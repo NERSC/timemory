@@ -147,7 +147,11 @@ void tim::util::timing_manager::write_json_no_mpi(string_t _fname)
     // write to file
     std::ofstream ofs(_fname.c_str());
     if(ofs)
+    {
+        ofs << "{\n\"ranks\": [" << std::endl;
         ofs << fss.str() << std::endl;
+        ofs << "]" << "\n}" << std::endl;
+    }
     else
         std::cerr << "Warning! Unable to write JSON output to \""
                   << _fname << "\"" << std::endl;
