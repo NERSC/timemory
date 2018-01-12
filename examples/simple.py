@@ -5,7 +5,7 @@ import os
 import timemory as tim
 import time
 
-default_nfib = 40
+default_nfib = 35
 
 def fibonacci(n):
     if n < 2:
