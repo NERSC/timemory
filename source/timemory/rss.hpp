@@ -41,6 +41,8 @@
 #include <cereal/types/deque.hpp>
 #include <cereal/types/vector.hpp>
 
+#include "timemory/namespace.hpp"
+
 //============================================================================//
 
 #if defined(__unix__) || defined(__unix) || defined(unix) || \
@@ -56,7 +58,7 @@
 
 // RSS - Resident set size (physical memory use, not in swap)
 
-namespace tim
+namespace NAME_TIM
 {
 
 namespace rss
@@ -281,7 +283,7 @@ namespace rss
 
 } // namespace rss
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 

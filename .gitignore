@@ -1,3 +1,7 @@
 
 # QtCreator config file
 /CMakeLists.txt.user
+
+# Edit files
+*~
+

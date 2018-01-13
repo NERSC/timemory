@@ -24,12 +24,14 @@
 #ifndef auto_timer_hpp_
 #define auto_timer_hpp_
 
+#include "timemory/namespace.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/timing_manager.hpp"
+
 #include <string>
 #include <cstdint>
 
-namespace tim
+namespace NAME_TIM
 {
 namespace util
 {
@@ -37,7 +39,7 @@ namespace util
 class auto_timer
 {
 public:
-    typedef tim::util::timing_manager::tim_timer_t  tim_timer_t;
+    typedef NAME_TIM::util::timing_manager::tim_timer_t  tim_timer_t;
 
 public:
     // Constructor and Destructors
@@ -100,11 +102,11 @@ inline auto_timer::~auto_timer()
 
 } // namespace util
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 
-typedef tim::util::auto_timer                     auto_timer_t;
+typedef NAME_TIM::util::auto_timer                     auto_timer_t;
 #if defined(DISABLE_TIMERS)
 #   define TIMEMORY_AUTO_TIMER(str)
 #else

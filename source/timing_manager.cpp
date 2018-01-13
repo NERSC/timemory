@@ -29,37 +29,37 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::util::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::util::timing_manager, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::util::timer_tuple, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::util::timing_manager, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
-tim::util::timing_manager* tim::util::timing_manager::fgInstance = nullptr;
+NAME_TIM::util::timing_manager* NAME_TIM::util::timing_manager::fgInstance = nullptr;
 
 //============================================================================//
 
-int32_t tim::util::timing_manager::fgMaxDepth =
+int32_t NAME_TIM::util::timing_manager::fgMaxDepth =
         std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
 // static function
-tim::util::timing_manager* tim::util::timing_manager::instance()
+NAME_TIM::util::timing_manager* NAME_TIM::util::timing_manager::instance()
 {
-    if(!fgInstance) new tim::util::timing_manager();
+    if(!fgInstance) new NAME_TIM::util::timing_manager();
     return fgInstance;
 }
 
 //============================================================================//
 
 #if defined(DISABLE_TIMERS)
-bool tim::util::timing_manager::fgEnabled = false;
+bool NAME_TIM::util::timing_manager::fgEnabled = false;
 #else
-bool tim::util::timing_manager::fgEnabled = true;
+bool NAME_TIM::util::timing_manager::fgEnabled = true;
 #endif
 
 //============================================================================//
 // static function
-void tim::util::timing_manager::enable(bool val)
+void NAME_TIM::util::timing_manager::enable(bool val)
 {
 #if defined(DISABLE_TIMERS)
     val = false;
@@ -69,17 +69,17 @@ void tim::util::timing_manager::enable(bool val)
 
 //============================================================================//
 // static function
-tim::util::timing_manager::comm_group_t
-tim::util::timing_manager::get_communicator_group()
+NAME_TIM::util::timing_manager::comm_group_t
+NAME_TIM::util::timing_manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    const int32_t nthreads = tim::get_env<int32_t>("OMP_NUM_THREADS", 1);
+    const int32_t nthreads = NAME_TIM::get_env<int32_t>("OMP_NUM_THREADS", 1);
     int32_t max_processes = max_concurrency / nthreads;
     int32_t mpi_node_default = mpi_size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
-    int32_t mpi_node_count = tim::get_env<int32_t>("TIMEMORY_NODE_COUNT",
+    int32_t mpi_node_count = NAME_TIM::get_env<int32_t>("TIMEMORY_NODE_COUNT",
                                                      mpi_node_default);
     int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
 
@@ -110,16 +110,16 @@ tim::util::timing_manager::get_communicator_group()
 
 //============================================================================//
 // static function
-void tim::util::timing_manager::write_json(string_t _fname)
+void NAME_TIM::util::timing_manager::write_json(string_t _fname)
 {
     (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
 }
 
 //============================================================================//
 // static function
-void tim::util::timing_manager::write_json_no_mpi(string_t _fname)
+void NAME_TIM::util::timing_manager::write_json_no_mpi(string_t _fname)
 {
-    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
 
     if(mpi_rank() == 0 && _verbose > 0)
     {
@@ -161,7 +161,7 @@ void tim::util::timing_manager::write_json_no_mpi(string_t _fname)
 
 //============================================================================//
 // static function
-void tim::util::timing_manager::write_json_mpi(string_t _fname)
+void NAME_TIM::util::timing_manager::write_json_mpi(string_t _fname)
 {
     const int32_t mpi_root = 0;
     comm_group_t mpi_comm_group = get_communicator_group();
@@ -281,21 +281,21 @@ void tim::util::timing_manager::write_json_mpi(string_t _fname)
 
 //============================================================================//
 
-tim::util::timing_manager::timing_manager()
+NAME_TIM::util::timing_manager::timing_manager()
 : m_report(&std::cout)
 {
 	if(!fgInstance) { fgInstance = this; }
     else
     {
         std::ostringstream ss;
-        ss << "tim::util::timing_manager singleton has already been created";
+        ss << "NAME_TIM::util::timing_manager singleton has already been created";
         throw std::runtime_error( ss.str().c_str() );
     }
 }
 
 //============================================================================//
 
-tim::util::timing_manager::~timing_manager()
+NAME_TIM::util::timing_manager::~timing_manager()
 {
     auto close_ostream = [&] (ostream_t*& m_os)
     {
@@ -312,8 +312,8 @@ tim::util::timing_manager::~timing_manager()
 
 //============================================================================//
 
-tim::util::timing_manager::string_t
-tim::util::timing_manager::get_prefix() const
+NAME_TIM::util::timing_manager::string_t
+NAME_TIM::util::timing_manager::get_prefix() const
 {
     if(!mpi_is_initialized())
         return "> ";
@@ -335,7 +335,7 @@ tim::util::timing_manager::get_prefix() const
 
 //============================================================================//
 
-tim::util::timer& tim::util::timing_manager::timer(const string_t& key,
+NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key,
                                                        const string_t& tag,
                                                        int32_t ncount,
                                                        int32_t nhash)
@@ -358,7 +358,7 @@ tim::util::timer& tim::util::timing_manager::timer(const string_t& key,
     // special case of auto_timer as the first timer
     if(ncount == 1 && m_timer_list.size() == 0)
     {
-        tim::util::details::base_timer::get_instance_count()--;
+        NAME_TIM::util::details::base_timer::get_instance_count()--;
         ncount = 0;
     }
 
@@ -376,7 +376,7 @@ tim::util::timer& tim::util::timing_manager::timer(const string_t& key,
     }
 
     ss << std::left << key;
-    tim::util::timer::propose_output_width(ss.str().length());
+    NAME_TIM::util::timer::propose_output_width(ss.str().length());
 
     m_timer_map[ref] = tim_timer_t(ss.str(), string_t(""), true, 3);
 
@@ -390,10 +390,10 @@ tim::util::timer& tim::util::timing_manager::timer(const string_t& key,
 
 //============================================================================//
 
-void tim::util::timing_manager::report() const
+void NAME_TIM::util::timing_manager::report() const
 {
     int32_t _default = (mpi_is_initialized()) ? 1 : 0;
-    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
+    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
 
     if(mpi_rank() == 0 && _verbose > 0)
     {
@@ -421,7 +421,7 @@ void tim::util::timing_manager::report() const
 
 //============================================================================//
 
-void tim::util::timing_manager::report(ostream_t* os) const
+void NAME_TIM::util::timing_manager::report(ostream_t* os) const
 {
     auto check_stream = [&] (ostream_t*& _os, const string_t& id)
     {
@@ -453,14 +453,14 @@ void tim::util::timing_manager::report(ostream_t* os) const
 
 //============================================================================//
 
-void tim::util::timing_manager::set_output_stream(ostream_t& _os)
+void NAME_TIM::util::timing_manager::set_output_stream(ostream_t& _os)
 {
     m_report = &_os;
 }
 
 //============================================================================//
 
-void tim::util::timing_manager::set_output_stream(const string_t& fname)
+void NAME_TIM::util::timing_manager::set_output_stream(const string_t& fname)
 {
     auto ostreamop = [&] (ostream_t*& m_os, const string_t& _fname)
     {
@@ -499,8 +499,8 @@ void tim::util::timing_manager::set_output_stream(const string_t& fname)
 
 //============================================================================//
 
-tim::util::timing_manager::ofstream_t*
-tim::util::timing_manager::get_ofstream(ostream_t* m_os) const
+NAME_TIM::util::timing_manager::ofstream_t*
+NAME_TIM::util::timing_manager::get_ofstream(ostream_t* m_os) const
 {
     return static_cast<ofstream_t*>(m_os);
 }

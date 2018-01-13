@@ -26,8 +26,10 @@
 
 //----------------------------------------------------------------------------//
 
-#include "base_clock.hpp"
-#include "rss.hpp"
+#include "timemory/namespace.hpp"
+#include "timemory/base_clock.hpp"
+#include "timemory/rss.hpp"
+
 #include <fstream>
 #include <string>
 #include <atomic>
@@ -41,7 +43,7 @@
 
 //----------------------------------------------------------------------------//
 
-namespace tim
+namespace NAME_TIM
 {
 
 enum class timer_field
@@ -69,7 +71,7 @@ class base_timer_data
 {
 public:
     typedef std::micro                                      ratio_t;
-    typedef tim::util::base_clock<ratio_t>                clock_t;
+    typedef NAME_TIM::util::base_clock<ratio_t>             clock_t;
     typedef clock_t::time_point                             time_point_t;
     typedef std::tuple<time_point_t, time_point_t>          data_type;
     typedef std::chrono::duration<clock_t, ratio_t>         duration_t;
@@ -205,7 +207,7 @@ public:
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
     typedef uomap<const base_timer*, data_t>    data_map_t;
-    typedef tim::rss::usage                     rss_usage_t;
+    typedef NAME_TIM::rss::usage                rss_usage_t;
 
 public:
     base_timer(uint16_t = 3, const string_t& =
@@ -432,15 +434,15 @@ base_timer::data_t& base_timer::m_timer() const
 
 } // namespace util
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 
 namespace internal
 {
-typedef typename tim::util::details::base_timer_data::ratio_t base_ratio_t;
-typedef tim::util::base_clock<base_ratio_t>   base_clock_t;
-typedef tim::util::base_clock_data<base_ratio_t> base_clock_data_t;
+typedef typename NAME_TIM::util::details::base_timer_data::ratio_t base_ratio_t;
+typedef NAME_TIM::util::base_clock<base_ratio_t>   base_clock_t;
+typedef NAME_TIM::util::base_clock_data<base_ratio_t> base_clock_data_t;
 typedef std::chrono::duration<base_clock_data_t, base_ratio_t> base_duration_t;
 typedef std::chrono::time_point<base_clock_t, base_duration_t>  base_time_point_t;
 typedef std::tuple<base_time_point_t, base_time_point_t> base_time_pair_t;

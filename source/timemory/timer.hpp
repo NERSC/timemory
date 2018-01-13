@@ -26,11 +26,10 @@
 
 //----------------------------------------------------------------------------//
 
+#include "timemory/namespace.hpp"
 #include "timemory/base_timer.hpp"
 
-#include <cereal/types/polymorphic.hpp>
-
-namespace tim
+namespace NAME_TIM
 {
 namespace util
 {
@@ -103,7 +102,7 @@ public:
 
 } // namespace util
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 

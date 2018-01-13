@@ -38,7 +38,9 @@
 #include <cmath>
 #include <vector>
 
-namespace tim
+#include "timemory/namespace.hpp"
+
+namespace NAME_TIM
 {
 
 //----------------------------------------------------------------------------//
@@ -91,7 +93,7 @@ delimit(const std::string& _str, const std::string& _delims,
     return _list;
 }
 
-
 }
+
 
 #endif

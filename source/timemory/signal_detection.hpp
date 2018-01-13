@@ -55,7 +55,8 @@
 #include <cmath>
 #include <vector>
 
-#include <timemory/utility.hpp>
+#include "timemory/namespace.hpp"
+#include "timemory/utility.hpp"
 
 // Define C++11
 #ifndef CXX11
@@ -71,13 +72,15 @@
 #   endif
 #endif
 
-#if (defined(__GNUC__) && !defined(__clang__)) // compatible compiler
+// compatible compiler
+#if (defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
 #   if !defined(SIGNAL_COMPAT_COMPILER)
 #       define SIGNAL_COMPAT_COMPILER
 #   endif
 #endif
 
-#if (defined(__linux__) || defined(__MACH__)) // compatible operating system
+// compatible operating system
+#if (defined(__linux__) || defined(__MACH__))
 #   if !defined(SIGNAL_COMPAT_OS)
 #       define SIGNAL_COMPAT_OS
 #   endif
@@ -136,7 +139,7 @@
 
 //============================================================================//
 
-namespace tim
+namespace NAME_TIM
 {
 
 //----------------------------------------------------------------------------//
@@ -200,7 +203,7 @@ private:
 
 //----------------------------------------------------------------------------//
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //============================================================================//
 
@@ -208,7 +211,7 @@ private:
 
 //============================================================================//
 
-namespace tim
+namespace NAME_TIM
 {
 
 //----------------------------------------------------------------------------//
@@ -467,7 +470,7 @@ inline void DisableSignalDetection()
 
 //----------------------------------------------------------------------------//
 
-} // namespace tim
+} // namespace NAME_TIM
 
 //============================================================================//
 
@@ -475,11 +478,11 @@ inline void DisableSignalDetection()
 
 //============================================================================//
 
-namespace tim
+namespace NAME_TIM
 {
 static bool EnableSignalDetection() { return false; }
 static void DisableSignalDetection() { }
-} // namespace tim
+} // namespace NAME_TIM
 
 //============================================================================//
 

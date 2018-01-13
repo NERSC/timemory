@@ -2,22 +2,19 @@ cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
 project(TiMemory LANGUAGES C CXX VERSION 1.0.0)
 
-
 ################################################################################
 #
-#        Macro to add to string
+# The license for TiMemory allows it to be included directly in the source
+# tree of another project
+# By setting TIMEMORY_NAMESPACE, the project can directly
+# use TiMemory in its own namespace, e.g.:
+# TIMEMORY_NAMESPACE=toast
+#   tim::util::timing_manager --> toast::util::timing_manager
 #
 ################################################################################
 
-macro(add _VAR _FLAG)
-    if(NOT "${_FLAG}" STREQUAL "")
-        if("${${_VAR}}" STREQUAL "")
-            set(${_VAR} "${_FLAG}")
-        else()
-            set(${_VAR} "${${_VAR}} ${_FLAG}")
-        endif()
-    endif()
-endmacro()
+set(TIMEMORY_NAMESPACE tim CACHE STRING "Top-level namespace for ${PROJECT_NAME}")
+
 
 ################################################################################
 #
@@ -28,8 +25,8 @@ endmacro()
 find_package(MPI REQUIRED)
 
 # Add the MPI-specific compiler and linker flags
-add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
-add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
 include_directories(${MPI_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
 
 set(MPI_LIBRARIES )
@@ -39,7 +36,7 @@ foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
         list(APPEND MPI_LIBRARIES ${${_TYPE}})
     endif(${_TYPE})
 endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-add(EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
+list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
 
 
 ################################################################################
@@ -92,6 +89,8 @@ set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 #        TiMemory
 #
 ################################################################################
+
+add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
 
 add_subdirectory(source)
 

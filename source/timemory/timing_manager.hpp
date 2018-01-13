@@ -29,8 +29,6 @@
 #include <unordered_map>
 #include <deque>
 #include <string>
-#include "timemory/utility.hpp"
-#include "timemory/timer.hpp"
 
 #include <mpi.h>
 
@@ -49,7 +47,11 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 
-namespace tim
+#include "timemory/namespace.hpp"
+#include "timemory/utility.hpp"
+#include "timemory/timer.hpp"
+
+namespace NAME_TIM
 {
 namespace util
 {
@@ -97,10 +99,10 @@ inline int32_t get_max_threads()
 //----------------------------------------------------------------------------//
 
 struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
-                                       tim::util::timer&>
+                                       NAME_TIM::util::timer&>
 {
     typedef std::string                                 string_t;
-    typedef tim::util::timer                            tim_timer_t;
+    typedef NAME_TIM::util::timer                            tim_timer_t;
     typedef uint64_t                                    first_type;
     typedef uint64_t                                    second_type;
     typedef string_t                                    third_type;
@@ -151,17 +153,17 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef tim::util::timer              tim_timer_t;
-    typedef tim_timer_t::string_t         string_t;
+    typedef NAME_TIM::util::timer             tim_timer_t;
+    typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
     typedef std::deque<timer_tuple_t>       timer_list_t;
     typedef timer_list_t::iterator          iterator;
     typedef timer_list_t::const_iterator    const_iterator;
     typedef timer_list_t::size_type         size_type;
-    typedef uomap<uint64_t, tim_timer_t>  timer_map_t;
-    typedef tim_timer_t::ostream_t        ostream_t;
-    typedef tim_timer_t::ofstream_t       ofstream_t;
-    typedef tim::timer_field              timer_field;
+    typedef uomap<uint64_t, tim_timer_t>    timer_map_t;
+    typedef tim_timer_t::ostream_t          ostream_t;
+    typedef tim_timer_t::ofstream_t         ofstream_t;
+    typedef NAME_TIM::timer_field              timer_field;
     typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
 
 public:
@@ -352,6 +354,6 @@ timing_manager::string_hash(const string_t& str) const
 
 } // namespace util
 
-} // namespace tim
+} // namespace NAME_TIM
 
 #endif // timing_manager_hpp_

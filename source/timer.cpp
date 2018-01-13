@@ -27,15 +27,15 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::util::timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::util::timer, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
-thread_local uint64_t tim::util::timer::f_output_width = 10;
+thread_local uint64_t NAME_TIM::util::timer::f_output_width = 10;
 
 //============================================================================//
 
-std::string tim::util::timer::default_format
+std::string NAME_TIM::util::timer::default_format
     =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
        // bash expansion:
        //   total_RSS_current, total_RSS_peak
@@ -46,18 +46,18 @@ std::string tim::util::timer::default_format
 
 //============================================================================//
 
-uint16_t tim::util::timer::default_precision = 3;
+uint16_t NAME_TIM::util::timer::default_precision = 3;
 
 //============================================================================//
 
-void tim::util::timer::propose_output_width(uint64_t _w)
+void NAME_TIM::util::timer::propose_output_width(uint64_t _w)
 {
     f_output_width = std::max(f_output_width, _w);
 }
 
 //============================================================================//
 
-tim::util::timer::timer(const string_t& _begin,
+NAME_TIM::util::timer::timer(const string_t& _begin,
                         const string_t& _close,
                         bool _use_static_width,
                         uint16_t prec)
@@ -68,7 +68,7 @@ tim::util::timer::timer(const string_t& _begin,
 
 //============================================================================//
 
-tim::util::timer::timer(const string_t& _begin,
+NAME_TIM::util::timer::timer(const string_t& _begin,
                         const string_t& _end,
                         const string_t& _fmt,
                         bool _use_static_width,
@@ -80,12 +80,12 @@ tim::util::timer::timer(const string_t& _begin,
 
 //============================================================================//
 
-tim::util::timer::~timer()
+NAME_TIM::util::timer::~timer()
 { }
 
 //============================================================================//
 
-void tim::util::timer::compose()
+void NAME_TIM::util::timer::compose()
 {
     std::stringstream ss;
     if(m_use_static_width)

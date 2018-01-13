@@ -49,14 +49,15 @@ namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
+#include "timemory/namespace.hpp"
 #include "timemory/timing_manager.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/auto_timer.hpp"
 
-typedef tim::util::timing_manager   timing_manager_t;
-typedef tim::util::timer            tim_timer_t;
-typedef tim::util::auto_timer       auto_timer_t;
+typedef NAME_TIM::util::timing_manager   timing_manager_t;
+typedef NAME_TIM::util::timer            tim_timer_t;
+typedef NAME_TIM::util::auto_timer       auto_timer_t;
 
 //============================================================================//
 //  Utility functions
