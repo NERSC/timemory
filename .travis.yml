@@ -138,3 +138,6 @@ install:
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     
+script:
+    - echo "Done"
+
