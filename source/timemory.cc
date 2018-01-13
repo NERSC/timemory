@@ -140,6 +140,97 @@ PYBIND11_MODULE(timemory, tim)
         return ret;
     };
 
+    auto add_arguments = [] (py::object parser, std::string fname = "")
+    {
+        auto locals = py::dict("fname"_a = fname,
+                               "parser"_a = parser);
+        py::exec(R"(
+                 from os.path import basename
+
+                 def get_file_tag(fname):
+                     _l = basename(fname).split('.')
+                     _l.pop()
+                     return ("{}".format('_'.join(_l)))
+
+                 def_fname = "timing_report"
+                 if fname is not None:
+                     def_fname = '_'.join(["timing_report", get_file_tag(fname)])
+
+                 parser.add_argument('--output-dir', required=False,
+                                     default='./', type=str, help="Output directory")
+                 parser.add_argument('--filename', required=False,
+                                     default=def_fname, type=str,
+                     help="Filename for timing report w/o directory and w/o suffix")
+                 parser.add_argument('--disable-timers', required=False,
+                                     action='store_false',
+                                     dest='use_timers',
+                                     help="Disable timers for script")
+                 parser.add_argument('--enable-timers', required=False,
+                                     action='store_true',
+                                     dest='use_timers', help="Enable timers for script")
+                 parser.add_argument('--disable-timer-serialization',
+                                     required=False, action='store_false',
+                                     dest='serial_report',
+                                     help="Disable serialization for timers")
+                 parser.add_argument('--enable-timer-serialization',
+                                     required=False, action='store_true',
+                                     dest='serial_report',
+                                     help="Enable serialization for timers")
+                 parser.add_argument('--max-timer-depth',
+                                     help="Maximum timer depth",
+                                     type=int,
+                                     default=65536)
+
+                 parser.set_defaults(use_timers=True)
+                 parser.set_defaults(serial_report=False)
+
+                 )", py::globals(), locals);
+    };
+
+    auto parse_args = [] (py::object args)
+    {
+        auto locals = py::dict("args"_a = args);
+        py::exec(R"(
+                 from os.path import join
+
+                 use_timers = args.use_timers
+                 serial_report = args.serial_report
+                 max_depth = args.max_timer_depth
+
+                 _report_fname = "{}.{}".format(args.timing_fname, "out")
+                 _serial_fname = "{}.{}".format(args.timing_fname, "json")
+                 report_fname = join(args.output_dir, _report_fname);
+                 serial_fname = join(args.output_dir, _serial_fname);
+
+                 )", py::globals(), locals);
+
+        auto report_fname = locals["report_fname"].cast<std::string>();
+        auto use_timer = locals["use_timers"].cast<bool>();
+        auto max_depth = locals["max_depth"].cast<int32_t>();
+        //auto serial_fname = locals["serial_fname"].cast<std::string>();
+        //auto serial_report = locals["serial_report"].cast<bool>();
+
+        timing_manager_t::instance()->set_max_depth(max_depth);
+        timing_manager_t::instance()->set_output_stream(report_fname);
+        timing_manager_t::instance()->enable(use_timer);
+
+    };
+
+    auto add_arguments_and_parse = [&] (py::object parser,
+            std::string fname = "")
+    {
+        add_arguments(parser, fname);
+        auto locals = py::dict("parser"_a = parser);
+        py::exec(R"(
+                 args = parser.parse_args()
+                 )",
+                 py::globals(), locals);
+
+        auto args = locals["args"];
+        parse_args(args);
+        return args;
+    };
+
     auto auto_timer_init = [&] (const std::string& key = "")
     {
         std::stringstream keyss;
@@ -195,6 +286,13 @@ PYBIND11_MODULE(timemory, tim)
     tim.def("enabled",
             [&] () { return timing_manager_t::instance()->is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
+    tim.def("add_arguments", add_arguments,
+            "Function to add default output arguments");
+    tim.def("parse_args", parse_args,
+            "Function to handle the output arguments");
+    tim.def("add_arguments_and_parse", add_arguments_and_parse,
+            "Combination of add_arguments and parse_args but returns");
+
 
 
 }
