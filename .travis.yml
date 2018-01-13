@@ -112,9 +112,18 @@ before_install:
     - eval "${MATRIX_EVAL}"
     - export CC=${CC}
     - export CXX=${CXX}
+    - export PYBINPATH=$(dirname $(which python))
+    - export PYROOTPATH=$(dirname ${PYBINPATH})
+    - export PATH=${PYBINPATH}:${PATH}
+    - export CMAKE_PREFIX_PATH=${PYROOTPATH}:${CMAKE_PREFIX_PATH}
+    - export PYTHON_VERSION="$(which python | awk '{print $NF}')"
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
-
+    - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
+    - echo "PYBINPATH = ${PYBINPATH}"
+    - echo "PYROOTPATH = ${PYROOTPATH}"
+    - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
+    
 install:
     - env
     - echo "--> ${PWD}"

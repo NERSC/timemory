@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
 
-project(TiMEmory LANGUAGES C CXX VERSION 1.0.0)
+project(TiMemory LANGUAGES C CXX VERSION 1.0.0)
 
 
 ################################################################################
@@ -55,12 +55,63 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
+set(CMAKE_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
+    CACHE PATH "Installation directory for CMake package config files")
+
+set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
+set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
+set(LIBNAME                 timemory)
+
 
 ################################################################################
 #
-#        TiMEmory
+#        PyBind11
 #
 ################################################################################
 
 add_subdirectory(pybind11)
+
+if(NOT PYBIND11_PYTHON_VERSION)
+    execute_process(COMMAND ${PYTHON_EXECUTABLE} --version
+        OUTPUT_VARIABLE PYTHON_VERSION
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REGEX REPLACE "[ A-Za-z]" "" PYTHON_VERSION "${PYTHON_VERSION}")
+    string(REGEX REPLACE "\.([0-9]+)$" "" PYTHON_VERSION "${PYTHON_VERSION}")
+    set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}"
+        CACHE STRING "Python version" FORCE)
+endif(NOT PYBIND11_PYTHON_VERSION)
+set(CMAKE_INSTALL_PYTHONDIR
+    ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages
+    CACHE PATH "Installation directory for python")
+set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
+set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
+
+
+################################################################################
+#
+#        TiMemory
+#
+################################################################################
+
 add_subdirectory(source)
+
+include(CMakePackageConfigHelpers)
+
+configure_package_config_file(
+    ${CMAKE_CURRENT_LIST_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+    INSTALL_DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    PATH_VARS
+        INCLUDE_INSTALL_DIR
+        LIB_INSTALL_DIR
+        PYTHON_INSTALL_DIR)
+
+write_basic_package_version_file(
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    VERSION ${PROJECT_VERSION}
+    COMPATIBILITY SameMajorVersion)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
+
