@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
-
 project(TiMemory LANGUAGES C CXX VERSION 1.0.0)
 
 
@@ -49,6 +48,7 @@ add(EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
 #
 ################################################################################
 
+include(GNUInstallDirs)
 set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)

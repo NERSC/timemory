@@ -1,6 +1,4 @@
 
-include(GNUInstallDirs)
-
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
 ################################################################################
