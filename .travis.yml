@@ -116,7 +116,7 @@ before_install:
     - export PYROOTPATH=$(dirname ${PYBINPATH})
     - export PATH=${PYBINPATH}:${PATH}
     - export CMAKE_PREFIX_PATH=${PYROOTPATH}:${CMAKE_PREFIX_PATH}
-    - export PYTHON_VERSION="$(which python | awk '{print $NF}')"
+    - export PYTHON_VERSION="$(python --version | awk '{print $NF}')"
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
@@ -133,7 +133,7 @@ install:
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
     - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/timemory/current
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
