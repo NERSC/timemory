@@ -2,8 +2,10 @@
 
 language: python
 
+
 python:
   - "3.5"
+
 
 # The apt packages here install our compiled code dependencies.
 matrix:
@@ -123,7 +125,9 @@ before_install:
     - echo "PYBINPATH = ${PYBINPATH}"
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
-    
+    - pip install matplotlib numpy tornado argparse
+
+
 install:
     - env
     - echo "--> ${PWD}"
@@ -138,6 +142,7 @@ install:
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     
+
 script:
     - ./simple.py
     - echo "Done"
