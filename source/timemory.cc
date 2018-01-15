@@ -69,16 +69,15 @@ PYBIND11_MODULE(timemory, tim)
 {
     py::add_ostream_redirect(tim, "ostream_redirect");
 
-    std::string default_format
-        =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
-           " : RSS {tot,self}_{curr,peak}"
-           " : (%C|%M)"
-           " | (%c|%m) [MB]";
+    auto tman_init = [=] () { return timing_manager_t::instance(); };
 
-    auto tman_init = [&] () { return timing_manager_t::instance(); };
-
-    auto timer_init = [&] (std::string begin)
+    auto timer_init = [=] (std::string begin)
     {
+        std::string default_format
+            =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
+               " : RSS {tot,self}_{curr,peak}"
+               " : (%C|%M)"
+               " | (%c|%m) [MB]";
         return new tim_timer_t(begin, "", default_format, false, 3);
     };
 
@@ -214,7 +213,7 @@ PYBIND11_MODULE(timemory, tim)
 
     };
 
-    auto add_arguments_and_parse = [&] (py::object parser,
+    auto add_arguments_and_parse = [=] (py::object parser,
             std::string fname = "")
     {
         add_arguments(parser, fname);
@@ -229,7 +228,7 @@ PYBIND11_MODULE(timemory, tim)
         return args;
     };
 
-    auto auto_timer_init = [&] (const std::string& key = "")
+    auto auto_timer_init = [=] (const std::string& key = "")
     {
         std::stringstream keyss;
         keyss << get_func(1);
@@ -240,7 +239,7 @@ PYBIND11_MODULE(timemory, tim)
         return new auto_timer_t(keyss.str(), op_line, "pyc");
     };
 
-    auto enable_signal_detection = [&] () { NAME_TIM::EnableSignalDetection(); };
+    auto enable_signal_detection = [=] () { NAME_TIM::EnableSignalDetection(); };
 
     // we have to wrap each return type
     py::class_<timing_manager_t> tman(tim, "timing_manager");
@@ -279,13 +278,13 @@ PYBIND11_MODULE(timemory, tim)
             py::arg("nback") = 2, py::arg("basename_only") = true,
             py::arg("use_dirname") = false, py::arg("noquotes") = false);
     tim.def("max_depth",
-            [&]() { return timing_manager_t::instance()->get_max_depth(); },
+            [=]() { return timing_manager_t::instance()->get_max_depth(); },
             "Max depth of auto-timers");
     tim.def("toggle",
-            [&] (bool timers_on) { timing_manager_t::instance()->enable(timers_on); },
+            [=] (bool timers_on) { timing_manager_t::instance()->enable(timers_on); },
             "Enable/disable auto-timers", py::arg("timers_on") = true);
     tim.def("enabled",
-            [&] () { return timing_manager_t::instance()->is_enabled(); },
+            [=] () { return timing_manager_t::instance()->is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
     tim.def("add_arguments", add_arguments,
             "Function to add default output arguments");
