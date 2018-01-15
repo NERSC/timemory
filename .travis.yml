@@ -24,6 +24,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
     # GCC 5
@@ -40,6 +41,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -56,6 +58,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
     # GCC 7
@@ -72,6 +75,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -89,6 +93,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -106,6 +111,7 @@ matrix:
             - build-essential
             - cmake3
             - libmpich-dev
+            - tk
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
          
@@ -126,7 +132,7 @@ before_install:
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
     - pip install matplotlib numpy tornado argparse
-
+    - export DISPLAY=":0"
 
 install:
     - env
