@@ -240,62 +240,127 @@ PYBIND11_MODULE(timemory, tim)
     };
 
     auto enable_signal_detection = [=] () { NAME_TIM::EnableSignalDetection(); };
+    auto disable_signal_detection = [=] () { NAME_TIM::DisableSignalDetection(); };
+
+    //========================================================================//
+    //
+    //  Binding implementation
+    //
+    //========================================================================//
 
     // we have to wrap each return type
     py::class_<timing_manager_t> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
     py::class_<auto_timer_t> auto_timer(tim, "auto_timer");
 
+    //------------------------------------------------------------------------//
+
     tman.def(py::init<>(tman_init), "Initialization");
-    tman.def("report", &timing_manager_t::print, "Report timing manager");
-    tman.def("size", &timing_manager_t::size, "Size of timing manager");
-    tman.def("clear", &timing_manager_t::clear, "Clear the timing manager");
-    tman.def("serialize", &timing_manager_t::write_serialization,
+    tman.def("report",
+             [=] (py::object tman)
+             { tman.cast<timing_manager_t*>()->print(); },
+             "Report timing manager");
+    tman.def("size",
+             [=] (py::object tman)
+             { return tman.cast<timing_manager_t*>()->size(); },
+             "Size of timing manager");
+    tman.def("clear",
+             [=] (py::object tman)
+             { return tman.cast<timing_manager_t*>()->clear(); },
+             "Clear the timing manager");
+    tman.def("serialize",
+             [=] (py::object tman, std::string fname)
+             { tman.cast<timing_manager_t*>()->write_serialization(fname); },
              "Serialize the timing manager to JSON");
-    tman.def("set_max_depth", &timing_manager_t::set_max_depth,
+    tman.def("set_max_depth",
+             [=] (py::object tman, int depth)
+             { tman.cast<timing_manager_t*>()->set_max_depth(depth); },
              "Set the max depth of the timers");
-    tman.def("get_max_depth", &timing_manager_t::get_max_depth,
+    tman.def("get_max_depth",
+             [=] (py::object tman)
+             { return tman.cast<timing_manager_t*>()->get_max_depth(); },
              "Get the max depth of the timers");
 
-    timer.def(py::init(timer_init), "Initialization",
+    //------------------------------------------------------------------------//
+
+    timer.def(py::init(timer_init),
+              "Initialization",
               py::return_value_policy::take_ownership);
-    timer.def("real_elapsed", &tim_timer_t::real_elapsed, "Elapsed wall clock");
-    timer.def("sys_elapsed", &tim_timer_t::system_elapsed, "Elapsed system clock");
-    timer.def("user_elapsed", &tim_timer_t::user_elapsed, "Elapsed user time");
-    timer.def("start", &tim_timer_t::start, "Start timer");
-    timer.def("stop", &tim_timer_t::stop, "Stop timer");
-    timer.def("report", &tim_timer_t::print, "Report timer");
+    timer.def("real_elapsed",
+              [=] (py::object timer)
+              { return timer.cast<tim_timer_t*>()->real_elapsed(); },
+              "Elapsed wall clock");
+    timer.def("sys_elapsed",
+              [=] (py::object timer)
+              { return timer.cast<tim_timer_t*>()->system_elapsed(); },
+              "Elapsed system clock");
+    timer.def("user_elapsed",
+              [=] (py::object timer)
+              { return timer.cast<tim_timer_t*>()->user_elapsed(); },
+              "Elapsed user time");
+    timer.def("start",
+              [=] (py::object timer)
+              { timer.cast<tim_timer_t*>()->start(); },
+              "Start timer");
+    timer.def("stop",
+              [=] (py::object timer)
+              { timer.cast<tim_timer_t*>()->stop(); },
+              "Stop timer");
+    timer.def("report",
+              [=] (py::object timer)
+              { timer.cast<tim_timer_t*>()->print(); },
+              "Report timer");
+
+    //------------------------------------------------------------------------//
 
     auto_timer.def(py::init(auto_timer_init), "Initialization",
                    py::arg("key") = "",
                    py::return_value_policy::take_ownership);
 
-    tim.def("LINE", get_line, "Function that emulates __LINE__ macro",
+    //------------------------------------------------------------------------//
+
+    tim.def("LINE",
+            get_line,
+            "Function that emulates __LINE__ macro",
             py::arg("nback") = 1);
-    tim.def("FUNC", get_func, "Function that emulates __FUNC__ macro",
+    tim.def("FUNC",
+            get_func,
+            "Function that emulates __FUNC__ macro",
             py::arg("nback") = 1);
-    tim.def("FILE", get_file, "Function that emulates __FILE__ macro",
-            py::arg("nback") = 2, py::arg("basename_only") = true,
-            py::arg("use_dirname") = false, py::arg("noquotes") = false);
+    tim.def("FILE",
+            get_file,
+            "Function that emulates __FILE__ macro",
+            py::arg("nback") = 2,
+            py::arg("basename_only") = true,
+            py::arg("use_dirname") = false,
+            py::arg("noquotes") = false);
     tim.def("max_depth",
-            [=]() { return timing_manager_t::instance()->get_max_depth(); },
+            [=]()
+            { return timing_manager_t::instance()->get_max_depth(); },
             "Max depth of auto-timers");
     tim.def("toggle",
-            [=] (bool timers_on) { timing_manager_t::instance()->enable(timers_on); },
-            "Enable/disable auto-timers", py::arg("timers_on") = true);
+            [=] (bool timers_on)
+            { timing_manager_t::instance()->enable(timers_on); },
+            "Enable/disable auto-timers",
+            py::arg("timers_on") = true);
     tim.def("enabled",
-            [=] () { return timing_manager_t::instance()->is_enabled(); },
+            [=] ()
+            { return timing_manager_t::instance()->is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
-    tim.def("add_arguments", add_arguments,
+    tim.def("add_arguments",
+            add_arguments,
             "Function to add default output arguments");
-    tim.def("parse_args", parse_args,
+    tim.def("parse_args",
+            parse_args,
             "Function to handle the output arguments");
-    tim.def("add_arguments_and_parse", add_arguments_and_parse,
+    tim.def("add_arguments_and_parse",
+            add_arguments_and_parse,
             "Combination of add_arguments and parse_args but returns");
-
-    tim.def("enable_signal_detection", enable_signal_detection,
+    tim.def("enable_signal_detection",
+            enable_signal_detection,
             "Enable signal detection");
-    tim.def("disable_signal_detection", &NAME_TIM::DisableSignalDetection,
+    tim.def("disable_signal_detection",
+            disable_signal_detection,
             "Enable signal detection");
 
     py::module timemory_plot = tim.import("timemory-supp");

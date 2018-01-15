@@ -31,7 +31,11 @@ find_package(MPI REQUIRED)
 # Add the MPI-specific compiler and linker flags
 add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
 add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
-include_directories(${MPI_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+list(APPEND EXTERNAL_INCLUDE_DIRS
+    ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+    include_directories(SYSTEM ${_DIR})
+endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 
 set(MPI_LIBRARIES )
 foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
@@ -49,9 +53,9 @@ list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
 #
 ################################################################################
 
-set(CMAKE_THREAD_PREFER_PTHREADS ON)
-find_package(Threads)
-list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+set(CMAKE_THREAD_PREFER_PTHREAD ON)
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
 
 
 ################################################################################
@@ -66,7 +70,8 @@ option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
 option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
-
+set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
+option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
@@ -85,9 +90,12 @@ set(LIBNAME                 timemory)
 #       This was likely caused by different translation units being
 #       compiled with different visibility settings.
 add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
-add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough -fvisibility=hidden")
+add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
 add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
 add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+if(ENABLE_SANITIZE)
+    add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE} -pthread")
+endif(ENABLE_SANITIZE)
 add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 
@@ -151,3 +159,5 @@ foreach(_FILE test.py timemory_plot.py)
     configure_file(${PROJECT_SOURCE_DIR}/examples/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
 endforeach(_FILE simple.py timemory_plot.py)
+
+#include(Testing)

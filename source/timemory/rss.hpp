@@ -195,6 +195,22 @@ namespace rss
         bool operator()(const this_type& rhs) const
         { return *this < rhs; }
 
+        static usage max(const usage& lhs, const usage& rhs)
+        {
+            usage ret;
+            ret.m_curr_rss = std::max(lhs.m_curr_rss, rhs.m_curr_rss);
+            ret.m_peak_rss = std::max(lhs.m_peak_rss, rhs.m_peak_rss);
+            return ret;
+        }
+
+        static usage min(const usage& lhs, const usage& rhs)
+        {
+            usage ret;
+            ret.m_curr_rss = std::min(lhs.m_curr_rss, rhs.m_curr_rss);
+            ret.m_peak_rss = std::min(lhs.m_peak_rss, rhs.m_peak_rss);
+            return ret;
+        }
+
         friend this_type operator-(const this_type& lhs, const this_type& rhs)
         {
             this_type r = lhs;

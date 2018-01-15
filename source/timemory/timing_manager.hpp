@@ -29,6 +29,8 @@
 #include <unordered_map>
 #include <deque>
 #include <string>
+#include <thread>
+#include <mutex>
 
 #include <mpi.h>
 
@@ -154,7 +156,7 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef NAME_TIM::util::timer             tim_timer_t;
+    typedef NAME_TIM::util::timer           tim_timer_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
     typedef std::deque<timer_tuple_t>       timer_list_t;
@@ -164,8 +166,11 @@ public:
     typedef uomap<uint64_t, tim_timer_t>    timer_map_t;
     typedef tim_timer_t::ostream_t          ostream_t;
     typedef tim_timer_t::ofstream_t         ofstream_t;
-    typedef NAME_TIM::timer_field              timer_field;
+    typedef NAME_TIM::timer_field           timer_field;
     typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
+    typedef std::mutex                      mutex_t;
+    typedef uomap<uint64_t, mutex_t>        mutex_map_t;
+    typedef std::lock_guard<mutex_t>        auto_lock_t;
 
 public:
 	// Constructor and Destructors
@@ -225,8 +230,8 @@ public:
     const_iterator  end() const     { return m_timer_list.cend(); }
     const_iterator  cend() const    { return m_timer_list.cend(); }
 
-    void report() const;
-    void report(std::ostream& os) const { report(&os); }
+    void report(bool no_min = false) const;
+    void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
     void set_output_stream(ostream_t&);
     void set_output_stream(const string_t&);
     void print() { this->report(); }
@@ -242,7 +247,7 @@ protected:
 private:
     // Private functions
     ofstream_t* get_ofstream(ostream_t* m_os) const;
-    void report(ostream_t*) const;
+    void report(ostream_t*, bool no_min = false) const;
 
 private:
 	// Private variables
@@ -257,6 +262,8 @@ private:
     timer_list_t            m_timer_list;
     // output stream for total timing report
     ostream_t*              m_report;
+    // locks for timers
+    mutex_map_t             m_mutex_map;
 };
 
 //----------------------------------------------------------------------------//

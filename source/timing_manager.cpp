@@ -351,6 +351,9 @@ NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key
 
     uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount+1) * (nhash+1);
 
+    // thread-safe
+    auto_lock_t lock(m_mutex_map[ref]);
+
     // if already exists, return it
     if(m_timer_map.find(ref) != m_timer_map.end())
         return m_timer_map.find(ref)->second;
@@ -390,7 +393,7 @@ NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key
 
 //============================================================================//
 
-void NAME_TIM::util::timing_manager::report() const
+void NAME_TIM::util::timing_manager::report(bool no_min) const
 {
     int32_t _default = (mpi_is_initialized()) ? 1 : 0;
     int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
@@ -415,13 +418,13 @@ void NAME_TIM::util::timing_manager::report() const
             if(i != mpi_rank() )
                 continue;
         }
-        report(m_report);
+        report(m_report, no_min);
     }
 }
 
 //============================================================================//
 
-void NAME_TIM::util::timing_manager::report(ostream_t* os) const
+void NAME_TIM::util::timing_manager::report(ostream_t* os, bool no_min) const
 {
     auto check_stream = [&] (ostream_t*& _os, const string_t& id)
     {
@@ -446,7 +449,7 @@ void NAME_TIM::util::timing_manager::report(ostream_t* os) const
         *os << "> rank " << mpi_rank() << std::endl;
 
     for(const auto& itr : *this)
-        itr.timer().report(*os);
+        itr.timer().report(*os, true, no_min);
 
     os->flush();
 }

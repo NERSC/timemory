@@ -69,7 +69,7 @@ public:
     std::string as_string() const
     {
         std::stringstream ss;
-        this->report(ss, false, false, true);
+        this->report(ss, false, true);
         return ss.str();
     }
 
