@@ -1,0 +1,9 @@
+
+#include <@HEADER_FILE@>
+
+int main(int, char**)
+{
+
+    return 0;
+}
+

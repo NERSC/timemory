@@ -41,8 +41,8 @@ std::string NAME_TIM::util::timer::default_format
        //   total_RSS_current, total_RSS_peak
        //   self_RSS_current self_RSS_peak
        " : RSS {tot,self}_{curr,peak}"
-       " : (%c|%m)"
-       " | (%C|%M) [MB]";
+       " : (%C|%M)"
+       " | (%c|%m) [MB]";
 
 //============================================================================//
 

@@ -102,7 +102,7 @@ struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
                                        NAME_TIM::util::timer&>
 {
     typedef std::string                                 string_t;
-    typedef NAME_TIM::util::timer                            tim_timer_t;
+    typedef NAME_TIM::util::timer                       tim_timer_t;
     typedef uint64_t                                    first_type;
     typedef uint64_t                                    second_type;
     typedef string_t                                    third_type;
@@ -143,6 +143,7 @@ struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
            cereal::make_nvp("timer.tag", std::get<2>(*this)),
            cereal::make_nvp("timer.ref", std::get<3>(*this)));
     }
+
 };
 
 //----------------------------------------------------------------------------//

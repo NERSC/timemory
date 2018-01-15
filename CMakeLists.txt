@@ -2,6 +2,10 @@ cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
 project(TiMemory LANGUAGES C CXX VERSION 1.0.0)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
+    ${CMAKE_MODULE_PATH})
+include(Compilers)
+
 ################################################################################
 #
 # The license for TiMemory allows it to be included directly in the source
@@ -25,8 +29,8 @@ set(TIMEMORY_NAMESPACE tim CACHE STRING "Top-level namespace for ${PROJECT_NAME}
 find_package(MPI REQUIRED)
 
 # Add the MPI-specific compiler and linker flags
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
+add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
 include_directories(${MPI_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
 
 set(MPI_LIBRARIES )
@@ -46,9 +50,11 @@ list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
 ################################################################################
 
 include(GNUInstallDirs)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
+option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
+option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+set(CMAKE_INSTALL_MESSAGE LAZY)
 
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
@@ -61,6 +67,18 @@ set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 set(LIBNAME                 timemory)
 
+# without this, get the following warning in compilation with "-g -DDEBUG":
+#   ld: warning: direct access in function 'XXX' from file
+#       'XXX' to global weak symbol 'XXX' from file
+#       'XXX' means the weak symbol cannot be overridden at runtime.
+#       This was likely caused by different translation units being
+#       compiled with different visibility settings.
+add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
+add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough -fvisibility=hidden")
+add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
+add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 
 ################################################################################
 #
@@ -68,6 +86,8 @@ set(LIBNAME                 timemory)
 #
 ################################################################################
 
+set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+    CACHE STRING "PyBind11 CXX standard")
 add_subdirectory(pybind11)
 
 if(NOT PYBIND11_PYTHON_VERSION)
@@ -116,3 +136,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
 
+foreach(_FILE simple.py timemory_plot.py)
+    configure_file(${PROJECT_SOURCE_DIR}/examples/${_FILE}
+        ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+endforeach(_FILE simple.py timemory_plot.py)

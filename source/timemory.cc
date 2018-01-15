@@ -59,9 +59,6 @@ typedef NAME_TIM::util::timing_manager   timing_manager_t;
 typedef NAME_TIM::util::timer            tim_timer_t;
 typedef NAME_TIM::util::auto_timer       auto_timer_t;
 
-//============================================================================//
-//  Utility functions
-//============================================================================//
 
 //============================================================================//
 //  Python wrappers
@@ -74,8 +71,8 @@ PYBIND11_MODULE(timemory, tim)
     std::string default_format
         =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
            " : RSS {tot,self}_{curr,peak}"
-           " : (%c|%m)"
-           " | (%C|%M) [MB]";
+           " : (%C|%M)"
+           " | (%c|%m) [MB]";
 
     auto tman_init = [&] () { return timing_manager_t::instance(); };
 
@@ -293,6 +290,7 @@ PYBIND11_MODULE(timemory, tim)
     tim.def("add_arguments_and_parse", add_arguments_and_parse,
             "Combination of add_arguments and parse_args but returns");
 
-
+    py::module timemory_plot = tim.import("timemory-supp");
+    tim.add_object("plot", timemory_plot);
 
 }

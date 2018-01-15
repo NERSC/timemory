@@ -1,0 +1,12 @@
+cmake_minimum_required(VERSION @CMAKE_VERSION@ FATAL_ERROR)
+
+set(VAR CMAKE_@LANG@_COMPILER)
+set(CMAKE_@LANG@_COMPILER @COMPILER@ CACHE FILEPATH "Compiler" FORCE)
+
+project(CompileTest @LANG@)
+
+set_source_files_properties(compile-test.cc PROPERTIES LANGUAGE @LANG@)
+
+set(CMAKE_@LANG@_FLAGS "@COMPILE_FLAGS@")
+
+add_executable(compile-test compile-test.cc)

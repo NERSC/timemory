@@ -3,15 +3,19 @@
 from __future__ import division
 import json
 import sys
-import argparse
 import traceback
 import collections
 import numpy as np
 
-_matplotlib_backend = 'agg'
-import matplotlib
-matplotlib.use(_matplotlib_backend)
-import matplotlib.pyplot as plt
+try:
+    import tornado
+    import matplotlib
+    import matplotlib.pyplot as plt
+except:
+    _matplotlib_backend = 'agg'
+    import matplotlib
+    matplotlib.use(_matplotlib_backend)
+    import matplotlib.pyplot as plt
 
 timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
 memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
@@ -31,26 +35,27 @@ def nested_dict():
 
 
 #==============================================================================#
-class memory_data():
+class timemory_data():
 
-    def __init__(self):
+    def __init__(self, types):
         self.data = nested_dict()
-        for key in memory_types:
+        self.types = types
+        for key in self.types:
             self.data[key] = []
 
     def append(self, _data):
         n = 0
-        for key in memory_types:
+        for key in self.types:
             self.data[key].append(_data[n])
             n += 1
 
     def __add__(self, rhs):
-        for key in memory_types:
+        for key in self.types:
             self.data[key].extend(rhs.data[key])
 
     def reset(self):
         self.data = nested_dict()
-        for key in memory_types:
+        for key in self.types:
             self.data[key] = []
 
     def __getitem__(self, key):
@@ -58,38 +63,11 @@ class memory_data():
 
 
 #==============================================================================#
-class timing_data():
+class timemory_function():
 
     def __init__(self):
-        self.data = nested_dict()
-        for key in timing_types:
-            self.data[key] = []
-
-    def append(self, _data):
-        n = 0
-        for key in timing_types:
-            self.data[key].append(_data[n])
-            n += 1
-
-    def __add__(self, rhs):
-        for key in timing_types:
-            self.data[key].extend(rhs.data[key])
-
-    def reset(self):
-        self.data = nested_dict()
-        for key in timing_types:
-            self.data[key] = []
-
-    def __getitem__(self, key):
-        return self.data[key]
-
-
-#==============================================================================#
-class timing_function():
-
-    def __init__(self):
-        self.data = timing_data()
-        self.memory = memory_data()
+        self.timing = timemory_data(timing_types)
+        self.memory = timemory_data(memory_types)
         self.laps = 0
 
     def process(self, denom, obj, nlap):
@@ -97,21 +75,21 @@ class timing_function():
         _user = obj['user_elapsed'] / denom
         _sys = obj['system_elapsed'] / denom
         _cpu = obj['cpu_elapsed'] / denom
-        _tpeak = obj['rss_max']['peak'] / (1024.0 * 1.0e6)
-        _tcurr = obj['rss_max']['current'] / (1024.0 * 1.0e6)
-        _speak = obj['rss_self']['peak'] / (1024.0 * 1.0e6)
-        _scurr = obj['rss_self']['current'] / (1024.0 * 1.0e6)
+        _tpeak = obj['rss_max']['peak']
+        _tcurr = obj['rss_max']['current']
+        _speak = obj['rss_self']['peak']
+        _scurr = obj['rss_self']['current']
         _perc = (_cpu / _wall) * 100.0 if _wall > 0.0 else 100.0
         if _wall > min_time or abs(_speak) > min_memory or abs(_scurr) > min_memory:
-            self.data.append([_wall, _sys, _user, _cpu, _perc])
+            self.timing.append([_wall, _sys, _user, _cpu, _perc])
             self.memory.append([_tpeak, _tcurr, _speak, _scurr])
         self.laps += nlap
 
     def __getitem__(self, key):
-        return self.data[key]
+        return self.timing[key]
 
     def length(self):
-        return max(len(self.data['cpu']), len(self.memory['self_peak_rss']))
+        return max(len(self.timing['cpu']), len(self.memory['self_peak_rss']))
 
 
 #==============================================================================#
@@ -137,7 +115,7 @@ def read(filename):
             max_level = max([max_level, nlevel])
 
     concurrency = concurrency_sum / mpi_size
-    timing_functions = nested_dict()
+    timemory_functions = nested_dict()
     for i in range(0, len(data_0['ranks'])):
         data_1 = data_0['ranks'][i]
         for j in range(0, len(data_1['timing_manager']['timers'])):
@@ -149,16 +127,16 @@ def read(filename):
                 indent = '|{}'.format(indent)
             tag = '{} {}'.format(indent, data_2['timer.tag'])
 
-            if not tag in timing_functions:
-                timing_functions[tag] = timing_function()
-            timing_func = timing_functions[tag]
+            if not tag in timemory_functions:
+                timemory_functions[tag] = timemory_function()
+            timemory_func = timemory_functions[tag]
             data_3 = data_2['timer.ref']
-            timing_func.process(data_3['to_seconds_ratio_den'], data_3, nlaps)
+            timemory_func.process(data_3['to_seconds_ratio_den'], data_3, nlaps)
 
-            if timing_func.length() == 0:
-                del timing_functions[tag]
+            if timemory_func.length() == 0:
+                del timemory_functions[tag]
 
-    return timing_functions
+    return timemory_functions
 
 
 #==============================================================================#
@@ -224,11 +202,13 @@ def plot_timing(filename, title, timing_data_dict, disp=False):
     plt.yticks(ind, ytics, ha='left')
     plt.setp(ax.get_yticklabels(), fontsize='smaller')
     plt.legend(plots, iter_order)
-    imgfname = filename.replace('.json', '_timing.png')
-    plt.savefig(imgfname, dpi=img_dpi)
     if disp:
+        print('Displaying plot...')
         plt.show()
     else:
+        print('Saving plot...')
+        imgfname = filename.replace('.json', '_timing.png')
+        plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
@@ -309,31 +289,24 @@ def plot_memory(filename, title, memory_data_dict, disp=False):
     plt.yticks(ind, ytics, ha='left')
     plt.setp(ax.get_yticklabels(), fontsize='smaller')
     plt.legend(plots, iter_order)
-    imgfname = filename.replace('.json', '_memory.png')
-    plt.savefig(imgfname, dpi=img_dpi)
     if disp:
+        print('Displaying plot...')
         plt.show()
     else:
+        print('Saving plot...')
+        imgfname = filename.replace('.json', '_memory.png')
+        plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def main(args):
+def plot(files, display=False):
     global concurrency
     global mpi_size
 
-    parser = argparse.ArgumentParser()
-    parser.add_argument("-f", "--files", nargs='*', help="File input")
-    parser.add_argument("-d", "--display", required=False, action='store_true',
-                        help="Display plot", dest='display_plot')
-    parser.set_defaults(display_plot=False)
-
-    args = parser.parse_args()
-    print('Files: {}'.format(args.files))
-
     file_data = dict()
     file_title = dict()
-    for filename in args.files:
+    for filename in files:
         print ('Reading {}...'.format(filename))
         file_data[filename] = read(filename)
         title = filename.replace('timing_report_', '')
@@ -344,14 +317,23 @@ def main(args):
 
     for filename, data in file_data.items():
         print ('Plotting {}...'.format(filename))
-        plot_timing(filename, file_title[filename], data, args.display_plot)
-        plot_memory(filename, file_title[filename], data, args.display_plot)
+        plot_timing(filename, file_title[filename], data, display)
+        plot_memory(filename, file_title[filename], data, display)
 
 
 #==============================================================================#
 if __name__ == "__main__":
+    import argparse
     try:
-        main(sys.argv[1:])
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-f", "--files", nargs='*', help="File input")
+        parser.add_argument("-d", "--display", required=False, action='store_true',
+                            help="Display plot", dest='display_plot')
+        parser.set_defaults(display_plot=False)
+
+        args = parser.parse_args()
+        print('Files: {}'.format(args.files))
+        plot(args.files, args.display)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

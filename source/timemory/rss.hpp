@@ -253,8 +253,8 @@ namespace rss
         template <typename Archive> void
         serialize(Archive& ar, const unsigned int /*version*/)
         {
-            ar(cereal::make_nvp("current", m_curr_rss),
-               cereal::make_nvp("peak",    m_peak_rss));
+            ar(cereal::make_nvp("current", current()),
+               cereal::make_nvp("peak",    peak()));
         }
 
     };
