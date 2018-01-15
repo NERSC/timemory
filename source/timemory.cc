@@ -54,6 +54,7 @@ using namespace py::literals;
 #include "timemory/timer.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/auto_timer.hpp"
+#include "timemory/signal_detection.hpp"
 
 typedef NAME_TIM::util::timing_manager   timing_manager_t;
 typedef NAME_TIM::util::timer            tim_timer_t;
@@ -239,6 +240,8 @@ PYBIND11_MODULE(timemory, tim)
         return new auto_timer_t(keyss.str(), op_line, "pyc");
     };
 
+    auto enable_signal_detection = [&] () { NAME_TIM::EnableSignalDetection(); };
+
     // we have to wrap each return type
     py::class_<timing_manager_t> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
@@ -289,6 +292,11 @@ PYBIND11_MODULE(timemory, tim)
             "Function to handle the output arguments");
     tim.def("add_arguments_and_parse", add_arguments_and_parse,
             "Combination of add_arguments and parse_args but returns");
+
+    tim.def("enable_signal_detection", enable_signal_detection,
+            "Enable signal detection");
+    tim.def("disable_signal_detection", &NAME_TIM::DisableSignalDetection,
+            "Enable signal detection");
 
     py::module timemory_plot = tim.import("timemory-supp");
     tim.add_object("plot", timemory_plot);

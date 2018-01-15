@@ -137,7 +137,7 @@ install:
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
     - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/timemory/current
-        -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python)
+        -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2

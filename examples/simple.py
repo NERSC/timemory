@@ -6,6 +6,7 @@ import timemory as tim
 import time
 
 default_nfib = 35
+tim.enable_signal_detection()
 
 def fibonacci(n):
     if n < 2:
@@ -42,7 +43,7 @@ def main(nfib):
     tman.report()
     tman.serialize('output.json')
     print ('')
-    tim.plot.plot("output.json", display=False)
+    tim.plot.plot(["output.json"], display=False)
     
     
 if __name__ == "__main__":
