@@ -43,8 +43,11 @@ def main(nfib):
     tman.report()
     tman.serialize('output.json')
     print ('')
-    tim.plot.plot(["output.json"], display=False)
-    
+    try:
+        tim.plot.plot(["output.json"], display=False)
+    except:
+        print ("Error! Unable to plot 'output.json'")
+
     
 if __name__ == "__main__":
     if len(sys.argv) > 1:

@@ -132,7 +132,7 @@ before_install:
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
     - pip install matplotlib numpy tornado argparse
-    - export DISPLAY=":0"
+
 
 install:
     - env
@@ -150,6 +150,6 @@ install:
     
 
 script:
-    - ./simple.py
+    - ./test.py
     - echo "Done"
 
