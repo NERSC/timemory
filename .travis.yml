@@ -139,5 +139,6 @@ install:
     - make -j2
     
 script:
+    - ./simple.py
     - echo "Done"
 
