@@ -79,7 +79,7 @@ PYBIND11_MODULE(timemory, tim)
 
     auto timer_init = [&] (std::string begin)
     {
-        return tim_timer_t(begin, "", default_format, false, 3);
+        return new tim_timer_t(begin, "", default_format, false, 3);
     };
 
     auto get_line = [] (int nback = 1)
@@ -258,7 +258,8 @@ PYBIND11_MODULE(timemory, tim)
     tman.def("get_max_depth", &timing_manager_t::get_max_depth,
              "Get the max depth of the timers");
 
-    timer.def(py::init(timer_init), "Initialization");
+    timer.def(py::init(timer_init), "Initialization",
+              py::return_value_policy::take_ownership);
     timer.def("real_elapsed", &tim_timer_t::real_elapsed, "Elapsed wall clock");
     timer.def("sys_elapsed", &tim_timer_t::system_elapsed, "Elapsed system clock");
     timer.def("user_elapsed", &tim_timer_t::user_elapsed, "Elapsed user time");

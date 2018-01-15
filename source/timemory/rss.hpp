@@ -125,8 +125,7 @@ namespace rss
             return (int64_t) 0L;
         }
         fclose(fp);
-        return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) *
-                          units::KiB *
+        return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) / units::KiB *
                           units::kilobyte);
 
 #endif
