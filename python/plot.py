@@ -1,4 +1,27 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
+# MIT License
+#
+# Copyright (c) 2018 Jonathan R. Madsen
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
 
 from __future__ import division
 import json
@@ -95,7 +118,6 @@ class timemory_function():
 #==============================================================================#
 def read(filename):
 
-    print('Opening {}...'.format(filename))
     f = open(filename, "r")
     data_0 = json.load(f)
     global concurrency
@@ -206,8 +228,8 @@ def plot_timing(filename, title, timing_data_dict, disp=False):
         print('Displaying plot...')
         plt.show()
     else:
-        print('Saving plot...')
         imgfname = filename.replace('.json', '_timing.png')
+        print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
@@ -290,11 +312,11 @@ def plot_memory(filename, title, memory_data_dict, disp=False):
     plt.setp(ax.get_yticklabels(), fontsize='smaller')
     plt.legend(plots, iter_order)
     if disp:
-        print('Displaying plot...')
+        #print('Displaying plot...')
         plt.show()
     else:
-        print('Saving plot...')
         imgfname = filename.replace('.json', '_memory.png')
+        print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 

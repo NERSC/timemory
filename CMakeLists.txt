@@ -155,9 +155,14 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
 
-foreach(_FILE test.py timemory_plot.py)
+foreach(_FILE test.py)
     configure_file(${PROJECT_SOURCE_DIR}/examples/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
-endforeach(_FILE simple.py timemory_plot.py)
+endforeach(_FILE test.py)
+
+foreach(_FILE unit_testing.py)
+    configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}
+        ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+endforeach(_FILE unit_testing.py)
 
 #include(Testing)

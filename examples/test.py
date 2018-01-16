@@ -1,9 +1,33 @@
 #!/usr/bin/env python
 
+# MIT License
+#
+# Copyright (c) 2018 Jonathan R. Madsen
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
 import sys
 import os
 import timemory as tim
 import time
+import argparse
 
 default_nfib = 35
 tim.enable_signal_detection()
@@ -44,13 +68,15 @@ def main(nfib):
     tman.serialize('output.json')
     print ('')
     try:
-        tim.plot.plot(["output.json"], display=False)
+        tim.util.plot(["output.json"], display=False)
     except:
         print ("Error! Unable to plot 'output.json'")
 
     
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        main(int(sys.argv[1]))
-    else:
-        main(default_nfib)
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-n", "--nfib",
+                        help="Number of fibonacci calculations",
+                        default=35, type=int)
+    args = tim.util.add_arguments_and_parse(parser)
+    main(args.nfib)

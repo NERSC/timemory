@@ -54,12 +54,15 @@ set_target_properties(${LIBNAME}-static PROPERTIES
 pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-static ${EXTERNAL_LIBRARIES})
-configure_file(${PROJECT_SOURCE_DIR}/examples/timemory_plot.py
-    ${PROJECT_BINARY_DIR}/timemory-supp/timemory_plot.py)
+configure_file(${PROJECT_SOURCE_DIR}/python/plot.py
+    ${PROJECT_BINARY_DIR}/timemory-supp/plot.py COPYONLY)
+configure_file(${PROJECT_SOURCE_DIR}/python/options.py
+    ${PROJECT_BINARY_DIR}/timemory-supp/options.py COPYONLY)
 file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
 "#!/usr/bin/env python
 
-from .timemory_plot import *
+from .plot import *
+from .options import *
 
 ")
 
@@ -74,7 +77,8 @@ install(FILES ${headers}
 install(TARGETS ${LIBNAME}
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 install(FILES
-    ${PROJECT_BINARY_DIR}/timemory-supp/timemory_plot.py
+    ${PROJECT_BINARY_DIR}/timemory-supp/plot.py
+    ${PROJECT_BINARY_DIR}/timemory-supp/options.py
     ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory-supp)
 # Install the export set for use with the install-tree

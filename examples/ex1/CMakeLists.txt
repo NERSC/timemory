@@ -7,7 +7,8 @@ find_package(TiMemory REQUIRED)
 foreach(_DIR ${TiMemory_INCLUDE_DIRS})
     include_directories(SYSTEM ${_DIR})
 endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
-
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the TiMemory libraries
