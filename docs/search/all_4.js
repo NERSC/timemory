@@ -1,0 +1,20 @@
+var searchData=
+[
+  ['data',['data',['../struct_n_a_m_e___t_i_m_1_1util_1_1base__clock__data.html#aeedd72ec8e6e9831ca2735754a516ffe',1,'NAME_TIM::util::base_clock_data::data()'],['../classplot_1_1timemory__data.html#abb95b85b3a519a89c6bf2a173c3eb476',1,'plot.timemory_data.data()']]],
+  ['data_5faccum_5ft',['data_accum_t',['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#abb58b5e13edea84dc91fe02ee03ed170',1,'NAME_TIM::util::details::base_timer']]],
+  ['data_5ft',['data_t',['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a7491bf1cdc962fdf51c9a8fc76785f5d',1,'NAME_TIM::util::details::base_timer']]],
+  ['data_5ftype',['data_type',['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__data.html#a447df866dd92f04f1a23b19b290fd9c6',1,'NAME_TIM::util::details::base_timer_data::data_type()'],['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#af1715914bd2b3331ce0554e588f26b53',1,'NAME_TIM::util::details::base_timer_delta::data_type()']]],
+  ['default_5fformat',['default_format',['../class_n_a_m_e___t_i_m_1_1util_1_1timer.html#ab5548a295881060fc77bee7d6d6fdb4f',1,'NAME_TIM::util::timer']]],
+  ['default_5fmax_5fdepth',['default_max_depth',['../namespaceoptions.html#ab5140ba85c09e796193b03974ca257cf',1,'options']]],
+  ['default_5fprecision',['default_precision',['../class_n_a_m_e___t_i_m_1_1util_1_1timer.html#a2190356a76e8812f797eff1abc949c7b',1,'NAME_TIM::util::timer']]],
+  ['delimit',['delimit',['../namespace_n_a_m_e___t_i_m.html#a1a326310b9a7d054241c4ba2c0c9d55c',1,'NAME_TIM']]],
+  ['dest',['dest',['../namespaceplot.html#ac5294b3502259ac3bb39b5fa29cfcf18',1,'plot']]],
+  ['disable',['disable',['../class_n_a_m_e___t_i_m_1_1signal__settings.html#aff2dd59a0ce45dc05ea20f9bcda495b8',1,'NAME_TIM::signal_settings']]],
+  ['disabled',['disabled',['../class_n_a_m_e___t_i_m_1_1signal__settings.html#aa107ed97a3790f3f31166e936b6c0469',1,'NAME_TIM::signal_settings']]],
+  ['disablesignaldetection',['DisableSignalDetection',['../namespace_n_a_m_e___t_i_m.html#aaa891f3a0b9dcd295f65805543683663',1,'NAME_TIM']]],
+  ['display_5fplot',['display_plot',['../namespaceplot.html#afa3fca7f92efbaff0bee51784246a038',1,'plot']]],
+  ['dummy_5ffunc',['dummy_func',['../namespace_n_a_m_e___t_i_m_1_1internal.html#ab27b8ea58b32006ee23440eca3f2c8ad',1,'NAME_TIM::internal']]],
+  ['dummy_5fstr_5freturn',['dummy_str_return',['../namespace_n_a_m_e___t_i_m_1_1internal.html#a85c95cb76f90ae07badfa2870bac2ada',1,'NAME_TIM::internal']]],
+  ['duration',['duration',['../class_n_a_m_e___t_i_m_1_1util_1_1base__clock.html#aebc4825dc57bbebf2e898de309bb57c9',1,'NAME_TIM::util::base_clock']]],
+  ['duration_5ft',['duration_t',['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__data.html#a0a97bac3488cfeff66b21d9f34f8ea47',1,'NAME_TIM::util::details::base_timer_data::duration_t()'],['../class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a7cedbb7d2dce73ae45347725497a15bc',1,'NAME_TIM::util::details::base_timer::duration_t()']]]
+];

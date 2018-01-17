@@ -1,0 +1,37 @@
+var signal__detection_8hpp =
+[
+    [ "signal_settings", "class_n_a_m_e___t_i_m_1_1signal__settings.html", "class_n_a_m_e___t_i_m_1_1signal__settings" ],
+    [ "SIGEMT", "signal__detection_8hpp.html#ab43f07f46430ee328387ac0ef274a974", null ],
+    [ "SIGINFO", "signal__detection_8hpp.html#a6d00ce03f0d85973025ae1f710b977ec", null ],
+    [ "SIGPROF", "signal__detection_8hpp.html#ab6bd2a2ff7e58d45965ef257f96dfe65", null ],
+    [ "SIGTRAP", "signal__detection_8hpp.html#aa2beb906ab1b46676e63823f4e773c38", null ],
+    [ "SIGURG", "signal__detection_8hpp.html#ad9ff13149e36144a4ea28788948c34dd", null ],
+    [ "SIGVTALRM", "signal__detection_8hpp.html#a71403d2f5240e409e213060ea3301851", null ],
+    [ "SIGXCPU", "signal__detection_8hpp.html#a7265cbba4972503c1c30a2e52a929874", null ],
+    [ "SIGXFSZ", "signal__detection_8hpp.html#a75440a7aa885a1052dfd3b4393fd9baa", null ],
+    [ "sys_signal", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229", [
+      [ "sHangup", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a2463d38333dce8936fcf8fa76cb984f6", null ],
+      [ "sInterrupt", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a6dfc74c458d06812f3e9e2b69a4efe2b", null ],
+      [ "sQuit", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229afefb91d22102507f6d8ff097d5a7f067", null ],
+      [ "sIllegal", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a5191b77e6c937fff291b16f70f75d17d", null ],
+      [ "sTrap", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229af81d30e8e8bcc89b74f67c44aced9c6f", null ],
+      [ "sAbort", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a18d7272cd6c287c491e6f0474d8b3c4a", null ],
+      [ "sEmulate", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a30c0437dad8a25bede6466cc22f73b50", null ],
+      [ "sFPE", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a4db9be2c3d980bbe7de668d3a7745e1c", null ],
+      [ "sKill", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a18e30b4220589a4bc5652be343a39420", null ],
+      [ "sBus", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a8eec018c22f96a5dd17cd14415fd4603", null ],
+      [ "sSegFault", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a7eb7845da7c153ff6916cc8bf3f669c7", null ],
+      [ "sSystem", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229af1bdf6ebe67bba9e99cfc2d72337555e", null ],
+      [ "sPipe", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a426a5c760aaa541dfeb951fa4e91e603", null ],
+      [ "sAlarm", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229acdc9d4159d3f8cce65c1a995187c5335", null ],
+      [ "sTerminate", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229ab1ffe92b4b1b0ed5d1c8713fabb405aa", null ],
+      [ "sUrgent", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229ae558c01a515e7d8497f4fe6cee238607", null ],
+      [ "sStop", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a70fa8633a2b08ea146ad21be2e280490", null ],
+      [ "sCPUtime", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a31fe939c3870c9db0a615a97afcfbabb", null ],
+      [ "sFileSize", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a78089515ebf771a1dab5ed4afe001157", null ],
+      [ "sVirtualAlarm", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a6b65985c6f11f09046a587c2bbe8bc49", null ],
+      [ "sProfileAlarm", "signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a288a698a02ef525e62efbcc8f441fae0", null ]
+    ] ],
+    [ "DisableSignalDetection", "signal__detection_8hpp.html#aaa891f3a0b9dcd295f65805543683663", null ],
+    [ "EnableSignalDetection", "signal__detection_8hpp.html#ae7401b5b453e5e04cb5422fe9ee0a233", null ]
+];
