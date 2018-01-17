@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file timing_manager.hpp
+ * Static singleton handler of auto-timers
+ *
+ */
+
 #ifndef timing_manager_hpp_
 #define timing_manager_hpp_
 

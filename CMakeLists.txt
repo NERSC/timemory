@@ -118,8 +118,18 @@ add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 #
 ################################################################################
 
+add_option(PYBIND11_INSTALL "PyBind11 installation" ON)
 set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
     CACHE STRING "PyBind11 CXX standard")
+if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
+    find_package(Git REQUIRED)
+    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+        RESULT_VARIABLE RET)
+    if(RET GREATER 0)
+        message(FATAL_ERROR "Failure checking out submodules")
+    endif(RET GREATER 0)
+endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
 add_subdirectory(pybind11)
 
 if(NOT PYBIND11_PYTHON_VERSION)
@@ -186,7 +196,9 @@ endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
 
 # documentation
 set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
-    ${PROJECT_SOURCE_DIR}/source ${PROJECT_SOURCE_DIR}/python)
+    ${PROJECT_SOURCE_DIR}/source
+    ${PROJECT_SOURCE_DIR}/examples
+    ${PROJECT_SOURCE_DIR}/python)
 set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
 
 include(Documentation)

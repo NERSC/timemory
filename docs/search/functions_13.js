@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['write_5fjson',['write_json',['../class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#aa084e6255ded7bc1bc4bd337b0aa6fd4',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fjson_5fmpi',['write_json_mpi',['../class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#ab0e02b3e2e78fc7d90e9811310e9c508',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fjson_5fno_5fmpi',['write_json_no_mpi',['../class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a4505a6df8c226d4842aba35e97cc8f99',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fserialization',['write_serialization',['../class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#aca3a9113101b35fead2b7584a2fa944f',1,'NAME_TIM::util::timing_manager']]]
+  ['usage',['usage',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a88cd0440fc60a3a89f227e5c53308a08',1,'NAME_TIM::rss::usage::usage()'],['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#ac8d9f3cf85e154fa9e709e9beefd3279',1,'NAME_TIM::rss::usage::usage(size_type minus)'],['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a25801c0a78ffa313440648270cdd584e',1,'NAME_TIM::rss::usage::usage(const usage &amp;rhs)']]],
+  ['user_5felapsed',['user_elapsed',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#aa06cf0f09c0054cbf7e8e3377708d6f1',1,'NAME_TIM::util::details::base_timer']]]
 ];

@@ -23,6 +23,10 @@
 # SOFTWARE.
 #
 
+## @file test.py
+## A simple test of the timemory module
+##
+
 import sys
 import os
 import timemory as tim

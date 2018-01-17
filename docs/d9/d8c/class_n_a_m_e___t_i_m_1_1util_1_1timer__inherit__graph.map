@@ -1,0 +1,3 @@
+<map id="NAME_TIM::util::timer" name="NAME_TIM::util::timer">
+<area shape="rect" id="node2" href="$d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html" title="{NAME_TIM::util::details\l::base_timer\n|# m_precision\l# m_os\l# m_format_positions\l# m_accum\l# m_format_string\l# m_data\l# m_mutex\l&#45; f_instance_count\l&#45; f_instance_hash\l&#45; w_mutex_map\l|+ base_timer()\l+ ~base_timer()\l+ base_timer()\l+ operator=()\l+ start()\l+ stop()\l+ is_valid()\l+ real_elapsed()\l+ system_elapsed()\l+ user_elapsed()\land 12 more...\l+ get_instance_count()\l+ get_instance_hash()\l# parse_format()\l# compose()\l# m_timer()\l# get_accum()\l# get_accum()\l}" alt="" coords="11,5,159,559"/>
+</map>

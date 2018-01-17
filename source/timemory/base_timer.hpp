@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file base_timer.hpp
+ * Base class for the timer class
+ * Not directly used
+ */
+
 #ifndef base_timer_hpp_
 #define base_timer_hpp_
 

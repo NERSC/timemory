@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file timer.hpp
+ * Primary timer class
+ * Inherits from base_timer
+ */
+
 #ifndef timer_hpp_
 #define timer_hpp_
 

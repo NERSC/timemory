@@ -18,7 +18,7 @@
 <!-- Node0 -->
 <g id="node2" class="node">
 <title>Node0</title>
-<g id="a_node2"><a xlink:href="classunit__testing_1_1_timing_test.html" target="_top" xlink:title="unit_testing.TimingTest">
+<g id="a_node2"><a xlink:href="de/d71/classunit__testing_1_1_timing_test.html" target="_top" xlink:title="unit_testing.TimingTest">
 <polygon fill="#ffffff" stroke="#000000" points="91,-.5 91,-21.5 201,-21.5 201,-.5 91,-.5"/>
 <text text-anchor="middle" x="146" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">unit_testing.TimingTest</text>
 </a>

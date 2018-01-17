@@ -23,6 +23,10 @@
 # SOFTWARE.
 #
 
+## @file nested.py
+## Auto-timer nesting example
+##
+
 import sys
 import os
 import timemory as tim

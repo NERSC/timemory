@@ -1,5 +1,10 @@
 #!/usr/bin/env python
 
+## @package unit_testing.py
+## @file unit_testing.py
+## Unit tests for TiMemory module
+##
+
 # MIT License
 #
 # Copyright (c) 2018 Jonathan R. Madsen

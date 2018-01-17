@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file base_timer.cpp
+ * Base class for the timer class
+ * Not directly used
+ */
+
 #include "timemory/base_timer.hpp"
 #include <cassert>
 #include <algorithm>

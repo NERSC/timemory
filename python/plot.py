@@ -23,6 +23,10 @@
 # SOFTWARE.
 #
 
+## @file plot.py
+## Plotting routines for TiMemory module
+##
+
 from __future__ import division
 import json
 import sys

@@ -23,6 +23,10 @@
 # SOFTWARE.
 #
 
+## @file options.py
+## Options for TiMemory module
+##
+
 import sys
 import os
 from os.path import dirname

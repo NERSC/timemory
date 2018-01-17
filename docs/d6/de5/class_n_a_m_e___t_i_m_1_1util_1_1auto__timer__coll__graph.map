@@ -1,0 +1,16 @@
+<map id="NAME_TIM::util::auto_timer" name="NAME_TIM::util::auto_timer">
+<area shape="rect" id="node3" href="$d1/da7/class_n_a_m_e___t_i_m_1_1util_1_1timer.html" title="{NAME_TIM::util::timer\n||+ timer()\l+ timer()\l+ ~timer()\l+ stop_and_return()\l+ begin()\l+ close()\l+ as_string()\l+ print()\l+ clone()\l+ clone_to_unique_ptr()\l+ clone_to_shared_ptr()\l+ clone_to_pointer()\l+ operator+=()\l+ serialize()\l+ propose_output_width()\l# compose()\l# set_parent()\l}" alt="" coords="537,1661,696,2024"/>
+<area shape="rect" id="node4" href="$d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html" title="{NAME_TIM::util::details\l::base_timer\n||+ base_timer()\l+ ~base_timer()\l+ base_timer()\l+ operator=()\l+ start()\l+ stop()\l+ is_valid()\l+ real_elapsed()\l+ system_elapsed()\l+ user_elapsed()\land 12 more...\l+ get_instance_count()\l+ get_instance_hash()\l# parse_format()\l# compose()\l# m_timer()\l# get_accum()\l# get_accum()\l}" alt="" coords="542,1215,690,1612"/>
+<area shape="rect" id="node13" href="$d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html" title="{NAME_TIM::util::details\l::base_timer_delta\n||+ base_timer_delta()\l+ reset()\l+ operator+=()\l+ operator+=()\l+ get_sum()\l+ get_sqr()\l+ size()\l+ rss()\l+ rss()\l# compute()\l# compute_sum()\l# compute_sqr()\l}" alt="" coords="389,856,537,1149"/>
+<area shape="rect" id="node7" href="$d0/dc7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__data.html" title="{NAME_TIM::util::details\l::base_timer_data\n||+ base_timer_data()\l+ start()\l+ stop()\l+ start()\l+ stop()\l+ running()\l+ serialize()\l+ rss_init()\l+ rss_record()\l+ rss()\l+ rss()\l}" alt="" coords="561,865,709,1141"/>
+<area shape="rect" id="node8" href="$d6/d49/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__rss__usage.html" title="{NAME_TIM::util::details\l::base_rss_usage\n||+ init()\l+ record()\l+ total()\l+ self()\l+ total()\l+ self()\l+ max()\l}" alt="" coords="185,567,333,773"/>
+<area shape="rect" id="node9" href="$df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html" title="{NAME_TIM::rss::usage\n||+ usage()\l+ usage()\l+ usage()\l+ operator=()\l+ record()\l+ record()\l+ operator()()\l+ operator&#45;=()\l+ current()\l+ peak()\l+ serialize()\l+ max()\l+ min()\l}" alt="" coords="186,173,332,467"/>
+<area shape="rect" id="node15" title="STL class. " alt="" coords="734,960,808,1045"/>
+<area shape="rect" id="node16" title="STL class. " alt="" coords="666,619,782,721"/>
+<area shape="rect" id="node19" title="STL class. " alt="" coords="904,627,1009,713"/>
+<area shape="rect" id="node21" title="STL class. " alt="" coords="1033,619,1162,721"/>
+<area shape="rect" id="node23" title="STL class. " alt="" coords="1140,960,1228,1045"/>
+<area shape="rect" id="node24" title="STL class. " alt="" coords="1187,619,1310,721"/>
+<area shape="rect" id="node25" title="STL class. " alt="" coords="1180,277,1322,363"/>
+<area shape="rect" id="node26" title="STL class. " alt="" coords="1204,5,1298,91"/>
+</map>

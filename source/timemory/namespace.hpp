@@ -20,6 +20,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file namespace.hpp
+ * Defines NAME_TIM if not defined
+ *
+ */
+
 #ifndef namespace_hpp_
 #define namespace_hpp_
 

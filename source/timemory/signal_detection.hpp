@@ -21,13 +21,16 @@
 // SOFTWARE.
 //
 
-// -----------------------------------------------------------------------
-/// This global method should be used on LINUX or MacOSX platforms with gcc
-/// compiler for activating NaN detection and FPE signals, and forcing
-/// abortion of the application at the time these are detected.
-/// Meant to be used for debug purposes, can be activated by compiling the
-/// "run" module with the flag FPE_DEBUG set in the environment.
-// -----------------------------------------------------------------------
+/** \file signal_detection.hpp
+ * Handles signals emitted by application
+ *
+ */
+
+//============================================================================//
+/// This global method should be used on LINUX or MacOSX platforms with gcc,
+/// clang, or intel compilers for activating signal detection and forcing
+/// exception being thrown that can be handled when detected.
+//============================================================================//
 
 #ifndef signal_detection_hpp_
 #define signal_detection_hpp_ 1

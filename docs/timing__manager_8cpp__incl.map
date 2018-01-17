@@ -1,9 +1,0 @@
-<map id="timing_manager.cpp" name="timing_manager.cpp">
-<area shape="rect" id="node2" href="$timing__manager_8hpp.html" title="timemory/timing_manager.hpp" alt="" coords="2091,83,2275,112"/>
-<area shape="rect" id="node19" href="$namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="927,409,1087,439"/>
-<area shape="rect" id="node20" href="$utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="560,332,685,361"/>
-<area shape="rect" id="node32" href="$timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="1732,169,1857,198"/>
-<area shape="rect" id="node33" href="$base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="2044,255,2201,284"/>
-<area shape="rect" id="node34" href="$base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="1529,332,1687,361"/>
-<area shape="rect" id="node43" href="$rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="2065,332,2180,361"/>
-</map>

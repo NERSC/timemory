@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file utility.hpp
+ * General utility functions
+ *
+ */
+
 #ifndef TIMEMORY_UTIL_INTERNAL_HPP
 #define TIMEMORY_UTIL_INTERNAL_HPP
 

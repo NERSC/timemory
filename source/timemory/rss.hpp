@@ -21,6 +21,10 @@
 // SOFTWARE.
 //
 
+/** \file rss.hpp
+ * Resident set size handler
+ *
+ */
 
 #ifndef rss_hpp_
 #define rss_hpp_

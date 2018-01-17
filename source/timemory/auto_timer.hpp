@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file auto_timer.hpp
+ * Automatic timers
+ * Just use \param TIMEMORY_AUTO_TIMER()
+ */
+
 #ifndef auto_timer_hpp_
 #define auto_timer_hpp_
 

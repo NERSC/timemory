@@ -21,11 +21,15 @@
 // SOFTWARE.
 //
 
+/** \file signal_detection.cpp
+ * Handles signals emitted by application
+ *
+ */
+
 #include "timemory/signal_detection.hpp"
 #include <sstream>
 #include <string>
 #include <cstdlib>
-
 
 namespace NAME_TIM
 {

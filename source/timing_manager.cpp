@@ -21,6 +21,11 @@
 // SOFTWARE.
 //
 
+/** \file timing_manager.cpp
+ * Static singleton handler of auto-timers
+ *
+ */
+
 #include "timemory/timing_manager.hpp"
 
 #include <sstream>

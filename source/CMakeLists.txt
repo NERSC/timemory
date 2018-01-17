@@ -8,10 +8,10 @@ include_directories(${CMAKE_CURRENT_LIST_DIR})
 ################################################################################
 
 # cereal options
-option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF)
-option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON)
-option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON)
-option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON)
+add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
+add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
+add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
+add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
 set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
 # this gets annoying

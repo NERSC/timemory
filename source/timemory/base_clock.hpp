@@ -21,6 +21,10 @@
 // SOFTWARE.
 //
 
+/** \file base_clock.hpp
+ * Base class for timing clocks
+ * Not directly used
+ */
 
 #ifndef base_clock_hpp_
 #define base_clock_hpp_
