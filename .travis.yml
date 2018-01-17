@@ -151,7 +151,7 @@ install:
     - make install -j2
     - export BUILD_DIR=${PWD}
     - cd examples/ex1
-    - cmake -DTiMemory_DIR=${HOME}/timemory/current/share/cmake/TiMemory
+    - cmake -DTiMemory_DIR=${INSTALL_DIR}/share/cmake/TiMemory
         -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .
     - make -j2
     - make install -j2
