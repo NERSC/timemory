@@ -132,6 +132,7 @@ before_install:
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
     - pip install matplotlib numpy tornado argparse
+    - export INSTALL_DIR=${HOME}/timemory/current
 
 
 install:
@@ -142,7 +143,7 @@ install:
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=${HOME}/timemory/current
+    - cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
         -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
@@ -150,10 +151,12 @@ install:
     - make install -j2
     - export BUILD_DIR=${PWD}
     - cd examples/ex1
-    - cmake -DTiMemory_DIR=${HOME}/timemory/current/share/cmake/TiMemory -DCMAKE_INSTALL_PREFIX=${BUILD_DIR} .
+    - cmake -DTiMemory_DIR=${HOME}/timemory/current/share/cmake/TiMemory
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .
     - make -j2
     - make install -j2
     - cd ../..
+    - export LD_LIBRARY_PATH=${INSTALL_DIR}/lib64:${INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
 
 
 script:
