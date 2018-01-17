@@ -16,13 +16,20 @@ There are essentially two components of the output:
 - a JSON file with more detailed data
 
   - used for plotting purposes
-  - example provided in `examples/timing_plot.py`
+  - can be directly called by module: timemory.util.plot(["output.json"], display=False)
+  - `python/plot.py` in the source tree can be directly used
 
 - Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer. 
 - The timer starts automatically and when the timer is “destroyed”, i.e. goes out of scope at the end of the function, it stops the timer and records the time difference and also some memory measurements. 
 - The way the auto-timers are setup is that they will automatically record the name of the function they were created in.
-- Additional info is sometimes added when you have similar function names, for example, a python “__init__” function will want to create an auto-timer that provides the class the function is being called from. 
+- Additional info is sometimes added when you have similar function names, for example, a python “\_\_init__” function will want to create an auto-timer that provides the class the function is being called from, e.g. autotimer = timemory.auto_timer(type(self).\_\_name__) 
 - All this info will show up with an ensuing “@‘ tag on the end of the function name. Other options are the name of the file, etc.
+
+  - timemory.FILE(nback=2)
+  - timemory.LINE(nback=1)
+  - timemory.FUNC(nback=1)
+  - where "nback" is a parameter specifying how far back in the call tree
+  
 
 Example
 -------
@@ -143,9 +150,13 @@ TIMING FIELDS
 - Then you have 5 time measurements
 
   (1) Wall clock time (e.g. how long it took according to a clock “on the wall”)
+  
   (2) User time (the time spent executing the code)
+  
   (3) System time (thread-specific CPU time, e.g. an idle thread waiting for synchronization, etc.)
+  
   (4) CPU time (user + system time)
+  
   (5) Percent CPU utilization (cpu / wall * 100)
   
 - For perfect speedup on 4 threads, the CPU time would be 4x as long as the wall clock time and would have a % CPU utilization of 400%
