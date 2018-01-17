@@ -1,4 +1,4 @@
-# TiMEmory
+# TiMemory
 C++ and Python Timing + Memory Utilities including auto-timers and temporary memory calculation
 
 Timing Results
@@ -9,25 +9,26 @@ Overview
 
 There are essentially two components of the output:
 
-- a text file (e.g. timing_report_XXX.out file)
+- a text file (e.g. `timing_report_XXX.out` file)
 
   - general ASCII report
 
 - a JSON file with more detailed data
 
   - used for plotting purposes
-  - can be directly called by module: timemory.util.plot(["output.json"], display=False)
+  - can be directly called by module: `timemory.util.plot(["output.json"], display=False)`
   - `python/plot.py` in the source tree can be directly used
 
 - Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer. 
 - The timer starts automatically and when the timer is “destroyed”, i.e. goes out of scope at the end of the function, it stops the timer and records the time difference and also some memory measurements. 
 - The way the auto-timers are setup is that they will automatically record the name of the function they were created in.
-- Additional info is sometimes added when you have similar function names, for example, a python “\_\_init__” function will want to create an auto-timer that provides the class the function is being called from, e.g. autotimer = timemory.auto_timer(type(self).\_\_name__) 
+- Additional info is sometimes added when you have similar function names, for example, a python `__init__` function will want to create an auto-timer that provides the class the function is being called from, e.g. `autotimer = timemory.auto_timer(type(self).__name__)` 
 - All this info will show up with an ensuing “@‘ tag on the end of the function name. Other options are the name of the file, etc.
 
-  - timemory.FILE(nback=2)
-  - timemory.LINE(nback=1)
-  - timemory.FUNC(nback=1)
+  - `timemory.FILE(nback=2)`
+  - `'{}'.format(timemory.LINE(nback=1))`
+  - `timemory.FUNC(nback=1)`
+  - `t = timemory.timer('{}@{}:{}'.format(timemory.FUNC(), timemory.FILE(), timemory.LINE()))`
   - where "nback" is a parameter specifying how far back in the call tree
   
 
@@ -36,8 +37,7 @@ Example
 
 For the interpretation of text output, here is an example and the explanation of it’s structure
 
-::
-
+```
 > rank 0
 |0> [pyc] main@'toast_ground_sim_simple.py'            : 41.104 wall, 69.150 user +  4.690 system = 73.840 CPU [sec] (179.6%) : RSS {tot,self}_{curr,peak} : (1146.5|2232.7) | (1072.4|2158.6) [MB]
 |0> [pyc] |_create_observations                        :  5.047 wall,  5.060 user +  0.060 system =  5.120 CPU [sec] (101.4%) : RSS {tot,self}_{curr,peak} : ( 110.3| 122.3) | (  35.8|  47.8) [MB]
@@ -136,16 +136,16 @@ For the interpretation of text output, here is an example and the explanation of
 |1> [pyc] |_apply_madam                                : 19.346 wall, 41.650 user +  1.580 system = 43.230 CPU [sec] (223.5%) : RSS {tot,self}_{curr,peak} : (1138.0|2223.7) | (   0.0| 402.1) [MB]
 |1> [pyc]   |_exec@OpMadam                             : 19.345 wall, 41.650 user +  1.580 system = 43.230 CPU [sec] (223.5%) : RSS {tot,self}_{curr,peak} : (1138.0|2223.7) | (   0.0| 402.1) [MB]
 |1> [pyc] |___del__@TODGround                          : 18.149 wall, 17.950 user +  0.150 system = 18.100 CPU [sec] ( 99.7%) : RSS {tot,self}_{curr,peak} : (1040.3|2223.7) | (   0.0|   0.0) [MB] (total # of laps: 24)
-
+```
 
 GENERAL LAYOUT
 --------------
 
-- The "rank" line(s) give the MPI process/rank
-- The first (non ">") column tells whether the “auto-timer” originated from C++ ([cxx]) or Python ([pyc]) code
+- The "rank" line(s) give the MPI process/rank (and x=rank in `|x>`)
+- The first (non ">") column tells whether the “auto-timer” originated from C++ (`[cxx]`) or Python (`[pyc]`) code
 - The second column is the function name the auto-timer was created in
 
-  - The indentation signifies the call tree
+  - The indentation signifies the call tree along with `|_`
 
 - The last column referring to “laps” is the number of times the function was invoked
 
@@ -170,7 +170,7 @@ TIMING FIELDS
 
   - This also includes vectorization. If each thread ran a calculation that calculated 4 values with a single CPU instruction (SIMD), we would have a speed up of 16x (4 threads x 4 values at one time == 16x) 
 
-- Relative time (i.e. self-cost) for a function at a certain indent level (i.e. indented with 2*level spaces from [pyc]/[cxx]) can be calculated from the function(s) at level+1 until you reach another function at the same level
+- Relative time (i.e. self-cost) for a function at a certain indent level (i.e. indented with `2\*level` spaces from [pyc]/[cxx]) can be calculated from the function(s) at `level+1` until you reach another function at the same level
 - This is better understood by an example
 
   - function A is the main (it is “level 0”) and takes 35 seconds
@@ -242,16 +242,68 @@ If you have new Python code you would like to use the auto-timers with, here is 
 - Import the timing module (obvious, I guess)
 - Always add the auto-timer at the very beginning of the function. 
 
-  - You can use an variable name you wish but make sure it is a named variable (e.g. "autotimer = timemory.auto_timer()", not "timemory.auto_timer()”)
+  - You can use an variable name you wish but make sure it is a named variable (e.g. `autotimer = timemory.auto_timer()`, not `timemory.auto_timer()`)
   - The auto-timer functionality requires the variable to exist for the scope of the function
   
-- For free-standing function without any name conflicts, just add: “autotimer = timemory.auto_timer()”
-- For functions within a class, add: “autotimer = timemory.auto_timer(type(self).__name__)”
-- For the primary auto-timer, use: “autotimer = timemory.auto_timer(timemory.FILE())” — this will tag “main” with the python file name
-- In some instances, you may want to include the directory of the filename, for this use: “autotimer = timemory.auto_timer(timemory.FILE(use_dirname = True))”
-- Add “tman = timemory.timing_manager() ; tman.report()” at the end of your main file. 
+- For free-standing function without any name conflicts, just add: `autotimer = timemory.auto_timer()`
+- For functions within a class, add: `autotimer = timemory.auto_timer(type(self).__name__)`
+- For the primary auto-timer, use: `autotimer = timemory.auto_timer(timemory.FILE())` — this will tag “main” with the python file name
+- In some instances, you may want to include the directory of the filename, for this use: `autotimer = timemory.auto_timer(timemory.FILE(use_dirname = True))`
+- Add `tman = timemory.timing_manager() ; tman.report()` at the end of your main file. 
   
   - It is generally recommended to do this in a different scope than the primary autotimer but not necessary. 
+  - Some control options are available with: `tim.util.add_arguments_and_parse(parser)` in Python
   - In other words, put all your work in a “main()” function looking like this:
+ 
+```python
 
+import timemory
+
+# optional (will catch SIGINT + other signals such as SIGABRT, SIGQUIT, SIGHUP, etc.)
+timemory.enable_signal_detection()
+
+# ...
+
+
+#------------------------------------------------------------------------------#
+def main(args):
+    # this will be the top-level timer in timing + memory report because it is
+    # the first added
+    autotimer = timemory.auto_timer(timemory.FILE(), timemory.LINE())
+    # ...
+
+
+#------------------------------------------------------------------------------#
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-s", "--size",
+                        help="Size of array allocations",
+                        default=array_size, type=int)
+    # ...
+    args = timemory.util.add_arguments_and_parse(parser)
+    
+    timemory.util.opts.set_report(timemory.util.opts.report_fname)
+    timemory.util.opts.set_serial(timemory.util.opts.serial_fname)
+
+    try:
+        main(args)
+        
+        # get the handle for the timing manager
+        timing_manager = timemory.timing_manager()
+        # will output to stdout if "set_report" not called
+        timing_manager.report()
+        # serialization will be called in above if "set_serial" is called
+        # but to serialize to file:
+        timing_manager.serialize('output.json')
+        # will create timing and memory plot with avg + err for files 
+        # (even though output is identical in this example...)
+        timemory.util.plot(files=[timemory.util.opts.serial_fname, "output.json"], display=False)
+        
+    except Exception as e:
+        print (e.what())
+        print ("Error! Unable to plot 'output.json'")
+
+    print ('')
+```
   
