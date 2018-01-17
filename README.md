@@ -192,11 +192,11 @@ TIMING FIELDS
 MEMORY FIELDS
 -------------
 
-- The memory measurements are a bit confusing, admittedly. The two types “curr” ("current", which I will refer to as such from here on out) and “peak” have to do with different memory measurements
+- The memory measurements are a bit confusing, admittedly. The two types "curr" ("current", which I will refer to as such from here on out) and "peak" have to do with different memory measurements
 
-  - They are both “RSS” measurements, which stand for “resident set size”. This is the amount of physical memory in RAM that is currently private to the process
+  - They are both "RSS" measurements, which stand for "resident set size". This is the amount of physical memory in RAM that is currently private to the process
   
-    - It does not include the “swap” memory, which is when the OS puts memory not currently being used onto the hard drive
+    - It does not include the "swap" memory, which is when the OS puts memory not currently being used onto the hard drive
     - Typical Linux implementations will start using swap when ~60% of your RAM is full (you can override this easily in Linux by switching the “swapiness” to say, 90% for better performance since swap is slower than RAM)
 
 - All memory measurements with “laps” > 0, are the max memory measurement of each "lap"
@@ -207,8 +207,9 @@ MEMORY FIELDS
 
 - With respect to “total” vs. “self”, this is fairly straightforward
 
-  - For the “total”, I simply take a measurement of the memory usage at the creation of the timer
+  - For the “total”, I simply take a measurement of the memory usage at the destruction of the timer
   - The “self” measurement is the difference in the memory measurements between the creation of the auto-timer and when it is destroyed
+  - The "total" memory at the start of the timer can be determined from the memory measurement of the timer one level higher up the call tree or by `"total" - "self"`
   
     - This measurement shows is how much persistent memory was created in the function
     - It is valuable primarily as a metric to see how much memory is being created in the function and returned to the calling function
