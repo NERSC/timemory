@@ -1,8 +1,7 @@
 # TiMemory
 C++ and Python Timing + Memory Utilities including auto-timers and temporary memory calculation
 
-Timing Results
-==============
+[Source code documentation for TiMemory](https://jrmadsen.github.io/TiMemory)
 
 Overview
 --------
