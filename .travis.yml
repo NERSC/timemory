@@ -157,11 +157,11 @@ install:
     - make install -j2
     - cd ../..
     - export LD_LIBRARY_PATH=${INSTALL_DIR}/lib64:${INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-
+    - export PATH=${INSTALL_DIR}/bin:${PATH}
 
 script:
     - ./test.py
     - ./unit_testing.py
-    - ./bin/timemory_test_timing
+    - timemory_test_timing
     - echo "Done"
 
