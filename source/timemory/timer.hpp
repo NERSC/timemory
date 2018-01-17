@@ -41,9 +41,12 @@ namespace util
 class timer : public details::base_timer
 {
 public:
-    typedef base_timer                          base_type;
-    typedef timer                               this_type;
-    typedef std::string                         string_t;
+    typedef base_timer      base_type;
+    typedef timer           this_type;
+    typedef std::string     string_t;
+    typedef void (*clone_function_t)(const this_type&);
+    typedef std::unique_ptr<this_type>  unique_ptr_type;
+    typedef std::shared_ptr<this_type>  shared_ptr_type;
 
 public:
     timer(const string_t& _begin = "[ ",
@@ -78,16 +81,30 @@ public:
         std::cout << this->as_string() << std::endl;
     }
 
+    this_type clone() const;
+    unique_ptr_type clone_to_unique_ptr() const;
+    shared_ptr_type clone_to_shared_ptr() const;
+    this_type* clone_to_pointer() const;
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        auto_lock_t l(m_mutex);
+        m_accum += rhs.get_accum();
+        return *this;
+    }
+
 protected:
     virtual void compose() final;
+    void set_parent(this_type* parent) { m_parent = parent; }
 
 protected:
-    bool     m_use_static_width;
-    string_t m_begin;
-    string_t m_close;
+    bool        m_use_static_width;
+    this_type*  m_parent;
+    string_t    m_begin;
+    string_t    m_close;
 
 private:
-    static thread_local uint64_t    f_output_width;
+    static uint64_t f_output_width;
 
 public:
     template <typename Archive> void
@@ -97,6 +114,30 @@ public:
     }
 
 };
+
+//----------------------------------------------------------------------------//
+
+inline timer::unique_ptr_type
+timer::clone_to_unique_ptr() const
+{
+    return std::unique_ptr<timer>(new timer(this->clone()));
+}
+
+//----------------------------------------------------------------------------//
+
+inline timer::shared_ptr_type
+timer::clone_to_shared_ptr() const
+{
+    return std::shared_ptr<timer>(new timer(this->clone()));
+}
+
+//----------------------------------------------------------------------------//
+
+inline timer*
+timer::clone_to_pointer() const
+{
+    return new timer(this->clone());
+}
 
 //----------------------------------------------------------------------------//
 

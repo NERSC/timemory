@@ -39,7 +39,7 @@ namespace util
 class auto_timer
 {
 public:
-    typedef NAME_TIM::util::timing_manager::tim_timer_t  tim_timer_t;
+    typedef NAME_TIM::util::timing_manager::tim_timer_t     tim_timer_t;
 
 public:
     // Constructor and Destructors
@@ -55,9 +55,10 @@ private:
     { return details::base_timer::get_instance_hash(); }
 
 private:
-    bool m_temp_disable;
-    uint64_t m_hash;
-    tim_timer_t* m_timer;
+    bool            m_temp_disable;
+    uint64_t        m_hash;
+    tim_timer_t*    m_timer;
+    tim_timer_t     m_temp_timer;
 };
 
 //----------------------------------------------------------------------------//
@@ -75,11 +76,13 @@ inline auto_timer::auto_timer(const std::string& timer_tag,
 
     if(timing_manager::is_enabled() &&
        (uint64_t) timing_manager::max_depth() > auto_timer::ncount())
+    {
         m_timer = &timing_manager::instance()->timer(timer_tag, code_tag,
                                                      auto_timer::ncount(),
                                                      auto_timer::nhash());
-    if(m_timer)
-        m_timer->start();
+
+        m_temp_timer.start();
+    }
 
     if(m_temp_disable && timing_manager::instance()->is_enabled())
         timing_manager::instance()->enable(false);
@@ -90,13 +93,16 @@ inline auto_timer::~auto_timer()
     if(m_temp_disable && ! timing_manager::instance()->is_enabled())
         timing_manager::instance()->enable(true);
 
-    if(m_timer)
-        m_timer->stop();
-
     // for consistency, always decrement hash keys
     if(auto_timer::ncount() > 0)
         --auto_timer::ncount();
     auto_timer::nhash() -= m_hash;
+
+    if(m_timer)
+    {
+        m_temp_timer.stop();
+        *m_timer += m_temp_timer;
+    }
 }
 //----------------------------------------------------------------------------//
 

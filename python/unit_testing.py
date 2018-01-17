@@ -29,6 +29,10 @@ import time
 import timemory as timing
 import unittest
 
+from os.path import join
+
+timing.enable_signal_detection()
+
 def fibonacci(n):
     if n < 2:
         return n
@@ -46,8 +50,8 @@ class TimingTest(unittest.TestCase):
     def test_timing(self):
         print ('Testing function: "{}"...'.format(timing.FUNC()))
 
-        timing.util.opts.set_report(os.path.join(self.outdir, "timing_report.out"))
-        timing.util.opts.set_serial(os.path.join(self.outdir, "timing_report.json"))
+        timing.util.opts.set_report(join(self.outdir, "timing_report.out"))
+        timing.util.opts.set_serial(join(self.outdir, "timing_report.json"))
 
         tman = timing.timing_manager()
 
@@ -91,7 +95,6 @@ class TimingTest(unittest.TestCase):
 
         tman = timing.timing_manager()
         timing.toggle(True)
-        #print ('Current max depth: {}'.format(timing.get_max_depth()))
 
         timing.set_max_depth(timing.util.default_max_depth())
         tman.clear()
@@ -99,14 +102,16 @@ class TimingTest(unittest.TestCase):
         timing.toggle(True)
         if True:
             autotimer = timing.auto_timer("on")
-            fibonacci(24)
+            fibonacci(27)
+            del autotimer
         self.assertEqual(tman.size(), 1)
 
         tman.clear()
         timing.toggle(False)
         if True:
             autotimer = timing.auto_timer("off")
-            fibonacci(24)
+            fibonacci(27)
+            del autotimer
         self.assertEqual(tman.size(), 0)
 
         tman.clear()
@@ -115,11 +120,13 @@ class TimingTest(unittest.TestCase):
             autotimer_on = timing.auto_timer("on")
             timing.toggle(False)
             autotimer_off = timing.auto_timer("off")
-            fibonacci(24)
+            fibonacci(27)
+            del autotimer_off
+            del autotimer_on
         self.assertEqual(tman.size(), 1)
 
-        timing.util.opts.set_report(os.path.join(self.outdir, "timing_toggle.out"))
-        timing.util.opts.set_serial(os.path.join(self.outdir, "timing_toggle.json"))
+        timing.util.opts.set_report(join(self.outdir, "timing_toggle.out"))
+        timing.util.opts.set_serial(join(self.outdir, "timing_toggle.json"))
 
         tman.report()
 
@@ -143,12 +150,11 @@ class TimingTest(unittest.TestCase):
 
         create_timer(0)
 
-        timing.util.opts.set_report(os.path.join(self.outdir, "timing_depth.out"))
-        timing.util.opts.set_serial(os.path.join(self.outdir, "timing_depth.json"))
+        timing.util.opts.set_report(join(self.outdir, "timing_depth.out"))
+        timing.util.opts.set_serial(join(self.outdir, "timing_depth.json"))
         tman.report()
 
         self.assertEqual(tman.size(), ntimers)
-
 
 
 if __name__ == '__main__':

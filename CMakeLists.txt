@@ -4,7 +4,10 @@ project(TiMemory LANGUAGES C CXX VERSION 1.0.0)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_MODULE_PATH})
+
 include(Compilers)
+include(MacroUtilities)
+
 
 ################################################################################
 #
@@ -18,6 +21,14 @@ include(Compilers)
 ################################################################################
 
 set(TIMEMORY_NAMESPACE tim CACHE STRING "Top-level namespace for ${PROJECT_NAME}")
+set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+add_feature(TIMEMORY_NAMESPACE "Top-level namespace for ${PROJECT_NAME}")
+add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
+add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
+add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
 
 
 ################################################################################
@@ -66,12 +77,13 @@ find_package(Threads REQUIRED)
 
 include(GNUInstallDirs)
 set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
-option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
-option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
+add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
+add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
+add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
 set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
-option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
+add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
@@ -92,9 +104,10 @@ set(LIBNAME                 timemory)
 add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
 add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
 add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
-add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
 if(ENABLE_SANITIZE)
-    add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE} -pthread")
+    add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
+    add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
 endif(ENABLE_SANITIZE)
 add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
@@ -123,7 +136,6 @@ set(CMAKE_INSTALL_PYTHONDIR
     CACHE PATH "Installation directory for python")
 set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
-
 
 ################################################################################
 #
@@ -155,7 +167,7 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
 
-foreach(_FILE test.py)
+foreach(_FILE test.py nested.py)
     configure_file(${PROJECT_SOURCE_DIR}/examples/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
 endforeach(_FILE test.py)
@@ -165,4 +177,24 @@ foreach(_FILE unit_testing.py)
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
 endforeach(_FILE unit_testing.py)
 
-#include(Testing)
+execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
+    ${CMAKE_SOURCE_DIR}/examples ${CMAKE_BINARY_DIR}/examples)
+
+if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
+    include(Testing)
+endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
+
+# documentation
+set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
+    ${PROJECT_SOURCE_DIR}/source ${PROJECT_SOURCE_DIR}/python)
+set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
+
+include(Documentation)
+
+if(DOXYGEN_DOCS)
+    SET(CMAKE_INSTALL_MESSAGE NEVER)
+    Generate_Documentation(Doxyfile.${PROJECT_NAME})
+    SET(CMAKE_INSTALL_MESSAGE LAZY)
+endif()
+
+print_features()

@@ -116,6 +116,7 @@ protected:
 class base_timer_data
 {
 public:
+    typedef base_timer_data                             this_type;
     typedef std::micro                                  ratio_t;
     typedef NAME_TIM::util::base_clock<ratio_t>         clock_t;
     typedef clock_t::time_point                         time_point_t;
@@ -179,6 +180,7 @@ uint64_t get_stop(const base_timer_data& data)
 class base_timer_delta
 {
 public:
+    typedef base_timer_delta                            this_type;
     typedef uint64_t                                    uint_type;
     typedef std::tuple<uint_type, uint_type, uint_type> data_type;
     typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
@@ -201,7 +203,7 @@ public:
         m_rss = rss_type();
     }
 
-    base_timer_delta& operator+=(const op_type& data)
+    this_type& operator+=(const op_type& data)
     {
         auto _data = incr_type(compute<0>(data),
                                compute<1>(data),
@@ -211,6 +213,15 @@ public:
         m_lap += 1;
         m_rss.max(data.rss());
 
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        m_lap += rhs.m_lap;
+        compute_sum(rhs.m_sum);
+        //compute_sqr(rhs.m_sqr);
+        m_rss.max(rhs.m_rss);
         return *this;
     }
 
@@ -283,8 +294,8 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    typedef uomap<const base_timer*, data_t>    data_map_t;
-    typedef std::unique_ptr<data_map_t>         data_map_ptr_t;
+    //typedef uomap<const base_timer*, data_t>    data_map_t;
+    //typedef std::unique_ptr<data_map_t>         data_map_ptr_t;
     typedef base_rss_usage                      rss_usage_t;
 
 public:
@@ -292,9 +303,9 @@ public:
                "%w wall, %u user + %s system = %t CPU [sec] (%p%)"
                " : total rss %c | %m  : self rss %C | %M [MB]\n",
                ostream_t* = &std::cout);
-    base_timer(const base_timer& rhs);
     virtual ~base_timer();
 
+    base_timer(const base_timer& rhs);
     base_timer& operator=(const base_timer& rhs);
 
 public:
@@ -334,6 +345,9 @@ protected:
     virtual void compose() = 0;
     data_t& m_timer() const;
 
+    data_accum_t& get_accum() { return m_accum; }
+    const data_accum_t& get_accum() const { return m_accum; }
+
 protected:
     // PODs
     uint16_t                m_precision;
@@ -344,14 +358,17 @@ protected:
     mutable data_accum_t    m_accum;
     // strings
     string_t                m_format_string;
+    // data
+    mutable data_t          m_data;
     // mutex
     mutex_t                 m_mutex;
 
 private:
-    // world mutex map, thread-safe ostreams
+    // hash and data fields
     static thread_local uint64_t        f_instance_count;
     static thread_local uint64_t        f_instance_hash;
-    static thread_local data_map_ptr_t  f_data_map;
+    //static thread_local data_map_ptr_t  f_data_map;
+    // world mutex map, thread-safe ostreams
     static mutex_map_t                  w_mutex_map;
 
 public:
@@ -454,7 +471,7 @@ void base_timer::stop()
     {
         m_timer().stop() = base_clock_t::now();
         rss_record();
-        auto_lock_t l(m_mutex);
+        //auto_lock_t l(f_mutex_map[this]);
         m_accum += m_timer();
     }
 }
@@ -496,11 +513,12 @@ void base_timer::report_average(ostream_t& os, bool endline) const
 inline
 base_timer::data_t& base_timer::m_timer() const
 {
-    if(!f_data_map)
-        f_data_map.reset(new data_map_t());
-    if(f_data_map->find(this) == f_data_map->end())
-        f_data_map->insert(std::make_pair(this, data_t()));
-    return f_data_map->find(this)->second;
+    return m_data;
+    //if(!f_data_map)
+    //    f_data_map.reset(new data_map_t());
+    //if(f_data_map->find(this) == f_data_map->end())
+    //    f_data_map->insert(std::make_pair(this, data_t()));
+    //return f_data_map->find(this)->second;
 }
 //----------------------------------------------------------------------------//
 

@@ -240,9 +240,14 @@ public:
     void write_serialization(string_t _fname) const { write_json(_fname); }
 
 protected:
+    // protected functions
     inline uint64_t string_hash(const string_t&) const;
     string_t get_prefix() const;
+
+protected:
+    // protected static functions and vars
     static comm_group_t get_communicator_group();
+    static mutex_t  f_mutex;
 
 private:
     // Private functions
@@ -262,8 +267,6 @@ private:
     timer_list_t            m_timer_list;
     // output stream for total timing report
     ostream_t*              m_report;
-    // locks for timers
-    mutex_map_t             m_mutex_map;
 };
 
 //----------------------------------------------------------------------------//

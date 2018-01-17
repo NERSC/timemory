@@ -54,7 +54,7 @@ thread_local uint64_t base_timer::f_instance_hash = 0;
 
 //============================================================================//
 
-thread_local base_timer::data_map_ptr_t base_timer::f_data_map = nullptr;
+//thread_local base_timer::data_map_ptr_t base_timer::f_data_map = nullptr;
 
 //============================================================================//
 
@@ -66,7 +66,8 @@ base_timer::base_timer(uint16_t prec, const string_t& fmt, std::ostream* os)
 : m_precision(prec),
   m_os(os),
   m_format_positions(poslist_t()),
-  m_format_string(fmt)
+  m_format_string(fmt),
+  m_data(data_t())
 { }
 
 //============================================================================//
@@ -76,7 +77,8 @@ base_timer::base_timer(const base_timer& rhs)
   m_os(rhs.m_os),
   m_format_positions(rhs.m_format_positions),
   m_accum(rhs.m_accum),
-  m_format_string(rhs.m_format_string)
+  m_format_string(rhs.m_format_string),
+  m_data(rhs.m_data)
 { }
 
 //============================================================================//
@@ -102,6 +104,7 @@ base_timer& base_timer::operator=(const base_timer& rhs)
         m_format_positions = rhs.m_format_positions;
         m_accum = rhs.m_accum;
         m_format_string = rhs.m_format_string;
+        m_data = rhs.m_data;
     }
     return *this;
 }
@@ -233,26 +236,26 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
             case timer_field::total_curr:
                 // total RSS (current)
                 ss.precision(1);
-                ss << std::setw(wrss)
-                   << (m_accum.rss().total().current());
+                ss << std::setw(wrss+1)
+                   << m_accum.rss().total().current();
                 break;
             case timer_field::total_peak:
                 // total RSS (peak)
                 ss.precision(1);
-                ss << std::setw(wrss)
-                   << (m_accum.rss().total().peak());
+                ss << std::setw(wrss+1)
+                   << m_accum.rss().total().peak();
                 break;
             case timer_field::self_curr:
                 // self RSS (current)
                 ss.precision(1);
-                ss << std::setw(wrss)
-                   << (m_accum.rss().self().current());
+                ss << std::setw(wrss+1)
+                   << m_accum.rss().self().current();
                 break;
             case timer_field::self_peak:
                 // self RSS (peak)
                 ss.precision(1);
-                ss << std::setw(wrss)
-                   << (m_accum.rss().self().peak());
+                ss << std::setw(wrss+1)
+                   << m_accum.rss().self().peak();
                 break;
 
         }
@@ -275,7 +278,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
         ss << std::endl;
 
     // ensure thread-safety
-    recursive_lock_t lock(w_mutex_map[&os]);
+    recursive_lock_t rlock(w_mutex_map[&os]);
     // output to ostream
     os << ss.str();
 }

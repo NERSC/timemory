@@ -81,3 +81,14 @@ else()
 endif(BUILD_SHARED_LIBRARIES)
 
 add_definitions(-DNAME_TIM=@TIMEMORY_NAMESPACE@)
+
+set(@PROJECT_NAME@_C_FLAGS "@CMAKE_C_FLAGS@")
+set(@PROJECT_NAME@_CXX_FLAGS "@CMAKE_CXX_FLAGS@")
+
+include(FindPackageHandleStandardArgs)
+# handle the QUIETLY and REQUIRED arguments and set UnitTest++_FOUND to TRUE
+# if all listed variables are TRUE
+find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
+    @PROJECT_NAME@_LIBRARIES
+    @PROJECT_NAME@_INCLUDE_DIR
+    @PROJECT_NAME@_PYTHON_DIR)

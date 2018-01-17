@@ -58,6 +58,10 @@ bool NAME_TIM::util::timing_manager::fgEnabled = true;
 #endif
 
 //============================================================================//
+
+NAME_TIM::util::timing_manager::mutex_t NAME_TIM::util::timing_manager::f_mutex;
+
+//============================================================================//
 // static function
 void NAME_TIM::util::timing_manager::enable(bool val)
 {
@@ -335,10 +339,11 @@ NAME_TIM::util::timing_manager::get_prefix() const
 
 //============================================================================//
 
-NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key,
-                                                       const string_t& tag,
-                                                       int32_t ncount,
-                                                       int32_t nhash)
+NAME_TIM::util::timer&
+NAME_TIM::util::timing_manager::timer(const string_t& key,
+                                      const string_t& tag,
+                                      int32_t ncount,
+                                      int32_t nhash)
 {
 #if defined(DEBUG)
     if(key.find(" ") != string_t::npos)
@@ -352,7 +357,7 @@ NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key
     uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount+1) * (nhash+1);
 
     // thread-safe
-    auto_lock_t lock(m_mutex_map[ref]);
+    auto_lock_t lock(f_mutex);
 
     // if already exists, return it
     if(m_timer_map.find(ref) != m_timer_map.end())
@@ -372,10 +377,10 @@ NAME_TIM::util::timer& NAME_TIM::util::timing_manager::timer(const string_t& key
     // indent
     for(int64_t i = 0; i < ncount; ++i)
     {
-        if(i+1 == ncount || i == 0)
+        if(i+1 == ncount)
             ss << "|_";
         else
-            ss << "|_";
+            ss << "  ";
     }
 
     ss << std::left << key;

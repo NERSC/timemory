@@ -108,7 +108,7 @@ function(test_compile _LANG _VAR _FLAG)
     generate_test_project()
     set(LANG "${_LANG}")
     set(COMPILE_FLAGS "${_FLAG}")
-    set(COMPILE "${CMAKE_${LANG}_COMPILER}")
+    set(COMPILER "${CMAKE_${LANG}_COMPILER}")
     configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/CMakeLists.txt.in
         ${CMAKE_BINARY_DIR}/compile-testing/CMakeLists.txt @ONLY)
     # try compiling with flag
@@ -116,6 +116,9 @@ function(test_compile _LANG _VAR _FLAG)
         ${CMAKE_BINARY_DIR}/compile-testing
         ${CMAKE_BINARY_DIR}/compile-testing
         CompileTest
+        CMAKE_FLAGS
+            -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
+            -DCMAKE_CXX_COMPILER:STRING=${CMAKE_CXX_COMPILER}
         OUTPUT_VARIABLE RET_OUT)
     # add flag if successful
     set(${_VAR} ${RET} PARENT_SCOPE)

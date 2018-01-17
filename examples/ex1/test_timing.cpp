@@ -56,7 +56,6 @@ int64_t fibonacci(int32_t n)
 // e.g. std::function < int32_t ( int32_t ) >
 int64_t time_fibonacci(int32_t n)
 {
-    timing_manager_t* tman = timing_manager_t::instance();
     std::stringstream ss;
     ss << "(" << n << ")";
     TIMEMORY_AUTO_TIMER(ss.str());
@@ -92,6 +91,8 @@ int main()
     RUN_TEST(test_timing_manager);
     RUN_TEST(test_timing_toggle);
     RUN_TEST(test_timing_thread);
+
+    std::cout << "\nDone.\n" << std::endl;
 
     if(num_fail > 0)
         std::cout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
@@ -225,21 +226,24 @@ void test_timing_thread()
     thread_list_t threads(num_threads, nullptr);
 
     {
-        std::stringstream ss;
-        ss << "@" << num_threads << "_threads";
-        TIMEMORY_AUTO_TIMER(ss.str());
+        TIMEMORY_AUTO_TIMER();
+        {
+            std::stringstream ss;
+            ss << "@" << num_threads << "_threads";
+            TIMEMORY_AUTO_TIMER(ss.str());
 
-        for(auto& itr : threads)
-            itr = create_thread(42);
+            for(auto& itr : threads)
+                itr = create_thread(42);
 
-        join_thread(threads.begin(), threads);
+            join_thread(threads.begin(), threads);
+        }
     }
 
     bool no_min = true;
     tman->report(no_min);
+
     std::cout << "Timing manager size: " << timing_manager_t::instance()->size()
               << std::endl;
-    EXPECT_EQ(timing_manager_t::instance()->size(), 20);
 
     for(auto& itr : threads)
         delete itr;
@@ -248,5 +252,6 @@ void test_timing_thread()
 
     tman->enable(_is_enabled);
 
+    EXPECT_EQ(timing_manager_t::instance()->size(), 21);
 }
 //============================================================================//

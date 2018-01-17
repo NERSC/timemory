@@ -33,6 +33,7 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <memory>
 
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
@@ -44,6 +45,7 @@
 #include <pybind11/embed.h>
 #include <pybind11/cast.h>
 #include <pybind11/pytypes.h>
+#include <pybind11/numpy.h>
 
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
@@ -55,11 +57,14 @@ using namespace py::literals;
 #include "timemory/rss.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/signal_detection.hpp"
+#include "timemory/rss.hpp"
 
-typedef NAME_TIM::util::timing_manager   timing_manager_t;
-typedef NAME_TIM::util::timer            tim_timer_t;
-typedef NAME_TIM::util::auto_timer       auto_timer_t;
+typedef NAME_TIM::util::timing_manager      timing_manager_t;
+typedef NAME_TIM::util::timer               tim_timer_t;
+typedef NAME_TIM::util::auto_timer          auto_timer_t;
+typedef NAME_TIM::rss::usage                rss_usage_t;
 
+typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
 //============================================================================//
 //  Python wrappers
@@ -71,15 +76,6 @@ PYBIND11_MODULE(timemory, tim)
 
     auto tman_init = [=] () { return timing_manager_t::instance(); };
 
-    auto timer_init = [=] (std::string begin)
-    {
-        std::string default_format
-            =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
-               " : RSS {tot,self}_{curr,peak}"
-               " : (%C|%M)"
-               " | (%c|%m) [MB]";
-        return new tim_timer_t(begin, "", default_format, false, 3);
-    };
 
     auto get_line = [] (int nback = 1)
     {
@@ -137,6 +133,26 @@ PYBIND11_MODULE(timemory, tim)
         return ret;
     };
 
+    auto timer_init = [=] (std::string begin = "", std::string format = "")
+    {
+        if(begin.empty())
+        {
+            std::stringstream keyss;
+            keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
+            begin = keyss.str();
+        }
+
+        const std::string default_format
+            =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
+               " : RSS {tot,self}_{curr,peak}"
+               " : (%C|%M)"
+               " | (%c|%m) [MB]";
+        if(format.empty())
+            format = default_format;
+
+        return new tim_timer_t(begin, "", format, false, 3);
+    };
+
     auto auto_timer_init = [=] (const std::string& key = "")
     {
         std::stringstream keyss;
@@ -177,7 +193,7 @@ PYBIND11_MODULE(timemory, tim)
             { timing_manager_t::instance()->set_max_depth(ndepth); },
             "Max depth of auto-timers");
     tim.def("get_max_depth",
-            [=]()
+            [=] ()
             { return timing_manager_t::instance()->get_max_depth(); },
             "Max depth of auto-timers");
     tim.def("toggle",
@@ -196,6 +212,8 @@ PYBIND11_MODULE(timemory, tim)
             disable_signal_detection,
             "Enable signal detection");
 
+    //------------------------------------------------------------------------//
+
     py::module timemory_util = tim.import("timemory-supp");
     tim.add_object("util", timemory_util);
 
@@ -210,7 +228,8 @@ PYBIND11_MODULE(timemory, tim)
 
     timer.def(py::init(timer_init),
               "Initialization",
-              py::return_value_policy::take_ownership);
+              py::return_value_policy::take_ownership,
+              py::arg("begin") = "", py::arg("format") = "");
     timer.def("real_elapsed",
               [=] (py::object timer)
               { return timer.cast<tim_timer_t*>()->real_elapsed(); },
@@ -239,7 +258,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
 
     tman.def(py::init<>(tman_init), "Initialization",
-             py::return_value_policy::reference);
+             py::return_value_policy::reference, py::keep_alive<0,1>());
     tman.def("report",
              [=] (py::object tman)
              {
@@ -255,11 +274,14 @@ PYBIND11_MODULE(timemory, tim)
                  auto serfnm = locals["serfnm"].cast<std::string>();
                  auto _do_rep = locals["do_ret"].cast<bool>();
                  auto _do_ser = locals["do_ser"].cast<bool>();
+                 auto* _tman = tman.cast<timing_manager_t*>();
+                 assert(tman.cast<timing_manager_t*>() ==
+                        timing_manager_t::instance());
                  if(_do_rep)
-                     tman.cast<timing_manager_t*>()->set_output_stream(repfnm);
-                 tman.cast<timing_manager_t*>()->report();
-                 if(_do_ser)
-                     tman.cast<timing_manager_t*>()->write_serialization(serfnm);
+                     _tman->set_output_stream(repfnm);
+                 _tman->report();
+                 if(_do_ser && timing_manager_t::instance()->size() > 0)
+                     _tman->write_serialization(serfnm);
              },
              "Report timing manager");
     tman.def("set_output_file",

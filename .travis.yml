@@ -147,9 +147,18 @@ install:
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
-    
+    - make install -j2
+    - export BUILD_DIR=${PWD}
+    - cd examples/ex1
+    - cmake -DTiMemory_DIR=${HOME}/timemory/current/share/cmake/TiMemory -DCMAKE_INSTALL_PREFIX=${BUILD_DIR} .
+    - make -j2
+    - make install -j2
+    - cd ../..
+
 
 script:
     - ./test.py
+    - ./unit_testing.py
+    - ./bin/timemory_test_timing
     - echo "Done"
 
