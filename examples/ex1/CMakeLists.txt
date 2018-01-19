@@ -3,8 +3,9 @@ cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 #----------------------------------------------------------------------------
 project(TiMemory-Example1)
 
-if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory")
-    include_directories(${CMAKE_SOURCE_DIR}/source)
+if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
+    include_directories(${CMAKE_SOURCE_DIR}/source
+        ${CMAKE_SOURCE_DIR}/source/cereal/include)
     set(TiMemory_LIBRARIES timemory-shared ${EXTERNAL_LIBRARIES})
 else()
     find_package(TiMemory REQUIRED)
