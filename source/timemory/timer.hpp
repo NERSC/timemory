@@ -98,6 +98,13 @@ public:
         return *this;
     }
 
+    this_type& operator/=(const uint64_t& rhs)
+    {
+        auto_lock_t l(m_mutex);
+        m_accum /= rhs;
+        return *this;
+    }
+
 protected:
     virtual void compose() final;
     void set_parent(this_type* parent) { m_parent = parent; }

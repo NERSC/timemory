@@ -230,6 +230,17 @@ public:
         return *this;
     }
 
+    this_type& operator/=(const uint64_t& rhs)
+    {
+        std::get<0>(m_sum) /= rhs;
+        std::get<1>(m_sum) /= rhs;
+        std::get<2>(m_sum) /= rhs;
+        //std::get<0>(m_sqr) /= rhs;
+        //std::get<1>(m_sqr) /= rhs;
+        //std::get<2>(m_sqr) /= rhs;
+        return *this;
+    }
+
     template <int N> uint64_t get_sum() const { return std::get<N>(m_sum); }
     template <int N> uint64_t get_sqr() const { return std::get<N>(m_sqr); }
     uint64_t size() const { return m_lap; }

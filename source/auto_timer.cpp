@@ -31,15 +31,11 @@ namespace util
 
 //============================================================================//
 
-thread_local auto_timer* auto_timer::f_auto_timer = nullptr;
+uint64_t& auto_timer::nhash() { return timing_manager::instance()->hash(); }
 
 //============================================================================//
 
-thread_local uint64_t auto_timer::f_instance_count = 0;
-
-//============================================================================//
-
-thread_local uint64_t auto_timer::f_instance_hash = 0;
+uint64_t& auto_timer::ncount() { return timing_manager::instance()->count(); }
 
 //============================================================================//
 
@@ -49,7 +45,6 @@ auto_timer::auto_timer(const std::string& timer_tag,
                        bool temp_disable)
 : m_temp_disable(temp_disable),
   m_hash(10*lineno),
-  m_parent(f_auto_timer),
   m_timer(nullptr)
 {
     m_hash += std::hash<std::string>()(timer_tag);
@@ -69,16 +64,12 @@ auto_timer::auto_timer(const std::string& timer_tag,
 
     if(m_temp_disable && timing_manager::instance()->is_enabled())
         timing_manager::instance()->enable(false);
-
-    f_auto_timer = this;
 }
 
 //============================================================================//
 
 auto_timer::~auto_timer()
 {
-    f_auto_timer = m_parent;
-
     if(m_temp_disable && ! timing_manager::instance()->is_enabled())
         timing_manager::instance()->enable(true);
 

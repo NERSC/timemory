@@ -105,20 +105,25 @@ inline int32_t get_max_threads()
 
 //----------------------------------------------------------------------------//
 
-struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
-                                       NAME_TIM::util::timer&>
+namespace details
 {
-    typedef std::string                                 string_t;
-    typedef NAME_TIM::util::timer                       tim_timer_t;
-    typedef uint64_t                                    first_type;
-    typedef uint64_t                                    second_type;
-    typedef string_t                                    third_type;
-    typedef tim_timer_t                                 fourth_type;
-    typedef std::tuple<uint64_t, uint64_t, string_t,
-                       tim_timer_t&>                    base_type;
+typedef std::tuple<uint64_t, uint64_t, std::string,
+                   std::shared_ptr<NAME_TIM::util::timer>> base_timer_tuple_t;
+}
+struct timer_tuple : public details::base_timer_tuple_t
+{
+    typedef timer_tuple                     this_type;
+    typedef std::string                     string_t;
+    typedef NAME_TIM::util::timer           tim_timer_t;
+    typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
+    typedef uint64_t                        first_type;
+    typedef uint64_t                        second_type;
+    typedef string_t                        third_type;
+    typedef timer_ptr_t                     fourth_type;
+    typedef details::base_timer_tuple_t     base_type;
 
     timer_tuple(const base_type& _data) : base_type(_data) { }
-    timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type& _f)
+    timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
     : base_type(_b, _s, _t, _f) { }
 
     timer_tuple& operator=(const base_type& rhs)
@@ -127,6 +132,28 @@ struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
             return *this;
         base_type::operator =(rhs);
         return *this;
+    }
+
+    bool operator==(const this_type& rhs) const
+    {
+        return (key() == rhs.key() && level() == rhs.level() &&
+                tag() == rhs.tag());
+    }
+
+    bool operator!=(const this_type& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        timer() += rhs.timer();
+        return *this;
+    }
+
+    const this_type operator+(const this_type& rhs) const
+    {
+        return this_type(*this) += rhs;
     }
 
     first_type& key() { return std::get<0>(*this); }
@@ -138,17 +165,17 @@ struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
     third_type tag() { return std::get<2>(*this); }
     const third_type tag() const { return std::get<2>(*this); }
 
-    fourth_type& timer() { return std::get<3>(*this); }
-    const fourth_type& timer() const { return std::get<3>(*this); }
+    tim_timer_t& timer() { return *(std::get<3>(*this).get()); }
+    const tim_timer_t& timer() const { return *(std::get<3>(*this).get()); }
 
     // serialization function
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar(cereal::make_nvp("timer.key", std::get<0>(*this)),
-           cereal::make_nvp("timer.level", std::get<1>(*this)),
-           cereal::make_nvp("timer.tag", std::get<2>(*this)),
-           cereal::make_nvp("timer.ref", std::get<3>(*this)));
+        ar(cereal::make_nvp("timer.key", key()),
+           cereal::make_nvp("timer.level", level()),
+           cereal::make_nvp("timer.tag", tag()),
+           cereal::make_nvp("timer.ref", timer()));
     }
 
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
@@ -171,14 +198,16 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
+    typedef timing_manager                  this_type;
     typedef NAME_TIM::util::timer           tim_timer_t;
+    typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
     typedef std::deque<timer_tuple_t>       timer_list_t;
     typedef timer_list_t::iterator          iterator;
     typedef timer_list_t::const_iterator    const_iterator;
     typedef timer_list_t::size_type         size_type;
-    typedef uomap<uint64_t, tim_timer_t>    timer_map_t;
+    typedef uomap<uint64_t, timer_ptr_t>    timer_map_t;
     typedef tim_timer_t::ostream_t          ostream_t;
     typedef tim_timer_t::ofstream_t         ofstream_t;
     typedef NAME_TIM::timer_field           timer_field;
@@ -186,6 +215,9 @@ public:
     typedef std::mutex                      mutex_t;
     typedef uomap<uint64_t, mutex_t>        mutex_map_t;
     typedef std::lock_guard<mutex_t>        auto_lock_t;
+    typedef this_type*                      pointer_type;
+    typedef std::shared_ptr<this_type>      shared_type;
+    typedef std::set<shared_type>           daughter_list_t;
 
 public:
     // Constructor and Destructors
@@ -194,8 +226,9 @@ public:
 
 public:
     // Public static functions
-    static timing_manager* instance();
-    static bool is_enabled() { return fgEnabled; }
+    static pointer_type instance();
+    static shared_type  shared_instance();
+    static bool is_enabled() { return f_enabled; }
     static void enable(bool val = true);
     static void write_json(string_t _fname);
     static int32_t& max_depth() { return fgMaxDepth; }
@@ -254,6 +287,18 @@ public:
     int32_t get_max_depth() { return fgMaxDepth; }
     void write_serialization(string_t _fname) const { write_json(_fname); }
 
+    void add(shared_type ptr);
+    void merge(bool div_clock = true);
+
+    const timer_map_t& map() const { return m_timer_map; }
+    const timer_list_t& list() const { return m_timer_list; }
+
+    uint64_t& hash() { return m_hash; }
+    uint64_t& count() { return m_count; }
+
+    const uint64_t& hash() const { return m_hash; }
+    const uint64_t& count() const { return m_count; }
+
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
@@ -271,17 +316,25 @@ private:
 
 private:
     // Private variables
-    static timing_manager*  fgInstance;
+    static pointer_type  f_instance;
     // for temporary enabling/disabling
-    static bool             fgEnabled;
+    static bool             f_enabled;
     // max depth of timers
     static int32_t          fgMaxDepth;
+    // hash counting
+    uint64_t                m_hash;
+    // auto timer counting
+    uint64_t                m_count;
     // hashed string map for fast lookup
     timer_map_t             m_timer_map;
     // ordered list for output (outputs in order of timer instantiation)
     timer_list_t            m_timer_list;
     // output stream for total timing report
     ostream_t*              m_report;
+    // mutex
+    mutex_t                 m_mutex;
+    // daughter list
+    daughter_list_t         m_daughters;
 };
 
 

@@ -82,6 +82,7 @@ class TimingTest(unittest.TestCase):
             time_fibonacci(n)
             time_fibonacci(n + 1)
 
+        tman.merge()
         tman.report()
 
         self.assertEqual(tman.size(), 12)
@@ -160,6 +161,30 @@ class TimingTest(unittest.TestCase):
         tman.report()
 
         self.assertEqual(tman.size(), ntimers)
+
+    # Test the timing on/off toggle functionalities
+    def test_pointer(self):
+        print ('Testing function: "{}"...'.format(timing.FUNC()))
+
+        nval = 4
+
+        def set_pointer_max(nmax):
+            tman = timing.timing_manager()
+            tman.set_max_depth(4)
+            return tman.get_max_depth()
+
+        def get_pointer_max():
+            return timing.timing_manager().get_max_depth()
+
+        ndef = get_pointer_max()
+        nnew = set_pointer_max(nval)
+        nchk = get_pointer_max()
+
+        self.assertEqual(nval, nchk)
+
+        set_pointer_max(ndef)
+
+        self.assertEqual(ndef, get_pointer_max())
 
 
 if __name__ == '__main__':

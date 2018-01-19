@@ -55,19 +55,12 @@ public:
 
 public:
     // static public functions
-    static uint64_t& ncount()       { return f_instance_count; }
-    static uint64_t& nhash()        { return f_instance_hash; }
-    static this_type*& last_timer() { return f_auto_timer; }
-
-protected:
-    static thread_local uint64_t        f_instance_count;
-    static thread_local uint64_t        f_instance_hash;
-    static thread_local auto_timer*     f_auto_timer;
+    static uint64_t& ncount();
+    static uint64_t& nhash();
 
 private:
     bool            m_temp_disable;
     uint64_t        m_hash;
-    this_type*      m_parent;
     tim_timer_t*    m_timer;
     tim_timer_t     m_temp_timer;
 };

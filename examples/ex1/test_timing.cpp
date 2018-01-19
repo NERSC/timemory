@@ -84,6 +84,7 @@ int64_t time_fibonacci(int32_t n)
 //----------------------------------------------------------------------------//
 
 void print_size(const std::string&, int64_t);
+void test_timing_pointer();
 void test_timing_manager();
 void test_timing_toggle();
 void test_timing_thread();
@@ -113,6 +114,7 @@ int main()
         num_fail += 1; \
     }
 
+    RUN_TEST(test_timing_pointer);
     RUN_TEST(test_timing_manager);
     RUN_TEST(test_timing_toggle);
     RUN_TEST(test_timing_thread);
@@ -147,11 +149,31 @@ void print_size(const std::string& func, int64_t line)
 
 //============================================================================//
 
+void test_timing_pointer()
+{
+    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
+    uint16_t set_depth = 4;
+    uint16_t get_depth = 0;
+
+    {
+        timing_manager_t::instance()->set_max_depth(4);
+    }
+
+    {
+        get_depth = timing_manager_t::instance()->get_max_depth();
+    }
+
+    EXPECT_EQ(set_depth, get_depth);
+    timing_manager_t::instance()->set_max_depth(std::numeric_limits<uint16_t>::max());
+}
+
+//============================================================================//
+
 void test_timing_manager()
 {
     std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
 
-    timing_manager_t* tman = timing_manager_t::instance();
+    auto tman = timing_manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -188,7 +210,7 @@ void test_timing_toggle()
 {
     std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
 
-    timing_manager_t* tman = timing_manager_t::instance();
+    auto tman = timing_manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -262,7 +284,7 @@ void join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
 void test_timing_thread()
 {
     std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
-    timing_manager_t* tman = timing_manager_t::instance();
+    auto tman = timing_manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -291,6 +313,9 @@ void test_timing_thread()
 
     threads.clear();
 
+    // divide the threaded clocks that are merge
+    tman->merge(true);
+
     bool no_min;
     print_size(__FUNCTION__, __LINE__);
     tman->report(no_min = true);
@@ -304,7 +329,7 @@ void test_timing_thread()
 void test_timing_depth()
 {
     std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
-    timing_manager_t* tman = timing_manager_t::instance();
+    auto tman = timing_manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -327,4 +352,5 @@ void test_timing_depth()
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
+
 //============================================================================//

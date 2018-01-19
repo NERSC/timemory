@@ -66,6 +66,23 @@ typedef NAME_TIM::rss::usage                rss_usage_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
+typedef timing_manager_t::shared_type       shared_timing_manager_t;
+
+class timing_manager_wrapper
+{
+public:
+    timing_manager_wrapper() : m_manager(timing_manager_t::shared_instance())
+    { }
+
+    ~timing_manager_wrapper()
+    { }
+
+    timing_manager_t* get() { return m_manager.get(); }
+
+private:
+    shared_timing_manager_t           m_manager;
+};
+
 //============================================================================//
 //  Python wrappers
 //============================================================================//
@@ -74,7 +91,7 @@ PYBIND11_MODULE(timemory, tim)
 {
     py::add_ostream_redirect(tim, "ostream_redirect");
 
-    auto tman_init = [=] () { return timing_manager_t::instance(); };
+    auto tman_init = [&] () { return new timing_manager_wrapper(); };
 
 
     auto get_line = [] (int nback = 1)
@@ -220,7 +237,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     // Classes
 
-    py::class_<timing_manager_t> tman(tim, "timing_manager");
+    py::class_<timing_manager_wrapper> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
     py::class_<auto_timer_t> auto_timer(tim, "auto_timer");
 
@@ -258,7 +275,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
 
     tman.def(py::init<>(tman_init), "Initialization",
-             py::return_value_policy::reference, py::keep_alive<0,1>());
+             py::return_value_policy::take_ownership);
     tman.def("report",
              [=] (py::object tman)
              {
@@ -274,9 +291,7 @@ PYBIND11_MODULE(timemory, tim)
                  auto serfnm = locals["serfnm"].cast<std::string>();
                  auto _do_rep = locals["do_ret"].cast<bool>();
                  auto _do_ser = locals["do_ser"].cast<bool>();
-                 auto* _tman = tman.cast<timing_manager_t*>();
-                 assert(tman.cast<timing_manager_t*>() ==
-                        timing_manager_t::instance());
+                 timing_manager_t* _tman = tman.cast<timing_manager_wrapper*>()->get();
                  if(_do_rep)
                      _tman->set_output_stream(repfnm);
                  _tman->report();
@@ -287,7 +302,7 @@ PYBIND11_MODULE(timemory, tim)
     tman.def("set_output_file",
              [=] (py::object tman, std::string fname)
              {
-                 timing_manager_t* _tman = tman.cast<timing_manager_t*>();
+                 timing_manager_t* _tman = tman.cast<timing_manager_wrapper*>()->get();
                  auto locals = py::dict("fname"_a = fname);
                  py::exec(R"(
                           import timemory as tim
@@ -298,11 +313,11 @@ PYBIND11_MODULE(timemory, tim)
              "Set the output stream file");
     tman.def("size",
              [=] (py::object tman)
-             { return tman.cast<timing_manager_t*>()->size(); },
+             { return tman.cast<timing_manager_wrapper*>()->get()->size(); },
              "Size of timing manager");
     tman.def("clear",
              [=] (py::object tman)
-             { return tman.cast<timing_manager_t*>()->clear(); },
+             { return tman.cast<timing_manager_wrapper*>()->get()->clear(); },
              "Clear the timing manager");
     tman.def("serialize",
              [=] (py::object tman, std::string fname = "")
@@ -316,26 +331,34 @@ PYBIND11_MODULE(timemory, tim)
                                )", py::globals(), locals);
                       fname = locals["result"].cast<std::string>();
                   }
-                  tman.cast<timing_manager_t*>()->write_serialization(fname);
+                  tman.cast<timing_manager_wrapper*>()->get()->write_serialization(fname);
              },
              "Serialize the timing manager to JSON",
              py::arg("fname") = "");
     tman.def("set_max_depth",
              [=] (py::object tman, int depth)
-             { tman.cast<timing_manager_t*>()->set_max_depth(depth); },
+             { tman.cast<timing_manager_wrapper*>()->get()->set_max_depth(depth); },
              "Set the max depth of the timers");
     tman.def("get_max_depth",
              [=] (py::object tman)
-             { return tman.cast<timing_manager_t*>()->get_max_depth(); },
+             { return tman.cast<timing_manager_wrapper*>()->get()->get_max_depth(); },
              "Get the max depth of the timers");
     tman.def("at",
              [=] (py::object tman, int i)
              {
-                 tim_timer_t& _t = tman.cast<timing_manager_t*>()->at(i);
+                 tim_timer_t& _t = tman.cast<timing_manager_wrapper*>()->get()->at(i);
                  return &_t;
              },
              "Set the max depth of the timers",
              py::return_value_policy::reference);
+    tman.def("merge",
+             [=] (py::object tman, bool div_clocks)
+             { tman.cast<timing_manager_wrapper*>()->get()->merge(div_clocks); },
+             "Merge the thread-local timers",
+             py::arg("div_clocks") = true);
+
+    // keep from being garbage collected
+    tim.attr("_static_timing_manager") = new timing_manager_wrapper();
 
     //------------------------------------------------------------------------//
 
