@@ -114,8 +114,8 @@ matrix:
             - tk
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
-         
-         
+
+
 before_install:
     - eval "${MATRIX_EVAL}"
     - export CC=${CC}
@@ -149,19 +149,10 @@ install:
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     - make install -j2
-    - export BUILD_DIR=${PWD}
-    - cd examples/ex1
-    - cmake -DTiMemory_DIR=${INSTALL_DIR}/share/cmake/TiMemory
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} .
-    - make -j2
-    - make install -j2
-    - cd ../..
-    - export LD_LIBRARY_PATH=${INSTALL_DIR}/lib64:${INSTALL_DIR}/lib:${LD_LIBRARY_PATH}
-    - export PATH=${INSTALL_DIR}/bin:${PATH}
 
 script:
     - ./test.py
     - ./unit_testing.py
-    - timemory_test_timing
+    - ./timemory_test_timing
     - echo "Done"
 

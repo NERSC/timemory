@@ -80,6 +80,7 @@ set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
 add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
 add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
+add_option(TIMEMORY_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(CMAKE_INSTALL_MESSAGE LAZY)
 set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
@@ -105,11 +106,17 @@ add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
 add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
 add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
 add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
+if(UNIX)
+    add(CMAKE_CXX_FLAGS "-pthread")
+endif(UNIX)
 if(ENABLE_SANITIZE)
     add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
     add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
 endif(ENABLE_SANITIZE)
 add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+if(TIMEMORY_EXCEPTIONS)
+    add_definitions(-DTIMEMORY_EXCEPTIONS)
+endif()
 
 
 ################################################################################
@@ -120,7 +127,7 @@ add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
 add_option(PYBIND11_INSTALL "PyBind11 installation" ON)
 set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-    CACHE STRING "PyBind11 CXX standard")
+    CACHE STRING "PyBind11 CXX standard" FORCE)
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
     find_package(Git REQUIRED)
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
@@ -157,6 +164,8 @@ add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
 
 add_subdirectory(source)
 
+add_subdirectory(examples)
+
 include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
@@ -177,18 +186,10 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
 
-foreach(_FILE test.py nested.py)
-    configure_file(${PROJECT_SOURCE_DIR}/examples/${_FILE}
-        ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
-endforeach(_FILE test.py)
-
 foreach(_FILE unit_testing.py)
     configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
 endforeach(_FILE unit_testing.py)
-
-execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
-    ${CMAKE_SOURCE_DIR}/examples ${CMAKE_BINARY_DIR}/examples)
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
     include(Testing)
@@ -197,8 +198,8 @@ endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
 # documentation
 set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
     ${PROJECT_SOURCE_DIR}/source
-    ${PROJECT_SOURCE_DIR}/examples
     ${PROJECT_SOURCE_DIR}/python)
+
 set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
 
 include(Documentation)

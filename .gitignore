@@ -2,6 +2,9 @@
 # QtCreator config file
 /CMakeLists.txt.user
 
+# Ninja-IDE project files
+/*.nja
+
 # Edit files
 *~
 

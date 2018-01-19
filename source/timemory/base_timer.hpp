@@ -299,24 +299,17 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    //typedef uomap<const base_timer*, data_t>    data_map_t;
-    //typedef std::unique_ptr<data_map_t>         data_map_ptr_t;
     typedef base_rss_usage                      rss_usage_t;
 
 public:
     base_timer(uint16_t = 3, const string_t& =
                "%w wall, %u user + %s system = %t CPU [sec] (%p%)"
-               " : total rss %c | %m  : self rss %C | %M [MB]\n",
+               " : total rss %C | %M  : self rss %c | %m [MB]\n",
                ostream_t* = &std::cout);
     virtual ~base_timer();
 
     base_timer(const base_timer& rhs);
     base_timer& operator=(const base_timer& rhs);
-
-public:
-    // static public functions
-    static uint64_t& get_instance_count() { return f_instance_count; }
-    static uint64_t& get_instance_hash()  { return f_instance_hash; }
 
 public:
     inline void start();
@@ -370,8 +363,6 @@ protected:
 
 private:
     // hash and data fields
-    static thread_local uint64_t        f_instance_count;
-    static thread_local uint64_t        f_instance_hash;
     //static thread_local data_map_ptr_t  f_data_map;
     // world mutex map, thread-safe ostreams
     static mutex_map_t                  w_mutex_map;

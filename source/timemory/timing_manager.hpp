@@ -151,6 +151,16 @@ struct timer_tuple : public std::tuple<uint64_t, uint64_t, std::string,
            cereal::make_nvp("timer.ref", std::get<3>(*this)));
     }
 
+    friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
+    {
+        std::stringstream ss;
+        ss << "Key = " << std::get<0>(t) << ", "
+           << "Count = " << std::get<1>(t) << ", "
+           << "Tag = " << std::get<2>(t);
+        os << ss.str();
+        return os;
+    }
+
 };
 
 //----------------------------------------------------------------------------//
@@ -178,7 +188,7 @@ public:
     typedef std::lock_guard<mutex_t>        auto_lock_t;
 
 public:
-	// Constructor and Destructors
+    // Constructor and Destructors
     timing_manager();
     virtual ~timing_manager();
 
@@ -260,7 +270,7 @@ private:
     void report(ostream_t*, bool no_min = false) const;
 
 private:
-	// Private variables
+    // Private variables
     static timing_manager*  fgInstance;
     // for temporary enabling/disabling
     static bool             fgEnabled;
@@ -274,41 +284,7 @@ private:
     ostream_t*              m_report;
 };
 
-//----------------------------------------------------------------------------//
-inline void
-timing_manager::clear()
-{
-    m_timer_list.clear();
-    m_timer_map.clear();
-    details::base_timer::get_instance_count() = 0;
-    details::base_timer::get_instance_hash() = 0;
 
-    ofstream_t* m_fos = get_ofstream(m_report);
-    for(int32_t i = 0; i < mpi_size(); ++i)
-    {
-        if(mpi_is_initialized())
-            MPI_Barrier(MPI_COMM_WORLD);
-        if(mpi_rank() != i)
-            continue;
-
-        if(m_fos->good() && m_fos->is_open())
-        {
-            if(mpi_rank()+1 >= mpi_size())
-            {
-                m_fos->flush();
-                m_fos->close();
-                delete m_fos;
-            }
-            else
-            {
-                m_fos->flush();
-                m_fos->close();
-                delete m_fos;
-            }
-        }
-    }
-    m_report = &std::cout;
-}
 //----------------------------------------------------------------------------//
 template <typename _Ret, typename _Func>
 inline _Ret

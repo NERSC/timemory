@@ -1,5 +1,5 @@
 
-add_option(BUILD_TESTING "Build testing" OFF)
+add_option(BUILD_TESTING "Build testing" ON)
 if(NOT BUILD_TESTING)
     return()
 endif(NOT BUILD_TESTING)

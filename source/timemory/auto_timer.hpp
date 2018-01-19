@@ -45,6 +45,7 @@ class auto_timer
 {
 public:
     typedef NAME_TIM::util::timing_manager::tim_timer_t     tim_timer_t;
+    typedef auto_timer                                      this_type;
 
 public:
     // Constructor and Destructors
@@ -52,63 +53,25 @@ public:
                const std::string& = "cxx", bool temp_disable = false);
     virtual ~auto_timer();
 
-private:
-    static uint64_t& ncount()
-    { return details::base_timer::get_instance_count(); }
+public:
+    // static public functions
+    static uint64_t& ncount()       { return f_instance_count; }
+    static uint64_t& nhash()        { return f_instance_hash; }
+    static this_type*& last_timer() { return f_auto_timer; }
 
-    static uint64_t& nhash()
-    { return details::base_timer::get_instance_hash(); }
+protected:
+    static thread_local uint64_t        f_instance_count;
+    static thread_local uint64_t        f_instance_hash;
+    static thread_local auto_timer*     f_auto_timer;
 
 private:
     bool            m_temp_disable;
     uint64_t        m_hash;
+    this_type*      m_parent;
     tim_timer_t*    m_timer;
     tim_timer_t     m_temp_timer;
 };
 
-//----------------------------------------------------------------------------//
-inline auto_timer::auto_timer(const std::string& timer_tag,
-                              const int32_t& lineno,
-                              const std::string& code_tag,
-                              bool temp_disable)
-: m_temp_disable(temp_disable),
-  m_hash(lineno),
-  m_timer(nullptr)
-{
-    // for consistency, always increment hash keys
-    ++auto_timer::ncount();
-    auto_timer::nhash() += m_hash;
-
-    if(timing_manager::is_enabled() &&
-       (uint64_t) timing_manager::max_depth() > auto_timer::ncount())
-    {
-        m_timer = &timing_manager::instance()->timer(timer_tag, code_tag,
-                                                     auto_timer::ncount(),
-                                                     auto_timer::nhash());
-
-        m_temp_timer.start();
-    }
-
-    if(m_temp_disable && timing_manager::instance()->is_enabled())
-        timing_manager::instance()->enable(false);
-}
-//----------------------------------------------------------------------------//
-inline auto_timer::~auto_timer()
-{
-    if(m_temp_disable && ! timing_manager::instance()->is_enabled())
-        timing_manager::instance()->enable(true);
-
-    // for consistency, always decrement hash keys
-    if(auto_timer::ncount() > 0)
-        --auto_timer::ncount();
-    auto_timer::nhash() -= m_hash;
-
-    if(m_timer)
-    {
-        m_temp_timer.stop();
-        *m_timer += m_temp_timer;
-    }
-}
 //----------------------------------------------------------------------------//
 
 } // namespace util

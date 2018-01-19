@@ -259,8 +259,12 @@ inline void StackBackTrace(std::ostream& ss)
 
     for(size_type j = 0; j < nptrs; ++j)
     {
-        auto _delim = delimit(strings[j], " \t\n\r");
-        // found a GCC compiler but when passing _transform to delimit
+        std::string str = strings[j];
+        if(str.find("+") != std::string::npos)
+            str.replace(str.find_last_of("+"), 1, " +");
+
+        auto _delim = delimit(str, " \t\n\r()");
+        // found a GCC compiler bug when passing _transform to delimit
         for(auto& itr : _delim)
             itr = _transform(itr);
 
@@ -276,7 +280,9 @@ inline void StackBackTrace(std::ostream& ss)
 
         // get rid of hex strings if not last param
         for(itr = _delim.begin(); itr != _delim.end(); ++itr)
-            if(itr->substr(0, 2) == "0x")
+            if(itr->substr(0, 2) == "0x"  ||
+               itr->substr(0, 3) == "[0x" ||
+               itr->substr(0, 3) == "+0x" )
             {
                 if(itr+1 == _delim.end())
                     continue;
@@ -377,6 +383,7 @@ inline void TerminationSignalMessage(int sig, siginfo_t* sinfo,
     message << std::endl;
     try
     {
+        signal_settings::disable(_sig);
         signal_settings::exit_action(sig);
     }
     catch(std::exception& e)
@@ -415,7 +422,12 @@ inline void TerminationSignalHandler(int sig, siginfo_t* sinfo,
 
     // throw an exception instead of ::abort() so it can be caught
     // if the error can be ignored if desired
+#if defined(TIMEMORY_EXCEPTIONS)
     throw std::runtime_error(message.str());
+#else
+    std::cerr << message.str() << std::endl;
+    exit(sig);
+#endif
 }
 
 //----------------------------------------------------------------------------//
