@@ -66,21 +66,20 @@ typedef NAME_TIM::rss::usage                rss_usage_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
-typedef timing_manager_t::shared_type       shared_timing_manager_t;
-
 class timing_manager_wrapper
 {
 public:
-    timing_manager_wrapper() : m_manager(timing_manager_t::shared_instance())
+    timing_manager_wrapper()
+    : m_manager(timing_manager_t::instance())
     { }
 
     ~timing_manager_wrapper()
     { }
 
-    timing_manager_t* get() { return m_manager.get(); }
+    timing_manager_t* get() { return m_manager; }
 
 private:
-    shared_timing_manager_t           m_manager;
+    timing_manager_t* m_manager;
 };
 
 //============================================================================//

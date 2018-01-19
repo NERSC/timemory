@@ -216,8 +216,7 @@ public:
     typedef uomap<uint64_t, mutex_t>        mutex_map_t;
     typedef std::lock_guard<mutex_t>        auto_lock_t;
     typedef this_type*                      pointer_type;
-    typedef std::shared_ptr<this_type>      shared_type;
-    typedef std::set<shared_type>           daughter_list_t;
+    typedef std::set<this_type*>            daughter_list_t;
 
 public:
     // Constructor and Destructors
@@ -227,11 +226,11 @@ public:
 public:
     // Public static functions
     static pointer_type instance();
-    static shared_type  shared_instance();
     static bool is_enabled() { return f_enabled; }
     static void enable(bool val = true);
     static void write_json(string_t _fname);
-    static int32_t& max_depth() { return fgMaxDepth; }
+    static int32_t& max_depth() { return f_max_depth; }
+    void merge(bool div_clock = true);
 
 protected:
     static void write_json_mpi(string_t _fname);
@@ -283,12 +282,14 @@ public:
     void set_output_stream(ostream_t&);
     void set_output_stream(const string_t&);
     void print() { this->report(); }
-    void set_max_depth(int32_t d) { fgMaxDepth = d; }
-    int32_t get_max_depth() { return fgMaxDepth; }
+    void set_max_depth(int32_t d) { f_max_depth = d; }
+    int32_t get_max_depth() { return f_max_depth; }
     void write_serialization(string_t _fname) const { write_json(_fname); }
 
-    void add(shared_type ptr);
-    void merge(bool div_clock = true);
+    void add(pointer_type ptr);
+
+    timer_map_t& map() { return m_timer_map; }
+    timer_list_t& list() { return m_timer_list; }
 
     const timer_map_t& map() const { return m_timer_map; }
     const timer_list_t& list() const { return m_timer_list; }
@@ -299,10 +300,16 @@ public:
     const uint64_t& hash() const { return m_hash; }
     const uint64_t& count() const { return m_count; }
 
+    daughter_list_t& daughters() { return m_daughters; }
+    const daughter_list_t& daughters() const { return m_daughters; }
+
+    void set_merge(bool val) { m_merge.store(val); }
+
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
     string_t get_prefix() const;
+    void const_merge(bool div = true) const { const_cast<this_type*>(this)->merge(div); }
 
 protected:
     // protected static functions and vars
@@ -316,11 +323,13 @@ private:
 
 private:
     // Private variables
-    static pointer_type  f_instance;
+    static pointer_type     f_instance;
     // for temporary enabling/disabling
     static bool             f_enabled;
     // max depth of timers
-    static int32_t          fgMaxDepth;
+    static int32_t          f_max_depth;
+    // merge checking
+    std::atomic<bool>       m_merge;
     // hash counting
     uint64_t                m_hash;
     // auto timer counting

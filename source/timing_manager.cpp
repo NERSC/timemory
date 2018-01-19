@@ -49,29 +49,26 @@ timing_manager::pointer_type timing_manager::f_instance = nullptr;
 
 //============================================================================//
 
-static thread_local timing_manager::shared_type l_instance = nullptr;
+static thread_local timing_manager::pointer_type l_instance = nullptr;
 
 //============================================================================//
 
-int32_t timing_manager::fgMaxDepth = std::numeric_limits<uint16_t>::max();
-
-//============================================================================//
-// static function
-timing_manager::shared_type timing_manager::shared_instance()
-{
-    if(!l_instance)
-    {
-        l_instance = std::shared_ptr<timing_manager>(new timing_manager());
-        f_instance->add(l_instance);
-    }
-    return l_instance;
-}
+int32_t timing_manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
 // static function
 timing_manager::pointer_type timing_manager::instance()
 {
-    return timing_manager::shared_instance().get();
+    if(!l_instance)
+    {
+        l_instance = new timing_manager();
+        f_instance->add(l_instance);
+    }
+
+    if(l_instance != f_instance)
+        f_instance->set_merge(true);
+
+    return l_instance;
 }
 
 //============================================================================//
@@ -311,11 +308,14 @@ void timing_manager::write_json_mpi(string_t _fname)
 //============================================================================//
 
 timing_manager::timing_manager()
-: m_report(&std::cout)
+: m_merge(false),
+  m_hash((f_instance) ? f_instance->hash() : 0),
+  m_count((f_instance) ? f_instance->count() : 0),
+  m_report(&std::cout)
 {
     if(!f_instance)
         f_instance = this;
-    else if(f_instance && l_instance.get())
+    else if(f_instance && l_instance)
     {
         std::ostringstream ss;
         ss << "timing_manager singleton has already been created";
@@ -343,17 +343,18 @@ timing_manager::~timing_manager()
                   << std::endl;
 #endif
 
-    m_timer_list.clear();
-    m_timer_map.clear();
+    close_ostream(m_report);
 
-    if(f_instance == l_instance.get())
-        close_ostream(m_report);
-
-    if(f_instance == l_instance.get())
+    if(f_instance == l_instance)
         f_instance = nullptr;
 
-    m_daughters.clear();
+    for(auto& itr : m_daughters)
+        if(itr != this)
+            delete itr;
 
+    m_daughters.clear();
+    m_timer_list.clear();
+    m_timer_map.clear();
 }
 
 //============================================================================//
@@ -362,13 +363,13 @@ void timing_manager::clear()
 {
 #if defined(DEBUG)
     if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "Clearing " << l_instance.get() << "..." << std::endl;
+        std::cout << "Clearing " << l_instance << "..." << std::endl;
 #endif
 
     m_timer_list.clear();
     m_timer_map.clear();
     for(auto& itr : m_daughters)
-        if(itr.get() != this)
+        if(itr != this)
             itr->clear();
 
     ofstream_t* m_fos = get_ofstream(m_report);
@@ -611,15 +612,13 @@ timing_manager::get_ofstream(ostream_t* m_os) const
 
 //============================================================================//
 
-void timing_manager::add(shared_type ptr)
+void timing_manager::add(pointer_type ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
     if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "Adding " << ptr << " to " << this << "..." << std::endl;
 #endif
-    ptr->hash() = this->hash();
-    ptr->count() = this->count();
     m_daughters.insert(ptr);
 }
 
@@ -627,22 +626,23 @@ void timing_manager::add(shared_type ptr)
 
 void timing_manager::merge(bool div_clock)
 {
-    if(m_daughters.size() == 1)
+    if(!m_merge.load())
         return;
+
+    m_merge.store(false);
 
     auto_lock_t lock(m_mutex);
 
     uomap<uint64_t, uint64_t> clock_div_count;
     for(auto& itr : m_daughters)
     {
+        if(itr == f_instance)
+            continue;
 
 #if defined(DEBUG)
     if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "Merging " << itr.get() << "..." << std::endl;
+        std::cout << "Merging " << itr << "..." << std::endl;
 #endif
-
-        if(itr.get() == f_instance)
-            continue;
 
         for(const auto& mitr : itr->map())
         {
@@ -666,16 +666,17 @@ void timing_manager::merge(bool div_clock)
             if(!found)
                 m_timer_list.push_back(litr);
         }
-        itr->clear();
+
     }
 
     if(div_clock)
         for(auto& itr : clock_div_count)
             *(m_timer_map[itr.first].get()) /= itr.second;
 
-    shared_type l_this = l_instance;
-    m_daughters.clear();
-    m_daughters.insert(l_this);
+    for(auto& itr : m_daughters)
+        if(itr != this)
+            itr->clear();
+
 }
 
 //============================================================================//

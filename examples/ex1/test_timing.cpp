@@ -28,14 +28,7 @@
 #include <unordered_map>
 #include <vector>
 #include <iterator>
-
-#ifndef DEBUG
-#   define DEBUG
-#endif
-
-#ifdef NDEBUG
-#   undef NDEBUG
-#endif
+#include <future>
 
 #include <cassert>
 
@@ -52,11 +45,30 @@ typedef tim::util::timing_manager timing_manager_t;
 // EXPECT_DOUBLE_EQ
 
 #define EXPECT_EQ(lhs, rhs) if(lhs != rhs) { \
-    std::stringstream ss; ss << #lhs << " != " << #rhs << " @ line " \
-    << __LINE__ << " of " << __FILE__; \
+    std::stringstream ss; \
+    ss << #lhs << " != " << #rhs << " @ line " \
+       << __LINE__ << " of " << __FILE__; \
+    std::cerr << ss.str() << std::endl; \
     throw std::runtime_error(ss.str()); }
 
-#define ASSERT_FALSE(expr) assert(!(expr))
+#define ASSERT_FALSE(expr) if( expr ) { \
+    std::stringstream ss; \
+    ss << "Expression: ( " << #expr << " ) "\
+       << "failed @ line " \
+       << __LINE__ << " of " << __FILE__; \
+    std::cerr << ss.str() << std::endl; \
+    throw std::runtime_error(ss.str()); }
+
+#define ASSERT_TRUE(expr) if(!( expr )) { \
+    std::stringstream ss; \
+    ss << "Expression: !( " << #expr << " ) "\
+       << "failed @ line " \
+       << __LINE__ << " of " << __FILE__; \
+    std::cerr << ss.str() << std::endl; \
+    throw std::runtime_error(ss.str()); }
+
+#define PRINT_HERE std::cout << "HERE: " << " [ " << __FUNCTION__ \
+    << ":" << __LINE__ << " ] " << std::endl;
 
 //----------------------------------------------------------------------------//
 // fibonacci calculation
@@ -132,6 +144,8 @@ int main()
     std::cout << std::endl;
     t.report();
     std::cout << std::endl;
+
+    delete timing_manager_t::instance();
 
     exit(num_fail);
 }
@@ -259,11 +273,19 @@ typedef std::vector<std::thread*> thread_list_t;
 
 //============================================================================//
 
-std::thread* create_thread(int32_t nfib)
+void thread_func(int32_t nfib, std::shared_future<void> fut)
+{
+    fut.get();
+    time_fibonacci(nfib);
+}
+
+//============================================================================//
+
+std::thread* create_thread(int32_t nfib, std::shared_future<void> fut)
 {
     TIMEMORY_AUTO_TIMER();
     static int32_t n = 0;
-    return new std::thread(time_fibonacci, nfib + (n++)%2);
+    return new std::thread(thread_func, nfib + (n++)%2, fut);
 }
 
 //============================================================================//
@@ -301,8 +323,15 @@ void test_timing_thread()
             ss << "@" << num_threads << "_threads";
             TIMEMORY_AUTO_TIMER(ss.str());
 
+            std::promise<void> prom;
+            std::shared_future<void> fut = prom.get_future().share();
+
             for(auto& itr : threads)
-                itr = create_thread(43);
+                itr = create_thread(43, fut);
+
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+            prom.set_value();
 
             join_thread(threads.begin(), threads);
         }
