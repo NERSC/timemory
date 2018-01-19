@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['debug',['DEBUG',['../d6/d8e/test__timing_8cpp.html#ad72dbcf6d0153db1b8d8a58001feed83',1,'test_timing.cpp']]]
+  ['expect_5feq',['EXPECT_EQ',['../d6/d8e/test__timing_8cpp.html#aa3e555662b0eca178fd8a576e9000f95',1,'test_timing.cpp']]]
 ];

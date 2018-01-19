@@ -14,6 +14,7 @@ var class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta =
     [ "get_sum", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a4b74a82e228537e8c2de478e688a4db0", null ],
     [ "operator+=", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a126b450fccd1e96d85bde6ccbcafb3f3", null ],
     [ "operator+=", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#adc42743b30415e1f8cb5b6ddcedbd968", null ],
+    [ "operator/=", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a8e46e8e94322d52244288e1926187933", null ],
     [ "reset", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a7bd4973b14e768f439c9bca48861c3df", null ],
     [ "rss", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#ab2bf166442241bf0cc448b88fe4281fa", null ],
     [ "rss", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a0d740ebc82f5f6a997c1109998f26130", null ],

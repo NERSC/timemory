@@ -1,5 +1,6 @@
 var searchData=
 [
+  ['add',['add',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#af0ee84e023b7602d429e0e4f7b1b60ae',1,'NAME_TIM::util::timing_manager']]],
   ['add_5farguments',['add_arguments',['../d2/df2/namespaceoptions.html#abd27d6448152ffa2e217fad811cec6c9',1,'options']]],
   ['add_5farguments_5fand_5fparse',['add_arguments_and_parse',['../d2/df2/namespaceoptions.html#a42e2d2daf494aa5be62ec02a3aa67de0',1,'options']]],
   ['alloc_5fmemory',['alloc_memory',['../d4/d6e/namespacenested.html#a9cffb85e19aaee4cff729aee4cbc1dd5',1,'nested']]],

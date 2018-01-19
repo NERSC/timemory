@@ -1,15 +1,13 @@
 var NAVTREE =
 [
   [ "TiMemory", "index.html", [
-    [ "Timing Results", "index.html#autotoc_md1", [
-      [ "Overview", "index.html#autotoc_md2", null ],
-      [ "Example", "index.html#autotoc_md3", null ],
-      [ "GENERAL LAYOUT", "index.html#autotoc_md4", null ],
-      [ "TIMING FIELDS", "index.html#autotoc_md5", null ],
-      [ "MEMORY FIELDS", "index.html#autotoc_md6", null ],
-      [ "USING AUTO-TIMERS", "index.html#autotoc_md7", null ]
-    ] ],
     [ "Namespaces", null, [
+      [ "Overview", "index.html#autotoc_md1", null ],
+      [ "Example", "index.html#autotoc_md2", null ],
+      [ "GENERAL LAYOUT", "index.html#autotoc_md3", null ],
+      [ "TIMING FIELDS", "index.html#autotoc_md4", null ],
+      [ "MEMORY FIELDS", "index.html#autotoc_md5", null ],
+      [ "USING AUTO-TIMERS", "index.html#autotoc_md6", null ],
       [ "Namespace List", "namespaces.html", "namespaces" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
@@ -46,8 +44,8 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 ".html",
-"d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#afe91d43b6462be95596c8f1026426681",
-"da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html#a2c1baf3b63bf1530233d0aedd14b9c50"
+"d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#ab4723f7c958d4d0cb9ebb48531a2ba14",
+"da/d8e/signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a6dfc74c458d06812f3e9e2b69a4efe2b"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

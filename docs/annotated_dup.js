@@ -4,5 +4,6 @@ var annotated_dup =
     [ "options", "d2/df2/namespaceoptions.html", "d2/df2/namespaceoptions" ],
     [ "plot", "de/d73/namespaceplot.html", "de/d73/namespaceplot" ],
     [ "std", null, null ],
-    [ "unit_testing", "dd/d12/namespaceunit__testing.html", "dd/d12/namespaceunit__testing" ]
+    [ "unit_testing", "dd/d12/namespaceunit__testing.html", "dd/d12/namespaceunit__testing" ],
+    [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", "db/de1/classtiming__manager__wrapper" ]
 ];

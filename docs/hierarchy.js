@@ -9,6 +9,9 @@ var hierarchy =
     ] ],
     [ "NAME_TIM::util::details::base_timer_data", "d0/dc7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__data.html", null ],
     [ "NAME_TIM::util::details::base_timer_delta", "d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html", null ],
+    [ "base_timer_tuple_t", null, [
+      [ "NAME_TIM::util::timer_tuple", "da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html", null ]
+    ] ],
     [ "options.opts", "db/d77/classoptions_1_1opts.html", null ],
     [ "NAME_TIM::signal_settings", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html", null ],
     [ "TestCase", null, [
@@ -28,8 +31,6 @@ var hierarchy =
     [ "plot.timemory_data", "d8/d7a/classplot_1_1timemory__data.html", null ],
     [ "plot.timemory_function", "d6/d44/classplot_1_1timemory__function.html", null ],
     [ "NAME_TIM::util::timing_manager", "d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html", null ],
-    [ "tuple", null, [
-      [ "NAME_TIM::util::timer_tuple", "da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html", null ]
-    ] ],
+    [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", null ],
     [ "NAME_TIM::rss::usage", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html", null ]
 ];

@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['milliseconds_5ftype',['milliseconds_type',['../d6/d8e/test__timing_8cpp.html#aa680cd8bdb28de793cdb110557062db9',1,'test_timing.cpp']]],
-  ['mutex_5fmap_5ft',['mutex_map_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a5741ebc24cabc86b9b3242260a14678d',1,'NAME_TIM::util::details::base_timer::mutex_map_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a8435474dbc4b61d3066902b24a974bfd',1,'NAME_TIM::util::timing_manager::mutex_map_t()']]],
-  ['mutex_5ft',['mutex_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a26a181b7703f20f4971cbd7d81a92934',1,'NAME_TIM::util::details::base_timer::mutex_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a77ac13fa37f49b18e1b40b3d4603d125',1,'NAME_TIM::util::timing_manager::mutex_t()']]]
+  ['ofstream_5ft',['ofstream_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a92b9281ec4b4a05a3ee99f8e7b8fc11b',1,'NAME_TIM::util::details::base_timer::ofstream_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2d4ddde773f7d0a3620e6477d9d2c730',1,'NAME_TIM::util::timing_manager::ofstream_t()']]],
+  ['op_5ftype',['op_type',['../d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a5204a1f51e0db2a0410675913e2a25d6',1,'NAME_TIM::util::details::base_timer_delta']]],
+  ['ostream_5ft',['ostream_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a0802d270537d50df6b8690c25e3b6188',1,'NAME_TIM::util::details::base_timer::ostream_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2371821f06044d6e3a51c9cd6fadc42d',1,'NAME_TIM::util::timing_manager::ostream_t()']]]
 ];

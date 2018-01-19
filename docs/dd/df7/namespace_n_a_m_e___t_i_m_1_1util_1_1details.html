@@ -83,6 +83,7 @@ $(document).ready(function(){initNavTree('dd/df7/namespace_n_a_m_e___t_i_m_1_1ut
 <div class="header">
   <div class="summary">
 <a href="#nested-classes">Classes</a> &#124;
+<a href="#typedef-members">Typedefs</a> &#124;
 <a href="#func-members">Functions</a>  </div>
   <div class="headertitle">
 <div class="title">NAME_TIM::util::details Namespace Reference</div>  </div>
@@ -100,6 +101,11 @@ Classes</h2></td></tr>
 <tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html">base_timer_delta</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
+<tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
+Typedefs</h2></td></tr>
+<tr class="memitem:a0c68bd6911c6a577ced215f5c77600a1"><td class="memItemLeft" align="right" valign="top">typedef std::tuple&lt; uint64_t, uint64_t, std::string, std::shared_ptr&lt; <a class="el" href="../../d1/da7/class_n_a_m_e___t_i_m_1_1util_1_1timer.html">NAME_TIM::util::timer</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html#a0c68bd6911c6a577ced215f5c77600a1">base_timer_tuple_t</a></td></tr>
+<tr class="separator:a0c68bd6911c6a577ced215f5c77600a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+</table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
 <tr class="memitem:a4a59ef048ca6e4071864f1b4e9195f9d"><td class="memTemplParams" colspan="2">template&lt;int N&gt; </td></tr>
@@ -111,6 +117,21 @@ Functions</h2></td></tr>
 <tr class="memitem:a3f689a044396b1fa1423494efa369e83"><td class="memItemLeft" align="right" valign="top">static std::ostream &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html#a3f689a044396b1fa1423494efa369e83">operator&lt;&lt;</a> (std::ostream &amp;os, const <a class="el" href="../../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html">base_timer</a> &amp;t)</td></tr>
 <tr class="separator:a3f689a044396b1fa1423494efa369e83"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
+<h2 class="groupheader">Typedef Documentation</h2>
+<a id="a0c68bd6911c6a577ced215f5c77600a1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0c68bd6911c6a577ced215f5c77600a1">&#9670;&nbsp;</a></span>base_timer_tuple_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef std::tuple&lt;uint64_t, uint64_t, std::string, std::shared_ptr&lt;<a class="el" href="../../d1/da7/class_n_a_m_e___t_i_m_1_1util_1_1timer.html">NAME_TIM::util::timer</a>&gt; &gt; <a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html#a0c68bd6911c6a577ced215f5c77600a1">NAME_TIM::util::details::base_timer_tuple_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="a4a59ef048ca6e4071864f1b4e9195f9d"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a4a59ef048ca6e4071864f1b4e9195f9d">&#9670;&nbsp;</a></span>get_start()</h2>
@@ -185,7 +206,7 @@ template&lt;int N&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00424"></a><span class="lineno">  424</span>&#160;{</div><div class="line"><a name="l00425"></a><span class="lineno">  425</span>&#160;    <span class="keywordtype">bool</span> restart = !<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>.is_valid();</div><div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>).stop();</div><div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;    <a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>.report(os);</div><div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>).start();</div><div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;</div><div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;    <span class="keywordflow">return</span> os;</div><div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;}</div><div class="ttc" id="namespacenested_html_a6824fd2f060ae2c6fc094dfeefbba871"><div class="ttname"><a href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">nested.t</a></div><div class="ttdeci">t</div><div class="ttdef"><b>Definition:</b> nested.py:108</div></div>
+<div class="fragment"><div class="line"><a name="l00426"></a><span class="lineno">  426</span>&#160;{</div><div class="line"><a name="l00427"></a><span class="lineno">  427</span>&#160;    <span class="keywordtype">bool</span> restart = !<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>.is_valid();</div><div class="line"><a name="l00428"></a><span class="lineno">  428</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00429"></a><span class="lineno">  429</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>).stop();</div><div class="line"><a name="l00430"></a><span class="lineno">  430</span>&#160;    <a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>.report(os);</div><div class="line"><a name="l00431"></a><span class="lineno">  431</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00432"></a><span class="lineno">  432</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(<a class="code" href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">t</a>).start();</div><div class="line"><a name="l00433"></a><span class="lineno">  433</span>&#160;</div><div class="line"><a name="l00434"></a><span class="lineno">  434</span>&#160;    <span class="keywordflow">return</span> os;</div><div class="line"><a name="l00435"></a><span class="lineno">  435</span>&#160;}</div><div class="ttc" id="namespacenested_html_a6824fd2f060ae2c6fc094dfeefbba871"><div class="ttname"><a href="../../d4/d6e/namespacenested.html#a6824fd2f060ae2c6fc094dfeefbba871">nested.t</a></div><div class="ttdeci">t</div><div class="ttdef"><b>Definition:</b> nested.py:108</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -195,7 +216,7 @@ template&lt;int N&gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html">NAME_TIM</a></li><li class="navelem"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html">util</a></li><li class="navelem"><a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html">details</a></li>
-    <li class="footer">Generated on Wed Jan 17 2018 04:33:22 for TiMemory by
+    <li class="footer">Generated on Fri Jan 19 2018 07:22:40 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

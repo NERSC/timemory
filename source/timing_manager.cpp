@@ -426,9 +426,9 @@ timing_manager::get_prefix() const
 
 timer&
 timing_manager::timer(const string_t& key,
-                                      const string_t& tag,
-                                      int32_t ncount,
-                                      int32_t nhash)
+                      const string_t& tag,
+                      int32_t ncount,
+                      int32_t nhash)
 {
 #if defined(DEBUG)
     if(key.find(" ") != string_t::npos)

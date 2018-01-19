@@ -12,53 +12,53 @@
 <!-- Node21 -->
 <g id="node1" class="node">
 <title>Node21</title>
-<polygon fill="#bfbfbf" stroke="#000000" points="80,-58.5 80,-79.5 219,-79.5 219,-58.5 80,-58.5"/>
-<text text-anchor="middle" x="149.5" y="-65.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/signal_detection.hpp</text>
+<polygon fill="#bfbfbf" stroke="#000000" points="133,-58.5 133,-79.5 272,-79.5 272,-58.5 133,-58.5"/>
+<text text-anchor="middle" x="202.5" y="-65.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/signal_detection.hpp</text>
 </g>
 <!-- Node22 -->
 <g id="node2" class="node">
 <title>Node22</title>
-<g id="a_node2"><a xlink:href="../../dc/d43/signal__detection_8cpp.html" target="_top" xlink:title="signal_detection.cpp">
-<polygon fill="#ffffff" stroke="#000000" points="0,-.5 0,-21.5 99,-21.5 99,-.5 0,-.5"/>
-<text text-anchor="middle" x="49.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">signal_detection.cpp</text>
+<g id="a_node2"><a xlink:href="../../d6/d8e/test__timing_8cpp.html" target="_top" xlink:title="examples/ex1/test_timing.cpp">
+<polygon fill="#ffffff" stroke="#000000" points="0,-.5 0,-21.5 135,-21.5 135,-.5 0,-.5"/>
+<text text-anchor="middle" x="67.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">examples/ex1/test_timing.cpp</text>
 </a>
 </g>
 </g>
 <!-- Node21&#45;&gt;Node22 -->
 <g id="edge1" class="edge">
 <title>Node21&#45;&gt;Node22</title>
-<path fill="none" stroke="#191970" d="M122.0878,-53.1009C104.7859,-43.0658 82.9152,-30.3808 67.7253,-21.5707"/>
-<polygon fill="#191970" stroke="#191970" points="120.7521,-56.3723 131.1585,-58.3619 124.2642,-50.3171 120.7521,-56.3723"/>
+<path fill="none" stroke="#191970" d="M168.702,-54.4794C144.9375,-44.2695 113.6761,-30.8386 92.2218,-21.6212"/>
+<polygon fill="#191970" stroke="#191970" points="167.483,-57.7649 178.0525,-58.4966 170.2462,-51.3334 167.483,-57.7649"/>
 </g>
 <!-- Node23 -->
 <g id="node3" class="node">
 <title>Node23</title>
-<g id="a_node3"><a xlink:href="../../d2/dfd/timemory_8cc.html" target="_top" xlink:title="timemory.cc">
-<polygon fill="#ffffff" stroke="#000000" points="117,-.5 117,-21.5 182,-21.5 182,-.5 117,-.5"/>
-<text text-anchor="middle" x="149.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory.cc</text>
+<g id="a_node3"><a xlink:href="../../dc/d43/signal__detection_8cpp.html" target="_top" xlink:title="signal_detection.cpp">
+<polygon fill="#ffffff" stroke="#000000" points="153,-.5 153,-21.5 252,-21.5 252,-.5 153,-.5"/>
+<text text-anchor="middle" x="202.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">signal_detection.cpp</text>
 </a>
 </g>
 </g>
 <!-- Node21&#45;&gt;Node23 -->
 <g id="edge2" class="edge">
 <title>Node21&#45;&gt;Node23</title>
-<path fill="none" stroke="#191970" d="M149.5,-48.1906C149.5,-39.1684 149.5,-28.9941 149.5,-21.5707"/>
-<polygon fill="#191970" stroke="#191970" points="146.0001,-48.3619 149.5,-58.3619 153.0001,-48.3619 146.0001,-48.3619"/>
+<path fill="none" stroke="#191970" d="M202.5,-48.1906C202.5,-39.1684 202.5,-28.9941 202.5,-21.5707"/>
+<polygon fill="#191970" stroke="#191970" points="199.0001,-48.3619 202.5,-58.3619 206.0001,-48.3619 199.0001,-48.3619"/>
 </g>
 <!-- Node24 -->
 <g id="node4" class="node">
 <title>Node24</title>
-<g id="a_node4"><a xlink:href="../../d6/d8e/test__timing_8cpp.html" target="_top" xlink:title="examples/ex1/test_timing.cpp">
-<polygon fill="#ffffff" stroke="#000000" points="200,-.5 200,-21.5 335,-21.5 335,-.5 200,-.5"/>
-<text text-anchor="middle" x="267.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">examples/ex1/test_timing.cpp</text>
+<g id="a_node4"><a xlink:href="../../d2/dfd/timemory_8cc.html" target="_top" xlink:title="timemory.cc">
+<polygon fill="#ffffff" stroke="#000000" points="270,-.5 270,-21.5 335,-21.5 335,-.5 270,-.5"/>
+<text text-anchor="middle" x="302.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory.cc</text>
 </a>
 </g>
 </g>
 <!-- Node21&#45;&gt;Node24 -->
 <g id="edge3" class="edge">
 <title>Node21&#45;&gt;Node24</title>
-<path fill="none" stroke="#191970" d="M179.8763,-54.0693C200.541,-43.9121 227.3887,-30.7157 245.8913,-21.6212"/>
-<polygon fill="#191970" stroke="#191970" points="178.2995,-50.9443 170.8689,-58.4966 181.3873,-57.2265 178.2995,-50.9443"/>
+<path fill="none" stroke="#191970" d="M229.9122,-53.1009C247.2141,-43.0658 269.0848,-30.3808 284.2747,-21.5707"/>
+<polygon fill="#191970" stroke="#191970" points="227.7358,-50.3171 220.8415,-58.3619 231.2479,-56.3723 227.7358,-50.3171"/>
 </g>
 </g>
 </svg>

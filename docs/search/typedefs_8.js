@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['ofstream_5ft',['ofstream_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a92b9281ec4b4a05a3ee99f8e7b8fc11b',1,'NAME_TIM::util::details::base_timer::ofstream_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2d4ddde773f7d0a3620e6477d9d2c730',1,'NAME_TIM::util::timing_manager::ofstream_t()']]],
-  ['op_5ftype',['op_type',['../d7/db7/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer__delta.html#a5204a1f51e0db2a0410675913e2a25d6',1,'NAME_TIM::util::details::base_timer_delta']]],
-  ['ostream_5ft',['ostream_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a0802d270537d50df6b8690c25e3b6188',1,'NAME_TIM::util::details::base_timer::ostream_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2371821f06044d6e3a51c9cd6fadc42d',1,'NAME_TIM::util::timing_manager::ostream_t()']]]
+  ['period',['period',['../d4/d95/class_n_a_m_e___t_i_m_1_1util_1_1base__clock.html#a9b676be64b5d8491d403a49870026d1e',1,'NAME_TIM::util::base_clock']]],
+  ['pointer_5ftype',['pointer_type',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2493b80cfeb764b76f2900e6809f5251',1,'NAME_TIM::util::timing_manager']]],
+  ['poslist_5ft',['poslist_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a8233de947e1054de477e835466626d3f',1,'NAME_TIM::util::details::base_timer']]],
+  ['precision',['precision',['../da/d27/struct_n_a_m_e___t_i_m_1_1util_1_1base__clock__data.html#a8c52dd5c4e4ff3ede35c841ded85b773',1,'NAME_TIM::util::base_clock_data']]]
 ];
