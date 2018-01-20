@@ -154,6 +154,7 @@ install:
 script:
     - ./test.py
     - ./unit_testing.py
+    - ./nested.py
     - ./timemory_test_timing
     - echo "Done"
 
