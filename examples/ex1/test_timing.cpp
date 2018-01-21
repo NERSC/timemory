@@ -275,6 +275,12 @@ typedef std::vector<std::thread*> thread_list_t;
 
 void thread_func(int32_t nfib, std::shared_future<void> fut)
 {
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+
+    int32_t nsize = timing_manager_t::instance()->size();
+    if(nsize > 0)
+        std::cerr << "thread-local timing_manager size: " << nsize << std::endl;
+
     fut.get();
     time_fibonacci(nfib);
 }
@@ -329,7 +335,7 @@ void test_timing_thread()
             for(auto& itr : threads)
                 itr = create_thread(43, fut);
 
-            std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
 
             prom.set_value();
 
