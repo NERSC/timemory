@@ -86,5 +86,5 @@ install(FILES
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory-supp)
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
     COMPONENT dev)

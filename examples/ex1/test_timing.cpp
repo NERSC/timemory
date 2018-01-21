@@ -36,8 +36,8 @@
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 
-typedef tim::timer          tim_timer_t;
-typedef tim::timing_manager timing_manager_t;
+typedef NAME_TIM::timer          tim_timer_t;
+typedef NAME_TIM::timing_manager timing_manager_t;
 
 // ASSERT_NEAR
 // EXPECT_EQ
@@ -106,7 +106,7 @@ void test_timing_depth();
 
 int main()
 {
-    tim::EnableSignalDetection();
+    NAME_TIM::EnableSignalDetection();
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();

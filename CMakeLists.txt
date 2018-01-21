@@ -8,6 +8,11 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
 include(Compilers)
 include(MacroUtilities)
 
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    set(SUBPROJECT OFF)
+else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    set(SUBPROJECT ON)
+endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
 ################################################################################
 #
@@ -21,14 +26,16 @@ include(MacroUtilities)
 ################################################################################
 
 set(TIMEMORY_NAMESPACE tim CACHE STRING "Top-level namespace for ${PROJECT_NAME}")
-set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
-if(NOT CMAKE_BUILD_TYPE)
-    set(CMAKE_BUILD_TYPE Release)
-endif()
+if(NOT SUBPROJECT)
+    set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
+    if(NOT CMAKE_BUILD_TYPE)
+        set(CMAKE_BUILD_TYPE Release)
+    endif()
+    add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
+    add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
+    add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
+endif(NOT SUBPROJECT)
 add_feature(TIMEMORY_NAMESPACE "Top-level namespace for ${PROJECT_NAME}")
-add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
-add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
-add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
 
 
 ################################################################################
@@ -76,20 +83,22 @@ find_package(Threads REQUIRED)
 ################################################################################
 
 include(GNUInstallDirs)
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
-add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
-add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
-add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
 add_option(TIMEMORY_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(CMAKE_INSTALL_MESSAGE LAZY)
-set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
-add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
-foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-    set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
+if(NOT SUBPROJECT)
+    set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
+    add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
+    add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
+    add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+    set(CMAKE_INSTALL_MESSAGE LAZY)
+    set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
+    add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
+    foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
+    endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
+endif(NOT SUBPROJECT)
 
-set(CMAKE_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
+set(PROJECT_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
     CACHE PATH "Installation directory for CMake package config files")
 
 set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
@@ -102,21 +111,24 @@ set(LIBNAME                 timemory)
 #       'XXX' means the weak symbol cannot be overridden at runtime.
 #       This was likely caused by different translation units being
 #       compiled with different visibility settings.
-add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
-add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
-add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
-add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add(CMAKE_CXX_FLAGS "-DDEBUG")
-endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-if(UNIX)
-    add(CMAKE_CXX_FLAGS "-pthread")
-endif(UNIX)
-if(ENABLE_SANITIZE)
-    add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
-    add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
-endif(ENABLE_SANITIZE)
-add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+if(NOT SUBPROJECT)
+    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
+    add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
+    add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
+    add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        add(CMAKE_CXX_FLAGS "-DDEBUG")
+    endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    if(UNIX)
+        add(CMAKE_CXX_FLAGS "-pthread")
+    endif(UNIX)
+    if(ENABLE_SANITIZE)
+        add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
+        add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
+    endif(ENABLE_SANITIZE)
+    add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+endif(NOT SUBPROJECT)
+
 if(TIMEMORY_EXCEPTIONS)
     add_definitions(-DTIMEMORY_EXCEPTIONS)
 endif()
@@ -157,6 +169,7 @@ set(CMAKE_INSTALL_PYTHONDIR
 set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 
+
 ################################################################################
 #
 #        TiMemory
@@ -174,7 +187,7 @@ include(CMakePackageConfigHelpers)
 configure_package_config_file(
     ${CMAKE_CURRENT_LIST_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    INSTALL_DESTINATION ${CMAKE_INSTALL_CMAKEDIR}
+    INSTALL_DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
     PATH_VARS
         INCLUDE_INSTALL_DIR
         LIB_INSTALL_DIR
@@ -187,7 +200,7 @@ write_basic_package_version_file(
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION ${CMAKE_INSTALL_CMAKEDIR})
+    DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
 
 foreach(_FILE unit_testing.py)
     configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}
@@ -198,19 +211,21 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
     include(Testing)
 endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
 
-# documentation
-set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
-    ${PROJECT_SOURCE_DIR}/source
-    ${PROJECT_SOURCE_DIR}/python)
 
-set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
+if(NOT SUBPROJECT)
+    # documentation
+    set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
+        ${PROJECT_SOURCE_DIR}/source
+        ${PROJECT_SOURCE_DIR}/python)
+    
+    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
+    include(Documentation)
+    
+    if(DOXYGEN_DOCS)
+        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        Generate_Documentation(Doxyfile.${PROJECT_NAME})
+        SET(CMAKE_INSTALL_MESSAGE LAZY)
+    endif()
 
-include(Documentation)
-
-if(DOXYGEN_DOCS)
-    SET(CMAKE_INSTALL_MESSAGE NEVER)
-    Generate_Documentation(Doxyfile.${PROJECT_NAME})
-    SET(CMAKE_INSTALL_MESSAGE LAZY)
-endif()
-
-print_features()
+    print_features()
+endif(NOT SUBPROJECT)
