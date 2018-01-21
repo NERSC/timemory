@@ -59,9 +59,9 @@ using namespace py::literals;
 #include "timemory/signal_detection.hpp"
 #include "timemory/rss.hpp"
 
-typedef NAME_TIM::util::timing_manager      timing_manager_t;
-typedef NAME_TIM::util::timer               tim_timer_t;
-typedef NAME_TIM::util::auto_timer          auto_timer_t;
+typedef NAME_TIM::timing_manager      timing_manager_t;
+typedef NAME_TIM::timer               tim_timer_t;
+typedef NAME_TIM::auto_timer          auto_timer_t;
 typedef NAME_TIM::rss::usage                rss_usage_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
@@ -169,10 +169,10 @@ PYBIND11_MODULE(timemory, tim)
         return new tim_timer_t(begin, "", format, false, 3);
     };
 
-    auto auto_timer_init = [=] (const std::string& key = "")
+    auto auto_timer_init = [=] (const std::string& key = "", int nback = 1)
     {
         std::stringstream keyss;
-        keyss << get_func(1);
+        keyss << get_func(nback);
         if(key != "" && key[0] != '@')
             keyss << "@";
         keyss << key;
@@ -355,16 +355,41 @@ PYBIND11_MODULE(timemory, tim)
              { tman.cast<timing_manager_wrapper*>()->get()->merge(div_clocks); },
              "Merge the thread-local timers",
              py::arg("div_clocks") = true);
-
+    tman.def("json",
+             [=] (py::object tman)
+             {
+                 std::stringstream ss;
+                 tman.cast<timing_manager_wrapper*>()->get()->write_json(ss);
+                 py::module _json = py::module::import("json");
+                 return _json.attr("loads")(ss.str());
+             }, "Get JSON serialization of timing manager");
     // keep from being garbage collected
     tim.attr("_static_timing_manager") = new timing_manager_wrapper();
 
     //------------------------------------------------------------------------//
 
     auto_timer.def(py::init(auto_timer_init), "Initialization",
-                   py::arg("key") = "",
+                   py::arg("key") = "", py::arg("nback") = 1,
                    py::return_value_policy::take_ownership);
 
+    tim.def("auto_decorator",
+            [=] (py::function pyfunc, int n)
+            {
+                auto locals = py::dict();
+                py::exec(R"(
+                         func = tim.FUNC(2)
+                         line = tim.LINE(2)
+                         file = tim.FILE()
+                         )", py::globals(), locals);
+                auto func = locals["func"].cast<std::string>();
+                auto line = locals["line"].cast<int32_t>();
+                auto file = locals["file"].cast<std::string>();
+                std::stringstream ss;
+                ss << func << "@" << file << ":" << line;
+                auto_timer_t autotimer = auto_timer_t(ss.str(), line);
+                return pyfunc(n);
+            },
+            "Decorator function");
     //------------------------------------------------------------------------//
 
 }

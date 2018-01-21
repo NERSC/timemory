@@ -49,13 +49,16 @@
 
 //============================================================================//
 
-#if defined(__unix__) || defined(__unix) || defined(unix) || \
-    (defined(__APPLE__) && defined(__MACH__))
+#if defined(_UNIX)
 #   include <unistd.h>
 #   include <sys/resource.h>
-#   if defined(__APPLE__) && defined(__MACH__)
+#   if defined(_MACOS)
 #       include <mach/mach.h>
 #   endif
+#elif defined(_WINDOWS)
+#   include <windows.h>
+#   include <stdio.h>
+#   include <psapi.h>
 #else
 #   error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
 #endif
@@ -92,12 +95,37 @@ namespace rss
     static inline
     int64_t get_peak_rss()
     {
+#if defined(_UNIX)
         struct rusage rusage;
         getrusage( RUSAGE_SELF, &rusage );
-#if defined(__APPLE__) && defined(__MACH__)
+#   if defined(__APPLE__) && defined(__MACH__)
         return (int64_t) (rusage.ru_maxrss / units::KiB * units::kilobyte);
-#else
+#   else
         return (int64_t) (rusage.ru_maxrss / units::KiB * units::megabyte);
+#   endif
+#elif defined(_WINDOWS)
+        DWORD processID = GetCurrentProcessId();
+        HANDLE hProcess;
+        PROCESS_MEMORY_COUNTERS pmc;
+
+        // Print the process identifier.
+        // printf( "\nProcess ID: %u\n", processID );
+        // Print information about the memory usage of the process.
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                               PROCESS_VM_READ,
+                               FALSE, processID);
+        if (NULL == hProcess)
+            return (int64_t) 0;
+
+        int64_t nsize = 0;
+        if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
+            nsize = (int64_t) pmc.PeakWorkingSetSize / units::KiB;
+
+        CloseHandle( hProcess );
+
+        return nsize;
+#else
+        return (int64_t) 0;
 #endif
     }
 
@@ -108,8 +136,8 @@ namespace rss
     static inline
     int64_t get_current_rss()
     {
-
-#if defined(__APPLE__) && defined(__MACH__)
+#if defined(_UNIX)
+#   if defined(_MACOS)
         // OSX
         struct mach_task_basic_info info;
         mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
@@ -118,7 +146,7 @@ namespace rss
             return (int64_t) 0L;      /* Can't access? */
         return (int64_t) (info.resident_size / units::KiB * units::kilobyte);
 
-#else // Linux
+#   else // Linux
         long rss = 0L;
         FILE* fp = fopen("/proc/self/statm", "r");
         if(fp == nullptr)
@@ -131,7 +159,30 @@ namespace rss
         fclose(fp);
         return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) / units::KiB *
                           units::kilobyte);
+#   endif
+#elif defined(_WINDOWS)
+        DWORD processID = GetCurrentProcessId();
+        HANDLE hProcess;
+        PROCESS_MEMORY_COUNTERS pmc;
 
+        // Print the process identifier.
+        // printf( "\nProcess ID: %u\n", processID );
+        // Print information about the memory usage of the process.
+        hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                               PROCESS_VM_READ,
+                               FALSE, processID);
+        if (NULL == hProcess)
+            return (int64_t) 0;
+
+        int64_t nsize = 0;
+        if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
+            nsize = (int64_t) pmc.WorkingSetSize / units::KiB;
+
+        CloseHandle( hProcess );
+
+        return nsize;
+#else
+        return (int64_t) 0;
 #endif
     }
 

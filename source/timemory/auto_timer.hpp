@@ -38,14 +38,12 @@
 
 namespace NAME_TIM
 {
-namespace util
-{
 
 class auto_timer
 {
 public:
-    typedef NAME_TIM::util::timing_manager::tim_timer_t     tim_timer_t;
-    typedef auto_timer                                      this_type;
+    typedef NAME_TIM::timing_manager::tim_timer_t   tim_timer_t;
+    typedef auto_timer                              this_type;
 
 public:
     // Constructor and Destructors
@@ -67,13 +65,11 @@ private:
 
 //----------------------------------------------------------------------------//
 
-} // namespace util
-
 } // namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 
-typedef NAME_TIM::util::auto_timer                     auto_timer_t;
+typedef NAME_TIM::auto_timer                     auto_timer_t;
 #if defined(DISABLE_TIMERS)
 #   define TIMEMORY_AUTO_TIMER(str)
 #else

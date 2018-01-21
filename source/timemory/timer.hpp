@@ -36,14 +36,12 @@
 
 namespace NAME_TIM
 {
-namespace util
-{
 
 //============================================================================//
 // Main timer class
 //============================================================================//
 
-class timer : public details::base_timer
+class timer : public internal::base_timer
 {
 public:
     typedef base_timer      base_type;
@@ -122,7 +120,7 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version)
     {
-        details::base_timer::serialize(ar, version);
+        internal::base_timer::serialize(ar, version);
     }
 
 };
@@ -152,8 +150,6 @@ timer::clone_to_pointer() const
 }
 
 //----------------------------------------------------------------------------//
-
-} // namespace util
 
 } // namespace NAME_TIM
 

@@ -65,9 +65,7 @@ enum class timer_field
 
 };
 
-namespace util
-{
-namespace details
+namespace internal
 {
 
 //============================================================================//
@@ -123,7 +121,7 @@ class base_timer_data
 public:
     typedef base_timer_data                             this_type;
     typedef std::micro                                  ratio_t;
-    typedef NAME_TIM::util::base_clock<ratio_t>         clock_t;
+    typedef NAME_TIM::base_clock<ratio_t>               clock_t;
     typedef clock_t::time_point                         time_point_t;
     typedef std::tuple<time_point_t, time_point_t>      data_type;
     typedef base_rss_usage                              rss_type;
@@ -232,12 +230,11 @@ public:
 
     this_type& operator/=(const uint64_t& rhs)
     {
-        std::get<0>(m_sum) /= rhs;
-        std::get<1>(m_sum) /= rhs;
-        std::get<2>(m_sum) /= rhs;
-        //std::get<0>(m_sqr) /= rhs;
-        //std::get<1>(m_sqr) /= rhs;
-        //std::get<2>(m_sqr) /= rhs;
+        if(rhs > 0)
+        {
+            divide_sum(rhs);
+            //divide_sqr(rhs);
+        }
         return *this;
     }
 
@@ -270,6 +267,22 @@ protected:
         std::get<0>(m_sum) += std::pow(std::get<0>(rhs), 2);
         std::get<1>(m_sum) += std::pow(std::get<1>(rhs), 2);
         std::get<2>(m_sum) += std::pow(std::get<2>(rhs), 2);
+    }
+
+    inline
+    void divide_sum(const uint64_t& rhs)
+    {
+        std::get<0>(m_sum) /= rhs;
+        std::get<1>(m_sum) /= rhs;
+        std::get<2>(m_sum) /= rhs;
+    }
+
+    inline
+    void divide_sqr(const uint64_t& rhs)
+    {
+        std::get<0>(m_sum) /= rhs;
+        std::get<1>(m_sum) /= rhs;
+        std::get<2>(m_sum) /= rhs;
     }
 
 protected:
@@ -352,8 +365,8 @@ protected:
 protected:
     void parse_format();
     virtual void compose() = 0;
-    data_t& m_timer() const;
 
+    data_t& m_timer() const { return m_data; }
     data_accum_t& get_accum() { return m_accum; }
     const data_accum_t& get_accum() const { return m_accum; }
 
@@ -362,15 +375,13 @@ protected:
     uint16_t                m_precision;
     // pointers
     ostream_t*              m_os;
+    // objects
+    string_t                m_format_string;
+    mutex_t                 m_mutex;
+    mutable data_t          m_data;
+    mutable data_accum_t    m_accum;
     // lists
     poslist_t               m_format_positions;
-    mutable data_accum_t    m_accum;
-    // strings
-    string_t                m_format_string;
-    // data
-    mutable data_t          m_data;
-    // mutex
-    mutex_t                 m_mutex;
 
 private:
     // hash and data fields
@@ -494,7 +505,7 @@ inline const char* base_timer::clock_time() const
     time_t rawtime;
     struct tm* timeinfo;
 
-    time ( &rawtime );
+    std::time ( &rawtime );
     timeinfo = localtime ( &rawtime );
     return asctime (timeinfo);
 }
@@ -517,21 +528,8 @@ void base_timer::report_average(ostream_t& os, bool endline) const
     this->report(os, endline, true);
 }
 //----------------------------------------------------------------------------//
-inline
-base_timer::data_t& base_timer::m_timer() const
-{
-    return m_data;
-    //if(!f_data_map)
-    //    f_data_map.reset(new data_map_t());
-    //if(f_data_map->find(this) == f_data_map->end())
-    //    f_data_map->insert(std::make_pair(this, data_t()));
-    //return f_data_map->find(this)->second;
-}
-//----------------------------------------------------------------------------//
 
-} // namespace details
-
-} // namespace util
+} // namespace internal
 
 } // namespace NAME_TIM
 
@@ -539,9 +537,9 @@ base_timer::data_t& base_timer::m_timer() const
 
 namespace internal
 {
-typedef typename NAME_TIM::util::details::base_timer_data::ratio_t base_ratio_t;
-typedef NAME_TIM::util::base_clock<base_ratio_t>   base_clock_t;
-typedef NAME_TIM::util::base_clock_data<base_ratio_t> base_clock_data_t;
+typedef typename NAME_TIM::internal::base_timer_data::ratio_t base_ratio_t;
+typedef NAME_TIM::base_clock<base_ratio_t>   base_clock_t;
+typedef NAME_TIM::base_clock_data<base_ratio_t> base_clock_data_t;
 typedef std::chrono::duration<base_clock_data_t, base_ratio_t> base_duration_t;
 typedef std::chrono::time_point<base_clock_t, base_duration_t>  base_time_point_t;
 typedef std::tuple<base_time_point_t, base_time_point_t> base_time_pair_t;

@@ -36,8 +36,8 @@
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 
-typedef tim::util::timer          tim_timer_t;
-typedef tim::util::timing_manager timing_manager_t;
+typedef tim::timer          tim_timer_t;
+typedef tim::timing_manager timing_manager_t;
 
 // ASSERT_NEAR
 // EXPECT_EQ

@@ -120,12 +120,26 @@ class timemory_function():
 
 
 #==============================================================================#
-def read(filename):
+class plot_data():
 
-    f = open(filename, "r")
-    data_0 = json.load(f)
-    global concurrency
-    global mpi_size
+    def __init__(self, filename = "output", concurrency = 1, mpi_size = 1,
+                 timemory_functions = [], title = ""):
+        self.filename = filename
+        self.concurrency = concurrency
+        self.mpi_size = mpi_size
+        self.timemory_functions = timemory_functions
+        self.title = title
+
+
+    def get_title(self):
+        return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
+                mpi_size, int(concurrency))
+
+
+#==============================================================================#
+def read(json_obj):
+
+    data_0 = json_obj
 
     max_level = 0
     concurrency_sum = 0
@@ -162,11 +176,17 @@ def read(filename):
             if timemory_func.length() == 0:
                 del timemory_functions[tag]
 
-    return timemory_functions
+    return plot_data(concurrency = concurrency,
+                     mpi_size = mpi_size,
+                     timemory_functions = timemory_functions)
 
 
 #==============================================================================#
-def plot_timing(filename, title, timing_data_dict, disp=False):
+def plot_timing(_plot_data, disp=False):
+
+    filename = _plot_data.filename
+    title = _plot_data.get_title()
+    timing_data_dict = _plot_data.timemory_functions
 
     ntics = len(timing_data_dict)
     ytics = []
@@ -232,14 +252,20 @@ def plot_timing(filename, title, timing_data_dict, disp=False):
         print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('.json', '_timing.png')
+        imgfname = filename.replace('.', '_timing.')
+        imgfname = imgfname.replace('.json', '.png')
+        imgfname = imgfname.replace('.py', '.png')
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot_memory(filename, title, memory_data_dict, disp=False):
+def plot_memory(_plot_data, disp=False):
+
+    filename = _plot_data.filename
+    title = _plot_data.get_title()
+    memory_data_dict = _plot_data.timemory_functions
 
     ntics = len(memory_data_dict)
     ytics = []
@@ -319,32 +345,35 @@ def plot_memory(filename, title, memory_data_dict, disp=False):
         #print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('.json', '_memory.png')
+        imgfname = filename.replace('.', '_memory.')
+        imgfname = imgfname.replace('.json', '.png')
+        imgfname = imgfname.replace('.py', '.png')
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot(files, display=False):
-    global concurrency
-    global mpi_size
+def plot(data = [], files = [], display=False):
 
-    file_data = dict()
-    file_title = dict()
-    for filename in files:
-        print ('Reading {}...'.format(filename))
-        file_data[filename] = read(filename)
-        title = filename.replace('timing_report_', '')
-        title = title.replace('.json', '')
-        title = '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(title, mpi_size,
-                                                                int(concurrency))
-        file_title[filename] = title
+    if len(files) > 0:
+        for filename in files:
+            print ('Reading {}...'.format(filename))
+            f = open(filename, "r")
+            _data = read(json.load(f))
+            _data.filename = filename
+            _data.title = filename
+            data.append(_data)
 
-    for filename, data in file_data.items():
-        print ('Plotting {}...'.format(filename))
-        plot_timing(filename, file_title[filename], data, display)
-        plot_memory(filename, file_title[filename], data, display)
+    print ('Length of data: {}...'.format(len(data)))
+
+    for _data in data:
+        try:
+            print ('Plotting {}...'.format(_data.filename))
+            plot_timing(_data, display)
+            plot_memory(_data, display)
+        except:
+            print ('Error! Unable to plot "{}"...'.format(_data.filename))
 
 
 #==============================================================================#
@@ -355,11 +384,23 @@ if __name__ == "__main__":
         parser.add_argument("-f", "--files", nargs='*', help="File input")
         parser.add_argument("-d", "--display", required=False, action='store_true',
                             help="Display plot", dest='display_plot')
+        parser.add_argument("-t", "--titles", nargs='*', help="Plot titles")
+
         parser.set_defaults(display_plot=False)
 
         args = parser.parse_args()
         print('Files: {}'.format(args.files))
-        plot(args.files, args.display)
+        if len(args.titles) != 1 and len(args.titles) != len(args.files):
+            raise Exception("Error must provide one title or a title for each file")
+        data = []
+        for i in range(len(args.files)):
+            f = open(args.files[i], "r")
+            _data = read(json.load(f))
+            if len(args.titles) == 1:
+                _data.title = args.titles[0]
+            else:
+                _data.title = args.titles[i]
+        plot(data, args.display)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

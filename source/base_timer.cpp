@@ -32,8 +32,8 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(NAME_TIM::util::details::base_timer_data, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(NAME_TIM::util::details::base_timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::internal::base_timer, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_clock_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_clock_data_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_duration_t, TIMEMORY_TIMER_VERSION)
@@ -44,9 +44,7 @@ CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
 
 namespace NAME_TIM
 {
-namespace util
-{
-namespace details
+namespace internal
 {
 
 //============================================================================//
@@ -62,9 +60,9 @@ base_timer::mutex_map_t base_timer::w_mutex_map;
 base_timer::base_timer(uint16_t prec, const string_t& fmt, std::ostream* os)
 : m_precision(prec),
   m_os(os),
-  m_format_positions(poslist_t()),
   m_format_string(fmt),
-  m_data(data_t())
+  m_data(data_t()),
+  m_format_positions(poslist_t())
 { }
 
 //============================================================================//
@@ -72,10 +70,10 @@ base_timer::base_timer(uint16_t prec, const string_t& fmt, std::ostream* os)
 base_timer::base_timer(const base_timer& rhs)
 : m_precision(rhs.m_precision),
   m_os(rhs.m_os),
-  m_format_positions(rhs.m_format_positions),
-  m_accum(rhs.m_accum),
   m_format_string(rhs.m_format_string),
-  m_data(rhs.m_data)
+  m_data(rhs.m_data),
+  m_accum(rhs.m_accum),
+  m_format_positions(rhs.m_format_positions)
 { }
 
 //============================================================================//
@@ -98,10 +96,10 @@ base_timer& base_timer::operator=(const base_timer& rhs)
     {
         m_precision = rhs.m_precision;
         m_os = rhs.m_os;
-        m_format_positions = rhs.m_format_positions;
-        m_accum = rhs.m_accum;
         m_format_string = rhs.m_format_string;
         m_data = rhs.m_data;
+        m_accum = rhs.m_accum;
+        m_format_positions = rhs.m_format_positions;
     }
     return *this;
 }
@@ -280,9 +278,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     os << ss.str();
 }
 
-} // namespace details
-
-} // namespace util
+} // namespace internal
 
 } // namespace NAME_TIM
 

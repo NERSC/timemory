@@ -60,8 +60,6 @@
 
 namespace NAME_TIM
 {
-namespace util
-{
 
 //----------------------------------------------------------------------------//
 
@@ -105,22 +103,22 @@ inline int32_t get_max_threads()
 
 //----------------------------------------------------------------------------//
 
-namespace details
+namespace internal
 {
 typedef std::tuple<uint64_t, uint64_t, std::string,
-                   std::shared_ptr<NAME_TIM::util::timer>> base_timer_tuple_t;
+                   std::shared_ptr<NAME_TIM::timer>> base_timer_tuple_t;
 }
-struct timer_tuple : public details::base_timer_tuple_t
+struct timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
     typedef std::string                     string_t;
-    typedef NAME_TIM::util::timer           tim_timer_t;
+    typedef NAME_TIM::timer           tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef uint64_t                        first_type;
     typedef uint64_t                        second_type;
     typedef string_t                        third_type;
     typedef timer_ptr_t                     fourth_type;
-    typedef details::base_timer_tuple_t     base_type;
+    typedef internal::base_timer_tuple_t     base_type;
 
     timer_tuple(const base_type& _data) : base_type(_data) { }
     timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
@@ -199,7 +197,7 @@ public:
     using uomap = std::unordered_map<_Key, _Mapped>;
 
     typedef timing_manager                  this_type;
-    typedef NAME_TIM::util::timer           tim_timer_t;
+    typedef NAME_TIM::timer           tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
@@ -229,12 +227,15 @@ public:
     static bool is_enabled() { return f_enabled; }
     static void enable(bool val = true);
     static void write_json(string_t _fname);
+    static std::pair<int32_t, bool> write_json(ostream_t& os);
     static int32_t& max_depth() { return f_max_depth; }
     void merge(bool div_clock = true);
 
 protected:
-    static void write_json_mpi(string_t _fname);
     static void write_json_no_mpi(string_t _fname);
+    static void write_json_mpi(string_t _fname);
+    static void write_json_no_mpi(ostream_t& os);
+    static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
 
 public:
     // Public member functions
@@ -285,6 +286,7 @@ public:
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
     void write_serialization(string_t _fname) const { write_json(_fname); }
+    void write_serialization(std::ostream& os) const;
 
     void add(pointer_type ptr);
 
@@ -405,8 +407,6 @@ timing_manager::string_hash(const string_t& str) const
     return std::hash<string_t>()(str);
 }
 //----------------------------------------------------------------------------//
-
-} // namespace util
 
 } // namespace NAME_TIM
 

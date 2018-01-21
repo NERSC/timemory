@@ -16,7 +16,7 @@ include(MacroUtilities)
 # By setting TIMEMORY_NAMESPACE, the project can directly
 # use TiMemory in its own namespace, e.g.:
 # TIMEMORY_NAMESPACE=toast
-#   tim::util::timing_manager --> toast::util::timing_manager
+#   tim::timing_manager --> toast::timing_manager
 #
 ################################################################################
 

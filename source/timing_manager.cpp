@@ -35,12 +35,10 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(NAME_TIM::util::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(NAME_TIM::util::timing_manager, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::timer_tuple, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(NAME_TIM::timing_manager, TIMEMORY_TIMER_VERSION)
 
 namespace NAME_TIM
-{
-namespace util
 {
 
 //============================================================================//
@@ -91,218 +89,6 @@ void timing_manager::enable(bool val)
     val = false;
 #endif
     f_enabled = val;
-}
-
-//============================================================================//
-// static function
-timing_manager::comm_group_t
-timing_manager::get_communicator_group()
-{
-    int32_t max_concurrency = std::thread::hardware_concurrency();
-    // We want on-node communication only
-    const int32_t nthreads = NAME_TIM::get_env<int32_t>("OMP_NUM_THREADS", 1);
-    int32_t max_processes = max_concurrency / nthreads;
-    int32_t mpi_node_default = mpi_size() / max_processes;
-    if(mpi_node_default < 1)
-        mpi_node_default = 1;
-    int32_t mpi_node_count = NAME_TIM::get_env<int32_t>("TIMEMORY_NODE_COUNT",
-                                                     mpi_node_default);
-    int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
-
-    // Split the communicator based on the number of nodes and use the
-    // original rank for ordering
-    MPI_Comm local_mpi_comm;
-    MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
-
-#if defined(DEBUG)
-    int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
-    int32_t local_mpi_size = mpi_size(local_mpi_comm);
-    int32_t local_mpi_file = mpi_rank() / local_mpi_size;
-
-    printf("WORLD RANK/SIZE: %d/%d --> ROW RANK/SIZE: %d/%d\n",
-        mpi_rank(), mpi_size(), local_mpi_rank, local_mpi_size);
-
-    std::stringstream _info;
-    _info << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
-    _info << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
-    _info << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
-    _info << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
-    _info << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
-    std::cout << _info.str();
-#endif
-
-    return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));
-}
-
-//============================================================================//
-// static function
-void timing_manager::write_json(string_t _fname)
-{
-    (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
-}
-
-//============================================================================//
-// static function
-void timing_manager::write_json_no_mpi(string_t _fname)
-{
-    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
-
-    if(mpi_rank() == 0 && _verbose > 0)
-    {
-        // notify so if it takes too long, user knows why
-        std::stringstream _info;
-        _info << "Writing serialization file: "
-              << _fname << std::endl;
-        std::cout << _info.str();
-    }
-
-    // output stream
-    std::stringstream fss;
-
-    // ensure json write final block during destruction before the file
-    // is closed
-    {
-        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-        // precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-        cereal::JSONOutputArchive oa(fss, opts);
-
-        oa(cereal::make_nvp("timing_manager", *timing_manager::instance()));
-    }
-
-    // write to file
-    std::ofstream ofs(_fname.c_str());
-    if(ofs)
-    {
-        ofs << "{\n\"ranks\": [" << std::endl;
-        ofs << fss.str() << std::endl;
-        ofs << "]" << "\n}" << std::endl;
-    }
-    else
-        std::cerr << "Warning! Unable to write JSON output to \""
-                  << _fname << "\"" << std::endl;
-    ofs.close();
-}
-
-
-//============================================================================//
-// static function
-void timing_manager::write_json_mpi(string_t _fname)
-{
-    const int32_t mpi_root = 0;
-    comm_group_t mpi_comm_group = get_communicator_group();
-    MPI_Comm& local_mpi_comm = std::get<0>(mpi_comm_group);
-    int32_t local_mpi_file = std::get<1>(mpi_comm_group);
-
-    {
-        std::stringstream _rss;
-        _rss << "_" << local_mpi_file;
-        _fname.insert(_fname.find_last_of("."), _rss.str());
-        // notify so if it takes too long, user knows why
-        std::stringstream _info;
-        _info << "[" << mpi_rank() << "] Writing serialization file: "
-              << _fname << std::endl;
-        std::cout << _info.str();
-    }
-
-    // output stream
-    std::stringstream fss;
-
-    // ensure json write final block during destruction before the file
-    // is closed
-    {
-        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::tab;
-        // precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 1);
-        cereal::JSONOutputArchive oa(fss, opts);
-
-        oa(cereal::make_nvp("timing_manager", *timing_manager::instance()));
-    }
-
-    // if another entry follows
-    if(mpi_rank(local_mpi_comm)+1 < mpi_size(local_mpi_comm))
-        fss << ",";
-
-    // the JSON output as a string
-    string_t fss_str = fss.str();
-    // limit the iteration loop. Occasionally it seems that this will create
-    // an infinite loop even though it shouldn't...
-    const uint64_t itr_limit = fss_str.length();
-    // compact the JSON
-    for(auto citr : { "\n", "\t", "  " })
-    {
-        string_t itr(citr);
-        string_t::size_type fpos = 0;
-        uint64_t nitr = 0;
-        do
-        {
-            fpos = fss_str.find(itr, fpos);
-            if(fpos != string_t::npos)
-                fss_str.replace(fpos, itr.length(), " ");
-            ++nitr;
-        }
-        while(nitr < itr_limit && fpos != string_t::npos);
-    }
-
-    // now we need to gather the lengths of each serialization string
-    int fss_len = fss_str.length();
-    int* recvcounts = nullptr;
-
-    // Only root has the received data
-    if (mpi_rank(local_mpi_comm) == mpi_root)
-        recvcounts = (int*) malloc( mpi_size(local_mpi_comm) * sizeof(int)) ;
-
-    MPI_Gather(&fss_len, 1, MPI_INT,
-               recvcounts, 1, MPI_INT,
-               mpi_root, local_mpi_comm);
-
-    // Figure out the total length of string, and displacements for each rank
-    int fss_tot_len = 0;
-    int* fss_tot = nullptr;
-    char* totalstring = nullptr;
-
-    if (mpi_rank(local_mpi_comm) == mpi_root)
-    {
-        fss_tot = (int*) malloc( mpi_size(local_mpi_comm) * sizeof(int) );
-
-        fss_tot[0] = 0;
-        fss_tot_len += recvcounts[0]+1;
-
-        for(int32_t i = 1; i < mpi_size(local_mpi_comm); ++i)
-        {
-            // plus one for space or \0 after words
-            fss_tot_len += recvcounts[i]+1;
-            fss_tot[i] = fss_tot[i-1] + recvcounts[i-1] + 1;
-        }
-
-        // allocate string, pre-fill with spaces and null terminator
-        totalstring = (char*) malloc(fss_tot_len * sizeof(char));
-        for(int32_t i = 0; i < fss_tot_len-1; ++i)
-            totalstring[i] = ' ';
-        totalstring[fss_tot_len-1] = '\0';
-    }
-
-    // Now we have the receive buffer, counts, and displacements, and
-    // can gather the strings
-
-    char* cfss = (char*) fss_str.c_str();
-    MPI_Gatherv(cfss, fss_len, MPI_CHAR,
-                totalstring, recvcounts, fss_tot, MPI_CHAR,
-                mpi_root, local_mpi_comm);
-
-    if (mpi_rank(local_mpi_comm) == mpi_root)
-    {
-        ofstream_t ofs;
-        ofs.open(_fname);
-        ofs << "{\n\"ranks\": [" << std::endl;
-        ofs << totalstring << std::endl;
-        ofs << "]" << "\n}" << std::endl;
-        free(totalstring);
-        free(fss_tot);
-        free(recvcounts);
-    }
-
-    MPI_Comm_free(&local_mpi_comm);
 }
 
 //============================================================================//
@@ -680,7 +466,262 @@ void timing_manager::merge(bool div_clock)
 }
 
 //============================================================================//
+//
+//  Static functions for writing JSON output
+//
+//============================================================================//
 
-} // namespace util
+// static function
+std::pair<int32_t, bool> timing_manager::write_json(ostream_t& ofss)
+{
+    if(mpi_is_initialized())
+        return write_json_mpi(ofss);
+    else
+    {
+        write_json_no_mpi(ofss);
+        return std::pair<int32_t, bool>(0, true);
+    }
+}
+
+//============================================================================//
+// static function
+void timing_manager::write_json(string_t _fname)
+{
+    (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
+}
+
+//============================================================================//
+// static function
+void timing_manager::write_json_no_mpi(ostream_t& fss)
+{
+    fss << "{\n\"ranks\": [" << std::endl;
+
+    // ensure json write final block during destruction before the file
+    // is closed
+    {
+        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+        // precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive oa(fss, opts);
+
+        oa(cereal::make_nvp("timing_manager", *timing_manager::instance()));
+    }
+
+    fss << "]" << "\n}" << std::endl;
+}
+
+//============================================================================//
+// static function
+void timing_manager::write_json_no_mpi(string_t _fname)
+{
+    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+
+    if(mpi_rank() == 0 && _verbose > 0)
+    {
+        // notify so if it takes too long, user knows why
+        std::stringstream _info;
+        _info << "Writing serialization file: "
+              << _fname << std::endl;
+        std::cout << _info.str();
+    }
+
+    std::stringstream fss;
+    write_json_no_mpi(fss);
+
+    // write to file
+    std::ofstream ofs(_fname.c_str());
+    if(ofs)
+        ofs << fss.str() << std::endl;
+    else
+        std::cerr << "Warning! Unable to write JSON output to \""
+                  << _fname << "\"" << std::endl;
+    ofs.close();
+}
+
+
+//============================================================================//
+// static function
+std::pair<int32_t, bool> timing_manager::write_json_mpi(ostream_t& ofss)
+{
+    const int32_t mpi_root = 0;
+    comm_group_t mpi_comm_group = get_communicator_group();
+    MPI_Comm& local_mpi_comm = std::get<0>(mpi_comm_group);
+    int32_t local_mpi_file = std::get<1>(mpi_comm_group);
+
+    // output stream
+    std::stringstream fss;
+
+    // ensure json write final block during destruction before the file
+    // is closed
+    {
+        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::tab;
+        // precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 1);
+        cereal::JSONOutputArchive oa(fss, opts);
+
+        oa(cereal::make_nvp("timing_manager", *timing_manager::instance()));
+    }
+
+    // if another entry follows
+    if(mpi_rank(local_mpi_comm)+1 < mpi_size(local_mpi_comm))
+        fss << ",";
+
+    // the JSON output as a string
+    string_t fss_str = fss.str();
+    // limit the iteration loop. Occasionally it seems that this will create
+    // an infinite loop even though it shouldn't...
+    const uint64_t itr_limit = fss_str.length();
+    // compact the JSON
+    for(auto citr : { "\n", "\t", "  " })
+    {
+        string_t itr(citr);
+        string_t::size_type fpos = 0;
+        uint64_t nitr = 0;
+        do
+        {
+            fpos = fss_str.find(itr, fpos);
+            if(fpos != string_t::npos)
+                fss_str.replace(fpos, itr.length(), " ");
+            ++nitr;
+        }
+        while(nitr < itr_limit && fpos != string_t::npos);
+    }
+
+    // now we need to gather the lengths of each serialization string
+    int fss_len = fss_str.length();
+    int* recvcounts = nullptr;
+
+    // Only root has the received data
+    if (mpi_rank(local_mpi_comm) == mpi_root)
+        recvcounts = (int*) malloc( mpi_size(local_mpi_comm) * sizeof(int)) ;
+
+    MPI_Gather(&fss_len, 1, MPI_INT,
+               recvcounts, 1, MPI_INT,
+               mpi_root, local_mpi_comm);
+
+    // Figure out the total length of string, and displacements for each rank
+    int fss_tot_len = 0;
+    int* fss_tot = nullptr;
+    char* totalstring = nullptr;
+
+    if (mpi_rank(local_mpi_comm) == mpi_root)
+    {
+        fss_tot = (int*) malloc( mpi_size(local_mpi_comm) * sizeof(int) );
+
+        fss_tot[0] = 0;
+        fss_tot_len += recvcounts[0]+1;
+
+        for(int32_t i = 1; i < mpi_size(local_mpi_comm); ++i)
+        {
+            // plus one for space or \0 after words
+            fss_tot_len += recvcounts[i]+1;
+            fss_tot[i] = fss_tot[i-1] + recvcounts[i-1] + 1;
+        }
+
+        // allocate string, pre-fill with spaces and null terminator
+        totalstring = (char*) malloc(fss_tot_len * sizeof(char));
+        for(int32_t i = 0; i < fss_tot_len-1; ++i)
+            totalstring[i] = ' ';
+        totalstring[fss_tot_len-1] = '\0';
+    }
+
+    // Now we have the receive buffer, counts, and displacements, and
+    // can gather the strings
+
+    char* cfss = (char*) fss_str.c_str();
+    MPI_Gatherv(cfss, fss_len, MPI_CHAR,
+                totalstring, recvcounts, fss_tot, MPI_CHAR,
+                mpi_root, local_mpi_comm);
+
+    if (mpi_rank(local_mpi_comm) == mpi_root)
+    {
+        ofss << "{\n\"ranks\": [" << std::endl;
+        ofss << totalstring << std::endl;
+        ofss << "]" << "\n}" << std::endl;
+        free(totalstring);
+        free(fss_tot);
+        free(recvcounts);
+    }
+
+    bool write_rank = mpi_rank(local_mpi_comm) == mpi_root;
+
+    MPI_Comm_free(&local_mpi_comm);
+
+    return std::pair<int32_t, bool>(local_mpi_file, write_rank);
+}
+
+//============================================================================//
+// static function
+void timing_manager::write_json_mpi(string_t _fname)
+{
+    {
+        // notify so if it takes too long, user knows why
+        std::stringstream _info;
+        _info << "[" << mpi_rank() << "] Writing serialization file: "
+              << _fname << std::endl;
+        std::cout << _info.str();
+    }
+
+    std::stringstream ofss;
+    auto ret = write_json_mpi(ofss);
+    int32_t local_mpi_file = ret.first;
+    bool write_rank = ret.second;
+
+    if(write_rank)
+    {
+        std::stringstream _rss;
+        _rss << "_" << local_mpi_file;
+        _fname.insert(_fname.find_last_of("."), _rss.str());
+
+        ofstream_t ofs;
+        ofs.open(_fname);
+        if(ofs)
+            ofs << ofss.str();
+        ofs.close();
+    }
+}
+
+//============================================================================//
+// static function
+timing_manager::comm_group_t
+timing_manager::get_communicator_group()
+{
+    int32_t max_concurrency = std::thread::hardware_concurrency();
+    // We want on-node communication only
+    const int32_t nthreads = NAME_TIM::get_env<int32_t>("OMP_NUM_THREADS", 1);
+    int32_t max_processes = max_concurrency / nthreads;
+    int32_t mpi_node_default = mpi_size() / max_processes;
+    if(mpi_node_default < 1)
+        mpi_node_default = 1;
+    int32_t mpi_node_count = NAME_TIM::get_env<int32_t>("TIMEMORY_NODE_COUNT",
+                                                     mpi_node_default);
+    int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
+
+    // Split the communicator based on the number of nodes and use the
+    // original rank for ordering
+    MPI_Comm local_mpi_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
+
+#if defined(DEBUG)
+    int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
+    int32_t local_mpi_size = mpi_size(local_mpi_comm);
+    int32_t local_mpi_file = mpi_rank() / local_mpi_size;
+
+    printf("WORLD RANK/SIZE: %d/%d --> ROW RANK/SIZE: %d/%d\n",
+        mpi_rank(), mpi_size(), local_mpi_rank, local_mpi_size);
+
+    std::stringstream _info;
+    _info << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
+    _info << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
+    _info << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
+    _info << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
+    _info << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
+    std::cout << _info.str();
+#endif
+
+    return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));
+}
+
+//============================================================================//
 
 } // namespace NAME_TIM
