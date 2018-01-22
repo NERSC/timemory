@@ -126,9 +126,19 @@ class CatchTestCommand(TestCommand):
 
 
 # ------------------------------------------------------------------------------------- #
+def get_long_descript():
+    long_descript = ''
+    try:
+        long_descript = open('README.rst').read()
+    except:
+        long_descript = ''
+    return long_descript
+
+
+# ------------------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.0b3',
+    version='1.0b4',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',
@@ -136,7 +146,7 @@ setup(name='TiMemory',
     contact='Jonathan R. Madsen',
     contact_email='jonrobm.programming@gmail.com',
     description='Python timing + memory manager',
-    long_description=open('README.rst').read(),
+    long_description=get_long_descript(),
     url='https://github.com/jrmadsen/TiMemory.git',
     license='MIT',
     # add extension module
