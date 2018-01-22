@@ -34,6 +34,8 @@
 #include "timemory/namespace.hpp"
 #include "timemory/base_clock.hpp"
 #include "timemory/rss.hpp"
+#include "timemory/utility.hpp"
+#include "timemory/signal_detection.hpp"
 
 #include <fstream>
 #include <string>
@@ -480,6 +482,21 @@ void base_timer::start()
         m_timer().start() = base_clock_t::now();
         rss_init();
     }
+    else
+    {
+#if !defined(NDEBUG)
+        int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+        if(_verbose > 0)
+        {
+            std::stringstream _msg;
+            _msg << "Warning! base_timer::start() called but already "
+                 << "running..." << std::endl;
+            if(_verbose > 1)
+                NAME_TIM::StackBackTrace(_msg);
+            std::cerr << _msg.str();
+        }
+#endif
+    }
 }
 //----------------------------------------------------------------------------//
 inline
@@ -491,6 +508,21 @@ void base_timer::stop()
         rss_record();
         //auto_lock_t l(f_mutex_map[this]);
         m_accum += m_timer();
+    }
+    else
+    {
+#if !defined(NDEBUG)
+        int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+        if(_verbose > 0)
+        {
+            std::stringstream _msg;
+            _msg << "Warning! base_timer::stop() called but already "
+                 << "stopped..." << std::endl;
+            if(_verbose > 1)
+                NAME_TIM::StackBackTrace(_msg);
+            std::cerr << _msg.str();
+        }
+#endif
     }
 }
 //----------------------------------------------------------------------------//
