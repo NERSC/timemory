@@ -70,9 +70,8 @@ private:
 //----------------------------------------------------------------------------//
 
 typedef NAME_TIM::auto_timer                     auto_timer_t;
-#if defined(DISABLE_TIMERS)
-#   define TIMEMORY_AUTO_TIMER(str)
-#else
+
+#if !defined(TIMEMORY_AUTO_TIMER)
 #   define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
 #   define AUTO_TIMER_NAME(Y) AUTO_TIMER_NAME_COMBINE(macro_auto_timer, Y)
 #   define TIMEMORY_AUTO_TIMER(str) \

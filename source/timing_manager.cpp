@@ -71,11 +71,7 @@ timing_manager::pointer_type timing_manager::instance()
 
 //============================================================================//
 
-#if defined(DISABLE_TIMERS)
-bool timing_manager::f_enabled = false;
-#else
 bool timing_manager::f_enabled = true;
-#endif
 
 //============================================================================//
 
@@ -85,9 +81,6 @@ timing_manager::mutex_t timing_manager::f_mutex;
 // static function
 void timing_manager::enable(bool val)
 {
-#if defined(DISABLE_TIMERS)
-    val = false;
-#endif
     f_enabled = val;
 }
 
