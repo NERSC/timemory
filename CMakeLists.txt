@@ -68,7 +68,12 @@ if(USE_MPI)
 
         list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
         add_definitions(-DTIMEMORY_USE_MPI)
-
+        if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
+          set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
+        endif(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
+        if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
+          set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
+        endif(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
     else(MPI_FOUND)
 
         message(WARNING "MPI not found. Proceeding without MPI")
@@ -88,7 +93,7 @@ endif(USE_MPI)
 set(CMAKE_THREAD_PREFER_PTHREAD ON)
 set(THREADS_PREFER_PTHREAD_FLAG ON)
 find_package(Threads REQUIRED)
-
+list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 ################################################################################
 #
