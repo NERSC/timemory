@@ -113,13 +113,13 @@ def _path_to_file(pfile):
     return '{}/timemory-supp/{}'.format(os.path.dirname(timemory.__file__), pfile)
 
 def mpi_exe_info():
-    return print(open(_path_to_file('mpi_exe_info.txt'), 'r').read())
+    print (open(_path_to_file('mpi_exe_info.txt'), 'r').read())
 
 def mpi_c_info():
-    return print(open(_path_to_file('mpi_c_info.txt'), 'r').read())
+    print (open(_path_to_file('mpi_c_info.txt'), 'r').read())
 
 def mpi_cxx_info():
-    return print(open(_path_to_file('mpi_cxx_info.txt'), 'r').read())
+    print (open(_path_to_file('mpi_cxx_info.txt'), 'r').read())
 
 ")
 
