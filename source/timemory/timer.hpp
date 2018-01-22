@@ -52,8 +52,8 @@ public:
     typedef std::shared_ptr<this_type>  shared_ptr_type;
 
 public:
-    timer(const string_t& _begin = "[ ",
-          const string_t& _close = " ]",
+    timer(const string_t& _begin = "",
+          const string_t& _close = "",
           bool _use_static_width = false,
           uint16_t prec = default_precision);
     timer(const string_t& _begin,

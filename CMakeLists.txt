@@ -93,10 +93,10 @@ if(NOT SUBPROJECT)
     set(CMAKE_INSTALL_MESSAGE LAZY)
     set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
     add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
-    foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR})
-    endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 endif(NOT SUBPROJECT)
+foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
+    set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
 set(PROJECT_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
     CACHE PATH "Installation directory for CMake package config files")
@@ -186,7 +186,7 @@ include(CMakePackageConfigHelpers)
 
 configure_package_config_file(
     ${CMAKE_CURRENT_LIST_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     INSTALL_DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
     PATH_VARS
         INCLUDE_INSTALL_DIR
@@ -194,12 +194,12 @@ configure_package_config_file(
         PYTHON_INSTALL_DIR)
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
 
 foreach(_FILE unit_testing.py)
