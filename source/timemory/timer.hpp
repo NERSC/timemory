@@ -67,21 +67,22 @@ public:
     static string_t default_format;
     static uint16_t default_precision;
     static void propose_output_width(uint64_t);
+    static void set_default_format(const string_t& str) { default_format = str; }
 
 public:
     timer& stop_and_return() { this->stop(); return *this; }
     string_t begin() const { return m_begin; }
     string_t close() const { return m_close; }
-    std::string as_string() const
+    std::string as_string(bool no_min = true) const
     {
         std::stringstream ss;
-        this->report(ss, false, true);
+        this->report(ss, false, no_min);
         return ss.str();
     }
 
-    void print() const
+    void print(bool no_min = true) const
     {
-        std::cout << this->as_string() << std::endl;
+        std::cout << this->as_string(no_min) << std::endl;
     }
 
     this_type clone() const;

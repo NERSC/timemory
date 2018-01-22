@@ -225,7 +225,7 @@ timing_manager::timer(const string_t& key,
     }
 #endif
 
-    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount+1) * (nhash+1);
+    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount+2) * (nhash+2);
 
     // thread-safe
     auto_lock_t lock(f_mutex);

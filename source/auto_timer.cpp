@@ -54,7 +54,7 @@ auto_timer::auto_timer(const std::string& timer_tag,
        (uint64_t) timing_manager::max_depth() > auto_timer::ncount() - 1)
     {
         m_timer = &timing_manager::instance()->timer(timer_tag, code_tag,
-                                                     auto_timer::ncount(),
+                                                     auto_timer::ncount() - 1,
                                                      auto_timer::nhash());
 
         m_temp_timer.start();

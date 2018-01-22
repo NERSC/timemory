@@ -72,7 +72,7 @@ def main(nfib):
     tman.serialize('output.json')
     print ('')
     try:
-        tim.util.plot(["output.json"], display=False)
+        tim.util.plot(files=["output.json"], display=False)
     except:
         print ("Error! Unable to plot 'output.json'")
 

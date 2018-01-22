@@ -130,7 +130,12 @@ PYBIND11_MODULE(timemory, tim)
                  from os.path import join
 
                  def get_fcode(back):
-                     return sys._getframe(back).f_code.co_filename
+                     fname = '<module'
+                     try:
+                         fname = sys._getframe(back).f_code.co_filename
+                     except:
+                         fname = '<module>'
+                     return fname
 
                  result = None
                  if only_basename:
@@ -149,6 +154,31 @@ PYBIND11_MODULE(timemory, tim)
         return ret;
     };
 
+    auto set_timer_default_format = [=] (std::string format)
+    {
+        auto locals = py::dict("format"_a = format);
+        py::exec(R"(
+                 import timemory as tim
+                 tim.default_format = format
+                 )", py::globals(), locals);
+        // update C++
+        tim_timer_t::set_default_format(format);
+        return format;
+    };
+
+    auto get_timer_default_format = [=] ()
+    {
+        auto locals = py::dict();
+        py::exec(R"(
+                 import timemory as tim
+                 format = tim.default_format
+                 )", py::globals(), locals);
+        auto format = locals["format"].cast<std::string>();
+        // in case changed in python, update C++
+        tim_timer_t::set_default_format(format);
+        return format;
+    };
+
     auto timer_init = [=] (std::string begin = "", std::string format = "")
     {
         if(begin.empty())
@@ -158,13 +188,8 @@ PYBIND11_MODULE(timemory, tim)
             begin = keyss.str();
         }
 
-        const std::string default_format
-            =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
-               " : RSS {tot,self}_{curr,peak}"
-               " : (%C|%M)"
-               " | (%c|%m) [MB]";
         if(format.empty())
-            format = default_format;
+            format = get_timer_default_format();
 
         return new tim_timer_t(begin, "", format, false, 3);
     };
@@ -175,8 +200,16 @@ PYBIND11_MODULE(timemory, tim)
         keyss << get_func(nback);
         if(key != "" && key[0] != '@')
             keyss << "@";
-        keyss << key;
-        auto op_line = get_line(2);
+        if(key != "")
+            keyss << key;
+        else
+        {
+            keyss << "@";
+            keyss << get_file(nback+1);
+            keyss << ":";
+            keyss << get_line(nback);
+        }
+        auto op_line = get_line();
         return new auto_timer_t(keyss.str(), op_line, "pyc");
     };
 
@@ -227,6 +260,14 @@ PYBIND11_MODULE(timemory, tim)
     tim.def("disable_signal_detection",
             disable_signal_detection,
             "Enable signal detection");
+    tim.attr("default_format")
+            =  tim_timer_t::default_format;
+    tim.def("set_default_format",
+            set_timer_default_format,
+            "Set the default format of the timers");
+    tim.def("get_default_format",
+            get_timer_default_format,
+            "Get the default format of the timers");
 
     //------------------------------------------------------------------------//
 
@@ -267,16 +308,18 @@ PYBIND11_MODULE(timemory, tim)
               { timer.cast<tim_timer_t*>()->stop(); },
               "Stop timer");
     timer.def("report",
-              [=] (py::object timer)
-              { timer.cast<tim_timer_t*>()->print(); },
-              "Report timer");
+              [=] (py::object timer, bool no_min = true)
+              { timer.cast<tim_timer_t*>()->print(no_min); },
+              "Report timer",
+              py::arg("no_min") = true);
 
     //------------------------------------------------------------------------//
 
     tman.def(py::init<>(tman_init), "Initialization",
              py::return_value_policy::take_ownership);
     tman.def("report",
-             [=] (py::object tman)
+             [=] (py::object tman, bool no_min = false, bool serialize = true,
+                  std::string serial_filename = "output.json")
              {
                  auto locals = py::dict();
                  py::exec(R"(
@@ -286,18 +329,36 @@ PYBIND11_MODULE(timemory, tim)
                           do_ret = tim.util.opts.report_file
                           do_ser = tim.util.opts.serial_report
                           )", py::globals(), locals);
+
                  auto repfnm = locals["repfnm"].cast<std::string>();
                  auto serfnm = locals["serfnm"].cast<std::string>();
                  auto _do_rep = locals["do_ret"].cast<bool>();
                  auto _do_ser = locals["do_ser"].cast<bool>();
-                 timing_manager_t* _tman = tman.cast<timing_manager_wrapper*>()->get();
+
+                 timing_manager_t* _tman
+                         = tman.cast<timing_manager_wrapper*>()->get();
+
+                 // set the output stream
                  if(_do_rep)
                      _tman->set_output_stream(repfnm);
-                 _tman->report();
+
+                 // report ASCII output
+                 _tman->report(no_min);
+
+                 // handle the serialization
+                 if(!_do_ser && serialize)
+                 {
+                     _do_ser = true;
+                     serfnm = serial_filename;
+                 }
+
                  if(_do_ser && timing_manager_t::instance()->size() > 0)
                      _tman->write_serialization(serfnm);
              },
-             "Report timing manager");
+             "Report timing manager",
+             py::arg("no_min") = false,
+             py::arg("serialize") = true,
+             py::arg("serial_filename") = "output.json");
     tman.def("set_output_file",
              [=] (py::object tman, std::string fname)
              {
@@ -390,6 +451,15 @@ PYBIND11_MODULE(timemory, tim)
                 return pyfunc(n);
             },
             "Decorator function");
+
+    tim.def("report",
+            [=] (bool no_min = true)
+            {
+                timing_manager_t::instance()->report(no_min);
+            },
+            "Report the timing manager (default: no_min = True)",
+            py::arg("no_min") = true);
+
     //------------------------------------------------------------------------//
 
 }

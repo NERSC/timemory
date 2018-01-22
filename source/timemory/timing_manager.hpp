@@ -282,7 +282,7 @@ public:
     void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
     void set_output_stream(ostream_t&);
     void set_output_stream(const string_t&);
-    void print() { this->report(); }
+    void print(bool no_min = false) { this->report(no_min); }
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
     void write_serialization(string_t _fname) const { write_json(_fname); }
