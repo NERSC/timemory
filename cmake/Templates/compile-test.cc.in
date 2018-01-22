@@ -3,7 +3,9 @@
 
 int main(int, char**)
 {
-
+    double x = 1.0;
+    double y = 5.0;
+    double val = x * y;
     return 0;
 }
 

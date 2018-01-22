@@ -7,6 +7,6 @@ project(CompileTest @LANG@)
 
 set_source_files_properties(compile-test.cc PROPERTIES LANGUAGE @LANG@)
 
-set(CMAKE_@LANG@_FLAGS "@COMPILE_FLAGS@")
+set(CMAKE_@LANG@_FLAGS '@COMPILE_FLAGS@')
 
 add_executable(compile-test compile-test.cc)

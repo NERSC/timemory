@@ -14,6 +14,8 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(SUBPROJECT ON)
 endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
+add_option(SETUP_PY "Python build from setup.py" OFF NO_FEATURE)
+
 ################################################################################
 #
 # The license for TiMemory allows it to be included directly in the source
@@ -95,7 +97,11 @@ if(NOT SUBPROJECT)
     add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
 endif(NOT SUBPROJECT)
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-    set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    if(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    else(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
+    endif(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
 set(PROJECT_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
@@ -175,6 +181,11 @@ set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 #        TiMemory
 #
 ################################################################################
+
+if(SETUP_PY)
+    set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX} CACHE PATH
+        "Installation prefix of python" FORCE)
+endif(SETUP_PY)
 
 add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
 

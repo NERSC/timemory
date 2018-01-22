@@ -25,4 +25,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
 add_executable(timemory_test_timing test_timing.cpp)
 target_link_libraries(timemory_test_timing ${TiMemory_LIBRARIES})
 
-install(TARGETS timemory_test_timing DESTINATION bin)
+if(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
+    install(TARGETS timemory_test_timing DESTINATION bin)
+else(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
+endif(NOT DEFINED SETUP_PY OR NOT SETUP_PY)

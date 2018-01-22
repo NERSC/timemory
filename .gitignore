@@ -9,4 +9,12 @@
 *~
 
 # build directories
-/build-*
+/build*
+
+# setup.py files
+/dist*
+/TiMemory.*
+/timemory.*
+
+# miscellaneous
+timing_report*
