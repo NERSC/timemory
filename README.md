@@ -17,6 +17,7 @@ Dependancies
 - C++
 
   - C++11 compiler
+
     - Known support for:
 
       - GCC (Linux + macOS, 4.9 - 7.2)
@@ -40,7 +41,7 @@ Dependancies
 Python setup.py installation
 ----------------------------
 
-```{r, engine='bash', count_lines}
+```
 # with MPI
 python setup.py build install
 # without MPI

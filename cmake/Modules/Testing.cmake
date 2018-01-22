@@ -18,7 +18,8 @@ option(DASHBOARD_MODE "Internally used to skip generation of CDash files" OFF)
 # -- Miscellaneous
 # ------------------------------------------------------------------------ #
 if(NOT DASHBOARD_MODE AND BUILD_TESTING)
-    add_option(CTEST_LOCAL_CHECKOUT "Use the local source tree for CTest/CDash" OFF)
+    add_option(CTEST_LOCAL_CHECKOUT "Use the local source tree for CTest/CDash"
+        OFF NO_FEATURE)
     if(CTEST_LOCAL_CHECKOUT)
         set(CMAKE_LOCAL_DIRECTORY "${CMAKE_SOURCE_DIR}")
         set(CTEST_MODEL "Continuous" CACHE STRING "Model for CTest")

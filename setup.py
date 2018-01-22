@@ -68,9 +68,8 @@ class CMakeBuild(build_ext, Command):
             build_args += ['--', '-j4']
 
         env = os.environ.copy()
-        env['CXXFLAGS'] = '{} -DVERSION_INFO=\\"{}\\"'.format(
-            env.get('CXXFLAGS', ''),
-            self.distribution.get_version())
+        env['CXXFLAGS'] = '{}'.format(
+            env.get('CXXFLAGS', ''))
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
@@ -129,7 +128,7 @@ class CatchTestCommand(TestCommand):
 # ------------------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.0b0',
+    version='1.0b3',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',
@@ -146,7 +145,7 @@ setup(name='TiMemory',
     cmdclass=dict(config=CMakeCommand, build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
-    install_requires=[ 'numpy', 'matplotlib', 'argparse' ],
+    install_requires=[ 'numpy', 'matplotlib', 'argparse', 'cmake' ],
     provides=[ 'timemory' ],
     keywords=[ 'timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx' ],
     python_requires='>=2.6',

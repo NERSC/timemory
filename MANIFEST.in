@@ -1,0 +1,15 @@
+# include .gitignore
+# include .gitmodules
+include CMakeLists.txt
+include LICENSE
+include README.md
+# recursive-include .git *
+recursive-include cmake *
+recursive-include examples *
+recursive-include pybind11 *
+recursive-include python *
+recursive-include source *
+recursive-include tests *
+global-exclude *__pycache__*
+global-exclude *.pyc
+global-exclude *.git*
