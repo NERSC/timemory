@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['write_5fjson',['write_json',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#aa084e6255ded7bc1bc4bd337b0aa6fd4',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fjson_5fmpi',['write_json_mpi',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#ab0e02b3e2e78fc7d90e9811310e9c508',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fjson_5fno_5fmpi',['write_json_no_mpi',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a4505a6df8c226d4842aba35e97cc8f99',1,'NAME_TIM::util::timing_manager']]],
-  ['write_5fserialization',['write_serialization',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#aca3a9113101b35fead2b7584a2fa944f',1,'NAME_TIM::util::timing_manager']]]
+  ['write_5fjson',['write_json',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a544dc75eb32fc1f9026041294f781310',1,'NAME_TIM::timing_manager::write_json(string_t _fname)'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a41e7afcc9991b3b61c68734a60762f80',1,'NAME_TIM::timing_manager::write_json(ostream_t &amp;os)']]],
+  ['write_5fjson_5fmpi',['write_json_mpi',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ac90494c517aea6bb27f4cfa7ceed7c53',1,'NAME_TIM::timing_manager::write_json_mpi(string_t _fname)'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a4a409c336219c16abbe639cc75d791bb',1,'NAME_TIM::timing_manager::write_json_mpi(ostream_t &amp;os)']]],
+  ['write_5fjson_5fno_5fmpi',['write_json_no_mpi',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a6f044ff1290770dbdb8fe57c32c94c7b',1,'NAME_TIM::timing_manager::write_json_no_mpi(string_t _fname)'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a6eebf9edf8d41f6aff4ba29e33fe67a1',1,'NAME_TIM::timing_manager::write_json_no_mpi(ostream_t &amp;os)']]],
+  ['write_5fserialization',['write_serialization',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ab14cafcae0df4340852d6b753bd1d53d',1,'NAME_TIM::timing_manager::write_serialization(string_t _fname) const'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a3d67a116e972230eb07415200782824a',1,'NAME_TIM::timing_manager::write_serialization(std::ostream &amp;os) const']]]
 ];

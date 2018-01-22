@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['period',['period',['../d4/d95/class_n_a_m_e___t_i_m_1_1util_1_1base__clock.html#a9b676be64b5d8491d403a49870026d1e',1,'NAME_TIM::util::base_clock']]],
-  ['pointer_5ftype',['pointer_type',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a2493b80cfeb764b76f2900e6809f5251',1,'NAME_TIM::util::timing_manager']]],
-  ['poslist_5ft',['poslist_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a8233de947e1054de477e835466626d3f',1,'NAME_TIM::util::details::base_timer']]],
-  ['precision',['precision',['../da/d27/struct_n_a_m_e___t_i_m_1_1util_1_1base__clock__data.html#a8c52dd5c4e4ff3ede35c841ded85b773',1,'NAME_TIM::util::base_clock_data']]]
+  ['period',['period',['../d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html#af80e8ea3640a6db73aedef6e4a449d11',1,'NAME_TIM::base_clock']]],
+  ['pointer_5ftype',['pointer_type',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad11c24ad6c41e18a5120485165d2d868',1,'NAME_TIM::timing_manager']]],
+  ['poslist_5ft',['poslist_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#addccbc5ba045e4d174a4edc050d28eac',1,'NAME_TIM::internal::base_timer']]],
+  ['precision',['precision',['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html#a1a8d930a92649d397678c6145bedb13d',1,'NAME_TIM::base_clock_data']]]
 ];

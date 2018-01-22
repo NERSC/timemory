@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['auto_5flock_5ft',['auto_lock_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#ad449ac44686615372c475cd57d535cd0',1,'NAME_TIM::util::details::base_timer::auto_lock_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#ad95beed17f89cc3e73fcba1ed3b72f26',1,'NAME_TIM::util::timing_manager::auto_lock_t()']]],
-  ['auto_5ftimer_5ft',['auto_timer_t',['../d8/d07/auto__timer_8hpp.html#a42af0d9c19e5c9ebb4106ac0a24cdd9e',1,'auto_timer_t():&#160;auto_timer.hpp'],['../d2/dfd/timemory_8cc.html#a42af0d9c19e5c9ebb4106ac0a24cdd9e',1,'auto_timer_t():&#160;timemory.cc']]]
+  ['auto_5flock_5ft',['auto_lock_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a3ed61ecaf5a15a1692fd787023f3b905',1,'NAME_TIM::internal::base_timer::auto_lock_t()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#aa09fdc5d5283c1105288d8a098ea2539',1,'NAME_TIM::timing_manager::auto_lock_t()']]],
+  ['auto_5ftimer_5ft',['auto_timer_t',['../d8/d07/auto__timer_8hpp.html#aefee237cddda46d831639f9b5359d309',1,'auto_timer_t():&#160;auto_timer.hpp'],['../d2/dfd/timemory_8cc.html#aefee237cddda46d831639f9b5359d309',1,'auto_timer_t():&#160;timemory.cc']]]
 ];

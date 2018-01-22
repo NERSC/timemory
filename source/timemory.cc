@@ -58,6 +58,7 @@ using namespace py::literals;
 #include "timemory/auto_timer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/rss.hpp"
+#include "timemory/mpi.hpp"
 
 typedef NAME_TIM::timing_manager      timing_manager_t;
 typedef NAME_TIM::timer               tim_timer_t;
@@ -268,6 +269,10 @@ PYBIND11_MODULE(timemory, tim)
     tim.def("get_default_format",
             get_timer_default_format,
             "Get the default format of the timers");
+    tim.def("has_mpi_support",
+            [=] ()
+            { return NAME_TIM::has_mpi_support(); },
+            "Return if the TiMemory library has MPI support");
 
     //------------------------------------------------------------------------//
 

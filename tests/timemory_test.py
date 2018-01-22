@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-## @package unit_testing.py
+## @package timemory_test.py
 ## @file unit_testing.py
 ## Unit tests for TiMemory module
 ##
@@ -31,46 +31,46 @@
 import sys
 import os
 import time
-import timemory as timing
-import unittest
-
 from os.path import join
 
-timing.enable_signal_detection()
+import unittest
+import timemory
+
+timemory.enable_signal_detection()
 
 def fibonacci(n):
     if n < 2:
         return n
     return fibonacci(n - 1) + fibonacci(n - 2)
 
-class TimingTest(unittest.TestCase):
+class timemory_test(unittest.TestCase):
 
     def setUp(self):
-        self.outdir = "timemory_test_output"
-        timing.util.use_timers = True
-        timing.util.serial_report = True
+        self.outdir = "test_output"
+        timemory.util.use_timers = True
+        timemory.util.serial_report = True
 
 
     # Test if the timers are working if not disabled at compilation
     def test_timing(self):
-        print ('Testing function: "{}"...'.format(timing.FUNC()))
+        print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
-        timing.util.opts.set_report(join(self.outdir, "timing_report.out"))
-        timing.util.opts.set_serial(join(self.outdir, "timing_report.json"))
+        timemory.util.opts.set_report(join(self.outdir, "timing_report.out"))
+        timemory.util.opts.set_serial(join(self.outdir, "timing_report.json"))
 
-        tman = timing.timing_manager()
+        tman = timemory.timing_manager()
 
         def time_fibonacci(n):
-            atimer = timing.auto_timer('({})@{}'.format(n, timing.FILE(use_dirname=True)))
+            atimer = timemory.auto_timer('({})@{}'.format(n, timemory.FILE(use_dirname=True)))
             key = ('fibonacci(%i)' % n)
-            timer = timing.timer(key)
+            timer = timemory.timer(key)
             timer.start()
             fibonacci(n)
             timer.stop()
 
 
         tman.clear()
-        t = timing.timer("tmanager_test")
+        t = timemory.timer("tmanager_test")
         t.start()
 
         for i in [39, 35, 43, 39]:
@@ -91,90 +91,90 @@ class TimingTest(unittest.TestCase):
             t = tman.at(i)
             self.assertFalse(t.real_elapsed() < 0.0)
             self.assertFalse(t.user_elapsed() < 0.0)
-        timing.toggle(True)
+        timemory.toggle(True)
 
 
 
     # Test the timing on/off toggle functionalities
     def test_toggle(self):
-        print ('Testing function: "{}"...'.format(timing.FUNC()))
+        print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
-        tman = timing.timing_manager()
-        timing.toggle(True)
+        tman = timemory.timing_manager()
+        timemory.toggle(True)
 
-        timing.set_max_depth(timing.util.default_max_depth())
+        timemory.set_max_depth(timemory.util.default_max_depth())
         tman.clear()
 
-        timing.toggle(True)
+        timemory.toggle(True)
         if True:
-            autotimer = timing.auto_timer("on")
+            autotimer = timemory.auto_timer("on")
             fibonacci(27)
             del autotimer
         self.assertEqual(tman.size(), 1)
 
         tman.clear()
-        timing.toggle(False)
+        timemory.toggle(False)
         if True:
-            autotimer = timing.auto_timer("off")
+            autotimer = timemory.auto_timer("off")
             fibonacci(27)
             del autotimer
         self.assertEqual(tman.size(), 0)
 
         tman.clear()
-        timing.toggle(True)
+        timemory.toggle(True)
         if True:
-            autotimer_on = timing.auto_timer("on")
-            timing.toggle(False)
-            autotimer_off = timing.auto_timer("off")
+            autotimer_on = timemory.auto_timer("on")
+            timemory.toggle(False)
+            autotimer_off = timemory.auto_timer("off")
             fibonacci(27)
             del autotimer_off
             del autotimer_on
         self.assertEqual(tman.size(), 1)
 
-        timing.util.opts.set_report(join(self.outdir, "timing_toggle.out"))
-        timing.util.opts.set_serial(join(self.outdir, "timing_toggle.json"))
+        timemory.util.opts.set_report(join(self.outdir, "timing_toggle.out"))
+        timemory.util.opts.set_serial(join(self.outdir, "timing_toggle.json"))
 
         tman.report()
 
 
     # Test the timing on/off toggle functionalities
     def test_max_depth(self):
-        print ('Testing function: "{}"...'.format(timing.FUNC()))
+        print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
-        tman = timing.timing_manager()
-        timing.toggle(True)
+        tman = timemory.timing_manager()
+        timemory.toggle(True)
         tman.clear()
 
         def create_timer(n):
-            autotimer = timing.auto_timer('{}'.format(n))
+            autotimer = timemory.auto_timer('{}'.format(n))
             fibonacci(30)
             if n < 8:
                 create_timer(n + 1)
 
         ntimers = 4
-        timing.set_max_depth(ntimers)
+        timemory.set_max_depth(ntimers)
 
         create_timer(0)
 
-        timing.util.opts.set_report(join(self.outdir, "timing_depth.out"))
-        timing.util.opts.set_serial(join(self.outdir, "timing_depth.json"))
+        timemory.util.opts.set_report(join(self.outdir, "timing_depth.out"))
+        timemory.util.opts.set_serial(join(self.outdir, "timing_depth.json"))
         tman.report()
 
         self.assertEqual(tman.size(), ntimers)
 
     # Test the timing on/off toggle functionalities
     def test_pointer(self):
-        print ('Testing function: "{}"...'.format(timing.FUNC()))
+        print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
         nval = 4
 
         def set_pointer_max(nmax):
-            tman = timing.timing_manager()
+            tman = timemory.timing_manager()
             tman.set_max_depth(4)
             return tman.get_max_depth()
 
         def get_pointer_max():
-            return timing.timing_manager().get_max_depth()
+            return timemory.timing_manager().get_max_depth()
 
         ndef = get_pointer_max()
         nnew = set_pointer_max(nval)

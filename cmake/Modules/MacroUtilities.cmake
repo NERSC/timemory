@@ -55,9 +55,19 @@ include(CMakeDependentOption)
 #       If variable var is not set, set its value to that provided
 #
 macro(set_ifnot _var _value)
-  if(NOT DEFINED ${_var})
-    set(${_var} ${_value} ${ARGN})
-  endif()
+    if(NOT DEFINED ${_var})
+        set(${_var} ${_value} ${ARGN})
+    endif()
+endmacro()
+
+#-----------------------------------------------------------------------
+# macro safe_remove_duplicates(<list>)
+#       ensures remove_duplicates is only called if list has values
+#
+macro(safe_remove_duplicates _list)
+    if(NOT "${${_list}}" STREQUAL "")
+        list(REMOVE_DUPLICATES ${_list})
+    endif(NOT "${${_list}}" STREQUAL "")
 endmacro()
 
 #-----------------------------------------------------------------------

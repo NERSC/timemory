@@ -38,8 +38,6 @@
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
 
-#include <mpi.h>
-
 #include <iostream>
 #include <cstdlib>
 #include <stdlib.h>  /* abort(), exit() */
@@ -60,6 +58,7 @@
 
 #include "timemory/namespace.hpp"
 #include "timemory/utility.hpp"
+#include "timemory/mpi.hpp"
 
 // Define C++11
 #ifndef CXX11
@@ -335,23 +334,6 @@ inline void TerminationSignalMessage(int sig, siginfo_t* sinfo,
                                      std::ostream& message)
 {
     sys_signal _sig = (sys_signal) (sig);
-
-    //------------------------------------------------------------------------//
-    auto mpi_is_initialized = [] ()
-    {
-        int32_t _init = 0;
-        MPI_Initialized(&_init);
-        return (_init != 0) ? true : false;
-    };
-    //------------------------------------------------------------------------//
-    auto mpi_rank = [=] ()
-    {
-        int32_t _rank = 0;
-        if(mpi_is_initialized())
-            MPI_Comm_rank(MPI_COMM_WORLD, &_rank);
-        return std::max(_rank, (int32_t) 0);
-    };
-    //------------------------------------------------------------------------//
 
     message << "\n" << "### ERROR ### ";
     if(mpi_is_initialized())

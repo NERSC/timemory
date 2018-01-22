@@ -95,7 +95,7 @@ $(document).ready(function(){initNavTree('df/df2/timing__manager_8hpp.html','../
 <code>#include &lt;string&gt;</code><br />
 <code>#include &lt;thread&gt;</code><br />
 <code>#include &lt;mutex&gt;</code><br />
-<code>#include &lt;mpi.h&gt;</code><br />
+<code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;cereal/cereal.hpp&gt;</code><br />
 <code>#include &lt;cereal/types/deque.hpp&gt;</code><br />
 <code>#include &lt;cereal/access.hpp&gt;</code><br />
@@ -109,55 +109,47 @@ $(document).ready(function(){initNavTree('df/df2/timing__manager_8hpp.html','../
 <code>#include &quot;<a class="el" href="../../">timemory/namespace.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../">timemory/utility.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../">timemory/timer.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../">timemory/mpi.hpp</a>&quot;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-0-trigger" src="../../closed.png" alt="+"/> Include dependency graph for timing_manager.hpp:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../da/d21/timing__manager_8hpp__incl.svg" width="100%" height="575"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../da/d21/timing__manager_8hpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 </div><div class="textblock"><div id="dynsection-1" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-1-trigger" src="../../closed.png" alt="+"/> This graph shows which files directly or indirectly include this file:</div>
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" frameborder="0" src="../../d4/da9/timing__manager_8hpp__dep__incl.svg" width="584" height="195"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d4/da9/timing__manager_8hpp__dep__incl.svg" width="100%" height="459"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 </div>
 <p><a href="">Go to the source code of this file.</a></p>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="nested-classes"></a>
 Classes</h2></td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html">NAME_TIM::util::timer_tuple</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">struct &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html">NAME_TIM::timer_tuple</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html">NAME_TIM::util::timing_manager</a></td></tr>
+<tr class="memitem:"><td class="memItemLeft" align="right" valign="top">class &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html">NAME_TIM::timing_manager</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="namespaces"></a>
 Namespaces</h2></td></tr>
 <tr class="memitem:de/de2/namespace_n_a_m_e___t_i_m"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html">NAME_TIM</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:d0/df9/namespace_n_a_m_e___t_i_m_1_1util"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html">NAME_TIM::util</a></td></tr>
-<tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html">NAME_TIM::util::details</a></td></tr>
+<tr class="memitem:d0/df5/namespace_n_a_m_e___t_i_m_1_1internal"><td class="memItemLeft" align="right" valign="top"> &#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html">NAME_TIM::internal</a></td></tr>
 <tr class="separator:"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
 Typedefs</h2></td></tr>
-<tr class="memitem:a0c68bd6911c6a577ced215f5c77600a1"><td class="memItemLeft" align="right" valign="top">typedef std::tuple&lt; uint64_t, uint64_t, std::string, std::shared_ptr&lt; <a class="el" href="../../d1/da7/class_n_a_m_e___t_i_m_1_1util_1_1timer.html">NAME_TIM::util::timer</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../dd/df7/namespace_n_a_m_e___t_i_m_1_1util_1_1details.html#a0c68bd6911c6a577ced215f5c77600a1">NAME_TIM::util::details::base_timer_tuple_t</a></td></tr>
-<tr class="separator:a0c68bd6911c6a577ced215f5c77600a1"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a2859e73f2225f8575c230728e785ca2d"><td class="memItemLeft" align="right" valign="top">typedef std::tuple&lt; uint64_t, uint64_t, std::string, std::shared_ptr&lt; <a class="el" href="../../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html">NAME_TIM::timer</a> &gt; &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html#a2859e73f2225f8575c230728e785ca2d">NAME_TIM::internal::base_timer_tuple_t</a></td></tr>
+<tr class="separator:a2859e73f2225f8575c230728e785ca2d"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:aea7505b0eb1498b19829c07458be0220"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html#aea7505b0eb1498b19829c07458be0220">NAME_TIM::util::mpi_is_initialized</a> ()</td></tr>
-<tr class="separator:aea7505b0eb1498b19829c07458be0220"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aea227e7e6fe4bdbd3e13abf17b8ccc02"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html#aea227e7e6fe4bdbd3e13abf17b8ccc02">NAME_TIM::util::mpi_rank</a> (MPI_Comm comm=MPI_COMM_WORLD)</td></tr>
-<tr class="separator:aea227e7e6fe4bdbd3e13abf17b8ccc02"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad717c59e5656ee4eda3333a62095a3a0"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html#ad717c59e5656ee4eda3333a62095a3a0">NAME_TIM::util::mpi_size</a> (MPI_Comm comm=MPI_COMM_WORLD)</td></tr>
-<tr class="separator:ad717c59e5656ee4eda3333a62095a3a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a2cf613f8dbd243a00eb80be33861c3b5"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df9/namespace_n_a_m_e___t_i_m_1_1util.html#a2cf613f8dbd243a00eb80be33861c3b5">NAME_TIM::util::get_max_threads</a> ()</td></tr>
-<tr class="separator:a2cf613f8dbd243a00eb80be33861c3b5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a25df2518725d65bfd24282f1640b4a46"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a25df2518725d65bfd24282f1640b4a46">NAME_TIM::get_max_threads</a> ()</td></tr>
+<tr class="separator:a25df2518725d65bfd24282f1640b4a46"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Static singleton handler of auto-timers </p>
@@ -169,7 +161,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_4fd02b5fd43288e8282468be733f8250.html">timemory</a></li><li class="navelem"><a class="el" href="../../df/df2/timing__manager_8hpp.html">timing_manager.hpp</a></li>
-    <li class="footer">Generated on Fri Jan 19 2018 07:22:39 for TiMemory by
+    <li class="footer">Generated on Mon Jan 22 2018 06:17:45 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

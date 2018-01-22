@@ -1,7 +1,8 @@
 <map id="timemory/timing_manager.hpp" name="timemory/timing_manager.hpp">
-<area shape="rect" id="node2" href="$d6/d8e/test__timing_8cpp.html" title="examples/ex1/test_timing.cpp" alt="" coords="5,160,185,189"/>
-<area shape="rect" id="node3" href="$d8/d07/auto__timer_8hpp.html" title="timemory/auto_timer.hpp" alt="" coords="187,83,342,112"/>
-<area shape="rect" id="node5" href="$d2/dfd/timemory_8cc.html" title="timemory.cc" alt="" coords="336,160,423,189"/>
-<area shape="rect" id="node6" href="$d9/dad/timing__manager_8cpp.html" title="timing_manager.cpp" alt="" coords="447,160,578,189"/>
-<area shape="rect" id="node4" href="$d2/d80/auto__timer_8cpp.html" title="auto_timer.cpp" alt="" coords="210,160,311,189"/>
+<area shape="rect" id="node2" href="$d6/d8e/test__timing_8cpp.html" title="examples/ex1/test_timing.cpp" alt="" coords="5,169,185,198"/>
+<area shape="rect" id="node3" href="$dd/d0a/mpi__test__timing_8cpp.html" title="examples/ex2/mpi_test\l_timing.cpp" alt="" coords="209,160,355,207"/>
+<area shape="rect" id="node4" href="$d8/d07/auto__timer_8hpp.html" title="timemory/auto_timer.hpp" alt="" coords="353,83,507,112"/>
+<area shape="rect" id="node6" href="$d2/dfd/timemory_8cc.html" title="timemory.cc" alt="" coords="505,169,592,198"/>
+<area shape="rect" id="node7" href="$d9/dad/timing__manager_8cpp.html" title="timing_manager.cpp" alt="" coords="617,169,747,198"/>
+<area shape="rect" id="node5" href="$d2/d80/auto__timer_8cpp.html" title="auto_timer.cpp" alt="" coords="379,169,481,198"/>
 </map>

@@ -29,6 +29,10 @@
 #ifndef timing_manager_hpp_
 #define timing_manager_hpp_
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-variable"
+#pragma GCC diagnostic ignored "-Wuninitialized"
+
 //----------------------------------------------------------------------------//
 
 #include <unordered_map>
@@ -36,8 +40,7 @@
 #include <string>
 #include <thread>
 #include <mutex>
-
-#include <mpi.h>
+#include <cstdint>
 
 #ifdef _OPENMP
 #   include <omp.h>
@@ -57,38 +60,10 @@
 #include "timemory/namespace.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/mpi.hpp"
 
 namespace NAME_TIM
 {
-
-//----------------------------------------------------------------------------//
-
-inline bool mpi_is_initialized()
-{
-    int32_t _init = 0;
-    MPI_Initialized(&_init);
-    return (_init != 0) ? true : false;
-}
-
-//----------------------------------------------------------------------------//
-
-inline int32_t mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
-{
-    int32_t _rank = 0;
-    if(mpi_is_initialized())
-        MPI_Comm_rank(comm, &_rank);
-    return std::max(_rank, (int32_t) 0);
-}
-
-//----------------------------------------------------------------------------//
-
-inline int32_t mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
-{
-    int32_t _size = 1;
-    if(mpi_is_initialized())
-        MPI_Comm_size(comm, &_size);
-    return std::max(_size, (int32_t) 1);
-}
 
 //----------------------------------------------------------------------------//
 
@@ -409,5 +384,7 @@ timing_manager::string_hash(const string_t& str) const
 //----------------------------------------------------------------------------//
 
 } // namespace NAME_TIM
+
+#pragma GCC diagnostic pop
 
 #endif // timing_manager_hpp_

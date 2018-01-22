@@ -148,14 +148,34 @@ endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
 # ------------------------------------------------------------------------ #
 # -- Add tests
 # ------------------------------------------------------------------------ #
-add_test(NAME PythonTest_A
-    COMMAND ${PROJECT_BINARY_DIR}/test.py
+add_test(NAME Python_Simple
+    COMMAND ${PROJECT_BINARY_DIR}/simple_test.py
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-set_tests_properties(PythonTest_A PROPERTIES
+set_tests_properties(Python_Simple PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)
 
-add_test(NAME PythonTest_B
-    COMMAND ${PROJECT_BINARY_DIR}/unit_testing.py
+add_test(NAME Python_UnitTest
+    COMMAND ${PROJECT_BINARY_DIR}/timemory_test.py
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-set_tests_properties(PythonTest_B PROPERTIES
+set_tests_properties(Python_UnitTest PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)
+
+add_test(NAME Python_Nested
+    COMMAND ${PROJECT_BINARY_DIR}/nested_test.py
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+set_tests_properties(Python_Nested PROPERTIES
+    LABELS "Python;UnitTest" TIMEOUT 7200)
+
+add_test(NAME Cxx_Test
+    COMMAND ${PROJECT_BINARY_DIR}/test_timing
+    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+set_tests_properties(Cxx_Test PROPERTIES
+    LABELS "CXX;UnitTest" TIMEOUT 7200)
+
+if(USE_MPI)
+    add_test(NAME Cxx_MPI_Test
+        COMMAND ${MPIEXEC_EXECUTABLE} -np 2 ${PROJECT_BINARY_DIR}/mpi_test_timing
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(Cxx_MPI_Test PROPERTIES
+        LABELS "CXX;UnitTest" TIMEOUT 7200)
+endif(USE_MPI)

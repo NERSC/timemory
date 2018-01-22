@@ -87,6 +87,11 @@ endif(@TIMEMORY_EXCEPTIONS@)
 
 set(@PROJECT_NAME@_C_FLAGS "@CMAKE_C_FLAGS@")
 set(@PROJECT_NAME@_CXX_FLAGS "@CMAKE_CXX_FLAGS@ -std=c++${CMAKE_CXX_STANDARD}")
+set(TIMEMORY_USE_MPI @MPI_FOUND@)
+
+if(TIMEMORY_USE_MPI)
+    add_definitions(-DTIMEMORY_USE_MPI)
+endif(TIMEMORY_USE_MPI)
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set UnitTest++_FOUND to TRUE

@@ -154,8 +154,7 @@ void timing_manager::clear()
     ofstream_t* m_fos = get_ofstream(m_report);
     for(int32_t i = 0; i < mpi_size(); ++i)
     {
-        if(mpi_is_initialized())
-            MPI_Barrier(MPI_COMM_WORLD);
+        mpi_barrier(MPI_COMM_WORLD);
         if(mpi_rank() != i)
             continue;
 
@@ -292,7 +291,7 @@ void timing_manager::report(bool no_min) const
         // MPI blocking
         if(mpi_is_initialized())
         {
-            MPI_Barrier(MPI_COMM_WORLD);
+            mpi_barrier(MPI_COMM_WORLD);
             // only 1 at a time
             if(i != mpi_rank() )
                 continue;
@@ -354,8 +353,7 @@ void timing_manager::set_output_stream(const string_t& fname)
         ofstream_t* _fos = new ofstream_t;
         for(int32_t i = 0; i < mpi_size(); ++i)
         {
-            if(mpi_is_initialized())
-                MPI_Barrier(MPI_COMM_WORLD);
+            mpi_barrier(MPI_COMM_WORLD);
             if(mpi_rank() != i)
                 continue;
 

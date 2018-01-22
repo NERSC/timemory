@@ -145,7 +145,7 @@ install:
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+    - cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DUSE_MPI=ON
         -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
@@ -154,17 +154,20 @@ install:
 
 
 script:
-    - ./timemory_test_timing &> run.log
+    - ./test_timing &> run.log
+    - RET=$?
+    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
+    - mpirun -np 2 ./mpi_test_timing &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
     - echo "C++ testing -- Done"
-    - ./test.py &> run.log
+    - ./simple_test.py &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
-    - ./unit_testing.py &> run.log
+    - ./timemory_test.py &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
-    - ./nested.py &> run.log
+    - ./nested_test.py &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi 
     - echo "Python testing -- Done"

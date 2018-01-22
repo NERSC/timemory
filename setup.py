@@ -10,6 +10,8 @@ import subprocess
 from distutils.version import LooseVersion
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools import Command
+from setuptools.command.test import test as TestCommand
 
 
 # ------------------------------------------------------------------------------------- #
@@ -20,7 +22,10 @@ class CMakeExtension(Extension):
 
 
 # ------------------------------------------------------------------------------------- #
-class CMakeBuild(build_ext):
+class CMakeBuild(build_ext, Command):
+
+    use_mpi = 'ON'
+
     def run(self):
         try:
             out = subprocess.check_output(['cmake', '--version'])
@@ -41,11 +46,12 @@ class CMakeBuild(build_ext):
     def build_extension(self, ext):
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
-        cmake_args = [#'-DCMAKE_LIBRARY_OUTPUT_DIRECTORY=' + extdir,
-                      '-DPYTHON_EXECUTABLE=' + sys.executable,
-                      #'-DPROJECT_OUTPUT_DIR=' + extdir,
+        mpiarg = '-DUSE_MPI={}'.format(CMakeBuild.use_mpi)
+        cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DSETUP_PY=ON',
-                      '-DCMAKE_INSTALL_PREFIX=' + extdir]
+                      '-DCMAKE_INSTALL_PREFIX=' + extdir,
+                      mpiarg, ]
+        print('CMake args: {}'.format(cmake_args))
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -77,24 +83,53 @@ class CMakeBuild(build_ext):
 
 
 # ------------------------------------------------------------------------------------- #
-#setup(
-    #name='python_cpp_example',
-    #version='0.1',
-    #author='Benjamin Jack',
-    #author_email='benjamin.r.jack@gmail.com',
-    #description='A hybrid Python/C++ test project',
-    #long_description='',
-    ## add extension module
-    #ext_modules=[CMakeExtension('python_cpp_example')],
-    ## add custom build_ext command
-    #cmdclass=dict(build_ext=CMakeBuild),
-    #zip_safe=False,
-#)
+class CMakeCommand(Command):
+    """ Run my command.
+    """
+    description = 'generate cmake options'
+
+    user_options = [ ('disable-mpi', 's', 'disable building with MPI'), ]
+
+    def initialize_options(self):
+        self.disable_mpi = None
+        self.use_mpi = 'ON'
+
+    def finalize_options(self):
+        if self.disable_mpi is not None:
+            self.use_mpi = 'OFF'
+
+    def run(self):
+        print ('USE_MPI: {} ({})'.format(self.use_mpi, self.disable_mpi))
+        CMakeBuild.use_mpi = self.use_mpi
+
+
+# ------------------------------------------------------------------------------------- #
+class CatchTestCommand(TestCommand):
+    """
+    A custom test runner to execute both Python unittest tests and C++ Catch-
+    lib tests.
+    """
+    def distutils_dir_name(self, dname):
+        """Returns the name of a distutils build directory"""
+        dir_name = "{dirname}.{platform}-{version[0]}.{version[1]}"
+        return dir_name.format(dirname=dname,
+                               platform=sysconfig.get_platform(),
+                               version=sys.version_info)
+
+    def run(self):
+        # Run Python tests
+        #super(CatchTestCommand, self).run()
+        #print("\nPython tests complete")
+        print("Running CMake/CTest tests...\n")
+        # Run catch tests
+        subprocess.call(['ctest'],
+                cwd=os.path.join('build', self.distutils_dir_name('temp')), shell=True)
+
 
 # ------------------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
-setup(name='timemory',
-    version='0.1.dev0',
+setup(name='TiMemory',
+    version='1.0b0',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',
@@ -106,12 +141,12 @@ setup(name='timemory',
     url='https://github.com/jrmadsen/TiMemory.git',
     license='MIT',
     # add extension module
-    ext_modules=[CMakeExtension('TiMemory')],
+    ext_modules=[CMakeExtension('timemory')],
     # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild),
+    cmdclass=dict(config=CMakeCommand, build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
-    #install_requires=[ 'numpy', 'matplotlib', 'argparse', 'unittest' ],
+    install_requires=[ 'numpy', 'matplotlib', 'argparse' ],
     provides=[ 'timemory' ],
     keywords=[ 'timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx' ],
     python_requires='>=2.6',

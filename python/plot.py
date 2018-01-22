@@ -50,8 +50,8 @@ memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
 
 concurrency = 1
 mpi_size = 1
-min_time = 0.01
-min_memory = 5
+min_time = 0.005
+min_memory = 1
 img_dpi = 75
 img_size = {'w': 1200, 'h': 800}
 

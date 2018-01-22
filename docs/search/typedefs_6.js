@@ -1,5 +1,5 @@
 var searchData=
 [
-  ['mutex_5fmap_5ft',['mutex_map_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a5741ebc24cabc86b9b3242260a14678d',1,'NAME_TIM::util::details::base_timer::mutex_map_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a8435474dbc4b61d3066902b24a974bfd',1,'NAME_TIM::util::timing_manager::mutex_map_t()']]],
-  ['mutex_5ft',['mutex_t',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#a26a181b7703f20f4971cbd7d81a92934',1,'NAME_TIM::util::details::base_timer::mutex_t()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a77ac13fa37f49b18e1b40b3d4603d125',1,'NAME_TIM::util::timing_manager::mutex_t()']]]
+  ['mutex_5fmap_5ft',['mutex_map_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a0ac1d6aef3eb387324e2b2d8513cadb2',1,'NAME_TIM::internal::base_timer::mutex_map_t()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a823f673442937a2153f9f459ec8f56cc',1,'NAME_TIM::timing_manager::mutex_map_t()']]],
+  ['mutex_5ft',['mutex_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#ad9d550b0e4ea4a310a5da4c0a3c0fb50',1,'NAME_TIM::internal::base_timer::mutex_t()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a6c259f33a49a6991879226d14b93dca0',1,'NAME_TIM::timing_manager::mutex_t()']]]
 ];

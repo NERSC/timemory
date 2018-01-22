@@ -87,7 +87,44 @@ $(document).ready(function(){initNavTree('index.html','');});
 <div class="contents">
 <div class="textblock"><p>C++ and Python Timing + Memory Utilities including auto-timers and temporary memory calculation</p>
 <p><a href="https://jrmadsen.github.io/TiMemory">Source code documentation for TiMemory</a></p>
-<p>There are essentially two components of the output:</p>
+<ul>
+<li>Operating systems<ul>
+<li>Linux (tested on Ubuntu 14.04)</li>
+<li>macOS (tested on 10.13 - High Sierra)</li>
+<li>Windows support is generally untested<ul>
+<li>memory measurements may not have correct units if compiles</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>C++<ul>
+<li>C++11 compiler<ul>
+<li>Known support for:<ul>
+<li>GCC (Linux + macOS, 4.9 - 7.2)</li>
+<li>Clang (Linux + macOS, 4.0, 5.0)</li>
+<li>Intel (Linux, 18.0.1)</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>MPI (optional)</li>
+<li>cereal (git submodule)</li>
+<li>pybind11 (git submodule)</li>
+</ul>
+</li>
+<li>Python<ul>
+<li>version &gt;= 2.6</li>
+<li>packages<ul>
+<li>argparse</li>
+<li>numpy</li>
+<li>matplotlib</li>
+<li>unittest</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="fragment"><div class="line">{r,}</div><div class="line"># with MPI</div><div class="line">python setup.py build install</div><div class="line"># without MPI</div><div class="line">python setup.py config --disable-mpi build install</div></div><!-- fragment --><p>There are essentially two components of the output:</p>
 <ul>
 <li>a text file (e.g. <code>timing_report_XXX.out</code> file)<ul>
 <li>general ASCII report</li>
@@ -226,7 +263,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Fri Jan 19 2018 07:22:40 for TiMemory by
+    <li class="footer">Generated on Mon Jan 22 2018 06:17:45 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

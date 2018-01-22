@@ -94,8 +94,7 @@ $(document).ready(function(){initNavTree('db/de1/classtiming__manager__wrapper.h
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><iframe scrolling="no" frameborder="0" src="../../d4/d1f/classtiming__manager__wrapper__coll__graph.svg" width="195" height="282"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe>
-</div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d4/d1f/classtiming__manager__wrapper__coll__graph.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pub-methods"></a>
@@ -104,12 +103,12 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:aebfb77fc957da2e5b23d55c9df000978"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a3341302a309c48243599997282264d3b"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html#a3341302a309c48243599997282264d3b">~timing_manager_wrapper</a> ()</td></tr>
 <tr class="separator:a3341302a309c48243599997282264d3b"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a7eb16612ab4ee444fc4b6829b7d0eb69"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#a96eef8137fb7797ded9f4ff9830205fc">timing_manager_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html#a7eb16612ab4ee444fc4b6829b7d0eb69">get</a> ()</td></tr>
+<tr class="memitem:a7eb16612ab4ee444fc4b6829b7d0eb69"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#ad138ca31b7a7619d1898904bb9a37c8d">timing_manager_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html#a7eb16612ab4ee444fc4b6829b7d0eb69">get</a> ()</td></tr>
 <tr class="separator:a7eb16612ab4ee444fc4b6829b7d0eb69"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pri-attribs"></a>
 Private Attributes</h2></td></tr>
-<tr class="memitem:a641e7d3da7e2c9b5324da791ed4014a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#a96eef8137fb7797ded9f4ff9830205fc">timing_manager_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a></td></tr>
+<tr class="memitem:a641e7d3da7e2c9b5324da791ed4014a8"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#ad138ca31b7a7619d1898904bb9a37c8d">timing_manager_t</a> *&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a></td></tr>
 <tr class="separator:a641e7d3da7e2c9b5324da791ed4014a8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -136,7 +135,8 @@ Private Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    : <a class="code" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a>(timing_manager_t::instance())</div><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    { }</div><div class="ttc" id="classtiming__manager__wrapper_html_a641e7d3da7e2c9b5324da791ed4014a8"><div class="ttname"><a href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">timing_manager_wrapper::m_manager</a></div><div class="ttdeci">timing_manager_t * m_manager</div><div class="ttdef"><b>Definition:</b> timemory.cc:82</div></div>
+<div class="fragment"><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;    : <a class="code" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a>(<a class="code" href="../../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#add31f1ab0b76b417f73894070007a035">timing_manager_t::instance</a>())</div><div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    { }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1timing__manager_html_add31f1ab0b76b417f73894070007a035"><div class="ttname"><a href="../../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#add31f1ab0b76b417f73894070007a035">NAME_TIM::timing_manager::instance</a></div><div class="ttdeci">static pointer_type instance()</div><div class="ttdef"><b>Definition:</b> timing_manager.cpp:58</div></div>
+<div class="ttc" id="classtiming__manager__wrapper_html_a641e7d3da7e2c9b5324da791ed4014a8"><div class="ttname"><a href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">timing_manager_wrapper::m_manager</a></div><div class="ttdeci">timing_manager_t * m_manager</div><div class="ttdef"><b>Definition:</b> timemory.cc:83</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -162,7 +162,7 @@ Private Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    { }</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    { }</div></div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -176,7 +176,7 @@ Private Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#a96eef8137fb7797ded9f4ff9830205fc">timing_manager_t</a>* timing_manager_wrapper::get </td>
+          <td class="memname"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#ad138ca31b7a7619d1898904bb9a37c8d">timing_manager_t</a>* timing_manager_wrapper::get </td>
           <td>(</td>
           <td class="paramname"></td><td>)</td>
           <td></td>
@@ -188,7 +188,7 @@ Private Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a>; }</div><div class="ttc" id="classtiming__manager__wrapper_html_a641e7d3da7e2c9b5324da791ed4014a8"><div class="ttname"><a href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">timing_manager_wrapper::m_manager</a></div><div class="ttdeci">timing_manager_t * m_manager</div><div class="ttdef"><b>Definition:</b> timemory.cc:82</div></div>
+<div class="fragment"><div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">m_manager</a>; }</div><div class="ttc" id="classtiming__manager__wrapper_html_a641e7d3da7e2c9b5324da791ed4014a8"><div class="ttname"><a href="../../db/de1/classtiming__manager__wrapper.html#a641e7d3da7e2c9b5324da791ed4014a8">timing_manager_wrapper::m_manager</a></div><div class="ttdeci">timing_manager_t * m_manager</div><div class="ttdef"><b>Definition:</b> timemory.cc:83</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -203,7 +203,7 @@ Private Attributes</h2></td></tr>
   <td class="mlabels-left">
       <table class="memname">
         <tr>
-          <td class="memname"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#a96eef8137fb7797ded9f4ff9830205fc">timing_manager_t</a>* timing_manager_wrapper::m_manager</td>
+          <td class="memname"><a class="el" href="../../d6/d8e/test__timing_8cpp.html#ad138ca31b7a7619d1898904bb9a37c8d">timing_manager_t</a>* timing_manager_wrapper::m_manager</td>
         </tr>
       </table>
   </td>
@@ -224,7 +224,7 @@ Private Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../db/de1/classtiming__manager__wrapper.html">timing_manager_wrapper</a></li>
-    <li class="footer">Generated on Fri Jan 19 2018 07:22:39 for TiMemory by
+    <li class="footer">Generated on Mon Jan 22 2018 06:17:45 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

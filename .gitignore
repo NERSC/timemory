@@ -15,6 +15,7 @@
 /dist*
 /TiMemory.*
 /timemory.*
+__pycache__
 
 # miscellaneous
 timing_report*

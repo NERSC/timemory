@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['signal_5fsettings',['signal_settings',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html',1,'NAME_TIM']]]
+  ['plot_5fdata',['plot_data',['../d5/df1/classplot_1_1plot__data.html',1,'plot']]]
 ];

@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['laps',['laps',['../d9/d1f/class_n_a_m_e___t_i_m_1_1util_1_1details_1_1base__timer.html#ab7a3f8234edcaabd5e59ccc0f2f4a8c0',1,'NAME_TIM::util::details::base_timer']]],
+  ['laps',['laps',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a2fe9f97eb50567f7a243d7cb65ffa155',1,'NAME_TIM::internal::base_timer']]],
   ['length',['length',['../d6/d44/classplot_1_1timemory__function.html#af38dafe3482fe78bc92f6cbc1859b7cc',1,'plot::timemory_function']]],
-  ['level',['level',['../da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html#a4b139282fb8b5182de08b47b5b61daaf',1,'NAME_TIM::util::timer_tuple::level()'],['../da/de9/struct_n_a_m_e___t_i_m_1_1util_1_1timer__tuple.html#ae8d08ccc794f8222e9eb33913ba140c1',1,'NAME_TIM::util::timer_tuple::level() const']]],
-  ['list',['list',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a69147c9ed3b3e5e30a371991f41f188a',1,'NAME_TIM::util::timing_manager::list()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a0e2b0e2bb53016ff1a682f3bddab81df',1,'NAME_TIM::util::timing_manager::list() const']]]
+  ['level',['level',['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#aff42709e78c56abfe5a83e3c29e34835',1,'NAME_TIM::timer_tuple::level()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a1e9be9e1df621003f2616fbefa2fd90d',1,'NAME_TIM::timer_tuple::level() const']]],
+  ['list',['list',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a0726d609bd9e0bf892ef35f96526e307',1,'NAME_TIM::timing_manager::list()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a4ef1f1f9017a9048a70b0272953e70ce',1,'NAME_TIM::timing_manager::list() const']]]
 ];

@@ -45,26 +45,38 @@ add_feature(TIMEMORY_NAMESPACE "Top-level namespace for ${PROJECT_NAME}")
 #        MPI
 #
 ################################################################################
+add_option(USE_MPI "Enable MPI usage" ON)
 
-find_package(MPI REQUIRED)
+if(USE_MPI)
+    find_package(MPI)
 
-# Add the MPI-specific compiler and linker flags
-add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
-add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
-list(APPEND EXTERNAL_INCLUDE_DIRS
-    ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
-foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+    set(MPI_LIBRARIES )
+    if(MPI_FOUND)
 
-set(MPI_LIBRARIES )
-foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-    set(_TYPE MPI_${_TYPE})
-    if(${_TYPE})
-        list(APPEND MPI_LIBRARIES ${${_TYPE}})
-    endif(${_TYPE})
-endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
+        # Add the MPI-specific compiler and linker flags
+        add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
+        add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
+        list(APPEND EXTERNAL_INCLUDE_DIRS
+            ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+
+        foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+            set(_TYPE MPI_${_TYPE})
+            if(${_TYPE})
+                list(APPEND MPI_LIBRARIES ${${_TYPE}})
+            endif(${_TYPE})
+        endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+
+        list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
+        add_definitions(-DTIMEMORY_USE_MPI)
+
+    else(MPI_FOUND)
+
+        message(WARNING "MPI not found. Proceeding without MPI")
+        remove_definitions(-DTIMEMORY_USE_MPI)
+
+    endif(MPI_FOUND)
+
+endif(USE_MPI)
 
 
 ################################################################################
@@ -118,10 +130,11 @@ set(LIBNAME                 timemory)
 #       This was likely caused by different translation units being
 #       compiled with different visibility settings.
 if(NOT SUBPROJECT)
-    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra")
-    add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
+    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra -Wno-unknown-warning-option")
+    add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough -Wno-unused-parameter")
     add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
     add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
+    add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         add(CMAKE_CXX_FLAGS "-DDEBUG")
     endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -182,6 +195,13 @@ set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
 #
 ################################################################################
 
+safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
+safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
+
+foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+    include_directories(SYSTEM ${_DIR})
+endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+
 if(SETUP_PY)
     set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX} CACHE PATH
         "Installation prefix of python" FORCE)
@@ -213,10 +233,10 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
 
-foreach(_FILE unit_testing.py)
-    configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}
+foreach(_FILE timemory_test.py simple_test.py nested_test.py __init__.py)
+    configure_file(${PROJECT_SOURCE_DIR}/tests/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
-endforeach(_FILE unit_testing.py)
+endforeach(_FILE timemory_test.py)
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
     include(Testing)
@@ -227,7 +247,8 @@ if(NOT SUBPROJECT)
     # documentation
     set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/source
-        ${PROJECT_SOURCE_DIR}/python)
+        ${PROJECT_SOURCE_DIR}/python
+        ${PROJECT_SOURCE_DIR}/tests)
     
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
     include(Documentation)

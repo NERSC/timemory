@@ -7,6 +7,46 @@ temporary memory calculation
 `Source code documentation for
 TiMemory <https://jrmadsen.github.io/TiMemory>`__
 
+Dependancies
+------------
+
+-  Operating systems
+
+-  Linux (tested on Ubuntu 14.04)
+-  macOS (tested on 10.13 - High Sierra)
+-  Windows support is generally untested
+
+   -  memory measurements may not have correct units if compiles
+
+-  C++
+
+-  C++11 compiler
+
+   -  Known support for:
+
+   -  GCC (Linux + macOS, 4.9 - 7.2)
+   -  Clang (Linux + macOS, 4.0, 5.0)
+   -  Intel (Linux, 18.0.1)
+
+-  MPI (optional)
+-  cereal (git submodule)
+-  pybind11 (git submodule)
+
+-  Python
+
+-  version >= 2.6
+-  packages
+
+   -  argparse
+   -  numpy
+   -  matplotlib
+   -  unittest
+
+Python setup.py installation
+----------------------------
+
+``{r, engine='bash', count_lines} # with MPI python setup.py build install # without MPI python setup.py config --disable-mpi build install``
+
 Overview
 --------
 

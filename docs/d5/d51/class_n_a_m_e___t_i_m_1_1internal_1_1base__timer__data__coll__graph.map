@@ -1,0 +1,4 @@
+<map id="NAME_TIM::internal::base_timer_data" name="NAME_TIM::internal::base_timer_data">
+<area shape="rect" id="node2" href="$d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html" title="{NAME_TIM::internal\l::base_rss_usage\n||+ init()\l+ record()\l+ total()\l+ self()\l+ total()\l+ self()\l+ max()\l}" alt="" coords="13,567,144,773"/>
+<area shape="rect" id="node3" href="$df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html" title="{NAME_TIM::rss::usage\n||+ usage()\l+ usage()\l+ usage()\l+ operator=()\l+ record()\l+ record()\l+ operator()()\l+ operator&#45;=()\l+ current()\l+ peak()\l+ serialize()\l+ max()\l+ min()\l}" alt="" coords="5,173,152,467"/>
+</map>

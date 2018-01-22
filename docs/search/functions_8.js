@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['hash',['hash',['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#a1766b329030fe279046521a31e72242d',1,'NAME_TIM::util::timing_manager::hash()'],['../d5/d04/class_n_a_m_e___t_i_m_1_1util_1_1timing__manager.html#ab8d72e5ce915d34756fa26ad7eff26f2',1,'NAME_TIM::util::timing_manager::hash() const']]]
+  ['has_5fmpi_5fsupport',['has_mpi_support',['../de/de2/namespace_n_a_m_e___t_i_m.html#aae46092d088b8446223be6ab13ee27a6',1,'NAME_TIM']]],
+  ['hash',['hash',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a6981b994030d6a709aaa75757a3affaa',1,'NAME_TIM::timing_manager::hash()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#aaccf1aeab3c23683a6ea97331a9b66da',1,'NAME_TIM::timing_manager::hash() const']]]
 ];
