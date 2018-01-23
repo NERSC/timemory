@@ -133,6 +133,11 @@ class plot_data():
         self.title = title
 
 
+    def __str__(self):
+        return '\tFilename: {}\n\tConcurrency: {}\n\tMPI ranks: {}\n\t# functions: {}\n\tTitle: {}'.format(
+            self.filename, self.concurrency, self.mpi_size, len(self.timemory_functions), self.title)
+
+
     def get_title(self):
         return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
                 mpi_size, int(concurrency))
@@ -254,9 +259,15 @@ def plot_timing(_plot_data, disp=False):
         print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('.', '_timing.')
+        imgfname = filename.replace('../', '')
+        imgfname = imgfname.replace('./', '')
+        imgfname = imgfname.replace('.', '_timing.')
+        if not '_timing.' in imgfname:
+            imgfname += "_timing."
         imgfname = imgfname.replace('.json', '.png')
         imgfname = imgfname.replace('.py', '.png')
+        if not '.png' in imgfname:
+            imgfname += '.png'
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
@@ -347,9 +358,15 @@ def plot_memory(_plot_data, disp=False):
         #print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('.', '_memory.')
+        imgfname = filename.replace('../', '')
+        imgfname = imgfname.replace('./', '')
+        imgfname = imgfname.replace('.', '_memory.')
+        if not '_memory.' in imgfname:
+            imgfname += "_memory."
         imgfname = imgfname.replace('.json', '.png')
         imgfname = imgfname.replace('.py', '.png')
+        if not '.png' in imgfname:
+            imgfname += '.png'
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()

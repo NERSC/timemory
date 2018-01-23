@@ -12,10 +12,10 @@
 <!-- Node0 -->
 <g id="node1" class="node">
 <title>Node0</title>
-<g id="a_node1"><a xlink:href="d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html" target="_top" xlink:title="NAME_TIM::base_clock\l_data\&lt; _Prec \&gt;">
+<g id="a_node1"><a xlink:href="d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html" target="_top" xlink:title="NAME_TIM::base_clock\l\&lt; _precision \&gt;">
 <polygon fill="#ffffff" stroke="#000000" points="0,-.5 0,-34.5 113,-34.5 113,-.5 0,-.5"/>
 <text text-anchor="start" x="8" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">NAME_TIM::base_clock</text>
-<text text-anchor="middle" x="56.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">_data&lt; _Prec &gt;</text>
+<text text-anchor="middle" x="56.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">&lt; _precision &gt;</text>
 </a>
 </g>
 </g>

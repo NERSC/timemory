@@ -144,7 +144,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;    <span class="keyword">def </span>__init__(self, types):</div><div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;        self.data = <a class="code" href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">nested_dict</a>()</div><div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;        self.types = types</div><div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;            self.data[key] = []</div><div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;</div><div class="ttc" id="namespaceplot_html_a1746449f3f66569de58d3e40c0478605"><div class="ttname"><a href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">plot.nested_dict</a></div><div class="ttdeci">def nested_dict()</div><div class="ttdef"><b>Definition:</b> plot.py:60</div></div>
+<div class="fragment"><div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keyword">def </span>__init__(self, types):</div><div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        self.data = <a class="code" href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">nested_dict</a>()</div><div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;        self.types = types</div><div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;            self.data[key] = []</div><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;</div><div class="ttc" id="namespaceplot_html_a1746449f3f66569de58d3e40c0478605"><div class="ttname"><a href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">plot.nested_dict</a></div><div class="ttdeci">def nested_dict()</div><div class="ttdef"><b>Definition:</b> plot.py:62</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -174,7 +174,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keyword">def </span>__add__(self, rhs):</div><div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;            self.data[key].extend(rhs.data[key])</div><div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keyword">def </span>__add__(self, rhs):</div><div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;            self.data[key].extend(rhs.data[key])</div><div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;</div></div><!-- fragment -->
 </div>
 </div>
 <a id="a2e147890dd82278a6a03e0daa07efa31"></a>
@@ -202,7 +202,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <span class="keyword">def </span>__getitem__(self, key):</div><div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;        <span class="keywordflow">return</span> self.data[key]</div><div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;</div><div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;</div><div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;<span class="comment">#==============================================================================#</span></div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keyword">def </span>__getitem__(self, key):</div><div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;        <span class="keywordflow">return</span> self.data[key]</div><div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;</div><div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;</div><div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;<span class="comment">#==============================================================================#</span></div></div><!-- fragment -->
 </div>
 </div>
 <a id="a580f951b395f720c2492df20a1a58dbf"></a>
@@ -230,7 +230,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keyword">def </span>append(self, _data):</div><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        n = 0</div><div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;            self.data[key].append(_data[n])</div><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;            n += 1</div><div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keyword">def </span>append(self, _data):</div><div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        n = 0</div><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;            self.data[key].append(_data[n])</div><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;            n += 1</div><div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;</div></div><!-- fragment -->
 </div>
 </div>
 <a id="a89136760bacc636f134e668807654818"></a>
@@ -248,7 +248,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;    <span class="keyword">def </span>reset(self):</div><div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        self.data = <a class="code" href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">nested_dict</a>()</div><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;            self.data[key] = []</div><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;</div><div class="ttc" id="namespaceplot_html_a1746449f3f66569de58d3e40c0478605"><div class="ttname"><a href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">plot.nested_dict</a></div><div class="ttdeci">def nested_dict()</div><div class="ttdef"><b>Definition:</b> plot.py:60</div></div>
+<div class="fragment"><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    <span class="keyword">def </span>reset(self):</div><div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;        self.data = <a class="code" href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">nested_dict</a>()</div><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">for</span> key <span class="keywordflow">in</span> self.types:</div><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;            self.data[key] = []</div><div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;</div><div class="ttc" id="namespaceplot_html_a1746449f3f66569de58d3e40c0478605"><div class="ttname"><a href="../../de/d73/namespaceplot.html#a1746449f3f66569de58d3e40c0478605">plot.nested_dict</a></div><div class="ttdeci">def nested_dict()</div><div class="ttdef"><b>Definition:</b> plot.py:62</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -290,7 +290,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../de/d73/namespaceplot.html">plot</a></li><li class="navelem"><a class="el" href="../../d8/d7a/classplot_1_1timemory__data.html">timemory_data</a></li>
-    <li class="footer">Generated on Mon Jan 22 2018 06:17:45 for TiMemory by
+    <li class="footer">Generated on Mon Jan 22 2018 21:33:35 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

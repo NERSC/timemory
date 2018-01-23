@@ -4,6 +4,7 @@ var searchData=
   ['add',['add',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad861adfe2194814fcd7fec65119a6f95',1,'NAME_TIM::timing_manager']]],
   ['add_5farguments',['add_arguments',['../d2/df2/namespaceoptions.html#abd27d6448152ffa2e217fad811cec6c9',1,'options']]],
   ['add_5farguments_5fand_5fparse',['add_arguments_and_parse',['../d2/df2/namespaceoptions.html#a42e2d2daf494aa5be62ec02a3aa67de0',1,'options']]],
+  ['alloc_5fnext',['alloc_next',['../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html#a39e45313b0020a208c2a24163e4fa48d',1,'NAME_TIM::auto_timer']]],
   ['append',['append',['../d8/d7a/classplot_1_1timemory__data.html#a580f951b395f720c2492df20a1a58dbf',1,'plot::timemory_data']]],
   ['args',['args',['../de/d73/namespaceplot.html#a64ec1b7bf5cd5e3cc032b18ba2abea3a',1,'plot.args()'],['../dd/dcb/namespacetests_1_1nested__test.html#a6e9f984729a9b3a0feaeb2f55d02733c',1,'tests.nested_test.args()'],['../d0/d18/namespacetests_1_1simple__test.html#a5201204e2b88d4195ec2af02c95df4c6',1,'tests.simple_test.args()']]],
   ['array_5fsize',['array_size',['../dd/dcb/namespacetests_1_1nested__test.html#ac48fb65227fc7c2204b442060243ea46',1,'tests::nested_test']]],
@@ -15,7 +16,7 @@ var searchData=
   ['auto_5ftimer',['auto_timer',['../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html',1,'NAME_TIM::auto_timer'],['../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html#ab8f071cff25a0d6aac4e489705254fe7',1,'NAME_TIM::auto_timer::auto_timer()']]],
   ['auto_5ftimer_2ecpp',['auto_timer.cpp',['../d2/d80/auto__timer_8cpp.html',1,'']]],
   ['auto_5ftimer_2ehpp',['auto_timer.hpp',['../d8/d07/auto__timer_8hpp.html',1,'']]],
-  ['auto_5ftimer_5fdecorator',['auto_timer_decorator',['../d2/d25/namespacedecorator.html#a73300b061f7ae6e67ba595d560f011b9',1,'decorator']]],
+  ['auto_5ftimer_5fdecorator',['auto_timer_decorator',['../da/da5/classauto__timer__decorator.html',1,'auto_timer_decorator'],['../da/da5/classauto__timer__decorator.html#a1e0a5805102d4828439fbeb2deb3fdc9',1,'auto_timer_decorator::auto_timer_decorator()']]],
   ['auto_5ftimer_5fname',['AUTO_TIMER_NAME',['../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877',1,'auto_timer.hpp']]],
   ['auto_5ftimer_5fname_5fcombine',['AUTO_TIMER_NAME_COMBINE',['../d8/d07/auto__timer_8hpp.html#a11ae3bcd187cb4431427bf4af46f14af',1,'auto_timer.hpp']]],
   ['auto_5ftimer_5ft',['auto_timer_t',['../d8/d07/auto__timer_8hpp.html#aefee237cddda46d831639f9b5359d309',1,'auto_timer_t():&#160;auto_timer.hpp'],['../d2/dfd/timemory_8cc.html#aefee237cddda46d831639f9b5359d309',1,'auto_timer_t():&#160;timemory.cc']]]

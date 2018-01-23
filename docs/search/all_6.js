@@ -17,6 +17,5 @@ var searchData=
   ['fourth_5ftype',['fourth_type',['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#afe6865709169eb7cf6eead6ecba38494',1,'NAME_TIM::timer_tuple']]],
   ['func_5f1',['func_1',['../dd/dcb/namespacetests_1_1nested__test.html#addf4be5d9955c56adc225324e189c8c7',1,'tests::nested_test']]],
   ['func_5f2',['func_2',['../dd/dcb/namespacetests_1_1nested__test.html#a6888eb5debb629baa04d6a13f2ed3ae0',1,'tests::nested_test']]],
-  ['func_5f3',['func_3',['../dd/dcb/namespacetests_1_1nested__test.html#a38605cb6bcb08284631c00347e71c795',1,'tests::nested_test']]],
-  ['func_5fmem',['func_mem',['../dd/dcb/namespacetests_1_1nested__test.html#acb7fdd9db4d6456c86ca02d93bbc9f84',1,'tests::nested_test']]]
+  ['func_5f3',['func_3',['../dd/dcb/namespacetests_1_1nested__test.html#a38605cb6bcb08284631c00347e71c795',1,'tests::nested_test']]]
 ];

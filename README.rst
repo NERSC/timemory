@@ -388,6 +388,10 @@ here is general guide:
    -  The auto-timer functionality requires the variable to exist for
       the scope of the function
 
+-  Alternatively, use the auto\_timer decorator in timemory.utils
+
+   -  However, this decorator does not work well for recursive functions
+
 -  For free-standing function without any name conflicts, just add:
    ``autotimer = timemory.auto_timer()``
 -  For functions within a class, add:
@@ -410,6 +414,7 @@ here is general guide:
 
 .. code:: python
 
+  #!/usr/bin/env python
 
   import timemory
 
@@ -420,42 +425,64 @@ here is general guide:
 
 
   #------------------------------------------------------------------------------#
+  # use a decorator
+  @timemory.util.auto_timer(key = "", add_args=True)
+  def decorator_func(args):
+      # ...
+      import time
+      time.sleep(1)
+
+
+  #------------------------------------------------------------------------------#
   def main(args):
       # this will be the top-level timer in timing + memory report because it is
       # the first added
-      autotimer = timemory.auto_timer(timemory.FILE(), timemory.LINE())
+      autotimer = timemory.auto_timer()
+      # ...
+      decorator_func(args)
       # ...
 
 
   #------------------------------------------------------------------------------#
   if __name__ == "__main__":
 
+      import argparse
       parser = argparse.ArgumentParser()
       parser.add_argument("-s", "--size",
                           help="Size of array allocations",
-                          default=array_size, type=int)
+                          default=10, type=int)
       # ...
       args = timemory.util.add_arguments_and_parse(parser)
-      
+
       timemory.util.opts.set_report(timemory.util.opts.report_fname)
       timemory.util.opts.set_serial(timemory.util.opts.serial_fname)
 
       try:
           main(args)
-          
+
           # get the handle for the timing manager
           timing_manager = timemory.timing_manager()
+
           # will output to stdout if "set_report" not called
           timing_manager.report()
+
           # serialization will be called in above if "set_serial" is called
           # but to serialize to file:
           timing_manager.serialize('output.json')
-          # will create timing and memory plot with avg + err for files 
+
+          # get the serialization directly
+          json_objs = [ timemory.util.read(timing_manager.json()) ]
+          print (json_objs[0])
+
+          # get the serialization file ('output.json')
+          json_files = [ timemory.util.opts.serial_fname ]
+
+          # will create timing and memory plot with avg + err for files
           # (even though output is identical in this example...)
-          timemory.util.plot(files=[timemory.util.opts.serial_fname, "output.json"], display=False)
-          
+          timemory.util.plot(json_objs, files=json_files, display=False)
+
       except Exception as e:
-          print (e.what())
+          print (e)
           print ("Error! Unable to plot 'output.json'")
 
       print ('')

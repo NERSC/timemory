@@ -1,6 +1,7 @@
 var timemory_8cc =
 [
     [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", "db/de1/classtiming__manager__wrapper" ],
+    [ "auto_timer_decorator", "da/da5/classauto__timer__decorator.html", "da/da5/classauto__timer__decorator" ],
     [ "auto_timer_t", "d2/dfd/timemory_8cc.html#aefee237cddda46d831639f9b5359d309", null ],
     [ "farray_t", "d2/dfd/timemory_8cc.html#a95ea1f4a7f0b037991013bbf55b5b82e", null ],
     [ "rss_usage_t", "d2/dfd/timemory_8cc.html#ae94d3ee91f12093b9ab803e53ae1b90c", null ],

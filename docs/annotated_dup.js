@@ -6,5 +6,6 @@ var annotated_dup =
     [ "std", null, null ],
     [ "tests", "d9/df4/namespacetests.html", "d9/df4/namespacetests" ],
     [ "timemory_test", "d0/d9e/namespacetimemory__test.html", null ],
+    [ "auto_timer_decorator", "da/da5/classauto__timer__decorator.html", "da/da5/classauto__timer__decorator" ],
     [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", "db/de1/classtiming__manager__wrapper" ]
 ];

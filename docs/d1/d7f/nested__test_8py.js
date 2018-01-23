@@ -4,7 +4,6 @@ var nested__test_8py =
     [ "func_1", "d1/d7f/nested__test_8py.html#addf4be5d9955c56adc225324e189c8c7", null ],
     [ "func_2", "d1/d7f/nested__test_8py.html#a6888eb5debb629baa04d6a13f2ed3ae0", null ],
     [ "func_3", "d1/d7f/nested__test_8py.html#a38605cb6bcb08284631c00347e71c795", null ],
-    [ "func_mem", "d1/d7f/nested__test_8py.html#acb7fdd9db4d6456c86ca02d93bbc9f84", null ],
     [ "main", "d1/d7f/nested__test_8py.html#adb7845568bf1b21fffeee071850390db", null ],
     [ "_data", "d1/d7f/nested__test_8py.html#a3d5fd781467251ff3b26a131cc931ec9", null ],
     [ "args", "d1/d7f/nested__test_8py.html#a6e9f984729a9b3a0feaeb2f55d02733c", null ],

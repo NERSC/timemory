@@ -1,10 +1,12 @@
 var NAVTREEINDEX3 =
 {
+"df/ddd/namespacetests_1_1timemory__test.html":[0,8,5,2],
+"df/ddd/namespacetests_1_1timemory__test.html":[1,0,4,0],
 "df/df2/timing__manager_8hpp.html":[2,0,3,8],
 "df/df2/timing__manager_8hpp.html#a25df2518725d65bfd24282f1640b4a46":[2,0,3,8,3],
 "df/df2/timing__manager_8hpp.html#a2859e73f2225f8575c230728e785ca2d":[2,0,3,8,2],
+"df/df9/namespace_n_a_m_e___t_i_m_1_1rss.html":[0,8,1,1],
 "df/df9/namespace_n_a_m_e___t_i_m_1_1rss.html":[1,0,0,1],
-"df/df9/namespace_n_a_m_e___t_i_m_1_1rss.html":[0,8,2,1],
 "dir_44f8871e198e5901b49dec9153953d20.html":[2,0,0,0],
 "dir_4fd02b5fd43288e8282468be733f8250.html":[2,0,3],
 "dir_59425e443f801f1f2fd8bbe4959a3ccf.html":[2,0,2],
@@ -21,8 +23,8 @@ var NAVTREEINDEX3 =
 "functions_d.html":[1,3,0,4],
 "functions_e.html":[1,3,0,5],
 "functions_f.html":[1,3,0,6],
-"functions_func.html":[1,3,1,0],
 "functions_func.html":[1,3,1],
+"functions_func.html":[1,3,1,0],
 "functions_func_0x7e.html":[1,3,1,20],
 "functions_func_a.html":[1,3,1,1],
 "functions_func_b.html":[1,3,1,2],

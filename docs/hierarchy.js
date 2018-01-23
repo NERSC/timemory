@@ -1,6 +1,7 @@
 var hierarchy =
 [
     [ "NAME_TIM::auto_timer", "dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html", null ],
+    [ "auto_timer_decorator", "da/da5/classauto__timer__decorator.html", null ],
     [ "NAME_TIM::base_clock< _precision >", "d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html", null ],
     [ "NAME_TIM::base_clock_data< _Prec >", "d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html", null ],
     [ "NAME_TIM::internal::base_rss_usage", "d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html", null ],

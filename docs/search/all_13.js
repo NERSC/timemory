@@ -7,6 +7,7 @@ var searchData=
   ['t',['t',['../dd/dcb/namespacetests_1_1nested__test.html#a53d5853d6119b4a5e7f547333606f7ad',1,'tests::nested_test']]],
   ['tag',['tag',['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#afa57eb4451c209656f20c56134712787',1,'NAME_TIM::timer_tuple::tag()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#ac11cd619e8e622db01bcce3339b2b301',1,'NAME_TIM::timer_tuple::tag() const']]],
   ['test',['test',['../d0/d18/namespacetests_1_1simple__test.html#ac62aa6eb02492ff7551df1f41a133053',1,'tests::simple_test']]],
+  ['test_5fdecorator',['test_decorator',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a0bb9ab9577d10775898038f78692d4ee',1,'tests::timemory_test::timemory_test']]],
   ['test_5fmax_5fdepth',['test_max_depth',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a63185bcee00e8e7aee4f78292bc88207',1,'tests::timemory_test::timemory_test']]],
   ['test_5fpointer',['test_pointer',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#ae682888e72ea8b5ef593cca62616d34b',1,'tests::timemory_test::timemory_test']]],
   ['test_5ftiming',['test_timing',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a569e2ef981eb4a80e9c65bef1dd2dc5c',1,'tests::timemory_test::timemory_test']]],
