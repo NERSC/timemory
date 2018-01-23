@@ -1,6 +1,8 @@
 //  MIT License
 //  
-//  Copyright (c) 2018 Jonathan R. Madsen
+//  Copyright (c) 2018, The Regents of the University of California, 
+// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //  
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal

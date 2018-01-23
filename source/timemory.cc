@@ -1,6 +1,8 @@
 // MIT License
 //
-// Copyright (c) 2018 Jonathan R. Madsen
+// Copyright (c) 2018, The Regents of the University of California, 
+// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -245,7 +247,8 @@ PYBIND11_MODULE(timemory, tim)
     auto timer_decorator_init = [=] (const std::string& func,
                                      const std::string& file,
                                      int line,
-                                     const std::string& key)
+                                     const std::string& key,
+                                     bool added_args)
     {
         auto_timer_decorator* _ptr = new auto_timer_decorator();
         if(!auto_timer_t::alloc_next())
@@ -253,9 +256,14 @@ PYBIND11_MODULE(timemory, tim)
 
         std::stringstream keyss;
         keyss << func;
-        if(key != "" && key[0] != '@')
-            keyss << "@";
-        if(key != "")
+
+        // add arguments to end of function
+        if(added_args)
+            keyss << key;
+        else if(key != "" && key[0] != '@' && !added_args)
+                keyss << "@";
+
+        if(key != "" && !added_args)
             keyss << key;
         else
         {

@@ -2,7 +2,9 @@
 
 # MIT License
 #
-# Copyright (c) 2018 Jonathan R. Madsen
+# Copyright (c) 2018, The Regents of the University of California, 
+# through Lawrence Berkeley National Laboratory (subject to receipt of any 
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -48,42 +50,38 @@ array_size = 8000000
 
 
 #------------------------------------------------------------------------------#
+# NOTE: Using decorator on a recursive function will produce a very different
+# output
 def fibonacci(n):
     if n < 2:
         return n 
-    autotimer = tim.auto_timer('({})@{}:{}'.format(n, tim.FILE(), tim.LINE()))
+    autotimer = tim.auto_timer('({}){}:{}'.format(n, tim.FILE(), tim.LINE()))
     return fibonacci(n-1) + fibonacci(n-2)
 
 
 #------------------------------------------------------------------------------#
-def func_mem(n=array_size):
-    autotimer = tim.auto_timer('{}:{}'.format(tim.FILE(), tim.LINE()))
-
-
-#------------------------------------------------------------------------------#
+@tim.util.auto_timer(add_args=True)
 def func_1(n):
-    autotimer = tim.auto_timer('{}:{}'.format(tim.FILE(), tim.LINE()))
     fibonacci(n)
-    func_mem(array_size)
 
 
 #------------------------------------------------------------------------------#
+@tim.util.auto_timer(add_args=True)
 def func_2(n):
-    autotimer = tim.auto_timer('{}:{}'.format(tim.FILE(), tim.LINE()))
     func_1(n)
     fibonacci(n)
 
 
 #------------------------------------------------------------------------------#
+@tim.util.auto_timer(add_args=True)
 def func_3(n):
-    autotimer = tim.auto_timer('{}:{}'.format(tim.FILE(), tim.LINE()))
     func_1(n)
     func_2(n)
 
 
 #------------------------------------------------------------------------------#
+@tim.util.auto_timer("'AUTO_TIMER_DECORATOR_KEY_TEST':{}".format(tim.LINE()))
 def main(nfib):
-    autotimer = tim.auto_timer('{}:{}'.format(tim.FILE(), tim.LINE()))
     for i in range(2):
         func_1(nfib)
     func_2(nfib)
@@ -92,6 +90,10 @@ def main(nfib):
 
 #------------------------------------------------------------------------------#
 if __name__ == "__main__":
+
+    t = tim.timer("Total time")
+    t.start()
+    print ('')
 
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--nfib",
@@ -103,12 +105,9 @@ if __name__ == "__main__":
     args = tim.util.add_arguments_and_parse(parser)
     array_size = args.size
 
-    print ('')
     try:
-        t = tim.timer("Total time")
-        t.start()
         main(args.nfib)
-        print ('')
+        print ('\nTiming manager size: {}\n'.format(tim.size()))
         tman = tim.timing_manager()
         tman.report()
         tman.serialize('output.json')
@@ -117,12 +116,12 @@ if __name__ == "__main__":
         _data.title = tim.FILE(noquotes=True)
         _data.filename = tim.FILE(noquotes=True)
         tim.util.plot(data = [_data], files = ["output.json"], display=False)
-        t.stop()
-        print ('')
-        t.report()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
         print ('Exception - {}'.format(e))
 
+    t.stop()
+    print ('')
+    t.report()
     print ('')

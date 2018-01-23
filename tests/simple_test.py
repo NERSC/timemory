@@ -2,7 +2,9 @@
 
 # MIT License
 #
-# Copyright (c) 2018 Jonathan R. Madsen
+# Copyright (c) 2018, The Regents of the University of California, 
+# through Lawrence Berkeley National Laboratory (subject to receipt of any 
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -36,7 +38,7 @@ import argparse
 default_nfib = 29
 tim.enable_signal_detection()
 
-@tim.util.decorate_auto_timer
+@tim.util.auto_timer()
 def fibonacci(n):
     if n < 2:
         return n 
@@ -48,7 +50,7 @@ def test():
     print ('test: func(2) {}'.format(tim.FUNC(2)))
 
 
-@tim.util.decorate_auto_timer
+@tim.util.auto_timer()
 def calcfib(nfib):
     t = tim.timer("> [pyc] fib({}) ".format(nfib))
     t.start()

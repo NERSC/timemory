@@ -1,6 +1,8 @@
 // MIT License
 //
-// Copyright (c) 2018 Jonathan R. Madsen
+// Copyright (c) 2018, The Regents of the University of California, 
+// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -186,18 +188,27 @@ public:
         typedef std::chrono::high_resolution_clock              clock_type;
         typedef std::chrono::duration<clock_type::rep, period>  duration_type;
 
-        tms _internal;
-        ::times(&_internal);
+        tms _tms;
+
+        // wall clock
+        auto get_wall_time = [&] ()
+        { return std::chrono::duration_cast<duration_type>(
+                        clock_type::now().time_since_epoch()).count(); };
+
+        // user time
+        auto get_user_time = [&] ()
+        { return (_tms.tms_utime + _tms.tms_cutime) * clock_tick<period>(); };
+
+        // system time
+        auto get_sys_time = [&] ()
+        { return (_tms.tms_stime + _tms.tms_cstime) * clock_tick<period>(); };
+
+        // record as close as possible, user and sys before wall
+        ::times(&_tms);
+        auto wall_time = get_wall_time();
+
         return time_point(duration(rep
-        { std::make_tuple(
-          // user time
-          (_internal.tms_utime + _internal.tms_cutime) * clock_tick<period>(),
-          // system time
-          (_internal.tms_stime + _internal.tms_cstime) * clock_tick<period>(),
-          // wall time
-          std::chrono::duration_cast<duration_type>(
-          clock_type::now().time_since_epoch()).count())
-        }));
+        { std::make_tuple(get_user_time(), get_sys_time(), wall_time) } ));
     }
 };
 

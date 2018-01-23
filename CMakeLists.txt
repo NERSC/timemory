@@ -253,7 +253,8 @@ if(NOT SUBPROJECT)
     set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/source
         ${PROJECT_SOURCE_DIR}/python
-        ${PROJECT_SOURCE_DIR}/tests)
+        ${PROJECT_SOURCE_DIR}/tests
+        ${PROJECT_SOURCE_DIR}/examples)
     
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
     include(Documentation)
