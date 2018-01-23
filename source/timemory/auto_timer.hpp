@@ -55,6 +55,7 @@ public:
     // static public functions
     static uint64_t& ncount();
     static uint64_t& nhash();
+    static bool alloc_next();
 
 private:
     bool            m_temp_disable;

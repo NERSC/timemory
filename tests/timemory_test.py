@@ -186,6 +186,36 @@ class timemory_test(unittest.TestCase):
 
         self.assertEqual(ndef, get_pointer_max())
 
+    # Test decorator
+    def test_decorator(self):
+        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+
+        import time
+
+        timemory.clear()
+
+        @timemory.util.decorate_auto_timer
+        def test_func_glob():
+            time.sleep(1)
+
+            @timemory.util.decorate_auto_timer
+            def test_func_1():
+                time.sleep(1)
+
+            @timemory.util.decorate_auto_timer
+            def test_func_2(n):
+                test_func_1()
+                time.sleep(n)
+
+            test_func_1()
+            test_func_2(2)
+
+        test_func_glob()
+
+        timemory.report()
+
+        self.assertEqual(timemory.size(), 4)
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -37,6 +37,14 @@ uint64_t& auto_timer::ncount() { return timing_manager::instance()->count(); }
 
 //============================================================================//
 
+bool auto_timer::alloc_next()
+{
+    return timing_manager::is_enabled() &&
+            (uint64_t) timing_manager::max_depth() > auto_timer::ncount();
+}
+
+//============================================================================//
+
 auto_timer::auto_timer(const std::string& timer_tag,
                        const int32_t& lineno,
                        const std::string& code_tag,

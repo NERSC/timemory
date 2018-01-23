@@ -61,14 +61,9 @@ foreach(_FILE plot options)
         ${PROJECT_BINARY_DIR}/timemory-supp/${_FILE}.py COPYONLY)
 endforeach(_FILE plot options)
 
-file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
-"#!/usr/bin/env python
-
-from .plot import *
-from .options import *
-from .mpi_support import *
-
-")
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py
+    ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
+    COPYONLY)
 
 #----------------------------------------------------------------------------
 # MPI info

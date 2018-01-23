@@ -60,12 +60,14 @@ using namespace py::literals;
 #include "timemory/rss.hpp"
 #include "timemory/mpi.hpp"
 
-typedef NAME_TIM::timing_manager      timing_manager_t;
-typedef NAME_TIM::timer               tim_timer_t;
-typedef NAME_TIM::auto_timer          auto_timer_t;
-typedef NAME_TIM::rss::usage                rss_usage_t;
+typedef NAME_TIM::timing_manager    timing_manager_t;
+typedef NAME_TIM::timer             tim_timer_t;
+typedef NAME_TIM::auto_timer        auto_timer_t;
+typedef NAME_TIM::rss::usage        rss_usage_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
+
+//============================================================================//
 
 class timing_manager_wrapper
 {
@@ -81,6 +83,32 @@ public:
 
 private:
     timing_manager_t* m_manager;
+};
+
+//============================================================================//
+
+class auto_timer_decorator
+{
+public:
+    auto_timer_decorator(auto_timer_t* _ptr = nullptr)
+    : m_ptr(_ptr)
+    { }
+
+    ~auto_timer_decorator()
+    {
+        delete m_ptr;
+    }
+
+    auto_timer_decorator& operator=(auto_timer_t* _ptr)
+    {
+        if(m_ptr)
+            delete m_ptr;
+        m_ptr = _ptr;
+        return *this;
+    }
+
+private:
+    auto_timer_t* m_ptr;
 };
 
 //============================================================================//
@@ -214,6 +242,31 @@ PYBIND11_MODULE(timemory, tim)
         return new auto_timer_t(keyss.str(), op_line, "pyc");
     };
 
+    auto timer_decorator_init = [=] (const std::string& func,
+                                     const std::string& file,
+                                     int line,
+                                     const std::string& key)
+    {
+        auto_timer_decorator* _ptr = new auto_timer_decorator();
+        if(!auto_timer_t::alloc_next())
+            return _ptr;
+
+        std::stringstream keyss;
+        keyss << func;
+        if(key != "" && key[0] != '@')
+            keyss << "@";
+        if(key != "")
+            keyss << key;
+        else
+        {
+            keyss << "@";
+            keyss << file;
+            keyss << ":";
+            keyss << line;
+        }
+        return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc"));
+    };
+
     auto enable_signal_detection = [=] () { NAME_TIM::EnableSignalDetection(); };
     auto disable_signal_detection = [=] () { NAME_TIM::DisableSignalDetection(); };
 
@@ -285,6 +338,7 @@ PYBIND11_MODULE(timemory, tim)
     py::class_<timing_manager_wrapper> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
     py::class_<auto_timer_t> auto_timer(tim, "auto_timer");
+    py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
 
     //------------------------------------------------------------------------//
 
@@ -434,36 +488,33 @@ PYBIND11_MODULE(timemory, tim)
 
     //------------------------------------------------------------------------//
 
-    auto_timer.def(py::init(auto_timer_init), "Initialization",
-                   py::arg("key") = "", py::arg("nback") = 1,
+    auto_timer.def(py::init(auto_timer_init),
+                   "Initialization",
+                   py::arg("key") = "",
+                   py::arg("nback") = 1,
                    py::return_value_policy::take_ownership);
 
-    tim.def("auto_decorator",
-            [=] (py::function pyfunc, int n)
-            {
-                auto locals = py::dict();
-                py::exec(R"(
-                         func = tim.FUNC(2)
-                         line = tim.LINE(2)
-                         file = tim.FILE()
-                         )", py::globals(), locals);
-                auto func = locals["func"].cast<std::string>();
-                auto line = locals["line"].cast<int32_t>();
-                auto file = locals["file"].cast<std::string>();
-                std::stringstream ss;
-                ss << func << "@" << file << ":" << line;
-                auto_timer_t autotimer = auto_timer_t(ss.str(), line);
-                return pyfunc(n);
-            },
-            "Decorator function");
+    timer_decorator.def(py::init(timer_decorator_init),
+                        "Initialization",
+                        py::return_value_policy::automatic);
+
+    //------------------------------------------------------------------------//
 
     tim.def("report",
             [=] (bool no_min = true)
-            {
-                timing_manager_t::instance()->report(no_min);
-            },
+            { timing_manager_t::instance()->report(no_min); },
             "Report the timing manager (default: no_min = True)",
             py::arg("no_min") = true);
+
+    tim.def("clear",
+            [=] ()
+            { timing_manager_t::instance()->clear(); },
+            "Clear the timing manager");
+
+    tim.def("size",
+            [=] ()
+            { return timing_manager_t::instance()->size(); },
+            "Size of the timing manager");
 
     //------------------------------------------------------------------------//
 

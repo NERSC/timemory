@@ -33,9 +33,10 @@ import timemory as tim
 import time
 import argparse
 
-default_nfib = 35
+default_nfib = 29
 tim.enable_signal_detection()
 
+@tim.util.decorate_auto_timer
 def fibonacci(n):
     if n < 2:
         return n 
@@ -46,9 +47,9 @@ def test():
     print ('test: func() {}'.format(tim.FUNC()))
     print ('test: func(2) {}'.format(tim.FUNC(2)))
 
-    
+
+@tim.util.decorate_auto_timer
 def calcfib(nfib):
-    autotimer = tim.auto_timer()
     t = tim.timer("> [pyc] fib({}) ".format(nfib))
     t.start()
     ret = fibonacci(nfib)
@@ -59,6 +60,7 @@ def calcfib(nfib):
 
 
 def main(nfib):
+    tim.set_max_depth(5)
     print ('')
     print ('main: file() {}'.format(tim.FILE()))
     print ('main: line() {}'.format(tim.LINE()))
@@ -67,7 +69,7 @@ def main(nfib):
     test()
     print ('')
     tman = tim.timing_manager()
-    calcfib(int(nfib))
+    ret = calcfib(int(nfib))
     tman.report()
     tman.serialize('output.json')
     print ('')
@@ -81,6 +83,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--nfib",
                         help="Number of fibonacci calculations",
-                        default=35, type=int)
+                        default=default_nfib, type=int)
     args = tim.util.add_arguments_and_parse(parser)
     main(args.nfib)
