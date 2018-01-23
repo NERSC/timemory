@@ -138,7 +138,7 @@ def get_long_descript():
 # ------------------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.0b5',
+    version='1.0b6',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',

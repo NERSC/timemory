@@ -22,3 +22,7 @@ timing_report*
 
 # macOS Finder files
 .DS_Store
+
+# setup.py 
+/TiMemory-*
+/dist
