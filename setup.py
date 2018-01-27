@@ -26,37 +26,43 @@ class CMakeBuild(build_ext, Command):
 
     use_mpi = 'ON'
     build_type = 'Release'
+    cmake_version = '2.7.12'
 
     def init_cmake(self):
         """
         Ensure cmake is in PATH
         """
-        import cmake
         try:
-            if not cmake.CMAKE_BIN_DIR in sys.path:
-                sys.path.append(cmake.CMAKE_BIN_DIR)
-            if platform.system() != "Windows":
-                curr_path = os.environ['PATH']
-                if not cmake.CMAKE_BIN_DIR in curr_path:
-                    os.environ['PATH'] = "{}:{}".format(curr_path, cmake.CMAKE_BIN_DIR)
-        except:
-            print ('Error putting cmake in path')
+            out = subprocess.check_output(['cmake', '--version'])
+            CMakeBuild.cmake_version = LooseVersion(
+                re.search(r'version\s*([\d.]+)', out.decode()).group(1))
+        except OSError:
+            # if fail, try the module
+            import cmake
+            try:
+                if not cmake.CMAKE_BIN_DIR in sys.path:
+                    sys.path.append(cmake.CMAKE_BIN_DIR)
+                if platform.system() != "Windows":
+                    curr_path = os.environ['PATH']
+                    if not cmake.CMAKE_BIN_DIR in curr_path:
+                        os.environ['PATH'] = "{}:{}".format(curr_path, cmake.CMAKE_BIN_DIR)
+
+                CMakeBuild.cmake_version = cmake.sys.version.split(' ')[0]
+            except:
+                print ('Error putting cmake in path')
+                raise RuntimeError(
+                    "CMake must be installed to build the following extensions: " +
+                        ", ".join(e.name for e in self.extensions))
 
 
     def run(self):
         import cmake
         self.init_cmake()
-        try:
-            cmake_version = cmake.sys.version.split(' ')[0]
-        except OSError:
-            raise RuntimeError(
-                "CMake must be installed to build the following extensions: " +
-                ", ".join(e.name for e in self.extensions))
 
-        if cmake_version < '3.1.3':
-            raise RuntimeError("CMake >= 3.1.3 is required on Windows")
+        if CMakeBuild.cmake_version < '3.1.3':
+            raise RuntimeError("CMake >= 3.1.3 is required")
 
-        print ('Using CMake version {}...'.format(cmake_version))
+        print ('Using CMake version {}...'.format(CMakeBuild.cmake_version))
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -141,20 +147,32 @@ class CatchTestCommand(TestCommand):
     A custom test runner to execute both Python unittest tests and C++ Catch-
     lib tests.
     """
+
+    cmake_version = '2.7.12'
+
     def init_cmake(self):
         """
         Ensure cmake is in PATH
         """
-        import cmake
         try:
-            if not cmake.CMAKE_BIN_DIR in sys.path:
-                sys.path.append(cmake.CMAKE_BIN_DIR)
-            if platform.system() != "Windows":
-                curr_path = os.environ['PATH']
-                if not cmake.CMAKE_BIN_DIR in curr_path:
-                    os.environ['PATH'] = "{}:{}".format(curr_path, cmake.CMAKE_BIN_DIR)
-        except:
-            print ('Error putting cmake in path')
+            out = subprocess.check_output(['cmake', '--version'])
+
+        except OSError:
+            # if fail, try the module
+            import cmake
+            try:
+                if not cmake.CMAKE_BIN_DIR in sys.path:
+                    sys.path.append(cmake.CMAKE_BIN_DIR)
+                if platform.system() != "Windows":
+                    curr_path = os.environ['PATH']
+                    if not cmake.CMAKE_BIN_DIR in curr_path:
+                        os.environ['PATH'] = "{}:{}".format(curr_path, cmake.CMAKE_BIN_DIR)
+
+            except:
+                print ('Error putting cmake in path')
+                raise RuntimeError(
+                    "CMake must be installed to test the following extensions: " +
+                        ", ".join(e.name for e in self.extensions))
 
 
     def distutils_dir_name(self, dname):
