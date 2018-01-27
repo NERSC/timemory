@@ -46,9 +46,9 @@ build_script:
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
     -DCMAKE_CXX_STANDARD=%CPP%
     -DCMAKE_SUPPRESS_REGENERATION=1
+- ls
+- DIR
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config %CONFIG% --target all -- /m /v:m /logger:%MSBuildLogger%
-- cmake --build . --config %CONFIG% --target all -- /m /v:m /logger:%MSBuildLogger%
+- cmake --build . --config %CONFIG% --target TiMemory -- /m /v:m /logger:%MSBuildLogger%
 - python setup.py build install
 - ctest
-on_failure: if exist "tests\test_cmake_build" type tests\test_cmake_build\*.log*

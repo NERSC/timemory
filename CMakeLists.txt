@@ -94,8 +94,10 @@ endif(USE_MPI)
 #
 ################################################################################
 
-set(CMAKE_THREAD_PREFER_PTHREAD ON)
-set(THREADS_PREFER_PTHREAD_FLAG ON)
+if(NOT WIN32)
+    set(CMAKE_THREAD_PREFER_PTHREAD ON)
+    set(THREADS_PREFER_PTHREAD_FLAG ON)
+endif(NOT WIN32)
 find_package(Threads REQUIRED)
 list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
