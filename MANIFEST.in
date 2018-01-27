@@ -1,15 +1,18 @@
-# include .gitignore
-# include .gitmodules
+# direct includes
 include CMakeLists.txt
 include LICENSE
 include README.md
-# recursive-include .git *
+include CHANGES.rst
+# recursive includes
 recursive-include cmake *
 recursive-include examples *
 recursive-include pybind11 *
 recursive-include python *
 recursive-include source *
 recursive-include tests *
-global-exclude *__pycache__*
+# global exclude
 global-exclude *.pyc
 global-exclude *.git*
+global-exclude *__pycache__*
+# recursive excludes
+recursive-exclude pybind11/docs/.build *
