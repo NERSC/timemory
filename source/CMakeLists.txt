@@ -34,9 +34,15 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 file(GLOB sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 file(GLOB headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 
-add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-add_library(${LIBNAME}-shared SHARED $<TARGET_OBJECTS:${LIBNAME}-object>)
-add_library(${LIBNAME}-static STATIC $<TARGET_OBJECTS:${LIBNAME}-object>)
+if(WIN32)
+    add_library(${LIBNAME}-shared SHARED ${sources} ${headers})
+    add_library(${LIBNAME}-static STATIC ${sources} ${headers})
+elseif(WIN32)
+    add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
+    add_library(${LIBNAME}-shared SHARED $<TARGET_OBJECTS:${LIBNAME}-object>)
+    add_library(${LIBNAME}-static STATIC $<TARGET_OBJECTS:${LIBNAME}-object>)
+endif(WIN32)
+
 target_link_libraries(${LIBNAME}-shared ${EXTERNAL_LIBRARIES})
 target_link_libraries(${LIBNAME}-static ${EXTERNAL_LIBRARIES})
 

@@ -34,7 +34,7 @@ int gettimeofday(struct timeval* t, void* /* timezone */)
 #   if defined(_WIN64)
     _ftime64(&timebuffer);
 #   elif defined(_WIN32)
-    _ftime32(&timebuffer);
+    _ftime(&timebuffer);
 #   endif
     t->tv_sec=timebuffer.time;
     t->tv_usec=1000*timebuffer.millitm;

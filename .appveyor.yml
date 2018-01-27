@@ -1,25 +1,32 @@
 version: 1.0.{build}
+
 image:
 - Visual Studio 2017
 - Visual Studio 2015
+
 test: off
+
 build:
   parallel: true
+
 platform:
 - x64
-- x86
+#- x86
+
 environment:
   matrix:
   - PYTHON: 36
     CPP: 14
-    CONFIG: Debug
+    CONFIG: Release
   - PYTHON: 27
     CPP: 14
-    CONFIG: Debug
+    CONFIG: Release
+
 matrix:
   exclude:
     - image: Visual Studio 2015
       platform: x86
+
 install:
 - ps: |
     if ($env:PLATFORM -eq "x64") { $env:CMAKE_ARCH = "x64" }
@@ -33,15 +40,14 @@ install:
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       pip install --disable-pip-version-check --user --upgrade pip wheel
-      pip install pytest numpy
     } elseif ($env:CONDA) {
       if ($env:CONDA -eq "27") { $env:CONDA = "" }
       if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
       $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
       $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
-      conda install -y -q pytest numpy scipy pip
+      conda install -y -q pip
     }
-    pip install matplotlib numpy tornado argparse cmake
+
 build_script:
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
     -DCMAKE_CXX_STANDARD=%CPP%
@@ -51,5 +57,6 @@ build_script:
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 - cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
-- python setup.py build install
-- ctest
+- ctest -V
+- python setup.py build install test
+
