@@ -140,7 +140,7 @@ set(LIBNAME                 timemory)
 #       'XXX' means the weak symbol cannot be overridden at runtime.
 #       This was likely caused by different translation units being
 #       compiled with different visibility settings.
-if(NOT SUBPROJECT)
+if(NOT SUBPROJECT AND NOT WIN32)
     add(CMAKE_CXX_FLAGS "-W -Wall -Wextra -Wno-unknown-warning-option")
     add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough -Wno-unused-parameter")
     add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
@@ -156,11 +156,8 @@ if(NOT SUBPROJECT)
         add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
         add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
     endif(ENABLE_SANITIZE)
-    if(WIN32)
-        STRING(REPLACE " -" " /" CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-    endif(WIN32)
     add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
-endif(NOT SUBPROJECT)
+endif(NOT SUBPROJECT AND NOT WIN32)
 
 if(TIMEMORY_EXCEPTIONS)
     if(WIN32)

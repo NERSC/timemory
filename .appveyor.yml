@@ -49,6 +49,7 @@ build_script:
 - ls
 - DIR
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config %CONFIG% --target TiMemory -- /m /v:m /logger:%MSBuildLogger%
+- cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
+- cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - python setup.py build install
 - ctest
