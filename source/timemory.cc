@@ -369,63 +369,13 @@ PYBIND11_MODULE(timemory, tim)
             "Return if the TiMemory library has MPI support");
 
     //------------------------------------------------------------------------//
-
-    //py::module utl = tim.def_submodule("util",          "Utility submodule");
-    //py::module opt = tim.def_submodule("options",       "I/O options submodule");
-    //py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
-    //py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
-    py::module sig = tim.def_submodule("signals",       "Signals submodule");
-
-    auto _util = tim.import("util");
-    auto _plot = tim.import("plotting");
-    auto _mpis = tim.import("mpi_support");
-    //auto _opts = tim.import("options");
-
-    tim.add_object("util", _util);
-    tim.add_object("plotting", _plot);
-    tim.add_object("mpi_support", _mpis);
-    //tim.add_object("options", _opts);
-
-    //py::eval_file("util/__init__.py",       py::globals(), utl.attr("__dict__"));
-    //py::eval_file("options/__init__.py",    py::globals(), opt.attr("__dict__"));
-    //py::eval_file("plotting/__init__.py",   py::globals(), plt.attr("__dict__"));
-    //py::eval_file("mpi_support/__init__.py",py::globals(), mpi.attr("__dict__"));
-
-    //------------------------------------------------------------------------//
     // Classes
 
-    py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
-                                            "Signals for TiMemory module");
     py::class_<timing_manager_wrapper> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
     py::class_<auto_timer_t> auto_timer(tim, "auto_timer");
     py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
     py::class_<rss_usage_t> rss_usage(tim, "rss_usage");
-
-    //------------------------------------------------------------------------//
-
-    sys_signal_enum
-            .value("Hangup", sys_signal_t::sHangup)
-            .value("Interrupt", sys_signal_t::sInterrupt)
-            .value("Quit", sys_signal_t::sQuit)
-            .value("Illegal", sys_signal_t::sIllegal)
-            .value("Trap", sys_signal_t::sTrap)
-            .value("Abort", sys_signal_t::sAbort)
-            .value("Emulate", sys_signal_t::sEmulate)
-            .value("FPE", sys_signal_t::sFPE)
-            .value("Kill", sys_signal_t::sKill)
-            .value("Bus", sys_signal_t::sBus)
-            .value("SegFault", sys_signal_t::sSegFault)
-            .value("System", sys_signal_t::sSystem)
-            .value("Pipe", sys_signal_t::sPipe)
-            .value("Alarm", sys_signal_t::sAlarm)
-            .value("Terminate", sys_signal_t::sTerminate)
-            .value("Urgent", sys_signal_t::sUrgent)
-            .value("Stop", sys_signal_t::sStop)
-            .value("CPUtime", sys_signal_t::sCPUtime)
-            .value("FileSize", sys_signal_t::sFileSize)
-            .value("VirtualAlarm", sys_signal_t::sVirtualAlarm)
-            .value("ProfileAlarm", sys_signal_t::sProfileAlarm);
 
     //------------------------------------------------------------------------//
 
@@ -654,19 +604,68 @@ PYBIND11_MODULE(timemory, tim)
                   py::return_value_policy::take_ownership,
                   py::arg("record") = false);
     rss_usage.def("record",
-                  [=] (py::object _rss_usage)
+                  [=] (py::object self)
                   {
-                      _rss_usage.cast<rss_usage_t*>()->record();
+                      self.cast<rss_usage_t*>()->record();
                   },
                   "Record the RSS usage");
     rss_usage.def("__str__",
-                  [=] (py::object _rss)
+                  [=] (py::object self)
                   {
                       std::stringstream ss;
-                      ss << *(_rss.cast<rss_usage_t*>());
+                      ss << *(self.cast<rss_usage_t*>());
                       return ss.str();
                   },
                   "Stringify the rss usage");
+    rss_usage.def("__iadd__",
+                  [=] (py::object self, py::object rhs)
+                  {
+                      *(self.cast<rss_usage_t*>())
+                            += *(rhs.cast<rss_usage_t*>());
+                      return self;
+                  },
+                  "Add rss usage");
+    rss_usage.def("__isub__",
+                  [=] (py::object self, py::object rhs)
+                  {
+                      *(self.cast<rss_usage_t*>())
+                            -= *(rhs.cast<rss_usage_t*>());
+                      return self;
+                  },
+                  "Subtract rss usage");
+    rss_usage.def("__add__",
+                  [=] (py::object self, py::object rhs)
+                  {
+                      rss_usage_t* _rss
+                            = new rss_usage_t(*(self.cast<rss_usage_t*>()));
+                      *_rss += *(rhs.cast<rss_usage_t*>());
+                      return _rss;
+                  },
+                  "Add rss usage",
+                  py::return_value_policy::take_ownership);
+    rss_usage.def("__sub__",
+                  [=] (py::object self, py::object rhs)
+                  {
+                      rss_usage_t* _rss
+                            = new rss_usage_t(*(self.cast<rss_usage_t*>()));
+                      *_rss -= *(rhs.cast<rss_usage_t*>());
+                      return _rss;
+                  },
+                  "Subtract rss usage",
+                  py::return_value_policy::take_ownership);
+    rss_usage.def("current",
+                  [=] (py::object self)
+                  {
+                      return self.cast<rss_usage_t*>()->current();
+                  },
+                  "Return the current rss usage");
+    rss_usage.def("peak",
+                  [=] (py::object self)
+                  {
+                      return self.cast<rss_usage_t*>()->peak();
+                  },
+                  "Return the current rss usage");
+
 
     //------------------------------------------------------------------------//
 
@@ -686,7 +685,66 @@ PYBIND11_MODULE(timemory, tim)
             { return timing_manager_t::instance()->size(); },
             "Size of the timing manager");
 
+
     //------------------------------------------------------------------------//
+    //
+    //      Dummy submodules
+    //
+    //------------------------------------------------------------------------//
+
+    //py::module utl = tim.def_submodule("util",          "Utility submodule");
+    //py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
+    //py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
+
+    auto _util = tim.import("util");
+    auto _plot = tim.import("plotting");
+    auto _mpis = tim.import("mpi_support");
+
+    tim.add_object("util", _util);
+    tim.add_object("plotting", _plot);
+    tim.add_object("mpi_support", _mpis);
+
+    //py::eval_file("util/__init__.py",       py::globals(), utl.attr("__dict__"));
+    //py::eval_file("plotting/__init__.py",   py::globals(), plt.attr("__dict__"));
+    //py::eval_file("mpi_support/__init__.py",py::globals(), mpi.attr("__dict__"));
+
+    //========================================================================//
+    //
+    //      Signals submodule
+    //
+    //========================================================================//
+
+    py::module sig = tim.def_submodule("signals",       "Signals submodule");
+
+    //------------------------------------------------------------------------//
+
+    py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
+                                            "Signals for TiMemory module");
+
+    //------------------------------------------------------------------------//
+
+    sys_signal_enum
+            .value("Hangup", sys_signal_t::sHangup)
+            .value("Interrupt", sys_signal_t::sInterrupt)
+            .value("Quit", sys_signal_t::sQuit)
+            .value("Illegal", sys_signal_t::sIllegal)
+            .value("Trap", sys_signal_t::sTrap)
+            .value("Abort", sys_signal_t::sAbort)
+            .value("Emulate", sys_signal_t::sEmulate)
+            .value("FPE", sys_signal_t::sFPE)
+            .value("Kill", sys_signal_t::sKill)
+            .value("Bus", sys_signal_t::sBus)
+            .value("SegFault", sys_signal_t::sSegFault)
+            .value("System", sys_signal_t::sSystem)
+            .value("Pipe", sys_signal_t::sPipe)
+            .value("Alarm", sys_signal_t::sAlarm)
+            .value("Terminate", sys_signal_t::sTerminate)
+            .value("Urgent", sys_signal_t::sUrgent)
+            .value("Stop", sys_signal_t::sStop)
+            .value("CPUtime", sys_signal_t::sCPUtime)
+            .value("FileSize", sys_signal_t::sFileSize)
+            .value("VirtualAlarm", sys_signal_t::sVirtualAlarm)
+            .value("ProfileAlarm", sys_signal_t::sProfileAlarm);
 
     //========================================================================//
     //
@@ -695,6 +753,7 @@ PYBIND11_MODULE(timemory, tim)
     //========================================================================//
 
     py::module opts = tim.def_submodule("options", "I/O options submodule");
+
     // ---------------------------------------------------------------------- //
 
     opts.attr("report_file") = false;

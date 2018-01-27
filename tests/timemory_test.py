@@ -34,6 +34,7 @@ import sys
 import os
 import time
 import unittest
+import numpy as np
 from os.path import join
 
 import timemory
@@ -41,26 +42,32 @@ from timemory import options
 
 timemory.enable_signal_detection()
 
+# ============================================================================ #
+
 def fibonacci(n):
     if n < 2:
         return n
     return fibonacci(n - 1) + fibonacci(n - 2)
 
+# ============================================================================ #
+
 class timemory_test(unittest.TestCase):
 
+    # ------------------------------------------------------------------------ #
     def setUp(self):
-        self.outdir = "test_output"
+        timemory.options.output_dir = "test_output"
         timemory.options.use_timers = True
         timemory.options.serial_report = True
 
 
+    # ------------------------------------------------------------------------ #
     # Test if the timers are working if not disabled at compilation
     @timemory.util.timer(is_class=True)
     def test_timing(self):
-        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
-        options.set_report(join(self.outdir, "timing_report.out"))
-        options.set_serial(join(self.outdir, "timing_report.json"))
+        options.set_report("timing_report.out")
+        options.set_serial("timing_report.json")
 
         tman = timemory.timing_manager()
 
@@ -95,13 +102,15 @@ class timemory_test(unittest.TestCase):
             t = tman.at(i)
             self.assertFalse(t.real_elapsed() < 0.0)
             self.assertFalse(t.user_elapsed() < 0.0)
+
         timemory.toggle(True)
 
 
+    # ------------------------------------------------------------------------ #
     # Test the timing on/off toggle functionalities
-    @timemory.util.timer(is_class=True, nback=3)
+    @timemory.util.timer(is_class=True)
     def test_toggle(self):
-        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         tman = timemory.timing_manager()
         timemory.toggle(True)
@@ -135,16 +144,17 @@ class timemory_test(unittest.TestCase):
             del autotimer_on
         self.assertEqual(tman.size(), 1)
 
-        timemory.options.set_report(join(self.outdir, "timing_toggle.out"))
-        timemory.options.set_serial(join(self.outdir, "timing_toggle.json"))
+        timemory.options.set_report("timing_toggle.out")
+        timemory.options.set_serial("timing_toggle.json")
 
         tman.report()
 
 
+    # ------------------------------------------------------------------------ #
     # Test the timing on/off toggle functionalities
     @timemory.util.timer(is_class=True)
     def test_max_depth(self):
-        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         tman = timemory.timing_manager()
         timemory.toggle(True)
@@ -161,16 +171,18 @@ class timemory_test(unittest.TestCase):
 
         create_timer(0)
 
-        timemory.options.set_report(join(self.outdir, "timing_depth.out"))
-        timemory.options.set_serial(join(self.outdir, "timing_depth.json"))
+        timemory.options.set_report("timing_depth.out")
+        timemory.options.set_serial("timing_depth.json")
         tman.report()
 
         self.assertEqual(tman.size(), ntimers)
 
+
+    # ------------------------------------------------------------------------ #
     # Test the timing on/off toggle functionalities
     @timemory.util.timer(is_class=True)
     def test_pointer(self):
-        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         nval = 4
 
@@ -192,10 +204,12 @@ class timemory_test(unittest.TestCase):
 
         self.assertEqual(ndef, get_pointer_max())
 
+
+    # ------------------------------------------------------------------------ #
     # Test decorator
     @timemory.util.timer(is_class=True)
     def test_decorator(self):
-        print ('Testing function: "{}"...'.format(timemory.FUNC()))
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         import time
 
@@ -222,6 +236,24 @@ class timemory_test(unittest.TestCase):
         timemory.report()
 
         self.assertEqual(timemory.size(), 4)
+
+        @timemory.util.timer()
+        def test_func_timer():
+            time.sleep(1)
+
+            @timemory.util.rss_usage()
+            def test_func_rss():
+                ret = np.ones(shape=[3000, 3000], dtype=np.float128)
+                return None
+
+            print('')
+            ret = test_func_rss()
+            print('')
+            #print('ret: {}'.format(ret), flush=True)
+            time.sleep(1)
+            return None
+
+        test_func_timer()
 
 
 if __name__ == '__main__':
