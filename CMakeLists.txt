@@ -123,44 +123,96 @@ if(NOT SUBPROJECT)
     set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
     add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
 endif(NOT SUBPROJECT)
+
+# set the output directory (critical on Windows
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-    if(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-    else(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${PROJECT_OUTPUT_DIR})
-    endif(NOT DEFINED PROJECT_OUTPUT_DIR OR "${PROJECT_OUTPUT_DIR}" STREQUAL "")
+    # if TIMEMORY_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
+    if(NOT DEFINED TIMEMORY_OUTPUT_DIR OR "${TIMEMORY_OUTPUT_DIR}" STREQUAL "")
+        set(TIMEMORY_OUTPUT_DIR ${CMAKE_BINARY_DIR})
+    endif(NOT DEFINED TIMEMORY_OUTPUT_DIR OR "${TIMEMORY_OUTPUT_DIR}" STREQUAL "")
+    # set the CMAKE_{ARCHIVE,LIBRARY,RUNTIME}_OUTPUT_DIRECTORY variables
+    if(WIN32)
+        # on Windows, separate types into different directories
+        string(TOLOWER "${_TYPE}" _LTYPE)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${TIMEMORY_OUTPUT_DIR}/outputs/${_LTYPE})
+    else(WIN32)
+        # on UNIX, just set to same directory
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${TIMEMORY_OUTPUT_DIR})
+    endif(WIN32)
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
+# cmake installation folder
 set(PROJECT_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
     CACHE PATH "Installation directory for CMake package config files")
 
+# used by configure_package_*
 set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 set(LIBNAME                 timemory)
 
-# without this, get the following warning in compilation with "-g -DDEBUG":
-#   ld: warning: direct access in function 'XXX' from file
-#       'XXX' to global weak symbol 'XXX' from file
-#       'XXX' means the weak symbol cannot be overridden at runtime.
-#       This was likely caused by different translation units being
-#       compiled with different visibility settings.
+# set the compiler flags if not on Windows
 if(NOT SUBPROJECT AND NOT WIN32)
-    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra -Wno-unknown-warning-option")
-    add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough -Wno-unused-parameter")
-    add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
-    add(CMAKE_CXX_FLAGS "-Wno-unused-private-field -Wno-exceptions")
+
+    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra -faligned-new ${CXXFLAGS} $ENV{CXXFLAGS}")
+    add(CMAKE_CXX_FLAGS "-Wno-unused-parameter")
     add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
+
+    if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+        add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
+        add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
+        add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
+        add(CMAKE_CXX_FLAGS "-Wno-exceptions")
+        add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
+        add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+    endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+
+    add(CMAKE_C_FLAGS "-W -Wall -Wextra -faligned-new ${CFLAGS} $ENV{CFLAGS}")
+    add(CMAKE_C_FLAGS "-Wno-unused-parameter")
+    add(CMAKE_C_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
+
+    if(NOT CMAKE_C_COMPILER_IS_INTEL)
+        add(CMAKE_C_FLAGS "-Wno-unknown-warning-option")
+        add(CMAKE_C_FLAGS "-Wno-implicit-fallthrough")
+        add(CMAKE_C_FLAGS "-Wno-shadow-field-in-constructor-modified")
+        add(CMAKE_C_FLAGS "-Wno-exceptions")
+        add(CMAKE_C_FLAGS "-Wno-unknown-warning-option")
+        add(CMAKE_C_FLAGS "-Wno-unused-private-field")
+    endif(NOT CMAKE_C_COMPILER_IS_INTEL)
+
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+
+        add(CMAKE_C_FLAGS "-DDEBUG")
         add(CMAKE_CXX_FLAGS "-DDEBUG")
+
+    else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+
+        if(CMAKE_CXX_COMPILER_IS_INTEL)
+            add(CMAKE_CXX_FLAGS "-xHOST")
+        else(CMAKE_CXX_COMPILER_IS_INTEL)
+            add(CMAKE_CXX_FLAGS "-march=native")
+        endif(CMAKE_CXX_COMPILER_IS_INTEL)
+
+        if(CMAKE_C_COMPILER_IS_INTEL)
+            add(CMAKE_C_FLAGS "-xHOST")
+        else(CMAKE_C_COMPILER_IS_INTEL)
+            add(CMAKE_C_FLAGS "-march=native")
+        endif(CMAKE_C_COMPILER_IS_INTEL)
+
     endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+
     if(UNIX)
         add(CMAKE_CXX_FLAGS "-pthread")
+        add(CMAKE_C_FLAGS "-pthread")
     endif(UNIX)
+
     if(ENABLE_SANITIZE)
         add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
         add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
     endif(ENABLE_SANITIZE)
+
+    add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
 endif(NOT SUBPROJECT AND NOT WIN32)
 
 if(TIMEMORY_EXCEPTIONS)
