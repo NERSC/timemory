@@ -31,6 +31,7 @@
 #define mpi_hpp_
 
 #include <cstdint>
+#include <algorithm>
 
 #if defined(TIMEMORY_USE_MPI)
 #   include <mpi.h>

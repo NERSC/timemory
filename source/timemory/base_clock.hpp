@@ -134,16 +134,25 @@ template<> struct time_units<std::ratio<3600*24>>
 template <typename Precision>
 static std::intmax_t clock_tick()
 {
+    auto _get_sys_tick = [] ()
+    {
+#if defined(_WINDOWS)
+        return CLOCKS_PER_SEC;
+#else
+        return ::sysconf(_SC_CLK_TCK);
+#endif
+    };
+
     static std::intmax_t result = 0;
     if (result == 0)
     {
-        result = ::sysconf(_SC_CLK_TCK);
+        result = _get_sys_tick();
         if (result <= 0)
         {
             std::stringstream ss;
             ss << "Could not retrieve number of clock ticks "
-                      << "per second (_SC_CLK_TCK).";
-            result = ::sysconf(_SC_CLK_TCK);
+                      << "per second (_SC_CLK_TCK / CLOCKS_PER_SEC).";
+            result = _get_sys_tick();
             throw std::runtime_error(ss.str().c_str());
         }
         else if (result > Precision::den) // den == std::ratio::denominator
@@ -152,12 +161,12 @@ static std::intmax_t clock_tick()
             ss << "Found more than 1 clock tick per "
                << time_units<Precision>::str
                << ". cpu_clock can't handle that.";
-            result = ::sysconf(_SC_CLK_TCK);
+            result = _get_sys_tick();
             throw std::runtime_error(ss.str().c_str());
         }
         else
         {
-            result = Precision::den / ::sysconf(_SC_CLK_TCK);
+            result = Precision::den / _get_sys_tick();
             //std::cout << "1 tick is " << result << ' '
             //          << time_units<_Prec>::str;
         }
