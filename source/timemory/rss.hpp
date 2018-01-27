@@ -101,9 +101,9 @@ namespace rss
         struct rusage rusage;
         getrusage( RUSAGE_SELF, &rusage );
 #   if defined(__APPLE__) && defined(__MACH__)
-        return (int64_t) (rusage.ru_maxrss / units::KiB * units::kilobyte);
+        return (int64_t) (rusage.ru_maxrss / ((int64_t) units::KiB) * units::kilobyte);
 #   else
-        return (int64_t) (rusage.ru_maxrss / units::KiB * units::megabyte);
+        return (int64_t) (rusage.ru_maxrss / ((int64_t) units::KiB) * units::megabyte);
 #   endif
 #elif defined(_WINDOWS)
         DWORD processID = GetCurrentProcessId();
@@ -121,7 +121,7 @@ namespace rss
 
         int64_t nsize = 0;
         if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-            nsize = (int64_t) pmc.PeakWorkingSetSize / units::KiB;
+            nsize = (int64_t) pmc.PeakWorkingSetSize / ((int64_t) units::KiB);
 
         CloseHandle( hProcess );
 
@@ -146,7 +146,7 @@ namespace rss
         if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
                      (task_info_t) &info, &infoCount) != KERN_SUCCESS)
             return (int64_t) 0L;      /* Can't access? */
-        return (int64_t) (info.resident_size / units::KiB * units::kilobyte);
+        return (int64_t) (info.resident_size / ((int64_t) units::KiB) * units::kilobyte);
 
 #   else // Linux
         long rss = 0L;
@@ -159,7 +159,7 @@ namespace rss
             return (int64_t) 0L;
         }
         fclose(fp);
-        return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) / units::KiB *
+        return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) / ((int64_t) units::KiB) *
                           units::kilobyte);
 #   endif
 #elif defined(_WINDOWS)
@@ -178,7 +178,7 @@ namespace rss
 
         int64_t nsize = 0;
         if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-            nsize = (int64_t) pmc.WorkingSetSize / units::KiB;
+            nsize = (int64_t) pmc.WorkingSetSize / ((int64_t) units::KiB);
 
         CloseHandle( hProcess );
 

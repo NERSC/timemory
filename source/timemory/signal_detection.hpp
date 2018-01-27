@@ -51,8 +51,6 @@
 #include <exception>
 #include <stdexcept>
 #include <functional>
-#include <cfenv>
-#include <cxxabi.h>
 #include <deque>
 #include <cmath>
 #include <vector>
@@ -62,6 +60,8 @@
 #include "timemory/mpi.hpp"
 
 #if defined(_UNIX)
+#   include <cfenv>
+#   include <cxxabi.h>
 #   include <execinfo.h> // for StackBacktrace()
 #endif
 
