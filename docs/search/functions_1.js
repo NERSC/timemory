@@ -1,10 +1,9 @@
 var searchData=
 [
   ['add',['add',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad861adfe2194814fcd7fec65119a6f95',1,'NAME_TIM::timing_manager']]],
-  ['add_5farguments',['add_arguments',['../d2/df2/namespaceoptions.html#abd27d6448152ffa2e217fad811cec6c9',1,'options']]],
-  ['add_5farguments_5fand_5fparse',['add_arguments_and_parse',['../d2/df2/namespaceoptions.html#a42e2d2daf494aa5be62ec02a3aa67de0',1,'options']]],
   ['alloc_5fnext',['alloc_next',['../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html#a39e45313b0020a208c2a24163e4fa48d',1,'NAME_TIM::auto_timer']]],
-  ['append',['append',['../d8/d7a/classplot_1_1timemory__data.html#a580f951b395f720c2492df20a1a58dbf',1,'plot::timemory_data']]],
+  ['append',['append',['../d9/de3/classplotting_1_1timemory__data.html#ab0fbece430716b1d44cd57e3039ede30',1,'plotting::timemory_data']]],
+  ['arg_5fstring',['arg_string',['../dc/d4e/classutil_1_1base__decorator.html#a5ce2f7eb9fe3e1f21d5cec0011f8114f',1,'util::base_decorator']]],
   ['as_5fstring',['as_string',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#afc7d91686ad78a8f03b8763abd8400c4',1,'NAME_TIM::timer']]],
   ['at',['at',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#aefb435e9acccfec849322570d2f34398',1,'NAME_TIM::timing_manager']]],
   ['auto_5ftimer',['auto_timer',['../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html#ab8f071cff25a0d6aac4e489705254fe7',1,'NAME_TIM::auto_timer']]],

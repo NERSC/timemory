@@ -8,6 +8,7 @@ var class_n_a_m_e___t_i_m_1_1signal__settings =
     [ "enable", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#afd61dca7204e00ef98ed54aa4e0e6bcf", null ],
     [ "enabled", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a90682b7f52fed0b816c92dd81f400b12", null ],
     [ "exit_action", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a181c33c0b2a46a7781c1a400ee52f440", null ],
+    [ "get_default", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a4d81cbae6f7b87c22f2eebbafa855aba", null ],
     [ "get_disabled", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a3e36643977c67814f5edb23cfe7c4a86", null ],
     [ "get_enabled", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#ac1b6001108b13416e1d6d706a9fae45c", null ],
     [ "is_active", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#ab7a9781309be6ad75e909d473e266a7a", null ],

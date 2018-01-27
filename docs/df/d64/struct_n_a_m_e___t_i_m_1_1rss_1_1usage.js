@@ -9,6 +9,7 @@ var struct_n_a_m_e___t_i_m_1_1rss_1_1usage =
     [ "max", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a40b7dc56b03e2579790fbec5dceefb1e", null ],
     [ "min", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#adcea8b05109c408dc0b1695d816ea386", null ],
     [ "operator()", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#ae2f82b796c45f1026903dfa5fa94348e", null ],
+    [ "operator+=", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#af1b22f5e9b60ae37ba9f464c5cda6d17", null ],
     [ "operator-=", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#ac1203fb44b92325c5e0e36fab03e8ad3", null ],
     [ "operator=", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#abdd2f210cfb8e6514a178dad1f05306b", null ],
     [ "peak", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#acd3d69e502936e84975af318ce7b2907", null ],

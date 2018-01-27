@@ -24,6 +24,7 @@ var searchData=
   ['m_5frss_5fself',['m_rss_self',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a46f4a2c2a9de0f2cc3e66b354214e3fd',1,'NAME_TIM::internal::base_rss_usage']]],
   ['m_5frss_5ftmp',['m_rss_tmp',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#aae3ebe702daf380edb36df5d6d968db6',1,'NAME_TIM::internal::base_rss_usage']]],
   ['m_5frss_5ftot',['m_rss_tot',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a7377a191ba8061f6e1224c8cd82c2e95',1,'NAME_TIM::internal::base_rss_usage']]],
+  ['m_5frss_5fusage',['m_rss_usage',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#afa63d89350952292176813e0d8300aab',1,'NAME_TIM::timing_manager']]],
   ['m_5frunning',['m_running',['../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995',1,'NAME_TIM::internal::base_timer_data']]],
   ['m_5fsqr',['m_sqr',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#aa7024c6e7b76e55cef6cb1ad37fcdc07',1,'NAME_TIM::internal::base_timer_delta']]],
   ['m_5fsum',['m_sum',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#ad2b53ebff51039684b5f986cf1a97d13',1,'NAME_TIM::internal::base_timer_delta']]],
@@ -33,12 +34,11 @@ var searchData=
   ['m_5ftimer_5flist',['m_timer_list',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a439b61d89d0f80776c9d2d5b551b1332',1,'NAME_TIM::timing_manager']]],
   ['m_5ftimer_5fmap',['m_timer_map',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af8fb49a7e32904199a806030b85c1cd7',1,'NAME_TIM::timing_manager']]],
   ['m_5fuse_5fstatic_5fwidth',['m_use_static_width',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a8cb406f145cbb1b0206ba0f6c97231c4',1,'NAME_TIM::timer']]],
-  ['max_5ftimer_5fdepth',['max_timer_depth',['../db/d77/classoptions_1_1opts.html#a258aacb70123aeb3db68d4226bf78e01',1,'options::opts']]],
   ['megabyte',['megabyte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a851b8249bcf55849c737bbd847560dc4',1,'NAME_TIM::rss::units']]],
-  ['memory',['memory',['../d6/d44/classplot_1_1timemory__function.html#afafc3cfd7e43f94ea5ea9c2bbfff2bec',1,'plot::timemory_function']]],
-  ['memory_5ftypes',['memory_types',['../de/d73/namespaceplot.html#ac24cf06505bda8f45683aa0df1225ec6',1,'plot']]],
+  ['memory',['memory',['../da/dcb/classplotting_1_1timemory__function.html#abde7a131c7ee67366e63af56571e9a95',1,'plotting::timemory_function']]],
+  ['memory_5ftypes',['memory_types',['../d5/d81/namespaceplotting.html#adb99f27a3b0f77fca4a94ecbc860bd55',1,'plotting']]],
   ['mib',['MiB',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#aa0ba6f8cbec361f821ced2f0f8b83275',1,'NAME_TIM::rss::units']]],
-  ['min_5fmemory',['min_memory',['../de/d73/namespaceplot.html#a5630b6c0cd92300016f0ea34cfebcb94',1,'plot']]],
-  ['min_5ftime',['min_time',['../de/d73/namespaceplot.html#a8710772b0b52ca64ad9d32459635d1bd',1,'plot']]],
-  ['mpi_5fsize',['mpi_size',['../d5/df1/classplot_1_1plot__data.html#aa4ea88b7f68e699a8a33683716a8d681',1,'plot.plot_data.mpi_size()'],['../de/d73/namespaceplot.html#a7073ad06396ca8f5fc79e61433661618',1,'plot.mpi_size()']]]
+  ['min_5fmemory',['min_memory',['../d5/d81/namespaceplotting.html#a7bce9955e3bd56cb5554cb7c0b139a64',1,'plotting']]],
+  ['min_5ftime',['min_time',['../d5/d81/namespaceplotting.html#a487aefb86c4df96ef9ef3cdbce15518d',1,'plotting']]],
+  ['mpi_5fsize',['mpi_size',['../d5/d62/classplotting_1_1plot__data.html#af0ebea8229528568c40e726b1b3ab452',1,'plotting.plot_data.mpi_size()'],['../d5/d81/namespaceplotting.html#a1b8c7aa83ba02951ee9e0ec4f4f7dd40',1,'plotting.mpi_size()']]]
 ];

@@ -23,11 +23,11 @@
 <!-- Node2 -->
 <g id="node2" class="node">
 <title>Node2</title>
-<polygon fill="#ffffff" stroke="#bfbfbf" points="39.5,-126.5 39.5,-189.5 73.5,-189.5 73.5,-126.5 39.5,-126.5"/>
-<text text-anchor="middle" x="56.5" y="-175.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">bool</text>
-<polyline fill="none" stroke="#bfbfbf" points="39.5,-168.5 73.5,-168.5 "/>
+<polygon fill="#ffffff" stroke="#bfbfbf" points="7,-126.5 7,-189.5 106,-189.5 106,-126.5 7,-126.5"/>
+<text text-anchor="middle" x="56.5" y="-175.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">static constexpr bool</text>
+<polyline fill="none" stroke="#bfbfbf" points="7,-168.5 106,-168.5 "/>
 <text text-anchor="middle" x="56.5" y="-154.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000"> </text>
-<polyline fill="none" stroke="#bfbfbf" points="39.5,-147.5 73.5,-147.5 "/>
+<polyline fill="none" stroke="#bfbfbf" points="7,-147.5 106,-147.5 "/>
 <text text-anchor="middle" x="56.5" y="-133.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000"> </text>
 </g>
 <!-- Node2&#45;&gt;Node1 -->

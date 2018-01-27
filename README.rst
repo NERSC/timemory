@@ -52,6 +52,111 @@ Python setup.py installation
   # without MPI
   python setup.py config --disable-mpi build install
 
+Basic Python usage
+------------------
+
+-  Decorators available for auto\_timers, timers, and rss\_usage in
+   ``timemory.util``
+-  One can also use auto\_timer, timer, and rss\_usage objects directly
+   for same results
+-  ``timemory.timing_manager`` class will record all auto-timers and can
+   be printed out at completions of application
+-  The report from the timing manager can be plotted using
+   ``timemory.plotting``
+-  All decorators take similar arguments
+
+   -  key : this is a custom key to append after function name. The
+      default will add file and line number.
+   -  add\_args : add the arguments to the auto-timer key. Will be
+      over-ridden by key argument
+   -  is\_class : will add \`'[{}]'.format(type(self).\ **name**)\`\` to
+      the function name
+
+.. code:: python
+
+  @timemory.util.auto_timer(key="", add_args=False, is_class=False)
+  def function(...):
+      time.sleep(1)
+
+-  Auto-timer example
+
+.. code:: python
+
+  @timemory.util.auto_timer(key="", add_args=False, is_class=False)
+  def function(...):
+      time.sleep(1)
+
+::
+
+  - output (from `timemory.report()`):
+
+::
+
+  > [pyc] test_func_glob@'timemory_test.py':218   :  5.003 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+  > [pyc] |_test_func_1@'timemory_test.py':222    :  1.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+  > [pyc] |_test_func_2@'timemory_test.py':226    :  3.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+  > [pyc]   |_test_func_1@'timemory_test.py':222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+
+-  Timer example (will report to stdout at the end of the function)
+
+.. code:: python
+
+  @timemory.util.timer(key="", add_args=False, is_class=False)
+  def function(...):
+      time.sleep(1)
+
+::
+
+  - output:
+
+::
+
+  # free function
+  test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]
+  # with is_class=True
+  test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
+
+-  RSS usage:
+
+.. code:: python
+
+  @timemory.util.rss_usage(key="", add_args=False, is_class=False)
+  def function(...):
+      time.sleep(1)
+
+::
+
+  - output:
+
+::
+
+  test_func_rss@'timemory_test.py':244 : RSS {total,self}_{current,peak} : (52.536|193.164) | (0.0|140.568) [MB]
+
+::
+
+  - Fields (in order):
+
+    - total current: current RSS usage of process (52.536 MB)
+    - total peak: peak RSS usage of process (193.164 MB)
+    - self current: current RSS usage of function (0.0 MB)
+    - self peak: peak RSS usage of function (140.568 MB)
+    - In above, the temporary memory used by the function can be determined by `self peak` - `self current`
+
+Basic C++ usage
+---------------
+
+-  In C++ code, easiest usage for the auto\_timers is with the TiMemory
+   macro
+
+.. code:: cpp
+
+  TIMEMORY_AUTO_TIMER("custom_string")
+
+-  The timing\_manager is thread-safe and should be accessed through
+   ``timing_manager::instance()``
+-  See the full documentation and examples for more information on the
+   classes and usage
+
 Overview
 --------
 
@@ -65,7 +170,7 @@ There are essentially two components of the output:
 
    -  used for plotting purposes
    -  can be directly called by module:
-      ``timemory.util.plot(["output.json"], display=False)``
+      ``timemory.plotting.plot(files=["output.json"], display=False, output_dir=".")``
    -  ``python/plot.py`` in the source tree can be directly used
 
 -  Implementation uses “auto-timers”. Essentially, at the beginning of a
@@ -408,7 +513,7 @@ here is general guide:
    -  It is generally recommended to do this in a different scope than
       the primary autotimer but not necessary.
    -  Some control options are available with:
-      ``tim.util.add_arguments_and_parse(parser)`` in Python
+      ``tim.options.add_arguments_and_parse(parser)`` in Python
    -  In other words, put all your work in a “main()” function looking
       like this:
 
@@ -452,10 +557,10 @@ here is general guide:
                           help="Size of array allocations",
                           default=10, type=int)
       # ...
-      args = timemory.util.add_arguments_and_parse(parser)
+      args = timemory.options.add_arguments_and_parse(parser)
 
-      timemory.util.opts.set_report(timemory.util.opts.report_fname)
-      timemory.util.opts.set_serial(timemory.util.opts.serial_fname)
+      timemory.options.set_report(timemory.options.report_fname)
+      timemory.options.set_serial(timemory.options.serial_fname)
 
       try:
           main(args)
@@ -471,15 +576,15 @@ here is general guide:
           timing_manager.serialize('output.json')
 
           # get the serialization directly
-          json_objs = [ timemory.util.read(timing_manager.json()) ]
+          json_objs = [ timemory.plotting.read(timing_manager.json()) ]
           print (json_objs[0])
 
           # get the serialization file ('output.json')
-          json_files = [ timemory.util.opts.serial_fname ]
+          json_files = [ timemory.options.serial_fname ]
 
           # will create timing and memory plot with avg + err for files
           # (even though output is identical in this example...)
-          timemory.util.plot(json_objs, files=json_files, display=False)
+          timemory.plotting.plot(json_objs, files=json_files, display=False)
 
       except Exception as e:
           print (e)

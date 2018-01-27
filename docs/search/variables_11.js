@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['serial_5ffname',['serial_fname',['../db/d77/classoptions_1_1opts.html#a1053f1f542bf9193bb1e490f9a2bfe3b',1,'options::opts']]],
-  ['serial_5freport',['serial_report',['../db/d77/classoptions_1_1opts.html#ae0b6c9d5c3f3f0c613694106a177baed',1,'options::opts']]],
   ['signals_5factive',['signals_active',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a7e54d9173cba7c5e9473e98a0d201981',1,'NAME_TIM::signal_settings']]],
   ['signals_5fdefault',['signals_default',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a8bba5e36bc17b1c98b2b0e0f4104e60b',1,'NAME_TIM::signal_settings']]],
   ['signals_5fdisabled',['signals_disabled',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a307c41790b843424c007c849994afea8',1,'NAME_TIM::signal_settings']]],

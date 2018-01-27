@@ -10,6 +10,7 @@ var class_n_a_m_e___t_i_m_1_1timing__manager =
     [ "ofstream_t", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a7e0fc4e473d2045c9d2181f3a2c35f25", null ],
     [ "ostream_t", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#abf1b6f985b04a658f5c90b9e4f061b9f", null ],
     [ "pointer_type", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad11c24ad6c41e18a5120485165d2d868", null ],
+    [ "rss_usage_t", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af4540b6a60ab6a552f872fb920f8d0fc", null ],
     [ "size_type", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#adad2ce69ce03838a4e90681fc8fe80d1", null ],
     [ "string_t", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a66b4fc5feeb1d537e6ca5d82e07df496", null ],
     [ "this_type", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a5600a6929c09032e292eac8936caaed5", null ],
@@ -51,6 +52,8 @@ var class_n_a_m_e___t_i_m_1_1timing__manager =
     [ "map", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a2e03a5361623b47cf485da5bfe995300", null ],
     [ "max_depth", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ac0b332e3b4bae2b08b0a8197e937ad24", null ],
     [ "merge", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a1e8ba0cf87ac468746fe5b4d0a19a04a", null ],
+    [ "operator+=", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a36c5414587d24143fde8fcb1a76853e9", null ],
+    [ "operator-=", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a1227742f5aa4bac5d3b8423f8d8756b8", null ],
     [ "print", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a5ccfa691ebd6f3023f3d52f4abf8f424", null ],
     [ "report", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a224ef6ede0bbed1cd4d5296ed34af6aa", null ],
     [ "report", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a8098023b76c406198bb96b933478fcb0", null ],
@@ -85,6 +88,7 @@ var class_n_a_m_e___t_i_m_1_1timing__manager =
     [ "m_merge", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad6b97c95aa46822dcf94867180f11eca", null ],
     [ "m_mutex", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#aa618c659283d69d2d5cbeba860464167", null ],
     [ "m_report", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a91131c344f7db135c2de55d839fef049", null ],
+    [ "m_rss_usage", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#afa63d89350952292176813e0d8300aab", null ],
     [ "m_timer_list", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a439b61d89d0f80776c9d2d5b551b1332", null ],
     [ "m_timer_map", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af8fb49a7e32904199a806030b85c1cd7", null ]
 ];

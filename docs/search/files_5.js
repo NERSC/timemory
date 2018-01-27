@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['options_2epy',['options.py',['../d0/d32/options_8py.html',1,'']]]
+  ['plotting_2epy',['plotting.py',['../d7/d84/plotting_8py.html',1,'']]]
 ];

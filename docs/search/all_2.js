@@ -5,6 +5,7 @@ var searchData=
   ['base_5fclock_5fdata',['base_clock_data',['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html',1,'NAME_TIM::base_clock_data&lt; _Prec &gt;'],['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html#ab766b195507794decc11517d08faf99c',1,'NAME_TIM::base_clock_data::base_clock_data(int _val=0)'],['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html#a7bdaa9af114d98ae0005cb65fb20c8f9',1,'NAME_TIM::base_clock_data::base_clock_data(const rep &amp;_data)']]],
   ['base_5fclock_5fdata_5ft',['base_clock_data_t',['../d5/d40/namespaceinternal.html#a5dcc42f59df294951f3a6572a7e143ea',1,'internal']]],
   ['base_5fclock_5ft',['base_clock_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#ade6dbbe8104cc545906b41a5c4e06181',1,'NAME_TIM::internal::base_timer::base_clock_t()'],['../d5/d40/namespaceinternal.html#a39859606cd952247afe1fc52afbd260e',1,'internal::base_clock_t()']]],
+  ['base_5fdecorator',['base_decorator',['../dc/d4e/classutil_1_1base__decorator.html',1,'util']]],
   ['base_5fduration_5ft',['base_duration_t',['../d5/d40/namespaceinternal.html#a2b2ed64cb219d9882959f2058112b46f',1,'internal']]],
   ['base_5fratio_5ft',['base_ratio_t',['../d5/d40/namespaceinternal.html#aa9c3c43fa5be3ac6314c7bb9364ad053',1,'internal']]],
   ['base_5frss_5fusage',['base_rss_usage',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html',1,'NAME_TIM::internal']]],

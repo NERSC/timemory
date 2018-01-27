@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.0.0</span>
+   &#160;<span id="projectnumber">1.1.0</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -124,7 +124,54 @@ $(document).ready(function(){initNavTree('index.html','');});
 </ul>
 </li>
 </ul>
-<div class="fragment"><div class="line"># with MPI</div><div class="line">python setup.py build install</div><div class="line"># without MPI</div><div class="line">python setup.py config --disable-mpi build install</div></div><!-- fragment --><p>There are essentially two components of the output:</p>
+<div class="fragment"><div class="line"># with MPI</div><div class="line">python setup.py build install</div><div class="line"># without MPI</div><div class="line">python setup.py config --disable-mpi build install</div></div><!-- fragment --><ul>
+<li>Decorators available for auto_timers, timers, and rss_usage in <code>timemory.util</code></li>
+<li>One can also use auto_timer, timer, and rss_usage objects directly for same results</li>
+<li><code>timemory.timing_manager</code> class will record all auto-timers and can be printed out at completions of application</li>
+<li>The report from the timing manager can be plotted using <code>timemory.plotting</code></li>
+<li>All decorators take similar arguments<ul>
+<li>key : this is a custom key to append after function name. The default will add file and line number.</li>
+<li>add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument</li>
+<li>is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name</li>
+</ul>
+</li>
+</ul>
+<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
+<li>Auto-timer example</li>
+</ul>
+<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
+<li>output (from <code>timemory.report()</code>):</li>
+</ul>
+<div class="fragment"><div class="line">&gt; [pyc] test_func_glob@&#39;timemory_test.py&#39;:218   :  5.003 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc] |_test_func_1@&#39;timemory_test.py&#39;:222    :  1.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc] |_test_func_2@&#39;timemory_test.py&#39;:226    :  3.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc]   |_test_func_1@&#39;timemory_test.py&#39;:222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div></div><!-- fragment --><ul>
+<li>Timer example (will report to stdout at the end of the function)</li>
+</ul>
+<div class="fragment"><div class="line">@timemory.util.timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
+<li>output:</li>
+</ul>
+<div class="fragment"><div class="line"># free function</div><div class="line">test_func_timer@&#39;timemory_test.py&#39;:240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]</div><div class="line"># with is_class=True</div><div class="line">test_decorator[timemory_test]@&#39;timemory_test.py&#39;:210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]</div></div><!-- fragment --><ul>
+<li>RSS usage:</li>
+</ul>
+<div class="fragment"><div class="line">@timemory.util.rss_usage(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
+<li>output:</li>
+</ul>
+<div class="fragment"><div class="line">test_func_rss@&#39;timemory_test.py&#39;:244 : RSS {total,self}_{current,peak} : (52.536|193.164) | (0.0|140.568) [MB]</div></div><!-- fragment --><ul>
+<li>Fields (in order):<ul>
+<li>total current: current RSS usage of process (52.536 MB)</li>
+<li>total peak: peak RSS usage of process (193.164 MB)</li>
+<li>self current: current RSS usage of function (0.0 MB)</li>
+<li>self peak: peak RSS usage of function (140.568 MB)</li>
+<li>In above, the temporary memory used by the function can be determined by <code>self peak</code> - <code>self current</code></li>
+</ul>
+</li>
+</ul>
+<ul>
+<li>In C++ code, easiest usage for the auto_timers is with the TiMemory macro</li>
+</ul>
+<div class="fragment"><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(<span class="stringliteral">&quot;custom_string&quot;</span>)</div></div><!-- fragment --><ul>
+<li>The timing_manager is thread-safe and should be accessed through <code>timing_manager::instance()</code></li>
+<li>See the full documentation and examples for more information on the classes and usage</li>
+</ul>
+<p>There are essentially two components of the output:</p>
 <ul>
 <li>a text file (e.g. <code>timing_report_XXX.out</code> file)<ul>
 <li>general ASCII report</li>
@@ -132,8 +179,8 @@ $(document).ready(function(){initNavTree('index.html','');});
 </li>
 <li>a JSON file with more detailed data<ul>
 <li>used for plotting purposes</li>
-<li>can be directly called by module: <code>timemory.util.plot(["output.json"], display=False)</code></li>
-<li><code><a class="el" href="db/d7a/plot_8py.html" title="Plotting routines for TiMemory module. ">python/plot.py</a></code> in the source tree can be directly used</li>
+<li>can be directly called by module: <code>timemory.plotting.plot(files=["output.json"], display=False, output_dir=".")</code></li>
+<li><code>python/plot.py</code> in the source tree can be directly used</li>
 </ul>
 </li>
 <li>Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer.</li>
@@ -247,23 +294,27 @@ $(document).ready(function(){initNavTree('index.html','');});
 <li>The auto-timer functionality requires the variable to exist for the scope of the function</li>
 </ul>
 </li>
+<li>Alternatively, use the auto_timer decorator in timemory.utils<ul>
+<li>However, this decorator does not work well for recursive functions</li>
+</ul>
+</li>
 <li>For free-standing function without any name conflicts, just add: <code>autotimer = timemory.auto_timer()</code></li>
 <li>For functions within a class, add: <code>autotimer = timemory.auto_timer(type(self).__name__)</code></li>
 <li>For the primary auto-timer, use: <code>autotimer = timemory.auto_timer(timemory.FILE())</code> — this will tag “main” with the python file name</li>
 <li>In some instances, you may want to include the directory of the filename, for this use: <code>autotimer = timemory.auto_timer(timemory.FILE(use_dirname = True))</code></li>
 <li>Add <code>tman = timemory.timing_manager() ; tman.report()</code> at the end of your main file.<ul>
 <li>It is generally recommended to do this in a different scope than the primary autotimer but not necessary.</li>
-<li>Some control options are available with: <code>tim.util.add_arguments_and_parse(parser)</code> in Python</li>
+<li>Some control options are available with: <code>tim.options.add_arguments_and_parse(parser)</code> in Python</li>
 <li>In other words, put all your work in a “main()” function looking like this:</li>
 </ul>
 </li>
 </ul>
-<div class="fragment"><div class="line">import timemory</div><div class="line"></div><div class="line"># optional (will catch SIGINT + other signals such as SIGABRT, SIGQUIT, SIGHUP, etc.)</div><div class="line">timemory.enable_signal_detection()</div><div class="line"></div><div class="line"># ...</div><div class="line"></div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line">def main(args):</div><div class="line">    # this will be the top-level timer in timing + memory report because it is</div><div class="line">    # the first added</div><div class="line">    autotimer = timemory.auto_timer(timemory.FILE(), timemory.LINE())</div><div class="line">    # ...</div><div class="line"></div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line">if __name__ == &quot;__main__&quot;:</div><div class="line"></div><div class="line">    parser = argparse.ArgumentParser()</div><div class="line">    parser.add_argument(&quot;-s&quot;, &quot;--size&quot;,</div><div class="line">                        help=&quot;Size of array allocations&quot;,</div><div class="line">                        default=array_size, type=int)</div><div class="line">    # ...</div><div class="line">    args = timemory.util.add_arguments_and_parse(parser)</div><div class="line"></div><div class="line">    timemory.util.opts.set_report(timemory.util.opts.report_fname)</div><div class="line">    timemory.util.opts.set_serial(timemory.util.opts.serial_fname)</div><div class="line"></div><div class="line">    try:</div><div class="line">        main(args)</div><div class="line"></div><div class="line">        # get the handle for the timing manager</div><div class="line">        timing_manager = timemory.timing_manager()</div><div class="line">        # will output to stdout if &quot;set_report&quot; not called</div><div class="line">        timing_manager.report()</div><div class="line">        # serialization will be called in above if &quot;set_serial&quot; is called</div><div class="line">        # but to serialize to file:</div><div class="line">        timing_manager.serialize(&#39;output.json&#39;)</div><div class="line">        # will create timing and memory plot with avg + err for files </div><div class="line">        # (even though output is identical in this example...)</div><div class="line">        timemory.util.plot(files=[timemory.util.opts.serial_fname, &quot;output.json&quot;], display=False)</div><div class="line"></div><div class="line">    except Exception as e:</div><div class="line">        print (e.what())</div><div class="line">        print (&quot;Error! Unable to plot &#39;output.json&#39;&quot;)</div><div class="line"></div><div class="line">    print (&#39;&#39;)</div></div><!-- fragment --> </div></div><!-- contents -->
+<div class="fragment"><div class="line">#!/usr/bin/env python</div><div class="line"></div><div class="line">import timemory</div><div class="line"></div><div class="line"># optional (will catch SIGINT + other signals such as SIGABRT, SIGQUIT, SIGHUP, etc.)</div><div class="line">timemory.enable_signal_detection()</div><div class="line"></div><div class="line"># ...</div><div class="line"></div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line"># use a decorator</div><div class="line">@timemory.util.auto_timer(key = &quot;&quot;, add_args=True)</div><div class="line">def decorator_func(args):</div><div class="line">    # ...</div><div class="line">    import time</div><div class="line">    time.sleep(1)</div><div class="line"></div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line">def main(args):</div><div class="line">    # this will be the top-level timer in timing + memory report because it is</div><div class="line">    # the first added</div><div class="line">    autotimer = timemory.auto_timer()</div><div class="line">    # ...</div><div class="line">    decorator_func(args)</div><div class="line">    # ...</div><div class="line"></div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line">if __name__ == &quot;__main__&quot;:</div><div class="line"></div><div class="line">    import argparse</div><div class="line">    parser = argparse.ArgumentParser()</div><div class="line">    parser.add_argument(&quot;-s&quot;, &quot;--size&quot;,</div><div class="line">                        help=&quot;Size of array allocations&quot;,</div><div class="line">                        default=10, type=int)</div><div class="line">    # ...</div><div class="line">    args = timemory.options.add_arguments_and_parse(parser)</div><div class="line"></div><div class="line">    timemory.options.set_report(timemory.options.report_fname)</div><div class="line">    timemory.options.set_serial(timemory.options.serial_fname)</div><div class="line"></div><div class="line">    try:</div><div class="line">        main(args)</div><div class="line"></div><div class="line">        # get the handle for the timing manager</div><div class="line">        timing_manager = timemory.timing_manager()</div><div class="line"></div><div class="line">        # will output to stdout if &quot;set_report&quot; not called</div><div class="line">        timing_manager.report()</div><div class="line"></div><div class="line">        # serialization will be called in above if &quot;set_serial&quot; is called</div><div class="line">        # but to serialize to file:</div><div class="line">        timing_manager.serialize(&#39;output.json&#39;)</div><div class="line"></div><div class="line">        # get the serialization directly</div><div class="line">        json_objs = [ timemory.plotting.read(timing_manager.json()) ]</div><div class="line">        print (json_objs[0])</div><div class="line"></div><div class="line">        # get the serialization file (&#39;output.json&#39;)</div><div class="line">        json_files = [ timemory.options.serial_fname ]</div><div class="line"></div><div class="line">        # will create timing and memory plot with avg + err for files</div><div class="line">        # (even though output is identical in this example...)</div><div class="line">        timemory.plotting.plot(json_objs, files=json_files, display=False)</div><div class="line"></div><div class="line">    except Exception as e:</div><div class="line">        print (e)</div><div class="line">        print (&quot;Error! Unable to plot &#39;output.json&#39;&quot;)</div><div class="line"></div><div class="line">    print (&#39;&#39;)</div></div><!-- fragment --> </div></div><!-- contents -->
 </div><!-- doc-content -->
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Mon Jan 22 2018 21:33:35 for TiMemory by
+    <li class="footer">Generated on Fri Jan 26 2018 17:59:18 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

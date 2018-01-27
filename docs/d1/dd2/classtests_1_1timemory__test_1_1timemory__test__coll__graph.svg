@@ -15,7 +15,7 @@
 <polygon fill="#bfbfbf" stroke="#000000" points="0,-.5 0,-128.5 154,-128.5 154,-.5 0,-.5"/>
 <text text-anchor="middle" x="77" y="-114.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">tests.timemory_test.timemory_test</text>
 <polyline fill="none" stroke="#000000" points="0,-107.5 154,-107.5 "/>
-<text text-anchor="start" x="8" y="-93.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ outdir</text>
+<text text-anchor="start" x="8" y="-93.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ is_class</text>
 <polyline fill="none" stroke="#000000" points="0,-86.5 154,-86.5 "/>
 <text text-anchor="start" x="8" y="-72.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ setUp()</text>
 <text text-anchor="start" x="8" y="-59.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ test_timing()</text>

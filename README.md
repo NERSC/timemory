@@ -3,8 +3,7 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
 
 [Source code documentation for TiMemory](https://jrmadsen.github.io/TiMemory)
 
-Dependancies
-------------
+## Dependancies
 
 - Operating systems
 
@@ -38,8 +37,7 @@ Dependancies
     - matplotlib
     - unittest
 
-Python setup.py installation
-----------------------------
+## Python setup.py installation
 
 ```
 # with MPI
@@ -48,8 +46,94 @@ python setup.py build install
 python setup.py config --disable-mpi build install
 ```
 
-Overview
---------
+## Basic Python usage
+
+- Decorators available for auto_timers, timers, and rss_usage in `timemory.util`
+- One can also use auto_timer, timer, and rss_usage objects directly for same results
+- `timemory.timing_manager` class will record all auto-timers and can be printed out at completions of application
+- The report from the timing manager can be plotted using `timemory.plotting`
+- All decorators take similar arguments
+
+  - key : this is a custom key to append after function name. The default will add file and line number.
+  - add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument
+  - is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name
+
+```python
+@timemory.util.auto_timer(key="", add_args=False, is_class=False)
+def function(...):
+    time.sleep(1)
+```
+
+- Auto-timer example
+
+```python
+@timemory.util.auto_timer(key="", add_args=False, is_class=False)
+def function(...):
+    time.sleep(1)
+```
+
+  - output (from `timemory.report()`):
+
+```
+> [pyc] test_func_glob@'timemory_test.py':218   :  5.003 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+> [pyc] |_test_func_1@'timemory_test.py':222    :  1.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+> [pyc] |_test_func_2@'timemory_test.py':226    :  3.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+> [pyc]   |_test_func_1@'timemory_test.py':222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
+```
+
+- Timer example (will report to stdout at the end of the function)
+
+```python
+@timemory.util.timer(key="", add_args=False, is_class=False)
+def function(...):
+    time.sleep(1)
+```
+
+  - output:
+
+```
+# free function
+test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]
+# with is_class=True
+test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
+```
+
+- RSS usage:
+
+```python
+@timemory.util.rss_usage(key="", add_args=False, is_class=False)
+def function(...):
+    time.sleep(1)
+```
+
+  - output:
+
+```
+test_func_rss@'timemory_test.py':244 : RSS {total,self}_{current,peak} : (52.536|193.164) | (0.0|140.568) [MB]
+```
+
+  - Fields (in order):
+
+    - total current: current RSS usage of process (52.536 MB)
+    - total peak: peak RSS usage of process (193.164 MB)
+    - self current: current RSS usage of function (0.0 MB)
+    - self peak: peak RSS usage of function (140.568 MB)
+    - In above, the temporary memory used by the function can be determined by `self peak` - `self current`
+
+
+## Basic C++ usage
+
+- In C++ code, easiest usage for the auto_timers is with the TiMemory macro
+
+```cpp
+TIMEMORY_AUTO_TIMER("custom_string")
+```
+
+- The timing_manager is thread-safe and should be accessed through `timing_manager::instance()`
+- See the full documentation and examples for more information on the classes and usage
+
+
+## Overview
 
 There are essentially two components of the output:
 
@@ -60,7 +144,7 @@ There are essentially two components of the output:
 - a JSON file with more detailed data
 
   - used for plotting purposes
-  - can be directly called by module: `timemory.util.plot(["output.json"], display=False)`
+  - can be directly called by module: `timemory.plotting.plot(files=["output.json"], display=False, output_dir=".")`
   - `python/plot.py` in the source tree can be directly used
 
 - Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer. 
@@ -76,8 +160,7 @@ There are essentially two components of the output:
   - where "nback" is a parameter specifying how far back in the call tree
   
 
-Example
--------
+## Example
 
 For the interpretation of text output, here is an example and the explanation of it’s structure
 
@@ -182,8 +265,7 @@ For the interpretation of text output, here is an example and the explanation of
 |1> [pyc] |___del__@TODGround                          : 18.149 wall, 17.950 user +  0.150 system = 18.100 CPU [sec] ( 99.7%) : RSS {tot,self}_{curr,peak} : (1040.3|2223.7) | (   0.0|   0.0) [MB] (total # of laps: 24)
 ```
 
-GENERAL LAYOUT
---------------
+## GENERAL LAYOUT
 
 - The "rank" line(s) give the MPI process/rank (and x=rank in `|x>`)
 - The first (non ">") column tells whether the “auto-timer” originated from C++ (`[cxx]`) or Python (`[pyc]`) code
@@ -195,8 +277,7 @@ GENERAL LAYOUT
 
   - If the number of laps are not noted, the total number of laps is implicitly one
 
-TIMING FIELDS
--------------
+## TIMING FIELDS
 
 - Then you have 5 time measurements
 
@@ -234,8 +315,7 @@ TIMING FIELDS
     - When calculating the self-cost of A, one does not subtract the time spent in function D. These times are included in the timing of both B and C
 
 
-MEMORY FIELDS
--------------
+## MEMORY FIELDS
 
 - The memory measurements are a bit confusing, admittedly. The two types "curr" ("current", which I will refer to as such from here on out) and "peak" have to do with different memory measurements
 
@@ -279,8 +359,7 @@ MEMORY FIELDS
     - Thus, with these two numbers, one can then deduce how much temporary/transient memory usage is being allocated in the function — if a function reports a self-cost of 243.2 MB of “current” RSS and a “peak” RSS of 403.9 MB, then you know that the “build_npp” function created 243.2 MB of persistent memory but creating the object requiring the persistent 243.2 MB required an additional 160.7 MB of temporary/transient memory (403.9 MB - 243.2 MB).
 
 
-USING AUTO-TIMERS
------------------
+## USING AUTO-TIMERS
 
 If you have new Python code you would like to use the auto-timers with, here is general guide:
 
@@ -301,7 +380,7 @@ If you have new Python code you would like to use the auto-timers with, here is 
 - Add `tman = timemory.timing_manager() ; tman.report()` at the end of your main file. 
   
   - It is generally recommended to do this in a different scope than the primary autotimer but not necessary. 
-  - Some control options are available with: `tim.util.add_arguments_and_parse(parser)` in Python
+  - Some control options are available with: `tim.options.add_arguments_and_parse(parser)` in Python
   - In other words, put all your work in a “main()” function looking like this:
  
 ```python
@@ -343,10 +422,10 @@ if __name__ == "__main__":
                         help="Size of array allocations",
                         default=10, type=int)
     # ...
-    args = timemory.util.add_arguments_and_parse(parser)
+    args = timemory.options.add_arguments_and_parse(parser)
 
-    timemory.util.opts.set_report(timemory.util.opts.report_fname)
-    timemory.util.opts.set_serial(timemory.util.opts.serial_fname)
+    timemory.options.set_report(timemory.options.report_fname)
+    timemory.options.set_serial(timemory.options.serial_fname)
 
     try:
         main(args)
@@ -362,15 +441,15 @@ if __name__ == "__main__":
         timing_manager.serialize('output.json')
 
         # get the serialization directly
-        json_objs = [ timemory.util.read(timing_manager.json()) ]
+        json_objs = [ timemory.plotting.read(timing_manager.json()) ]
         print (json_objs[0])
 
         # get the serialization file ('output.json')
-        json_files = [ timemory.util.opts.serial_fname ]
+        json_files = [ timemory.options.serial_fname ]
 
         # will create timing and memory plot with avg + err for files
         # (even though output is identical in this example...)
-        timemory.util.plot(json_objs, files=json_files, display=False)
+        timemory.plotting.plot(json_objs, files=json_files, display=False)
 
     except Exception as e:
         print (e)

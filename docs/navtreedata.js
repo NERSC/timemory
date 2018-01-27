@@ -4,12 +4,14 @@ var NAVTREE =
     [ "Namespaces", null, [
       [ "Dependancies", "index.html#autotoc_md1", null ],
       [ "Python setup.py installation", "index.html#autotoc_md2", null ],
-      [ "Overview", "index.html#autotoc_md3", null ],
-      [ "Example", "index.html#autotoc_md4", null ],
-      [ "GENERAL LAYOUT", "index.html#autotoc_md5", null ],
-      [ "TIMING FIELDS", "index.html#autotoc_md6", null ],
-      [ "MEMORY FIELDS", "index.html#autotoc_md7", null ],
-      [ "USING AUTO-TIMERS", "index.html#autotoc_md8", null ],
+      [ "Basic Python usage", "index.html#autotoc_md3", null ],
+      [ "Basic C++ usage", "index.html#autotoc_md4", null ],
+      [ "Overview", "index.html#autotoc_md5", null ],
+      [ "Example", "index.html#autotoc_md6", null ],
+      [ "GENERAL LAYOUT", "index.html#autotoc_md7", null ],
+      [ "TIMING FIELDS", "index.html#autotoc_md8", null ],
+      [ "MEMORY FIELDS", "index.html#autotoc_md9", null ],
+      [ "USING AUTO-TIMERS", "index.html#autotoc_md10", null ],
       [ "Namespace List", "namespaces.html", "namespaces" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
@@ -46,9 +48,9 @@ var NAVTREE =
 var NAVTREEINDEX =
 [
 ".html",
-"d6/d8e/test__timing_8cpp.html#adade51e2fa03aca9642474eb0da1b9b5",
-"dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a9502391dcec106f6d37d7f3ecca67541",
-"df/ddd/namespacetests_1_1timemory__test.html"
+"d6/d8e/test__timing_8cpp.html#a305a7326a1f4f59bbcafcb3e35a732c7",
+"dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a31fa6e079fb8b67da664f28e4bb707d8",
+"de/d81/classutil_1_1timer.html"
 ];
 
 var SYNCONMSG = 'click to disable panel synchronisation';

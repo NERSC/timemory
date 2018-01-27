@@ -6,5 +6,5 @@ var classtests_1_1timemory__test_1_1timemory__test =
     [ "test_pointer", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#ae682888e72ea8b5ef593cca62616d34b", null ],
     [ "test_timing", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a569e2ef981eb4a80e9c65bef1dd2dc5c", null ],
     [ "test_toggle", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a88a227cd21dfe2d71c7359add05568bb", null ],
-    [ "outdir", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a9007749977902ac39ea33f8abc148731", null ]
+    [ "is_class", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a26de11e35bf2b31957d2d6c36c658598", null ]
 ];
