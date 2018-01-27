@@ -33,5 +33,6 @@ var signal__detection_8hpp =
       [ "sProfileAlarm", "da/d8e/signal__detection_8hpp.html#a4002c0450ebb4d8becb42a7924506229a288a698a02ef525e62efbcc8f441fae0", null ]
     ] ],
     [ "DisableSignalDetection", "da/d8e/signal__detection_8hpp.html#aaa891f3a0b9dcd295f65805543683663", null ],
-    [ "EnableSignalDetection", "da/d8e/signal__detection_8hpp.html#ae7401b5b453e5e04cb5422fe9ee0a233", null ]
+    [ "EnableSignalDetection", "da/d8e/signal__detection_8hpp.html#a17690f207ffa63f34a7a71540b192274", null ],
+    [ "StackBackTrace", "da/d8e/signal__detection_8hpp.html#a3a492f1594134545dd43609437cd73aa", null ]
 ];

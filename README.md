@@ -7,11 +7,9 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
 
 - Operating systems
 
-  - Linux (tested on Ubuntu 14.04)
+  - Linux (tested on Ubuntu 14.04 and 16.04, openSUSE )
   - macOS (tested on 10.13 - High Sierra)
-  - Windows support is generally untested
-
-    - memory measurements may not have correct units if compiles
+  - Windows (tested on Windows 10 x64 with MSVC 14+)
 
 - C++
 
@@ -22,6 +20,7 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
       - GCC (Linux + macOS, 4.9 - 7.2)
       - Clang (Linux + macOS, 4.0, 5.0)
       - Intel (Linux, 18.0.1)
+      - MSVC (14, 15) [2015, 2017]
 
   - MPI (optional)
   - cereal (git submodule)

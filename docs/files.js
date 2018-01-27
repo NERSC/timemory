@@ -5,6 +5,7 @@ var files =
     [ "tests", "dir_59425e443f801f1f2fd8bbe4959a3ccf.html", "dir_59425e443f801f1f2fd8bbe4959a3ccf" ],
     [ "timemory", "dir_4fd02b5fd43288e8282468be733f8250.html", "dir_4fd02b5fd43288e8282468be733f8250" ],
     [ "auto_timer.cpp", "d2/d80/auto__timer_8cpp.html", null ],
+    [ "base_clock.cpp", "d5/db8/base__clock_8cpp.html", null ],
     [ "base_timer.cpp", "dd/d84/base__timer_8cpp.html", null ],
     [ "signal_detection.cpp", "dc/d43/signal__detection_8cpp.html", "dc/d43/signal__detection_8cpp" ],
     [ "timemory.cc", "d2/dfd/timemory_8cc.html", "d2/dfd/timemory_8cc" ],

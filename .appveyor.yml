@@ -4,7 +4,7 @@ image:
 - Visual Studio 2017
 - Visual Studio 2015
 
-test: on
+test: off
 
 build:
   parallel: true
@@ -57,6 +57,8 @@ build_script:
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 - cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
-- cmake --build . --config %CONFIG% --target RUN_TESTS -- /m /v:m /logger:%MSBuildLogger%
-- python setup.py build install test
+- python setup.py build install
+- python ./tests/simple_test.py
+- python ./tests/nested_test.py
+- python ./tests/timemory_test.py
 

@@ -1,18 +1,19 @@
 <map id="timemory/namespace.hpp" name="timemory/namespace.hpp">
-<area shape="rect" id="node2" href="$d8/d07/auto__timer_8hpp.html" title="timemory/auto_timer.hpp" alt="" coords="652,469,807,499"/>
-<area shape="rect" id="node5" href="$d2/d80/auto__timer_8cpp.html" title="auto_timer.cpp" alt="" coords="852,555,953,585"/>
-<area shape="rect" id="node6" href="$d2/dfd/timemory_8cc.html" title="timemory.cc" alt="" coords="205,555,291,585"/>
-<area shape="rect" id="node8" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="565,83,691,112"/>
-<area shape="rect" id="node9" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="189,237,347,267"/>
-<area shape="rect" id="node11" href="$df/d05/timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="93,315,219,344"/>
-<area shape="rect" id="node12" href="$df/df2/timing__manager_8hpp.html" title="timemory/timing_manager.hpp" alt="" coords="472,392,656,421"/>
-<area shape="rect" id="node14" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="415,160,601,189"/>
-<area shape="rect" id="node16" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="311,83,470,112"/>
-<area shape="rect" id="node17" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="121,160,236,189"/>
-<area shape="rect" id="node3" href="$d6/d8e/test__timing_8cpp.html" title="examples/ex1/test_timing.cpp" alt="" coords="322,555,502,585"/>
-<area shape="rect" id="node4" href="$dd/d0a/mpi__test__timing_8cpp.html" title="examples/ex2/mpi_test\l_timing.cpp" alt="" coords="682,547,827,593"/>
-<area shape="rect" id="node7" href="$d9/dad/timing__manager_8cpp.html" title="timing_manager.cpp" alt="" coords="527,555,657,585"/>
-<area shape="rect" id="node10" href="$dd/d84/base__timer_8cpp.html" title="base_timer.cpp" alt="" coords="243,315,347,344"/>
-<area shape="rect" id="node13" href="$dc/de5/timer_8cpp.html" title="timer.cpp" alt="" coords="120,392,192,421"/>
-<area shape="rect" id="node15" href="$dc/d43/signal__detection_8cpp.html" title="signal_detection.cpp" alt="" coords="422,237,554,267"/>
+<area shape="rect" id="node2" href="$d8/d07/auto__timer_8hpp.html" title="timemory/auto_timer.hpp" alt="" coords="331,469,485,499"/>
+<area shape="rect" id="node5" href="$d2/d80/auto__timer_8cpp.html" title="auto_timer.cpp" alt="" coords="5,555,107,585"/>
+<area shape="rect" id="node6" href="$d2/dfd/timemory_8cc.html" title="timemory.cc" alt="" coords="709,555,795,585"/>
+<area shape="rect" id="node8" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="361,83,487,112"/>
+<area shape="rect" id="node9" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="605,237,763,267"/>
+<area shape="rect" id="node11" href="$df/d05/timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="837,315,963,344"/>
+<area shape="rect" id="node12" href="$df/df2/timing__manager_8hpp.html" title="timemory/timing_manager.hpp" alt="" coords="453,392,637,421"/>
+<area shape="rect" id="node14" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="197,160,382,189"/>
+<area shape="rect" id="node16" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="671,83,830,112"/>
+<area shape="rect" id="node18" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="852,160,967,189"/>
+<area shape="rect" id="node3" href="$d6/d8e/test__timing_8cpp.html" title="examples/ex1/test_timing.cpp" alt="" coords="131,555,311,585"/>
+<area shape="rect" id="node4" href="$dd/d0a/mpi__test__timing_8cpp.html" title="examples/ex2/mpi_test\l_timing.cpp" alt="" coords="335,547,481,593"/>
+<area shape="rect" id="node7" href="$d9/dad/timing__manager_8cpp.html" title="timing_manager.cpp" alt="" coords="507,555,637,585"/>
+<area shape="rect" id="node10" href="$dd/d84/base__timer_8cpp.html" title="base_timer.cpp" alt="" coords="632,315,736,344"/>
+<area shape="rect" id="node13" href="$dc/de5/timer_8cpp.html" title="timer.cpp" alt="" coords="837,392,909,421"/>
+<area shape="rect" id="node15" href="$dc/d43/signal__detection_8cpp.html" title="signal_detection.cpp" alt="" coords="246,237,378,267"/>
+<area shape="rect" id="node17" href="$d5/db8/base__clock_8cpp.html" title="base_clock.cpp" alt="" coords="722,160,827,189"/>
 </map>

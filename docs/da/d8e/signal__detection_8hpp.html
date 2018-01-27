@@ -102,9 +102,6 @@ $(document).ready(function(){initNavTree('da/d8e/signal__detection_8hpp.html','.
 <code>#include &lt;exception&gt;</code><br />
 <code>#include &lt;stdexcept&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
-<code>#include &lt;cfenv&gt;</code><br />
-<code>#include &lt;execinfo.h&gt;</code><br />
-<code>#include &lt;cxxabi.h&gt;</code><br />
 <code>#include &lt;deque&gt;</code><br />
 <code>#include &lt;cmath&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
@@ -116,14 +113,16 @@ $(document).ready(function(){initNavTree('da/d8e/signal__detection_8hpp.html','.
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d7/d5f/signal__detection_8hpp__incl.svg" width="100%" height="446"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d7/d5f/signal__detection_8hpp__incl.svg" width="100%" height="446"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 </div>
 </div><div class="textblock"><div id="dynsection-1" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-1-trigger" src="../../closed.png" alt="+"/> This graph shows which files directly or indirectly include this file:</div>
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../df/d56/signal__detection_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../df/d56/signal__detection_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 </div>
 </div>
 <p><a href="">Go to the source code of this file.</a></p>
@@ -208,10 +207,12 @@ Enumerations</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
-<tr class="memitem:ae7401b5b453e5e04cb5422fe9ee0a233"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#ae7401b5b453e5e04cb5422fe9ee0a233">NAME_TIM::EnableSignalDetection</a> ()</td></tr>
-<tr class="separator:ae7401b5b453e5e04cb5422fe9ee0a233"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a17690f207ffa63f34a7a71540b192274"><td class="memItemLeft" align="right" valign="top">static bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a17690f207ffa63f34a7a71540b192274">NAME_TIM::EnableSignalDetection</a> (<a class="el" href="../../d2/dfd/timemory_8cc.html#abefc568a1ea873d69e92d13cd7720081">signal_settings::signal_set_t</a>=<a class="el" href="../../d2/dfd/timemory_8cc.html#abefc568a1ea873d69e92d13cd7720081">signal_settings::signal_set_t</a>())</td></tr>
+<tr class="separator:a17690f207ffa63f34a7a71540b192274"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:aaa891f3a0b9dcd295f65805543683663"><td class="memItemLeft" align="right" valign="top">static void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#aaa891f3a0b9dcd295f65805543683663">NAME_TIM::DisableSignalDetection</a> ()</td></tr>
 <tr class="separator:aaa891f3a0b9dcd295f65805543683663"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a492f1594134545dd43609437cd73aa"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a3a492f1594134545dd43609437cd73aa">NAME_TIM::StackBackTrace</a> (std::ostream &amp;os)</td></tr>
+<tr class="separator:a3a492f1594134545dd43609437cd73aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
 <div class="textblock"><p>Handles signals emitted by application </p>
@@ -338,7 +339,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_4fd02b5fd43288e8282468be733f8250.html">timemory</a></li><li class="navelem"><a class="el" href="../../da/d8e/signal__detection_8hpp.html">signal_detection.hpp</a></li>
-    <li class="footer">Generated on Fri Jan 26 2018 18:05:46 for TiMemory by
+    <li class="footer">Generated on Sat Jan 27 2018 03:10:05 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>
