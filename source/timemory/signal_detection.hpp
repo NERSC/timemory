@@ -52,7 +52,6 @@
 #include <stdexcept>
 #include <functional>
 #include <cfenv>
-#include <execinfo.h> // for StackBacktrace()
 #include <cxxabi.h>
 #include <deque>
 #include <cmath>
@@ -62,18 +61,8 @@
 #include "timemory/utility.hpp"
 #include "timemory/mpi.hpp"
 
-// Define C++11
-#ifndef CXX11
-#   if __cplusplus > 199711L   // C++11
-#       define CXX11
-#   endif
-#endif
-
-// Define C++14
-#ifndef CXX14
-#   if __cplusplus > 201103L   // C++14
-#       define CXX14
-#   endif
+#if defined(_UNIX)
+#   include <execinfo.h> // for StackBacktrace()
 #endif
 
 // compatible compiler
@@ -516,7 +505,9 @@ inline void DisableSignalDetection()
 
 namespace NAME_TIM
 {
-static bool EnableSignalDetection() { return false; }
+static bool EnableSignalDetection(signal_settings::signal_set_t
+                                  = signal_settings::signal_set_t())
+{ return false; }
 static void DisableSignalDetection() { }
 } // namespace NAME_TIM
 

@@ -38,6 +38,7 @@
 #include <iomanip>
 #include <stdio.h>
 #include <cstdint>
+#include <algorithm>
 
 #include <cereal/cereal.hpp>
 #include <cereal/access.hpp>
