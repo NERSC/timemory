@@ -509,6 +509,11 @@ static bool EnableSignalDetection(signal_settings::signal_set_t
                                   = signal_settings::signal_set_t())
 { return false; }
 static void DisableSignalDetection() { }
+inline void StackBackTrace(std::ostream& os)
+{
+    os << "StackBackTrace() not available." << std::endl;
+}
+
 } // namespace NAME_TIM
 
 //============================================================================//
