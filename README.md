@@ -3,7 +3,7 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
 
 [Source code documentation for TiMemory](https://jrmadsen.github.io/TiMemory)
 
-## Dependancies
+### Dependancies
 
 - Operating systems
 
@@ -37,7 +37,7 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
     - matplotlib
     - unittest
 
-## Python setup.py installation
+### Python setup.py installation
 
 ```
 # with MPI
@@ -46,7 +46,7 @@ python setup.py build install
 python setup.py config --disable-mpi build install
 ```
 
-## Basic Python usage
+### Basic Python usage
 
 - Decorators available for auto_timers, timers, and rss_usage in `timemory.util`
 - One can also use auto_timer, timer, and rss_usage objects directly for same results
@@ -64,7 +64,7 @@ def function(...):
     time.sleep(1)
 ```
 
-- Auto-timer example
+#### Auto-timer example
 
 ```python
 @timemory.util.auto_timer(key="", add_args=False, is_class=False)
@@ -81,7 +81,7 @@ def function(...):
 > [pyc]   |_test_func_1@'timemory_test.py':222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
 ```
 
-- Timer example (will report to stdout at the end of the function)
+#### Timer example (will report to stdout at the end of the function)
 
 ```python
 @timemory.util.timer(key="", add_args=False, is_class=False)
@@ -98,7 +98,7 @@ test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 syste
 test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 ```
 
-- RSS usage:
+#### RSS usage example:
 
 ```python
 @timemory.util.rss_usage(key="", add_args=False, is_class=False)
@@ -121,7 +121,7 @@ test_func_rss@'timemory_test.py':244 : RSS {total,self}_{current,peak} : (52.536
     - In above, the temporary memory used by the function can be determined by `self peak` - `self current`
 
 
-## Basic C++ usage
+### Basic C++ usage
 
 - In C++ code, easiest usage for the auto_timers is with the TiMemory macro
 
@@ -133,7 +133,7 @@ TIMEMORY_AUTO_TIMER("custom_string")
 - See the full documentation and examples for more information on the classes and usage
 
 
-## Overview
+### Overview
 
 There are essentially two components of the output:
 
@@ -160,7 +160,7 @@ There are essentially two components of the output:
   - where "nback" is a parameter specifying how far back in the call tree
   
 
-## Example
+### Example
 
 For the interpretation of text output, here is an example and the explanation of it’s structure
 
@@ -265,7 +265,7 @@ For the interpretation of text output, here is an example and the explanation of
 |1> [pyc] |___del__@TODGround                          : 18.149 wall, 17.950 user +  0.150 system = 18.100 CPU [sec] ( 99.7%) : RSS {tot,self}_{curr,peak} : (1040.3|2223.7) | (   0.0|   0.0) [MB] (total # of laps: 24)
 ```
 
-## GENERAL LAYOUT
+### GENERAL LAYOUT
 
 - The "rank" line(s) give the MPI process/rank (and x=rank in `|x>`)
 - The first (non ">") column tells whether the “auto-timer” originated from C++ (`[cxx]`) or Python (`[pyc]`) code
@@ -277,7 +277,7 @@ For the interpretation of text output, here is an example and the explanation of
 
   - If the number of laps are not noted, the total number of laps is implicitly one
 
-## TIMING FIELDS
+### TIMING FIELDS
 
 - Then you have 5 time measurements
 
@@ -315,7 +315,7 @@ For the interpretation of text output, here is an example and the explanation of
     - When calculating the self-cost of A, one does not subtract the time spent in function D. These times are included in the timing of both B and C
 
 
-## MEMORY FIELDS
+### MEMORY FIELDS
 
 - The memory measurements are a bit confusing, admittedly. The two types "curr" ("current", which I will refer to as such from here on out) and "peak" have to do with different memory measurements
 
@@ -359,7 +359,7 @@ For the interpretation of text output, here is an example and the explanation of
     - Thus, with these two numbers, one can then deduce how much temporary/transient memory usage is being allocated in the function — if a function reports a self-cost of 243.2 MB of “current” RSS and a “peak” RSS of 403.9 MB, then you know that the “build_npp” function created 243.2 MB of persistent memory but creating the object requiring the persistent 243.2 MB required an additional 160.7 MB of temporary/transient memory (403.9 MB - 243.2 MB).
 
 
-## USING AUTO-TIMERS
+### USING AUTO-TIMERS
 
 If you have new Python code you would like to use the auto-timers with, here is general guide:
 

@@ -8,7 +8,7 @@ temporary memory calculation
 TiMemory <https://jrmadsen.github.io/TiMemory>`__
 
 Dependancies
-------------
+~~~~~~~~~~~~
 
 -  Operating systems
 
@@ -43,7 +43,7 @@ Dependancies
       -  unittest
 
 Python setup.py installation
-----------------------------
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
@@ -53,7 +53,7 @@ Python setup.py installation
   python setup.py config --disable-mpi build install
 
 Basic Python usage
-------------------
+~~~~~~~~~~~~~~~~~~
 
 -  Decorators available for auto\_timers, timers, and rss\_usage in
    ``timemory.util``
@@ -78,7 +78,8 @@ Basic Python usage
   def function(...):
       time.sleep(1)
 
--  Auto-timer example
+Auto-timer example
+^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -97,7 +98,8 @@ Basic Python usage
   > [pyc] |_test_func_2@'timemory_test.py':226    :  3.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
   > [pyc]   |_test_func_1@'timemory_test.py':222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
 
--  Timer example (will report to stdout at the end of the function)
+Timer example (will report to stdout at the end of the function)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -116,7 +118,8 @@ Basic Python usage
   # with is_class=True
   test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 
--  RSS usage:
+RSS usage example:
+^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -143,7 +146,7 @@ Basic Python usage
     - In above, the temporary memory used by the function can be determined by `self peak` - `self current`
 
 Basic C++ usage
----------------
+~~~~~~~~~~~~~~~
 
 -  In C++ code, easiest usage for the auto\_timers is with the TiMemory
    macro
@@ -158,7 +161,7 @@ Basic C++ usage
    classes and usage
 
 Overview
---------
+~~~~~~~~
 
 There are essentially two components of the output:
 
@@ -196,7 +199,7 @@ There are essentially two components of the output:
       tree
 
 Example
--------
+~~~~~~~
 
 For the interpretation of text output, here is an example and the
 explanation of it’s structure
@@ -303,7 +306,7 @@ explanation of it’s structure
   |1> [pyc] |___del__@TODGround                          : 18.149 wall, 17.950 user +  0.150 system = 18.100 CPU [sec] ( 99.7%) : RSS {tot,self}_{curr,peak} : (1040.3|2223.7) | (   0.0|   0.0) [MB] (total # of laps: 24)
 
 GENERAL LAYOUT
---------------
+~~~~~~~~~~~~~~
 
 -  The "rank" line(s) give the MPI process/rank (and x=rank in ``|x>``)
 -  The first (non ">") column tells whether the “auto-timer” originated
@@ -319,7 +322,7 @@ GENERAL LAYOUT
       implicitly one
 
 TIMING FIELDS
--------------
+~~~~~~~~~~~~~
 
 -  Then you have 5 time measurements
 
@@ -379,7 +382,7 @@ TIMING FIELDS
          timing of both B and C
 
 MEMORY FIELDS
--------------
+~~~~~~~~~~~~~
 
 -  The memory measurements are a bit confusing, admittedly. The two
    types "curr" ("current", which I will refer to as such from here on
@@ -479,7 +482,7 @@ MEMORY FIELDS
          (403.9 MB - 243.2 MB).
 
 USING AUTO-TIMERS
------------------
+~~~~~~~~~~~~~~~~~
 
 If you have new Python code you would like to use the auto-timers with,
 here is general guide:

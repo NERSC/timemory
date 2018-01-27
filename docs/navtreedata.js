@@ -2,16 +2,6 @@ var NAVTREE =
 [
   [ "TiMemory", "index.html", [
     [ "Namespaces", null, [
-      [ "Dependancies", "index.html#autotoc_md1", null ],
-      [ "Python setup.py installation", "index.html#autotoc_md2", null ],
-      [ "Basic Python usage", "index.html#autotoc_md3", null ],
-      [ "Basic C++ usage", "index.html#autotoc_md4", null ],
-      [ "Overview", "index.html#autotoc_md5", null ],
-      [ "Example", "index.html#autotoc_md6", null ],
-      [ "GENERAL LAYOUT", "index.html#autotoc_md7", null ],
-      [ "TIMING FIELDS", "index.html#autotoc_md8", null ],
-      [ "MEMORY FIELDS", "index.html#autotoc_md9", null ],
-      [ "USING AUTO-TIMERS", "index.html#autotoc_md10", null ],
       [ "Namespace List", "namespaces.html", "namespaces" ],
       [ "Namespace Members", "namespacemembers.html", [
         [ "All", "namespacemembers.html", null ],
