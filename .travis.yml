@@ -137,7 +137,7 @@ before_install:
     - echo "PYBINPATH = ${PYBINPATH}"
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
-    - pip install matplotlib numpy tornado argparse
+    - pip install matplotlib numpy tornado argparse cmake
     - export INSTALL_DIR=${HOME}/timemory/current
 
 
@@ -178,5 +178,5 @@ script:
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi 
     - echo "Python testing -- Done"
     - cd ${SOURCE_DIR}
-    - python setup.py build
+    - python setup.py build install
     - echo "Python setup.py -- Done"
