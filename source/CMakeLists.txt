@@ -38,12 +38,12 @@ file(GLOB headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 set(INSTALL_LIBRARIES )
 
 # macro to build a library of type: shared, static
-macro(_BUILD_LIBRARY type)
+macro(_BUILD_LIBRARY type output_name)
     string(TOUPPER "${type}" LIB_TYPE)
     add_library(${LIBNAME}-${type} ${LIB_TYPE} ${ARGN})
     target_link_libraries(${LIBNAME}-${type} ${EXTERNAL_LIBRARIES})
     set_target_properties(${LIBNAME}-${type} PROPERTIES
-        OUTPUT_NAME ${LIBNAME}
+        OUTPUT_NAME ${output_name}
         VERSION ${PROJECT_VERSION}
         SOVERSION ${PROJECT_VERSION_MAJOR})
     list(APPEND INSTALL_LIBRARIES ${LIBNAME}-${type})
@@ -53,16 +53,16 @@ endmacro(_BUILD_LIBRARY TYPE)
 set(LINK_TYPE static)
 
 if(WIN32)
-    #_build_library(shared ${sources} ${headers})
-    _build_library(static ${sources} ${headers})
+    #_build_library(shared ${LIBNAME}-shared ${sources} ${headers})
+    _build_library(static ${LIBNAME}-archive ${sources} ${headers})
     set(LINK_TYPE static)
 else(WIN32)
     message(STATUS "")
     message(STATUS "Building ${PROJECT_NAME} with object library...")
     message(STATUS "")
     add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-    _build_library(shared $<TARGET_OBJECTS:${LIBNAME}-object>)
-    _build_library(static $<TARGET_OBJECTS:${LIBNAME}-object>)
+    _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+    _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
     set(LINK_TYPE static)
 endif(WIN32)
 
