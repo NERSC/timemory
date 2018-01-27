@@ -25,7 +25,7 @@ add_subdirectory(cereal)
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
     FORCE)
-message(STATUS "Dev warnings: ${DEV_WARNINGS}")
+#message(STATUS "Dev warnings: ${DEV_WARNINGS}")
 include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 
 #----------------------------------------------------------------------------
@@ -34,25 +34,39 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 file(GLOB sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 file(GLOB headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 
+# libraries to install
+set(INSTALL_LIBRARIES )
+
+# macro to build a library of type: shared, static
+macro(_BUILD_LIBRARY type)
+    string(TOUPPER "${type}" LIB_TYPE)
+    add_library(${LIBNAME}-${type} ${LIB_TYPE} ${ARGN})
+    target_link_libraries(${LIBNAME}-${type} ${EXTERNAL_LIBRARIES})
+    set_target_properties(${LIBNAME}-${type} PROPERTIES
+        OUTPUT_NAME ${LIBNAME}
+        VERSION ${PROJECT_VERSION}
+        SOVERSION ${PROJECT_VERSION_MAJOR})
+    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-${type})
+endmacro(_BUILD_LIBRARY TYPE)
+
+# library type to link pybind11 module to
+set(LINK_TYPE static)
+
 if(WIN32)
-    add_library(${LIBNAME}-shared SHARED ${sources} ${headers})
-    add_library(${LIBNAME}-static STATIC ${sources} ${headers})
-elseif(WIN32)
+    #_build_library(shared ${sources} ${headers})
+    _build_library(static ${sources} ${headers})
+    set(LINK_TYPE static)
+else(WIN32)
+    message(STATUS "")
+    message(STATUS "Building ${PROJECT_NAME} with object library...")
+    message(STATUS "")
     add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-    add_library(${LIBNAME}-shared SHARED $<TARGET_OBJECTS:${LIBNAME}-object>)
-    add_library(${LIBNAME}-static STATIC $<TARGET_OBJECTS:${LIBNAME}-object>)
+    _build_library(shared $<TARGET_OBJECTS:${LIBNAME}-object>)
+    _build_library(static $<TARGET_OBJECTS:${LIBNAME}-object>)
+    set(LINK_TYPE static)
 endif(WIN32)
 
-target_link_libraries(${LIBNAME}-shared ${EXTERNAL_LIBRARIES})
-target_link_libraries(${LIBNAME}-static ${EXTERNAL_LIBRARIES})
 
-set_target_properties(${LIBNAME}-shared PROPERTIES
-    OUTPUT_NAME ${LIBNAME}
-    VERSION ${PROJECT_VERSION}
-    SOVERSION ${PROJECT_VERSION_MAJOR})
-set_target_properties(${LIBNAME}-static PROPERTIES
-    OUTPUT_NAME ${LIBNAME}
-    VERSION ${PROJECT_VERSION})
 
 #----------------------------------------------------------------------------
 # PyBind11
@@ -60,7 +74,7 @@ set_target_properties(${LIBNAME}-static PROPERTIES
 message(STATUS "External libraries: ${EXTERNAL_LIBRARIES}")
 pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
-target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-static ${EXTERNAL_LIBRARIES})
+target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 
 foreach(_FILE plotting mpi_support util)
     configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}.py
@@ -109,7 +123,7 @@ file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
 #
 
 # C++ compiled libraries
-install(TARGETS ${LIBNAME}-shared ${LIBNAME}-static
+install(TARGETS ${INSTALL_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}LibraryDepends)
 
