@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California, 
@@ -31,9 +31,12 @@
 
 import sys
 import os
-import timemory as tim
 import time
 import argparse
+
+import timemory as tim
+from timemory import options
+from timemory import plotting
 
 default_nfib = 29
 tim.enable_signal_detection()
@@ -76,7 +79,7 @@ def main(nfib):
     tman.serialize('output.json')
     print ('')
     try:
-        tim.util.plot(files=["output.json"], display=False)
+        plotting.plot(files=["output.json"], display=False)
     except:
         print ("Error! Unable to plot 'output.json'")
 
@@ -86,5 +89,5 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--nfib",
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
-    args = tim.util.add_arguments_and_parse(parser)
+    args = options.add_arguments_and_parse(parser, "simple")
     main(args.nfib)

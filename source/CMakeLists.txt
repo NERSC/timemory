@@ -25,7 +25,7 @@ add_subdirectory(cereal)
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
     FORCE)
-
+message(STATUS "Dev warnings: ${DEV_WARNINGS}")
 include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 
 #----------------------------------------------------------------------------
@@ -56,19 +56,19 @@ pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-static ${EXTERNAL_LIBRARIES})
 
-foreach(_FILE plot options)
+foreach(_FILE plotting mpi_support util)
     configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}.py
-        ${PROJECT_BINARY_DIR}/timemory-supp/${_FILE}.py COPYONLY)
-endforeach(_FILE plot options)
+        ${PROJECT_BINARY_DIR}/${_FILE}/__init__.py COPYONLY)
+    install(DIRECTORY
+        ${PROJECT_BINARY_DIR}/${_FILE}/
+        DESTINATION
+        ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
+endforeach(_FILE plotting mpi_support util)
 
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py
-    ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
-    COPYONLY)
 
 #----------------------------------------------------------------------------
 # MPI info
 #
-
 set(MPI_EXE_INFO "MPI not supported")
 set(MPI_C_INFO "MPI not supported")
 set(MPI_CXX_INFO "MPI not supported")
@@ -94,29 +94,9 @@ if(USE_MPI)
 
 endif(USE_MPI)
 
-file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/mpi_exe_info.txt "${MPI_EXE_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/mpi_c_info.txt "${MPI_C_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/mpi_cxx_info.txt "${MPI_CXX_INFO}")
-
-file(WRITE ${PROJECT_BINARY_DIR}/timemory-supp/mpi_support.py
-"#!/usr/bin/env python
-
-import os
-
-def _path_to_file(pfile):
-    import timemory
-    return '{}/timemory-supp/{}'.format(os.path.dirname(timemory.__file__), pfile)
-
-def mpi_exe_info():
-    print (open(_path_to_file('mpi_exe_info.txt'), 'r').read())
-
-def mpi_c_info():
-    print (open(_path_to_file('mpi_c_info.txt'), 'r').read())
-
-def mpi_cxx_info():
-    print (open(_path_to_file('mpi_cxx_info.txt'), 'r').read())
-
-")
+file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
+file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
+file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
 
 #----------------------------------------------------------------------------
 # Install the targets and export
@@ -136,17 +116,24 @@ install(TARGETS ${LIBNAME}
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
 # Python supplementary files
-install(FILES
-    ${PROJECT_BINARY_DIR}/timemory-supp/__init__.py
-    ${PROJECT_BINARY_DIR}/timemory-supp/plot.py
-    ${PROJECT_BINARY_DIR}/timemory-supp/options.py
-    ${PROJECT_BINARY_DIR}/timemory-supp/mpi_support.py
-    # MPI info files
-    ${PROJECT_BINARY_DIR}/timemory-supp/mpi_exe_info.txt
-    ${PROJECT_BINARY_DIR}/timemory-supp/mpi_c_info.txt
-    ${PROJECT_BINARY_DIR}/timemory-supp/mpi_cxx_info.txt
-    # ${PROJECT_BINARY_DIR}/timemory-supp/decorator.py
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/timemory-supp)
+install(DIRECTORY
+    ${PROJECT_BINARY_DIR}/util/
+    DESTINATION
+    ${CMAKE_INSTALL_PYTHONDIR}/util)
+
+#install(FILES
+#    # python supplementary modules
+#    ${PROJECT_BINARY_DIR}/util/__init__.py
+#    ${PROJECT_BINARY_DIR}/util/plot.py
+#    ${PROJECT_BINARY_DIR}/util/options.py
+#    ${PROJECT_BINARY_DIR}/util/mpi_support.py
+#    ${PROJECT_BINARY_DIR}/util/signals.py
+#    # MPI info files
+#    ${PROJECT_BINARY_DIR}/util/mpi_exe_info.txt
+#    ${PROJECT_BINARY_DIR}/util/mpi_c_info.txt
+#    ${PROJECT_BINARY_DIR}/util/mpi_cxx_info.txt
+#    # destination
+#    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/util)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends

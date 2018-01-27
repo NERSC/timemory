@@ -1,10 +1,5 @@
 #!/usr/bin/env python
-
-## @package timemory_test.py
-## @file unit_testing.py
-## Unit tests for TiMemory module
-##
-
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California, 
@@ -30,13 +25,19 @@
 # SOFTWARE.
 #
 
+## @package timemory_test.py
+## @file unit_testing.py
+## Unit tests for TiMemory module
+##
+
 import sys
 import os
 import time
+import unittest
 from os.path import join
 
-import unittest
 import timemory
+from timemory import options
 
 timemory.enable_signal_detection()
 
@@ -49,16 +50,17 @@ class timemory_test(unittest.TestCase):
 
     def setUp(self):
         self.outdir = "test_output"
-        timemory.util.use_timers = True
-        timemory.util.serial_report = True
+        timemory.options.use_timers = True
+        timemory.options.serial_report = True
 
 
     # Test if the timers are working if not disabled at compilation
+    @timemory.util.timer(is_class=True)
     def test_timing(self):
         print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
-        timemory.util.opts.set_report(join(self.outdir, "timing_report.out"))
-        timemory.util.opts.set_serial(join(self.outdir, "timing_report.json"))
+        options.set_report(join(self.outdir, "timing_report.out"))
+        options.set_serial(join(self.outdir, "timing_report.json"))
 
         tman = timemory.timing_manager()
 
@@ -96,15 +98,15 @@ class timemory_test(unittest.TestCase):
         timemory.toggle(True)
 
 
-
     # Test the timing on/off toggle functionalities
+    @timemory.util.timer(is_class=True, nback=3)
     def test_toggle(self):
         print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
         tman = timemory.timing_manager()
         timemory.toggle(True)
 
-        timemory.set_max_depth(timemory.util.default_max_depth())
+        timemory.set_max_depth(timemory.options.default_max_depth())
         tman.clear()
 
         timemory.toggle(True)
@@ -133,13 +135,14 @@ class timemory_test(unittest.TestCase):
             del autotimer_on
         self.assertEqual(tman.size(), 1)
 
-        timemory.util.opts.set_report(join(self.outdir, "timing_toggle.out"))
-        timemory.util.opts.set_serial(join(self.outdir, "timing_toggle.json"))
+        timemory.options.set_report(join(self.outdir, "timing_toggle.out"))
+        timemory.options.set_serial(join(self.outdir, "timing_toggle.json"))
 
         tman.report()
 
 
     # Test the timing on/off toggle functionalities
+    @timemory.util.timer(is_class=True)
     def test_max_depth(self):
         print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
@@ -158,13 +161,14 @@ class timemory_test(unittest.TestCase):
 
         create_timer(0)
 
-        timemory.util.opts.set_report(join(self.outdir, "timing_depth.out"))
-        timemory.util.opts.set_serial(join(self.outdir, "timing_depth.json"))
+        timemory.options.set_report(join(self.outdir, "timing_depth.out"))
+        timemory.options.set_serial(join(self.outdir, "timing_depth.json"))
         tman.report()
 
         self.assertEqual(tman.size(), ntimers)
 
     # Test the timing on/off toggle functionalities
+    @timemory.util.timer(is_class=True)
     def test_pointer(self):
         print ('Testing function: "{}"...'.format(timemory.FUNC()))
 
@@ -189,6 +193,7 @@ class timemory_test(unittest.TestCase):
         self.assertEqual(ndef, get_pointer_max())
 
     # Test decorator
+    @timemory.util.timer(is_class=True)
     def test_decorator(self):
         print ('Testing function: "{}"...'.format(timemory.FUNC()))
 

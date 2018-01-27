@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California, 
@@ -39,12 +39,21 @@
 
 import sys
 import os
-import timemory as tim
 import time
 import argparse
 import numpy as np
+import traceback
 
-tim.enable_signal_detection()
+import timemory as tim
+from timemory import options
+from timemory import signals
+from timemory import options
+from timemory import plotting
+
+tim.enable_signal_detection([signals.sys_signal.Hangup,
+                             signals.sys_signal.Interrupt,
+                             signals.sys_signal.FPE,
+                             signals.sys_signal.Abort ])
 
 array_size = 8000000
 
@@ -102,26 +111,36 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--size",
                         help="Size of array allocations",
                         default=array_size, type=int)
-    args = tim.util.add_arguments_and_parse(parser)
+    args = options.add_arguments_and_parse(parser)
     array_size = args.size
+
+    options.set_report("nested_report.out")
+    options.set_serial("nested_report.json")
+
+    rss = tim.rss_usage()
+    rss.record()
 
     try:
         main(args.nfib)
         print ('\nTiming manager size: {}\n'.format(tim.size()))
         tman = tim.timing_manager()
+        tman -= rss
         tman.report()
         tman.serialize('output.json')
         print ('')
-        _data = tim.util.read(tman.json())
+        _data = tim.plotting.read(tman.json())
         _data.title = tim.FILE(noquotes=True)
-        _data.filename = tim.FILE(noquotes=True)
-        tim.util.plot(data = [_data], files = ["output.json"], display=False)
+        _data.filename = options.serial_fname
+        plotting.plot(data = [_data], files = ["output.json"], output_dir=options.output_dir)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
         print ('Exception - {}'.format(e))
 
     t.stop()
+    print("\nRSS usage at initialization: {}".format(rss))
+    t -= rss
     print ('')
     t.report()
     print ('')
+    print("RSS usage at finalization: {}\n".format(tim.rss_usage(record=True)))

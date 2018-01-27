@@ -81,6 +81,7 @@ namespace internal
 class base_rss_usage
 {
 public:
+    typedef base_rss_usage          this_type;
     typedef NAME_TIM::rss::usage    rss_usage_t;
 
     inline void init()
@@ -104,6 +105,18 @@ public:
     {
         m_rss_tot  = NAME_TIM::rss::usage::max(m_rss_tot, rhs.total());
         m_rss_self = NAME_TIM::rss::usage::max(m_rss_self, rhs.self());
+    }
+
+    inline this_type& operator+=(const rss_usage_t& rhs)
+    {
+        m_rss_tot += rhs;
+        return *this;
+    }
+
+    inline this_type& operator-=(const rss_usage_t& rhs)
+    {
+        m_rss_tot -= rhs;
+        return *this;
     }
 
 protected:
@@ -193,6 +206,7 @@ public:
     typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
     typedef base_timer_data                             op_type;
     typedef base_rss_usage                              rss_type;
+    typedef NAME_TIM::rss::usage                        rss_usage_t;
 
 public:
     base_timer_delta()
@@ -229,6 +243,18 @@ public:
         compute_sum(rhs.m_sum);
         //compute_sqr(rhs.m_sqr);
         m_rss.max(rhs.m_rss);
+        return *this;
+    }
+
+    this_type& operator+=(const rss_usage_t& rhs)
+    {
+        m_rss += rhs;
+        return *this;
+    }
+
+    this_type& operator-=(const rss_usage_t& rhs)
+    {
+        m_rss -= rhs;
         return *this;
     }
 
@@ -327,7 +353,8 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    typedef base_rss_usage                      rss_usage_t;
+    typedef NAME_TIM::rss::usage                rss_usage_t;
+    typedef base_rss_usage                      rss_type;
 
 public:
     base_timer(uint16_t = 3, const string_t& =

@@ -85,6 +85,7 @@ namespace internal
 typedef std::tuple<uint64_t, uint64_t, std::string,
                    std::shared_ptr<NAME_TIM::timer>> base_timer_tuple_t;
 }
+
 struct timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
@@ -174,7 +175,7 @@ public:
     using uomap = std::unordered_map<_Key, _Mapped>;
 
     typedef timing_manager                  this_type;
-    typedef NAME_TIM::timer           tim_timer_t;
+    typedef NAME_TIM::timer                 tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
@@ -192,6 +193,7 @@ public:
     typedef std::lock_guard<mutex_t>        auto_lock_t;
     typedef this_type*                      pointer_type;
     typedef std::set<this_type*>            daughter_list_t;
+    typedef tim_timer_t::rss_usage_t        rss_usage_t;
 
 public:
     // Constructor and Destructors
@@ -284,6 +286,9 @@ public:
 
     void set_merge(bool val) { m_merge.store(val); }
 
+    void operator+=(const rss_usage_t& rhs);
+    void operator-=(const rss_usage_t& rhs);
+
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
@@ -323,9 +328,24 @@ private:
     mutex_t                 m_mutex;
     // daughter list
     daughter_list_t         m_daughters;
+    // baseline rss
+    rss_usage_t             m_rss_usage;
 };
 
-
+//----------------------------------------------------------------------------//
+inline void
+timing_manager::operator+=(const rss_usage_t& rhs)
+{
+    for(auto& itr : m_timer_list)
+        *(std::get<3>(itr).get()) += rhs;
+}
+//----------------------------------------------------------------------------//
+inline void
+timing_manager::operator-=(const rss_usage_t& rhs)
+{
+    for(auto& itr : m_timer_list)
+        *(std::get<3>(itr).get()) -= rhs;
+}
 //----------------------------------------------------------------------------//
 template <typename _Ret, typename _Func>
 inline _Ret

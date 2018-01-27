@@ -29,6 +29,8 @@
 ## Options for TiMemory module
 ##
 
+from __future__ import absolute_import
+
 import sys
 import os
 from os.path import dirname
@@ -76,6 +78,16 @@ class opts():
         ensure_directory_exists(fname)
         opts.serial_fname = fname
         opts.serial_report = True
+
+
+#------------------------------------------------------------------------------#
+def set_report(fname):
+    opts.set_report(fname)
+
+
+#------------------------------------------------------------------------------#
+def set_serial(fname):
+    opts.set_serial(fname)
 
 
 #------------------------------------------------------------------------------#
@@ -136,7 +148,6 @@ def parse_args(args):
     tim.toggle(opts.use_timers)
     tim.set_max_depth(opts.max_timer_depth)
 
-
 #------------------------------------------------------------------------------#
 def add_arguments_and_parse(parser, fname=None):
     # Combination of timing.add_arguments and timing.parse_args but returns
@@ -144,3 +155,5 @@ def add_arguments_and_parse(parser, fname=None):
     args = parser.parse_args()
     parse_args(args)
     return args
+
+#print ('Done import from "{}"'.format(__file__))

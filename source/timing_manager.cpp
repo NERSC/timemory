@@ -325,7 +325,8 @@ void timing_manager::report(ostream_t* os, bool no_min) const
         check_stream(os, "total timing report");
 
     for(const auto& itr : *this)
-        const_cast<tim_timer_t&>(itr.timer()).stop();
+        if(!itr.timer().is_valid())
+            const_cast<tim_timer_t&>(itr.timer()).stop();
 
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;

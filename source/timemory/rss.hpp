@@ -285,6 +285,13 @@ namespace rss
             return r;
         }
 
+        this_type& operator+=(const this_type& rhs)
+        {
+            m_peak_rss += rhs.m_peak_rss;
+            m_curr_rss += rhs.m_curr_rss;
+            return *this;
+        }
+
         this_type& operator-=(const this_type& rhs)
         {
             m_peak_rss -= rhs.m_peak_rss;

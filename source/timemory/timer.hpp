@@ -106,6 +106,19 @@ public:
         return *this;
     }
 
+    this_type& operator+=(const rss_usage_t& rhs)
+    {
+        m_accum += rhs;
+        return *this;
+    }
+
+    this_type& operator-=(const rss_usage_t& rhs)
+    {
+        m_accum -= rhs;
+        return *this;
+    }
+
+
 protected:
     virtual void compose() final;
     void set_parent(this_type* parent) { m_parent = parent; }

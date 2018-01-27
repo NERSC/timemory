@@ -29,12 +29,15 @@
 ## Plotting routines for TiMemory module
 ##
 
+from __future__ import absolute_import
 from __future__ import division
+
 import json
 import sys
 import traceback
 import collections
 import numpy as np
+import os
 
 try:
     import tornado
@@ -57,6 +60,11 @@ min_memory = 1
 img_dpi = 75
 img_size = {'w': 1200, 'h': 800}
 
+
+#==============================================================================#
+def make_output_directory(directory):
+    if not os.path.exists(directory) and directory != '':
+        os.makedirs(directory)
 
 #==============================================================================#
 def nested_dict():
@@ -189,7 +197,7 @@ def read(json_obj):
 
 
 #==============================================================================#
-def plot_timing(_plot_data, disp=False):
+def plot_timing(_plot_data, disp=False, output_dir="."):
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -259,8 +267,8 @@ def plot_timing(_plot_data, disp=False):
         print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('../', '')
-        imgfname = imgfname.replace('./', '')
+        make_output_directory(output_dir)
+        imgfname = os.path.basename(filename)
         imgfname = imgfname.replace('.', '_timing.')
         if not '_timing.' in imgfname:
             imgfname += "_timing."
@@ -268,13 +276,14 @@ def plot_timing(_plot_data, disp=False):
         imgfname = imgfname.replace('.py', '.png')
         if not '.png' in imgfname:
             imgfname += '.png'
+        imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot_memory(_plot_data, disp=False):
+def plot_memory(_plot_data, disp=False, output_dir="."):
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -358,8 +367,8 @@ def plot_memory(_plot_data, disp=False):
         #print('Displaying plot...')
         plt.show()
     else:
-        imgfname = filename.replace('../', '')
-        imgfname = imgfname.replace('./', '')
+        make_output_directory(output_dir)
+        imgfname = os.path.basename(filename)
         imgfname = imgfname.replace('.', '_memory.')
         if not '_memory.' in imgfname:
             imgfname += "_memory."
@@ -367,13 +376,14 @@ def plot_memory(_plot_data, disp=False):
         imgfname = imgfname.replace('.py', '.png')
         if not '.png' in imgfname:
             imgfname += '.png'
+        imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot(data = [], files = [], display=False):
+def plot(data = [], files = [], display=False, output_dir='.'):
 
     if len(files) > 0:
         for filename in files:
@@ -389,9 +399,12 @@ def plot(data = [], files = [], display=False):
     for _data in data:
         try:
             print ('Plotting {}...'.format(_data.filename))
-            plot_timing(_data, display)
-            plot_memory(_data, display)
-        except:
+            plot_timing(_data, display, output_dir)
+            plot_memory(_data, display, output_dir)
+        except Exception as e:
+            exc_type, exc_value, exc_traceback = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+            print ('Exception - {}'.format(e))
             print ('Error! Unable to plot "{}"...'.format(_data.filename))
 
 
