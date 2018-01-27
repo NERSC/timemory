@@ -218,6 +218,7 @@ setup(name='TiMemory',
     zip_safe=False,
     # extra
     install_requires=[ 'numpy', 'matplotlib', 'argparse', 'cmake' ],
+    setup_requires=[ 'cmake' ],
     provides=[ 'timemory' ],
     keywords=get_keywords(),
     python_requires='>=2.6',
