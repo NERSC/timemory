@@ -121,7 +121,7 @@ namespace rss
 
         int64_t nsize = 0;
         if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-            nsize = (int64_t) pmc.PeakWorkingSetSize / ((int64_t) units::KiB);
+            nsize = (int64_t) pmc.PeakWorkingSetSize;
 
         CloseHandle( hProcess );
 
@@ -178,7 +178,7 @@ namespace rss
 
         int64_t nsize = 0;
         if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-            nsize = (int64_t) pmc.WorkingSetSize / ((int64_t) units::KiB);
+            nsize = (int64_t) pmc.WorkingSetSize;
 
         CloseHandle( hProcess );
 
