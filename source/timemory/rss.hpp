@@ -31,7 +31,6 @@
 #ifndef rss_hpp_
 #define rss_hpp_
 
-#include <unistd.h>
 #include <ios>
 #include <iostream>
 #include <fstream>

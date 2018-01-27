@@ -31,8 +31,6 @@
 #ifndef base_clock_hpp_
 #define base_clock_hpp_
 
-#include <unistd.h>
-#include <sys/times.h>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
@@ -54,6 +52,15 @@
 #include <cereal/access.hpp>
 
 #include "timemory/namespace.hpp"
+
+#if defined(_UNIX)
+#   include <unistd.h>
+#   include <sys/times.h>
+#elif defined(_WINDOWS)
+#   include <Windows.h>
+#   include <time.h>
+#   include <windows.h>
+#endif
 
 namespace NAME_TIM
 {
