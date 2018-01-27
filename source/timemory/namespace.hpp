@@ -77,4 +77,19 @@
 #   define EXTERN_C_END   /* Nothing */
 #endif
 
+
+// Define C++11
+#ifndef CXX11
+#   if __cplusplus > 199711L   // C++11
+#       define CXX11
+#   endif
+#endif
+
+// Define C++14
+#ifndef CXX14
+#   if __cplusplus > 201103L   // C++14
+#       define CXX14
+#   endif
+#endif
+
 #endif

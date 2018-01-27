@@ -66,6 +66,9 @@ struct dummy { static int32_t asymbol; };
 //  Windows does not have tms definition
 //
 
+// without this, windows will define macros for min and max
+#define NOMINMAX
+
 #include <sys/timeb.h>
 #include <sys/types.h>
 #include <winsock2.h>

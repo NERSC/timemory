@@ -101,10 +101,10 @@ public:
     const rss_usage_t& total() const { return m_rss_tot; }
     const rss_usage_t& self() const { return m_rss_self; }
 
-    void get_max(const base_rss_usage& rhs)
+    void max(const base_rss_usage& rhs)
     {
-        m_rss_tot  = NAME_TIM::rss::usage::get_max(m_rss_tot, rhs.total());
-        m_rss_self = NAME_TIM::rss::usage::get_max(m_rss_self, rhs.self());
+        m_rss_tot  = NAME_TIM::rss::usage::max(m_rss_tot, rhs.total());
+        m_rss_self = NAME_TIM::rss::usage::max(m_rss_self, rhs.self());
     }
 
     inline this_type& operator+=(const rss_usage_t& rhs)
@@ -232,7 +232,7 @@ public:
         compute_sum(_data);
         //compute_sqr(_data);
         m_lap += 1;
-        m_rss.get_max(data.rss());
+        m_rss.max(data.rss());
 
         return *this;
     }
@@ -242,7 +242,7 @@ public:
         m_lap += rhs.m_lap;
         compute_sum(rhs.m_sum);
         //compute_sqr(rhs.m_sqr);
-        m_rss.get_max(rhs.m_rss);
+        m_rss.max(rhs.m_rss);
         return *this;
     }
 
