@@ -20,6 +20,7 @@
 #       - XLC
 #       - HP_ACC
 #       - MIPS
+#       - MSVC
 #
 
 # include guard
@@ -135,10 +136,15 @@ macro(add_flags _LANG _VAR _FLAGS)
         set(_VAR_GOOD "${${_VAR}}")
     endif("${${_VAR}}" STREQUAL "${_FLAGS}")
 
-    test_compile(${_LANG} HAS_WERROR "-Werror")
+    if(WIN32)
+        set(WERR_FLAG "/Werror")
+    else(WIN32)
+        set(WERR_FLAG "-Werror")
+    endif(WIN32)
+    test_compile(${_LANG} HAS_WERROR "${WERR_FLAG}")
     set(WARNING_AS_ERROR "")
     if(HAS_WERROR)
-        set(WARNING_AS_ERROR "-Werror")
+        set(WARNING_AS_ERROR "${WERR_FLAG}")
     endif(HAS_WERROR)
 
     # test whole string
@@ -287,10 +293,15 @@ foreach(LANG C CXX)
 
         SET_COMPILER_VAR(       INTEL_${CTYPE}      ON)
 
+    elseif(CMAKE_${LANG}_COMPILER MATCHES "MSVC")
+
+        # Windows Visual Studio compiler
+        SET_COMPILER_VAR(       MSVC                ON)
+
     endif()
 
     # set other to no
-    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC CLANG PGI XLC HP_ACC MIPS)
+    foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC CLANG PGI XLC HP_ACC MIPS MSVC)
         if(${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
             continue()
         else()

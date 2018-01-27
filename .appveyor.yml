@@ -44,7 +44,7 @@ install:
     pip install matplotlib numpy tornado argparse cmake
 build_script:
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-    -DCMAKE_CXX_STANDARD=/std:c++%CPP%
+    -DCMAKE_CXX_STANDARD=%CPP%
     -DCMAKE_SUPPRESS_REGENERATION=1
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config %CONFIG% --target all -- /m /v:m /logger:%MSBuildLogger%
