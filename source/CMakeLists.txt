@@ -92,7 +92,7 @@ endforeach(_FILE plotting mpi_support util)
 set(MPI_EXE_INFO "MPI not supported")
 set(MPI_C_INFO "MPI not supported")
 set(MPI_CXX_INFO "MPI not supported")
-if(USE_MPI)
+if(USE_MPI AND MPI_FOUND)
 
     execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
         OUTPUT_VARIABLE MPI_EXE_INFO
@@ -112,7 +112,7 @@ if(USE_MPI)
         OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
-endif(USE_MPI)
+endif(USE_MPI AND MPI_FOUND)
 
 file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
 file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
