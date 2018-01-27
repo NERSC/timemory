@@ -1,8 +1,6 @@
 
-add_option(BUILD_TESTING "Build testing" ON)
-if(NOT BUILD_TESTING)
-    return()
-endif(NOT BUILD_TESTING)
+add_option(BUILD_TESTING "Build testing for dashboard" OFF NO_FEATURE)
+mark_as_advanced(BUILD_TESTING)
 
 # testing
 ENABLE_TESTING()
@@ -11,8 +9,8 @@ if(BUILD_TESTING)
 endif(BUILD_TESTING)
 
 # if this is directory we are running CDash (don't set to ON)
-option(DASHBOARD_MODE "Internally used to skip generation of CDash files" OFF)
-
+add_option(DASHBOARD_MODE "Internally used to skip generation of CDash files" OFF NO_FEATURE)
+mark_as_advanced(DASHBOARD_MODE)
 
 # ------------------------------------------------------------------------ #
 # -- Miscellaneous
@@ -43,18 +41,23 @@ endfunction()
 # ------------------------------------------------------------------------ #
 # -- Configure Branch label
 # ------------------------------------------------------------------------ #
-execute_process(COMMAND git branch --contains
-    OUTPUT_VARIABLE CMAKE_SOURCE_BRANCH
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
-string(REPLACE "*" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
-string(REPLACE " " "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+if(BUILD_TESTING)
+    find_package(Git REQUIRED)
+
+    execute_process(COMMAND ${GIT_EXECUTABLE} branch --contains
+        OUTPUT_VARIABLE CMAKE_SOURCE_BRANCH
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    string(REPLACE "*" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+    string(REPLACE " " "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+endif(BUILD_TESTING)
 
 
 # ------------------------------------------------------------------------ #
 # -- Add options
 # ------------------------------------------------------------------------ #
 macro(add_ctest_options VARIABLE )
+
     get_cmake_property(_vars CACHE_VARIABLES)
     get_cmake_property(_nvars VARIABLES)
     foreach(_var ${_nvars})
