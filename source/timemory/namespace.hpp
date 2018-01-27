@@ -67,4 +67,14 @@
 #   endif
 #endif
 
+#ifdef __cplusplus
+#   define EXTERN_C       extern "C"
+#   define EXTERN_C_BEGIN extern "C" {
+#   define EXTERN_C_END   }
+#else
+#   define EXTERN_C       /* Nothing */
+#   define EXTERN_C_BEGIN /* Nothing */
+#   define EXTERN_C_END   /* Nothing */
+#endif
+
 #endif

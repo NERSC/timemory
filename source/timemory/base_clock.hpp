@@ -54,12 +54,48 @@
 #include "timemory/namespace.hpp"
 
 #if defined(_UNIX)
+
 #   include <unistd.h>
 #   include <sys/times.h>
+
+// avoid no symbols warning
+struct dummy { static int32_t asymbol; };
+
 #elif defined(_WINDOWS)
-#   include <Windows.h>
-#   include <time.h>
-#   include <windows.h>
+//
+//  Windows does not have tms definition
+//
+
+#include <sys/timeb.h>
+#include <sys/types.h>
+#include <winsock2.h>
+
+EXTERN_C int gettimeofday(struct timeval* t, void* timezone);
+
+#define __need_clock_t
+
+#include <Windows.h>
+#include <windows.h>
+#include <time.h>
+
+// Structure describing CPU time used by a process and its children.
+struct tms
+{
+    clock_t tms_utime;          // User CPU time
+    clock_t tms_stime;          // System CPU time
+    clock_t tms_cutime;         // User CPU time of dead children
+    clock_t tms_cstime;         // System CPU time of dead children
+};
+
+// Store the CPU time used by this process and all its
+// dead children (and their dead children) in BUFFER.
+// Return the elapsed real time, or (clock_t) -1 for errors.
+// All times are in CLK_TCKths of a second.
+
+EXTERN_C clock_t times (struct tms *__buffer);
+
+typedef long long suseconds_t ;
+
 #endif
 
 namespace NAME_TIM
