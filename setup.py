@@ -101,10 +101,16 @@ class CMakeBuild(build_ext, Command):
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
         self.build_temp=os.path.realpath(self.build_temp)
+        if platform.system() == "Windows":
+            subprocess.check_call(['DIR', self.build_temp])
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
                               cwd=self.build_temp, env=env)
+        if platform.system() == "Windows":
+            subprocess.check_call(['DIR', self.build_temp])
         subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
                               cwd=self.build_temp, env=env)
+        if platform.system() == "Windows":
+            subprocess.check_call(['DIR', self.build_temp])
         subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
                               cwd=self.build_temp, env=env)
         print()  # Add an empty line for cleaner output
