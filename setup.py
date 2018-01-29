@@ -115,7 +115,7 @@ class CMakeBuild(build_ext, Command):
     # build extension
     def build_extension(self, ext):
         self.init_cmake()
-        CMakeBuild.mpi_prefix = self.init_mpi()
+        mpi_prefix = self.init_mpi()
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -160,15 +160,15 @@ class CMakeBuild(build_ext, Command):
         print('Install args: {}'.format(install_args))
 
         # configure the project
-        subprocess.check_call(['cmake', '--config', self.build_temp ] + cmake_args + [ ext.sourcedir ],
+        subprocess.check_call(['cmake'] + cmake_args + [ ext.sourcedir ],
                               cwd=self.build_temp, env=env)
 
         # build the project
-        subprocess.check_call(['cmake', '--config'] + cmake_args + [ '--build', self.build_temp] + build_args,
+        subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
                               cwd=self.build_temp, env=env)
 
         # install the CMake build
-        subprocess.check_call(['cmake', '--config'] + cmake_args + [ '--build', self.build_temp] + install_args,
+        subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
                               cwd=self.build_temp, env=env)
 
         print()  # Add an empty line for cleaner output
