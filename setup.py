@@ -29,7 +29,7 @@ class CMakeBuild(build_ext, Command):
     build_type = 'Release'
     use_mpi = 'ON'
     timemory_exceptions = 'OFF'
-    build_examples = 'ON'
+    build_examples = 'OFF'
     cxx_standard = 11
     mpicc = ''
     mpicxx = ''
@@ -299,7 +299,7 @@ def get_email():
 
 
 # ---------------------------------------------------------------------------- #
-# calls the setup and declare our 'my_cool_package'
+# calls the setup and declare package
 setup(name='TiMemory',
     version='1.1.1',
     author=get_name(),
@@ -318,8 +318,8 @@ setup(name='TiMemory',
     cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
-    install_requires=[ 'numpy', 'matplotlib', 'cmake' ],
-    setup_requires=[ 'cmake', 'setuptools', 'disttools' ],
+    install_requires=[ 'numpy', 'matplotlib' ],
+    setup_requires=[ 'setuptools', 'disttools' ],
     provides=[ 'timemory' ],
     keywords=get_keywords(),
     classifiers=get_classifiers(),
