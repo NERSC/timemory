@@ -87,32 +87,59 @@ class CMakeBuild(build_ext, Command):
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
             #build_args += ['--', '/m']
-            build_args += ['--target', 'BUILD_ALL']
+            build_args += ['--target', 'ALL_BUILD']
             install_args += ['--target', 'INSTALL']
         else:
             #cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j4']
             install_args += ['--target', 'install']
-        print('CMake args: {}'.format(cmake_args))
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{}'.format(
             env.get('CXXFLAGS', ''))
+
+        # make directory if not exist
         if not os.path.exists(self.build_temp):
             os.makedirs(self.build_temp)
+
+        # set to absolute path
         self.build_temp=os.path.realpath(self.build_temp)
+
+        # print the CMake args
+        print('CMake args: {}'.format(cmake_args))
+        # print the build_args
+        print('Build args: {}'.format(build_args))
+        # print the install args
+        print('Install args: {}'.format(install_args))
+
+        LIST_CMD='ls'
         if platform.system() == "Windows":
-            subprocess.check_call(['DIR', self.build_temp])
+            LIST_CMD='DIR'
+
+        # list files for debug purposes
+        print('\nListing the build directory: "{}"'.format(self.build_temp))
+        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+
+        # configure the project
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
                               cwd=self.build_temp, env=env)
-        if platform.system() == "Windows":
-            subprocess.check_call(['DIR', self.build_temp])
+
+        # list files for debug purposes
+        print('\nListing the build directory: "{}"'.format(self.build_temp))
+        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+
+        # build the project
         subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
                               cwd=self.build_temp, env=env)
-        if platform.system() == "Windows":
-            subprocess.check_call(['DIR', self.build_temp])
+
+        # list files for debug purposes
+        print('\nListing the build directory: "{}"'.format(self.build_temp))
+        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+
+        # install the CMake build
         subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
                               cwd=self.build_temp, env=env)
+
         print()  # Add an empty line for cleaner output
 
 
