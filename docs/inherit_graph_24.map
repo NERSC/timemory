@@ -1,3 +1,9 @@
 <map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
-<area shape="rect" id="node1" href="$d5/d62/classplotting_1_1plot__data.html" title="plotting.plot_data" alt="" coords="5,5,119,35"/>
+<area shape="rect" id="node1" href="$dc/dd8/classobject.html" title="object" alt="" coords="5,77,60,106"/>
+<area shape="rect" id="node2" href="$db/db6/classarray__test_1_1auto__disk__array__weakref.html" title="array_test.auto_disk\l_array_weakref" alt="" coords="111,5,242,52"/>
+<area shape="rect" id="node3" href="$db/d13/classsimple__test_1_1_fibonacci.html" title="simple_test.Fibonacci" alt="" coords="108,77,245,106"/>
+<area shape="rect" id="node4" href="$dc/d4e/classutil_1_1base__decorator.html" title="util.base_decorator" alt="" coords="115,130,239,159"/>
+<area shape="rect" id="node5" href="$d1/d0b/classutil_1_1auto__timer.html" title="util.auto_timer" alt="" coords="293,77,391,106"/>
+<area shape="rect" id="node6" href="$d7/d4b/classutil_1_1rss__usage.html" title="util.rss_usage" alt="" coords="294,130,390,159"/>
+<area shape="rect" id="node7" href="$de/d81/classutil_1_1timer.html" title="util.timer" alt="" coords="308,183,376,213"/>
 </map>

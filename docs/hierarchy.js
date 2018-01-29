@@ -13,7 +13,12 @@ var hierarchy =
     [ "base_timer_tuple_t", null, [
       [ "NAME_TIM::timer_tuple", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html", null ]
     ] ],
+    [ "ndarray", null, [
+      [ "array_test.auto_disk_array", "d9/d0b/classarray__test_1_1auto__disk__array.html", null ]
+    ] ],
     [ "object", "dc/dd8/classobject.html", [
+      [ "array_test.auto_disk_array_weakref", "db/db6/classarray__test_1_1auto__disk__array__weakref.html", null ],
+      [ "simple_test.Fibonacci", "db/d13/classsimple__test_1_1_fibonacci.html", null ],
       [ "util.base_decorator", "dc/d4e/classutil_1_1base__decorator.html", [
         [ "util.auto_timer", "d1/d0b/classutil_1_1auto__timer.html", null ],
         [ "util.rss_usage", "d7/d4b/classutil_1_1rss__usage.html", null ],
@@ -23,7 +28,7 @@ var hierarchy =
     [ "plotting.plot_data", "d5/d62/classplotting_1_1plot__data.html", null ],
     [ "NAME_TIM::signal_settings", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html", null ],
     [ "TestCase", null, [
-      [ "tests.timemory_test.timemory_test", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html", null ]
+      [ "timemory_test.timemory_test", "da/df2/classtimemory__test_1_1timemory__test.html", null ]
     ] ],
     [ "NAME_TIM::time_units< Ratio >", "d6/d92/struct_n_a_m_e___t_i_m_1_1time__units.html", null ],
     [ "NAME_TIM::time_units< std::centi >", "dc/d62/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1centi_01_4.html", null ],

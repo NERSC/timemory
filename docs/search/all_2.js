@@ -21,5 +21,6 @@ var searchData=
   ['base_5ftype',['base_type',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a3be4247e8cac6f68a22e2d5768628cbe',1,'NAME_TIM::timer::base_type()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a4e1148cd4bc5c0e07890b040d0f5e319',1,'NAME_TIM::timer_tuple::base_type()']]],
   ['begin',['begin',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a4847a60bdee33dc9da64bd085e2fd8cc',1,'NAME_TIM::timer::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a85ff5964791bd1a1313225cf45fc1682',1,'NAME_TIM::timing_manager::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad8a0af1af26e43789136e4899c05ed0a',1,'NAME_TIM::timing_manager::begin() const']]],
   ['bi',['Bi',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a33ba7de65c4031e9717e1b0ef4391e48',1,'NAME_TIM::rss::units']]],
+  ['bind_5ffinalizer',['bind_finalizer',['../db/db6/classarray__test_1_1auto__disk__array__weakref.html#a07219efbc74d9bd5b9fe9280207ca704',1,'array_test::auto_disk_array_weakref']]],
   ['byte',['byte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a42ab8ed0bd794ee8835dc79fc82d5c2a',1,'NAME_TIM::rss::units']]]
 ];
