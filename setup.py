@@ -16,6 +16,7 @@ from setuptools.command.test import test as TestCommand
 
 # ---------------------------------------------------------------------------- #
 class CMakeExtension(Extension):
+
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
@@ -31,8 +32,7 @@ class CMakeExtension(Extension):
                             _l = l.split('=')
                             last = _l[len(_l)-1]
                             if 'include_dirs' in l:
-                                os.environ['CMAKE_INCLUDE_PATH'] = os.path.abspath(last)
-                                os.environ['CMAKE_PREFIX_PATH'] = os.path.dirname(os.path.abspath(last))
+                                CMakeBuild.mpi_prefix = os.path.dirname(os.path.abspath(last))
             except Exception as e:
                 print ('Warning! Unable to find/use mpi.cfg')
                 print (e)
@@ -44,6 +44,7 @@ class CMakeBuild(build_ext, Command):
     use_mpi = 'ON'
     build_type = 'Release'
     cmake_version = '2.7.12'
+    mpi_prefix = ''
 
     def init_cmake(self):
         """
@@ -114,7 +115,7 @@ class CMakeBuild(build_ext, Command):
     # build extension
     def build_extension(self, ext):
         self.init_cmake()
-        mpi_prefix = self.init_mpi()
+        CMakeBuild.mpi_prefix = self.init_mpi()
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -125,7 +126,7 @@ class CMakeBuild(build_ext, Command):
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
                       buildarg,
                       mpiarg, ]
-        if mpi_prefix != '':
+        if CMakeBuild.mpi_prefix != '':
             cmake_args.append(mpi_prefix)
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -159,15 +160,15 @@ class CMakeBuild(build_ext, Command):
         print('Install args: {}'.format(install_args))
 
         # configure the project
-        subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
+        subprocess.check_call(['cmake', '--config', self.build_temp ] + cmake_args + [ ext.sourcedir ],
                               cwd=self.build_temp, env=env)
 
         # build the project
-        subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
+        subprocess.check_call(['cmake', '--config'] + cmake_args + [ '--build', self.build_temp] + build_args,
                               cwd=self.build_temp, env=env)
 
         # install the CMake build
-        subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
+        subprocess.check_call(['cmake', '--config'] + cmake_args + [ '--build', self.build_temp] + install_args,
                               cwd=self.build_temp, env=env)
 
         print()  # Add an empty line for cleaner output
