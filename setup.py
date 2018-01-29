@@ -55,9 +55,33 @@ class CMakeBuild(build_ext, Command):
                         ", ".join(e.name for e in self.extensions))
 
 
+    def init_mpi(self):
+        """
+        Ensure MPI can be found by Windows
+        """
+        if platform.system() == "Windows":
+            try:
+                import mpi4py
+                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
+                if os.path.exists(fname):
+                    f = open(fname, 'r')
+                    for l in f.readlines():
+                        if not '[' in l:
+                            print (l)
+                            _l = l.split('=')
+                            last = _l[len(_l)-1]
+                            if 'include_dirs' in l:
+                                os.environ['CMAKE_INCLUDE_PATH'] = os.path.abspath(last)
+                                os.environ['CMAKE_PREFIX_PATH'] = os.path.dirname(os.path.abspath(last))
+            except Exception as e:
+                print ('Warning! Unable to find/use mpi.cfg')
+                print (e)
+
+
+    # run
     def run(self):
-        import cmake
         self.init_cmake()
+        self.init_mpi()
 
         if CMakeBuild.cmake_version < '3.1.3':
             raise RuntimeError("CMake >= 3.1.3 is required")
@@ -68,8 +92,9 @@ class CMakeBuild(build_ext, Command):
             self.build_extension(ext)
 
     def build_extension(self, ext):
-        import cmake
         self.init_cmake()
+        self.init_mpi()
+
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
         mpiarg = '-DUSE_MPI={}'.format(CMakeBuild.use_mpi)
@@ -115,16 +140,6 @@ class CMakeBuild(build_ext, Command):
         LIST_CMD='ls'
         if platform.system() == "Windows":
             LIST_CMD='DIR'
-            try:
-                import mpi4py
-                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
-                if os.path.exists(fname):
-                    f = open(fname, 'r')
-                    for l in f.readlines():
-                        print (l)
-            except Exception as e:
-                print ('Warning! Unable to find mpi.cfg')
-                print (e)
 
         # list files for debug purposes
         print('\nListing the build directory: "{}"'.format(self.build_temp))
