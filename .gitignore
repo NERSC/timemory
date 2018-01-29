@@ -26,3 +26,4 @@ timing_report*
 # setup.py 
 /TiMemory-*
 /dist
+/.eggs

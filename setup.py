@@ -103,7 +103,7 @@ class CMakeBuild(build_ext, Command):
             os.makedirs(self.build_temp)
 
         # set to absolute path
-        self.build_temp=os.path.realpath(self.build_temp)
+        self.build_temp=os.path.abspath(self.build_temp)
 
         # print the CMake args
         print('CMake args: {}'.format(cmake_args))
@@ -117,14 +117,14 @@ class CMakeBuild(build_ext, Command):
             LIST_CMD='DIR'
             try:
                 import mpi4py
-                import os
                 fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
                 if os.path.exists(fname):
                     f = open(fname, 'r')
                     for l in f.readlines():
                         print (l)
-            except:
+            except Exception as e:
                 print ('Warning! Unable to find mpi.cfg')
+                print (e)
 
         # list files for debug purposes
         print('\nListing the build directory: "{}"'.format(self.build_temp))
