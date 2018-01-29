@@ -95,6 +95,18 @@ $(document).ready(function(){initNavTree('index.html','');});
 <li>Windows (tested on Windows 10 x64 with MSVC 14+)</li>
 </ul>
 </li>
+<li>CMake (version &gt;= 3.1.3)<ul>
+<li>The default behavior when installing from PyPi (i.e. <code>pip install timemory</code>) is to use the system CMake installation</li>
+<li>When installing from PyPi, the python <code>cmake</code> package is not required</li>
+<li>However, if a system CMake is not found, <code>setup.py</code> will try to use the Python module</li>
+<li>Using the Python CMake module will occasionally fail due to an older distribution of pip (e.g. version &lt; 9.0.1). This can be remedied by running (typically as root):<ul>
+<li><code>pip install --upgrade pip</code></li>
+<li>if a failure occurs referencing <code>skbuild</code> in the CMake python package, run: <code>pip install --upgrade cmake</code></li>
+</ul>
+</li>
+<li>However, this is typically not needed if a system CMake is installed</li>
+</ul>
+</li>
 <li>C++<ul>
 <li>C++11 compiler<ul>
 <li>Known support for:<ul>
@@ -317,7 +329,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Mon Jan 29 2018 15:00:39 for TiMemory by
+    <li class="footer">Generated on Mon Jan 29 2018 15:56:58 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

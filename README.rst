@@ -16,6 +16,25 @@ Dependancies
    -  macOS (tested on 10.13 - High Sierra)
    -  Windows (tested on Windows 10 x64 with MSVC 14+)
 
+-  CMake (version >= 3.1.3)
+
+   -  The default behavior when installing from PyPi (i.e.
+      ``pip install timemory``) is to use the system CMake installation
+   -  When installing from PyPi, the python ``cmake`` package is not
+      required
+   -  However, if a system CMake is not found, ``setup.py`` will try to
+      use the Python module
+   -  Using the Python CMake module will occasionally fail due to an
+      older distribution of pip (e.g. version < 9.0.1). This can be
+      remedied by running (typically as root):
+
+      -  ``pip install --upgrade pip``
+      -  if a failure occurs referencing ``skbuild`` in the CMake python
+         package, run: ``pip install --upgrade cmake``
+
+   -  However, this is typically not needed if a system CMake is
+      installed
+
 -  C++
 
    -  C++11 compiler
