@@ -32,7 +32,8 @@ class CMakeExtension(Extension):
                             _l = l.split('=')
                             last = _l[len(_l)-1]
                             if 'include_dirs' in l:
-                                CMakeBuild.mpi_prefix = os.path.dirname(os.path.abspath(last))
+                                print ('Adding {} to CMAKE_PREFIX_PATH...'.format(os.path.dirname(last)))
+                                CMakeBuild.mpi_prefix = os.path.dirname(last)
             except Exception as e:
                 print ('Warning! Unable to find/use mpi.cfg')
                 print (e)
@@ -90,9 +91,8 @@ class CMakeBuild(build_ext, Command):
                             _l = l.split('=')
                             last = _l[len(_l)-1]
                             if 'include_dirs' in l:
-                                os.environ['CMAKE_INCLUDE_PATH'] = os.path.abspath(last)
-                                os.environ['CMAKE_PREFIX_PATH'] = os.path.dirname(os.path.abspath(last))
-                                return "-DCMAKE_PREFIX_PATH='{}'".format(os.path.dirname(os.path.abspath(last)))
+                                print ('Adding {} to CMAKE_PREFIX_PATH...'.format(os.path.dirname(last)))
+                                return "-DCMAKE_PREFIX_PATH={}".format(os.path.dirname(last))
             except Exception as e:
                 print ('Warning! Unable to find/use mpi.cfg')
                 print (e)
