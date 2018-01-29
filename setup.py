@@ -115,10 +115,20 @@ class CMakeBuild(build_ext, Command):
         LIST_CMD='ls'
         if platform.system() == "Windows":
             LIST_CMD='DIR'
+            try:
+                import mpi4py
+                import os
+                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
+                if os.path.exists(fname):
+                    f = open(fname, 'r')
+                    for l in f.readlines():
+                        print (l)
+            except:
+                print ('Warning! Unable to find mpi.cfg')
 
         # list files for debug purposes
         print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+        subprocess.check_call([LIST_CMD, self.build_temp])
 
         # configure the project
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
@@ -126,7 +136,7 @@ class CMakeBuild(build_ext, Command):
 
         # list files for debug purposes
         print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+        subprocess.check_call([LIST_CMD, self.build_temp])
 
         # build the project
         subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
@@ -134,7 +144,7 @@ class CMakeBuild(build_ext, Command):
 
         # list files for debug purposes
         print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.run([LIST_CMD, self.build_temp], timeout=1)
+        subprocess.check_call([LIST_CMD, self.build_temp])
 
         # install the CMake build
         subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
@@ -268,8 +278,8 @@ setup(name='TiMemory',
     cmdclass=dict(config=CMakeCommand, build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
-    install_requires=[ 'numpy', 'matplotlib', 'argparse', 'cmake' ],
-    setup_requires=[ 'cmake' ],
+    install_requires=[ 'numpy', 'matplotlib', 'argparse', 'cmake', 'mpi4py' ],
+    setup_requires=[ 'cmake', 'mpi4py', 'setuptools', 'disttools', 'unittest2' ],
     provides=[ 'timemory' ],
     keywords=get_keywords(),
     python_requires='>=2.6',
