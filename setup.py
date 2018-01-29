@@ -236,7 +236,7 @@ def get_keywords():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.1rc0',
+    version='1.1rc1',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',
@@ -253,8 +253,8 @@ setup(name='TiMemory',
     cmdclass=dict(config=CMakeCommand, build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
-    install_requires=[ 'numpy', 'matplotlib', 'argparse', 'cmake', 'mpi4py' ],
-    setup_requires=[ 'cmake', 'mpi4py', 'setuptools', 'disttools', 'unittest2' ],
+    install_requires=[ 'numpy', 'matplotlib', 'cmake' ],
+    setup_requires=[ 'cmake', 'setuptools', 'disttools' ],
     provides=[ 'timemory' ],
     keywords=get_keywords(),
     python_requires='>=2.6',
