@@ -33,7 +33,7 @@
 <text text-anchor="start" x="8" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ print()</text>
 <text text-anchor="start" x="8" y="-85.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ clone()</text>
 <text text-anchor="start" x="8" y="-72.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ clone_to_unique_ptr()</text>
-<text text-anchor="start" x="8" y="-59.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">and 7 more...</text>
+<text text-anchor="start" x="8" y="-59.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">and 11 more...</text>
 <text text-anchor="start" x="8" y="-46.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ propose_output_width()</text>
 <text text-anchor="start" x="8" y="-33.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ set_default_format()</text>
 <text text-anchor="start" x="8" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000"># compose()</text>

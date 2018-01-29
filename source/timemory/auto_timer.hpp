@@ -50,7 +50,7 @@ public:
 public:
     // Constructor and Destructors
     auto_timer(const std::string&, const int32_t& lineno,
-               const std::string& = "cxx", bool temp_disable = false);
+               const std::string& = "cxx", bool report_at_exit = false);
     virtual ~auto_timer();
 
 public:
@@ -60,7 +60,7 @@ public:
     static bool alloc_next();
 
 private:
-    bool            m_temp_disable;
+    bool            m_report_at_exit;
     uint64_t        m_hash;
     tim_timer_t*    m_timer;
     tim_timer_t     m_temp_timer;

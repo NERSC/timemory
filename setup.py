@@ -272,7 +272,7 @@ def get_classifiers():
         # tested on these OSes
         'Operating System :: MacOS',
         'Operating System :: Microsoft :: Windows :: Windows 10',
-        'Operating System :: Linux',
+        'Operating System :: POSIX :: Linux',
         # written in C++, available to Python via PyBind11
         'Programming Language :: C++',
         'Programming Language :: Python :: 2',
@@ -301,7 +301,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.1rc2',
+    version='1.1.1',
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),

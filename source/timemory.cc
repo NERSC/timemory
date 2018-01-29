@@ -229,7 +229,9 @@ PYBIND11_MODULE(timemory, tim)
         return new tim_timer_t(begin, "", format, false, 3);
     };
 
-    auto auto_timer_init = [=] (const std::string& key = "", int nback = 1,
+    auto auto_timer_init = [=] (const std::string& key = "",
+                                bool report_at_exit = false,
+                                int nback = 1,
                                 bool added_args = false)
     {
         std::stringstream keyss;
@@ -250,14 +252,15 @@ PYBIND11_MODULE(timemory, tim)
             keyss << get_line(nback);
         }
         auto op_line = get_line();
-        return new auto_timer_t(keyss.str(), op_line, "pyc");
+        return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
     };
 
     auto timer_decorator_init = [=] (const std::string& func,
                                      const std::string& file,
                                      int line,
                                      const std::string& key,
-                                     bool added_args)
+                                     bool added_args,
+                                     bool report_at_exit)
     {
         auto_timer_decorator* _ptr = new auto_timer_decorator();
         if(!auto_timer_t::alloc_next())
@@ -281,7 +284,7 @@ PYBIND11_MODULE(timemory, tim)
             keyss << ":";
             keyss << line;
         }
-        return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc"));
+        return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
     };
 
     auto rss_usage_init = [=] (bool record = false)
@@ -606,6 +609,7 @@ PYBIND11_MODULE(timemory, tim)
     auto_timer.def(py::init(auto_timer_init),
                    "Initialization",
                    py::arg("key") = "",
+                   py::arg("report_at_exit") = false,
                    py::arg("nback") = 1,
                    py::arg("added_args") = false,
                    py::return_value_policy::take_ownership);

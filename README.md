@@ -56,9 +56,10 @@ python setup.py config --disable-mpi build install
   - key : this is a custom key to append after function name. The default will add file and line number.
   - add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument
   - is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name
+  - report_at_exit (auto_timer only) : at the end of the timing, report to stdout
 
 ```python
-@timemory.util.auto_timer(key="", add_args=False, is_class=False)
+@timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
 def function(...):
     time.sleep(1)
 ```
@@ -66,12 +67,12 @@ def function(...):
 #### Auto-timer example
 
 ```python
-@timemory.util.auto_timer(key="", add_args=False, is_class=False)
+@timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
 def function(...):
     time.sleep(1)
 ```
 
-  - output (from `timemory.report()`):
+  - sample of an output (from `timemory.report()`):
 
 ```
 > [pyc] test_func_glob@'timemory_test.py':218   :  5.003 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]
@@ -88,7 +89,7 @@ def function(...):
     time.sleep(1)
 ```
 
-  - output:
+  - sample of an output:
 
 ```
 # free function
@@ -105,7 +106,7 @@ def function(...):
     time.sleep(1)
 ```
 
-  - output:
+  - sample of an output:
 
 ```
 test_func_rss@'timemory_test.py':244 : RSS {total,self}_{current,peak} : (52.536|193.164) | (0.0|140.568) [MB]

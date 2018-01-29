@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.1.0</span>
+   &#160;<span id="projectnumber">1.1.1</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -134,20 +134,21 @@ $(document).ready(function(){initNavTree('index.html','');});
 <li>key : this is a custom key to append after function name. The default will add file and line number.</li>
 <li>add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument</li>
 <li>is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name</li>
+<li>report_at_exit (auto_timer only) : at the end of the timing, report to stdout</li>
 </ul>
 </li>
 </ul>
-<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><h4>Auto-timer example</h4>
-<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
-<li>output (from <code>timemory.report()</code>):</li>
+<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False, report_at_exit=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><h4>Auto-timer example</h4>
+<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False, report_at_exit=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
+<li>sample of an output (from <code>timemory.report()</code>):</li>
 </ul>
 <div class="fragment"><div class="line">&gt; [pyc] test_func_glob@&#39;timemory_test.py&#39;:218   :  5.003 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc] |_test_func_1@&#39;timemory_test.py&#39;:222    :  1.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc] |_test_func_2@&#39;timemory_test.py&#39;:226    :  3.001 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div><div class="line">&gt; [pyc]   |_test_func_1@&#39;timemory_test.py&#39;:222  :  1.000 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (52.6|52.6) | ( 0.0| 0.0) [MB]</div></div><!-- fragment --><h4>Timer example (will report to stdout at the end of the function)</h4>
 <div class="fragment"><div class="line">@timemory.util.timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
-<li>output:</li>
+<li>sample of an output:</li>
 </ul>
 <div class="fragment"><div class="line"># free function</div><div class="line">test_func_timer@&#39;timemory_test.py&#39;:240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]</div><div class="line"># with is_class=True</div><div class="line">test_decorator[timemory_test]@&#39;timemory_test.py&#39;:210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]</div></div><!-- fragment --><h4>RSS usage example:</h4>
 <div class="fragment"><div class="line">@timemory.util.rss_usage(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
-<li>output:</li>
+<li>sample of an output:</li>
 </ul>
 <div class="fragment"><div class="line">test_func_rss@&#39;timemory_test.py&#39;:244 : RSS {total,self}_{current,peak} : (52.536|193.164) | (0.0|140.568) [MB]</div></div><!-- fragment --><ul>
 <li>Fields (in order):<ul>
@@ -316,7 +317,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Mon Jan 29 2018 13:33:36 for TiMemory by
+    <li class="footer">Generated on Mon Jan 29 2018 15:00:39 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

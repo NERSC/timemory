@@ -70,10 +70,12 @@ Basic Python usage
       over-ridden by key argument
    -  is\_class : will add \`'[{}]'.format(type(self).\ **name**)\`\` to
       the function name
+   -  report\_at\_exit (auto\_timer only) : at the end of the timing,
+      report to stdout
 
 .. code:: python
 
-  @timemory.util.auto_timer(key="", add_args=False, is_class=False)
+  @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
 
@@ -82,13 +84,13 @@ Auto-timer example
 
 .. code:: python
 
-  @timemory.util.auto_timer(key="", add_args=False, is_class=False)
+  @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
 
 ::
 
-  - output (from `timemory.report()`):
+  - sample of an output (from `timemory.report()`):
 
 ::
 
@@ -108,7 +110,7 @@ Timer example (will report to stdout at the end of the function)
 
 ::
 
-  - output:
+  - sample of an output:
 
 ::
 
@@ -128,7 +130,7 @@ RSS usage example:
 
 ::
 
-  - output:
+  - sample of an output:
 
 ::
 

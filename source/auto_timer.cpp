@@ -50,8 +50,8 @@ bool auto_timer::alloc_next()
 auto_timer::auto_timer(const std::string& timer_tag,
                        const int32_t& lineno,
                        const std::string& code_tag,
-                       bool temp_disable)
-: m_temp_disable(temp_disable),
+                       bool report_at_exit)
+: m_report_at_exit(report_at_exit),
   m_hash(10*lineno),
   m_timer(nullptr)
 {
@@ -66,21 +66,21 @@ auto_timer::auto_timer(const std::string& timer_tag,
         m_timer = &timing_manager::instance()->timer(timer_tag, code_tag,
                                                      auto_timer::ncount() - 1,
                                                      auto_timer::nhash());
+        if(m_report_at_exit)
+        {
+            m_temp_timer.grab_metadata(*m_timer);
+            m_temp_timer.set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer.set_use_static_width(false);
+        }
 
         m_temp_timer.start();
     }
-
-    if(m_temp_disable && timing_manager::instance()->is_enabled())
-        timing_manager::instance()->enable(false);
 }
 
 //============================================================================//
 
 auto_timer::~auto_timer()
 {
-    if(m_temp_disable && ! timing_manager::instance()->is_enabled())
-        timing_manager::instance()->enable(true);
-
     // for consistency, always decrement hash keys
     --auto_timer::ncount();
     auto_timer::nhash() -= m_hash;
@@ -89,6 +89,8 @@ auto_timer::~auto_timer()
     {
         m_temp_timer.stop();
         *m_timer += m_temp_timer;
+        if(m_report_at_exit)
+            m_temp_timer.report(std::cout, true, true);
     }
 }
 

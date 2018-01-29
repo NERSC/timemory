@@ -118,6 +118,11 @@ public:
         return *this;
     }
 
+    void grab_metadata(const this_type& rhs);
+
+    void set_begin(const string_t& _val) { m_begin = _val; }
+    void set_close(const string_t& _val) { m_close = _val; }
+    void set_use_static_width(bool _val) { m_use_static_width = _val; }
 
 protected:
     virtual void compose() final;

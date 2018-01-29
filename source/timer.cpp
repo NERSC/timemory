@@ -135,4 +135,15 @@ timer timer::clone() const
 
 //============================================================================//
 
+void timer::grab_metadata(const this_type& rhs)
+{
+    m_begin = rhs.m_begin;
+    m_close = rhs.m_close;
+    m_use_static_width = rhs.m_use_static_width;
+    m_precision = rhs.m_precision;
+    m_format_string = rhs.m_format_string;
+}
+
+//============================================================================//
+
 } // namespace NAME_TIM

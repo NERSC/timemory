@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 
-project(TiMemory LANGUAGES C CXX VERSION 1.1.0)
+project(TiMemory LANGUAGES C CXX VERSION 1.1.1)
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_MODULE_PATH})

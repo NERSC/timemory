@@ -97,22 +97,22 @@
 <!-- Node4 -->
 <g id="node5" class="node">
 <title>Node4</title>
-<g id="a_node5"><a xlink:href="../../d1/d0b/classutil_1_1auto__timer.html" target="_top" xlink:title="{util.auto_timer\n||+ __init__()\l+ __call__()\l}">
-<polygon fill="#ffffff" stroke="#000000" points="174.5,-.5 174.5,-76.5 247.5,-76.5 247.5,-.5 174.5,-.5"/>
-<text text-anchor="middle" x="211" y="-62.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">util.auto_timer</text>
-<polyline fill="none" stroke="#000000" points="174.5,-55.5 247.5,-55.5 "/>
-<text text-anchor="middle" x="211" y="-41.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000"> </text>
-<polyline fill="none" stroke="#000000" points="174.5,-34.5 247.5,-34.5 "/>
-<text text-anchor="start" x="182.5" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ __init__()</text>
-<text text-anchor="start" x="182.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ __call__()</text>
+<g id="a_node5"><a xlink:href="../../d1/d0b/classutil_1_1auto__timer.html" target="_top" xlink:title="{util.auto_timer\n|+ report_at_exit\l|+ __init__()\l+ __call__()\l}">
+<polygon fill="#ffffff" stroke="#000000" points="168.5,-.5 168.5,-76.5 247.5,-76.5 247.5,-.5 168.5,-.5"/>
+<text text-anchor="middle" x="208" y="-62.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">util.auto_timer</text>
+<polyline fill="none" stroke="#000000" points="168.5,-55.5 247.5,-55.5 "/>
+<text text-anchor="start" x="176.5" y="-41.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ report_at_exit</text>
+<polyline fill="none" stroke="#000000" points="168.5,-34.5 247.5,-34.5 "/>
+<text text-anchor="start" x="176.5" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ __init__()</text>
+<text text-anchor="start" x="176.5" y="-7.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ __call__()</text>
 </a>
 </g>
 </g>
 <!-- Node3&#45;&gt;Node4 -->
 <g id="edge4" class="edge">
 <title>Node3&#45;&gt;Node4</title>
-<path fill="none" stroke="#191970" d="M268.9977,-156.0887C255.8379,-129.4076 241.1661,-99.661 229.8719,-76.7622"/>
-<polygon fill="none" stroke="#191970" points="266.0189,-157.9617 273.5813,-165.382 272.2968,-154.8653 266.0189,-157.9617"/>
+<path fill="none" stroke="#191970" d="M268.7528,-156.0082C261.6246,-141.7854 254.1007,-126.877 247,-113 240.9484,-101.1732 234.2711,-88.3408 228.1777,-76.7122"/>
+<polygon fill="none" stroke="#191970" points="265.7663,-157.8614 273.3714,-165.238 272.0263,-154.7288 265.7663,-157.8614"/>
 </g>
 <!-- Node5 -->
 <g id="node6" class="node">

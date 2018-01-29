@@ -45,7 +45,7 @@
 <!-- Node1 -->
 <g id="node2" class="node">
 <title>Node1</title>
-<g id="a_node2"><a xlink:href="../../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html" target="_top" xlink:title="{NAME_TIM::timer\n|+ default_format\l+ default_precision\l# m_use_static_width\l# m_parent\l# m_begin\l# m_close\l&#45; f_output_width\l|+ timer()\l+ timer()\l+ ~timer()\l+ stop_and_return()\l+ begin()\l+ close()\l+ as_string()\l+ print()\l+ clone()\l+ clone_to_unique_ptr()\land 7 more...\l+ propose_output_width()\l+ set_default_format()\l# compose()\l# set_parent()\l}">
+<g id="a_node2"><a xlink:href="../../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html" target="_top" xlink:title="{NAME_TIM::timer\n|+ default_format\l+ default_precision\l# m_use_static_width\l# m_parent\l# m_begin\l# m_close\l&#45; f_output_width\l|+ timer()\l+ timer()\l+ ~timer()\l+ stop_and_return()\l+ begin()\l+ close()\l+ as_string()\l+ print()\l+ clone()\l+ clone_to_unique_ptr()\land 11 more...\l+ propose_output_width()\l+ set_default_format()\l# compose()\l# set_parent()\l}">
 <polygon fill="#ffffff" stroke="#000000" points="0,-.5 0,-323.5 119,-323.5 119,-.5 0,-.5"/>
 <text text-anchor="middle" x="59.5" y="-309.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">NAME_TIM::timer</text>
 <polyline fill="none" stroke="#000000" points="0,-302.5 119,-302.5 "/>
@@ -67,7 +67,7 @@
 <text text-anchor="start" x="8" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ print()</text>
 <text text-anchor="start" x="8" y="-85.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ clone()</text>
 <text text-anchor="start" x="8" y="-72.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ clone_to_unique_ptr()</text>
-<text text-anchor="start" x="8" y="-59.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">and 7 more...</text>
+<text text-anchor="start" x="8" y="-59.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">and 11 more...</text>
 <text text-anchor="start" x="8" y="-46.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ propose_output_width()</text>
 <text text-anchor="start" x="8" y="-33.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ set_default_format()</text>
 <text text-anchor="start" x="8" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000"># compose()</text>

@@ -96,8 +96,9 @@ class auto_timer(base_decorator):
         # > [pyc] main(5)@'example.py':10 ...
     """
     # ------------------------------------------------------------------------ #
-    def __init__(self, key="", add_args=False, is_class=False):
+    def __init__(self, key="", add_args=False, is_class=False, report_at_exit=False):
         super(auto_timer, self).__init__(key, add_args, is_class)
+        self.report_at_exit = report_at_exit
 
 
     # ------------------------------------------------------------------------ #
@@ -114,7 +115,7 @@ class auto_timer(base_decorator):
             _key = '{}{}'.format(self.key, self.arg_string(args, kwargs))
 
             t = timemory.timer_decorator(func.__name__, _file, _line,
-                _key, self.add_args or self.is_class)
+                _key, self.add_args or self.is_class, self.report_at_exit)
 
             return func(*args, **kwargs)
 

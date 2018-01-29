@@ -17,5 +17,6 @@ var searchData=
   ['get_5fstart',['get_start',['../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html#a894418276b197ca38e8f2536201dbf1d',1,'NAME_TIM::internal']]],
   ['get_5fstop',['get_stop',['../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html#aa998f9b1e4d18cc9c30b3af111b68d9d',1,'NAME_TIM::internal']]],
   ['get_5fsum',['get_sum',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a576e0a98b86e4981a74e6d3eec101e6c',1,'NAME_TIM::internal::base_timer_delta']]],
-  ['get_5ftitle',['get_title',['../d5/d62/classplotting_1_1plot__data.html#ab1a8ad793c2c2a6ff914d1e2f28a7e55',1,'plotting::plot_data']]]
+  ['get_5ftitle',['get_title',['../d5/d62/classplotting_1_1plot__data.html#ab1a8ad793c2c2a6ff914d1e2f28a7e55',1,'plotting::plot_data']]],
+  ['grab_5fmetadata',['grab_metadata',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#ac76bcd55ae0db2f56a84c68e4de9eb82',1,'NAME_TIM::timer']]]
 ];

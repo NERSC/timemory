@@ -1,6 +1,19 @@
 TiMemory
 ========
 
+Release: TiMemory 1.1.0
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Author: Jonathan R. Madsen
+- Date:   Mon Jan 29 15:00:12 2018 -0800
+
+    - Added 'report_at_exit' parameter to auto_timer decorator
+    - Added added_args flag for auto_timer decorator
+    - Fixed I/O output bug
+    - Added setup.cfg
+    - Fixed auto_timer decorator issue with self.key, self.is_class, and self.add_args
+
+
 Release: TiMemory 1.1b0
 ~~~~~~~~~~~~~~~~~~~~~~~
 

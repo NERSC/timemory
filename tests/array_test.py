@@ -167,7 +167,7 @@ class auto_disk_array(np.ndarray):
 
 
 # ---------------------------------------------------------------------------- #
-@timemory.util.auto_timer()
+@timemory.util.auto_timer(report_at_exit=True)
 def run(weak_ref):
 
     @timemory.util.auto_timer()
@@ -202,7 +202,7 @@ def run(weak_ref):
     return ref
 
 # ---------------------------------------------------------------------------- #
-@timemory.util.auto_timer()
+@timemory.util.auto_timer(report_at_exit=True)
 def main():
 
     print ("\nmain start")
@@ -215,7 +215,7 @@ def main():
 
 
 # ---------------------------------------------------------------------------- #
-@timemory.util.auto_timer()
+@timemory.util.auto_timer(report_at_exit=True)
 def dummy():
 
     @timemory.util.auto_timer()
