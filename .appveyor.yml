@@ -50,14 +50,14 @@ install:
     pip install -U setuptools disttools mpi4py
 
 build_script:
-- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-    -DCMAKE_CXX_STANDARD=%CPP%
-    -DCMAKE_SUPPRESS_REGENERATION=1
+#- cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
+#    -DCMAKE_CXX_STANDARD=%CPP%
+#    -DCMAKE_SUPPRESS_REGENERATION=1
 - ls
 - DIR
-- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
-- cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+#- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+#- cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
+#- cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - python setup.py build install
 - python ./tests/simple_test.py
 - python ./tests/nested_test.py
