@@ -55,6 +55,7 @@ class CMakeBuild(build_ext, Command):
                         ", ".join(e.name for e in self.extensions))
 
 
+    # initialize MPI
     def init_mpi(self):
         """
         Ensure MPI can be found by Windows
@@ -73,15 +74,16 @@ class CMakeBuild(build_ext, Command):
                             if 'include_dirs' in l:
                                 os.environ['CMAKE_INCLUDE_PATH'] = os.path.abspath(last)
                                 os.environ['CMAKE_PREFIX_PATH'] = os.path.dirname(os.path.abspath(last))
+                                return "-DCMAKE_PREFIX_PATH='{}'".format(os.path.dirname(os.path.abspath(last)))
             except Exception as e:
                 print ('Warning! Unable to find/use mpi.cfg')
                 print (e)
+        return ''
 
 
     # run
     def run(self):
         self.init_cmake()
-        self.init_mpi()
 
         if CMakeBuild.cmake_version < '3.1.3':
             raise RuntimeError("CMake >= 3.1.3 is required")
@@ -91,9 +93,11 @@ class CMakeBuild(build_ext, Command):
         for ext in self.extensions:
             self.build_extension(ext)
 
+
+    # build extension
     def build_extension(self, ext):
         self.init_cmake()
-        self.init_mpi()
+        mpi_prefix = self.init_mpi()
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -104,6 +108,8 @@ class CMakeBuild(build_ext, Command):
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
                       buildarg,
                       mpiarg, ]
+        if mpi_prefix != '':
+            cmake_args.append(mpi_prefix)
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -111,13 +117,11 @@ class CMakeBuild(build_ext, Command):
         if platform.system() == "Windows":
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
-            #build_args += ['--', '/m']
-            build_args += ['--target', 'ALL_BUILD']
-            install_args += ['--target', 'INSTALL']
+            build_args += ['--target', 'ALL_BUILD', '--', '/m' ]
+            install_args += ['--target', 'INSTALL', '--', '/m' ]
         else:
-            #cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
-            build_args += ['--', '-j4']
-            install_args += ['--target', 'install']
+            build_args += [ '--', '-j4' ]
+            install_args += [ '--target', 'install' ]
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{}'.format(
@@ -137,29 +141,13 @@ class CMakeBuild(build_ext, Command):
         # print the install args
         print('Install args: {}'.format(install_args))
 
-        LIST_CMD='ls'
-        if platform.system() == "Windows":
-            LIST_CMD='DIR'
-
-        # list files for debug purposes
-        print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.check_call([LIST_CMD, self.build_temp])
-
         # configure the project
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
                               cwd=self.build_temp, env=env)
 
-        # list files for debug purposes
-        print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.check_call([LIST_CMD, self.build_temp])
-
         # build the project
         subprocess.check_call(['cmake', '--build', self.build_temp] + build_args,
                               cwd=self.build_temp, env=env)
-
-        # list files for debug purposes
-        print('\nListing the build directory: "{}"'.format(self.build_temp))
-        subprocess.check_call([LIST_CMD, self.build_temp])
 
         # install the CMake build
         subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
