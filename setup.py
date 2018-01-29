@@ -82,18 +82,20 @@ class CMakeBuild(build_ext, Command):
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
-
+        install_args = ['--config', cfg]
         if platform.system() == "Windows":
-            cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
-                cfg.upper(),
-                extdir)]
+            #cmake_args += ['-DCMAKE_LIBRARY_OUTPUT_DIRECTORY_{}={}'.format(
+            #    cfg.upper(),
+            #    extdir)]
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
-            build_args += ['--', '/m']
+            #build_args += ['--', '/m']
+            build_args += ['--target', 'BUILD_ALL']
+            install_args += ['--target', 'INSTALL']
         else:
             #cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
             build_args += ['--', '-j4']
-
+            install_args += ['--target', 'install']
         print('CMake args: {}'.format(cmake_args))
 
         env = os.environ.copy()
@@ -104,9 +106,9 @@ class CMakeBuild(build_ext, Command):
         subprocess.check_call(['cmake', ext.sourcedir] + cmake_args,
                               cwd=self.build_temp, env=env)
         subprocess.check_call(['cmake', '--build', '.'] + build_args,
-                              cwd=self.build_temp)
-        subprocess.check_call(['cmake', '--build', '.', '--target', 'install'],
-                              cwd=self.build_temp)
+                              cwd=self.build_temp, env=env)
+        subprocess.check_call(['cmake', '--build', '.'] + install_args,
+                              cwd=self.build_temp, env=env)
         print()  # Add an empty line for cleaner output
 
 
