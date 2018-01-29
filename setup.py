@@ -218,7 +218,7 @@ def get_keywords():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.1b0',
+    version='1.1rc0',
     author='Jonathan R. Madsen',
     author_email='jonrobm.programming@gmail.com',
     maintainer='Jonathan R. Madsen',

@@ -47,6 +47,7 @@ install:
       $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
       conda install -y -q pip
     }
+    pip install -U setuptools disttools
 
 build_script:
 - cmake -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
