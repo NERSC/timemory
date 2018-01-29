@@ -20,23 +20,6 @@ class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
-        if platform.system() == "Windows":
-            try:
-                import mpi4py
-                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
-                if os.path.exists(fname):
-                    f = open(fname, 'r')
-                    for l in f.readlines():
-                        if not '[' in l:
-                            print (l)
-                            _l = l.split('=')
-                            last = _l[len(_l)-1]
-                            if 'include_dirs' in l:
-                                print ('Adding {} to CMAKE_PREFIX_PATH...'.format(os.path.dirname(last)))
-                                CMakeBuild.mpi_prefix = os.path.dirname(last)
-            except Exception as e:
-                print ('Warning! Unable to find/use mpi.cfg')
-                print (e)
 
 
 # ---------------------------------------------------------------------------- #
@@ -45,7 +28,6 @@ class CMakeBuild(build_ext, Command):
     use_mpi = 'ON'
     build_type = 'Release'
     cmake_version = '2.7.12'
-    mpi_prefix = ''
 
     def init_cmake(self):
         """
@@ -74,31 +56,6 @@ class CMakeBuild(build_ext, Command):
                         ", ".join(e.name for e in self.extensions))
 
 
-    # initialize MPI
-    def init_mpi(self):
-        """
-        Ensure MPI can be found by Windows
-        """
-        if platform.system() == "Windows":
-            try:
-                import mpi4py
-                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
-                if os.path.exists(fname):
-                    f = open(fname, 'r')
-                    for l in f.readlines():
-                        if not '[' in l:
-                            print (l)
-                            _l = l.split('=')
-                            last = _l[len(_l)-1]
-                            if 'include_dirs' in l:
-                                print ('Adding {} to CMAKE_PREFIX_PATH...'.format(os.path.dirname(last)))
-                                return "-DCMAKE_PREFIX_PATH={}".format(os.path.dirname(last))
-            except Exception as e:
-                print ('Warning! Unable to find/use mpi.cfg')
-                print (e)
-        return ''
-
-
     # run
     def run(self):
         self.init_cmake()
@@ -115,7 +72,6 @@ class CMakeBuild(build_ext, Command):
     # build extension
     def build_extension(self, ext):
         self.init_cmake()
-        mpi_prefix = self.init_mpi()
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
@@ -126,8 +82,6 @@ class CMakeBuild(build_ext, Command):
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
                       buildarg,
                       mpiarg, ]
-        if CMakeBuild.mpi_prefix != '':
-            cmake_args.append(mpi_prefix)
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
