@@ -19,6 +19,23 @@ class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
         Extension.__init__(self, name, sources=[])
         self.sourcedir = os.path.abspath(sourcedir)
+        if platform.system() == "Windows":
+            try:
+                import mpi4py
+                fname = os.path.join(os.path.dirname(mpi4py.__file__), 'mpi.cfg')
+                if os.path.exists(fname):
+                    f = open(fname, 'r')
+                    for l in f.readlines():
+                        if not '[' in l:
+                            print (l)
+                            _l = l.split('=')
+                            last = _l[len(_l)-1]
+                            if 'include_dirs' in l:
+                                os.environ['CMAKE_INCLUDE_PATH'] = os.path.abspath(last)
+                                os.environ['CMAKE_PREFIX_PATH'] = os.path.dirname(os.path.abspath(last))
+            except Exception as e:
+                print ('Warning! Unable to find/use mpi.cfg')
+                print (e)
 
 
 # ---------------------------------------------------------------------------- #
