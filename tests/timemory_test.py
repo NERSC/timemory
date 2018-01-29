@@ -33,7 +33,7 @@
 import sys
 import os
 import time
-import unittest
+import unittest2 as unittest
 import numpy as np
 from os.path import join
 
