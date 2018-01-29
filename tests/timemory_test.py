@@ -25,8 +25,7 @@
 # SOFTWARE.
 #
 
-## @package timemory_test.py
-## @file unit_testing.py
+## @file timemory_test.py
 ## Unit tests for TiMemory module
 ##
 
@@ -45,15 +44,15 @@ from timemory import options
 
 timemory.enable_signal_detection()
 
-# ============================================================================ #
 
+# ============================================================================ #
 def fibonacci(n):
     if n < 2:
         return n
     return fibonacci(n - 1) + fibonacci(n - 2)
 
-# ============================================================================ #
 
+# ============================================================================ #
 class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #

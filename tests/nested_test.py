@@ -64,7 +64,7 @@ array_size = 8000000
 def fibonacci(n):
     if n < 2:
         return n 
-    autotimer = tim.auto_timer('({}){}:{}'.format(n, tim.FILE(), tim.LINE()))
+    autotimer = tim.auto_timer('({})'.format(n), added_args=True)
     return fibonacci(n-1) + fibonacci(n-2)
 
 

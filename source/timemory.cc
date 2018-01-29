@@ -229,13 +229,18 @@ PYBIND11_MODULE(timemory, tim)
         return new tim_timer_t(begin, "", format, false, 3);
     };
 
-    auto auto_timer_init = [=] (const std::string& key = "", int nback = 1)
+    auto auto_timer_init = [=] (const std::string& key = "", int nback = 1,
+                                bool added_args = false)
     {
         std::stringstream keyss;
         keyss << get_func(nback);
-        if(key != "" && key[0] != '@')
+
+        if(added_args)
+            keyss << key;
+        else if(key != "" && key[0] != '@' && !added_args)
             keyss << "@";
-        if(key != "")
+
+        if(key != "" && !added_args)
             keyss << key;
         else
         {
@@ -265,7 +270,7 @@ PYBIND11_MODULE(timemory, tim)
         if(added_args)
             keyss << key;
         else if(key != "" && key[0] != '@' && !added_args)
-                keyss << "@";
+            keyss << "@";
 
         if(key != "" && !added_args)
             keyss << key;
@@ -436,7 +441,7 @@ PYBIND11_MODULE(timemory, tim)
              py::return_value_policy::take_ownership);
     tman.def("report",
              [=] (py::object tman, bool no_min = false, bool serialize = true,
-                  std::string serial_filename = "output.json")
+                  std::string serial_filename = "")
              {
                  auto locals = py::dict();
                  py::exec(R"(
@@ -466,7 +471,11 @@ PYBIND11_MODULE(timemory, tim)
 
                  // set the output stream
                  if(_do_rep)
+                 {
+                     std::cout << "Outputting timing_manager to '" << repfnm
+                               << "'..." << std::endl;
                      _tman->set_output_stream(repfnm);
+                 }
 
                  // report ASCII output
                  _tman->report(no_min);
@@ -475,16 +484,23 @@ PYBIND11_MODULE(timemory, tim)
                  if(!_do_ser && serialize)
                  {
                      _do_ser = true;
-                     serfnm = serial_filename;
+                     if(!serial_filename.empty())
+                         serfnm = serial_filename;
+                     else if(serfnm.empty())
+                         serfnm = "output.json";
                  }
 
                  if(_do_ser && timing_manager_t::instance()->size() > 0)
+                 {
+                     std::cout << "Serializing timing_manager to '" << serfnm
+                               << "'..." << std::endl;
                      _tman->write_serialization(serfnm);
+                 }
              },
              "Report timing manager",
              py::arg("no_min") = false,
              py::arg("serialize") = true,
-             py::arg("serial_filename") = "output.json");
+             py::arg("serial_filename") = "");
     tman.def("__str__",
              [=] (py::object tman)
              {
@@ -591,6 +607,7 @@ PYBIND11_MODULE(timemory, tim)
                    "Initialization",
                    py::arg("key") = "",
                    py::arg("nback") = 1,
+                   py::arg("added_args") = false,
                    py::return_value_policy::take_ownership);
 
     timer_decorator.def(py::init(timer_decorator_init),
@@ -843,7 +860,8 @@ PYBIND11_MODULE(timemory, tim)
                  def get_file_tag(fname):
                      import os
                      _l = os.path.basename(fname).split('.')
-                     _l.pop()
+                     if len(_l) > 1:
+                         _l.pop()
                      return ("{}".format('_'.join(_l)))
 
                  def_fname = "timing_report"

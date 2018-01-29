@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California, 
@@ -25,7 +25,7 @@
 # SOFTWARE.
 #
 
-## @file plot.py
+## @file plotting.py
 ## Plotting routines for TiMemory module
 ##
 

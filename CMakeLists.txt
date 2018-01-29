@@ -319,10 +319,11 @@ install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
 
-foreach(_FILE timemory_test.py simple_test.py nested_test.py __init__.py)
+set(TEST_FILES timemory_test.py simple_test.py nested_test.py array_test.py)
+foreach(_FILE ${TEST_FILES})
     configure_file(${PROJECT_SOURCE_DIR}/tests/${_FILE}
         ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
-endforeach(_FILE timemory_test.py)
+endforeach(_FILE ${TEST_FILES})
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
     include(Testing)

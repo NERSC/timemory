@@ -25,9 +25,17 @@ class CMakeExtension(Extension):
 # ---------------------------------------------------------------------------- #
 class CMakeBuild(build_ext, Command):
 
-    use_mpi = 'ON'
-    build_type = 'Release'
     cmake_version = '2.7.12'
+    build_type = 'Release'
+    use_mpi = 'ON'
+    timemory_exceptions = 'OFF'
+    build_examples = 'ON'
+    cxx_standard = 11
+    mpicc = ''
+    mpicxx = ''
+    cmake_prefix_path = ''
+    cmake_include_path = ''
+    cmake_library_path = ''
 
     def init_cmake(self):
         """
@@ -75,17 +83,56 @@ class CMakeBuild(build_ext, Command):
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
-        mpiarg = '-DUSE_MPI={}'.format(CMakeBuild.use_mpi)
-        buildarg = '-DCMAKE_BUILD_TYPE={}'.format(CMakeBuild.build_type)
         cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DSETUP_PY=ON',
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
-                      buildarg,
-                      mpiarg, ]
+                      ]
 
-        cfg = 'Debug' if self.debug else 'Release'
-        build_args = ['--config', cfg]
-        install_args = ['--config', cfg]
+        _valid_type = False
+        for _type in [ 'Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel' ]:
+            if _type == self.build_type:
+                _valid_type = True
+                break
+
+        if not _valid_type:
+            self.build_type = 'Release'
+
+        cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
+        cmake_args += [ '-DUSE_MPI={}'.format(str.upper(self.use_mpi)) ]
+
+        if platform.system() != "Windows":
+            cmake_args += [ '-DBUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
+
+        _cxxstd = int(self.cxx_standard)
+        if _cxxstd < 14 and platform.system() != "Windows":
+            _cxxstd = 14
+
+        if _cxxstd == 11 or _cxxstd == 14 or _cxxstd == 17:
+            cmake_args += [ '-DCMAKE_CXX_STANDARD={}'.format(self.cxx_standard) ]
+
+        def valid_string(_str):
+            if len(_str) > 0 and _str != '""' and _str != "''":
+                return True
+
+        if valid_string(self.mpicc):
+            cmake_args += [ '-DMPI_C_COMPILER={}'.format(self.mpicc) ]
+
+        if valid_string(self.mpicxx):
+            cmake_args += [ '-DMPI_CXX_COMPILER={}'.format(self.mpicxx) ]
+
+        if valid_string(self.cmake_prefix_path):
+            cmake_args += [ '-DCMAKE_PREFIX_PATH={}'.format(self.cmake_prefix_path) ]
+
+        if valid_string(self.cmake_library_path):
+            cmake_args += [ '-DCMAKE_LIBRARY_PATH={}'.format(self.cmake_library_path) ]
+
+        if valid_string(self.cmake_include_path):
+            cmake_args += [ '-DCMAKE_INCLUDE_PATH={}'.format(self.cmake_include_path) ]
+
+        cmake_args += [ '-DTIMEMORY_EXCEPTIONS={}'.format(str.upper(self.timemory_exceptions)) ]
+
+        build_args = [ '--config', self.build_type ]
+        install_args = [ '--config', self.build_type ]
         if platform.system() == "Windows":
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
@@ -126,37 +173,6 @@ class CMakeBuild(build_ext, Command):
                               cwd=self.build_temp, env=env)
 
         print()  # Add an empty line for cleaner output
-
-
-# ---------------------------------------------------------------------------- #
-class CMakeCommand(Command):
-    """ Run my command.
-    """
-    description = 'generate cmake options'
-
-    user_options = [ ('disable-mpi', 's', 'disable building with MPI'),
-                     ('debug', 'd', 'debug build'),
-                     ('rdebug', 'r', 'release with debug info build'), ]
-
-    def initialize_options(self):
-        self.disable_mpi = None
-        self.debug = None
-        self.rdebug = None
-        self.use_mpi = 'ON'
-        self.build_type = 'Release'
-
-    def finalize_options(self):
-        if self.disable_mpi is not None:
-            self.use_mpi = 'OFF'
-        if self.rdebug is not None:
-            self.build_type = 'RelWithDebInfo'
-        if self.debug is not None:
-            self.build_type = 'Debug'
-
-    def run(self):
-        print ('USE_MPI: {} ({})'.format(self.use_mpi, self.disable_mpi))
-        CMakeBuild.use_mpi = self.use_mpi
-        CMakeBuild.build_type = self.build_type
 
 
 # ---------------------------------------------------------------------------- #
@@ -203,10 +219,10 @@ class CatchTestCommand(TestCommand):
     def run(self):
         import cmake
         self.init_cmake()
-        print("Running CMake/CTest tests...\n")
+        print("\nRunning CMake/CTest tests...\n")
         # Run catch tests
-        subprocess.call(['ctest'],
-                cwd=os.path.join('build', self.distutils_dir_name('temp')), shell=True)
+        subprocess.check_call(['ctest', '--output-on-failure' ],
+                cwd=os.path.join('build', self.distutils_dir_name('temp')))
 
 
 # ---------------------------------------------------------------------------- #
@@ -234,15 +250,64 @@ def get_keywords():
 
 
 # ---------------------------------------------------------------------------- #
+def get_classifiers():
+    return [
+        # no longer beta
+        'Development Status :: 5 - Production/Stable',
+        # performance monitoring
+        'Intended Audience :: Developers',
+        'Intended Audience :: Science/Research',
+        # can be used for all of below
+        'Topic :: Software Development :: Bug Tracking',
+        'Topic :: Software Development :: Testing',
+        'Topic :: Software Development :: Quality Assurance',
+        'Topic :: Software Development :: Libraries :: Python Modules',
+        'Topic :: System :: Logging',
+        'Topic :: System :: Monitoring',
+        'Topic :: Utilities',
+        # written in English
+        'Natural Language :: English',
+        # MIT license
+        'License :: OSI Approved :: MIT License',
+        # tested on these OSes
+        'Operating System :: MacOS',
+        'Operating System :: Microsoft :: Windows :: Windows 10',
+        'Operating System :: Linux',
+        # written in C++, available to Python via PyBind11
+        'Programming Language :: C++',
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 2.6',
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.1',
+        'Programming Language :: Python :: 3.2',
+        'Programming Language :: Python :: 3.3',
+        'Programming Language :: Python :: 3.4',
+        'Programming Language :: Python :: 3.5',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+    ]
+
+
+# ---------------------------------------------------------------------------- #
+def get_name():
+    return 'Jonathan R. Madsen'
+
+# ---------------------------------------------------------------------------- #
+def get_email():
+    return 'jonrobm.programming@gmail.com'
+
+
+# ---------------------------------------------------------------------------- #
 # calls the setup and declare our 'my_cool_package'
 setup(name='TiMemory',
-    version='1.1rc1',
-    author='Jonathan R. Madsen',
-    author_email='jonrobm.programming@gmail.com',
-    maintainer='Jonathan R. Madsen',
-    maintainer_email='jonrobm.programming@gmail.com',
-    contact='Jonathan R. Madsen',
-    contact_email='jonrobm.programming@gmail.com',
+    version='1.1rc2',
+    author=get_name(),
+    author_email=get_email(),
+    maintainer=get_name(),
+    maintainer_email=get_email(),
+    contact=get_name(),
+    contact_email=get_email(),
     description=get_short_description(),
     long_description=get_long_description(),
     url='https://github.com/jrmadsen/TiMemory.git',
@@ -250,12 +315,13 @@ setup(name='TiMemory',
     # add extension module
     ext_modules=[CMakeExtension('timemory')],
     # add custom build_ext command
-    cmdclass=dict(config=CMakeCommand, build_ext=CMakeBuild, test=CatchTestCommand),
+    cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand),
     zip_safe=False,
     # extra
     install_requires=[ 'numpy', 'matplotlib', 'cmake' ],
     setup_requires=[ 'cmake', 'setuptools', 'disttools' ],
     provides=[ 'timemory' ],
     keywords=get_keywords(),
+    classifiers=get_classifiers(),
     python_requires='>=2.6',
 )

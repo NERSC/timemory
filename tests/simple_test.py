@@ -25,7 +25,7 @@
 # SOFTWARE.
 #
 
-## @file test.py
+## @file simple_test.py
 ## A simple test of the timemory module
 ##
 
@@ -34,48 +34,61 @@ import os
 import time
 import argparse
 
-import timemory as tim
+import timemory
 from timemory import options
 from timemory import plotting
 
 default_nfib = 29
-tim.enable_signal_detection()
+timemory.enable_signal_detection()
 
-@tim.util.auto_timer()
+
+# ---------------------------------------------------------------------------- #
+@timemory.util.auto_timer()
 def fibonacci(n):
     if n < 2:
-        return n 
+        return n
     return fibonacci(n-1) + fibonacci(n-2)
 
 
+# ---------------------------------------------------------------------------- #
+class Fibonacci(object):
+
+    def __init__(self, n):
+        self.n = n
+
+    @timemory.util.auto_timer(is_class=True)
+    def calculate(self):
+        t = timemory.timer("> [pyc] fib({}) ".format(self.n))
+        t.start()
+        ret = fibonacci(self.n)
+        t.stop()
+        print ('fibonacci({}) = {}\n'.format(self.n, ret))
+        t.report()
+        return ret
+
+
+# ---------------------------------------------------------------------------- #
 def test():
-    print ('test: func() {}'.format(tim.FUNC()))
-    print ('test: func(2) {}'.format(tim.FUNC(2)))
+    print ('test: func() {}'.format(timemory.FUNC()))
+    print ('test: func(2) {}'.format(timemory.FUNC(2)))
 
 
-@tim.util.auto_timer()
-def calcfib(nfib):
-    t = tim.timer("> [pyc] fib({}) ".format(nfib))
-    t.start()
-    ret = fibonacci(nfib)
-    t.stop()
-    print ('fibonacci({}) = {}\n'.format(nfib, ret))
-    t.report()
-    return ret
-
-
+# ---------------------------------------------------------------------------- #
 def main(nfib):
-    tim.set_max_depth(5)
+    timemory.set_max_depth(5)
     print ('')
-    print ('main: file() {}'.format(tim.FILE()))
-    print ('main: line() {}'.format(tim.LINE()))
-    print ('main: line() {}'.format(tim.LINE()))
-    print ('main: func() {}'.format(tim.FUNC()))
+    print ('main: file() {}'.format(timemory.FILE()))
+    print ('main: line() {}'.format(timemory.LINE()))
+    print ('main: line() {}'.format(timemory.LINE()))
+    print ('main: func() {}'.format(timemory.FUNC()))
     test()
     print ('')
-    tman = tim.timing_manager()
-    ret = calcfib(int(nfib))
-    tman.report()
+    tman = timemory.timing_manager()
+    fib = Fibonacci(int(nfib))
+    ret = fib.calculate()
+
+    timemory.report()
+    tman.report(no_min=True)
     tman.serialize('output.json')
     print ('')
     try:
@@ -89,5 +102,5 @@ if __name__ == "__main__":
     parser.add_argument("-n", "--nfib",
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
-    args = options.add_arguments_and_parse(parser, "simple")
+    args = options.add_arguments_and_parse(parser, __file__)
     main(args.nfib)

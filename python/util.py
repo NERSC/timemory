@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-
+#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -25,6 +25,10 @@
 # SOFTWARE.
 #
 
+## @file util.py
+## Decorators for TiMemory module
+##
+
 from __future__ import absolute_import
 
 import os
@@ -48,8 +52,14 @@ class base_decorator(object):
         Generate a class identifier
         """
         _str = ''
-        if self.is_class and len(args) > 0:
+        if self.is_class and len(args) > 0 and args[0] is not None:
             _str = '[{}]'.format(type(args[0]).__name__)
+            # this check guards against old bug from class methods
+            # calling class methods
+            if not _str in self.key:
+                return _str
+            else:
+                return ''
         return _str
 
 
@@ -58,34 +68,36 @@ class base_decorator(object):
         """
         Generate a string of the arguments
         """
-        _str = '{}('.format(self.class_string(args, kwargs))
-        for i in range(0, len(args)):
-            if i == 0:
-                _str = '{}{}'.format(_str, args[i])
-            else:
-                _str = '{}, {}'.format(_str, args[i])
+        _str = '{}'.format(self.class_string(args, kwargs))
+        if self.add_args:
+            _str = '{}('.format(_str)
+            for i in range(0, len(args)):
+                if i == 0:
+                    _str = '{}{}'.format(_str, args[i])
+                else:
+                    _str = '{}, {}'.format(_str, args[i])
 
-        for key, val in kwargs:
-            _str = '{}, {}={}'.format(_str, key, val)
+            for key, val in kwargs:
+                _str = '{}, {}={}'.format(_str, key, val)
 
-        return '{})'.format(_str)
+            return '{})'.format(_str)
+        return _str
 
 
 #------------------------------------------------------------------------------#
 class auto_timer(base_decorator):
     """ A decorator for the auto-timer, e.g.:
-        @timemory.util.auto_timer("'AUTO_TIMER_DECORATOR_KEY_TEST':{}".format(timemory.LINE()))
-        def main(n):
+        @timemory.util.auto_timer(add_args=True)
+        def main(n=5):
             for i in range(2):
                 fibonacci(n * (i+1))
         # ...
+        # output :
+        # > [pyc] main(5)@'example.py':10 ...
     """
     # ------------------------------------------------------------------------ #
     def __init__(self, key="", add_args=False, is_class=False):
         super(auto_timer, self).__init__(key, add_args, is_class)
-        self.key = key
-        self.add_args = add_args
-        self.is_class = is_class
 
 
     # ------------------------------------------------------------------------ #
@@ -99,14 +111,10 @@ class auto_timer(base_decorator):
         @wraps(func)
         def function_wrapper(*args, **kwargs):
 
-            # add_args only if key not specified
-            if self.add_args and self.key == "":
-                self.key = self.arg_string(args, kwargs)
-            else:
-                self.key = '{}{}'.format(self.key, self.class_string(args, kwargs))
+            _key = '{}{}'.format(self.key, self.arg_string(args, kwargs))
 
             t = timemory.timer_decorator(func.__name__, _file, _line,
-                self.key, self.add_args)
+                _key, self.add_args or self.is_class)
 
             return func(*args, **kwargs)
 
@@ -127,9 +135,6 @@ class timer(base_decorator):
     # ------------------------------------------------------------------------ #
     def __init__(self, key="", add_args=False, is_class=False):
         super(timer, self).__init__(key, add_args, is_class)
-        self.key = key
-        self.add_args = add_args
-        self.is_class = is_class
 
 
     # ------------------------------------------------------------------------ #
@@ -143,17 +148,15 @@ class timer(base_decorator):
         @wraps(func)
         def function_wrapper(*args, **kwargs):
 
-            t = None
+            _key = ''
+            _args = self.arg_string(args, kwargs)
             if self.key == "":
                 _func = func.__name__
-                self.key = '{}{}'.format(self.key, self.class_string(args, kwargs))
-                # add_args only if key not specified
-                if self.add_args:
-                    self.key = self.arg_string(args, kwargs)
-                t = timemory.timer('{}{}@{}:{}'.format(_func, self.key, _file, _line))
+                _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
             else:
-                self.key = '{}{}'.format(self.key, self.class_string(args, kwargs))
-                t = timemory.timer(self.key)
+                _key = '{}{}'.format(self.key, _args)
+
+            t = timemory.timer(_key)
 
             t.start()
             ret = func(*args, **kwargs)
@@ -178,9 +181,6 @@ class rss_usage(base_decorator):
     # ------------------------------------------------------------------------ #
     def __init__(self, key="", add_args=False, is_class=False):
         super(rss_usage, self).__init__(key, add_args, is_class)
-        self.key = key
-        self.add_args = add_args
-        self.is_class = is_class
 
 
     # ------------------------------------------------------------------------ #
@@ -194,15 +194,13 @@ class rss_usage(base_decorator):
         @wraps(func)
         def function_wrapper(*args, **kwargs):
 
+            _key = ''
+            _args = self.arg_string(args, kwargs)
             if self.key == "":
                 _func = func.__name__
-                self.key = '{}{}'.format(self.key, self.class_string(args, kwargs))
-                # add_args only if key not specified
-                if self.add_args:
-                    self.key = self.arg_string(args, kwargs)
-                self.key = '{}{}@{}:{}'.format(_func, self.key, _file, _line)
+                _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
             else:
-                self.key = '{}{}'.format(self.key, self.class_string(args, kwargs))
+                _key = '{}{}'.format(self.key, _args)
 
             # initial values
             rss_done = timemory.rss_usage()
@@ -217,7 +215,7 @@ class rss_usage(base_decorator):
             rss_self = rss_done - rss_self
 
             print('{} : RSS {}total,self{}_{}current,peak{} : ({}|{}) | ({}|{}) [MB]'.format(
-                self.key, '{', '}', '{', '}',
+                _key, '{', '}', '{', '}',
                 rss_done.current(), rss_done.peak(),
                 rss_self.current(), rss_self.peak()))
 
