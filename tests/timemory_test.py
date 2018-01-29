@@ -33,9 +33,12 @@
 import sys
 import os
 import time
-import unittest2 as unittest
 import numpy as np
 from os.path import join
+try:
+    import unittest2 as unittest
+except:
+    import unittest
 
 import timemory
 from timemory import options

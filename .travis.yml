@@ -137,7 +137,7 @@ before_install:
     - echo "PYBINPATH = ${PYBINPATH}"
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
-    - pip install matplotlib numpy tornado argparse cmake
+    - pip install matplotlib numpy tornado argparse cmake unittest2
     - export INSTALL_DIR=${HOME}/timemory/current
 
 
