@@ -30,7 +30,7 @@ var searchData=
   ['siginfo',['SIGINFO',['../da/d8e/signal__detection_8hpp.html#a6d00ce03f0d85973025ae1f710b977ec',1,'signal_detection.hpp']]],
   ['signal_5fdetection_2ecpp',['signal_detection.cpp',['../dc/d43/signal__detection_8cpp.html',1,'']]],
   ['signal_5fdetection_2ehpp',['signal_detection.hpp',['../da/d8e/signal__detection_8hpp.html',1,'']]],
-  ['signal_5ffunction_5ft',['signal_function_t',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#aa9ff5a04eda113706c6eeb93329892ed',1,'NAME_TIM::signal_settings']]],
+  ['signal_5ffunction_5ft',['signal_function_t',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a1e9b3cab31b156d42aef0d74fae99f31',1,'NAME_TIM::signal_settings']]],
   ['signal_5fset_5ft',['signal_set_t',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a154e293587a9835f4e2bef675f1b62ea',1,'NAME_TIM::signal_settings::signal_set_t()'],['../d2/dfd/timemory_8cc.html#abefc568a1ea873d69e92d13cd7720081',1,'signal_set_t():&#160;timemory.cc']]],
   ['signal_5fsettings',['signal_settings',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html',1,'NAME_TIM']]],
   ['signal_5fsettings_5ft',['signal_settings_t',['../d2/dfd/timemory_8cc.html#add2d3622f8c3abb4befe604a9205c671',1,'timemory.cc']]],

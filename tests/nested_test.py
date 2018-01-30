@@ -57,6 +57,21 @@ tim.enable_signal_detection([signals.sys_signal.Hangup,
 
 array_size = 8000000
 
+#------------------------------------------------------------------------------#
+# create an exit action function
+def exit_action(errcode):
+    tman = tim.timing_manager()
+    tim.report(no_min=True)
+    fname = 'nested_test_err_{}.out'.format(errcode)
+    f = open(fname, 'w')
+    f.write('{}\n'.format(tman))
+    f.close()
+
+
+#------------------------------------------------------------------------------#
+# set the exit action function
+tim.set_exit_action(exit_action)
+
 
 #------------------------------------------------------------------------------#
 # NOTE: Using decorator on a recursive function will produce a very different

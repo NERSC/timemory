@@ -172,6 +172,18 @@ $(document).ready(function(){initNavTree('index.html','');});
 </ul>
 </li>
 </ul>
+<h4>Signal detection example:</h4>
+<div class="fragment"><div class="line">import timemory</div><div class="line">from timemory import signals</div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line"># Detect any SIGHUP, SIGINT, SIGFPE, and SIGABRT signals.</div><div class="line">timemory.enable_signal_detection([signals.sys_signal.Hangup,</div><div class="line">                                  signals.sys_signal.Interrupt,</div><div class="line">                                  signals.sys_signal.Abort ])</div><div class="line">#------------------------------------------------------------------------------#</div><div class="line"># create an exit action function, i.e. customization before quitting app</div><div class="line">def exit_action(errcode):</div><div class="line">    tman = timemory.timing_manager()</div><div class="line">    timemory.report(no_min=True)</div><div class="line">    fname = &#39;signal_error_{}.out&#39;.format(errcode)</div><div class="line">    f = open(fname, &#39;w&#39;)</div><div class="line">    f.write(&#39;{}\n&#39;.format(tman))</div><div class="line">    f.close()</div><div class="line"></div><div class="line">#------------------------------------------------------------------------------#</div><div class="line"># set the exit action function</div><div class="line">timemory.set_exit_action(exit_action)</div></div><!-- fragment --><ul>
+<li>In the above, when any of the signals are raised, execute <code>exit_action</code> function &ndash; printing out the timing manager data to stdout and to a file <code>signal_error_&lt;error_code&gt;.out</code>.</li>
+<li>Certain signals will usually be caught by the Python interpreter (e.g. floating-point exceptions [FPE]) before it reaches the signal handler in TiMemory.</li>
+<li>However, SIGINT (Interrupt, i.e. Ctrl-C) is one such signal that will get caught by <code>TiMemory</code></li>
+<li>Another signal handler at the Python level can redirect to this signal handler via:</li>
+</ul>
+<div class="fragment"><div class="line">import os</div><div class="line">import signal</div><div class="line">os.kill(os.getpid(), signal.SIGHUP)</div></div><!-- fragment --><ul>
+<li>where <code>signal.SIGHUP</code> can be replaced with another signal from the signal module based on the error-code, as desired.</li>
+<li>NOTE: Signal detection is not available on all OS platforms, e.g. Windows is not supported at all</li>
+<li>NOTE: Signal detection is not available with all compilers. Supported compilers are GNU, Clang, and Intel</li>
+</ul>
 <h3>Basic C++ usage</h3>
 <ul>
 <li>In C++ code, easiest usage for the auto_timers is with the TiMemory macro</li>
@@ -329,7 +341,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Mon Jan 29 2018 15:56:58 for TiMemory by
+    <li class="footer">Generated on Mon Jan 29 2018 17:32:53 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

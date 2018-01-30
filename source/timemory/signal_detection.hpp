@@ -192,7 +192,8 @@ class signal_settings
 {
 public:
     typedef std::set<sys_signal> signal_set_t;
-    typedef void (*signal_function_t)(int errcode);
+    //typedef void (*signal_function_t)(int errcode);
+    typedef std::function<void(int)> signal_function_t;
 
 public:
     static bool is_active() { return signals_active; }

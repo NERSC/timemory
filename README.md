@@ -133,6 +133,48 @@ test_func_rss@'timemory_test.py':244 : RSS {total,self}_{current,peak} : (52.536
     - In above, the temporary memory used by the function can be determined by `self peak` - `self current`
 
 
+#### Signal detection example:
+
+```python
+
+import timemory
+from timemory import signals
+
+#------------------------------------------------------------------------------#
+# Detect any SIGHUP, SIGINT, SIGFPE, and SIGABRT signals.
+timemory.enable_signal_detection([signals.sys_signal.Hangup,
+                                  signals.sys_signal.Interrupt,
+                                  signals.sys_signal.Abort ])
+#------------------------------------------------------------------------------#
+# create an exit action function, i.e. customization before quitting app
+def exit_action(errcode):
+    tman = timemory.timing_manager()
+    timemory.report(no_min=True)
+    fname = 'signal_error_{}.out'.format(errcode)
+    f = open(fname, 'w')
+    f.write('{}\n'.format(tman))
+    f.close()
+
+#------------------------------------------------------------------------------#
+# set the exit action function
+timemory.set_exit_action(exit_action)
+```
+
+  - In the above, when any of the signals are raised, execute `exit_action` function -- printing out the timing manager data to stdout and to a file `signal_error_<error_code>.out`.
+  - Certain signals will usually be caught by the Python interpreter (e.g. floating-point exceptions [FPE]) before it reaches the signal handler in TiMemory.
+  - However, SIGINT (Interrupt, i.e. Ctrl-C) is one such signal that will get caught by `TiMemory`
+  - Another signal handler at the Python level can redirect to this signal handler via:
+
+```python
+import os
+import signal
+os.kill(os.getpid(), signal.SIGHUP)
+```
+
+  - where `signal.SIGHUP` can be replaced with another signal from the signal module based on the error-code, as desired.
+  - NOTE: Signal detection is not available on all OS platforms, e.g. Windows is not supported at all
+  - NOTE: Signal detection is not available with all compilers. Supported compilers are GNU, Clang, and Intel
+
 ### Basic C++ usage
 
 - In C++ code, easiest usage for the auto_timers is with the TiMemory macro

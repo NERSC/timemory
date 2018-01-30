@@ -706,6 +706,20 @@ PYBIND11_MODULE(timemory, tim)
             { return timing_manager_t::instance()->size(); },
             "Size of the timing manager");
 
+    tim.def("set_exit_action",
+            [=] (py::function func)
+            {
+                auto _func = [=] (int errcode) -> void
+                {
+                    func(errcode);
+                };
+                //typedef tim::signal_settings::signal_function_t signal_function_t;
+                typedef std::function<void(int)> signal_function_t;
+                using std::placeholders::_1;
+                signal_function_t _f = std::bind<void>(_func, _1);
+                tim::signal_settings::set_exit_action(_f);
+            },
+            "Set the exit action when a signal is raised -- function must accept integer");
 
     //------------------------------------------------------------------------//
     //

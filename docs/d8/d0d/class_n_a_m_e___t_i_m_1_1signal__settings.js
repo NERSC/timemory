@@ -1,6 +1,6 @@
 var class_n_a_m_e___t_i_m_1_1signal__settings =
 [
-    [ "signal_function_t", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#aa9ff5a04eda113706c6eeb93329892ed", null ],
+    [ "signal_function_t", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a1e9b3cab31b156d42aef0d74fae99f31", null ],
     [ "signal_set_t", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a154e293587a9835f4e2bef675f1b62ea", null ],
     [ "check_environment", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a8ab1bfa9acbe2952b53990136f8e4122", null ],
     [ "disable", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#aff2dd59a0ce45dc05ea20f9bcda495b8", null ],

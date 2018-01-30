@@ -1,7 +1,23 @@
 TiMemory
 ========
 
-Release: TiMemory 1.1.0
+Release: TiMemory 1.1.3
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Author: Jonathan R. Madsen
+- Date:   Mon Jan 29 18:46:09 2018 -0800
+
+    - added `timemory.set_exit_action(...)` capability for defining a function to handle the exit of the application due to a signal being raised (e.g. SIGHUP, SIGINT, SIGABRT)
+
+Release: TiMemory 1.1.2
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Author: Jonathan R. Madsen
+- Date:   Mon Jan 29 16:20:06 2018 -0800
+
+    - removed Python 'cmake' requirement in 'setup.py
+
+Release: TiMemory 1.1.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 - Author: Jonathan R. Madsen
