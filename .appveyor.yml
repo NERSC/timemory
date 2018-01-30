@@ -53,4 +53,4 @@ build_script:
 - ls
 - python ./setup.py build install
 - python ./tests/simple_test.py
-- if ($env:PLATFORM -eq "x64") { python ./tests/nested_test.py }
+#- if ($env:PLATFORM -eq "x64") { python ./tests/nested_test.py }

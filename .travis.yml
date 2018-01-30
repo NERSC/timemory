@@ -160,6 +160,9 @@ install:
 
 
 script:
+    - cd ${SOURCE_DIR}
+    - python setup.py install test
+    - echo "Python setup.py -- Done"
     - ./test_timing &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
@@ -167,16 +170,3 @@ script:
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
     - echo "C++ testing -- Done"
-    - ./simple_test.py &> run.log
-    - RET=$?
-    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
-    - ./timemory_test.py &> run.log
-    - RET=$?
-    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
-    - ./nested_test.py &> run.log
-    - RET=$?
-    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi 
-    - echo "Python testing -- Done"
-    - cd ${SOURCE_DIR}
-    - python setup.py build install
-    - echo "Python setup.py -- Done"

@@ -49,6 +49,7 @@ except:
     matplotlib.use(_matplotlib_backend)
     import matplotlib.pyplot as plt
 
+
 timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
 memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
     'self_current_rss')

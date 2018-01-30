@@ -727,21 +727,18 @@ PYBIND11_MODULE(timemory, tim)
     //
     //------------------------------------------------------------------------//
 
-    //py::module utl = tim.def_submodule("util",          "Utility submodule");
-    //py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
-    //py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
 
     auto _util = py::module::import("timemory-util");
     auto _plot = py::module::import("timemory-plotting");
     auto _mpis = py::module::import("timemory-mpi_support");
 
-    tim.add_object("util", _util);
-    tim.add_object("plotting", _plot);
-    tim.add_object("mpi_support", _mpis);
+    py::module utl = tim.def_submodule("util",          "Utility submodule");
+    py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
+    py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
 
-    //py::eval_file("util/__init__.py",       py::globals(), utl.attr("__dict__"));
-    //py::eval_file("plotting/__init__.py",   py::globals(), plt.attr("__dict__"));
-    //py::eval_file("mpi_support/__init__.py",py::globals(), mpi.attr("__dict__"));
+    tim.add_object("util", _util, true);
+    tim.add_object("plotting", _plot, true);
+    tim.add_object("mpi_support", _mpis, true);
 
     //========================================================================//
     //
