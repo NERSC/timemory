@@ -21,6 +21,7 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
 
 # add cereal
 add_subdirectory(cereal)
+list(APPEND EXTERNAL_LIBRARIES cereal)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
@@ -82,7 +83,7 @@ foreach(_FILE plotting mpi_support util)
     install(DIRECTORY
         ${PROJECT_BINARY_DIR}/${_FILE}/
         DESTINATION
-        ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
+        ${CMAKE_INSTALL_PYTHONDIR}/timemory-${_FILE})
 endforeach(_FILE plotting mpi_support util)
 
 
@@ -127,33 +128,15 @@ install(TARGETS ${INSTALL_LIBRARIES}
     DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}LibraryDepends)
 
-# C++ development headers
-install(FILES ${headers}
-    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+if(NOT SETUP_PY)
+    # C++ development headers
+    install(FILES ${headers}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+endif(NOT SETUP_PY)
 
 # Python library target (linked to static target)
 install(TARGETS ${LIBNAME}
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
-
-# Python supplementary files
-install(DIRECTORY
-    ${PROJECT_BINARY_DIR}/util/
-    DESTINATION
-    ${CMAKE_INSTALL_PYTHONDIR}/util)
-
-#install(FILES
-#    # python supplementary modules
-#    ${PROJECT_BINARY_DIR}/util/__init__.py
-#    ${PROJECT_BINARY_DIR}/util/plot.py
-#    ${PROJECT_BINARY_DIR}/util/options.py
-#    ${PROJECT_BINARY_DIR}/util/mpi_support.py
-#    ${PROJECT_BINARY_DIR}/util/signals.py
-#    # MPI info files
-#    ${PROJECT_BINARY_DIR}/util/mpi_exe_info.txt
-#    ${PROJECT_BINARY_DIR}/util/mpi_c_info.txt
-#    ${PROJECT_BINARY_DIR}/util/mpi_cxx_info.txt
-#    # destination
-#    DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/util)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends

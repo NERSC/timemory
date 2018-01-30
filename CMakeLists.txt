@@ -241,7 +241,12 @@ endif()
 #
 ################################################################################
 
-add_option(PYBIND11_INSTALL "PyBind11 installation" ON)
+if(NOT SETUP_PY)
+    add_option(PYBIND11_INSTALL "PyBind11 installation" ON)
+else(NOT SETUP_PY)
+    set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11" FORCE)
+endif(NOT SETUP_PY)
+
 set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
     CACHE STRING "PyBind11 CXX standard" FORCE)
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")

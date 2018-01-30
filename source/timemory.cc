@@ -731,9 +731,9 @@ PYBIND11_MODULE(timemory, tim)
     //py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
     //py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
 
-    auto _util = tim.import("util");
-    auto _plot = tim.import("plotting");
-    auto _mpis = tim.import("mpi_support");
+    auto _util = py::module::import("timemory-util");
+    auto _plot = py::module::import("timemory-plotting");
+    auto _mpis = py::module::import("timemory-mpi_support");
 
     tim.add_object("util", _util);
     tim.add_object("plotting", _plot);

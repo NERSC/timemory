@@ -12,7 +12,7 @@ from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools import Command
 from setuptools.command.test import test as TestCommand
-
+from setuptools.command.install_egg_info import install_egg_info
 
 # ---------------------------------------------------------------------------- #
 class CMakeExtension(Extension):
@@ -83,6 +83,7 @@ class CMakeBuild(build_ext, Command):
 
         extdir = os.path.abspath(
             os.path.dirname(self.get_ext_fullpath(ext.name)))
+        #extdir = os.path.join(extdir, 'timemory')
         cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-DSETUP_PY=ON',
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
@@ -172,6 +173,7 @@ class CMakeBuild(build_ext, Command):
         subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
                               cwd=self.build_temp, env=env)
 
+        CMakeInstallEggInfo.dirs[self.build_temp] = extdir
         print()  # Add an empty line for cleaner output
 
 
@@ -223,6 +225,34 @@ class CatchTestCommand(TestCommand):
         # Run catch tests
         subprocess.check_call(['ctest', '--output-on-failure' ],
                 cwd=os.path.join('build', self.distutils_dir_name('temp')))
+
+
+# ---------------------------------------------------------------------------- #
+class CMakeInstallEggInfo(install_egg_info):
+    dirs = {}
+    def run(self):
+        install_egg_info.run(self)
+        # read the install manifest from CMake
+        for tmpdir, libdir in CMakeInstallEggInfo.dirs.items():
+            fname = os.path.join(tmpdir, 'install_manifest.txt')
+            f = open(fname, 'r')
+            if libdir[len(libdir)-1] != '/':
+                libdir += '/'
+            for l in f.read().splitlines():
+                b = l.replace(libdir, '')
+                l = os.path.join(self.install_dir, b)
+                print ('Adding "{}"...'.format(l))
+                self.outputs.append(l)
+        # old files not tracked
+        for i in ['plotting/__init__.py',
+                  'mpi_support/mpi_cxx_info.txt',
+                  'mpi_support/mpi_c_info.txt',
+                  'mpi_support/mpi_exe_info.txt',
+                  'mpi_support/__init__.py',
+                  'util/__init__.py',]:
+            fname = os.path.join(self.install_dir, i)
+            if os.path.exists(fname):
+                self.outputs.append(fname)
 
 
 # ---------------------------------------------------------------------------- #
@@ -301,7 +331,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare package
 setup(name='TiMemory',
-    version='1.1.3',
+    version='1.1.4',
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),
@@ -315,7 +345,7 @@ setup(name='TiMemory',
     # add extension module
     ext_modules=[CMakeExtension('timemory')],
     # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand),
+    cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand, install_egg_info=CMakeInstallEggInfo),
     zip_safe=False,
     # extra
     install_requires=[ 'numpy', 'matplotlib' ],
@@ -325,3 +355,4 @@ setup(name='TiMemory',
     classifiers=get_classifiers(),
     python_requires='>=2.6',
 )
+
