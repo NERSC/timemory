@@ -163,6 +163,7 @@ script:
     - cd ${SOURCE_DIR}
     - python setup.py install test
     - echo "Python setup.py -- Done"
+    - cd ${BUILD_DIR}
     - ./test_timing &> run.log
     - RET=$?
     - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
