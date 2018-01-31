@@ -3,17 +3,140 @@
 language: python
 
 
-python:
-  - "3.5"
+cache:
+  directories:
+  - "$HOME/.cache/pip"
+  - "$HOME/.pyenv"
 
 
 # The apt packages here install our compiled code dependencies.
 matrix:
   include:
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python 2.7
+    #
+    # ------------------------------------------------------------------------ #
+    # GCC 4.9
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+    # GCC 5
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+    # GCC 6
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+    # GCC 7
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+    # Clang 4.0
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-precise-4.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+    # Clang 5.0
+    - os: linux
+      dist: precise
+      sudo: false
+      python: '2.7'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-precise-5.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python 3.4
+    #
+    # ------------------------------------------------------------------------ #
     # GCC 4.9
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -25,13 +148,13 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
     # GCC 5
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -43,13 +166,13 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -61,13 +184,13 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
     # GCC 7
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -79,13 +202,13 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -98,13 +221,13 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
     - os: linux
       dist: trusty
       sudo: false
+      python: '3.4'
       addons:
         apt:
           sources:
@@ -117,9 +240,239 @@ matrix:
             - cmake3
             - libmpich-dev
             - mpich
-            - tk
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python 3.5
+    #
+    # ------------------------------------------------------------------------ #
+    # GCC 4.9
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+    # GCC 5
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+    # GCC 6
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+    # GCC 7
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+    # Clang 4.0
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+    # Clang 5.0
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.5'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python 3.6
+    #
+    # ------------------------------------------------------------------------ #
+    # GCC 4.9
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-4.9
+            - g++-4.9
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+    # GCC 5
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+    # GCC 6
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+    # GCC 7
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+    # Clang 4.0
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-4.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+    # Clang 5.0
+    - os: linux
+      dist: trusty
+      sudo: false
+      python: '3.6'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake3
+            - libmpich-dev
+            - mpich
+      env:
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+    # ------------------------------------------------------------------------ #
 
 
 before_install:
@@ -137,7 +490,6 @@ before_install:
     - echo "PYBINPATH = ${PYBINPATH}"
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
-    - pip install matplotlib numpy tornado argparse cmake unittest2
     - export INSTALL_DIR=${HOME}/timemory/current
 
 
@@ -145,6 +497,7 @@ install:
     - env
     - echo "--> ${PWD}"
     - export SOURCE_DIR=${PWD}
+    - pip install matplotlib numpy
     - mkdir -p build-timemory
     - cd build-timemory
     - export BUILD_DIR=${PWD}
@@ -152,22 +505,30 @@ install:
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
     - cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DUSE_MPI=ON
-        -DCMAKE_BUILD_TYPE=Debug -DPYTHON_EXECUTABLE=$(which python)
+        -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX} ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - make -j2
     - make install -j2
+    #
+    # Python testing
+    #
+    - cd ${SOURCE_DIR}
+    - pip install .
+    - pip uninstall -y .
 
 
 script:
+    #
+    # Python testing
+    #
     - cd ${SOURCE_DIR}
-    - python setup.py install test
+    - python${TRAVIS_PYTHON_VERSION} setup.py install test
     - echo "Python setup.py -- Done"
+    #
+    # C++ testing
+    #
     - cd ${BUILD_DIR}
-    - ./test_timing &> run.log
-    - RET=$?
-    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
-    - mpirun -np 2 ./mpi_test_timing &> run.log
-    - RET=$?
-    - if [ "${RET}" -ne 0 ]; then cat run.log ; fi
+    - ./test_timing
+    - mpirun -np 2 ./mpi_test_timing
     - echo "C++ testing -- Done"

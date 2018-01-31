@@ -125,6 +125,7 @@ class CMakeBuild(build_ext, Command):
         def valid_string(_str):
             if len(_str) > 0 and _str != '""' and _str != "''":
                 return True
+            return False
 
         if valid_string(self.mpicc):
             cmake_args += [ '-DMPI_C_COMPILER={}'.format(self.mpicc) ]
