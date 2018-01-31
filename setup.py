@@ -190,21 +190,37 @@ class CMakeBuild(build_ext, Command):
 
 
 # ---------------------------------------------------------------------------- #
-class CatchTestCommand(TestCommand):
+class CMakeTest(TestCommand):
     """
     A custom test runner to execute both Python unittest tests and C++ Catch-
     lib tests.
     """
 
-    cmake_version = '2.7.12'
+    ctest_version = '2.7.12'
+    ctest_min_version = '2.8.12'
 
-    def init_cmake(self):
+    #
+    def ctest_version_error(self):
         """
-        Ensure cmake is in PATH
+        Raise exception about CMake
+        """
+        ma = 'Error finding/putting ctest in path. Either no CMake found or no cmake module.'
+        mb = 'This error can commonly be resolved with "{}"'.format("pip install -U pip cmake")
+        mc = 'CMake version found: {}'.format(CMakeTest.ctest_version)
+        md = "CMake must be installed to build the following extensions: " + \
+        ", ".join(e.name for e in self.extensions)
+        mt = '\n\n\t{}\n\t{}\n\t{}\n\t{}\n\n'.format(ma, mb, mc, md)
+        raise RuntimeError(mt)
+
+
+    def init_ctest(self):
+        """
+        Ensure ctest is in PATH
         """
         try:
-            out = subprocess.check_output(['cmake', '--version'])
-
+            out = subprocess.check_output(['ctest', '--version'])
+            CMakeTest.ctest_version = LooseVersion(
+                re.search(r'version\s*([\d.]+)', out.decode()).group(1))
         except OSError:
             # if fail, try the module
             import cmake
@@ -216,12 +232,9 @@ class CatchTestCommand(TestCommand):
                     if not cmake.CMAKE_BIN_DIR in curr_path:
                         os.environ['PATH'] = "{}:{}".format(curr_path, cmake.CMAKE_BIN_DIR)
 
+                CMakeTest.ctest_version = cmake.sys.version.split(' ')[0]
             except:
-                print ('Error putting cmake in path')
-                print ('This error can commonly be resolved with "{}"'.format("pip install -U pip cmake"))
-                raise RuntimeError(
-                    "CMake must be installed to test the following extensions: " +
-                        ", ".join(e.name for e in self.extensions))
+                self.ctest_version_error()
 
 
     def distutils_dir_name(self, dname):
@@ -232,8 +245,7 @@ class CatchTestCommand(TestCommand):
                                version=sys.version_info)
 
     def run(self):
-        import cmake
-        self.init_cmake()
+        self.init_ctest()
         print("\nRunning CMake/CTest tests...\n")
         # Run catch tests
         subprocess.check_call(['ctest', '--output-on-failure' ],
@@ -344,7 +356,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare package
 setup(name='TiMemory',
-    version='1.1.5',
+    version='1.1.6',
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),
@@ -358,7 +370,7 @@ setup(name='TiMemory',
     # add extension module
     ext_modules=[CMakeExtension('timemory')],
     # add custom build_ext command
-    cmdclass=dict(build_ext=CMakeBuild, test=CatchTestCommand, install_egg_info=CMakeInstallEggInfo),
+    cmdclass=dict(build_ext=CMakeBuild, test=CMakeTest, install_egg_info=CMakeInstallEggInfo),
     zip_safe=False,
     # extra
     install_requires=[ 'numpy', 'matplotlib' ],
