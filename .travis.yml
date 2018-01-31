@@ -19,7 +19,7 @@ matrix:
     # ------------------------------------------------------------------------ #
     # GCC 4.9
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
@@ -31,13 +31,13 @@ matrix:
             - g++-4.9
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
     # GCC 5
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
@@ -49,13 +49,13 @@ matrix:
             - g++-5
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
@@ -67,13 +67,13 @@ matrix:
             - g++-6
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
     # GCC 7
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
@@ -85,46 +85,46 @@ matrix:
             - g++-7
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
         apt:
           sources:
-            - llvm-toolchain-precise-4.0
+            - llvm-toolchain-trusty-4.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-4.0
             - clang++-4.0
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
     - os: linux
-      dist: precise
+      dist: trusty
       sudo: false
       python: '2.7'
       addons:
         apt:
           sources:
-            - llvm-toolchain-precise-5.0
+            - llvm-toolchain-trusty-5.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
             - clang++-5.0
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -261,8 +261,8 @@ matrix:
             - g++-4.9
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
     # GCC 5
@@ -279,8 +279,8 @@ matrix:
             - g++-5
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -297,8 +297,8 @@ matrix:
             - g++-6
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
     # GCC 7
@@ -315,8 +315,8 @@ matrix:
             - g++-7
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -334,8 +334,8 @@ matrix:
             - clang++-4.0
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -353,8 +353,8 @@ matrix:
             - clang++-5.0
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            - libopenmpi-dev
+            - openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -375,7 +375,7 @@ matrix:
             - gcc-4.9
             - g++-4.9
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
@@ -393,7 +393,7 @@ matrix:
             - gcc-5
             - g++-5
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
@@ -411,7 +411,7 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
@@ -429,7 +429,7 @@ matrix:
             - gcc-7
             - g++-7
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
@@ -448,7 +448,7 @@ matrix:
             - clang-4.0
             - clang++-4.0
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
@@ -467,7 +467,7 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - cmake3
+            - cmake
             - libmpich-dev
             - mpich
       env:
