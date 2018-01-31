@@ -99,21 +99,15 @@ endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
 
 add_subdirectory(pybind11)
 
+unset(PYBIND11_PYTHON_VERSION)
 if(NOT PYBIND11_PYTHON_VERSION)
-    execute_process(COMMAND ${PYTHON_EXECUTABLE} --version
+    execute_process(COMMAND ${PYTHON_EXECUTABLE}
+        -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
         OUTPUT_VARIABLE PYTHON_VERSION
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    string(REGEX REPLACE "[ A-Za-z]" "" PYTHON_VERSION "${PYTHON_VERSION}")
-    if(GOOD_CMAKE)
-        string(REGEX REPLACE "\\.([0-9]+)$" "" PYTHON_VERSION "${PYTHON_VERSION}")
-    else(GOOD_CMAKE)
-        string(REPLACE "." ";" _PYVER_LIST "${PYTHON_VERSION}")
-        list(GET _PYVER_LIST 0 _PYVER_MAJOR)
-        list(GET _PYVER_LIST 1 _PYVER_MINOR)
-        set(PYTHON_VERSION "${_PYVER_MAJOR}.${_PYVER_MINOR}")
-    endif(GOOD_CMAKE)
+    message(STATUS "Python version: ${PYTHON_VERSION}")
     set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}"
         CACHE STRING "Python version" FORCE)
-    add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
 endif(NOT PYBIND11_PYTHON_VERSION)
 
+add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
