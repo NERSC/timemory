@@ -1,6 +1,14 @@
 TiMemory
 ========
 
+Release: TiMemory 1.1.7
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Author: Jonathan R. Madsen
+- Date:   Wed Jan 31 14:28:19 2018 -0800
+
+    - I/O fix for RSS to report negative values (i.e. deallocation)
+
 Release: TiMemory 1.1.5
 ~~~~~~~~~~~~~~~~~~~~~~~
 

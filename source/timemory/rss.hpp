@@ -315,10 +315,8 @@ namespace rss
             std::stringstream ss;
             ss.precision(1);
             int _w = 5;
-            double _curr = (m.m_curr_rss < 0) ? 0.0 : m.m_curr_rss;
-            double _peak = (m.m_peak_rss < 0) ? 0.0 : m.m_peak_rss;
-            _curr /= units::megabyte;
-            _peak /= units::megabyte;
+            double _curr = m.m_curr_rss / units::megabyte;
+            double _peak = m.m_peak_rss / units::megabyte;
 
             ss << std::fixed;
             ss << "rss curr|peak = "
