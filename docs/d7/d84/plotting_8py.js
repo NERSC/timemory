@@ -10,7 +10,6 @@ var plotting_8py =
     [ "plot_timing", "d7/d84/plotting_8py.html#a3a5d3c755f4d218e9b788678c4029233", null ],
     [ "read", "d7/d84/plotting_8py.html#a58ccce119e4f92c137773ac24ef88cd4", null ],
     [ "_data", "d7/d84/plotting_8py.html#a6730c79111fbb5472720daec4a6a5a3b", null ],
-    [ "_matplotlib_backend", "d7/d84/plotting_8py.html#ad28f16fef3fbfe0649e583308b67eee2", null ],
     [ "action", "d7/d84/plotting_8py.html#a7d3b8b2ce431528faf9f9be2c59c1fd6", null ],
     [ "args", "d7/d84/plotting_8py.html#ac800f1778184f8280e72a0e24c928709", null ],
     [ "concurrency", "d7/d84/plotting_8py.html#ac3a666dcf309f23f95b93b865a7597a0", null ],

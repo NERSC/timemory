@@ -16,7 +16,7 @@ Dependancies
    -  macOS (tested on 10.13 - High Sierra)
    -  Windows (tested on Windows 10 x64 with MSVC 14+)
 
--  CMake (version >= 3.1.3)
+-  CMake (version >= 2.8.12)
 
    -  The default behavior when installing from PyPi (i.e.
       ``pip install timemory``) is to use the system CMake installation

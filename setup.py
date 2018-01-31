@@ -26,6 +26,7 @@ class CMakeExtension(Extension):
 class CMakeBuild(build_ext, Command):
 
     cmake_version = '2.7.12'
+    cmake_min_version = '2.8.12'
     build_type = 'Release'
     use_mpi = 'ON'
     timemory_exceptions = 'OFF'
@@ -36,6 +37,19 @@ class CMakeBuild(build_ext, Command):
     cmake_prefix_path = ''
     cmake_include_path = ''
     cmake_library_path = ''
+
+    def cmake_version_error(self):
+        """
+        Raise exception about CMake
+        """
+        ma = 'Error finding/putting cmake in path. Either no CMake found or no cmake module.'
+        mb = 'This error can commonly be resolved with "{}"'.format("pip install -U pip cmake")
+        mc = 'CMake version found: {}'.format(CMakeBuild.cmake_version)
+        md = "CMake must be installed to build the following extensions: " + \
+        ", ".join(e.name for e in self.extensions)
+        mt = '\n\n\t{}\n\t{}\n\t{}\n\t{}\n\n'.format(ma, mb, mc, md)
+        raise RuntimeError(mt)
+
 
     def init_cmake(self):
         """
@@ -58,20 +72,17 @@ class CMakeBuild(build_ext, Command):
 
                 CMakeBuild.cmake_version = cmake.sys.version.split(' ')[0]
             except:
-                print ('Error putting cmake in path')
-                raise RuntimeError(
-                    "CMake must be installed to build the following extensions: " +
-                        ", ".join(e.name for e in self.extensions))
-
+                self.cmake_version_error()
 
     # run
     def run(self):
         self.init_cmake()
 
-        if CMakeBuild.cmake_version < '3.1.3':
-            raise RuntimeError("CMake >= 3.1.3 is required")
-
         print ('Using CMake version {}...'.format(CMakeBuild.cmake_version))
+
+        if CMakeBuild.cmake_version < CMakeBuild.cmake_min_version:
+            raise RuntimeError("CMake >= {} is required. Found CMake version {}".format(
+                               CMakeBuild.cmake_min_version, CMakeBuild.cmake_version))
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -206,6 +217,7 @@ class CatchTestCommand(TestCommand):
 
             except:
                 print ('Error putting cmake in path')
+                print ('This error can commonly be resolved with "{}"'.format("pip install -U pip cmake"))
                 raise RuntimeError(
                     "CMake must be installed to test the following extensions: " +
                         ", ".join(e.name for e in self.extensions))

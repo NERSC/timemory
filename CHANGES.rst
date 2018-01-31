@@ -1,6 +1,14 @@
 TiMemory
 ========
 
+Release: TiMemory 1.1.5
+~~~~~~~~~~~~~~~~~~~~~~~
+
+- Author: Jonathan R. Madsen
+- Date:   Mon Jan 29 18:46:09 2018 -0800
+
+    - Backported CMake to support older version of CMake (previous min: 3.1.3, new min: 2.8.12)
+  
 Release: TiMemory 1.1.3
 ~~~~~~~~~~~~~~~~~~~~~~~
 

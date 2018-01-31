@@ -21,7 +21,6 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
 
 # add cereal
 add_subdirectory(cereal)
-list(APPEND EXTERNAL_LIBRARIES cereal)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"

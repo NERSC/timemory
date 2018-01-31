@@ -256,7 +256,8 @@ foreach(LANG C CXX)
         SET_COMPILER_VAR(       INTEL               ON)
         SET_COMPILER_VAR(       INTEL_ICPC          ON)
 
-    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Clang")
+    elseif(CMAKE_${LANG}_COMPILER_ID MATCHES "Clang" OR
+            CMAKE_${LANG}_COMPILER_ID MATCHES "AppleClang")
 
         # Clang/LLVM compiler
         SET_COMPILER_VAR(       CLANG               ON)
@@ -302,9 +303,7 @@ foreach(LANG C CXX)
 
     # set other to no
     foreach(TYPE GNU INTEL INTEL_ICC INTEL_ICPC CLANG PGI XLC HP_ACC MIPS MSVC)
-        if(${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
-            continue()
-        else()
+        if(NOT ${CMAKE_${LANG}_COMPILER_IS_${TYPE}})
             SET_COMPILER_VAR(${TYPE} OFF)
         endif()
     endforeach()

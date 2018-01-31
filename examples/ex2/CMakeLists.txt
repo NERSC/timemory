@@ -1,4 +1,15 @@
-cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
+
+if(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE OFF)
+else(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE ON)
+endif(CMAKE_VERSION VERSION_LESS 3.1.3)
+
+if(GOOD_CMAKE)
+    cmake_policy(SET CMP0048 NEW)
+endif(GOOD_CMAKE)
+cmake_policy(SET CMP0042 NEW)
 
 #----------------------------------------------------------------------------
 project(TiMemory-Example2-MPI)

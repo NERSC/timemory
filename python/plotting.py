@@ -39,17 +39,6 @@ import collections
 import numpy as np
 import os
 
-try:
-    import tornado
-    import matplotlib
-    import matplotlib.pyplot as plt
-except:
-    _matplotlib_backend = 'agg'
-    import matplotlib
-    matplotlib.use(_matplotlib_backend)
-    import matplotlib.pyplot as plt
-
-
 timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
 memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
     'self_current_rss')
@@ -60,7 +49,6 @@ min_time = 0.005
 min_memory = 1
 img_dpi = 75
 img_size = {'w': 1200, 'h': 800}
-
 
 #==============================================================================#
 def make_output_directory(directory):
@@ -200,6 +188,16 @@ def read(json_obj):
 #==============================================================================#
 def plot_timing(_plot_data, disp=False, output_dir="."):
 
+    try:
+        import tornado
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except:
+        _matplotlib_backend = 'agg'
+        import matplotlib
+        matplotlib.use(_matplotlib_backend)
+        import matplotlib.pyplot as plt
+
     filename = _plot_data.filename
     title = _plot_data.get_title()
     timing_data_dict = _plot_data.timemory_functions
@@ -285,6 +283,16 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
 
 #==============================================================================#
 def plot_memory(_plot_data, disp=False, output_dir="."):
+
+    try:
+        import tornado
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except:
+        _matplotlib_backend = 'agg'
+        import matplotlib
+        matplotlib.use(_matplotlib_backend)
+        import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -394,8 +402,6 @@ def plot(data = [], files = [], display=False, output_dir='.'):
             _data.filename = filename
             _data.title = filename
             data.append(_data)
-
-    #print ('Length of data: {}...'.format(len(data)))
 
     for _data in data:
         try:
