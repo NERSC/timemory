@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.1.7</span>
+   &#160;<span id="projectnumber">1.1.8</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -124,11 +124,21 @@ Namespaces</h2></td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="define-members"></a>
 Macros</h2></td></tr>
+<tr class="memitem:ad9ac3d6162a4c18e51a0852093eab9bd"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#ad9ac3d6162a4c18e51a0852093eab9bd">STRINGIZE</a>(X)&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#af927b2ad883da01e218912611a38376e">STRINGIZE2</a>(X)</td></tr>
+<tr class="separator:ad9ac3d6162a4c18e51a0852093eab9bd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:af927b2ad883da01e218912611a38376e"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#af927b2ad883da01e218912611a38376e">STRINGIZE2</a>(X)&#160;&#160;&#160;#X</td></tr>
+<tr class="separator:af927b2ad883da01e218912611a38376e"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:aa627383e16ea66813a5245995ee6671f"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a>&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#ad9ac3d6162a4c18e51a0852093eab9bd">STRINGIZE</a>(__LINE__)</td></tr>
+<tr class="separator:aa627383e16ea66813a5245995ee6671f"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a11ae3bcd187cb4431427bf4af46f14af"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#a11ae3bcd187cb4431427bf4af46f14af">AUTO_TIMER_NAME_COMBINE</a>(X,  Y)&#160;&#160;&#160;X##Y</td></tr>
 <tr class="separator:a11ae3bcd187cb4431427bf4af46f14af"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:acac7c0387110c1c2cc15171a030b9877"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(Y)&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#a11ae3bcd187cb4431427bf4af46f14af">AUTO_TIMER_NAME_COMBINE</a>(macro_auto_timer, Y)</td></tr>
 <tr class="separator:acac7c0387110c1c2cc15171a030b9877"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a41455eb59dfd7a1395fb464cfa6f75d9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(str)&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#aefee237cddda46d831639f9b5359d309">auto_timer_t</a> <a class="el" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + std::string(str), __LINE__)</td></tr>
+<tr class="memitem:ac08058b08efd91db9b8e414d83782020"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a>(A,  B)</td></tr>
+<tr class="separator:ac08058b08efd91db9b8e414d83782020"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a050238c7eb3c1481b0c108ef9eb357db"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#a050238c7eb3c1481b0c108ef9eb357db">TIMEMORY_AUTO_TIMER_BASIC</a>(str)</td></tr>
+<tr class="separator:a050238c7eb3c1481b0c108ef9eb357db"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a41455eb59dfd7a1395fb464cfa6f75d9"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(str)</td></tr>
 <tr class="separator:a41455eb59dfd7a1395fb464cfa6f75d9"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="typedef-members"></a>
@@ -192,6 +202,84 @@ Typedefs</h2></td></tr>
 
 </div>
 </div>
+<a id="ac08058b08efd91db9b8e414d83782020"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac08058b08efd91db9b8e414d83782020">&#9670;&nbsp;</a></span>AUTO_TIMER_STR</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define AUTO_TIMER_STR</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">A, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">B&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line">std::string(<span class="stringliteral">&quot;@&#39;&quot;</span>) + \</div><div class="line">    std::string( A ).substr(std::string( A ).find_last_of(<span class="stringliteral">&quot;/&quot;</span>)+1) + std::string(<span class="stringliteral">&quot;&#39;:&quot;</span>) + B</div></div><!-- fragment -->
+</div>
+</div>
+<a id="aa627383e16ea66813a5245995ee6671f"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#aa627383e16ea66813a5245995ee6671f">&#9670;&nbsp;</a></span>LINE_STRING</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define LINE_STRING&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#ad9ac3d6162a4c18e51a0852093eab9bd">STRINGIZE</a>(__LINE__)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="ad9ac3d6162a4c18e51a0852093eab9bd"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad9ac3d6162a4c18e51a0852093eab9bd">&#9670;&nbsp;</a></span>STRINGIZE</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define STRINGIZE</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">X</td><td>)</td>
+          <td>&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#af927b2ad883da01e218912611a38376e">STRINGIZE2</a>(X)</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="af927b2ad883da01e218912611a38376e"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#af927b2ad883da01e218912611a38376e">&#9670;&nbsp;</a></span>STRINGIZE2</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define STRINGIZE2</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">X</td><td>)</td>
+          <td>&#160;&#160;&#160;#X</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="a41455eb59dfd7a1395fb464cfa6f75d9"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a41455eb59dfd7a1395fb464cfa6f75d9">&#9670;&nbsp;</a></span>TIMEMORY_AUTO_TIMER</h2>
 
@@ -203,11 +291,35 @@ Typedefs</h2></td></tr>
           <td>(</td>
           <td class="paramtype">&#160;</td>
           <td class="paramname">str</td><td>)</td>
-          <td>&#160;&#160;&#160;<a class="el" href="../../d8/d07/auto__timer_8hpp.html#aefee237cddda46d831639f9b5359d309">auto_timer_t</a> <a class="el" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + std::string(str), __LINE__)</td>
+          <td></td>
         </tr>
       </table>
 </div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str) + <a class="code" href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a>(__FILE__, <a class="code" href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a> ), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:86</div></div>
+<div class="ttc" id="auto__timer_8hpp_html_aa627383e16ea66813a5245995ee6671f"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a></div><div class="ttdeci">#define LINE_STRING</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:82</div></div>
+<div class="ttc" id="auto__timer_8hpp_html_ac08058b08efd91db9b8e414d83782020"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a></div><div class="ttdeci">#define AUTO_TIMER_STR(A, B)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:89</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1auto__timer_html"><div class="ttname"><a href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">NAME_TIM::auto_timer</a></div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:44</div></div>
+</div><!-- fragment -->
+</div>
+</div>
+<a id="a050238c7eb3c1481b0c108ef9eb357db"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a050238c7eb3c1481b0c108ef9eb357db">&#9670;&nbsp;</a></span>TIMEMORY_AUTO_TIMER_BASIC</h2>
 
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">#define TIMEMORY_AUTO_TIMER_BASIC</td>
+          <td>(</td>
+          <td class="paramtype">&#160;</td>
+          <td class="paramname">str</td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:86</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1auto__timer_html"><div class="ttname"><a href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">NAME_TIM::auto_timer</a></div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:44</div></div>
+</div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Typedef Documentation</h2>
@@ -231,7 +343,7 @@ Typedefs</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_4fd02b5fd43288e8282468be733f8250.html">timemory</a></li><li class="navelem"><a class="el" href="../../d8/d07/auto__timer_8hpp.html">auto_timer.hpp</a></li>
-    <li class="footer">Generated on Wed Jan 31 2018 14:25:02 for TiMemory by
+    <li class="footer">Generated on Tue Feb 6 2018 08:02:28 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

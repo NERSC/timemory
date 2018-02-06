@@ -1,6 +1,5 @@
 var searchData=
 [
-  ['n',['n',['../db/d13/classsimple__test_1_1_fibonacci.html#a103c08d726dfe782008901e30d90ca2d',1,'simple_test::Fibonacci']]],
-  ['nargs',['nargs',['../d5/d81/namespaceplotting.html#a7c1befb11b17aed211c47c7548ab1083',1,'plotting']]],
-  ['noquotes',['noquotes',['../d3/dd9/namespacenested__test.html#a4ef6945f161946a1834165d3be298f99',1,'nested_test']]]
+  ['n',['n',['../da/d81/classtests_1_1simple__test_1_1_fibonacci.html#aa91cd6ed25ddde0c5ec1ad5921ef92d6',1,'tests::simple_test::Fibonacci']]],
+  ['nargs',['nargs',['../df/d23/namespaceplotting_1_1plotting.html#acf0591cc863f07225eac52f7c31404fd',1,'plotting::plotting']]]
 ];

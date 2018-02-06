@@ -1,6 +1,30 @@
 TiMemory
 ========
 
+Release: TiMemory 1.1.8
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Tue Feb 6 05:12:56 2018 -0800
+
+    - Large restructuring to fix submodule nesting issue
+      
+        - Python > 3.1 now allows: "from timemory.util import rss_usage"  
+        - requires importlib.util
+        - not available in older versions
+          
+    - Better C++ auto_timer tagging and second option
+      
+         - TIMEMORY_AUTO_TIMER (func@'file':line)
+         - TIMEMORY_AUTO_TIMER_SIMPLE (func)
+         - TIMEMORY_AUTO_TIMER_SIMPLE was the old TIMEMORY_AUTO_TIMER
+           
+    - Squashed bugs + I/O and test improvements
+    - Excluded non-displayed timers (i.e. falling below minimum) from setting the output width
+    - Improved MPI detection          
+    - Included tests in installation --> timemory.tests.run(pattern="")
+    - timemory.plotting routines have improved handling of bar graphs to help eliminate hidden graphs in the overlay
+
 Release: TiMemory 1.1.7
 ~~~~~~~~~~~~~~~~~~~~~~~
 

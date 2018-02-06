@@ -6,7 +6,7 @@ var searchData=
   ['base_5fclock_5fdata',['base_clock_data',['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html',1,'NAME_TIM::base_clock_data&lt; _Prec &gt;'],['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html#ab766b195507794decc11517d08faf99c',1,'NAME_TIM::base_clock_data::base_clock_data(int _val=0)'],['../d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html#a7bdaa9af114d98ae0005cb65fb20c8f9',1,'NAME_TIM::base_clock_data::base_clock_data(const rep &amp;_data)']]],
   ['base_5fclock_5fdata_5ft',['base_clock_data_t',['../d5/d40/namespaceinternal.html#a5dcc42f59df294951f3a6572a7e143ea',1,'internal']]],
   ['base_5fclock_5ft',['base_clock_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#ade6dbbe8104cc545906b41a5c4e06181',1,'NAME_TIM::internal::base_timer::base_clock_t()'],['../d5/d40/namespaceinternal.html#a39859606cd952247afe1fc52afbd260e',1,'internal::base_clock_t()']]],
-  ['base_5fdecorator',['base_decorator',['../dc/d4e/classutil_1_1base__decorator.html',1,'util']]],
+  ['base_5fdecorator',['base_decorator',['../db/df0/classutil_1_1util_1_1base__decorator.html',1,'util::util']]],
   ['base_5fduration_5ft',['base_duration_t',['../d5/d40/namespaceinternal.html#a2b2ed64cb219d9882959f2058112b46f',1,'internal']]],
   ['base_5fratio_5ft',['base_ratio_t',['../d5/d40/namespaceinternal.html#aa9c3c43fa5be3ac6314c7bb9364ad053',1,'internal']]],
   ['base_5frss_5fusage',['base_rss_usage',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html',1,'NAME_TIM::internal']]],
@@ -21,6 +21,6 @@ var searchData=
   ['base_5ftype',['base_type',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a3be4247e8cac6f68a22e2d5768628cbe',1,'NAME_TIM::timer::base_type()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a4e1148cd4bc5c0e07890b040d0f5e319',1,'NAME_TIM::timer_tuple::base_type()']]],
   ['begin',['begin',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a4847a60bdee33dc9da64bd085e2fd8cc',1,'NAME_TIM::timer::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a85ff5964791bd1a1313225cf45fc1682',1,'NAME_TIM::timing_manager::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad8a0af1af26e43789136e4899c05ed0a',1,'NAME_TIM::timing_manager::begin() const']]],
   ['bi',['Bi',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a33ba7de65c4031e9717e1b0ef4391e48',1,'NAME_TIM::rss::units']]],
-  ['bind_5ffinalizer',['bind_finalizer',['../db/db6/classarray__test_1_1auto__disk__array__weakref.html#a07219efbc74d9bd5b9fe9280207ca704',1,'array_test::auto_disk_array_weakref']]],
+  ['bind_5ffinalizer',['bind_finalizer',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a7a9ddcd85f294b0cf5f6d462ebd4a260',1,'tests::array_test::auto_array_weakref']]],
   ['byte',['byte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a42ab8ed0bd794ee8835dc79fc82d5c2a',1,'NAME_TIM::rss::units']]]
 ];

@@ -1,8 +1,7 @@
 var files =
 [
     [ "examples", "dir_d28a4824dc47e487b107a5db32ef43c4.html", "dir_d28a4824dc47e487b107a5db32ef43c4" ],
-    [ "python", "dir_7837fde3ab9c1fb2fc5be7b717af8d79.html", "dir_7837fde3ab9c1fb2fc5be7b717af8d79" ],
-    [ "tests", "dir_59425e443f801f1f2fd8bbe4959a3ccf.html", "dir_59425e443f801f1f2fd8bbe4959a3ccf" ],
+    [ "timemory", "dir_77dea9b94a8703d6f1811660a895abdd.html", "dir_77dea9b94a8703d6f1811660a895abdd" ],
     [ "timemory", "dir_4fd02b5fd43288e8282468be733f8250.html", "dir_4fd02b5fd43288e8282468be733f8250" ],
     [ "auto_timer.cpp", "d2/d80/auto__timer_8cpp.html", null ],
     [ "base_clock.cpp", "d5/db8/base__clock_8cpp.html", null ],

@@ -4,8 +4,48 @@ TiMemory
 C++ and Python Timing + Memory Utilities including auto-timers and
 temporary memory calculation
 
-`Source code documentation for
+`TiMemory on GitHub <https://github.com/jrmadsen/TiMemory>`__
+
+`Doxygen source code documentation for
 TiMemory <https://jrmadsen.github.io/TiMemory>`__
+
+Introduction
+~~~~~~~~~~~~
+
+TiMemory is a very lightweight timing and memory utility. Its design is
+aimed at routine timing and memory analysis that can be standard part of
+the source code. It is not intended to replace profiling tools such as
+Intel's VTune, GProf, etc. -- instead, this package helps sift through
+profiling results. For example, the overhead of VTune will occasionally
+misrepresent (or not be clear about) the performance impact of a
+particular function. In the past, I have been misled by VTune into
+optimizing an extremely inefficient function that had a high-compute
+density but overall, accounted for < 1 % of runtime.
+
+In general, the only noticable performance hits I have seen from using
+TiMemory have been in very short functions (< 1 second) that are called
+within a loop tens of thousands of times.
+
+TiMemory is summarized by the following:
+
+::
+
+  - MPI support (if compiled with MPI)
+  - thread-safe
+  - can be used in pure C++
+  - can be used in pure Python
+  - can be used in hybrid Python + C++ codes simulatenously
+  - aside from MPI (which is optional), it has no compiled dependancies other than the header only libraries [Cereal](https://github.com/USCiLab/cereal) and [PyBind11](https://github.com/pybind/pybind11)
+
+    - these libraries are included in the TiMemory source code as Git submodules and CMake will call `git submodule update --init --recursive` if the submodules have not been checked out
+
+  - memory reports permit determination of temporary memory usage until the "high-water mark" of memory allocation is reached
+  - timing reports record three timers (wall, user, and system)
+
+    - from these, CPU utilization and thread-specific overhead can be determined
+
+  - reports produce a call tree -- i.e. TiMemory distiguished between same timers accessed through different pathways, provided the calling function(s) is also using an auto-timer
+  - the Python interface can be downloaded via PyPi (e.g. `pip install timemory`)
 
 Dependancies
 ~~~~~~~~~~~~
@@ -55,20 +95,49 @@ Dependancies
    -  version >= 2.6
    -  packages
 
-      -  argparse
       -  numpy
       -  matplotlib
-      -  unittest
 
 Python setup.py installation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ::
 
-  # with MPI
-  python setup.py build install
-  # without MPI
-  python setup.py config --disable-mpi build install
+  # standard
+  python setup.py build install [test]
+  # with pip
+  pip install .
+
+-  ``setup.cfg`` can be edited for build\_type, use\_mpi, mpicc, mpicxx,
+   etc.
+-  Build defaults:
+
+   -  build\_type == Release
+   -  use\_mpi = ON (build does not fail if not found)
+   -  timemory\_exceptions == OFF
+   -  build\_examples = OFF
+   -  cxx\_standard == 11
+   -  mpicc == ""
+   -  mpicxx == ""
+   -  cmake\_prefix\_path = ""
+   -  cmake\_library\_path = ""
+   -  cmake\_include\_path = ""
+
+Python Testing/Validation
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  Once timemory is installed, a set of unit-tests can be run via:
+
+::
+
+  # the run() function can take a regex string for running specific test names
+  $ python -c "import timemory ; timemory.tests.run()"
+
+General Testing/Validation
+~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If TiMemory is build from source, a set of C++ and Python tests are
+provided for CTest
 
 Basic Python usage
 ~~~~~~~~~~~~~~~~~~
@@ -265,8 +334,30 @@ There are essentially two components of the output:
    -  where "nback" is a parameter specifying how far back in the call
       tree
 
-Example
-~~~~~~~
+TiMemory Plot Sample Output (from JSON serialization of TiMemory data)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+As an added feature for software testing suites such as CTest/CDash,
+TiMemory can be used for reporting regular timing and memory plots by
+simply using the plotting submodule and outputting the following to my
+CTest log:
+
+::
+
+  <DartMeasurementFile name="out_tiny_ground_simple/timing_report_main_0_timing.png"
+  type="image/png">/global/cscratch1/sd/jrmadsen/software/toast-worker/build-toast/edison-intel-mkl/release/cdash/Nightly/build-toast/examples/out_tiny_ground_simple/timing_report_main_0_timing.png</DartMeasurementFile>
+
+This ``<DartMeasurementFile>`` tag is recognized by CTest in the output
+and the following plots get uploaded to dashboard
+
+.. figure:: /images/timing.png
+   :alt: 
+
+.. figure:: /images/memory.png
+   :alt: 
+
+Timemory ASCII Sample Output
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 For the interpretation of text output, here is an example and the
 explanation of it’s structure
@@ -661,4 +752,109 @@ here is general guide:
           print ("Error! Unable to plot 'output.json'")
 
       print ('')
+
+TiMemory with CTest/CDash
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+-  I use a script to echo the ``<DartMeasurementFile>`` tags, which get
+   loaded automatically by CDash.
+
+**generate\_plots.sh**:
+
+::
+
+  #!/bin/bash
+
+  set -o errexit
+
+  # if no realpath command, then add function
+  if ! eval command -v realpath &> /dev/null ; then
+      realpath()
+      {
+          [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+      }
+  fi
+
+  # if the glob is unsuccessful, don't pass ${outdir}/timing_report*.out
+  shopt -s nullglob
+  for j in $@
+  do
+      outdir=$(realpath ${j})
+
+      for i in ${outdir}/timing_report*.json
+      do
+          ${PWD}/timing_plot.py -f ${i}
+      done
+
+      for i in ${outdir}/timing_report*.png
+      do
+          # show in log
+          fname="$(basename $(dirname ${i}))/$(basename ${i})"
+          cat << EOF
+  <DartMeasurementFile name="${fname}"
+  type="image/png">${i}</DartMeasurementFile>
+  EOF
+      done
+  done
+
+-  I use another script to generate a ``CTestNotes.cmake`` file listing
+   the TiMemory text output files. CTest reads this file and includes
+   the text reports as a build note file that also gets loaded to the
+   dashboard
+
+**generate\_notes.sh**:
+
+::
+
+  #!/bin/bash
+
+  set -o errexit
+
+  # if no realpath command, then add function
+  if ! eval command -v realpath &> /dev/null ; then
+      realpath()
+      {
+          [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
+      }
+  fi
+
+  # if the glob is unsuccessful, don't pass ${outdir}/timing_report*.out
+  shopt -s nullglob
+  for j in $@
+  do
+      outdir=$(realpath ${j})
+      FILE="${outdir}/CTestNotes.cmake"
+
+      echo "Creating CTest notes file: \"${FILE}\"..."
+      cat > ${FILE} << EOF
+
+  IF(NOT DEFINED CTEST_NOTES_FILES)
+      SET(CTEST_NOTES_FILES )
+  ENDIF(NOT DEFINED CTEST_NOTES_FILES)
+
+  EOF
+
+      for i in ${outdir}/timing_report*.out
+      do
+          cat >> ${FILE} << EOF
+  LIST(APPEND CTEST_NOTES_FILES "${i}")
+  EOF
+      done
+      # remove duplicates
+      cat >> ${FILE} << EOF
+
+  IF(NOT "\${CTEST_NOTES_FILES}" STREQUAL "")
+      LIST(REMOVE_DUPLICATES CTEST_NOTES_FILES)
+  ENDIF(NOT "\${CTEST_NOTES_FILES}" STREQUAL "")
+
+  EOF
+
+  done
+
+  set +o errexit
+  set +v
+
+  PLOTS_SCRIPT=$(dirname ${BASH_SOURCE[0]})/generate_plots.sh
+  if [ -x "${PLOTS_SCRIPT}" ]; then
+      eval ${PLOTS_SCRIPT} $@
 

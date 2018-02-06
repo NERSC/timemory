@@ -31,9 +31,9 @@
 ## The output of this timing module will be very long. This output demonstrates
 ## the ability to distiguish the call tree history of the auto-timers from
 ## a recursive function called in many different contexts but the context
-## matching func_1 called from a loop (the output will have lap == 2):
+## matching nested_func_1 called from a loop (the output will have lap == 2):
 ## > [pyc] |_main@'nested.py':86                 :  2.227 wall,  2.100 user +  0.100 system =  2.200 CPU [sec] ( 98.8%) : RSS {tot,self}_{curr,peak} : (121.9|121.9) | ( 69.9| 69.9) [MB]
-## > [pyc]   |_func_1@'nested.py':65             :  0.659 wall,  0.600 user +  0.040 system =  0.640 CPU [sec] ( 97.1%) : RSS {tot,self}_{curr,peak} : (115.4|115.4) | ( 63.4| 63.4) [MB] (total # of laps: 2)
+## > [pyc]   |_nested_func_1@'nested.py':65             :  0.659 wall,  0.600 user +  0.040 system =  0.640 CPU [sec] ( 97.1%) : RSS {tot,self}_{curr,peak} : (115.4|115.4) | ( 63.4| 63.4) [MB] (total # of laps: 2)
 ## > [pyc]     |_fibonacci@(15)@'nested.py':46   :  0.595 wall,  0.580 user +  0.020 system =  0.600 CPU [sec] (100.8%) : RSS {tot,self}_{curr,peak} : (115.4|115.4) | (  0.9|  0.9) [MB] (total # of laps: 2)
 ##
 
@@ -43,8 +43,10 @@ import time
 import argparse
 import numpy as np
 import traceback
+import time
+import gc
 
-import timemory as tim
+import timemory
 from timemory import options
 from timemory import signals
 from timemory import options
@@ -54,8 +56,8 @@ from timemory import plotting
 #------------------------------------------------------------------------------#
 # create an exit action function
 def exit_action(errcode):
-    tman = tim.timing_manager()
-    tim.report(no_min=True)
+    tman = timemory.timing_manager()
+    timemory.report(no_min=True)
     fname = 'nested_test_err_{}.out'.format(errcode)
     f = open(fname, 'w')
     f.write('{}\n'.format(tman))
@@ -64,7 +66,7 @@ def exit_action(errcode):
 
 #------------------------------------------------------------------------------#
 # set the exit action function
-tim.set_exit_action(exit_action)
+timemory.set_exit_action(exit_action)
 
 
 #------------------------------------------------------------------------------#
@@ -73,50 +75,73 @@ tim.set_exit_action(exit_action)
 def fibonacci(n):
     if n < 2:
         return n 
-    autotimer = tim.auto_timer('({})'.format(n), added_args=True)
+    autotimer = None
+    if n > 3:
+        autotimer = timemory.auto_timer('({})'.format(n), added_args=True)
     return fibonacci(n-1) + fibonacci(n-2)
 
 
 #------------------------------------------------------------------------------#
-@tim.util.auto_timer(add_args=True)
-def func_1(n):
+@timemory.util.auto_timer(add_args=True)
+def nested_func_1(n):
+    """
+    Call fibonacci
+    """
+    fibonacci(n)
+    gc.collect()
+
+
+#------------------------------------------------------------------------------#
+@timemory.util.auto_timer(add_args=True)
+def nested_func_2(n):
+    """
+    Idle CPU time + calling nested_func_1
+    """
+    time.sleep(2)
+    nested_func_1(n)
     fibonacci(n)
 
 
 #------------------------------------------------------------------------------#
-@tim.util.auto_timer(add_args=True)
-def func_2(n):
-    func_1(n)
-    fibonacci(n)
+@timemory.util.auto_timer(add_args=True)
+def nested_func_3(n):
+    """
+    Array generation + calling nested_func_{1,2}
+    """
+    arr = []
+    for i in range(0, 500*500):
+        arr.append(float(i))
+    nested_func_1(n)
+    nested_func_2(n)
+    del arr
 
 
 #------------------------------------------------------------------------------#
-@tim.util.auto_timer(add_args=True)
-def func_3(n):
-    func_1(n)
-    func_2(n)
-
-
-#------------------------------------------------------------------------------#
-@tim.util.auto_timer("'AUTO_TIMER_DECORATOR_KEY_TEST':{}".format(tim.LINE()))
+@timemory.util.auto_timer("'AUTO_TIMER_FOR_NESTED_TEST':{}".format(timemory.LINE()))
 def main(nfib):
+    """
+    Main function calling fibonacci from different trees
+    """
     for i in range(2):
-        func_1(nfib)
-    func_2(nfib)
-    func_3(nfib)
+        nested_func_1(nfib)
+
+    nested_func_2(nfib)
+
+    for i in range(2):
+        nested_func_3(nfib)
 
 
 #------------------------------------------------------------------------------#
 def run_test():
 
-    tim.enable_signal_detection([signals.sys_signal.Hangup,
+    timemory.enable_signal_detection([signals.sys_signal.Hangup,
                                  signals.sys_signal.Interrupt,
                                  signals.sys_signal.FPE,
                                  signals.sys_signal.Abort ])
 
     array_size = 8000000
 
-    t = tim.timer("Total time")
+    t = timemory.timer("Total time")
     t.start()
     print ('')
 
@@ -134,19 +159,19 @@ def run_test():
     options.set_report("nested_report.out")
     options.set_serial("nested_report.json")
 
-    rss = tim.rss_usage()
+    rss = timemory.rss_usage()
     rss.record()
 
     try:
         main(args.nfib)
-        print ('Timing manager size: {}'.format(tim.size()))
-        tman = tim.timing_manager()
+        print ('Timing manager size: {}'.format(timemory.size()))
+        tman = timemory.timing_manager()
         tman -= rss
         tman.report()
         _jsonf = os.path.join(options.output_dir, 'nested_output.json')
         tman.serialize(_jsonf)
-        _data = tim.plotting.read(tman.json())
-        _data.title = tim.FILE(noquotes=True)
+        _data = timemory.plotting.read(tman.json())
+        _data.title = timemory.FILE(noquotes=True)
         _data.filename = options.serial_fname
         plotting.plot(data = [_data], files = [_jsonf], output_dir=options.output_dir)
     except Exception as e:
@@ -158,9 +183,9 @@ def run_test():
     print("RSS usage at initialization: {}".format(rss))
     t -= rss
     t.report()
-    print("RSS usage at finalization: {}\n".format(tim.rss_usage(record=True)))
+    print("RSS usage at finalization: {}\n".format(timemory.rss_usage(record=True)))
 
-    tim.disable_signal_detection()
+    timemory.disable_signal_detection()
 
 
 # ---------------------------------------------------------------------------- #

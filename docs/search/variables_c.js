@@ -35,10 +35,10 @@ var searchData=
   ['m_5ftimer_5fmap',['m_timer_map',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af8fb49a7e32904199a806030b85c1cd7',1,'NAME_TIM::timing_manager']]],
   ['m_5fuse_5fstatic_5fwidth',['m_use_static_width',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a8cb406f145cbb1b0206ba0f6c97231c4',1,'NAME_TIM::timer']]],
   ['megabyte',['megabyte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a851b8249bcf55849c737bbd847560dc4',1,'NAME_TIM::rss::units']]],
-  ['memory',['memory',['../da/dcb/classplotting_1_1timemory__function.html#abde7a131c7ee67366e63af56571e9a95',1,'plotting::timemory_function']]],
-  ['memory_5ftypes',['memory_types',['../d5/d81/namespaceplotting.html#adb99f27a3b0f77fca4a94ecbc860bd55',1,'plotting']]],
+  ['memory',['memory',['../d0/d20/classplotting_1_1plotting_1_1timemory__function.html#a638094fdf80fc24b83d77e4a87bd2b05',1,'plotting::plotting::timemory_function']]],
+  ['memory_5ftypes',['memory_types',['../df/d23/namespaceplotting_1_1plotting.html#a178ddc4ad47dc8da9d91f945c33d783e',1,'plotting::plotting']]],
   ['mib',['MiB',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#aa0ba6f8cbec361f821ced2f0f8b83275',1,'NAME_TIM::rss::units']]],
-  ['min_5fmemory',['min_memory',['../d5/d81/namespaceplotting.html#a7bce9955e3bd56cb5554cb7c0b139a64',1,'plotting']]],
-  ['min_5ftime',['min_time',['../d5/d81/namespaceplotting.html#a487aefb86c4df96ef9ef3cdbce15518d',1,'plotting']]],
-  ['mpi_5fsize',['mpi_size',['../d5/d62/classplotting_1_1plot__data.html#af0ebea8229528568c40e726b1b3ab452',1,'plotting.plot_data.mpi_size()'],['../d5/d81/namespaceplotting.html#a1b8c7aa83ba02951ee9e0ec4f4f7dd40',1,'plotting.mpi_size()']]]
+  ['min_5fmemory',['min_memory',['../df/d23/namespaceplotting_1_1plotting.html#a94a316daffd65cd8ff346821c3e6371c',1,'plotting::plotting']]],
+  ['min_5ftime',['min_time',['../df/d23/namespaceplotting_1_1plotting.html#a809e013d71c47ba712e7dc6d5581ed37',1,'plotting::plotting']]],
+  ['mpi_5fsize',['mpi_size',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#abad08aa2e8de5e883d686981c080df4e',1,'plotting.plotting.plot_data.mpi_size()'],['../df/d23/namespaceplotting_1_1plotting.html#a57538c075e8a08a43bd863bc11481541',1,'plotting.plotting.mpi_size()']]]
 ];

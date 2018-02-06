@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['action',['action',['../d5/d81/namespaceplotting.html#a7d3b8b2ce431528faf9f9be2c59c1fd6',1,'plotting']]],
-  ['add_5fargs',['add_args',['../dc/d4e/classutil_1_1base__decorator.html#a31af4b243244b9a6d2487a434e920318',1,'util::base_decorator']]],
-  ['args',['args',['../d5/d81/namespaceplotting.html#ac800f1778184f8280e72a0e24c928709',1,'plotting.args()'],['../d3/dd9/namespacenested__test.html#a766bf8778e0d3eeb6b84f4f0a55158c6',1,'nested_test.args()'],['../dc/d82/namespacesimple__test.html#a541a1a8dd72205a293a82a01a70e9d53',1,'simple_test.args()']]],
-  ['array_5fsize',['array_size',['../d3/dd9/namespacenested__test.html#ae1294cf7da7c912c76343b20d0d2a3a0',1,'nested_test']]]
+  ['action',['action',['../df/d23/namespaceplotting_1_1plotting.html#a9b569e979615f66852112f430b384789',1,'plotting::plotting']]],
+  ['add_5fargs',['add_args',['../db/df0/classutil_1_1util_1_1base__decorator.html#a9191aba0924f38d2157d58004da7b93c',1,'util.util.base_decorator.add_args()'],['../d0/d18/namespacetests_1_1simple__test.html#a150514a2b70971d85b332a71c18900eb',1,'tests.simple_test.add_args()']]],
+  ['args',['args',['../df/d23/namespaceplotting_1_1plotting.html#a8c63d8de8a3e63d81d58670727d9c4c5',1,'plotting::plotting']]]
 ];

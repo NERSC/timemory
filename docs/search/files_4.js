@@ -1,4 +1,5 @@
 var searchData=
 [
-  ['plotting_2epy',['plotting.py',['../d7/d84/plotting_8py.html',1,'']]]
+  ['namespace_2ehpp',['namespace.hpp',['../db/d19/namespace_8hpp.html',1,'']]],
+  ['nested_5ftest_2epy',['nested_test.py',['../d1/d7f/nested__test_8py.html',1,'']]]
 ];

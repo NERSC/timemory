@@ -44,15 +44,38 @@ def __load_module(module_name, path):
 
 
 #------------------------------------------------------------------------------#
-def run():
+def run(pattern=""):
+    """
+    Run the TiMemory unit tests
+
+    Args:
+        pattern (str): a regex string for matching the name of the tests to run
+            an empty string implies run all tests
+    """
     import timemory
+    test_names = [ 'timemory', 'array', 'nested', 'simple' ]
+    names = []
+    try:
+        import re
+        pat = re.compile(pattern)
+        for t in test_names:
+            mat = pat.match(t)
+            if mat is not None:
+                names.append(t)
+    except:
+        names = test_names
+
+    if len(names) == 0:
+        print('Warning! Pattern "{}" had no matches, running full suite: {}'.format(pattern, test_names))
+        names = test_names
+
     print('\n--> TiMemory has MPI support: {}\n'.format(timemory.has_mpi_support()))
     print('\n--> Running tests...\n')
     _fail = 0
     _call = 0
     _tot = timemory.timer('Total test time')
     _tot.start()
-    for i in [ 'timemory', 'array', 'nested', 'simple' ]:
+    for i in names:
         _f = '{}_test'.format(i)
         _file = os.path.join(__this_path, '{}.py'.format(_f))
         t = timemory.timer('{}'.format(_f.upper()))

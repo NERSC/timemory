@@ -138,7 +138,7 @@ EXAMPLE_PATTERNS       = *.hh \
                          *.py \
                          *.txt
 EXAMPLE_RECURSIVE      = YES
-IMAGE_PATH             = images
+IMAGE_PATH             = @PROJECT_SOURCE_DIR@/images
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
@@ -172,7 +172,8 @@ HTML_HEADER            =
 HTML_FOOTER            =
 HTML_STYLESHEET        =
 HTML_EXTRA_STYLESHEET  =
-HTML_EXTRA_FILES       =
+HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/images/memory.png \
+                         @PROJECT_SOURCE_DIR@/images/timing.png
 HTML_COLORSTYLE_HUE    = 220
 HTML_COLORSTYLE_SAT    = 100
 HTML_COLORSTYLE_GAMMA  = 80
@@ -233,7 +234,8 @@ EXTRA_PACKAGES         = float
 LATEX_HEADER           =
 LATEX_FOOTER           =
 LATEX_EXTRA_STYLESHEET =
-LATEX_EXTRA_FILES      =
+LATEX_EXTRA_FILES      = @PROJECT_SOURCE_DIR@/images/memory.png \
+                         @PROJECT_SOURCE_DIR@/images/timing.png
 PDF_HYPERLINKS         = YES
 USE_PDFLATEX           = YES
 LATEX_BATCHMODE        = YES
@@ -1532,7 +1534,7 @@ DOT_CLEANUP            = YES
 # files will be copied as-is; there are no commands or markers available.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-# HTML_EXTRA_FILES       =
+# HTML_EXTRA_FILES       = $relpath^/images/timing.png $relpath^/images/memory.png
 
 # The HTML_COLORSTYLE_HUE tag controls the color of the HTML output. Doxygen
 # will adjust the colors in the style sheet and background images according to

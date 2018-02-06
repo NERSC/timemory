@@ -1,12 +1,10 @@
 var array__test_8py =
 [
-    [ "auto_disk_array_weakref", "db/db6/classarray__test_1_1auto__disk__array__weakref.html", "db/db6/classarray__test_1_1auto__disk__array__weakref" ],
-    [ "auto_disk_array", "d9/d0b/classarray__test_1_1auto__disk__array.html", "d9/d0b/classarray__test_1_1auto__disk__array" ],
-    [ "dummy", "df/df7/array__test_8py.html#a4388507f4e754fb210c38a65567beb9a", null ],
-    [ "main", "df/df7/array__test_8py.html#a72f1346a674d95336db4c4a003487966", null ],
-    [ "measure", "df/df7/array__test_8py.html#af024c661a513f76b39a64693a800c89f", null ],
-    [ "run", "df/df7/array__test_8py.html#aff56831ff5ab56dc7578fc6353bdb930", null ],
-    [ "_rss", "df/df7/array__test_8py.html#a211ef30d77b7fda6e9f88247530f0d39", null ],
-    [ "rss", "df/df7/array__test_8py.html#af852f1827b2f95b9b1e00a0ef851fb9e", null ],
-    [ "timing_manager", "df/df7/array__test_8py.html#a47c6fe5e2e41b887cc2125a7be73a580", null ]
+    [ "auto_array_weakref", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref" ],
+    [ "auto_disk_array", "de/d79/classtests_1_1array__test_1_1auto__disk__array.html", "de/d79/classtests_1_1array__test_1_1auto__disk__array" ],
+    [ "dummy", "df/df7/array__test_8py.html#a105bc4dfab4cc67819a5a4cad0f4997f", null ],
+    [ "main", "df/df7/array__test_8py.html#ab4dafda616717a326c2c42c184ce678e", null ],
+    [ "measure", "df/df7/array__test_8py.html#a60de716ab272fbc076c5b73936f873fb", null ],
+    [ "run", "df/df7/array__test_8py.html#a63d065ad95eba84272583125de6c52fd", null ],
+    [ "run_test", "df/df7/array__test_8py.html#a2bf4768df9838aafbcaab18fdfdc9d75", null ]
 ];

@@ -10,5 +10,6 @@ var timemory_8cc =
     [ "sys_signal_t", "d2/dfd/timemory_8cc.html#ad817cd2f22b9e7c1bc599e144c0cc5ec", null ],
     [ "tim_timer_t", "d2/dfd/timemory_8cc.html#a1c887d1eae1680a0b878271aea98bac8", null ],
     [ "timing_manager_t", "d2/dfd/timemory_8cc.html#ad138ca31b7a7619d1898904bb9a37c8d", null ],
+    [ "load_module", "d2/dfd/timemory_8cc.html#a9be314fc3c5ffa47400cb250fc769b25", null ],
     [ "PYBIND11_MODULE", "d2/dfd/timemory_8cc.html#a519a38f3f564d1012b6e982fa157fab5", null ]
 ];

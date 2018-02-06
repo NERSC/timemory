@@ -1,10 +1,10 @@
 var searchData=
 [
-  ['calculate',['calculate',['../db/d13/classsimple__test_1_1_fibonacci.html#a8a50a1744c1a3cbe9a5438e577aef645',1,'simple_test::Fibonacci']]],
+  ['calculate',['calculate',['../da/d81/classtests_1_1simple__test_1_1_fibonacci.html#a0d9f73416b466b572936ce9fe7810be2',1,'tests::simple_test::Fibonacci']]],
   ['cbegin',['cbegin',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a904ccc24961dcd641efddabada81ab7a',1,'NAME_TIM::timing_manager']]],
   ['cend',['cend',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a944f67f9197c89d5ae3ffc34de7d6221',1,'NAME_TIM::timing_manager']]],
   ['check_5fenvironment',['check_environment',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#a8ab1bfa9acbe2952b53990136f8e4122',1,'NAME_TIM::signal_settings']]],
-  ['class_5fstring',['class_string',['../dc/d4e/classutil_1_1base__decorator.html#aa9ed112651580bfd7885bf6999104617',1,'util::base_decorator']]],
+  ['class_5fstring',['class_string',['../db/df0/classutil_1_1util_1_1base__decorator.html#a1f30add2b8df690b86e4b42b5be75ce5',1,'util::util::base_decorator']]],
   ['clear',['clear',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a4b2d0da1eae868af292296dab197d03d',1,'NAME_TIM::timing_manager']]],
   ['clock_5ft',['clock_t',['../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a6e8f860910584b83df6893f9cb5f5095',1,'NAME_TIM::internal::base_timer_data']]],
   ['clock_5ftick',['clock_tick',['../de/de2/namespace_n_a_m_e___t_i_m.html#ada8a79ef8464258673f976d20eddfa77',1,'NAME_TIM']]],
@@ -20,7 +20,7 @@ var searchData=
   ['compute',['compute',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a3301e5cab4258e601f5cca4875df77ca',1,'NAME_TIM::internal::base_timer_delta']]],
   ['compute_5fsqr',['compute_sqr',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a418cc7bfac4a7ddf7a516573bb1ac5fd',1,'NAME_TIM::internal::base_timer_delta']]],
   ['compute_5fsum',['compute_sum',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#aede0ba2adf340545fcccc495522f1fec',1,'NAME_TIM::internal::base_timer_delta']]],
-  ['concurrency',['concurrency',['../d5/d62/classplotting_1_1plot__data.html#a67beb8f092b00272ab228bc33fdd3271',1,'plotting.plot_data.concurrency()'],['../d5/d81/namespaceplotting.html#ac3a666dcf309f23f95b93b865a7597a0',1,'plotting.concurrency()']]],
+  ['concurrency',['concurrency',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#aba3d1e576a21f0e817f384837a664eb3',1,'plotting.plotting.plot_data.concurrency()'],['../df/d23/namespaceplotting_1_1plotting.html#af7f2bab15035a7d5ee34bbf543fd537b',1,'plotting.plotting.concurrency()']]],
   ['const_5fiterator',['const_iterator',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a13283238b31ebf49b6665be181336587',1,'NAME_TIM::timing_manager']]],
   ['const_5fmerge',['const_merge',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ac179580237a7747126f983e066124ae4',1,'NAME_TIM::timing_manager']]],
   ['count',['count',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#afb7cd6e4ef8b534c687d3aeb8e07888f',1,'NAME_TIM::timing_manager::count()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a32fce2ce115b06ad937648d3e062affc',1,'NAME_TIM::timing_manager::count() const']]],

@@ -1,8 +1,8 @@
 <map id="object" name="object">
-<area shape="rect" id="node2" href="$db/db6/classarray__test_1_1auto__disk__array__weakref.html" title="{array_test.auto_disk\l_array_weakref\n|+ resource\l+ finished\l+ ghost_attributes\l+ is_class\l&#45; __wr_map\l&#45; __wr_id\l|+ bind_finalizer()\l+ remove_finalizer()\l+ enable_auto_rollback()\l+ __finalize__()\l+ __init__()\l+ do_commit()\l+ do_rollback()\l}" alt="" coords="5,139,160,432"/>
-<area shape="rect" id="node3" href="$db/d13/classsimple__test_1_1_fibonacci.html" title="{simple_test.Fibonacci\n|+ n\l+ is_class\l|+ __init__()\l+ calculate()\l}" alt="" coords="185,225,322,345"/>
-<area shape="rect" id="node4" href="$dc/d4e/classutil_1_1base__decorator.html" title="{util.base_decorator\n|+ key\l+ add_args\l+ is_class\l|+ __init__()\l+ class_string()\l+ arg_string()\l}" alt="" coords="346,208,470,363"/>
-<area shape="rect" id="node5" href="$d1/d0b/classutil_1_1auto__timer.html" title="{util.auto_timer\n|+ report_at_exit\l|+ __init__()\l+ __call__()\l}" alt="" coords="230,480,335,583"/>
-<area shape="rect" id="node6" href="$d7/d4b/classutil_1_1rss__usage.html" title="{util.rss_usage\n|+ key\l|+ __init__()\l+ __call__()\l}" alt="" coords="360,480,456,583"/>
-<area shape="rect" id="node7" href="$de/d81/classutil_1_1timer.html" title="{util.timer\n|+ key\l|+ __init__()\l+ __call__()\l}" alt="" coords="480,480,565,583"/>
+<area shape="rect" id="node2" href="$da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html" title="{tests.array_test.auto\l_array_weakref\n|+ resource\l+ finished\l+ ghost_attributes\l+ is_class\l&#45; __wr_map\l&#45; __wr_id\l|+ bind_finalizer()\l+ remove_finalizer()\l+ enable_auto_rollback()\l+ __finalize__()\l+ __init__()\l+ do_commit()\l+ do_rollback()\l}" alt="" coords="5,139,160,432"/>
+<area shape="rect" id="node3" href="$da/d81/classtests_1_1simple__test_1_1_fibonacci.html" title="{tests.simple_test.Fibonacci\n|+ n\l+ is_class\l|+ __init__()\l+ calculate()\l}" alt="" coords="185,225,351,345"/>
+<area shape="rect" id="node4" href="$db/df0/classutil_1_1util_1_1base__decorator.html" title="{util.util.base_decorator\n|+ key\l+ add_args\l+ is_class\l|+ __init__()\l+ class_string()\l+ arg_string()\l}" alt="" coords="375,208,518,363"/>
+<area shape="rect" id="node5" href="$d3/df4/classutil_1_1util_1_1auto__timer.html" title="{util.util.auto_timer\n|+ report_at_exit\l|+ __init__()\l+ __call__()\l}" alt="" coords="249,480,365,583"/>
+<area shape="rect" id="node6" href="$d1/d2e/classutil_1_1util_1_1rss__usage.html" title="{util.util.rss_usage\n|+ key\l|+ __init__()\l+ __call__()\l}" alt="" coords="389,480,504,583"/>
+<area shape="rect" id="node7" href="$d9/dca/classutil_1_1util_1_1timer.html" title="{util.util.timer\n|+ key\l|+ __init__()\l+ __call__()\l}" alt="" coords="529,480,615,583"/>
 </map>

@@ -66,6 +66,7 @@ class timemory_data():
     def __init__(self, types):
         self.data = nested_dict()
         self.types = types
+        self.sums = {}
         for key in self.types:
             self.data[key] = []
 
@@ -73,19 +74,35 @@ class timemory_data():
         n = 0
         for key in self.types:
             self.data[key].append(_data[n])
+            if not key in self.sums.keys():
+                self.sums[key] = 0.0
+            self.sums[key] += _data[n]
             n += 1
 
     def __add__(self, rhs):
         for key in self.types:
             self.data[key].extend(rhs.data[key])
+            for k, v in rhs.data.items():
+                if not k in self.sums.keys():
+                    self.sums[k] = 0.0
+                self.sums[k] += v
 
     def reset(self):
         self.data = nested_dict()
         for key in self.types:
             self.data[key] = []
+            self.sums[key] = 0.0
 
     def __getitem__(self, key):
         return self.data[key]
+
+    def get_order(self, include_keys):
+        order = []
+        sorted_keys = sorted(self.sums, key=lambda x: self.sums[x])
+        for key in sorted_keys:
+            if key in include_keys:
+                order.append(key)
+        return order
 
 
 #==============================================================================#
@@ -198,6 +215,8 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
         matplotlib.use(_matplotlib_backend)
         import matplotlib.pyplot as plt
 
+    iter_order = ['wall', 'cpu', 'sys']
+
     filename = _plot_data.filename
     title = _plot_data.get_title()
     timing_data_dict = _plot_data.timemory_functions
@@ -216,7 +235,11 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
         avgs[key] = []
         stds[key] = []
 
+    _f = True
     for func, obj in timing_data_dict.items():
+        if _f is True:
+            iter_order = obj.timing.get_order(iter_order)
+            _f = False
         ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
         for key in timing_types:
             data = obj[key]
@@ -242,9 +265,9 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
         avgs[key].reverse()
         stds[key].reverse()
 
-    iter_order = ('cpu', 'wall', 'sys')
     plots = []
     lk = None
+    iter_order.reverse()
     for key in iter_order:
         data = avgs[key]
         err = stds[key]
@@ -294,6 +317,7 @@ def plot_memory(_plot_data, disp=False, output_dir="."):
         matplotlib.use(_matplotlib_backend)
         import matplotlib.pyplot as plt
 
+    iter_order = ['self_peak_rss', 'self_current_rss']
     filename = _plot_data.filename
     title = _plot_data.get_title()
     memory_data_dict = _plot_data.timemory_functions
@@ -312,7 +336,11 @@ def plot_memory(_plot_data, disp=False, output_dir="."):
         avgs[key] = []
         stds[key] = []
 
+    _f = True
     for func, obj in memory_data_dict.items():
+        if _f is True:
+            iter_order = obj.memory.get_order(iter_order)
+            _f = False
         ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
         for key in memory_types:
             data = obj.memory[key]
@@ -347,9 +375,9 @@ def plot_memory(_plot_data, disp=False, output_dir="."):
         avgs[key].reverse()
         stds[key].reverse()
 
-    iter_order = ['self_peak_rss', 'self_current_rss']
     plots = []
     lk = None
+    iter_order.reverse()
     for key in iter_order:
         data = avgs[key]
         if len(data) == 0:

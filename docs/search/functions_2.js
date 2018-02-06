@@ -5,5 +5,5 @@ var searchData=
   ['base_5ftimer_5fdata',['base_timer_data',['../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#af24df0bf37ff60aa33486a2a7db92641',1,'NAME_TIM::internal::base_timer_data']]],
   ['base_5ftimer_5fdelta',['base_timer_delta',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a594778783abb701c8704ee8778b6e4b4',1,'NAME_TIM::internal::base_timer_delta']]],
   ['begin',['begin',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a4847a60bdee33dc9da64bd085e2fd8cc',1,'NAME_TIM::timer::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a85ff5964791bd1a1313225cf45fc1682',1,'NAME_TIM::timing_manager::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad8a0af1af26e43789136e4899c05ed0a',1,'NAME_TIM::timing_manager::begin() const']]],
-  ['bind_5ffinalizer',['bind_finalizer',['../db/db6/classarray__test_1_1auto__disk__array__weakref.html#a07219efbc74d9bd5b9fe9280207ca704',1,'array_test::auto_disk_array_weakref']]]
+  ['bind_5ffinalizer',['bind_finalizer',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a7a9ddcd85f294b0cf5f6d462ebd4a260',1,'tests::array_test::auto_array_weakref']]]
 ];

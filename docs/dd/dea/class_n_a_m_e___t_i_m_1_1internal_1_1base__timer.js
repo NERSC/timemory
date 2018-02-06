@@ -27,6 +27,7 @@ var class_n_a_m_e___t_i_m_1_1internal_1_1base__timer =
     [ "base_timer", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a28600ca22f5d1265e5e69b1029d93611", null ],
     [ "~base_timer", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a959e8c74a3808183bfabcb6d79fd2615", null ],
     [ "base_timer", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a91aca658c464be66ed5dbe5ce5caeb34", null ],
+    [ "above_min", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a723eb47816393d117ad1d699a2eb5879", null ],
     [ "clock_time", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#adf028ef8447642836c3b3f49e076ab4f", null ],
     [ "compose", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#abc903deff273b2961d90fd5b402de45f", null ],
     [ "cpu_elapsed", "dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a3f6684fb24c1bd02e555bda8c850b7f5", null ],

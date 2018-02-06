@@ -1,10 +1,6 @@
 var searchData=
 [
-  ['test_5ftiming_2ecpp',['test_timing.cpp',['../d0/d90/ex1_2test__timing_8cpp.html',1,'(Global Namespace)'],['../d2/dc1/ex3_2test__timing_8cpp.html',1,'(Global Namespace)']]],
-  ['timemory_2ecc',['timemory.cc',['../d2/dfd/timemory_8cc.html',1,'']]],
-  ['timemory_5ftest_2epy',['timemory_test.py',['../d9/d9a/timemory__test_8py.html',1,'']]],
-  ['timer_2ecpp',['timer.cpp',['../dc/de5/timer_8cpp.html',1,'']]],
-  ['timer_2ehpp',['timer.hpp',['../df/d05/timer_8hpp.html',1,'']]],
-  ['timing_5fmanager_2ecpp',['timing_manager.cpp',['../d9/dad/timing__manager_8cpp.html',1,'']]],
-  ['timing_5fmanager_2ehpp',['timing_manager.hpp',['../df/df2/timing__manager_8hpp.html',1,'']]]
+  ['signal_5fdetection_2ecpp',['signal_detection.cpp',['../dc/d43/signal__detection_8cpp.html',1,'']]],
+  ['signal_5fdetection_2ehpp',['signal_detection.hpp',['../da/d8e/signal__detection_8hpp.html',1,'']]],
+  ['simple_5ftest_2epy',['simple_test.py',['../d2/d9d/simple__test_8py.html',1,'']]]
 ];
