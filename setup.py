@@ -265,9 +265,15 @@ class CMakeInstallEggInfo(install_egg_info):
                 libdir += '/'
             for l in f.read().splitlines():
                 b = l.replace(libdir, '')
-                l = os.path.join(self.install_dir, b)
-                print ('Adding "{}"...'.format(l))
-                self.outputs.append(l)
+                f = os.path.join(self.install_dir, b)
+                print ('Adding "{}"...'.format(f))
+                self.outputs.append(f)
+                
+        #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyc'))
+        #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyo'))
+        #self.outputs.append(os.path.join(self.install_dir, 'timemory/__init__.pyc'))
+        #self.outputs.append(os.path.join(self.install_dir, 'timemory/__init__.pyo'))
+        
         # old files not tracked
         for i in ['plotting/__init__.py',
                   'mpi_support/mpi_cxx_info.txt',
@@ -376,8 +382,8 @@ setup(name='TiMemory',
     # extra
     install_requires=[ 'numpy', 'matplotlib' ],
     setup_requires=[ 'setuptools', 'disttools' ],
-    provides=[ 'timemory' ],
-    packages=[ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util' ],
+    #provides=[ 'timemory' ],
+    packages=[ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util', 'timemory.tests' ],
     keywords=get_keywords(),
     classifiers=get_classifiers(),
     python_requires='>=2.6',

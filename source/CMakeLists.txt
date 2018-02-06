@@ -164,6 +164,13 @@ endif(NOT SETUP_PY)
 install(TARGETS ${LIBNAME}
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
+# it is in a folder that gets installed but still do it explicitly
+#install(TARGETS ${LIBNAME}
+#    DESTINATION ${CMAKE_INSTALL_PREFIX})
+
+install(TARGETS ${LIBNAME}
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+
 configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
     ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
 

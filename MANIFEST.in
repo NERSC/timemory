@@ -1,15 +1,16 @@
 # direct includes
 include CMakeLists.txt
 include LICENSE
+include .LICENSE
 include README.md
 include CHANGES.rst
+include timemory/timemory.py
 # recursive includes
 recursive-include cmake *
 recursive-include examples *
 recursive-include pybind11 *
-recursive-include python *
 recursive-include source *
-recursive-include tests *
+recursive-include timemory *.py*
 # global exclude
 global-exclude *.pyc
 global-exclude *.git*
@@ -17,3 +18,4 @@ global-exclude *__pycache__*
 # recursive excludes
 recursive-exclude pybind11/docs/.build *
 recursive-exclude examples/ex3 *
+
