@@ -80,9 +80,10 @@ target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBR
 
 if(NOT SETUP_PY)
 
-    set_target_properties(${LIBNAME} PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
-        ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+    if(NOT WIN32)
+        set_target_properties(${LIBNAME} PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+    endif(NOT WIN32)
 
     file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
     string(REPLACE "// " "# " LICENSE "${LICENSE}")
