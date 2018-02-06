@@ -68,7 +68,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(WIN32)
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ STL standard")
 else(WIN32)
-    set(CMAKE_CXX_STANDARD 1z CACHE STRING "C++ STL standard")
+    set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
 endif(WIN32)
 add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 
