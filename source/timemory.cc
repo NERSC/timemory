@@ -118,6 +118,23 @@ private:
 };
 
 //============================================================================//
+
+py::module load_module(const std::string& module,
+                       const std::string& path)
+{
+    py::dict locals;
+    locals["module_name"] = py::cast(module);
+    locals["path"]        = py::cast(path);
+
+    py::exec(R"(
+             import imp
+             new_module = imp.load_module(module_name, open(path), path, ('py', 'U', imp.PY_SOURCE))
+             )", py::globals(), locals);
+
+    return locals["new_module"].cast<py::module>();
+}
+
+//============================================================================//
 //  Python wrappers
 //============================================================================//
 
@@ -727,18 +744,64 @@ PYBIND11_MODULE(timemory, tim)
     //
     //------------------------------------------------------------------------//
 
+    //auto _util = py::module::import("timemory.util");
+    //auto _plot = py::module::import("timemory.plotting");
+    //auto _mpis = py::module::import("timemory.mpi_support");
 
-    auto _util = py::module::import("timemory-util");
-    auto _plot = py::module::import("timemory-plotting");
-    auto _mpis = py::module::import("timemory-mpi_support");
-
+    /*
     py::module utl = tim.def_submodule("util",          "Utility submodule");
     py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
     py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
 
-    tim.add_object("util", _util, true);
-    tim.add_object("plotting", _plot, true);
-    tim.add_object("mpi_support", _mpis, true);
+    auto _get_path = [=] (std::string subpath)
+    {
+        auto locals = py::dict("subpath"_a = subpath);
+        py::exec(R"(
+                 _f = __file__
+                 try:
+                     # if this succeeds, we are not calling from timemory.__init__
+                     # and thus, want to use this as base
+                     import timemory
+                     _f = timemory.__file__
+                 except:
+                     # else, we are likely in a submodule so go up one directory
+                     _f = os.path.dirname(_f)
+                 import os
+                 import sys
+                 __file_path = os.path.abspath(os.path.dirname(_f))
+                 __path = os.path.join(__file_path, subpath)
+                 )", py::globals(), locals);
+        return locals["__path"].cast<std::string>().c_str();
+    };
+
+    tim.def("__add_util_object",
+            [&] ()
+    {
+        auto _util = py::eval_file(_get_path("util/util.py"), py::globals(), utl);
+        tim.add_object("util", _util, true);
+    }, "Add the utility object (fallback method)");
+
+    tim.def("__add_plotting_object",
+            [&] ()
+    {
+        auto _plot = py::eval_file(_get_path("plotting/plotting.py"), py::globals(), plt);
+        tim.add_object("plotting", _plot, true);
+    }, "Add the utility object (fallback method)");
+
+    tim.def("__add_mpi_support_object",
+            [&] ()
+    {
+        auto _mpis = py::eval_file(_get_path("mpi_support/mpi_support.py"), py::globals(), mpi);
+        tim.add_object("mpi_support", _mpis, true);
+    }, "Add the utility object (fallback method)");*/
+
+    tim.def("load_module", &load_module, "Load a python submodule");
+
+    tim.def("add_object",
+            [&] (std::string _name, py::module _obj)
+            {
+                tim.add_object(_name.c_str(), _obj);
+            }, "Add an object to module");
 
     //========================================================================//
     //
@@ -974,7 +1037,29 @@ PYBIND11_MODULE(timemory, tim)
     //========================================================================//
 
 }
-
+/*
 //py::exec(R"(
 //         timemory.util.__dict__.update(timemory._util.__dict__)
 //         )", py::globals(), tim);
+
+
+int main()
+try
+{
+    Py_Initialize();
+    //pybind11_init_timemory();
+    std::cout << "Initializing..." << std::endl;
+    py::object main     = py::module::import("__main__");
+    py::object globals  = main.attr("__dict__");
+    py::object module   = import("util", "util.py", globals);
+    //py::object Strategy = module.attr("Strategy");
+    //py::object strategy = Strategy(&server);
+
+    return 0;
+}
+catch(const py::error_already_set&)
+{
+    std::cerr << ">>> Error! Uncaught exception:\n";
+    PyErr_Print();
+    return 1;
+}*/

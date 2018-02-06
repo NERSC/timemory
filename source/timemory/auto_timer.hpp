@@ -75,10 +75,30 @@ private:
 typedef NAME_TIM::auto_timer                     auto_timer_t;
 
 #if !defined(TIMEMORY_AUTO_TIMER)
+
+// stringify some macro
+#   define STRINGIZE(X) STRINGIZE2(X)
+#   define STRINGIZE2(X) #X
+#   define LINE_STRING STRINGIZE(__LINE__)
+
+// helper macros for assembling unique variable name
 #   define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
 #   define AUTO_TIMER_NAME(Y) AUTO_TIMER_NAME_COMBINE(macro_auto_timer, Y)
+
+// helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
+#   define AUTO_TIMER_STR(A, B) std::string("@'") + \
+    std::string( A ).substr(std::string( A ).find_last_of("/")+1) + std::string("':") + B
+
+// simple tagging w/ function name + optional extra string
+#   define TIMEMORY_AUTO_TIMER_BASIC(str) \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
+            std::string(str), __LINE__)
+
+// standard tagging with function name + optional extra string + "@'filename':##"
 #   define TIMEMORY_AUTO_TIMER(str) \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + std::string(str), __LINE__)
+    auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
+            std::string(str) + AUTO_TIMER_STR(__FILE__, LINE_STRING ), __LINE__)
+
 #endif
 
 //----------------------------------------------------------------------------//

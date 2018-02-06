@@ -678,7 +678,7 @@ endfunction()
 #          Print all features plus their docstrings.
 #
 function(print_features)
-    message("")
+    message(STATUS "")
     print_enabled_features()
     print_disabled_features()
 endfunction()

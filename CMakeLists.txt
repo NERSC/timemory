@@ -68,7 +68,7 @@ set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 if(WIN32)
     set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ STL standard")
 else(WIN32)
-    set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
+    set(CMAKE_CXX_STANDARD 1z CACHE STRING "C++ STL standard")
 endif(WIN32)
 add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 
@@ -76,7 +76,7 @@ include(BuildSettings)
 include(Packages)
 
 set(CMAKE_INSTALL_PYTHONDIR
-    ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages
+    ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
     CACHE PATH "Installation directory for python")
 set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
 set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
@@ -95,7 +95,7 @@ foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 
 if(SETUP_PY)
-    set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX} CACHE PATH
+    set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
         "Installation prefix of python" FORCE)
 endif(SETUP_PY)
 
@@ -125,14 +125,28 @@ write_basic_package_version_file(
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
-install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
+if(NOT SETUP_PY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
+endif(NOT SETUP_PY)
 
-set(TEST_FILES timemory_test.py simple_test.py nested_test.py array_test.py)
+set(TEST_FILES timemory_test.py simple_test.py nested_test.py array_test.py __init__.py tests.py)
 foreach(_FILE ${TEST_FILES})
-    configure_file(${PROJECT_SOURCE_DIR}/tests/${_FILE}
-        ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+    # only copy *_test.py files to binary directory
+    if("${_FILE}" MATCHES "_test.py")
+        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+            ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+    endif("${_FILE}" MATCHES "_test.py")
+
+    # copy to binary: timemory/tests/${_FILE}
+    configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} COPYONLY)
+
+    # install them though
+    install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/tests)
+
 endforeach(_FILE ${TEST_FILES})
 
 if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
@@ -144,8 +158,7 @@ if(NOT SUBPROJECT)
     # documentation
     set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/source
-        ${PROJECT_SOURCE_DIR}/python
-        ${PROJECT_SOURCE_DIR}/tests
+        ${PROJECT_SOURCE_DIR}/timemory
         ${PROJECT_SOURCE_DIR}/examples)
     
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)

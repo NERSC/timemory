@@ -237,8 +237,7 @@ def measure(name, _time = 1, _rss = None):
 
 
 # ---------------------------------------------------------------------------- #
-if __name__ == '__main__':
-
+def run_test():
     timemory.enable_signal_detection()
 
     rss = timemory.rss_usage()
@@ -258,3 +257,9 @@ if __name__ == '__main__':
     #timing_manager.report(no_min = True)
 
     measure('end', _rss = rss)
+
+    timemory.disable_signal_detection()
+
+# ---------------------------------------------------------------------------- #
+if __name__ == '__main__':
+    run_test()

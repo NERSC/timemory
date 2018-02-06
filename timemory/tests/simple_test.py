@@ -38,9 +38,6 @@ import timemory
 from timemory import options
 from timemory import plotting
 
-default_nfib = 29
-timemory.enable_signal_detection()
-
 
 # ---------------------------------------------------------------------------- #
 @timemory.util.auto_timer()
@@ -97,10 +94,22 @@ def main(nfib):
         print ("Error! Unable to plot 'output.json'")
 
     
-if __name__ == "__main__":
+# ---------------------------------------------------------------------------- #
+def run_test():
+
+    default_nfib = 29
+    timemory.enable_signal_detection()
+
     parser = argparse.ArgumentParser()
     parser.add_argument("-n", "--nfib",
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
     args = options.add_arguments_and_parse(parser, __file__)
     main(args.nfib)
+
+    timemory.disable_signal_detection()
+
+
+# ---------------------------------------------------------------------------- #
+if __name__ == "__main__":
+    run_test()

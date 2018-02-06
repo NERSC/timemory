@@ -36,17 +36,21 @@ if(USE_MPI)
         endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
 
         list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
+
         if(WIN32)
             add_definitions(/DTIMEMORY_USE_MPI)
         else(WIN32)
             add_definitions(-DTIMEMORY_USE_MPI)
         endif(WIN32)
+
         if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
           set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
         endif(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
+
         if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
           set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
         endif(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
+
     else(MPI_FOUND)
 
         message(WARNING "MPI not found. Proceeding without MPI")

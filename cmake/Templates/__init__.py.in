@@ -1,0 +1,111 @@
+# MIT License
+#
+# Copyright (c) 2018, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
+# required approvals from the U.S. Dept. of Energy).  All rights reserved.
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
+#
+
+from __future__ import absolute_import
+
+import os
+import sys
+import imp
+
+#__all__ = [ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util' ] # import for side effects
+#__all__ = []
+
+# get the path to this directory
+this_path = os.path.abspath(os.path.dirname(__file__))
+
+def __load_module(module_name, path):
+    return imp.load_module(module_name, open(path), path, ('py', 'U', imp.PY_SOURCE))
+
+# import the timemory python file
+timemory_py = __load_module('timemory', os.path.join(this_path, 'timemory.py'))
+
+# the dynamic library name
+timemory_dylib_name = '@LIBNAME@@PYTHON_MODULE_EXTENSION@'
+
+# import the compiled TiMemory module
+timemory = timemory_py.__bootstrap__(timemory_dylib_name)
+
+# ---------------------------------------------------------------------------- #
+def load_via_init():
+    global timemory
+
+    #print ('(A) Loading util ...')
+    # load the submodule
+    __init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))
+    # add the submodule attributes
+    timemory.__setattr__("util", __init_utl.__self)
+
+    #print ('(A) Loading mpi_support ...')
+    # load the submodule
+    __init_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/__init__.py'))
+    # add the submodule attributes
+    timemory.__setattr__("mpi_support", __init_mpi.__self)
+
+    #print ('(A) Loading plotting ...')
+    # load the submodule
+    __init_plt = __load_module('plotting', os.path.join(this_path, 'plotting/__init__.py'))
+    # add the submodule attributes
+    timemory.__setattr__("plotting", __init_plt.__self)
+
+    #print ('(A) Loading tests ...')
+    # load the submodule
+    __init_tst = __load_module('tests', os.path.join(this_path, 'tests/__init__.py'))
+    # add the submodule attributes
+    timemory.__setattr__("tests", __init_tst.__self)
+
+# ---------------------------------------------------------------------------- #
+def load_via_direct():
+    global timemory
+
+    #print ('(B) Loading util ...')
+    # load the submodule
+    __modl_utl = __load_module('util', os.path.join(this_path, 'util/util.py'))
+    # add the submodule attributes
+    timemory.__setattr__("util", __modl_utl)
+
+    #print ('(B) Loading mpi_support ...')
+    # load the submodule
+    __modl_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/mpi_support.py'))
+    # add the submodule attributes
+    timemory.__setattr__("mpi_support", __modl_mpi)
+
+    #print ('(B) Loading plotting ...')
+    # load the submodule
+    __modl_plt = __load_module('plotting', os.path.join(this_path, 'plotting/plotting.py'))
+    # add the submodule attributes
+    timemory.__setattr__("plotting", __modl_plt)
+
+    #print ('(B) Loading tests ...')
+    # load the submodule
+    __modl_tst = __load_module('tests', os.path.join(this_path, 'tests/tests.py'))
+    # add the submodule attributes
+    timemory.__setattr__("tests", __modl_tst)
+
+try:
+    # try loading the init files (works on Python >= 3.1)
+    load_via_init()
+except:
+    # fallback, some import statements don't work
+    load_via_direct()

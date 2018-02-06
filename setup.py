@@ -292,16 +292,17 @@ def get_long_description():
 
 # ---------------------------------------------------------------------------- #
 def get_short_description():
-    brief_A = 'Python timing (wall, system, user, cpu, %cpu) + RSS memory (current, peak) measurement manager'
-    brief_B = 'Written in high-perf C++ and made available to Python via PyBind11'
-    return '{}. {}.'.format(brief_A, brief_B)
+    brief_A = 'Lightweight python profiling: timing (wall, system, user, cpu, %cpu)'
+    brief_B = 'RSS memory (current, peak) measurement manager'
+    brief_C = 'Written in high-perf C++ and made available to Python via PyBind11'
+    return '{} + {}. {}.'.format(brief_A, brief_B, brief_C)
 
 
 # ---------------------------------------------------------------------------- #
 def get_keywords():
     return [ 'timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx', 'rss',
              'resident set size', 'cpu time', 'cpu utilization', 'wall clock',
-             'system clock', 'user clock', 'pybind11' ]
+             'system clock', 'user clock', 'pybind11', 'profiling' ]
 
 
 # ---------------------------------------------------------------------------- #
@@ -356,7 +357,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare package
 setup(name='TiMemory',
-    version='1.1.7',
+    version='1.1.8dev0',
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),
@@ -375,7 +376,8 @@ setup(name='TiMemory',
     # extra
     install_requires=[ 'numpy', 'matplotlib' ],
     setup_requires=[ 'setuptools', 'disttools' ],
-    provides=[ 'timemory' ],
+    #provides=[ 'timemory' ],
+    packages=[ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util' ],
     keywords=get_keywords(),
     classifiers=get_classifiers(),
     python_requires='>=2.6',

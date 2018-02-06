@@ -24,6 +24,8 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
     else(CTEST_LOCAL_CHECKOUT)
         set(CTEST_MODEL "Nightly" CACHE STRING "Model for CTest")
     endif(CTEST_LOCAL_CHECKOUT)
+    mark_as_advanced(CTEST_MODEL)
+    mark_as_advanced(CTEST_LOCAL_CHECKOUT)
 endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
 
 

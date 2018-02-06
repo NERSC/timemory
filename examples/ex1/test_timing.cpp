@@ -235,7 +235,7 @@ void test_timing_toggle()
 
     tman->enable(true);
     {
-        TIMEMORY_AUTO_TIMER("@toggle_on");
+        TIMEMORY_AUTO_TIMER("[toggle_on]");
         time_fibonacci(45);
     }
     print_size(__FUNCTION__, __LINE__);
@@ -245,7 +245,7 @@ void test_timing_toggle()
     tman->clear();
     tman->enable(false);
     {
-        TIMEMORY_AUTO_TIMER("@toggle_off");
+        TIMEMORY_AUTO_TIMER("[toggle_off]");
         time_fibonacci(45);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
@@ -256,10 +256,10 @@ void test_timing_toggle()
     tman->clear();
     tman->enable(true);
     {
-        TIMEMORY_AUTO_TIMER("@toggle_on");
+        TIMEMORY_AUTO_TIMER("[toggle_on]");
         time_fibonacci(45);
         tman->enable(false);
-        TIMEMORY_AUTO_TIMER("@toggle_off");
+        TIMEMORY_AUTO_TIMER("[toggle_off]");
         time_fibonacci(43);
     }
     print_size(__FUNCTION__, __LINE__);
@@ -328,7 +328,7 @@ void test_timing_thread()
         TIMEMORY_AUTO_TIMER();
         {
             std::stringstream ss;
-            ss << "@" << num_threads << "_threads";
+            ss << "[" << num_threads << "_threads]";
             TIMEMORY_AUTO_TIMER(ss.str());
 
             std::promise<void> prom;

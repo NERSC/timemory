@@ -16,6 +16,7 @@
 /TiMemory.*
 /timemory.*
 __pycache__
+*.pyc
 
 # miscellaneous
 timing_report*
@@ -27,3 +28,7 @@ timing_report*
 /TiMemory-*
 /dist
 /.eggs
+
+# info files
+/timemory/mpi_support/*.txt
+

@@ -20,7 +20,9 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
     FORCE)
 
 # add cereal
-add_subdirectory(cereal)
+if(NOT SETUP_PY)
+    add_subdirectory(cereal)
+endif(NOT SETUP_PY)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
@@ -76,15 +78,31 @@ pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 
-foreach(_FILE plotting mpi_support util)
-    configure_file(${PROJECT_SOURCE_DIR}/python/${_FILE}.py
-        ${PROJECT_BINARY_DIR}/${_FILE}/__init__.py COPYONLY)
-    install(DIRECTORY
-        ${PROJECT_BINARY_DIR}/${_FILE}/
-        DESTINATION
-        ${CMAKE_INSTALL_PYTHONDIR}/timemory-${_FILE})
-endforeach(_FILE plotting mpi_support util)
+if(NOT SETUP_PY)
 
+    set_target_properties(${LIBNAME} PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
+        ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+
+    file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
+    string(REPLACE "// " "# " LICENSE "${LICENSE}")
+    foreach(_FILE plotting mpi_support util)
+        set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
+        set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
+
+        # copy over the python file
+        configure_file(${SOURCE_DIR}/${_FILE}.py
+            ${BINARY_DIR}/${_FILE}.py COPYONLY)
+
+        # copy over the init file
+        configure_file(${SOURCE_DIR}/__init__.py
+            ${BINARY_DIR}/__init__.py COPYONLY)
+
+        # install the folder
+        install(DIRECTORY ${BINARY_DIR}/
+            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
+    endforeach(_FILE plotting mpi_support util)
+endif(NOT SETUP_PY)
 
 #----------------------------------------------------------------------------
 # MPI info
@@ -114,30 +132,48 @@ if(USE_MPI AND MPI_FOUND)
 
 endif(USE_MPI AND MPI_FOUND)
 
-file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
+file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
+file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
+file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
+
+foreach(_TYPE exe c cxx)
+    install(FILES ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/mpi_support)
+endforeach(_TYPE exe c cxx)
 
 #----------------------------------------------------------------------------
 # Install the targets and export
 #
 
-# C++ compiled libraries
-install(TARGETS ${INSTALL_LIBRARIES}
-    DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    EXPORT ${PROJECT_NAME}LibraryDepends)
-
 if(NOT SETUP_PY)
+    # C++ compiled libraries
+    install(TARGETS ${INSTALL_LIBRARIES}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}LibraryDepends)
+
     # C++ development headers
     install(FILES ${headers}
         DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+
+    # Install the export set for use with the install-tree
+    install(EXPORT ${PROJECT_NAME}LibraryDepends
+        DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
+        COMPONENT dev)
+
 endif(NOT SETUP_PY)
 
 # Python library target (linked to static target)
 install(TARGETS ${LIBNAME}
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
 
-# Install the export set for use with the install-tree
-install(EXPORT ${PROJECT_NAME}LibraryDepends
-    DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
-    COMPONENT dev)
+configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
+    ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
+
+install(FILES ${PROJECT_BINARY_DIR}/timemory/timemory.py
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+
+configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
+    ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
+
+install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
+    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})

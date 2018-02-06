@@ -50,12 +50,6 @@ from timemory import signals
 from timemory import options
 from timemory import plotting
 
-tim.enable_signal_detection([signals.sys_signal.Hangup,
-                             signals.sys_signal.Interrupt,
-                             signals.sys_signal.FPE,
-                             signals.sys_signal.Abort ])
-
-array_size = 8000000
 
 #------------------------------------------------------------------------------#
 # create an exit action function
@@ -113,7 +107,14 @@ def main(nfib):
 
 
 #------------------------------------------------------------------------------#
-if __name__ == "__main__":
+def run_test():
+
+    tim.enable_signal_detection([signals.sys_signal.Hangup,
+                                 signals.sys_signal.Interrupt,
+                                 signals.sys_signal.FPE,
+                                 signals.sys_signal.Abort ])
+
+    array_size = 8000000
 
     t = tim.timer("Total time")
     t.start()
@@ -159,3 +160,10 @@ if __name__ == "__main__":
     t.report()
     print ('')
     print("RSS usage at finalization: {}\n".format(tim.rss_usage(record=True)))
+
+    tim.disable_signal_detection()
+
+
+# ---------------------------------------------------------------------------- #
+if __name__ == '__main__':
+    run_test()

@@ -44,7 +44,7 @@ macro(generate_test_project)
     if(EXISTS ${CMAKE_SOURCE_DIR}/cmake/Templates/compile-test.cc.in)
         set(HEADER_FILE "stdlib.h")
         configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/compile-test.cc.in
-            ${CMAKE_BINARY_DIR}/compile-testing/compile-test.cc @ONLY)
+            ${CMAKE_BINARY_DIR}/CMakeFiles/compile-testing/compile-test.cc @ONLY)
     endif()
 endmacro()
 
@@ -111,11 +111,11 @@ function(test_compile _LANG _VAR _FLAG)
     set(COMPILE_FLAGS "${_FLAG}")
     set(COMPILER "${CMAKE_${LANG}_COMPILER}")
     configure_file(${CMAKE_SOURCE_DIR}/cmake/Templates/CMakeLists.txt.in
-        ${CMAKE_BINARY_DIR}/compile-testing/CMakeLists.txt @ONLY)
+        ${CMAKE_BINARY_DIR}/CMakeFiles/compile-testing/CMakeLists.txt @ONLY)
     # try compiling with flag
     try_compile(RET
-        ${CMAKE_BINARY_DIR}/compile-testing
-        ${CMAKE_BINARY_DIR}/compile-testing
+        ${CMAKE_BINARY_DIR}/CMakeFiles/compile-testing
+        ${CMAKE_BINARY_DIR}/CMakeFiles/compile-testing
         CompileTest
         CMAKE_FLAGS
             -DCMAKE_C_COMPILER:STRING=${CMAKE_C_COMPILER}
@@ -179,7 +179,7 @@ endmacro(add_flags _LANG _VAR _FLAGS)
 ################################################################################
 macro(add_c_flags _VAR _FLAGS)        
     # cache the flags to test
-    set(CACHED_C_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE STRING
+    set(CACHED_C_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE INTERNAL
         "Possible C flags for ${_VAR}")
     mark_as_advanced(CACHED_C_${_VAR}_TEST_FLAGS)
     # if flags were changed or not previously processed
@@ -188,7 +188,7 @@ macro(add_c_flags _VAR _FLAGS)
         # test flags
         add_flags(C "${_VAR}" "${_FLAGS}")
         # cache the valid flags
-        set(CACHED_C_${_VAR}_GOOD_FLAGS "${${_VAR}}" CACHE STRING
+        set(CACHED_C_${_VAR}_GOOD_FLAGS "${${_VAR}}" CACHE INTERNAL
             "Valid C flags for ${_VAR}" FORCE)
     endif(NOT "${CACHED_C_${_VAR}_TEST_FLAGS}" STREQUAL "${_FLAGS}" OR
         NOT DEFINED CACHED_C_${_VAR}_GOOD_FLAGS)
@@ -205,7 +205,7 @@ endmacro(add_c_flags _VAR _FLAGS)
 ################################################################################
 macro(add_cxx_flags _VAR _FLAGS)
     # cache the flags to test
-    set(CACHED_CXX_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE STRING
+    set(CACHED_CXX_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE INTERNAL
         "Possible C++ flags for ${_VAR}")
     mark_as_advanced(CACHED_CXX_${_VAR}_TEST_FLAGS)
     # if flags were changed or not previously processed
@@ -214,7 +214,7 @@ macro(add_cxx_flags _VAR _FLAGS)
         # test flags
         add_flags(CXX "${_VAR}" "${_FLAGS}")
         # cache the valid flags
-        set(CACHED_CXX_${_VAR}_GOOD_FLAGS "${${_VAR}}" CACHE STRING
+        set(CACHED_CXX_${_VAR}_GOOD_FLAGS "${${_VAR}}" CACHE INTERNAL
             "Valid C++ flags for ${_VAR}" FORCE)
     endif(NOT "${CACHED_CXX_${_VAR}_TEST_FLAGS}" STREQUAL "${_FLAGS}" OR
         NOT DEFINED CACHED_CXX_${_VAR}_GOOD_FLAGS)
