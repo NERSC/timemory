@@ -363,7 +363,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare package
 setup(name='TiMemory',
-    version='1.1.8dev0',
+    version='1.1.8rc0',
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),
