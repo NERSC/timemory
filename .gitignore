@@ -20,6 +20,7 @@ __pycache__
 
 # miscellaneous
 timing_report*
+/test_output*
 
 # macOS Finder files
 .DS_Store
@@ -32,3 +33,5 @@ timing_report*
 # info files
 /timemory/mpi_support/*.txt
 
+# unused examples
+/examples/ex3

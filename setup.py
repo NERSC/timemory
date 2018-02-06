@@ -376,7 +376,7 @@ setup(name='TiMemory',
     # extra
     install_requires=[ 'numpy', 'matplotlib' ],
     setup_requires=[ 'setuptools', 'disttools' ],
-    #provides=[ 'timemory' ],
+    provides=[ 'timemory' ],
     packages=[ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util' ],
     keywords=get_keywords(),
     classifiers=get_classifiers(),

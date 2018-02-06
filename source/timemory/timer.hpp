@@ -69,6 +69,8 @@ public:
     static string_t default_format;
     static uint16_t default_precision;
     static void propose_output_width(uint64_t);
+    static uint64_t get_output_width() { return f_output_width; }
+    static void set_output_width(uint64_t n) { f_output_width = n; }
     static void set_default_format(const string_t& str) { default_format = str; }
 
 public:

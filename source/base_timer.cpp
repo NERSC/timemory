@@ -146,6 +146,25 @@ void base_timer::parse_format()
 
 //============================================================================//
 
+bool base_timer::above_min(bool no_min) const
+{
+    if(no_min)
+        return true;
+
+    double _cpu = user_elapsed() + system_elapsed();
+
+    double tmin = 1.0 / (pow( (uint32_t) 10, (uint32_t) m_precision));
+    // skip if it will be reported as all zeros
+    // e.g. tmin = ( 1. / 10^3 ) = 0.001;
+    if((real_elapsed() < tmin && _cpu < tmin) ||
+       (_cpu / real_elapsed()) < 0.001)
+        return false;
+
+    return true;
+}
+
+//============================================================================//
+
 void base_timer::report(std::ostream& os, bool endline, bool no_min) const
 {
     const_cast<base_timer*>(this)->parse_format();
@@ -163,10 +182,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     double _cpu = _user + _system;
     double _perc = (_cpu / _real) * 100.0;
 
-    double tmin = 1.0 / (pow( (uint32_t) 10, (uint32_t) m_precision));
-    // skip if it will be reported as all zeros
-    // e.g. tmin = ( 1. / 10^3 ) = 0.001;
-    if(!no_min && ((_real < tmin && _cpu < tmin) || _perc < 0.1))
+    if(!above_min(no_min))
         return;
 
     // timing spacing
@@ -264,9 +280,6 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     size_type len = ter - pos;
     string_t substr = m_format_string.substr(pos, len);
     ss << substr;
-
-    //std::cout << " [ total " << m_accum.rss().total() << " ] [ self "
-    //          << m_accum.rss().self() << " ]";
 
     if(this->laps() > 1)
         ss << " (total # of laps: " << this->laps() << ")";

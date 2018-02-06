@@ -37,6 +37,7 @@
 #include <timemory/timing_manager.hpp>
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
+#include <timemory/mpi.hpp>
 
 typedef NAME_TIM::timer          tim_timer_t;
 typedef NAME_TIM::timing_manager timing_manager_t;
@@ -77,7 +78,7 @@ typedef NAME_TIM::timing_manager timing_manager_t;
 int64_t fibonacci(int32_t n)
 {
     if (n < 2) return n;
-    if(n > 36)
+    if(n > 34)
     {
         TIMEMORY_AUTO_TIMER();
         return fibonacci(n-1) + fibonacci(n-2);
@@ -97,18 +98,26 @@ int64_t time_fibonacci(int32_t n)
 }
 //----------------------------------------------------------------------------//
 
-void print_size(const std::string&, int64_t);
+void print_info(const std::string&);
+void print_size(const std::string&, int64_t, bool = true);
+void print_depth(const std::string&, int64_t, bool = true);
 void test_timing_pointer();
 void test_timing_manager();
 void test_timing_toggle();
-void test_timing_thread();
 void test_timing_depth();
+void test_timing_thread();
 
 //============================================================================//
 
-int main()
+int main(int /*argc*/, char** argv)
 {
-    NAME_TIM::EnableSignalDetection();
+    NAME_TIM::EnableSignalDetection({
+                                        NAME_TIM::sys_signal::sHangup,
+                                        NAME_TIM::sys_signal::sInterrupt,
+                                        NAME_TIM::sys_signal::sIllegal,
+                                        NAME_TIM::sys_signal::sSegFault,
+                                        NAME_TIM::sys_signal::sFPE
+                                    });
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
@@ -116,25 +125,25 @@ int main()
     int num_fail = 0;
     int num_test = 0;
 
-#define RUN_TEST(func) \
-    try \
-    { \
-        num_test += 1; \
-        func (); \
-    } \
-    catch(std::exception& e) \
-    { \
-        std::cerr << e.what() << std::endl; \
-        num_fail += 1; \
+#define RUN_TEST(func) { try { num_test += 1; func (); } catch(std::exception& e) \
+    { std::cerr << e.what() << std::endl; num_fail += 1; } }
+
+    try
+    {
+        RUN_TEST(test_timing_pointer);
+        RUN_TEST(test_timing_manager);
+        RUN_TEST(test_timing_toggle);
+        RUN_TEST(test_timing_depth);
+        RUN_TEST(test_timing_thread);
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
     }
 
-    RUN_TEST(test_timing_pointer);
-    RUN_TEST(test_timing_manager);
-    RUN_TEST(test_timing_toggle);
-    RUN_TEST(test_timing_thread);
-    RUN_TEST(test_timing_depth);
-
     std::cout << "\nDone.\n" << std::endl;
+
+    std::cout << "[" << argv[0] << "] ";
 
     if(num_fail > 0)
         std::cout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
@@ -154,31 +163,68 @@ int main()
 
 //============================================================================//
 
-void print_size(const std::string& func, int64_t line)
+void print_info(const std::string& func)
 {
-    std::cout << "\n" << func << "@" << line
-              << " : Timing manager size: "
-              << timing_manager_t::instance()->size()
-              << "\n" << std::endl;
+    if(NAME_TIM::mpi_rank() == 0)
+        std::cout << "\n[" << NAME_TIM::mpi_rank() << "]\e[1;31m TESTING \e[0m["
+                  << "\e[1;36m" << func << "\e[0m"
+                  << "]...\n" << std::endl;
+}
 
+//============================================================================//
+
+void print_size(const std::string& func, int64_t line, bool extra_endl)
+{
+    if(NAME_TIM::mpi_rank() == 0)
+    {
+        std::cout << "[" << NAME_TIM::mpi_rank() << "] "
+                  << func << "@" << line
+                  << " : Timing manager size: "
+                  << timing_manager_t::instance()->size()
+                  << std::endl;
+
+        if(extra_endl)
+            std::cout << std::endl;
+    }
+}
+
+//============================================================================//
+
+void print_depth(const std::string& func, int64_t line, bool extra_endl)
+{
+    if(NAME_TIM::mpi_rank() == 0)
+    {
+        std::cout << "[" << NAME_TIM::mpi_rank() << "] "
+                  << func << "@" << line
+                  << " : Timing manager size: "
+                  << timing_manager_t::instance()->get_max_depth()
+                  << std::endl;
+
+        if(extra_endl)
+            std::cout << std::endl;
+    }
 }
 
 //============================================================================//
 
 void test_timing_pointer()
 {
-    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
+    print_info(__FUNCTION__);
+
     uint16_t set_depth = 4;
     uint16_t get_depth = 0;
 
+    print_depth(__FUNCTION__, __LINE__, false);
     {
         timing_manager_t::instance()->set_max_depth(4);
     }
 
+    print_depth(__FUNCTION__, __LINE__, false);
     {
         get_depth = timing_manager_t::instance()->get_max_depth();
     }
 
+    print_depth(__FUNCTION__, __LINE__, false);
     EXPECT_EQ(set_depth, get_depth);
     timing_manager_t::instance()->set_max_depth(std::numeric_limits<uint16_t>::max());
 }
@@ -187,7 +233,7 @@ void test_timing_pointer()
 
 void test_timing_manager()
 {
-    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
+    print_info(__FUNCTION__);
 
     auto tman = timing_manager_t::instance();
     tman->clear();
@@ -198,7 +244,7 @@ void test_timing_manager()
     tim_timer_t& t = tman->timer("timing_manager_test");
     t.start();
 
-    for(auto itr : { 37, 39, 41, 43, 45, 41, 37, 45 })
+    for(auto itr : { 34, 36, 39, 40, 42, 38, 34, 42 })
         time_fibonacci(itr);
 
     t.stop();
@@ -209,7 +255,7 @@ void test_timing_manager()
     tman->report();
     tman->write_json("timing_report.json");
 
-    EXPECT_EQ(timing_manager_t::instance()->size(), 31);
+    EXPECT_EQ(timing_manager_t::instance()->size(), 32);
 
     for(const auto& itr : *tman)
     {
@@ -224,7 +270,7 @@ void test_timing_manager()
 
 void test_timing_toggle()
 {
-    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
+    print_info(__FUNCTION__);
 
     auto tman = timing_manager_t::instance();
     tman->clear();
@@ -236,17 +282,18 @@ void test_timing_toggle()
     tman->enable(true);
     {
         TIMEMORY_AUTO_TIMER("[toggle_on]");
-        time_fibonacci(45);
+        time_fibonacci(42);
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(timing_manager_t::instance()->size(), 11);
+    EXPECT_EQ(timing_manager_t::instance()->size(), 10);
 
     tman->clear();
     tman->enable(false);
+    std::cout << std::endl;
     {
         TIMEMORY_AUTO_TIMER("[toggle_off]");
-        time_fibonacci(45);
+        time_fibonacci(42);
         //std::this_thread::sleep_for(std::chrono::seconds(1));
     }
     print_size(__FUNCTION__, __LINE__);
@@ -257,16 +304,49 @@ void test_timing_toggle()
     tman->enable(true);
     {
         TIMEMORY_AUTO_TIMER("[toggle_on]");
-        time_fibonacci(45);
+        time_fibonacci(42);
         tman->enable(false);
         TIMEMORY_AUTO_TIMER("[toggle_off]");
-        time_fibonacci(43);
+        time_fibonacci(40);
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(timing_manager_t::instance()->size(), 11);
+    EXPECT_EQ(timing_manager_t::instance()->size(), 10);
 
     tman->enable(_is_enabled);
+}
+
+//============================================================================//
+
+void test_timing_depth()
+{
+    print_info(__FUNCTION__);
+
+    auto tman = timing_manager_t::instance();
+    tman->clear();
+
+    bool _is_enabled = tman->is_enabled();
+    tman->enable(true);
+    tman->set_output_stream(std::cout);
+
+    print_depth(__FUNCTION__, __LINE__, false);
+    int32_t _max_depth = tman->get_max_depth();
+    tman->set_max_depth(3);
+    print_depth(__FUNCTION__, __LINE__, false);
+    {
+        TIMEMORY_AUTO_TIMER();
+        for(auto itr : { 38, 39, 40 })
+            time_fibonacci(itr);
+    }
+
+    bool no_min;
+    print_depth(__FUNCTION__, __LINE__, false);
+    print_size(__FUNCTION__, __LINE__);
+    tman->report(no_min = true);
+    EXPECT_EQ(timing_manager_t::instance()->size(), 7);
+
+    tman->enable(_is_enabled);
+    tman->set_max_depth(_max_depth);
 }
 
 //============================================================================//
@@ -313,7 +393,8 @@ void join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
 
 void test_timing_thread()
 {
-    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
+    print_info(__FUNCTION__);
+
     auto tman = timing_manager_t::instance();
     tman->clear();
 
@@ -321,7 +402,7 @@ void test_timing_thread()
     tman->enable(true);
     tman->set_output_stream(std::cout);
 
-    int num_threads = 16;
+    int num_threads = 12;
     thread_list_t threads(num_threads, nullptr);
 
     {
@@ -354,40 +435,12 @@ void test_timing_thread()
     tman->merge(true);
 
     bool no_min;
+    print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(no_min = true);
     ASSERT_TRUE(timing_manager_t::instance()->size() >= 36);
 
     tman->enable(_is_enabled);
-}
-
-//============================================================================//
-
-void test_timing_depth()
-{
-    std::cout << "\nTesting " << __FUNCTION__ << "...\n" << std::endl;
-    auto tman = timing_manager_t::instance();
-    tman->clear();
-
-    bool _is_enabled = tman->is_enabled();
-    tman->enable(true);
-    tman->set_output_stream(std::cout);
-
-    int32_t _max_depth = tman->get_max_depth();
-    tman->set_max_depth(3);
-    {
-        TIMEMORY_AUTO_TIMER();
-        for(auto itr : { 40, 41, 42 })
-            time_fibonacci(itr);
-    }
-
-    bool no_min;
-    print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
-    EXPECT_EQ(timing_manager_t::instance()->size(), 7);
-
-    tman->enable(_is_enabled);
-    tman->set_max_depth(_max_depth);
 }
 
 //============================================================================//

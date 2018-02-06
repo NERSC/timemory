@@ -17,6 +17,22 @@ if(USE_MPI)
         endif(EXISTS "C:/Program\ Files/Microsoft\ SDKs/MPI")
     endif(WIN32)
 
+    # MPI C compiler from environment
+    set(_ENV MPICC)
+    if(NOT DEFINED MPI_C_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+        message(STATUS "Setting MPI C compiler to: $ENV{${_ENV}}")
+        set(MPI_C_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C compiler")
+    endif(NOT DEFINED MPI_C_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+
+    # MPI C++ compiler from environment
+    set(_ENV MPICC)
+    if(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+        message(STATUS "Setting MPI C++ compiler to: $ENV{${_ENV}}")
+        set(MPI_CXX_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C++ compiler")
+    endif(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+
+    unset(_ENV)
+
     find_package(MPI)
 
     set(MPI_LIBRARIES )

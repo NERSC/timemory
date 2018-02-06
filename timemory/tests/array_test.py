@@ -40,7 +40,7 @@ import weakref
 
 
 # ---------------------------------------------------------------------------- #
-class auto_disk_array_weakref(object):
+class auto_array_weakref(object):
     """
     Base class enabling the use a __finalize__ method without all the problems
     associated with __del__ and reference cycles.
@@ -187,17 +187,13 @@ def run(weak_ref):
         #f = open('test_array.txt', 'w')
         #f.write('{}'.format(ret))
         #f.close()
-        weak_ref = auto_disk_array_weakref(ret)
+        weak_ref = auto_array_weakref(ret)
         return weak_ref
 
     weak_ref = create(weak_ref)
     ref = weak_ref.resource()
     if ref is not None:
         ref += np.ones([3000,3000], dtype=np.float128)
-
-    if weak_ref is not None:
-        print ("--> weak_ref type: {}".format(type(weak_ref).__name__))
-        print ("--> weak_ref resource type: {}".format(type(weak_ref.resource()).__name__))
 
     return ref
 
@@ -209,7 +205,6 @@ def main():
     weak_ref = None
     for i in range(5):
         ref = run(weak_ref)
-        print ('Weak ref: {}'.format(type(weak_ref).__name__))
 
     print ("\nmain end \n")
 
@@ -239,6 +234,7 @@ def measure(name, _time = 1, _rss = None):
 # ---------------------------------------------------------------------------- #
 def run_test():
     timemory.enable_signal_detection()
+    timemory.options.output_dir = "test_output"
 
     rss = timemory.rss_usage()
     rss.record()

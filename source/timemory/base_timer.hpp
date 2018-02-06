@@ -386,6 +386,7 @@ public:
     inline void report(bool endline = true) const;
     inline void report_average(bool endline = true) const;
     inline void report_average(ostream_t& os, bool endline = true) const;
+    bool above_min(bool no_min = false) const;
 
 protected:
     typedef std::pair<size_type, timer_field>   fieldpos_t;

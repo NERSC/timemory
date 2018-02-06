@@ -147,6 +147,9 @@ void timing_manager::clear()
         std::cout << "Clearing " << l_instance << "..." << std::endl;
 #endif
 
+    if(this == f_instance)
+        tim_timer_t::set_output_width(10);
+
     m_timer_list.clear();
     m_timer_map.clear();
     for(auto& itr : m_daughters)
@@ -330,6 +333,20 @@ void timing_manager::report(ostream_t* os, bool no_min) const
 
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;
+
+    // temporarily store output width
+    uint64_t _width = tim_timer_t::get_output_width();
+    // reset output width
+    tim_timer_t::set_output_width(10);
+
+    // redo output width calc, removing no displayed funcs
+    for(const auto& itr : *this)
+        if(itr.timer().above_min(no_min))
+            tim_timer_t::propose_output_width(itr.timer().begin().length());
+
+    // don't make it longer
+    if(_width > 10 && _width < tim_timer_t::get_output_width())
+        tim_timer_t::set_output_width(_width);
 
     for(const auto& itr : *this)
         itr.timer().report(*os, true, no_min);

@@ -130,6 +130,7 @@ def run_test():
     args = options.add_arguments_and_parse(parser)
     array_size = args.size
 
+    options.output_dir = "test_output"
     options.set_report("nested_report.out")
     options.set_serial("nested_report.json")
 
@@ -138,27 +139,25 @@ def run_test():
 
     try:
         main(args.nfib)
-        print ('\nTiming manager size: {}\n'.format(tim.size()))
+        print ('Timing manager size: {}'.format(tim.size()))
         tman = tim.timing_manager()
         tman -= rss
         tman.report()
-        tman.serialize('output.json')
-        print ('')
+        _jsonf = os.path.join(options.output_dir, 'nested_output.json')
+        tman.serialize(_jsonf)
         _data = tim.plotting.read(tman.json())
         _data.title = tim.FILE(noquotes=True)
         _data.filename = options.serial_fname
-        plotting.plot(data = [_data], files = ["output.json"], output_dir=options.output_dir)
+        plotting.plot(data = [_data], files = [_jsonf], output_dir=options.output_dir)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
         print ('Exception - {}'.format(e))
 
     t.stop()
-    print("\nRSS usage at initialization: {}".format(rss))
+    print("RSS usage at initialization: {}".format(rss))
     t -= rss
-    print ('')
     t.report()
-    print ('')
     print("RSS usage at finalization: {}\n".format(tim.rss_usage(record=True)))
 
     tim.disable_signal_detection()

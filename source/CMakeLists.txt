@@ -78,32 +78,29 @@ pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 
-if(NOT SETUP_PY)
+set_target_properties(${LIBNAME} PROPERTIES
+    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
+    ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
+    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
-    if(NOT WIN32)
-        set_target_properties(${LIBNAME} PROPERTIES
-            LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
-    endif(NOT WIN32)
+file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
+string(REPLACE "// " "# " LICENSE "${LICENSE}")
+foreach(_FILE plotting mpi_support util)
+    set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
+    set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
 
-    file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
-    string(REPLACE "// " "# " LICENSE "${LICENSE}")
-    foreach(_FILE plotting mpi_support util)
-        set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
-        set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
+    # copy over the python file
+    configure_file(${SOURCE_DIR}/${_FILE}.py
+        ${BINARY_DIR}/${_FILE}.py COPYONLY)
 
-        # copy over the python file
-        configure_file(${SOURCE_DIR}/${_FILE}.py
-            ${BINARY_DIR}/${_FILE}.py COPYONLY)
+    # copy over the init file
+    configure_file(${SOURCE_DIR}/__init__.py
+        ${BINARY_DIR}/__init__.py COPYONLY)
 
-        # copy over the init file
-        configure_file(${SOURCE_DIR}/__init__.py
-            ${BINARY_DIR}/__init__.py COPYONLY)
-
-        # install the folder
-        install(DIRECTORY ${BINARY_DIR}/
-            DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
-    endforeach(_FILE plotting mpi_support util)
-endif(NOT SETUP_PY)
+    # install the folder
+    install(DIRECTORY ${BINARY_DIR}/
+        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
+endforeach(_FILE plotting mpi_support util)
 
 #----------------------------------------------------------------------------
 # MPI info

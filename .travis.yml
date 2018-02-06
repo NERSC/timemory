@@ -524,7 +524,9 @@ script:
     #
     - cd ${SOURCE_DIR}
     - python${TRAVIS_PYTHON_VERSION} setup.py install test
-    - echo "Python setup.py -- Done"
+    - echo "python${TRAVIS_PYTHON_VERSION} setup.py build install test -- Done"
+    - python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
+    - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
     #
     # C++ testing
     #

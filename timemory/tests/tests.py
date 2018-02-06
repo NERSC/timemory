@@ -65,8 +65,8 @@ def run():
             _fail += 1
         t.stop()
         print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(t))
-    print('\n\n============== TESTS: {}/{} PASSED   =============='.format(_call-_fail, _call))
-    print('============== TESTS: {}/{} FAILURES ==============\n\n'.format(_fail, _call))
+    print('\n\n============== PASSING TESTS: {}/{} =============='.format(_call-_fail, _call))
+    print('============== FAILING TESTS: {}/{} ==============\n\n'.format(_fail, _call))
     _tot.stop()
     print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(_tot))
 

@@ -40,7 +40,7 @@ from timemory import plotting
 
 
 # ---------------------------------------------------------------------------- #
-@timemory.util.auto_timer()
+@timemory.util.auto_timer(add_args=True)
 def fibonacci(n):
     if n < 2:
         return n
@@ -86,10 +86,10 @@ def main(nfib):
 
     timemory.report()
     tman.report(no_min=True)
-    tman.serialize('output.json')
+    _jsonf = os.path.join(options.output_dir, 'simple_output.json')
     print ('')
     try:
-        plotting.plot(files=["output.json"], display=False)
+        plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
     except:
         print ("Error! Unable to plot 'output.json'")
 
@@ -105,6 +105,8 @@ def run_test():
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
     args = options.add_arguments_and_parse(parser, __file__)
+    timemory.options.output_dir = "test_output"
+
     main(args.nfib)
 
     timemory.disable_signal_detection()
