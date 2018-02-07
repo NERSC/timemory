@@ -41,16 +41,18 @@ __self = __load_module('timemory.plotting', os.path.join(__this_path, 'plotting.
 __file_path = __self.__file__
 __module_name = __self.__name__
 
-try:
-    __spec = importlib.util.spec_from_file_location(__module_name, __file_path)
-    __module = importlib.util.module_from_spec(__spec)
-    __spec.loader.exec_module(__module)
-    # Optional; only necessary if you want to be able to import the module
-    # by name later.
-    sys.modules[__module_name] = __module
+# Python 3.1+
+if sys.version_info[0] > 2 and sys.version_info[1] > 0:
+    try:
+        __spec = importlib.util.spec_from_file_location(__module_name, __file_path)
+        __module = importlib.util.module_from_spec(__spec)
+        __spec.loader.exec_module(__module)
+        # Optional; only necessary if you want to be able to import the module
+        # by name later.
+        sys.modules[__module_name] = __module
 
-except Exception as e:
+    except Exception as e:
+        sys.modules[__module_name] = __self
+else:
     sys.modules[__module_name] = __self
-    raise e
 
-__dict__ = __self.__dict__

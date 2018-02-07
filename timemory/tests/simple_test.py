@@ -87,6 +87,7 @@ def main(nfib):
     timemory.report()
     tman.report(no_min=True)
     _jsonf = os.path.join(options.output_dir, 'simple_output.json')
+    tman.serialize(_jsonf)
     print ('')
     try:
         plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
