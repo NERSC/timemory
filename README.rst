@@ -132,6 +132,9 @@ Python Testing/Validation
 
   # the run() function can take a regex string for running specific test names
   $ python -c "import timemory ; timemory.tests.run()"
+  $ python -c "import timemory ; timemory.tests.run(pattern="nested")
+  # the run function will do `sys.exit(_fail)` if _fail > 0 by default, to disable:
+  $ python -c "import timemory ; timemory.tests.run(exit_at_failure=False)
 
 General Testing/Validation
 ~~~~~~~~~~~~~~~~~~~~~~~~~~

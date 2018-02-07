@@ -232,7 +232,7 @@ class timemory_test(unittest.TestCase):
 
             @timemory.util.rss_usage()
             def test_func_rss():
-                ret = np.ones(shape=[3000, 3000], dtype=np.float128)
+                ret = np.ones(shape=[5000, 5000], dtype=np.float64)
                 return None
 
             print('')

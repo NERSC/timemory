@@ -1,7 +1,6 @@
 var plotting_2____init_____8py =
 [
     [ "__load_module", "d9/d3e/plotting_2____init_____8py.html#a9245f4b39836c5928619e8cafb67f61a", null ],
-    [ "__dict__", "d9/d3e/plotting_2____init_____8py.html#a580ac7faaaed99d0d35f96dffd607d2c", null ],
     [ "__file_path", "d9/d3e/plotting_2____init_____8py.html#ae361d9e88f066236451663613c4508da", null ],
     [ "__module", "d9/d3e/plotting_2____init_____8py.html#a477f4cac04f51991e7a790d5cb944990", null ],
     [ "__module_name", "d9/d3e/plotting_2____init_____8py.html#ad071f568107432c3a7fe389ab951d55d", null ],

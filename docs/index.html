@@ -177,7 +177,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <ul>
 <li>Once timemory is installed, a set of unit-tests can be run via:</li>
 </ul>
-<div class="fragment"><div class="line"># the run() function can take a regex string for running specific test names</div><div class="line">$ python -c &quot;import timemory ; timemory.tests.run()&quot;</div></div><!-- fragment --><h3>General Testing/Validation</h3>
+<div class="fragment"><div class="line"># the run() function can take a regex string for running specific test names</div><div class="line">$ python -c &quot;import timemory ; timemory.tests.run()&quot;</div><div class="line">$ python -c &quot;import timemory ; timemory.tests.run(pattern=&quot;nested&quot;)</div><div class="line"># the run function will do `sys.exit(_fail)` if _fail &gt; 0 by default, to disable:</div><div class="line">$ python -c &quot;import timemory ; timemory.tests.run(exit_at_failure=False)</div></div><!-- fragment --><h3>General Testing/Validation</h3>
 <p>If TiMemory is build from source, a set of C++ and Python tests are provided for CTest</p>
 <h3>Basic Python usage</h3>
 <ul>
@@ -402,7 +402,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue Feb 6 2018 08:02:28 for TiMemory by
+    <li class="footer">Generated on Wed Feb 7 2018 15:46:00 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

@@ -177,7 +177,7 @@ def run(weak_ref):
             #print ("type: {}".format(type(weak_refs[0].resource()).__name__))
             return weak_ref.resource()
 
-        arr = np.ones([3000,3000], dtype=np.float128)
+        arr = np.ones([5000, 5000], dtype=np.float64)
         ret = auto_disk_array(arr, 'test')
         #print ('\n{} is gc: {}, {} is gc: {}'.format(type(arr).__name__,
         #    gc.is_tracked(arr), type(ret).__name__, gc.is_tracked(ret)))
@@ -193,7 +193,7 @@ def run(weak_ref):
     weak_ref = create(weak_ref)
     ref = weak_ref.resource()
     if ref is not None:
-        ref += np.ones([3000,3000], dtype=np.float128)
+        ref += np.ones([5000,5000], dtype=np.float64)
 
     return ref
 

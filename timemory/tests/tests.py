@@ -44,7 +44,7 @@ def __load_module(module_name, path):
 
 
 #------------------------------------------------------------------------------#
-def run(pattern=""):
+def run(pattern="", exit_at_failure=True):
     """
     Run the TiMemory unit tests
 
@@ -92,4 +92,7 @@ def run(pattern=""):
     print('============== FAILING TESTS: {}/{} ==============\n\n'.format(_fail, _call))
     _tot.stop()
     print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(_tot))
+
+    if _fail > 0 and exit_at_failure:
+        sys.exit(_fail)
 
