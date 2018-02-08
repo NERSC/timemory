@@ -21,11 +21,19 @@ environment:
   - PYTHON: 27
     CPP: 14
     CONFIG: Release
+  - CONDA: 36
+    CPP: latest
+    CONFIG: Release
 
-#matrix:
-#  exclude:
-#    - image: Visual Studio 2015
-#      platform: x86
+matrix:
+  exclude:
+  - image: Visual Studio 2015
+    CPP: latest
+  - image: Visual Studio 2017
+    CPP: latest
+    platform: x86
+#  - image: Visual Studio 2015
+#    platform: x86
 
 install:
 - ps: |
@@ -47,10 +55,10 @@ install:
       $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
       conda install -y -q pip
     }
-    pip install -U setuptools disttools mpi4py unittest2
+    pip install -U setuptools disttools
 
 build_script:
 - ls
-- pip install -v .
+- pip install .
 - cd ..
 - python -c "import timemory ; timemory.tests.run()"

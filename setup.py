@@ -155,7 +155,7 @@ class CMakeBuild(build_ext, Command):
         if platform.system() == "Windows":
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
-            build_args += ['--target', 'ALL_BUILD', '--', '/mp' ]
+            build_args += ['--target', 'ALL_BUILD', '--', '/m' ]
             install_args += ['--target', 'INSTALL', '--', '/m' ]
         else:
             nproc = '-j4'
