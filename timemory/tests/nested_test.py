@@ -134,10 +134,7 @@ def main(nfib):
 #------------------------------------------------------------------------------#
 def run_test():
 
-    timemory.enable_signal_detection([signals.sys_signal.Hangup,
-                                 signals.sys_signal.Interrupt,
-                                 signals.sys_signal.FPE,
-                                 signals.sys_signal.Abort ])
+    timemory.enable_signal_detection()
 
     array_size = 8000000
 

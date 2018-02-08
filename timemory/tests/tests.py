@@ -53,7 +53,7 @@ def run(pattern="", exit_at_failure=True):
             an empty string implies run all tests
     """
     import timemory
-    test_names = [ 'timemory', 'array', 'simple' ]
+    test_names = [ 'timemory', 'array', 'nested', 'simple' ]
     names = []
     try:
         import re
