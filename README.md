@@ -88,6 +88,12 @@ TiMemory is summarized by the following:
 python setup.py build install [test]
 # with pip
 pip install .
+# over-ride default when pip-installing (fields in setup.cfg should be prefixed
+# with "TIMEMORY_" if not in already and be in all caps, e.g.
+#   build_type -> TIMEMORY_BUILD_TYPE
+#   timemory_exceptions -> TIMEMORY_EXCEPTIONS
+TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install .
+TIMEMORY_BUIDL_TYPE=RelWithDebInfo pip install timemory
 ```
 
 - `setup.cfg` can be edited for build_type, use_mpi, mpicc, mpicxx, etc.
@@ -173,7 +179,7 @@ test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 syste
 test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 ```
 
-#### RSS usage example:
+#### RSS usage example (will report to stdout at the end of the function)
 
 ```python
 @timemory.util.rss_usage(key="", add_args=False, is_class=False)

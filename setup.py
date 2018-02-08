@@ -44,6 +44,16 @@ class CMakeBuild(build_ext, Command):
     cmake_include_path = ''
     cmake_library_path = ''
 
+
+    def check_env(self, var, key):
+        ret = var
+        try:
+            ret = os.environ[key]
+        except:
+            pass
+        return ret
+
+
     def cmake_version_error(self):
         """
         Raise exception about CMake
@@ -60,7 +70,7 @@ class CMakeBuild(build_ext, Command):
     def init_cmake(self):
         """
         Ensure cmake is in PATH
-        """
+        """        
         try:
             out = subprocess.check_output(['cmake', '--version'])
             CMakeBuild.cmake_version = LooseVersion(
@@ -105,6 +115,22 @@ class CMakeBuild(build_ext, Command):
                       '-DSETUP_PY=ON',
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
                       ]
+
+        # allow environment to over-ride setup.cfg
+        # options are prefixed with TIMEMORY_ if not already
+        def compose(str):
+            return 'TIMEMORY_{}'.format(str.upper())
+
+        self.build_type = self.check_env(self.build_type, compose("build_type"))
+        self.use_mpi = self.check_env(self.use_mpi, compose("use_mpi"))
+        self.timemory_exceptions = self.check_env(self.timemory_exceptions, "TIMEMORY_EXCEPTIONS")
+        self.build_examples = self.check_env(self.build_examples, compose("build_examples"))
+        self.cxx_standard = self.check_env(self.cxx_standard, compose("cxx_standard"))
+        self.mpicc = self.check_env(self.mpicc, compose("mpicc"))
+        self.mpicxx = self.check_env(self.mpicxx, compose("mpicxx"))
+        self.cmake_prefix_path = self.check_env(self.cmake_prefix_path, compose("cmake_prefix_path"))
+        self.cmake_include_path = self.check_env(self.cmake_include_path, compose("cmake_include_path"))
+        self.cmake_library_path = self.check_env(self.cmake_library_path, compose("cmake_library_path"))
 
         _valid_type = False
         for _type in [ 'Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel' ]:

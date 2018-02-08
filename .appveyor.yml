@@ -22,7 +22,7 @@ environment:
     CPP: 14
     CONFIG: Release
   - CONDA: 36
-    CPP: latest
+    CPP: 17
     CONFIG: Release
 
 matrix:

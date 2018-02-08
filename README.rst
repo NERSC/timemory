@@ -107,6 +107,12 @@ Python setup.py installation
   python setup.py build install [test]
   # with pip
   pip install .
+  # over-ride default when pip-installing (fields in setup.cfg should be prefixed
+  # with "TIMEMORY_" if not in already and be in all caps, e.g.
+  #   build_type -> TIMEMORY_BUILD_TYPE
+  #   timemory_exceptions -> TIMEMORY_EXCEPTIONS
+  TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install .
+  TIMEMORY_BUIDL_TYPE=RelWithDebInfo pip install timemory
 
 -  ``setup.cfg`` can be edited for build\_type, use\_mpi, mpicc, mpicxx,
    etc.
@@ -210,8 +216,8 @@ Timer example (will report to stdout at the end of the function)
   # with is_class=True
   test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 
-RSS usage example:
-^^^^^^^^^^^^^^^^^^
+RSS usage example (will report to stdout at the end of the function)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. code:: python
 
@@ -353,10 +359,10 @@ CTest log:
 This ``<DartMeasurementFile>`` tag is recognized by CTest in the output
 and the following plots get uploaded to dashboard
 
-.. figure:: /images/timing.png
+.. image:: /images/timing.png
    :alt: 
 
-.. figure:: /images/memory.png
+.. image:: /images/memory.png
    :alt: 
 
 Timemory ASCII Sample Output
