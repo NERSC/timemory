@@ -87,6 +87,11 @@ def run(pattern="", exit_at_failure=True):
         except:
             print('\n>>>>>>> Test [ {} ] failed! <<<<<<<\n'.format(_f))
             _fail += 1
+            try:
+                sp.check_call([sys.executable, "-m", "trace", "-t", _file],
+                              cwd=os.getcwd())
+            except:
+                print('\n>>>>>>> ERROR - CHECK LOG <<<<<<<\n')
         t.stop()
         print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(t))
     print('\n\n============== PASSING TESTS: {}/{} =============='.format(_call-_fail, _call))
