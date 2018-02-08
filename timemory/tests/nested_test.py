@@ -134,7 +134,10 @@ def main(nfib):
 #------------------------------------------------------------------------------#
 def run_test():
 
-    timemory.enable_signal_detection()
+    timemory.enable_signal_detection([ signals.sys_signal.Hangup,
+                                       signals.sys_signal.Interrupt,
+                                       signals.sys_signal.FPE,
+                                       signals.sys_signal.Abort ])
 
     array_size = 8000000
 
@@ -187,4 +190,10 @@ def run_test():
 
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':
-    run_test()
+    try:
+        run_test()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        raise

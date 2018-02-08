@@ -34,9 +34,9 @@ import os
 import numpy as np
 import time
 import gc
-import timemory
-
 import weakref
+import traceback
+import timemory
 
 
 # ---------------------------------------------------------------------------- #
@@ -258,4 +258,10 @@ def run_test():
 
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':
-    run_test()
+    try:
+        run_test()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        raise

@@ -35,6 +35,7 @@ import time
 import numpy as np
 from os.path import join
 import unittest as unittest
+import traceback
 
 import timemory
 from timemory import options
@@ -245,18 +246,23 @@ class timemory_test(unittest.TestCase):
 
 # ---------------------------------------------------------------------------- #
 def run_test():
-
-    _test = timemory_test()
-    _test.setUp()
-    _test.test_decorator()
-    _test.setUp()
-    _test.test_max_depth()
-    _test.setUp()
-    _test.test_pointer()
-    _test.setUp()
-    _test.test_timing()
-    _test.setUp()
-    _test.test_toggle()
+    try:
+        _test = timemory_test()
+        _test.setUp()
+        _test.test_decorator()
+        _test.setUp()
+        _test.test_max_depth()
+        _test.setUp()
+        _test.test_pointer()
+        _test.setUp()
+        _test.test_timing()
+        _test.setUp()
+        _test.test_toggle()
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        raise
 
 
 # ---------------------------------------------------------------------------- #
