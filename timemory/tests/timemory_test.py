@@ -200,9 +200,8 @@ class timemory_test(unittest.TestCase):
     def test_decorator(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
-        import time
-
-        timemory.clear()
+        timemory.toggle(True)
+        self.timing_manager.clear()
 
         @timemory.util.auto_timer()
         def test_func_glob():
@@ -221,7 +220,6 @@ class timemory_test(unittest.TestCase):
             test_func_2(2)
 
         test_func_glob()
-
         timemory.report()
 
         self.assertEqual(timemory.size(), 4)

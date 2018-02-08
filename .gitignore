@@ -4,6 +4,7 @@
 
 # Ninja-IDE project files
 /*.nja
+settings.json
 
 # Edit files
 *~

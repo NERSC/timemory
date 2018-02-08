@@ -111,6 +111,8 @@ timing_manager::~timing_manager()
     auto close_ostream = [&] (ostream_t*& m_os)
     {
         ofstream_t* m_fos = get_ofstream(m_os);
+        if(!m_fos)
+            return;
         if(!m_fos->good() || !m_fos->is_open())
             return;
         m_fos->close();
@@ -321,7 +323,7 @@ void timing_manager::report(ostream_t* os, bool no_min) const
         if(_os == &std::cout || _os == &std::cerr)
             return;
         ofstream_t* fos = get_ofstream(_os);
-        if(!(fos->is_open() && fos->good()))
+        if(fos && !(fos->is_open() && fos->good()))
         {
             std::cerr << "Output stream for " << id << " is not open/valid. "
                       << "Redirecting to stdout..." << std::endl;
@@ -409,7 +411,9 @@ void timing_manager::set_output_stream(const string_t& fname)
 timing_manager::ofstream_t*
 timing_manager::get_ofstream(ostream_t* m_os) const
 {
-    return static_cast<ofstream_t*>(m_os);
+    return (m_os != &std::cout && m_os != &std::cerr) 
+        ? static_cast<ofstream_t*>(m_os)
+        : nullptr;
 }
 
 //============================================================================//
