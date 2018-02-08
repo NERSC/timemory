@@ -51,5 +51,6 @@ install:
 
 build_script:
 - ls
-- python ./setup.py build install
+- pip install .
+- cd ..
 - python -c "import timemory ; timemory.tests.run()"
