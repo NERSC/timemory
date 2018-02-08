@@ -32,6 +32,10 @@ import imp
 import subprocess as sp
 
 
+# get the path to this directory
+__this_path = os.path.abspath(os.path.dirname(__file__))
+
+
 #------------------------------------------------------------------------------#
 def run(pattern="", exit_at_failure=True):
     """
