@@ -54,22 +54,6 @@ from timemory import plotting
 
 
 #------------------------------------------------------------------------------#
-# create an exit action function
-def exit_action(errcode):
-    tman = timemory.timing_manager()
-    timemory.report(no_min=True)
-    fname = 'nested_test_err_{}.out'.format(errcode)
-    f = open(fname, 'w')
-    f.write('{}\n'.format(tman))
-    f.close()
-
-
-#------------------------------------------------------------------------------#
-# set the exit action function
-timemory.set_exit_action(exit_action)
-
-
-#------------------------------------------------------------------------------#
 # NOTE: Using decorator on a recursive function will produce a very different
 # output
 def fibonacci(n):
