@@ -31,17 +31,6 @@ import os
 import imp
 import subprocess as sp
 
-__all__ = []
-
-#------------------------------------------------------------------------------#
-# get the path to this directory
-__this_path = os.path.abspath(os.path.dirname(__file__))
-
-
-#------------------------------------------------------------------------------#
-def __load_module(module_name, path):
-    return imp.load_module(module_name, open(path), path, ('py', 'U', imp.PY_SOURCE))
-
 
 #------------------------------------------------------------------------------#
 def run(pattern="", exit_at_failure=True):

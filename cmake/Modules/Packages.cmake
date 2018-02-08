@@ -133,3 +133,11 @@ if(NOT PYBIND11_PYTHON_VERSION)
 endif(NOT PYBIND11_PYTHON_VERSION)
 
 add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
+
+execute_process(COMMAND ${PYTHON_EXECUTABLE}
+    -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
+    OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET)
+
+string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")

@@ -14,6 +14,12 @@ from setuptools import Command
 from setuptools.command.test import test as TestCommand
 from setuptools.command.install_egg_info import install_egg_info
 
+
+# ---------------------------------------------------------------------------- #
+def get_project_version():
+    return '1.1.8rc2'
+
+
 # ---------------------------------------------------------------------------- #
 class CMakeExtension(Extension):
 
@@ -149,10 +155,16 @@ class CMakeBuild(build_ext, Command):
         if platform.system() == "Windows":
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
-            build_args += ['--target', 'ALL_BUILD', '--', '/m' ]
+            build_args += ['--target', 'ALL_BUILD', '--', '/mp' ]
             install_args += ['--target', 'INSTALL', '--', '/m' ]
         else:
-            build_args += [ '--', '-j4' ]
+            nproc = '-j4'
+            try:
+                import multiprocessing as mp
+                nproc = '-j{}'.format(mp.cpu_count())
+            except:
+                pass
+            build_args += [ '--', nproc ]
             install_args += [ '--target', 'install' ]
 
         env = os.environ.copy()
@@ -335,6 +347,7 @@ def get_classifiers():
         'Operating System :: MacOS',
         'Operating System :: Microsoft :: Windows :: Windows 10',
         'Operating System :: POSIX :: Linux',
+        'Operating System :: POSIX :: BSD',
         # written in C++, available to Python via PyBind11
         'Programming Language :: C++',
         'Programming Language :: Python :: 2',
@@ -348,6 +361,7 @@ def get_classifiers():
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: Implementation :: CPython',
     ]
 
 
@@ -363,7 +377,7 @@ def get_email():
 # ---------------------------------------------------------------------------- #
 # calls the setup and declare package
 setup(name='TiMemory',
-    version='1.1.8rc1',
+    version=get_project_version(),
     author=get_name(),
     author_email=get_email(),
     maintainer=get_name(),

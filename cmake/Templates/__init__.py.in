@@ -29,9 +29,6 @@ import os
 import sys
 import imp
 
-#__all__ = [ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util' ] # import for side effects
-#__all__ = []
-
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -47,65 +44,37 @@ timemory_dylib_name = '@LIBNAME@@PYTHON_MODULE_EXTENSION@'
 # import the compiled TiMemory module
 timemory = timemory_py.__bootstrap__(timemory_dylib_name)
 
-# ---------------------------------------------------------------------------- #
-def load_via_init():
-    global timemory
+# define the version_info
+timemory.__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@) )
 
-    #print ('(A) Loading util ...')
-    # load the submodule
-    __init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))
-    # add the submodule attributes
-    timemory.__setattr__("util", __init_utl.__self)
+# define the version string
+timemory.__setattr__("version", "@TIMEMORY_VERSION@" )
 
-    #print ('(A) Loading mpi_support ...')
-    # load the submodule
-    __init_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/__init__.py'))
-    # add the submodule attributes
-    timemory.__setattr__("mpi_support", __init_mpi.__self)
+timemory.__setattr__("build_info", { "date" : "@TIMEMORY_INSTALL_DATE@",
+                                     "library_architecture" : "@CMAKE_SYSTEM_PROCESSOR@",
+                                     "system_name" : "@CMAKE_SYSTEM_NAME@",
+                                     "system_version" : "@CMAKE_SYSTEM_VERSION@",
+                                     "build_type" : "@CMAKE_BUILD_TYPE@",
+                                     "compiler" : "@CMAKE_CXX_COMPILER@",
+                                     "compiler_id" : "@CMAKE_CXX_COMPILER_ID@",
+                                     "compiler_version" : "@CMAKE_CXX_COMPILER_VERSION@" } )
 
-    #print ('(A) Loading plotting ...')
-    # load the submodule
-    __init_plt = __load_module('plotting', os.path.join(this_path, 'plotting/__init__.py'))
-    # add the submodule attributes
-    timemory.__setattr__("plotting", __init_plt.__self)
+# load the submodule
+__init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))
+# add the submodule attributes
+timemory.__setattr__("util", __init_utl.__self)
 
-    #print ('(A) Loading tests ...')
-    # load the submodule
-    __init_tst = __load_module('tests', os.path.join(this_path, 'tests/__init__.py'))
-    # add the submodule attributes
-    timemory.__setattr__("tests", __init_tst.__self)
+# load the submodule
+__init_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/__init__.py'))
+# add the submodule attributes
+timemory.__setattr__("mpi_support", __init_mpi.__self)
 
-# ---------------------------------------------------------------------------- #
-def load_via_direct():
-    global timemory
+# load the submodule
+__init_plt = __load_module('plotting', os.path.join(this_path, 'plotting/__init__.py'))
+# add the submodule attributes
+timemory.__setattr__("plotting", __init_plt.__self)
 
-    #print ('(B) Loading util ...')
-    # load the submodule
-    __modl_utl = __load_module('util', os.path.join(this_path, 'util/util.py'))
-    # add the submodule attributes
-    timemory.__setattr__("util", __modl_utl)
-
-    #print ('(B) Loading mpi_support ...')
-    # load the submodule
-    __modl_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/mpi_support.py'))
-    # add the submodule attributes
-    timemory.__setattr__("mpi_support", __modl_mpi)
-
-    #print ('(B) Loading plotting ...')
-    # load the submodule
-    __modl_plt = __load_module('plotting', os.path.join(this_path, 'plotting/plotting.py'))
-    # add the submodule attributes
-    timemory.__setattr__("plotting", __modl_plt)
-
-    #print ('(B) Loading tests ...')
-    # load the submodule
-    __modl_tst = __load_module('tests', os.path.join(this_path, 'tests/tests.py'))
-    # add the submodule attributes
-    timemory.__setattr__("tests", __modl_tst)
-
-try:
-    # try loading the init files (works on Python >= 3.1)
-    load_via_init()
-except:
-    # fallback, some import statements don't work
-    load_via_direct()
+# load the submodule
+__init_tst = __load_module('tests', os.path.join(this_path, 'tests/__init__.py'))
+# add the submodule attributes
+timemory.__setattr__("tests", __init_tst.__self)

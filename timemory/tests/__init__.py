@@ -43,12 +43,11 @@ __module_name = __self.__name__
 
 # Python 3.1+
 if sys.version_info[0] > 2 and sys.version_info[1] > 0:
+    # try to populate __spec__ attribute
     try:
         __spec = importlib.util.spec_from_file_location(__module_name, __file_path)
         __module = importlib.util.module_from_spec(__spec)
         __spec.loader.exec_module(__module)
-        # Optional; only necessary if you want to be able to import the module
-        # by name later.
         sys.modules[__module_name] = __module
 
     except Exception as e:
