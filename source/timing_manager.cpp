@@ -153,32 +153,37 @@ void timing_manager::clear()
     m_timer_list.clear();
     m_timer_map.clear();
     for(auto& itr : m_daughters)
-        if(itr != this)
+        if(itr != this && itr)
             itr->clear();
 
     ofstream_t* m_fos = get_ofstream(m_report);
-    for(int32_t i = 0; i < mpi_size(); ++i)
-    {
-        mpi_barrier(MPI_COMM_WORLD);
-        if(mpi_rank() != i)
-            continue;
 
-        if(m_fos->good() && m_fos->is_open())
+    if(m_fos)
+    {
+        for(int32_t i = 0; i < mpi_size(); ++i)
         {
-            if(mpi_rank()+1 >= mpi_size())
+            mpi_barrier(MPI_COMM_WORLD);
+            if(mpi_rank() != i)
+                continue;
+
+            if(m_fos->good() && m_fos->is_open())
             {
-                m_fos->flush();
-                m_fos->close();
-                delete m_fos;
-            }
-            else
-            {
-                m_fos->flush();
-                m_fos->close();
-                delete m_fos;
+                if(mpi_rank()+1 >= mpi_size())
+                {
+                    m_fos->flush();
+                    m_fos->close();
+                    delete m_fos;
+                }
+                else
+                {
+                    m_fos->flush();
+                    m_fos->close();
+                    delete m_fos;
+                }
             }
         }
     }
+
     m_report = &std::cout;
 }
 

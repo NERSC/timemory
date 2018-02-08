@@ -550,7 +550,7 @@ PYBIND11_MODULE(timemory, tim)
              "Size of timing manager");
     tman.def("clear",
              [=] (py::object tman)
-             { return tman.cast<timing_manager_wrapper*>()->get()->clear(); },
+             { tman.cast<timing_manager_wrapper*>()->get()->clear(); },
              "Clear the timing manager");
     tman.def("serialize",
              [=] (py::object tman, std::string fname = "")
