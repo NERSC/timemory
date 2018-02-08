@@ -88,8 +88,20 @@ def run(pattern="", exit_at_failure=True):
             print('\n>>>>>>> Test [ {} ] failed! <<<<<<<\n'.format(_f))
             _fail += 1
             try:
-                sp.check_call([sys.executable, "-m", "trace", "-t", _file],
-                              cwd=os.getcwd())
+                args = [ sys.executable, "-m", "trace" ]
+                for ignore in [ "sre_parse", "sre_compile", "enum", "posixpath",
+                                 "__init__", "genericpath", "re", "version",
+                                 "importlib", "pyparsing", "pkgutil", "textwrap",
+                                 "copy", "zipfile", "codecs", "_structures",
+                                 "linecache", "abc", "_weakrefset", "platform",
+                                 "plistlib", "_bootstrap", "inspect", "warnings",
+                                 "requirements", "sysconfig", "traceback",
+                                 "copyreg", "os", "tokenize", "_collections_abc",
+                                 "appdirs", "__about__", "specifiers", "_compat",
+                                 "six" ]:
+                    args.extend([ "--ignore-module", ignore ])
+                args.extend([ "-t", _file ])
+                sp.check_call(args, cwd=os.getcwd())
             except:
                 print('\n>>>>>>> ERROR - CHECK LOG <<<<<<<\n')
         t.stop()
