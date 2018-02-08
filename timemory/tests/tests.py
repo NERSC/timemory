@@ -85,6 +85,7 @@ def run(pattern="", exit_at_failure=True):
             _call += 1
             sp.check_call([sys.executable, _file], cwd=os.getcwd())
         except:
+            print('\n>>>>>>> Test [ {} ] failed! <<<<<<<\n'.format(_f))
             _fail += 1
         t.stop()
         print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(t))
