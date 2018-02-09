@@ -474,13 +474,19 @@ PYBIND11_MODULE(timemory, tim)
                           do_ser = options.serial_file
                           outdir = options.output_dir
                           options.ensure_directory_exists('{}/test.txt'.format(outdir))
+                          # absolute paths
+                          absdir = os.path.abspath(outdir)
+                          repabs = os.path.join(absdir, repfnm)
+                          serabs = os.path.join(absdir, serfnm)
                           )", py::globals(), locals);
 
                  auto outdir = locals["outdir"].cast<std::string>();
                  auto repfnm = locals["repfnm"].cast<std::string>();
                  auto serfnm = locals["serfnm"].cast<std::string>();
-                 auto _do_rep = locals["do_ret"].cast<bool>();
-                 auto _do_ser = locals["do_ser"].cast<bool>();
+                 auto do_rep = locals["do_ret"].cast<bool>();
+                 auto do_ser = locals["do_ser"].cast<bool>();
+                 auto repabs = locals["repabs"].cast<std::string>();
+                 auto serabs = locals["serabs"].cast<std::string>();
 
                  if(repfnm.find(outdir) != 0)
                      repfnm = outdir + "/" + repfnm;
@@ -492,33 +498,34 @@ PYBIND11_MODULE(timemory, tim)
                          = tman.cast<timing_manager_wrapper*>()->get();
 
                  // set the output stream
-                 if(_do_rep)
+                 if(do_rep)
                  {
                      std::cout << "Outputting timing_manager to '" << repfnm
                                << "'..." << std::endl;
                      _tman->set_output_stream(repfnm);
-                     tman.attr("reported_files").cast<py::list>().append(repfnm);
+
+                     tman.attr("reported_files").cast<py::list>().append(repabs);
                  }
 
                  // report ASCII output
                  _tman->report(no_min);
 
                  // handle the serialization
-                 if(!_do_ser && serialize)
+                 if(!do_ser && serialize)
                  {
-                     _do_ser = true;
+                     do_ser = true;
                      if(!serial_filename.empty())
                          serfnm = serial_filename;
                      else if(serfnm.empty())
                          serfnm = "output.json";
                  }
 
-                 if(_do_ser && timing_manager_t::instance()->size() > 0)
+                 if(do_ser && timing_manager_t::instance()->size() > 0)
                  {
                      std::cout << "Serializing timing_manager to '" << serfnm
                                << "'..." << std::endl;
                      _tman->write_serialization(serfnm);
-                     tman.attr("serialized_files").cast<py::list>().append(serfnm);
+                     tman.attr("serialized_files").cast<py::list>().append(serabs);
                  }
              },
              "Report timing manager",
