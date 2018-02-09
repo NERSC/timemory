@@ -868,7 +868,7 @@ PYBIND11_MODULE(timemory, tim)
     opts.attr("serial_fname") = "timing_report.json";
     opts.attr("output_dir") = ".";
     opts.attr("echo_dart") = false;
-    opts.attr("ctesst_notes") = false;
+    opts.attr("ctest_notes") = false;
 
     // ---------------------------------------------------------------------- //
 
