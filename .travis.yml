@@ -510,8 +510,7 @@ install:
         -DBUILD_TESTING=ON -DCTEST_SITE=travis -DCTEST_MODEL=Continous
         -DCTEST_LOCAL_CHECKOUT=ON ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
-    - make -j2
-    - make install -j2
+    - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
     #
     # Python testing
     #
@@ -529,9 +528,3 @@ script:
     - cd ${HOME}/timemory-test
     - python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
     - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
-    #
-    # C++ testing
-    #
-    - cd ${BUILD_DIR}
-    - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
-    - echo "C++ testing -- Done"
