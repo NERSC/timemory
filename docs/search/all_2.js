@@ -22,5 +22,6 @@ var searchData=
   ['begin',['begin',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a4847a60bdee33dc9da64bd085e2fd8cc',1,'NAME_TIM::timer::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a85ff5964791bd1a1313225cf45fc1682',1,'NAME_TIM::timing_manager::begin()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#ad8a0af1af26e43789136e4899c05ed0a',1,'NAME_TIM::timing_manager::begin() const']]],
   ['bi',['Bi',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a33ba7de65c4031e9717e1b0ef4391e48',1,'NAME_TIM::rss::units']]],
   ['bind_5ffinalizer',['bind_finalizer',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a7a9ddcd85f294b0cf5f6d462ebd4a260',1,'tests::array_test::auto_array_weakref']]],
+  ['buffer',['buffer',['../df/ddd/namespacetests_1_1timemory__test.html#a2f39e693f5aed77e5f657d53a1f25fd7',1,'tests::timemory_test']]],
   ['byte',['byte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a42ab8ed0bd794ee8835dc79fc82d5c2a',1,'NAME_TIM::rss::units']]]
 ];

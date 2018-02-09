@@ -52,6 +52,9 @@ if(BUILD_TESTING)
         OUTPUT_STRIP_TRAILING_WHITESPACE)
     string(REPLACE "* " "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
     string(REPLACE "*" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+    # removes things such as : '(HEAD detached at 3109eab) master' -> 'master'
+    STRING(REGEX REPLACE "(\\\(.*\\\) )" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+
 endif(BUILD_TESTING)
 
 

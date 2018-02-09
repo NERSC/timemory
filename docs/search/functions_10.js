@@ -2,9 +2,9 @@ var searchData=
 [
   ['parse_5fformat',['parse_format',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a19281563a64bc897c8fb0aeb8da590ac',1,'NAME_TIM::internal::base_timer']]],
   ['peak',['peak',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#acd3d69e502936e84975af318ce7b2907',1,'NAME_TIM::rss::usage']]],
-  ['plot',['plot',['../df/d23/namespaceplotting_1_1plotting.html#ad9bf74e69b64d7e233da2c888022de35',1,'plotting::plotting']]],
-  ['plot_5fmemory',['plot_memory',['../df/d23/namespaceplotting_1_1plotting.html#a2142fe3875ad793d3b01569eb1597400',1,'plotting::plotting']]],
-  ['plot_5ftiming',['plot_timing',['../df/d23/namespaceplotting_1_1plotting.html#ae4ae1729c4ce7bb75dad070803f42204',1,'plotting::plotting']]],
+  ['plot',['plot',['../df/d23/namespaceplotting_1_1plotting.html#a585ef7431506d708a41006c6b2e6335a',1,'plotting::plotting']]],
+  ['plot_5fmemory',['plot_memory',['../df/d23/namespaceplotting_1_1plotting.html#afa5d94c1937ae10939842d5e27bdf330',1,'plotting::plotting']]],
+  ['plot_5ftiming',['plot_timing',['../df/d23/namespaceplotting_1_1plotting.html#af97341db5d1a92f684d6ca29f600760b',1,'plotting::plotting']]],
   ['print',['print',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#acc57df2670ab78469e8308a1e850dd21',1,'NAME_TIM::timer::print()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a5ccfa691ebd6f3023f3d52f4abf8f424',1,'NAME_TIM::timing_manager::print()']]],
   ['print_5fdepth',['print_depth',['../d0/d90/ex1_2test__timing_8cpp.html#a4026a720a9d214420c567e9617dd9735',1,'print_depth(const std::string &amp;, int64_t, bool=true):&#160;test_timing.cpp'],['../dd/d0a/mpi__test__timing_8cpp.html#a4026a720a9d214420c567e9617dd9735',1,'print_depth(const std::string &amp;, int64_t, bool=true):&#160;mpi_test_timing.cpp']]],
   ['print_5finfo',['print_info',['../d0/d90/ex1_2test__timing_8cpp.html#a856fbb2a912a742f01c6692a60866280',1,'print_info(const std::string &amp;):&#160;test_timing.cpp'],['../dd/d0a/mpi__test__timing_8cpp.html#a856fbb2a912a742f01c6692a60866280',1,'print_info(const std::string &amp;):&#160;mpi_test_timing.cpp']]],

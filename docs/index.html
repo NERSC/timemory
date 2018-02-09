@@ -157,7 +157,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 </li>
 </ul>
 <h3>Python setup.py installation</h3>
-<div class="fragment"><div class="line"># standard</div><div class="line">python setup.py build install [test]</div><div class="line"># with pip</div><div class="line">pip install .</div></div><!-- fragment --><ul>
+<div class="fragment"><div class="line"># standard</div><div class="line">python setup.py build install [test]</div><div class="line"># with pip</div><div class="line">pip install .</div><div class="line"># over-ride default when pip-installing (fields in setup.cfg should be prefixed</div><div class="line"># with &quot;TIMEMORY_&quot; if not in already and be in all caps, e.g.</div><div class="line">#   build_type -&gt; TIMEMORY_BUILD_TYPE</div><div class="line">#   timemory_exceptions -&gt; TIMEMORY_EXCEPTIONS</div><div class="line">TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install .</div><div class="line">TIMEMORY_BUIDL_TYPE=RelWithDebInfo pip install timemory</div></div><!-- fragment --><ul>
 <li><code>setup.cfg</code> can be edited for build_type, use_mpi, mpicc, mpicxx, etc.</li>
 <li>Build defaults:<ul>
 <li>build_type == Release</li>
@@ -201,7 +201,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <div class="fragment"><div class="line">@timemory.util.timer(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
 <li>sample of an output:</li>
 </ul>
-<div class="fragment"><div class="line"># free function</div><div class="line">test_func_timer@&#39;timemory_test.py&#39;:240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]</div><div class="line"># with is_class=True</div><div class="line">test_decorator[timemory_test]@&#39;timemory_test.py&#39;:210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]</div></div><!-- fragment --><h4>RSS usage example:</h4>
+<div class="fragment"><div class="line"># free function</div><div class="line">test_func_timer@&#39;timemory_test.py&#39;:240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]</div><div class="line"># with is_class=True</div><div class="line">test_decorator[timemory_test]@&#39;timemory_test.py&#39;:210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]</div></div><!-- fragment --><h4>RSS usage example (will report to stdout at the end of the function)</h4>
 <div class="fragment"><div class="line">@timemory.util.rss_usage(key=&quot;&quot;, add_args=False, is_class=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
 <li>sample of an output:</li>
 </ul>
@@ -240,12 +240,16 @@ $(document).ready(function(){initNavTree('index.html','');});
 <ul>
 <li>a text file (e.g. <code>timing_report_XXX.out</code> file)<ul>
 <li>general ASCII report</li>
+<li>to include this report as part of CDash dashboard (writing a CTestNotes.cmake file), use the <code>timemory.timing_manager</code> member function <code>write_ctest_notes</code>, e.g.</li>
 </ul>
 </li>
+</ul>
+<div class="fragment"><div class="line">if timemory.options.ctest_notes:</div><div class="line">    manager = timemory.timing_manager()</div><div class="line">    f = manager.write_ctest_notes(directory=&quot;test_output/simple_test&quot;)</div><div class="line">    print(&#39;&quot;{}&quot; wrote CTest notes file : {}&#39;.format(__file__, f))</div></div><!-- fragment --><p>and use the following in CMake (reproduced from cmake/Templates/cdash/Init.cmake)</p>
+<div class="fragment"><div class="line">file(GLOB_RECURSE NOTE_FILES &quot;${CTEST_BINARY_DIRECTORY}/*CTestNotes.cmake&quot;)</div><div class="line">foreach(_FILE ${NOTE_FILES})</div><div class="line">    include(&quot;${_FILE}&quot;)</div><div class="line">endforeach(_FILE ${NOTE_FILES})</div></div><!-- fragment --><ul>
 <li>a JSON file with more detailed data<ul>
 <li>used for plotting purposes</li>
 <li>can be directly called by module: <code>timemory.plotting.plot(files=["output.json"], display=False, output_dir=".")</code></li>
-<li><code>python/plot.py</code> in the source tree can be directly used</li>
+<li>Outputting this plot to a CDash dashboard is enabled with the option <code>--enable-dart</code> or by setting <code>timemory.options.enable_dart=True</code>.</li>
 </ul>
 </li>
 <li>Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer.</li>
@@ -260,8 +264,8 @@ $(document).ready(function(){initNavTree('index.html','');});
 </li>
 </ul>
 <h3>TiMemory Plot Sample Output (from JSON serialization of TiMemory data)</h3>
-<p>As an added feature for software testing suites such as CTest/CDash, TiMemory can be used for reporting regular timing and memory plots by simply using the plotting submodule and outputting the following to my CTest log:</p>
-<div class="fragment"><div class="line">&lt;DartMeasurementFile name=&quot;out_tiny_ground_simple/timing_report_main_0_timing.png&quot;</div><div class="line">type=&quot;image/png&quot;&gt;/global/cscratch1/sd/jrmadsen/software/toast-worker/build-toast/edison-intel-mkl/release/cdash/Nightly/build-toast/examples/out_tiny_ground_simple/timing_report_main_0_timing.png&lt;/DartMeasurementFile&gt;</div></div><!-- fragment --><p>This <code>&lt;DartMeasurementFile&gt;</code> tag is recognized by CTest in the output and the following plots get uploaded to dashboard</p>
+<p>As previously mentioned, for software testing suites such as CTest/CDash, TiMemory can be used for reporting regular timing and memory plots by simply using the plotting submodule and echoing the following to my testing log:</p>
+<div class="fragment"><div class="line">&lt;DartMeasurementFile name=&quot;timing_report_timing.png&quot;</div><div class="line">type=&quot;image/png&quot;&gt;/Users/somebody/timemory/build/timing_report_timing.png&lt;/DartMeasurementFile&gt;</div></div><!-- fragment --><p>This <code>&lt;DartMeasurementFile&gt;</code> tag is recognized by CTest in the output and the following plots get uploaded to dashboard. Outputting this string is enabled with the option <code>--enable-dart</code> or by setting <code>timemory.options.enable_dart=True</code> prior to calling <code>timemory.plotting.plot(...)</code></p>
 <div class="image">
 <img src="timing.png" alt="timing.png"/>
 </div>
@@ -402,7 +406,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Wed Feb 7 2018 15:46:00 for TiMemory by
+    <li class="footer">Generated on Thu Feb 8 2018 22:03:31 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

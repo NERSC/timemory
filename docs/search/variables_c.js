@@ -34,6 +34,7 @@ var searchData=
   ['m_5ftimer_5flist',['m_timer_list',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#a439b61d89d0f80776c9d2d5b551b1332',1,'NAME_TIM::timing_manager']]],
   ['m_5ftimer_5fmap',['m_timer_map',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af8fb49a7e32904199a806030b85c1cd7',1,'NAME_TIM::timing_manager']]],
   ['m_5fuse_5fstatic_5fwidth',['m_use_static_width',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a8cb406f145cbb1b0206ba0f6c97231c4',1,'NAME_TIM::timer']]],
+  ['manager',['manager',['../d9/d25/namespacetests_1_1array__test.html#a64c38049bf28954ec9c6d87d82daea88',1,'tests.array_test.manager()'],['../dd/dcb/namespacetests_1_1nested__test.html#a4738a6486a396116d6a91ad0f748f1bd',1,'tests.nested_test.manager()'],['../d0/d18/namespacetests_1_1simple__test.html#a34a516e72a877177fa66d60127ad54dc',1,'tests.simple_test.manager()'],['../df/ddd/namespacetests_1_1timemory__test.html#a347453af93b01dc0021113695387c8a1',1,'tests.timemory_test.manager()']]],
   ['megabyte',['megabyte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#a851b8249bcf55849c737bbd847560dc4',1,'NAME_TIM::rss::units']]],
   ['memory',['memory',['../d0/d20/classplotting_1_1plotting_1_1timemory__function.html#a638094fdf80fc24b83d77e4a87bd2b05',1,'plotting::plotting::timemory_function']]],
   ['memory_5ftypes',['memory_types',['../df/d23/namespaceplotting_1_1plotting.html#a178ddc4ad47dc8da9d91f945c33d783e',1,'plotting::plotting']]],

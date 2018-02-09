@@ -249,11 +249,17 @@ os.kill(os.getpid(), signal.SIGHUP)
 - In C++ code, easiest usage for the auto_timers is with the TiMemory macro
 
 ```cpp
-TIMEMORY_AUTO_TIMER("custom_string")
+// tags the timer in the format <function><custom>@'<file>':<line>
+TIMEMORY_AUTO_TIMER("[custom_string]")
+// tags the timer in the format <function><custom>
+TIMEMORY_AUTO_TIMER_BASIC("[custom_string]")
+
+// later on
+tim::timing_manager::instance()->report()
 ```
 
 - The timing_manager is thread-safe and should be accessed through `timing_manager::instance()`
-- See the full documentation and examples for more information on the classes and usage
+- See the full documentation and examples (ex1 and ex2) for more information on the classes and usage
 
 
 ### Overview
@@ -263,12 +269,29 @@ There are essentially two components of the output:
 - a text file (e.g. `timing_report_XXX.out` file)
 
   - general ASCII report
+  - to include this report as part of CDash dashboard (writing a CTestNotes.cmake file), use the `timemory.timing_manager` member function `write_ctest_notes`, e.g.
+
+```python
+if timemory.options.ctest_notes:
+    manager = timemory.timing_manager()
+    f = manager.write_ctest_notes(directory="test_output/simple_test")
+    print('"{}" wrote CTest notes file : {}'.format(__file__, f))
+```
+
+and use the following in CMake (reproduced from cmake/Templates/cdash/Init.cmake)
+
+```
+file(GLOB_RECURSE NOTE_FILES "${CTEST_BINARY_DIRECTORY}/*CTestNotes.cmake")
+foreach(_FILE ${NOTE_FILES})
+    include("${_FILE}")
+endforeach(_FILE ${NOTE_FILES})
+```
 
 - a JSON file with more detailed data
 
   - used for plotting purposes
   - can be directly called by module: `timemory.plotting.plot(files=["output.json"], display=False, output_dir=".")`
-  - `python/plot.py` in the source tree can be directly used
+  - Outputting this plot to a CDash dashboard is enabled with the option `--enable-dart` or by setting `timemory.options.enable_dart=True`.
 
 - Implementation uses “auto-timers”. Essentially, at the beginning of a function, you create a timer. 
 - The timer starts automatically and when the timer is “destroyed”, i.e. goes out of scope at the end of the function, it stops the timer and records the time difference and also some memory measurements. 
@@ -285,14 +308,15 @@ There are essentially two components of the output:
 
 ### TiMemory Plot Sample Output (from JSON serialization of TiMemory data)
 
-As an added feature for software testing suites such as CTest/CDash, TiMemory can be used for reporting regular timing and memory plots by simply using the plotting submodule and outputting the following to my CTest log:
+As previously mentioned, for software testing suites such as CTest/CDash, TiMemory can be used for reporting regular timing and memory plots by simply using the plotting submodule and echoing the following to my testing log:
 
 ```
-<DartMeasurementFile name="out_tiny_ground_simple/timing_report_main_0_timing.png"
-type="image/png">/global/cscratch1/sd/jrmadsen/software/toast-worker/build-toast/edison-intel-mkl/release/cdash/Nightly/build-toast/examples/out_tiny_ground_simple/timing_report_main_0_timing.png</DartMeasurementFile>
+<DartMeasurementFile name="timing_report_timing.png"
+type="image/png">/Users/somebody/timemory/build/timing_report_timing.png</DartMeasurementFile>
 ```
 
-This `<DartMeasurementFile>` tag is recognized by CTest in the output and the following plots get uploaded to dashboard
+This `<DartMeasurementFile>` tag is recognized by CTest in the output and the following plots get uploaded to dashboard. Outputting this string is enabled with the option `--enable-dart` or by setting
+`timemory.options.enable_dart=True` prior to calling `timemory.plotting.plot(...)`
 
 ![](/images/timing.png)
 

@@ -1,6 +1,7 @@
 var searchData=
 [
-  ['report_5fat_5fexit',['report_at_exit',['../d3/df4/classutil_1_1util_1_1auto__timer.html#a45403b7e175e80d061455a3712bd72f8',1,'util::util::auto_timer']]],
-  ['required',['required',['../df/d23/namespaceplotting_1_1plotting.html#a3337bbc024353127cea573b3f94ea075',1,'plotting::plotting']]],
-  ['resource',['resource',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a57b035587d69d2cc3924a2b77962eea6',1,'tests::array_test::auto_array_weakref']]]
+  ['parser',['parser',['../df/d23/namespaceplotting_1_1plotting.html#a837bb3a250c9f73ff475c15736b6d8bf',1,'plotting.plotting.parser()'],['../d9/d25/namespacetests_1_1array__test.html#a956e60ea254915fbc5d98eafbd27f6fc',1,'tests.array_test.parser()'],['../df/ddd/namespacetests_1_1timemory__test.html#a81498b2920413efd06206c61777f7ab3',1,'tests.timemory_test.parser()']]],
+  ['petabyte',['petabyte',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#af10e5e8a74bfef4beb5518746babc838',1,'NAME_TIM::rss::units']]],
+  ['pib',['PiB',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#ae0ddf0be965c9c73569dd01fce74b54e',1,'NAME_TIM::rss::units']]],
+  ['plotted_5ffiles',['plotted_files',['../df/d23/namespaceplotting_1_1plotting.html#aa5273f580854d28b80862e88da1fa073',1,'plotting::plotting']]]
 ];

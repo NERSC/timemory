@@ -170,7 +170,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00142"></a><span class="lineno">  142</span>&#160;                 timemory_functions = [], title = <span class="stringliteral">&quot;&quot;</span>):</div><div class="line"><a name="l00143"></a><span class="lineno">  143</span>&#160;        self.filename = filename</div><div class="line"><a name="l00144"></a><span class="lineno">  144</span>&#160;        self.concurrency = concurrency</div><div class="line"><a name="l00145"></a><span class="lineno">  145</span>&#160;        self.mpi_size = mpi_size</div><div class="line"><a name="l00146"></a><span class="lineno">  146</span>&#160;        self.timemory_functions = timemory_functions</div><div class="line"><a name="l00147"></a><span class="lineno">  147</span>&#160;        self.title = title</div><div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;</div><div class="line"><a name="l00149"></a><span class="lineno">  149</span>&#160;</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;                 timemory_functions = [], title = <span class="stringliteral">&quot;&quot;</span>):</div><div class="line"><a name="l00167"></a><span class="lineno">  167</span>&#160;        self.filename = filename</div><div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;        self.concurrency = concurrency</div><div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;        self.mpi_size = mpi_size</div><div class="line"><a name="l00170"></a><span class="lineno">  170</span>&#160;        self.timemory_functions = timemory_functions</div><div class="line"><a name="l00171"></a><span class="lineno">  171</span>&#160;        self.title = title</div><div class="line"><a name="l00172"></a><span class="lineno">  172</span>&#160;</div><div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;</div></div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
@@ -189,7 +189,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;    <span class="keyword">def </span>__str__(self):</div><div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&#39;\tFilename: {}\n\tConcurrency: {}\n\tMPI ranks: {}\n\t# functions: {}\n\tTitle: {}&#39;</span>.format(</div><div class="line"><a name="l00152"></a><span class="lineno">  152</span>&#160;            self.filename, self.concurrency, self.mpi_size, len(self.timemory_functions), self.title)</div><div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;</div><div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00174"></a><span class="lineno">  174</span>&#160;    <span class="keyword">def </span>__str__(self):</div><div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&#39;\tFilename: {}\n\tConcurrency: {}\n\tMPI ranks: {}\n\t# functions: {}\n\tTitle: {}&#39;</span>.format(</div><div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;            self.filename, self.concurrency, self.mpi_size, len(self.timemory_functions), self.title)</div><div class="line"><a name="l00177"></a><span class="lineno">  177</span>&#160;</div><div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;</div></div><!-- fragment -->
 </div>
 </div>
 <a id="afd471ecd8311161b97eebd23d0158621"></a>
@@ -207,7 +207,7 @@ Public Attributes</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00155"></a><span class="lineno">  155</span>&#160;    <span class="keyword">def </span>get_title(self):</div><div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&#39;&quot;{}&quot;\n@ MPI procs = {}, Threads/proc = {}&#39;</span>.format(self.title,</div><div class="line"><a name="l00157"></a><span class="lineno">  157</span>&#160;                mpi_size, int(concurrency))</div><div class="line"><a name="l00158"></a><span class="lineno">  158</span>&#160;</div><div class="line"><a name="l00159"></a><span class="lineno">  159</span>&#160;</div><div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;<span class="comment">#==============================================================================#</span></div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;    <span class="keyword">def </span>get_title(self):</div><div class="line"><a name="l00180"></a><span class="lineno">  180</span>&#160;        <span class="keywordflow">return</span> <span class="stringliteral">&#39;&quot;{}&quot;\n@ MPI procs = {}, Threads/proc = {}&#39;</span>.format(self.title,</div><div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;                mpi_size, int(concurrency))</div><div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;</div><div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;</div><div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;<span class="comment">#==============================================================================#</span></div></div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Data Documentation</h2>
@@ -290,7 +290,7 @@ Public Attributes</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../d5/d81/namespaceplotting.html">plotting</a></li><li class="navelem"><a class="el" href="../../df/d23/namespaceplotting_1_1plotting.html">plotting</a></li><li class="navelem"><a class="el" href="../../d6/d77/classplotting_1_1plotting_1_1plot__data.html">plot_data</a></li>
-    <li class="footer">Generated on Wed Feb 7 2018 15:46:00 for TiMemory by
+    <li class="footer">Generated on Thu Feb 8 2018 22:03:31 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

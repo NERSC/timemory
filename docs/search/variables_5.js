@@ -1,6 +1,6 @@
 var searchData=
 [
-  ['exc_5ftraceback',['exc_traceback',['../df/d23/namespaceplotting_1_1plotting.html#a433316536395a9586c15d71b502b6105',1,'plotting::plotting']]],
-  ['exc_5ftype',['exc_type',['../df/d23/namespaceplotting_1_1plotting.html#a9d9669bf53325a78299890e8db5e6706',1,'plotting::plotting']]],
-  ['exc_5fvalue',['exc_value',['../df/d23/namespaceplotting_1_1plotting.html#affd9684ec11ed5e00c17b89c6cfe64f9',1,'plotting::plotting']]]
+  ['exc_5ftraceback',['exc_traceback',['../df/d23/namespaceplotting_1_1plotting.html#a433316536395a9586c15d71b502b6105',1,'plotting.plotting.exc_traceback()'],['../d9/d25/namespacetests_1_1array__test.html#a5e8896e679f644d422ccf2eb3cd8ef33',1,'tests.array_test.exc_traceback()'],['../dd/dcb/namespacetests_1_1nested__test.html#a87f467f1eab7e912a80bf2219a8366c8',1,'tests.nested_test.exc_traceback()'],['../d0/d18/namespacetests_1_1simple__test.html#adb1fb191e605965ab155cc3d74dfc50d',1,'tests.simple_test.exc_traceback()']]],
+  ['exc_5ftype',['exc_type',['../df/d23/namespaceplotting_1_1plotting.html#a9d9669bf53325a78299890e8db5e6706',1,'plotting.plotting.exc_type()'],['../d9/d25/namespacetests_1_1array__test.html#a3421d365340981084a2c261bd2b8afee',1,'tests.array_test.exc_type()'],['../dd/dcb/namespacetests_1_1nested__test.html#a72fea00f6c943faecb10d6430a73b420',1,'tests.nested_test.exc_type()'],['../d0/d18/namespacetests_1_1simple__test.html#abefc244f868645c46967cc870e3a3941',1,'tests.simple_test.exc_type()']]],
+  ['exc_5fvalue',['exc_value',['../df/d23/namespaceplotting_1_1plotting.html#affd9684ec11ed5e00c17b89c6cfe64f9',1,'plotting.plotting.exc_value()'],['../d9/d25/namespacetests_1_1array__test.html#a42d1db1386a95e5aabf1ce8b09b10fd7',1,'tests.array_test.exc_value()'],['../dd/dcb/namespacetests_1_1nested__test.html#aa5049b21f537f84612ebcf65c5c34763',1,'tests.nested_test.exc_value()'],['../d0/d18/namespacetests_1_1simple__test.html#ae53387dd6bc8050e33930107fa6770dd',1,'tests.simple_test.exc_value()']]]
 ];

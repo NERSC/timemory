@@ -18,4 +18,4 @@ global-exclude *__pycache__*
 # recursive excludes
 recursive-exclude pybind11/docs/.build *
 recursive-exclude examples/ex3 *
-
+recursive-exclude cmake/Scripts *

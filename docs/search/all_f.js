@@ -17,5 +17,6 @@ var searchData=
   ['operator_3d_3d',['operator==',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a47007919cb6cefb70c78dc42518fbc45',1,'NAME_TIM::rss::usage::operator==()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a2376f16b0bb96effb8f283d8da68b260',1,'NAME_TIM::timer_tuple::operator==()']]],
   ['operator_3e',['operator&gt;',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a9d9ad7135a00ac4a7e99013313d36458',1,'NAME_TIM::rss::usage']]],
   ['operator_3e_3d',['operator&gt;=',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#a81ea8f5487827676bcec926bbd28cd22',1,'NAME_TIM::rss::usage']]],
-  ['ostream_5ft',['ostream_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a2e30ac6ec7fffe54c2fce6abaf59e2d4',1,'NAME_TIM::internal::base_timer::ostream_t()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#abf1b6f985b04a658f5c90b9e4f061b9f',1,'NAME_TIM::timing_manager::ostream_t()']]]
+  ['ostream_5ft',['ostream_t',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a2e30ac6ec7fffe54c2fce6abaf59e2d4',1,'NAME_TIM::internal::base_timer::ostream_t()'],['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#abf1b6f985b04a658f5c90b9e4f061b9f',1,'NAME_TIM::timing_manager::ostream_t()']]],
+  ['output_5fdir',['output_dir',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a94b268480ca03a818899c2dedba044ab',1,'tests::timemory_test::timemory_test']]]
 ];
