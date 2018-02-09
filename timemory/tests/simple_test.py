@@ -90,10 +90,7 @@ def main(nfib):
     _jsonf = os.path.join(options.output_dir, 'simple_output.json')
     tman.serialize(_jsonf)
     print ('')
-    try:
-        plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
-    except:
-        print ("Error! Unable to plot 'output.json'")
+    plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
 
     
 # ---------------------------------------------------------------------------- #
@@ -106,7 +103,7 @@ def run_test():
     parser.add_argument("-n", "--nfib",
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
-    args = options.add_arguments_and_parse(parser, __file__)
+    args = options.add_arguments_and_parse(parser)
     timemory.options.output_dir = "test_output"
 
     main(args.nfib)
@@ -118,6 +115,12 @@ def run_test():
 if __name__ == "__main__":
     try:
         run_test()
+
+        if options.ctest_notes:
+            manager = timemory.timing_manager()
+            f = manager.write_ctest_notes(directory="test_output/simple_test")
+            print('"{}" wrote CTest notes file : {}'.format(__file__, f))
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

@@ -155,25 +155,26 @@ endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
 # -- Add tests
 # ------------------------------------------------------------------------ #
 add_test(NAME Python_Simple
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py --enable-dart --write-ctest-notes
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 set_tests_properties(Python_Simple PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)
 
 add_test(NAME Python_UnitTest
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/timemory_test.py
+    # we don't enable dart because this always print (unittest will repeat DartMeasurementFiles)
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/timemory_test.py --write-ctest-notes
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 set_tests_properties(Python_UnitTest PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)
 
 add_test(NAME Python_Nested
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/nested_test.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/nested_test.py --enable-dart --write-ctest-notes
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 set_tests_properties(Python_Nested PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)
 
 add_test(NAME Python_Array
-    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/array_test.py
+    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/array_test.py --enable-dart --write-ctest-notes
     WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
 set_tests_properties(Python_Array PROPERTIES
     LABELS "Python;UnitTest" TIMEOUT 7200)

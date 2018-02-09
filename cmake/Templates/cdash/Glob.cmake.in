@@ -1,0 +1,28 @@
+
+if(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "${DASHBOARD_LABEL}")
+else(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "Glob")
+endif(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+
+set(TRIGGER "None" CACHE STRING "Delay submit until TRIGGER == '(Any|Build|Test|Coverage|MemCheck|None)'")
+
+macro(include_if _TESTFILE)
+    if(EXISTS "${_TESTFILE}")
+        include("${_TESTFILE}")
+    else(EXISTS "${_TESTFILE}")
+        if(NOT "${ARGN}" STREQUAL "")
+            include("${ARGN}")
+        endif(NOT "${ARGN}" STREQUAL "")
+    endif(EXISTS "${_TESTFILE}")
+macro(include_if _TESTFILE)
+
+include("${CMAKE_CURRENT_LIST_DIR}/Init.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/Build.cmake")
+# CDashTest.cmake is essentially called in CDashCoverage
+include_if("${CMAKE_CURRENT_LIST_DIR}/Coverage.cmake"
+    "${CMAKE_CURRENT_LIST_DIR}/Test.cmake")
+include_if("${CMAKE_CURRENT_LIST_DIR}/MemCheck.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/Submit.cmake")
+
+message(" -- Finished ${MODEL} Glob - ${CTEST_BUILD_NAME} --")

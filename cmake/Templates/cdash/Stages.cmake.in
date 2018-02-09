@@ -1,0 +1,21 @@
+
+if(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "${DASHBOARD_LABEL}")
+else(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set(_label "${STAGES}")
+    string(REPLACE ";" "_" _label "${_label}")
+    set_property(GLOBAL PROPERTY Label "Stages_${_label}")
+    set(CTEST_LABEL "Stages_${_label}" CACHE STRING "CTest label")
+endif(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+
+if(NOT DEFINED TRIGGER)
+    set(TRIGGER "Any" CACHE STRING "Delay submit until TRIGGER == '(Any|Build|Test|Coverage|MemCheck|None)'")
+endif(NOT DEFINED TRIGGER)
+
+include("${CMAKE_CURRENT_LIST_DIR}/Init.cmake")
+
+foreach(_STAGE ${STAGES})
+    include("${CMAKE_CURRENT_LIST_DIR}/${_STAGE}.cmake")
+endforeach(_STAGE ${STAGES})
+
+message(" -- Finished ${MODEL} Stages (${STAGES}) - ${CTEST_BUILD_NAME} --")

@@ -1,0 +1,17 @@
+
+if(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "${DASHBOARD_LABEL}")
+else(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "Test")
+endif(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+
+include("${CMAKE_CURRENT_LIST_DIR}/Init.cmake")
+
+setup(Test)
+ctest_test(BUILD "${CTEST_BINARY_DIRECTORY}"
+    APPEND
+    SCHEDULE_RANDOM OFF
+    RETURN_VALUE ret)
+submit(Test)
+
+message(" -- Finished ${MODEL} Testing - ${CTEST_BUILD_NAME} --")

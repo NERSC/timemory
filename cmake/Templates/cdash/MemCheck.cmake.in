@@ -1,0 +1,14 @@
+
+if(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "${DASHBOARD_LABEL}")
+else(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+    set_property(GLOBAL PROPERTY Label "MemCheck")
+endif(NOT "${DASHBOARD_LABEL}" STREQUAL "")
+
+include("${CMAKE_CURRENT_LIST_DIR}/Init.cmake")
+
+setup(MemoryCheck)
+ctest_memcheck(BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE ret)
+submit(MemoryCheck)
+
+message(" -- Finished ${MODEL} MemoryCheck - ${CTEST_BUILD_NAME} --")

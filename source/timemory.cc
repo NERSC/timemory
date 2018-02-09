@@ -457,6 +457,8 @@ PYBIND11_MODULE(timemory, tim)
 
     //------------------------------------------------------------------------//
 
+    tman.attr("reported_files") = py::list();
+    tman.attr("serialized_files") = py::list();
     tman.def(py::init<>(tman_init), "Initialization",
              py::return_value_policy::take_ownership);
     tman.def("report",
@@ -495,6 +497,7 @@ PYBIND11_MODULE(timemory, tim)
                      std::cout << "Outputting timing_manager to '" << repfnm
                                << "'..." << std::endl;
                      _tman->set_output_stream(repfnm);
+                     tman.attr("reported_files").cast<py::list>().append(repfnm);
                  }
 
                  // report ASCII output
@@ -515,6 +518,7 @@ PYBIND11_MODULE(timemory, tim)
                      std::cout << "Serializing timing_manager to '" << serfnm
                                << "'..." << std::endl;
                      _tman->write_serialization(serfnm);
+                     tman.attr("serialized_files").cast<py::list>().append(serfnm);
                  }
              },
              "Report timing manager",
@@ -617,6 +621,60 @@ PYBIND11_MODULE(timemory, tim)
                  return tman;
              },
              "Subtract RSS measurement");
+    tman.def("write_ctest_notes",
+             [=] (py::object tman, std::string directory, bool append)
+             {
+                 py::list filenames = tman.attr("reported_files").cast<py::list>();
+
+                 std::stringstream ss;
+                 ss << std::endl;
+                 ss << "IF(NOT DEFINED CTEST_NOTES_FILES)" << std::endl;
+                 ss << "    SET(CTEST_NOTES_FILES )" << std::endl;
+                 ss << "ENDIF(NOT DEFINED CTEST_NOTES_FILES)" << std::endl;
+                 ss << std::endl;
+
+                 // loop over ASCII report filenames
+                 for(const auto& itr : filenames)
+                 {
+                     std::string fname = itr.cast<std::string>();
+                     ss << "LIST(APPEND CTEST_NOTES_FILES \"" << fname << "\")" << std::endl;
+                 }
+
+                 ss << std::endl;
+                 ss << "IF(NOT \"${CTEST_NOTES_FILES}\" STREQUAL \"\")" << std::endl;
+                 ss << "    LIST(REMOVE_DUPLICATES CTEST_NOTES_FILES)" << std::endl;
+                 ss << "ENDIF(NOT \"${CTEST_NOTES_FILES}\" STREQUAL \"\")" << std::endl;
+                 ss << std::endl;
+
+                 // create directory (easier in Python)
+                 auto locals = py::dict("directory"_a = directory);
+                 py::exec(R"(
+                          import os
+                          from os.path import dirname
+
+                          if not os.path.exists(directory) and directory != '':
+                              os.makedirs(directory)
+
+                          file_path = os.path.join(directory, "CTestNotes.cmake")
+                          )",
+                          py::globals(), locals);
+
+                 std::string file_path = locals["file_path"].cast<std::string>();
+                 std::ofstream outf;
+                 if(append)
+                     outf.open(file_path.c_str(), std::ios::app);
+                 else
+                     outf.open(file_path.c_str());
+
+                 if(outf)
+                     outf << ss.str();
+                 outf.close();
+
+                 return file_path;
+             },
+             "Write a CTestNotes.cmake file",
+             py::arg("directory") = ".",
+             py::arg("append") = false);
 
     // keep from being garbage collected
     tim.attr("_static_timing_manager") = new timing_manager_wrapper();
@@ -738,71 +796,6 @@ PYBIND11_MODULE(timemory, tim)
             },
             "Set the exit action when a signal is raised -- function must accept integer");
 
-    //------------------------------------------------------------------------//
-    //
-    //      Dummy submodules
-    //
-    //------------------------------------------------------------------------//
-
-    //auto _util = py::module::import("timemory.util");
-    //auto _plot = py::module::import("timemory.plotting");
-    //auto _mpis = py::module::import("timemory.mpi_support");
-
-    /*
-    py::module utl = tim.def_submodule("util",          "Utility submodule");
-    py::module plt = tim.def_submodule("plotting",      "Plotting submodule");
-    py::module mpi = tim.def_submodule("mpi_support",   "MPI info submodule");
-
-    auto _get_path = [=] (std::string subpath)
-    {
-        auto locals = py::dict("subpath"_a = subpath);
-        py::exec(R"(
-                 _f = __file__
-                 try:
-                     # if this succeeds, we are not calling from timemory.__init__
-                     # and thus, want to use this as base
-                     import timemory
-                     _f = timemory.__file__
-                 except:
-                     # else, we are likely in a submodule so go up one directory
-                     _f = os.path.dirname(_f)
-                 import os
-                 import sys
-                 __file_path = os.path.abspath(os.path.dirname(_f))
-                 __path = os.path.join(__file_path, subpath)
-                 )", py::globals(), locals);
-        return locals["__path"].cast<std::string>().c_str();
-    };
-
-    tim.def("__add_util_object",
-            [&] ()
-    {
-        auto _util = py::eval_file(_get_path("util/util.py"), py::globals(), utl);
-        tim.add_object("util", _util, true);
-    }, "Add the utility object (fallback method)");
-
-    tim.def("__add_plotting_object",
-            [&] ()
-    {
-        auto _plot = py::eval_file(_get_path("plotting/plotting.py"), py::globals(), plt);
-        tim.add_object("plotting", _plot, true);
-    }, "Add the utility object (fallback method)");
-
-    tim.def("__add_mpi_support_object",
-            [&] ()
-    {
-        auto _mpis = py::eval_file(_get_path("mpi_support/mpi_support.py"), py::globals(), mpi);
-        tim.add_object("mpi_support", _mpis, true);
-    }, "Add the utility object (fallback method)");*/
-
-    tim.def("load_module", &load_module, "Load a python submodule");
-
-    tim.def("add_object",
-            [&] (std::string _name, py::module _obj)
-            {
-                tim.add_object(_name.c_str(), _obj);
-            }, "Add an object to module");
-
     //========================================================================//
     //
     //      Signals submodule
@@ -858,6 +851,8 @@ PYBIND11_MODULE(timemory, tim)
     opts.attr("report_fname") = "timing_report.out";
     opts.attr("serial_fname") = "timing_report.json";
     opts.attr("output_dir") = ".";
+    opts.attr("echo_dart") = false;
+    opts.attr("ctesst_notes") = false;
 
     // ---------------------------------------------------------------------- //
 
@@ -899,6 +894,7 @@ PYBIND11_MODULE(timemory, tim)
         ss << fname;
         opts.attr("report_fname") = ss.str().c_str();
         opts.attr("report_file") = true;
+        return ss.str();
     },
     "Set the ASCII report filename");
 
@@ -914,6 +910,7 @@ PYBIND11_MODULE(timemory, tim)
         ss << fname;
         opts.attr("serial_fname") = ss.str().c_str();
         opts.attr("serial_file") = true;
+        return ss.str();
     },
     "Set the JSON serialization filename");
 
@@ -970,9 +967,17 @@ PYBIND11_MODULE(timemory, tim)
                                      help="Maximum timer depth",
                                      type=int,
                                      default=options.default_max_depth())
+                 parser.add_argument('--enable-dart',
+                                     help="Print DartMeasurementFile tag for plots",
+                                     required=False, action='store_true')
+                 parser.add_argument('--write-ctest-notes',
+                                     help="Write a CTestNotes.cmake file for TiMemory ASCII output",
+                                     required=False, action='store_true')
 
                  parser.set_defaults(use_timers=True)
                  parser.set_defaults(serial_file=True)
+                 parser.set_defaults(enable_dart=False)
+                 parser.set_defaults(write_ctest_notes=False)
                  )",
                  py::globals(), locals);
         return locals["parser"].cast<py::object>();
@@ -998,6 +1003,8 @@ PYBIND11_MODULE(timemory, tim)
                  options.use_timers = args.use_timers
                  options.max_timer_depth = args.max_timer_depth
                  options.output_dir = args.output_dir
+                 options.echo_dart = args.enable_dart
+                 options.ctest_notes = args.write_ctest_notes
 
                  if args.filename:
                      options.set_report("{}.{}".format(args.filename, "out"))
@@ -1034,32 +1041,31 @@ PYBIND11_MODULE(timemory, tim)
 
     // ---------------------------------------------------------------------- //
 
+    opts.def("add_args_and_parse_known",
+             [=] (py::object parser = py::none(), std::string fname = "")
+    {
+        auto locals = py::dict("parser"_a = parser,
+                               "fname"_a = fname);
+        py::exec(R"(
+                 import timemory.options as options
+
+                 # Combination of timing.add_arguments and timing.parse_args but returns
+                 parser = options.add_arguments(parser, fname)
+                 args = parser.parse_args()
+                 args, left = parser.parse_known_args()
+                 options.parse_args(args)
+                 # replace sys.argv with unknown args only
+                 sys.argv = sys.argv[:1]+left
+                 )",
+                 py::globals(), locals);
+        return locals["args"].cast<py::object>();
+    },
+    "Combination of timing.add_arguments and timing.parse_args. Returns TiMemory args and "
+    "replaces sys.argv with the unknown args (used to fix issue with unittest module)",
+    py::arg("parser") = py::none(), py::arg("fname") = "");
+
+    // ---------------------------------------------------------------------- //
+
     //========================================================================//
 
 }
-/*
-//py::exec(R"(
-//         timemory.util.__dict__.update(timemory._util.__dict__)
-//         )", py::globals(), tim);
-
-
-int main()
-try
-{
-    Py_Initialize();
-    //pybind11_init_timemory();
-    std::cout << "Initializing..." << std::endl;
-    py::object main     = py::module::import("__main__");
-    py::object globals  = main.attr("__dict__");
-    py::object module   = import("util", "util.py", globals);
-    //py::object Strategy = module.attr("Strategy");
-    //py::object strategy = Strategy(&server);
-
-    return 0;
-}
-catch(const py::error_already_set&)
-{
-    std::cerr << ">>> Error! Uncaught exception:\n";
-    PyErr_Print();
-    return 1;
-}*/

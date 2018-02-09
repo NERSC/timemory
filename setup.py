@@ -17,7 +17,7 @@ from setuptools.command.install_egg_info import install_egg_info
 
 # ---------------------------------------------------------------------------- #
 def get_project_version():
-    return '1.1.8rc2'
+    return '1.1.8rc3'
 
 
 # ---------------------------------------------------------------------------- #

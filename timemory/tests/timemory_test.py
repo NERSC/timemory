@@ -36,9 +36,16 @@ import numpy as np
 from os.path import join
 import unittest as unittest
 import traceback
+import argparse
 
 import timemory
-from timemory import options
+import timemory.options as options
+import timemory.plotting as plotting
+
+# decorators
+from timemory.util import auto_timer
+from timemory.util import rss_usage
+from timemory.util import timer
 
 # ============================================================================ #
 def fibonacci(n):
@@ -56,18 +63,20 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     def setUp(self):
-        timemory.options.output_dir = "test_output"
+        self.output_dir = "test_output"
+        timemory.options.output_dir = self.output_dir
         timemory.options.use_timers = True
         timemory.options.serial_report = True
         self.timing_manager = timemory.timing_manager()
+
 
     # ------------------------------------------------------------------------ #
     # Test if the timers are working if not disabled at compilation
     def test_timing(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
-        options.set_report("timing_report.out")
-        options.set_serial("timing_report.json")
+        freport = options.set_report("timing_report.out")
+        fserial = options.set_serial("timing_report.json")
 
         def time_fibonacci(n):
             atimer = timemory.auto_timer('({})@{}'.format(n, timemory.FILE(use_dirname=True)))
@@ -93,6 +102,7 @@ class timemory_test(unittest.TestCase):
 
         self.timing_manager.merge()
         self.timing_manager.report()
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
 
         self.assertEqual(self.timing_manager.size(), 12)
 
@@ -120,15 +130,13 @@ class timemory_test(unittest.TestCase):
             del autotimer
         self.assertEqual(self.timing_manager.size(), 1)
 
-        self.timing_manager.clear()
         timemory.toggle(False)
         if True:
             autotimer = timemory.auto_timer("off")
             fibonacci(27)
             del autotimer
-        self.assertEqual(self.timing_manager.size(), 0)
+        self.assertEqual(self.timing_manager.size(), 1)
 
-        self.timing_manager.clear()
         timemory.toggle(True)
         if True:
             autotimer_on = timemory.auto_timer("on")
@@ -137,12 +145,12 @@ class timemory_test(unittest.TestCase):
             fibonacci(27)
             del autotimer_off
             del autotimer_on
-        self.assertEqual(self.timing_manager.size(), 1)
+        self.assertEqual(self.timing_manager.size(), 2)
 
-        timemory.options.set_report("timing_toggle.out")
-        timemory.options.set_serial("timing_toggle.json")
-
-        self.timing_manager.report()
+        freport = timemory.options.set_report("timing_toggle.out")
+        fserial = timemory.options.set_serial("timing_toggle.json")
+        self.timing_manager.report(no_min=True)
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 
     # ------------------------------------------------------------------------ #
@@ -164,15 +172,16 @@ class timemory_test(unittest.TestCase):
 
         create_timer(0)
 
-        timemory.options.set_report("timing_depth.out")
-        timemory.options.set_serial("timing_depth.json")
+        freport = timemory.options.set_report("timing_depth.out")
+        fserial = timemory.options.set_serial("timing_depth.json")
         self.timing_manager.report()
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
 
         self.assertEqual(self.timing_manager.size(), ntimers)
 
 
     # ------------------------------------------------------------------------ #
-    # Test the timing on/off toggle functionalities
+    # Test the persistancy of the timing_manager pointer
     def test_pointer(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
@@ -204,15 +213,16 @@ class timemory_test(unittest.TestCase):
         timemory.toggle(True)
         self.timing_manager.clear()
 
-        @timemory.util.auto_timer()
+        @auto_timer()
         def test_func_glob():
             time.sleep(1)
 
-            @timemory.util.auto_timer()
+            @auto_timer()
             def test_func_1():
+                ret = np.ones(shape=[2500, 2500], dtype=np.float64)
                 time.sleep(1)
 
-            @timemory.util.auto_timer()
+            @auto_timer()
             def test_func_2(n):
                 test_func_1()
                 time.sleep(n)
@@ -221,15 +231,19 @@ class timemory_test(unittest.TestCase):
             test_func_2(2)
 
         test_func_glob()
-        timemory.report()
+
+        freport = timemory.options.set_report("timing_decorator.out")
+        fserial = timemory.options.set_serial("timing_decorator.json")
+        self.timing_manager.report(no_min=True)
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
 
         self.assertEqual(timemory.size(), 4)
 
-        @timemory.util.timer()
+        @timer()
         def test_func_timer():
             time.sleep(1)
 
-            @timemory.util.rss_usage()
+            @rss_usage()
             def test_func_rss():
                 ret = np.ones(shape=[5000, 5000], dtype=np.float64)
                 return None
@@ -237,7 +251,6 @@ class timemory_test(unittest.TestCase):
             print('')
             ret = test_func_rss()
             print('')
-            #print('ret: {}'.format(ret), flush=True)
             time.sleep(1)
             return None
 
@@ -267,4 +280,21 @@ def run_test():
 
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':
-    unittest.main()
+    parser = argparse.ArgumentParser()
+    # this variant will remove TiMemory arguments from sys.argv
+    args = options.add_args_and_parse_known(parser)
+
+    try:
+        unittest.main(verbosity=2, buffer=False)
+    except:
+        raise
+    finally:
+        manager = timemory.timing_manager()
+        if options.ctest_notes:
+            f = manager.write_ctest_notes(directory="test_output/timemory_test")
+            print('"{}" wrote CTest notes file : {}'.format(__file__, f))
+        print('# of plotted files: {}'.format(len(plotting.plotted_files)))
+        for p in plotting.plotted_files:
+            n = p[0]
+            f = p[1]
+            plotting.echo_dart_tag(n, f)

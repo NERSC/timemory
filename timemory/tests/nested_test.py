@@ -176,6 +176,12 @@ def run_test():
 if __name__ == '__main__':
     try:
         run_test()
+
+        if options.ctest_notes:
+            manager = timemory.timing_manager()
+            f = manager.write_ctest_notes(directory="test_output/nested_test")
+            print('"{}" wrote CTest notes file : {}'.format(__file__, f))
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

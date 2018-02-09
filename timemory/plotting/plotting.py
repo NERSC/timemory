@@ -38,6 +38,7 @@ import traceback
 import collections
 import numpy as np
 import os
+import copy
 
 timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
 memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
@@ -50,10 +51,33 @@ min_memory = 1
 img_dpi = 75
 img_size = {'w': 1200, 'h': 800}
 
+plotted_files = []
+
+#==============================================================================#
+def echo_dart_tag(name, filepath):
+    print('<DartMeasurementFile name="{}" '.format(name) +
+    'type="image/png">{}</DartMeasurementFile>'.format(filepath))
+
+
+#==============================================================================#
+def add_plotted_files(name, filepath, echo_dart):
+    global plotted_files
+    if echo_dart:
+        echo_dart_tag(name, filepath)
+    found = False
+    for p in plotted_files:
+        if p[0] == name and p[1] == filepath:
+            found = True
+            break
+    if found is False:
+        plotted_files.append([ name, filepath ])
+
+
 #==============================================================================#
 def make_output_directory(directory):
     if not os.path.exists(directory) and directory != '':
         os.makedirs(directory)
+
 
 #==============================================================================#
 def nested_dict():
@@ -203,7 +227,7 @@ def read(json_obj):
 
 
 #==============================================================================#
-def plot_timing(_plot_data, disp=False, output_dir="."):
+def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
 
     try:
         import tornado
@@ -298,6 +322,9 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
         imgfname = imgfname.replace('.py', '.png')
         if not '.png' in imgfname:
             imgfname += '.png'
+
+        add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
+
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
@@ -305,7 +332,9 @@ def plot_timing(_plot_data, disp=False, output_dir="."):
 
 
 #==============================================================================#
-def plot_memory(_plot_data, disp=False, output_dir="."):
+def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
+
+    global plotted_files
 
     try:
         import tornado
@@ -413,6 +442,9 @@ def plot_memory(_plot_data, disp=False, output_dir="."):
         imgfname = imgfname.replace('.py', '.png')
         if not '.png' in imgfname:
             imgfname += '.png'
+
+        add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
+
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=img_dpi)
@@ -420,13 +452,20 @@ def plot_memory(_plot_data, disp=False, output_dir="."):
 
 
 #==============================================================================#
-def plot(data = [], files = [], display=False, output_dir='.'):
+def plot(data = [], files = [], display=False, output_dir='.', echo_dart=None):
+
+    import timemory.options as options
+    if echo_dart is None and options.echo_dart:
+        echo_dart = True
+    else:
+        echo_dart = False
 
     if len(files) > 0:
         for filename in files:
             print ('Reading {}...'.format(filename))
             f = open(filename, "r")
             _data = read(json.load(f))
+            f.close()
             _data.filename = filename
             _data.title = filename
             data.append(_data)
@@ -434,8 +473,8 @@ def plot(data = [], files = [], display=False, output_dir='.'):
     for _data in data:
         try:
             print ('Plotting {}...'.format(_data.filename))
-            plot_timing(_data, display, output_dir)
-            plot_memory(_data, display, output_dir)
+            plot_timing(_data, display, output_dir, echo_dart)
+            plot_memory(_data, display, output_dir, echo_dart)
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
