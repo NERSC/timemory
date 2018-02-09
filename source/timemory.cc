@@ -474,10 +474,19 @@ PYBIND11_MODULE(timemory, tim)
                           do_ser = options.serial_file
                           outdir = options.output_dir
                           options.ensure_directory_exists('{}/test.txt'.format(outdir))
+
                           # absolute paths
                           absdir = os.path.abspath(outdir)
-                          repabs = os.path.join(absdir, repfnm)
-                          serabs = os.path.join(absdir, serfnm)
+
+                          if outdir in repfnm:
+                              repabs = os.path.abspath(repfnm)
+                          else:
+                              repabs = os.path.join(absdir, repfnm)
+
+                          if outdir in serfnm:
+                              serabs = os.path.abspath(serfnm)
+                          else:
+                              serabs = os.path.join(absdir, serfnm)
                           )", py::globals(), locals);
 
                  auto outdir = locals["outdir"].cast<std::string>();
