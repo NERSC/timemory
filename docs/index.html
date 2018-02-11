@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.1.8</span>
+   &#160;<span id="projectnumber">1.2.0</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -182,10 +182,11 @@ $(document).ready(function(){initNavTree('index.html','');});
 <h3>Basic Python usage</h3>
 <ul>
 <li>Decorators available for auto_timers, timers, and rss_usage in <code>timemory.util</code></li>
+<li>The same classes that are used for decorators can also be used as context managers</li>
 <li>One can also use auto_timer, timer, and rss_usage objects directly for same results</li>
 <li><code>timemory.timing_manager</code> class will record all auto-timers and can be printed out at completions of application</li>
 <li>The report from the timing manager can be plotted using <code>timemory.plotting</code></li>
-<li>All decorators take similar arguments<ul>
+<li>All decorators and context managers take similar arguments<ul>
 <li>key : this is a custom key to append after function name. The default will add file and line number.</li>
 <li>add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument</li>
 <li>is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name</li>
@@ -193,7 +194,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 </ul>
 </li>
 </ul>
-<div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False, report_at_exit=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><h4>Auto-timer example</h4>
+<div class="fragment"><div class="line"># using decorators</div><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False, report_at_exit=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div><div class="line"></div><div class="line"># using context manager</div><div class="line">with timemory.util.auto_timer(report_at_exit=True):</div><div class="line">    time.sleep(1)</div><div class="line"></div><div class="line">    ret = np.ones(shape=[500, 500], dtype=np.float64)</div><div class="line">    for i in [ 2.0, 3.5, 8.7 ]:</div><div class="line">        n = i * np.ones(shape=[500, 500], dtype=np.float64)</div><div class="line">        ret += n</div><div class="line">        del n</div></div><!-- fragment --><h4>Auto-timer example</h4>
 <div class="fragment"><div class="line">@timemory.util.auto_timer(key=&quot;&quot;, add_args=False, is_class=False, report_at_exit=False)</div><div class="line">def function(...):</div><div class="line">    time.sleep(1)</div></div><!-- fragment --><ul>
 <li>sample of an output (from <code>timemory.report()</code>):</li>
 </ul>
@@ -231,9 +232,9 @@ $(document).ready(function(){initNavTree('index.html','');});
 <ul>
 <li>In C++ code, easiest usage for the auto_timers is with the TiMemory macro</li>
 </ul>
-<div class="fragment"><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(<span class="stringliteral">&quot;custom_string&quot;</span>)</div></div><!-- fragment --><ul>
+<div class="fragment"><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;@&#39;&lt;file&gt;&#39;:&lt;line&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(<span class="stringliteral">&quot;[custom_string]&quot;</span>)</div><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a050238c7eb3c1481b0c108ef9eb357db">TIMEMORY_AUTO_TIMER_BASIC</a>(&quot;[custom_string]&quot;)</div><div class="line"></div><div class="line"><span class="comment">// later on</span></div><div class="line">tim::timing_manager::instance()-&gt;report()</div></div><!-- fragment --><ul>
 <li>The timing_manager is thread-safe and should be accessed through <code>timing_manager::instance()</code></li>
-<li>See the full documentation and examples for more information on the classes and usage</li>
+<li>See the full documentation and examples (ex1 and ex2) for more information on the classes and usage</li>
 </ul>
 <h3>Overview</h3>
 <p>There are essentially two components of the output:</p>
@@ -406,7 +407,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Thu Feb 8 2018 22:03:31 for TiMemory by
+    <li class="footer">Generated on Sun Feb 11 2018 14:45:25 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

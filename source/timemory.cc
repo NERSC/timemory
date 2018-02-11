@@ -462,14 +462,14 @@ PYBIND11_MODULE(timemory, tim)
     tman.def(py::init<>(tman_init), "Initialization",
              py::return_value_policy::take_ownership);
     tman.def("report",
-             [=] (py::object tman, bool no_min = false, bool serialize = true,
+             [=] (py::object tman, bool no_min = false, bool serialize = false,
                   std::string serial_filename = "")
              {
                  auto locals = py::dict();
                  py::exec(R"(
                           import timemory.options as options
-                          repfnm = options.report_fname
-                          serfnm = options.serial_fname
+                          repfnm = options.report_filename
+                          serfnm = options.serial_filename
                           do_ret = options.report_file
                           do_ser = options.serial_file
                           outdir = options.output_dir
@@ -539,7 +539,7 @@ PYBIND11_MODULE(timemory, tim)
              },
              "Report timing manager",
              py::arg("no_min") = false,
-             py::arg("serialize") = true,
+             py::arg("serialize") = false,
              py::arg("serial_filename") = "");
     tman.def("__str__",
              [=] (py::object tman)
@@ -581,7 +581,7 @@ PYBIND11_MODULE(timemory, tim)
                       py::exec(R"(
                                import timemory.options as options
                                import os
-                               result = options.serial_fname
+                               result = options.serial_filename
                                if not options.output_dir in result:
                                    result = os.path.join(options.output_dir, result)
                                options.ensure_directory_exists(result)
@@ -589,6 +589,7 @@ PYBIND11_MODULE(timemory, tim)
                       fname = locals["result"].cast<std::string>();
                   }
                   tman.cast<timing_manager_wrapper*>()->get()->write_serialization(fname);
+                  return fname;
              },
              "Serialize the timing manager to JSON",
              py::arg("fname") = "");
@@ -864,8 +865,8 @@ PYBIND11_MODULE(timemory, tim)
     opts.attr("serial_file") = true;
     opts.attr("use_timers") = true;
     opts.attr("max_timer_depth") = std::numeric_limits<uint16_t>::max();
-    opts.attr("report_fname") = "timing_report.out";
-    opts.attr("serial_fname") = "timing_report.json";
+    opts.attr("report_filename") = "timing_report.out";
+    opts.attr("serial_filename") = "timing_report.json";
     opts.attr("output_dir") = ".";
     opts.attr("echo_dart") = false;
     opts.attr("ctest_notes") = false;
@@ -908,7 +909,7 @@ PYBIND11_MODULE(timemory, tim)
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;
-        opts.attr("report_fname") = ss.str().c_str();
+        opts.attr("report_filename") = ss.str().c_str();
         opts.attr("report_file") = true;
         return ss.str();
     },
@@ -924,7 +925,7 @@ PYBIND11_MODULE(timemory, tim)
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;
-        opts.attr("serial_fname") = ss.str().c_str();
+        opts.attr("serial_filename") = ss.str().c_str();
         opts.attr("serial_file") = true;
         return ss.str();
     },

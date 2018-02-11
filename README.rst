@@ -153,13 +153,15 @@ Basic Python usage
 
 -  Decorators available for auto\_timers, timers, and rss\_usage in
    ``timemory.util``
+-  The same classes that are used for decorators can also be used as
+   context managers
 -  One can also use auto\_timer, timer, and rss\_usage objects directly
    for same results
 -  ``timemory.timing_manager`` class will record all auto-timers and can
    be printed out at completions of application
 -  The report from the timing manager can be plotted using
    ``timemory.plotting``
--  All decorators take similar arguments
+-  All decorators and context managers take similar arguments
 
    -  key : this is a custom key to append after function name. The
       default will add file and line number.
@@ -172,9 +174,20 @@ Basic Python usage
 
 .. code:: python
 
+  # using decorators
   @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
+
+  # using context manager
+  with timemory.util.auto_timer(report_at_exit=True):
+      time.sleep(1)
+
+      ret = np.ones(shape=[500, 500], dtype=np.float64)
+      for i in [ 2.0, 3.5, 8.7 ]:
+          n = i * np.ones(shape=[500, 500], dtype=np.float64)
+          ret += n
+          del n
 
 Auto-timer example
 ^^^^^^^^^^^^^^^^^^

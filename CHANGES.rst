@@ -1,7 +1,7 @@
 TiMemory
 ========
 
-Release: TiMemory 1.1.8
+Release: TiMemory 1.2.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Author: Jonathan R. Madsen
@@ -24,6 +24,9 @@ Date:   Tue Feb 6 05:12:56 2018 -0800
     - Improved MPI detection          
     - Included tests in installation --> timemory.tests.run(pattern="")
     - timemory.plotting routines have improved handling of bar graphs to help eliminate hidden graphs in the overlay
+    - added context managers
+    - moved report_fname field in options to report_filename
+    - moved serial_fname field in options to serial_filename
 
 Release: TiMemory 1.1.7
 ~~~~~~~~~~~~~~~~~~~~~~~

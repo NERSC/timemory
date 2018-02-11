@@ -99,6 +99,7 @@ class auto_timer(base_decorator):
     def __init__(self, key="", add_args=False, is_class=False, report_at_exit=False):
         super(auto_timer, self).__init__(key, add_args, is_class)
         self.report_at_exit = report_at_exit
+        self._self_obj = None
 
 
     # ------------------------------------------------------------------------ #
@@ -122,6 +123,36 @@ class auto_timer(base_decorator):
         return function_wrapper
 
 
+    #
+    # ------------------------------------------------------------------------ #
+    def __enter__(self, *args, **kwargs):
+        """
+        Context manager
+        """
+        import timemory
+        _file = timemory.FILE(3)
+        _line = timemory.LINE(2)
+        _func = timemory.FUNC(2)
+
+        _key = ''
+        _args = self.arg_string(args, kwargs)
+        if self.key == "":
+            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+        else:
+            _key = '{}{}'.format(self.key, _args)
+
+        self._self_obj = timemory.timer_decorator(_func, _file, _line,
+             _key, self.add_args or self.is_class, self.report_at_exit)
+
+
+    # ------------------------------------------------------------------------ #
+    def __exit__(self, exc_type, exc_value, traceback):
+        del self._self_obj
+
+        if exc_type is not None and exc_value is not None and traceback is not None:
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+
+
 #------------------------------------------------------------------------------#
 class timer(base_decorator):
     """ A decorator for the timer, e.g.:
@@ -136,6 +167,7 @@ class timer(base_decorator):
     # ------------------------------------------------------------------------ #
     def __init__(self, key="", add_args=False, is_class=False):
         super(timer, self).__init__(key, add_args, is_class)
+        self._self_obj = None
 
 
     # ------------------------------------------------------------------------ #
@@ -168,6 +200,36 @@ class timer(base_decorator):
         return function_wrapper
 
 
+    # ------------------------------------------------------------------------ #
+    def __enter__(self, *args, **kwargs):
+        """
+        Context manager
+        """
+        import timemory
+        _file = timemory.FILE(3)
+        _line = timemory.LINE(2)
+        _func = timemory.FUNC(2)
+
+        _key = ''
+        _args = self.arg_string(args, kwargs)
+        if self.key == "":
+            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+        else:
+            _key = '{}{}'.format(self.key, _args)
+
+        self._self_obj = timemory.timer(_key)
+        self._self_obj.start()
+
+
+    # ------------------------------------------------------------------------ #
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._self_obj.stop()
+        self._self_obj.report()
+
+        if exc_type is not None and exc_value is not None and traceback is not None:
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+
+
 #------------------------------------------------------------------------------#
 class rss_usage(base_decorator):
     """ A decorator for the rss usage, e.g.:
@@ -182,6 +244,8 @@ class rss_usage(base_decorator):
     # ------------------------------------------------------------------------ #
     def __init__(self, key="", add_args=False, is_class=False):
         super(rss_usage, self).__init__(key, add_args, is_class)
+        self._self_obj = None
+        self._self_key = None
 
 
     # ------------------------------------------------------------------------ #
@@ -223,3 +287,45 @@ class rss_usage(base_decorator):
             return ret
 
         return function_wrapper
+
+
+    # ------------------------------------------------------------------------ #
+    def __enter__(self, *args, **kwargs):
+        """
+        Context manager
+        """
+        import timemory
+        _file = timemory.FILE(3)
+        _line = timemory.LINE(2)
+        _func = timemory.FUNC(2)
+
+        _key = ''
+        _args = self.arg_string(args, kwargs)
+        if self.key == "":
+            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+        else:
+            _key = '{}{}'.format(self.key, _args)
+
+        self._self_obj = timemory.rss_usage()
+        self._self_key = _key
+        self._self_obj.record()
+
+
+    # ------------------------------------------------------------------------ #
+    def __exit__(self, exc_type, exc_value, traceback):
+        import timemory
+        _key = '{}'.format(self._self_key)
+        rss_done = timemory.rss_usage()
+        rss_self = self._self_obj
+        # record at end
+        rss_done.record()
+        # calc self
+        rss_self = rss_done - rss_self
+
+        print('{} : RSS {}total,self{}_{}current,peak{} : ({}|{}) | ({}|{}) [MB]'.format(
+            _key, '{', '}', '{', '}',
+            rss_done.current(), rss_done.peak(),
+            rss_self.current(), rss_self.peak()))
+
+        if exc_type is not None and exc_value is not None and traceback is not None:
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

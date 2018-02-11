@@ -153,10 +153,10 @@ def run_test():
         tman -= rss
         tman.report()
         _jsonf = os.path.join(options.output_dir, 'nested_output.json')
-        tman.serialize(_jsonf)
+        _fname = tman.serialize(_jsonf)
         _data = timemory.plotting.read(tman.json())
         _data.title = timemory.FILE(noquotes=True)
-        _data.filename = options.serial_fname
+        _data.filename = _fname
         plotting.plot(data = [_data], files = [_jsonf], output_dir=options.output_dir)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

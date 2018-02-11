@@ -10,5 +10,7 @@ var searchData=
   ['_5f_5fwr_5fid',['__wr_id',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#ace620c6ac419bdd4623ab507db91fbf0',1,'tests::array_test::auto_array_weakref']]],
   ['_5f_5fwr_5fmap',['__wr_map',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#afcd3dcd99ac2f7abd45095f3979f3d4b',1,'tests::array_test::auto_array_weakref']]],
   ['_5fdata',['_data',['../df/d23/namespaceplotting_1_1plotting.html#aa6ea4a874535708bcc76734d84158739',1,'plotting::plotting']]],
-  ['_5fname',['_name',['../de/d79/classtests_1_1array__test_1_1auto__disk__array.html#a6237d76243b05b352e970760f40c806f',1,'tests::array_test::auto_disk_array']]]
+  ['_5fname',['_name',['../de/d79/classtests_1_1array__test_1_1auto__disk__array.html#a6237d76243b05b352e970760f40c806f',1,'tests::array_test::auto_disk_array']]],
+  ['_5fself_5fkey',['_self_key',['../d1/d2e/classutil_1_1util_1_1rss__usage.html#ade60912e277d2df6243b7ae8c0a7d6f0',1,'util::util::rss_usage']]],
+  ['_5fself_5fobj',['_self_obj',['../d3/df4/classutil_1_1util_1_1auto__timer.html#a39b4b27e9f4817e3b11c1a758cdd3962',1,'util.util.auto_timer._self_obj()'],['../d9/dca/classutil_1_1util_1_1timer.html#af78fe1591e26010297c766c24e23440b',1,'util.util.timer._self_obj()'],['../d1/d2e/classutil_1_1util_1_1rss__usage.html#a7e57fd57e793059553d15ccce4be7aff',1,'util.util.rss_usage._self_obj()']]]
 ];

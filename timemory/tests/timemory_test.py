@@ -257,10 +257,92 @@ class timemory_test(unittest.TestCase):
         test_func_timer()
 
 
+    # ------------------------------------------------------------------------ #
+    # Test context manager
+    def test_context_manager(self):
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
+
+        timemory.toggle(True)
+        self.timing_manager.clear()
+
+        # timer test
+        with timemory.util.timer():
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+
+        # timer test with args
+        with timemory.util.timer('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+
+        # auto timer test
+        with timemory.util.auto_timer(report_at_exit=True):
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+
+        # auto timer test with args
+        with timemory.util.auto_timer('{}({})'.format(timemory.FUNC(), ['test', 'context']),
+                                      report_at_exit=True):
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+
+        # rss test
+        with timemory.util.rss_usage():
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+
+        # rss test with args
+        with timemory.util.rss_usage('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
+            time.sleep(1)
+
+            ret = np.ones(shape=[500, 500], dtype=np.float64)
+            for i in [ 2.0, 3.5, 8.7 ]:
+                n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                ret += n
+                del n
+
+        freport = timemory.options.set_report("timing_context_manager.out")
+        fserial = timemory.options.set_serial("timing_context_manager.json")
+        self.timing_manager.report(no_min=True)
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
+
+
 # ---------------------------------------------------------------------------- #
 def run_test():
     try:
         _test = timemory_test()
+        _test.setUp()
+        _test.test_context_manager()
         _test.setUp()
         _test.test_decorator()
         _test.setUp()
@@ -285,7 +367,7 @@ if __name__ == '__main__':
     args = options.add_args_and_parse_known(parser)
 
     try:
-        unittest.main(verbosity=2, buffer=False)
+        unittest.main(verbosity=5, buffer=False)
     except:
         raise
     finally:
