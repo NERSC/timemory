@@ -905,7 +905,9 @@ PYBIND11_MODULE(timemory, tim)
              [=] (std::string fname)
     {
         std::stringstream ss;
-        ss << opts.attr("output_dir").cast<std::string>();
+        std::string output_dir = opts.attr("output_dir").cast<std::string>();
+        if(fname.find(output_dir) != 0)
+            ss << output_dir;
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;
@@ -921,7 +923,9 @@ PYBIND11_MODULE(timemory, tim)
              [=] (std::string fname)
     {
         std::stringstream ss;
-        ss << opts.attr("output_dir").cast<std::string>();
+        std::string output_dir = opts.attr("output_dir").cast<std::string>();
+        if(fname.find(output_dir) != 0)
+            ss << output_dir;
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;

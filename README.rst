@@ -54,7 +54,7 @@ Dependancies
 
    -  Linux (tested on Ubuntu 14.04 and 16.04, openSUSE )
    -  macOS (tested on 10.13 - High Sierra)
-   -  Windows (tested on Windows 10 x64 with MSVC 14+)
+   -  Windows (tested on Windows 10 x64 and x86 with MSVC 14+)
 
 -  CMake (version >= 2.8.12)
 
@@ -112,7 +112,7 @@ Python setup.py installation
   #   build_type -> TIMEMORY_BUILD_TYPE
   #   timemory_exceptions -> TIMEMORY_EXCEPTIONS
   TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install .
-  TIMEMORY_BUIDL_TYPE=RelWithDebInfo pip install timemory
+  TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install timemory
 
 -  ``setup.cfg`` can be edited for build\_type, use\_mpi, mpicc, mpicxx,
    etc.
@@ -194,9 +194,17 @@ Auto-timer example
 
 .. code:: python
 
+  # with decorator
   @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
+
+  # with context manager
+  with timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False):
+      ret = np.ones(shape=[500, 500], dtype=np.float64)
+      for i in [ 2.0, 3.5, 8.7 ]:
+          n = i * np.ones(shape=[500, 500], dtype=np.float64)
+          ret += n
 
 ::
 
@@ -214,9 +222,17 @@ Timer example (will report to stdout at the end of the function)
 
 .. code:: python
 
+  # with decorator
   @timemory.util.timer(key="", add_args=False, is_class=False)
   def function(...):
       time.sleep(1)
+
+  # with context manager
+  with timemory.util.timer(key="", add_args=False, is_class=False):
+      ret = np.ones(shape=[500, 500], dtype=np.float64)
+      for i in [ 2.0, 3.5, 8.7 ]:
+          n = i * np.ones(shape=[500, 500], dtype=np.float64)
+          ret += n
 
 ::
 
@@ -234,9 +250,17 @@ RSS usage example (will report to stdout at the end of the function)
 
 .. code:: python
 
+  # with decorator
   @timemory.util.rss_usage(key="", add_args=False, is_class=False)
   def function(...):
       time.sleep(1)
+
+  # with context manager
+  with timemory.util.rss_usage(key="", add_args=False, is_class=False):
+      ret = np.ones(shape=[500, 500], dtype=np.float64)
+      for i in [ 2.0, 3.5, 8.7 ]:
+          n = i * np.ones(shape=[500, 500], dtype=np.float64)
+          ret += n
 
 ::
 
@@ -735,7 +759,12 @@ here is general guide:
 
   #!/usr/bin/env python
 
+  import os
+  import sys
+  import argparse
+
   import timemory
+  import timemory.options as options
 
   # optional (will catch SIGINT + other signals such as SIGABRT, SIGQUIT, SIGHUP, etc.)
   timemory.enable_signal_detection()
@@ -745,7 +774,7 @@ here is general guide:
 
   #------------------------------------------------------------------------------#
   # use a decorator
-  @timemory.util.auto_timer(key = "", add_args=True)
+  @timemory.util.auto_timer()
   def decorator_func(args):
       # ...
       import time
@@ -765,7 +794,6 @@ here is general guide:
   #------------------------------------------------------------------------------#
   if __name__ == "__main__":
 
-      import argparse
       parser = argparse.ArgumentParser()
       parser.add_argument("-s", "--size",
                           help="Size of array allocations",
@@ -776,138 +804,113 @@ here is general guide:
       timemory.options.set_report(timemory.options.report_filename)
       timemory.options.set_serial(timemory.options.serial_filename)
 
-      try:
-          main(args)
+      with timemory.util.timer('\nTotal time for "{}"'.format(__file__)):
+          try:
+              main(args)
 
-          # get the handle for the timing manager
-          timing_manager = timemory.timing_manager()
+              # get the handle for the timing manager
+              timing_manager = timemory.timing_manager()
 
-          # will output to stdout if "set_report" not called
-          timing_manager.report()
+              # will output to stdout if "set_report" not called
+              print ('{}'.format(timing_manager))
 
-          # serialization will be called in above if "set_serial" is called
-          # but to serialize to file:
-          timing_manager.serialize('output.json')
+              # serialization will be called in above if "set_serial" is called
+              # but to serialize to file:
+              timing_manager.serialize(os.path.join(options.output_dir, 'output.json'))
 
-          # get the serialization directly
-          json_objs = [ timemory.plotting.read(timing_manager.json()) ]
-          print (json_objs[0])
+              # get the serialization directly
+              json_objs = [ timemory.plotting.read(timing_manager.json()) ]
+              print (json_objs[0])
 
-          # get the serialization file ('output.json')
-          json_files = [ timemory.options.serial_fname ]
+              # get the serialization file ('output.json')
+              json_files = [ timemory.options.serial_filename ]
 
-          # will create timing and memory plot with avg + err for files
-          # (even though output is identical in this example...)
-          timemory.plotting.plot(json_objs, files=json_files, display=False)
+              # will create timing and memory plot with avg + err for files
+              # (even though output is identical in this example...)
+              timemory.plotting.plot(json_objs, files=json_files, output_dir=options.output_dir)
 
-      except Exception as e:
-          print (e)
-          print ("Error! Unable to plot 'output.json'")
+              if options.ctest_notes:
+                  timing_manager.write_ctest_notes(directory=options.output_dir)
 
-      print ('')
+          except Exception as e:
+              print (e)
+              print ("Error! Unable to plot 'output.json'")
+
+-  Output of above with:
+   ``python test.py --enable-dart --write-ctest-notes --output-dir timemory_example``
+
+::
+
+  > [pyc] main@'test.py':29              :  1.005 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (28.0|28.0) | ( 0.0| 0.0) [MB]
+  > [pyc] |_decorator_func@'test.py':18  :  1.005 wall,  0.000 user +  0.000 system =  0.000 CPU [sec] (  0.0%) : RSS {tot,self}_{curr,peak} : (28.0|28.0) | ( 0.0| 0.0) [MB]
+
+      Filename: output
+      Concurrency: 1.0
+      MPI ranks: 1
+      # functions: 2
+      Title:
+  Reading timemory_example/timing_report.json...
+  Plotting output...
+  <DartMeasurementFile name="output_timing..png" type="image/png">timemory_example/output_timing..png</DartMeasurementFile>
+  Saving plot: "timemory_example/output_timing..png"...
+  <DartMeasurementFile name="output_memory..png" type="image/png">timemory_example/output_memory..png</DartMeasurementFile>
+  Saving plot: "timemory_example/output_memory..png"...
+  Plotting timemory_example/timing_report.json...
+  <DartMeasurementFile name="timing_report_timing.png" type="image/png">timemory_example/timing_report_timing.png</DartMeasurementFile>
+  Saving plot: "timemory_example/timing_report_timing.png"...
+  <DartMeasurementFile name="timing_report_memory.png" type="image/png">timemory_example/timing_report_memory.png</DartMeasurementFile>
+  Saving plot: "timemory_example/timing_report_memory.png"...
+
+  Total time for "test.py" :  2.406 wall,  1.270 user +  0.100 system =  1.370 CPU [sec] ( 56.9%) : RSS {tot,self}_{curr,peak} : (69.7|69.7) | (41.8|41.8) [MB]
 
 TiMemory with CTest/CDash
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
--  I use a script to echo the ``<DartMeasurementFile>`` tags, which get
-   loaded automatically by CDash.
+-  Run TiMemory with the option ``--enable-dart`` and
+   ``--write-ctest-notes``
 
-**generate\_plots.sh**:
+   -  For each plot generated, TiMemory will echo a string to the CTest
+      log that will cause the plot to be upload to the dashboard
+      (DartMeasurementFile tag)
+   -  Examples can be found in all the tests
+   -  Outputting the CTestNotes.cmake files requires a small amount of
+      extra code
 
-::
+.. code:: python
 
-  #!/bin/bash
+  import timemory.options as options
 
-  set -o errexit
+  # ...
 
-  # if no realpath command, then add function
-  if ! eval command -v realpath &> /dev/null ; then
-      realpath()
-      {
-          [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-      }
-  fi
+  if __name__ == '__main__':
+      try:
+          parser = argparse.ArgumentParser()
+          args = options.add_args_and_parse_known(parser)
 
-  # if the glob is unsuccessful, don't pass ${outdir}/timing_report*.out
-  shopt -s nullglob
-  for j in $@
-  do
-      outdir=$(realpath ${j})
+          main()
 
-      for i in ${outdir}/timing_report*.json
-      do
-          ${PWD}/timing_plot.py -f ${i}
-      done
+          if options.ctest_notes:
+              manager = timemory.timing_manager()
+              f = manager.write_ctest_notes(directory="test_output/array_test")
 
-      for i in ${outdir}/timing_report*.png
-      do
-          # show in log
-          fname="$(basename $(dirname ${i}))/$(basename ${i})"
-          cat << EOF
-  <DartMeasurementFile name="${fname}"
-  type="image/png">${i}</DartMeasurementFile>
-  EOF
-      done
-  done
+      except Exception as e:
+          exc_type, exc_value, exc_traceback = sys.exc_info()
+          traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+          print ('Exception - {}'.format(e))
+          raise
 
--  I use another script to generate a ``CTestNotes.cmake`` file listing
-   the TiMemory text output files. CTest reads this file and includes
-   the text reports as a build note file that also gets loaded to the
-   dashboard
-
-**generate\_notes.sh**:
+-  To ensure the ASCII files are uploaded, define a CMake macro and call
+   this macro before submitting
 
 ::
 
-  #!/bin/bash
-
-  set -o errexit
-
-  # if no realpath command, then add function
-  if ! eval command -v realpath &> /dev/null ; then
-      realpath()
-      {
-          [[ $1 = /* ]] && echo "$1" || echo "$PWD/${1#./}"
-      }
-  fi
-
-  # if the glob is unsuccessful, don't pass ${outdir}/timing_report*.out
-  shopt -s nullglob
-  for j in $@
-  do
-      outdir=$(realpath ${j})
-      FILE="${outdir}/CTestNotes.cmake"
-
-      echo "Creating CTest notes file: \"${FILE}\"..."
-      cat > ${FILE} << EOF
-
-  IF(NOT DEFINED CTEST_NOTES_FILES)
-      SET(CTEST_NOTES_FILES )
-  ENDIF(NOT DEFINED CTEST_NOTES_FILES)
-
-  EOF
-
-      for i in ${outdir}/timing_report*.out
-      do
-          cat >> ${FILE} << EOF
-  LIST(APPEND CTEST_NOTES_FILES "${i}")
-  EOF
-      done
-      # remove duplicates
-      cat >> ${FILE} << EOF
-
-  IF(NOT "\${CTEST_NOTES_FILES}" STREQUAL "")
-      LIST(REMOVE_DUPLICATES CTEST_NOTES_FILES)
-  ENDIF(NOT "\${CTEST_NOTES_FILES}" STREQUAL "")
-
-  EOF
-
-  done
-
-  set +o errexit
-  set +v
-
-  PLOTS_SCRIPT=$(dirname ${BASH_SOURCE[0]})/generate_plots.sh
-  if [ -x "${PLOTS_SCRIPT}" ]; then
-      eval ${PLOTS_SCRIPT} $@
+  # ---------------------------------------------------------------------------- #
+  # -- Read CTestNotes.cmake file
+  # ---------------------------------------------------------------------------- #
+  macro(READ_NOTES)
+      file(GLOB_RECURSE NOTE_FILES "${CTEST_BINARY_DIRECTORY}/*CTestNotes.cmake")
+      foreach(_FILE ${NOTE_FILES})
+          include("${_FILE}")
+      endforeach(_FILE ${NOTE_FILES})
+  endmacro(READ_NOTES)
 
