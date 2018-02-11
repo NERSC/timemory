@@ -598,8 +598,8 @@ if __name__ == "__main__":
     # ...
     args = timemory.options.add_arguments_and_parse(parser)
 
-    timemory.options.set_report(timemory.options.report_fname)
-    timemory.options.set_serial(timemory.options.serial_fname)
+    timemory.options.set_report(timemory.options.report_filename)
+    timemory.options.set_serial(timemory.options.serial_filename)
 
     try:
         main(args)
