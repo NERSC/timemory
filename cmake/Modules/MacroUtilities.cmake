@@ -36,10 +36,10 @@
 #
 
 # - Include guard
-if(__macroutilities_isloaded)
+if(__timemory_macroutilities_isloaded)
   return()
 endif()
-set(__macroutilities_isloaded YES)
+set(__timemory_macroutilities_isloaded YES)
 
 cmake_policy(PUSH)
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)

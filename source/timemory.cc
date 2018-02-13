@@ -809,7 +809,7 @@ PYBIND11_MODULE(timemory, tim)
                 typedef std::function<void(int)> signal_function_t;
                 using std::placeholders::_1;
                 signal_function_t _f = std::bind<void>(_func, _1);
-                tim::signal_settings::set_exit_action(_f);
+                NAME_TIM::signal_settings::set_exit_action(_f);
             },
             "Set the exit action when a signal is raised -- function must accept integer");
 
