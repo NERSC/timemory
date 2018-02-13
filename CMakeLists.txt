@@ -126,7 +126,7 @@ write_basic_package_version_file(
     COMPATIBILITY SameMajorVersion)
 
 if(NOT SETUP_PY)
-    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+    install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
         DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
 endif(NOT SETUP_PY)
