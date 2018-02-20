@@ -182,3 +182,5 @@ configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
 
 install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
     DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+
+export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
