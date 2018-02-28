@@ -11,6 +11,5 @@ var classtests_1_1array__test_1_1auto__array__weakref =
     [ "__wr_map", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#afcd3dcd99ac2f7abd45095f3979f3d4b", null ],
     [ "finished", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#af20ff370a78ca5040c8a384c398bc969", null ],
     [ "ghost_attributes", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#adbcff6317aa311077bb236c2b2694a1e", null ],
-    [ "is_class", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a7146dce05e47b29a8af7f3833bcb01fc", null ],
     [ "resource", "da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a57b035587d69d2cc3924a2b77962eea6", null ]
 ];

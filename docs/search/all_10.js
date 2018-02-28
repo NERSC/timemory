@@ -1,6 +1,7 @@
 var searchData=
 [
   ['parse_5fformat',['parse_format',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a19281563a64bc897c8fb0aeb8da590ac',1,'NAME_TIM::internal::base_timer']]],
+  ['parse_5fwrapped',['parse_wrapped',['../db/df0/classutil_1_1util_1_1base__decorator.html#a264134fe52fb5cc72017419c9133fb77',1,'util::util::base_decorator']]],
   ['parser',['parser',['../df/d23/namespaceplotting_1_1plotting.html#a837bb3a250c9f73ff475c15736b6d8bf',1,'plotting.plotting.parser()'],['../d9/d25/namespacetests_1_1array__test.html#a956e60ea254915fbc5d98eafbd27f6fc',1,'tests.array_test.parser()'],['../df/ddd/namespacetests_1_1timemory__test.html#a81498b2920413efd06206c61777f7ab3',1,'tests.timemory_test.parser()']]],
   ['peak',['peak',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#acd3d69e502936e84975af318ce7b2907',1,'NAME_TIM::rss::usage']]],
   ['percent',['percent',['../de/de2/namespace_n_a_m_e___t_i_m.html#a1299b93b264d54d534196b620fc0eb81a354f047ba64552895b016bbdd60ab174',1,'NAME_TIM']]],

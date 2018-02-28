@@ -10,6 +10,7 @@ var searchData=
   ['test_5fdecorator',['test_decorator',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a0bb9ab9577d10775898038f78692d4ee',1,'tests::timemory_test::timemory_test']]],
   ['test_5fmax_5fdepth',['test_max_depth',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a63185bcee00e8e7aee4f78292bc88207',1,'tests::timemory_test::timemory_test']]],
   ['test_5fpointer',['test_pointer',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#ae682888e72ea8b5ef593cca62616d34b',1,'tests::timemory_test::timemory_test']]],
+  ['test_5frss_5fvalidity',['test_rss_validity',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#ade7458431bd5be021eecab64bbafa95d',1,'tests::timemory_test::timemory_test']]],
   ['test_5ftiming',['test_timing',['../de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a569e2ef981eb4a80e9c65bef1dd2dc5c',1,'tests::timemory_test::timemory_test']]],
   ['test_5ftiming_2ecpp',['test_timing.cpp',['../d0/d90/ex1_2test__timing_8cpp.html',1,'(Global Namespace)'],['../d2/dc1/ex3_2test__timing_8cpp.html',1,'(Global Namespace)']]],
   ['test_5ftiming_5fdepth',['test_timing_depth',['../d0/d90/ex1_2test__timing_8cpp.html#a354c47b846b38480fc23f7f0ad15e9c5',1,'test_timing_depth():&#160;test_timing.cpp'],['../dd/d0a/mpi__test__timing_8cpp.html#a354c47b846b38480fc23f7f0ad15e9c5',1,'test_timing_depth():&#160;mpi_test_timing.cpp'],['../d2/dc1/ex3_2test__timing_8cpp.html#a354c47b846b38480fc23f7f0ad15e9c5',1,'test_timing_depth():&#160;test_timing.cpp']]],
@@ -74,5 +75,6 @@ var searchData=
   ['total',['total',['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a2778b6b32e8b494725ea095fab6bd409',1,'NAME_TIM::internal::base_rss_usage::total()'],['../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#ad07e4f1953e1f912627017742ecaffd4',1,'NAME_TIM::internal::base_rss_usage::total() const']]],
   ['total_5fcurr',['total_curr',['../de/de2/namespace_n_a_m_e___t_i_m.html#a1299b93b264d54d534196b620fc0eb81ae5a36dae54d8a734cf65af1a059f48a8',1,'NAME_TIM']]],
   ['total_5fpeak',['total_peak',['../de/de2/namespace_n_a_m_e___t_i_m.html#a1299b93b264d54d534196b620fc0eb81a43e42ffc7e4f56c6087abaa3dedbe831',1,'NAME_TIM']]],
+  ['type_5fmutex',['type_mutex',['../de/de2/namespace_n_a_m_e___t_i_m.html#a33ede75326192ed0e528a1c8723c3c56',1,'NAME_TIM']]],
   ['types',['types',['../d9/d35/classplotting_1_1plotting_1_1timemory__data.html#af516c4aa4756d78df13ffa82380b1c4b',1,'plotting::plotting::timemory_data']]]
 ];

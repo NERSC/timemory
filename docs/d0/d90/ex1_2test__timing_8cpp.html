@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.2.1</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -107,7 +107,8 @@ $(document).ready(function(){initNavTree('d0/d90/ex1_2test__timing_8cpp.html','.
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../db/da2/ex1_2test__timing_8cpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../db/da2/ex1_2test__timing_8cpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 </div>
 </div>
 <p><a href="">Go to the source code of this file.</a></p>
@@ -332,7 +333,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <div class="fragment"><div class="line"><a name="l00373"></a><span class="lineno">  373</span>&#160;{</div><div class="line"><a name="l00374"></a><span class="lineno">  374</span>&#160;    <a class="code" href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>();</div><div class="line"><a name="l00375"></a><span class="lineno">  375</span>&#160;    <span class="keyword">static</span> int32_t <a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a> = 0;</div><div class="line"><a name="l00376"></a><span class="lineno">  376</span>&#160;    <span class="keywordflow">return</span> <span class="keyword">new</span> std::thread(<a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a707bb555f18585ae3b74bf0ebfcffb1c">thread_func</a>, nfib + (n++)%2, fut);</div><div class="line"><a name="l00377"></a><span class="lineno">  377</span>&#160;}</div><div class="ttc" id="auto__timer_8hpp_html_a41455eb59dfd7a1395fb464cfa6f75d9"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a></div><div class="ttdeci">#define TIMEMORY_AUTO_TIMER(str)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:98</div></div>
-<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:380</div></div>
+<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:417</div></div>
 <div class="ttc" id="ex1_2test__timing_8cpp_html_a707bb555f18585ae3b74bf0ebfcffb1c"><div class="ttname"><a href="../../d0/d90/ex1_2test__timing_8cpp.html#a707bb555f18585ae3b74bf0ebfcffb1c">thread_func</a></div><div class="ttdeci">void thread_func(int32_t nfib, std::shared_future&lt; void &gt; fut)</div><div class="ttdef"><b>Definition:</b> test_timing.cpp:358</div></div>
 </div><!-- fragment -->
 </div>
@@ -353,7 +354,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <div class="fragment"><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;{</div><div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;    <span class="keywordflow">if</span> (<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a> &lt; 2) <span class="keywordflow">return</span> <a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a>;</div><div class="line"><a name="l00081"></a><span class="lineno">   81</span>&#160;    <span class="keywordflow">if</span>(<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a> &gt; 34)</div><div class="line"><a name="l00082"></a><span class="lineno">   82</span>&#160;    {</div><div class="line"><a name="l00083"></a><span class="lineno">   83</span>&#160;        <a class="code" href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>();</div><div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a>(<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a>-1) + <a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a>(<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a>-2);</div><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;    }</div><div class="line"><a name="l00086"></a><span class="lineno">   86</span>&#160;    <span class="keywordflow">else</span></div><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;        <span class="keywordflow">return</span> <a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a>(<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a>-1) + <a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a>(<a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a>-2);</div><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;}</div><div class="ttc" id="auto__timer_8hpp_html_a41455eb59dfd7a1395fb464cfa6f75d9"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a></div><div class="ttdeci">#define TIMEMORY_AUTO_TIMER(str)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:98</div></div>
-<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:380</div></div>
+<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:417</div></div>
 <div class="ttc" id="ex1_2test__timing_8cpp_html_a915c91c94d47aac9016f34aba62c750a"><div class="ttname"><a href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a></div><div class="ttdeci">int64_t fibonacci(int32_t n)</div><div class="ttdef"><b>Definition:</b> test_timing.cpp:78</div></div>
 </div><!-- fragment -->
 </div>
@@ -694,7 +695,7 @@ Functions</h2></td></tr>
       </table>
 </div><div class="memdoc">
 <div class="fragment"><div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;{</div><div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    std::stringstream ss;</div><div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;    ss &lt;&lt; <span class="stringliteral">&quot;(&quot;</span> &lt;&lt; <a class="code" href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">n</a> &lt;&lt; <span class="stringliteral">&quot;)&quot;</span>;</div><div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;    <a class="code" href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(ss.str());</div><div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;    <span class="keywordflow">return</span> <a class="code" href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a>(n);</div><div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;}</div><div class="ttc" id="auto__timer_8hpp_html_a41455eb59dfd7a1395fb464cfa6f75d9"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a></div><div class="ttdeci">#define TIMEMORY_AUTO_TIMER(str)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:98</div></div>
-<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:380</div></div>
+<div class="ttc" id="namespacetests_1_1timemory__test_html_a61af35775af9a4ba5d0dce20d72884df"><div class="ttname"><a href="../../df/ddd/namespacetests_1_1timemory__test.html#a61af35775af9a4ba5d0dce20d72884df">tests.timemory_test.n</a></div><div class="ttdeci">n</div><div class="ttdef"><b>Definition:</b> timemory_test.py:417</div></div>
 <div class="ttc" id="ex1_2test__timing_8cpp_html_a915c91c94d47aac9016f34aba62c750a"><div class="ttname"><a href="../../d0/d90/ex1_2test__timing_8cpp.html#a915c91c94d47aac9016f34aba62c750a">fibonacci</a></div><div class="ttdeci">int64_t fibonacci(int32_t n)</div><div class="ttdef"><b>Definition:</b> test_timing.cpp:78</div></div>
 </div><!-- fragment -->
 </div>
@@ -705,7 +706,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_d28a4824dc47e487b107a5db32ef43c4.html">examples</a></li><li class="navelem"><a class="el" href="../../dir_44f8871e198e5901b49dec9153953d20.html">ex1</a></li><li class="navelem"><a class="el" href="../../d0/d90/ex1_2test__timing_8cpp.html">test_timing.cpp</a></li>
-    <li class="footer">Generated on Sun Feb 11 2018 15:35:42 for TiMemory by
+    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

@@ -1,6 +1,7 @@
 var searchData=
 [
   ['parse_5fformat',['parse_format',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a19281563a64bc897c8fb0aeb8da590ac',1,'NAME_TIM::internal::base_timer']]],
+  ['parse_5fwrapped',['parse_wrapped',['../db/df0/classutil_1_1util_1_1base__decorator.html#a264134fe52fb5cc72017419c9133fb77',1,'util::util::base_decorator']]],
   ['peak',['peak',['../df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html#acd3d69e502936e84975af318ce7b2907',1,'NAME_TIM::rss::usage']]],
   ['plot',['plot',['../df/d23/namespaceplotting_1_1plotting.html#a585ef7431506d708a41006c6b2e6335a',1,'plotting::plotting']]],
   ['plot_5fmemory',['plot_memory',['../df/d23/namespaceplotting_1_1plotting.html#afa5d94c1937ae10939842d5e27bdf330',1,'plotting::plotting']]],

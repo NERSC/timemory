@@ -6,6 +6,7 @@ var classutil_1_1util_1_1auto__timer =
     [ "__exit__", "d3/df4/classutil_1_1util_1_1auto__timer.html#a3da9c8bdc8ccf4c970eae7ae9d1b26ed", null ],
     [ "arg_string", "d3/df4/classutil_1_1util_1_1auto__timer.html#ade7fe24f7c2b97db5d995fc55bd4b187", null ],
     [ "class_string", "d3/df4/classutil_1_1util_1_1auto__timer.html#a1f30add2b8df690b86e4b42b5be75ce5", null ],
+    [ "parse_wrapped", "d3/df4/classutil_1_1util_1_1auto__timer.html#a264134fe52fb5cc72017419c9133fb77", null ],
     [ "_self_obj", "d3/df4/classutil_1_1util_1_1auto__timer.html#a39b4b27e9f4817e3b11c1a758cdd3962", null ],
     [ "add_args", "d3/df4/classutil_1_1util_1_1auto__timer.html#a9191aba0924f38d2157d58004da7b93c", null ],
     [ "is_class", "d3/df4/classutil_1_1util_1_1auto__timer.html#acbe7cb643ad6b947b722501854dd5e78", null ],

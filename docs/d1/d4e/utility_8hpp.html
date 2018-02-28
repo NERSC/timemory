@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.2.1</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -89,33 +89,39 @@ $(document).ready(function(){initNavTree('d1/d4e/utility_8hpp.html','../../');})
 <div class="title">utility.hpp File Reference</div>  </div>
 </div><!--header-->
 <div class="contents">
-<div class="textblock"><code>#include &lt;iostream&gt;</code><br />
+<div class="textblock"><code>#include &lt;cstdint&gt;</code><br />
 <code>#include &lt;cstdlib&gt;</code><br />
-<code>#include &lt;set&gt;</code><br />
+<code>#include &lt;cstring&gt;</code><br />
+<code>#include &lt;cmath&gt;</code><br />
 <code>#include &lt;string&gt;</code><br />
 <code>#include &lt;sstream&gt;</code><br />
+<code>#include &lt;iostream&gt;</code><br />
 <code>#include &lt;iomanip&gt;</code><br />
-<code>#include &lt;cstring&gt;</code><br />
 <code>#include &lt;exception&gt;</code><br />
 <code>#include &lt;stdexcept&gt;</code><br />
 <code>#include &lt;functional&gt;</code><br />
 <code>#include &lt;deque&gt;</code><br />
-<code>#include &lt;cmath&gt;</code><br />
+<code>#include &lt;set&gt;</code><br />
 <code>#include &lt;vector&gt;</code><br />
+<code>#include &lt;atomic&gt;</code><br />
+<code>#include &lt;mutex&gt;</code><br />
+<code>#include &lt;thread&gt;</code><br />
 <code>#include &quot;<a class="el" href="../../">timemory/namespace.hpp</a>&quot;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-0-trigger" src="../../closed.png" alt="+"/> Include dependency graph for utility.hpp:</div>
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d1/d48/utility_8hpp__incl.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d1/d48/utility_8hpp__incl.svg" width="100%" height="388"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 </div>
 </div><div class="textblock"><div id="dynsection-1" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-1-trigger" src="../../closed.png" alt="+"/> This graph shows which files directly or indirectly include this file:</div>
 <div id="dynsection-1-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-1-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d7/d68/utility_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../d7/d68/utility_8hpp__dep__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
+</div>
 </div>
 </div>
 <p><a href="">Go to the source code of this file.</a></p>
@@ -131,9 +137,16 @@ Namespaces</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:add1957e32508eba19742c2c1b31118dd"><td class="memItemLeft" align="right" valign="top">typedef std::deque&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">NAME_TIM::str_list_t</a></td></tr>
 <tr class="separator:add1957e32508eba19742c2c1b31118dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fb3807e3a1e8e0d08e44dc9df28baf2"><td class="memItemLeft" align="right" valign="top">typedef std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">NAME_TIM::mutex_t</a></td></tr>
+<tr class="separator:a0fb3807e3a1e8e0d08e44dc9df28baf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a6cd5f7783e72c6f9a000cd2fe4ab1c"><td class="memItemLeft" align="right" valign="top">typedef std::unique_lock&lt; mutex_t &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a3a6cd5f7783e72c6f9a000cd2fe4ab1c">NAME_TIM::auto_lock_t</a></td></tr>
+<tr class="separator:a3a6cd5f7783e72c6f9a000cd2fe4ab1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="func-members"></a>
 Functions</h2></td></tr>
+<tr class="memitem:a33ede75326192ed0e528a1c8723c3c56"><td class="memTemplParams" colspan="2">template&lt;typename _Tp &gt; </td></tr>
+<tr class="memitem:a33ede75326192ed0e528a1c8723c3c56"><td class="memTemplItemLeft" align="right" valign="top">mutex_t &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a33ede75326192ed0e528a1c8723c3c56">NAME_TIM::type_mutex</a> (const uintmax_t &amp;_n=0)</td></tr>
+<tr class="separator:a33ede75326192ed0e528a1c8723c3c56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a85c95cb76f90ae07badfa2870bac2ada"><td class="memItemLeft" align="right" valign="top">std::string&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html#a85c95cb76f90ae07badfa2870bac2ada">NAME_TIM::internal::dummy_str_return</a> (std::string str)</td></tr>
 <tr class="separator:a85c95cb76f90ae07badfa2870bac2ada"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49e915d760fe6004df2d89ea51869e76"><td class="memTemplParams" colspan="2">template&lt;typename _Tp &gt; </td></tr>
@@ -152,7 +165,7 @@ Functions</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_4fd02b5fd43288e8282468be733f8250.html">timemory</a></li><li class="navelem"><a class="el" href="../../d1/d4e/utility_8hpp.html">utility.hpp</a></li>
-    <li class="footer">Generated on Sun Feb 11 2018 15:35:42 for TiMemory by
+    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

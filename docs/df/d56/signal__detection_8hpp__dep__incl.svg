@@ -55,30 +55,30 @@ var sectionId = 'dynsection-1';
 <g id="viewport">
 <title>timemory/signal_detection.hpp</title>
 <polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-329 808,-329 808,4 -4,4"/>
-<!-- Node20 -->
+<!-- Node23 -->
 <g id="node1" class="node">
-<title>Node20</title>
+<title>Node23</title>
 <polygon fill="#bfbfbf" stroke="#000000" points="525,-303.5 525,-324.5 664,-324.5 664,-303.5 525,-303.5"/>
 <text text-anchor="middle" x="594.5" y="-310.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/signal_detection.hpp</text>
 </g>
-<!-- Node21 -->
+<!-- Node24 -->
 <g id="node2" class="node">
-<title>Node21</title>
+<title>Node24</title>
 <g id="a_node2"><a xlink:href="../../d0/d90/ex1_2test__timing_8cpp.html" target="_top" xlink:title="examples/ex1/test_timing.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="127,-7 127,-28 262,-28 262,-7 127,-7"/>
 <text text-anchor="middle" x="194.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">examples/ex1/test_timing.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node21 -->
+<!-- Node23&#45;&gt;Node24 -->
 <g id="edge1" class="edge">
-<title>Node20&#45;&gt;Node21</title>
+<title>Node23&#45;&gt;Node24</title>
 <path fill="none" stroke="#191970" d="M514.8246,-308.2141C393.2792,-297.1663 175.5,-267.6529 175.5,-198 175.5,-198 175.5,-198 175.5,-140 175.5,-98.248 186.4113,-49.4271 191.6965,-28.2284"/>
 <polygon fill="#191970" stroke="#191970" points="514.5702,-311.7051 524.8403,-309.1025 515.1887,-304.7325 514.5702,-311.7051"/>
 </g>
-<!-- Node22 -->
+<!-- Node25 -->
 <g id="node3" class="node">
-<title>Node22</title>
+<title>Node25</title>
 <g id="a_node3"><a xlink:href="../../dd/d0a/mpi__test__timing_8cpp.html" target="_top" xlink:title="examples/ex2/mpi_test\l_timing.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="0,-.5 0,-34.5 109,-34.5 109,-.5 0,-.5"/>
 <text text-anchor="start" x="8" y="-20.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">examples/ex2/mpi_test</text>
@@ -86,234 +86,234 @@ var sectionId = 'dynsection-1';
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node22 -->
+<!-- Node23&#45;&gt;Node25 -->
 <g id="edge2" class="edge">
-<title>Node20&#45;&gt;Node22</title>
+<title>Node23&#45;&gt;Node25</title>
 <path fill="none" stroke="#191970" d="M514.693,-311.768C373.9844,-305.6457 96.5,-282.8193 96.5,-198 96.5,-198 96.5,-198 96.5,-140 96.5,-100.6554 76.8734,-57.8579 64.4534,-34.7141"/>
 <polygon fill="#191970" stroke="#191970" points="514.8562,-315.2778 524.9932,-312.197 515.1476,-308.2839 514.8562,-315.2778"/>
 </g>
-<!-- Node23 -->
+<!-- Node26 -->
 <g id="node4" class="node">
-<title>Node23</title>
+<title>Node26</title>
 <g id="a_node4"><a xlink:href="../../d2/dc1/ex3_2test__timing_8cpp.html" target="_top" xlink:title="examples/ex3/test_timing.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="491,-7 491,-28 626,-28 626,-7 491,-7"/>
 <text text-anchor="middle" x="558.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">examples/ex3/test_timing.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node23 -->
+<!-- Node23&#45;&gt;Node26 -->
 <g id="edge3" class="edge">
-<title>Node20&#45;&gt;Node23</title>
+<title>Node23&#45;&gt;Node26</title>
 <path fill="none" stroke="#191970" d="M606.9019,-294.48C619.9147,-272.0889 638.5,-233.8363 638.5,-198 638.5,-198 638.5,-198 638.5,-140 638.5,-91.7384 594.4326,-47.6369 571.7104,-28.1049"/>
 <polygon fill="#191970" stroke="#191970" points="603.7382,-292.9487 601.5694,-303.3192 609.7319,-296.5647 603.7382,-292.9487"/>
 </g>
-<!-- Node24 -->
+<!-- Node27 -->
 <g id="node5" class="node">
-<title>Node24</title>
+<title>Node27</title>
 <g id="a_node5"><a xlink:href="../../d6/d01/base__timer_8hpp.html" target="_top" xlink:title="timemory/base_timer.hpp">
 <polygon fill="#ffffff" stroke="#000000" points="492.5,-245.5 492.5,-266.5 610.5,-266.5 610.5,-245.5 492.5,-245.5"/>
 <text text-anchor="middle" x="551.5" y="-252.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/base_timer.hpp</text>
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node24 -->
+<!-- Node23&#45;&gt;Node27 -->
 <g id="edge4" class="edge">
-<title>Node20&#45;&gt;Node24</title>
+<title>Node23&#45;&gt;Node27</title>
 <path fill="none" stroke="#191970" d="M580.5994,-295.2504C573.556,-285.75 565.2638,-274.5651 559.3369,-266.5707"/>
 <polygon fill="#191970" stroke="#191970" points="577.8459,-297.4132 586.6131,-303.3619 583.4691,-293.2443 577.8459,-297.4132"/>
 </g>
-<!-- Node30 -->
+<!-- Node33 -->
 <g id="node11" class="node">
-<title>Node30</title>
+<title>Node33</title>
 <g id="a_node11"><a xlink:href="../../d2/dfd/timemory_8cc.html" target="_top" xlink:title="timemory.cc">
 <polygon fill="#ffffff" stroke="#000000" points="644,-7 644,-28 709,-28 709,-7 644,-7"/>
 <text text-anchor="middle" x="676.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory.cc</text>
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node30 -->
+<!-- Node23&#45;&gt;Node33 -->
 <g id="edge23" class="edge">
-<title>Node20&#45;&gt;Node30</title>
+<title>Node23&#45;&gt;Node33</title>
 <path fill="none" stroke="#191970" d="M617.2208,-296.7241C641.4887,-276.1238 676.5,-239.2549 676.5,-198 676.5,-198 676.5,-198 676.5,-140 676.5,-98.7413 676.5,-49.6661 676.5,-28.3152"/>
 <polygon fill="#191970" stroke="#191970" points="614.6876,-294.2742 609.16,-303.3128 619.1177,-299.6941 614.6876,-294.2742"/>
 </g>
-<!-- Node33 -->
+<!-- Node36 -->
 <g id="node14" class="node">
-<title>Node33</title>
+<title>Node36</title>
 <g id="a_node14"><a xlink:href="../../dc/d43/signal__detection_8cpp.html" target="_top" xlink:title="signal_detection.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="705,-245.5 705,-266.5 804,-266.5 804,-245.5 705,-245.5"/>
 <text text-anchor="middle" x="754.5" y="-252.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">signal_detection.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node20&#45;&gt;Node33 -->
+<!-- Node23&#45;&gt;Node36 -->
 <g id="edge22" class="edge">
-<title>Node20&#45;&gt;Node33</title>
+<title>Node23&#45;&gt;Node36</title>
 <path fill="none" stroke="#191970" d="M633.0945,-300.0095C661.5281,-289.7023 699.5953,-275.903 725.4709,-266.5231"/>
 <polygon fill="#191970" stroke="#191970" points="631.6833,-296.7981 623.4748,-303.4966 634.069,-303.3791 631.6833,-296.7981"/>
 </g>
-<!-- Node25 -->
+<!-- Node28 -->
 <g id="node6" class="node">
-<title>Node25</title>
+<title>Node28</title>
 <g id="a_node6"><a xlink:href="../../dd/d84/base__timer_8cpp.html" target="_top" xlink:title="base_timer.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="532.5,-187.5 532.5,-208.5 610.5,-208.5 610.5,-187.5 532.5,-187.5"/>
 <text text-anchor="middle" x="571.5" y="-194.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">base_timer.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node24&#45;&gt;Node25 -->
+<!-- Node27&#45;&gt;Node28 -->
 <g id="edge5" class="edge">
-<title>Node24&#45;&gt;Node25</title>
+<title>Node27&#45;&gt;Node28</title>
 <path fill="none" stroke="#191970" d="M558.4711,-235.7838C561.6321,-226.617 565.2389,-216.1572 567.8549,-208.5707"/>
 <polygon fill="#191970" stroke="#191970" points="555.1195,-234.7672 555.1683,-245.3619 561.7371,-237.0492 555.1195,-234.7672"/>
 </g>
-<!-- Node26 -->
+<!-- Node29 -->
 <g id="node7" class="node">
-<title>Node26</title>
+<title>Node29</title>
 <g id="a_node7"><a xlink:href="../../df/d05/timer_8hpp.html" target="_top" xlink:title="timemory/timer.hpp">
 <polygon fill="#ffffff" stroke="#000000" points="420.5,-187.5 420.5,-208.5 514.5,-208.5 514.5,-187.5 420.5,-187.5"/>
 <text text-anchor="middle" x="467.5" y="-194.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/timer.hpp</text>
 </a>
 </g>
 </g>
-<!-- Node24&#45;&gt;Node26 -->
+<!-- Node27&#45;&gt;Node29 -->
 <g id="edge6" class="edge">
-<title>Node24&#45;&gt;Node26</title>
+<title>Node27&#45;&gt;Node29</title>
 <path fill="none" stroke="#191970" d="M527.6624,-239.5407C513.2617,-229.5973 495.3325,-217.2177 482.8092,-208.5707"/>
 <polygon fill="#191970" stroke="#191970" points="525.8754,-242.5601 536.0931,-245.3619 529.8528,-236.7998 525.8754,-242.5601"/>
 </g>
-<!-- Node27 -->
+<!-- Node30 -->
 <g id="node8" class="node">
-<title>Node27</title>
+<title>Node30</title>
 <g id="a_node8"><a xlink:href="../../df/df2/timing__manager_8hpp.html" target="_top" xlink:title="timemory/timing_manager.hpp">
 <polygon fill="#ffffff" stroke="#000000" points="354.5,-129.5 354.5,-150.5 492.5,-150.5 492.5,-129.5 354.5,-129.5"/>
 <text text-anchor="middle" x="423.5" y="-136.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/timing_manager.hpp</text>
 </a>
 </g>
 </g>
-<!-- Node26&#45;&gt;Node27 -->
+<!-- Node29&#45;&gt;Node30 -->
 <g id="edge7" class="edge">
-<title>Node26&#45;&gt;Node27</title>
+<title>Node29&#45;&gt;Node30</title>
 <path fill="none" stroke="#191970" d="M453.2762,-179.2504C446.0689,-169.75 437.5839,-158.5651 431.5191,-150.5707"/>
 <polygon fill="#191970" stroke="#191970" points="450.5974,-181.5103 459.4297,-187.3619 456.1742,-177.2796 450.5974,-181.5103"/>
 </g>
-<!-- Node26&#45;&gt;Node30 -->
+<!-- Node29&#45;&gt;Node33 -->
 <g id="edge20" class="edge">
-<title>Node26&#45;&gt;Node30</title>
+<title>Node29&#45;&gt;Node33</title>
 <path fill="none" stroke="#191970" d="M487.7347,-180.5246C530.5748,-143.5263 629.3478,-58.2224 664.1172,-28.1942"/>
 <polygon fill="#191970" stroke="#191970" points="485.2286,-178.0643 479.948,-187.2495 489.8039,-183.3621 485.2286,-178.0643"/>
 </g>
-<!-- Node32 -->
+<!-- Node35 -->
 <g id="node13" class="node">
-<title>Node32</title>
+<title>Node35</title>
 <g id="a_node13"><a xlink:href="../../dc/de5/timer_8cpp.html" target="_top" xlink:title="timer.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="556.5,-129.5 556.5,-150.5 610.5,-150.5 610.5,-129.5 556.5,-129.5"/>
 <text text-anchor="middle" x="583.5" y="-136.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timer.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node26&#45;&gt;Node32 -->
+<!-- Node29&#45;&gt;Node35 -->
 <g id="edge21" class="edge">
-<title>Node26&#45;&gt;Node32</title>
+<title>Node29&#45;&gt;Node35</title>
 <path fill="none" stroke="#191970" d="M497.6363,-182.9319C517.9135,-172.7932 544.1505,-159.6748 562.2576,-150.6212"/>
 <polygon fill="#191970" stroke="#191970" points="495.8857,-179.8939 488.5067,-187.4966 499.0163,-186.1549 495.8857,-179.8939"/>
 </g>
-<!-- Node27&#45;&gt;Node21 -->
+<!-- Node30&#45;&gt;Node24 -->
 <g id="edge8" class="edge">
-<title>Node27&#45;&gt;Node21</title>
+<title>Node30&#45;&gt;Node24</title>
 <path fill="none" stroke="#191970" d="M356.9112,-127.0062C328.9268,-119.6988 296.829,-108.7848 270.5,-93 241.3089,-75.4993 215.0158,-44.4385 202.3942,-28.1472"/>
 <polygon fill="#191970" stroke="#191970" points="356.0707,-130.4038 366.6219,-129.4426 357.7743,-123.6142 356.0707,-130.4038"/>
 </g>
-<!-- Node27&#45;&gt;Node22 -->
+<!-- Node30&#45;&gt;Node25 -->
 <g id="edge9" class="edge">
-<title>Node27&#45;&gt;Node22</title>
+<title>Node30&#45;&gt;Node25</title>
 <path fill="none" stroke="#191970" d="M364.2564,-127.1872C327.6504,-118.7204 279.9166,-106.6829 238.5,-93 186.5339,-75.8318 128.3828,-50.9809 91.6259,-34.5418"/>
 <polygon fill="#191970" stroke="#191970" points="363.7428,-130.6601 374.2716,-129.479 365.3043,-123.8364 363.7428,-130.6601"/>
 </g>
-<!-- Node27&#45;&gt;Node23 -->
+<!-- Node30&#45;&gt;Node26 -->
 <g id="edge10" class="edge">
-<title>Node27&#45;&gt;Node23</title>
+<title>Node30&#45;&gt;Node26</title>
 <path fill="none" stroke="#191970" d="M438.4832,-121.306C450.4855,-106.8506 468.1325,-86.7191 485.5,-71 503.6735,-54.5514 526.8057,-38.283 542.1047,-28.0831"/>
 <polygon fill="#191970" stroke="#191970" points="435.741,-119.1304 432.1136,-129.0849 441.157,-123.5652 435.741,-119.1304"/>
 </g>
-<!-- Node28 -->
+<!-- Node31 -->
 <g id="node9" class="node">
-<title>Node28</title>
+<title>Node31</title>
 <g id="a_node9"><a xlink:href="../../d8/d07/auto__timer_8hpp.html" target="_top" xlink:title="timemory/auto_timer.hpp">
 <polygon fill="#ffffff" stroke="#000000" points="279.5,-71.5 279.5,-92.5 395.5,-92.5 395.5,-71.5 279.5,-71.5"/>
 <text text-anchor="middle" x="337.5" y="-78.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory/auto_timer.hpp</text>
 </a>
 </g>
 </g>
-<!-- Node27&#45;&gt;Node28 -->
+<!-- Node30&#45;&gt;Node31 -->
 <g id="edge11" class="edge">
-<title>Node27&#45;&gt;Node28</title>
+<title>Node30&#45;&gt;Node31</title>
 <path fill="none" stroke="#191970" d="M399.0949,-123.5407C384.3512,-113.5973 365.9952,-101.2177 353.1737,-92.5707"/>
 <polygon fill="#191970" stroke="#191970" points="397.4785,-126.6722 407.7263,-129.3619 401.3925,-120.8687 397.4785,-126.6722"/>
 </g>
-<!-- Node27&#45;&gt;Node30 -->
+<!-- Node30&#45;&gt;Node33 -->
 <g id="edge18" class="edge">
-<title>Node27&#45;&gt;Node30</title>
+<title>Node30&#45;&gt;Node33</title>
 <path fill="none" stroke="#191970" d="M444.1968,-123.0137C463.6746,-107.7053 494.1578,-85.4459 523.5,-71 570.4091,-47.9054 586.5145,-53.2824 635.5,-35 641.1556,-32.8892 647.1711,-30.4401 652.802,-28.0547"/>
 <polygon fill="#191970" stroke="#191970" points="441.9456,-120.3323 436.3121,-129.3053 446.3116,-125.8039 441.9456,-120.3323"/>
 </g>
-<!-- Node31 -->
+<!-- Node34 -->
 <g id="node12" class="node">
-<title>Node31</title>
+<title>Node34</title>
 <g id="a_node12"><a xlink:href="../../d9/dad/timing__manager_8cpp.html" target="_top" xlink:title="timing_manager.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="374.5,-7 374.5,-28 472.5,-28 472.5,-7 374.5,-7"/>
 <text text-anchor="middle" x="423.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timing_manager.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node27&#45;&gt;Node31 -->
+<!-- Node30&#45;&gt;Node34 -->
 <g id="edge19" class="edge">
-<title>Node27&#45;&gt;Node31</title>
+<title>Node30&#45;&gt;Node34</title>
 <path fill="none" stroke="#191970" d="M423.5,-119.0484C423.5,-92.683 423.5,-48.4069 423.5,-28.1718"/>
 <polygon fill="#191970" stroke="#191970" points="420.0001,-119.1289 423.5,-129.1289 427.0001,-119.129 420.0001,-119.1289"/>
 </g>
-<!-- Node28&#45;&gt;Node21 -->
+<!-- Node31&#45;&gt;Node24 -->
 <g id="edge12" class="edge">
-<title>Node28&#45;&gt;Node21</title>
+<title>Node31&#45;&gt;Node24</title>
 <path fill="none" stroke="#191970" d="M304.9269,-67.3079C278.3544,-55.3224 241.4633,-38.6827 217.7837,-28.0021"/>
 <polygon fill="#191970" stroke="#191970" points="303.6516,-70.5722 314.2063,-71.4934 306.5298,-64.1913 303.6516,-70.5722"/>
 </g>
-<!-- Node28&#45;&gt;Node22 -->
+<!-- Node31&#45;&gt;Node25 -->
 <g id="edge13" class="edge">
-<title>Node28&#45;&gt;Node22</title>
+<title>Node31&#45;&gt;Node25</title>
 <path fill="none" stroke="#191970" d="M273.5061,-69.393C229.4832,-60.4602 169.756,-47.8272 117.5,-35 114.7439,-34.3235 111.9253,-33.6122 109.0827,-32.8794"/>
 <polygon fill="#191970" stroke="#191970" points="273.0016,-72.8617 283.4967,-71.4115 274.3879,-66.0004 273.0016,-72.8617"/>
 </g>
-<!-- Node28&#45;&gt;Node23 -->
+<!-- Node31&#45;&gt;Node26 -->
 <g id="edge14" class="edge">
-<title>Node28&#45;&gt;Node23</title>
+<title>Node31&#45;&gt;Node26</title>
 <path fill="none" stroke="#191970" d="M383.3157,-68.6285C424.6275,-56.5714 484.5561,-39.0809 522.5161,-28.0021"/>
 <polygon fill="#191970" stroke="#191970" points="382.1182,-65.3318 373.4993,-71.4934 384.0795,-72.0515 382.1182,-65.3318"/>
 </g>
-<!-- Node29 -->
+<!-- Node32 -->
 <g id="node10" class="node">
-<title>Node29</title>
+<title>Node32</title>
 <g id="a_node10"><a xlink:href="../../d2/d80/auto__timer_8cpp.html" target="_top" xlink:title="auto_timer.cpp">
 <polygon fill="#ffffff" stroke="#000000" points="280.5,-7 280.5,-28 356.5,-28 356.5,-7 280.5,-7"/>
 <text text-anchor="middle" x="318.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">auto_timer.cpp</text>
 </a>
 </g>
 </g>
-<!-- Node28&#45;&gt;Node29 -->
+<!-- Node31&#45;&gt;Node32 -->
 <g id="edge15" class="edge">
-<title>Node28&#45;&gt;Node29</title>
+<title>Node31&#45;&gt;Node32</title>
 <path fill="none" stroke="#191970" d="M331.5052,-61.6491C328.2592,-50.6299 324.3782,-37.455 321.7056,-28.3823"/>
 <polygon fill="#191970" stroke="#191970" points="328.1794,-62.7457 334.3625,-71.3491 334.8941,-60.7676 328.1794,-62.7457"/>
 </g>
-<!-- Node28&#45;&gt;Node30 -->
+<!-- Node31&#45;&gt;Node33 -->
 <g id="edge16" class="edge">
-<title>Node28&#45;&gt;Node30</title>
+<title>Node31&#45;&gt;Node33</title>
 <path fill="none" stroke="#191970" d="M405.8324,-76.067C466.915,-69.6266 558.4136,-57.1602 635.5,-35 641.748,-33.2039 648.3101,-30.7023 654.3074,-28.1516"/>
 <polygon fill="#191970" stroke="#191970" points="405.1348,-72.6202 395.5454,-77.125 405.851,-79.5835 405.1348,-72.6202"/>
 </g>
-<!-- Node28&#45;&gt;Node31 -->
+<!-- Node31&#45;&gt;Node34 -->
 <g id="edge17" class="edge">
-<title>Node28&#45;&gt;Node31</title>
+<title>Node31&#45;&gt;Node34</title>
 <path fill="none" stroke="#191970" d="M359.8111,-65.2666C375.4284,-53.5537 395.8258,-38.2556 409.2778,-28.1667"/>
 <polygon fill="#191970" stroke="#191970" points="357.6012,-62.5491 351.7012,-71.3491 361.8012,-68.1491 357.6012,-62.5491"/>
 </g>

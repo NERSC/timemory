@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.0</span>
+   &#160;<span id="projectnumber">1.2.1</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -143,6 +143,10 @@ Classes</h2></td></tr>
 Typedefs</h2></td></tr>
 <tr class="memitem:add1957e32508eba19742c2c1b31118dd"><td class="memItemLeft" align="right" valign="top">typedef std::deque&lt; std::string &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">str_list_t</a></td></tr>
 <tr class="separator:add1957e32508eba19742c2c1b31118dd"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a0fb3807e3a1e8e0d08e44dc9df28baf2"><td class="memItemLeft" align="right" valign="top">typedef std::mutex&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a></td></tr>
+<tr class="separator:a0fb3807e3a1e8e0d08e44dc9df28baf2"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a3a6cd5f7783e72c6f9a000cd2fe4ab1c"><td class="memItemLeft" align="right" valign="top">typedef std::unique_lock&lt; <a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a> &gt;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a3a6cd5f7783e72c6f9a000cd2fe4ab1c">auto_lock_t</a></td></tr>
+<tr class="separator:a3a6cd5f7783e72c6f9a000cd2fe4ab1c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="enum-members"></a>
 Enumerations</h2></td></tr>
@@ -238,6 +242,9 @@ Functions</h2></td></tr>
 <tr class="separator:a3a492f1594134545dd43609437cd73aa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a25df2518725d65bfd24282f1640b4a46"><td class="memItemLeft" align="right" valign="top">int32_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a25df2518725d65bfd24282f1640b4a46">get_max_threads</a> ()</td></tr>
 <tr class="separator:a25df2518725d65bfd24282f1640b4a46"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a33ede75326192ed0e528a1c8723c3c56"><td class="memTemplParams" colspan="2">template&lt;typename _Tp &gt; </td></tr>
+<tr class="memitem:a33ede75326192ed0e528a1c8723c3c56"><td class="memTemplItemLeft" align="right" valign="top"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a> &amp;&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a33ede75326192ed0e528a1c8723c3c56">type_mutex</a> (const uintmax_t &amp;_n=0)</td></tr>
+<tr class="separator:a33ede75326192ed0e528a1c8723c3c56"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a49e915d760fe6004df2d89ea51869e76"><td class="memTemplParams" colspan="2">template&lt;typename _Tp &gt; </td></tr>
 <tr class="memitem:a49e915d760fe6004df2d89ea51869e76"><td class="memTemplItemLeft" align="right" valign="top">_Tp&#160;</td><td class="memTemplItemRight" valign="bottom"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a49e915d760fe6004df2d89ea51869e76">get_env</a> (const std::string &amp;env_id, _Tp _default=_Tp())</td></tr>
 <tr class="separator:a49e915d760fe6004df2d89ea51869e76"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -250,6 +257,34 @@ Variables</h2></td></tr>
 <tr class="separator:a3d1ddc76112cf479c65119aeff9333c4"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Typedef Documentation</h2>
+<a id="a3a6cd5f7783e72c6f9a000cd2fe4ab1c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a3a6cd5f7783e72c6f9a000cd2fe4ab1c">&#9670;&nbsp;</a></span>auto_lock_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef std::unique_lock&lt;<a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a>&gt; <a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a3a6cd5f7783e72c6f9a000cd2fe4ab1c">NAME_TIM::auto_lock_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a0fb3807e3a1e8e0d08e44dc9df28baf2"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a0fb3807e3a1e8e0d08e44dc9df28baf2">&#9670;&nbsp;</a></span>mutex_t</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">typedef std::mutex <a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">NAME_TIM::mutex_t</a></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <a id="add1957e32508eba19742c2c1b31118dd"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#add1957e32508eba19742c2c1b31118dd">&#9670;&nbsp;</a></span>str_list_t</h2>
 
@@ -447,7 +482,7 @@ template&lt;typename Precision &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00087"></a><span class="lineno">   87</span>&#160;{</div><div class="line"><a name="l00088"></a><span class="lineno">   88</span>&#160;    <a class="code" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">str_list_t</a> _list;</div><div class="line"><a name="l00089"></a><span class="lineno">   89</span>&#160;    <span class="keywordtype">size_t</span> _beg = 0;</div><div class="line"><a name="l00090"></a><span class="lineno">   90</span>&#160;    <span class="keywordtype">size_t</span> _end = 0;</div><div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;    <span class="keywordflow">while</span>(<span class="keyword">true</span>)</div><div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    {</div><div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;        _beg = _str.find_first_not_of(_delims, _end);</div><div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;        <span class="keywordflow">if</span>(_beg == std::string::npos)</div><div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;            <span class="keywordflow">break</span>;</div><div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        _end = _str.find_first_of(_delims, _beg);</div><div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        <span class="keywordflow">if</span>(_beg &lt; _end)</div><div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;            _list.push_back(strop(_str.substr(_beg, _end - _beg)));</div><div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;    }</div><div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    <span class="keywordflow">return</span> _list;</div><div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;}</div><div class="ttc" id="namespace_n_a_m_e___t_i_m_html_add1957e32508eba19742c2c1b31118dd"><div class="ttname"><a href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">NAME_TIM::str_list_t</a></div><div class="ttdeci">std::deque&lt; std::string &gt; str_list_t</div><div class="ttdef"><b>Definition:</b> utility.hpp:55</div></div>
+<div class="fragment"><div class="line"><a name="l00110"></a><span class="lineno">  110</span>&#160;{</div><div class="line"><a name="l00111"></a><span class="lineno">  111</span>&#160;    <a class="code" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">str_list_t</a> _list;</div><div class="line"><a name="l00112"></a><span class="lineno">  112</span>&#160;    <span class="keywordtype">size_t</span> _beg = 0;</div><div class="line"><a name="l00113"></a><span class="lineno">  113</span>&#160;    <span class="keywordtype">size_t</span> _end = 0;</div><div class="line"><a name="l00114"></a><span class="lineno">  114</span>&#160;    <span class="keywordflow">while</span>(<span class="keyword">true</span>)</div><div class="line"><a name="l00115"></a><span class="lineno">  115</span>&#160;    {</div><div class="line"><a name="l00116"></a><span class="lineno">  116</span>&#160;        _beg = _str.find_first_not_of(_delims, _end);</div><div class="line"><a name="l00117"></a><span class="lineno">  117</span>&#160;        <span class="keywordflow">if</span>(_beg == std::string::npos)</div><div class="line"><a name="l00118"></a><span class="lineno">  118</span>&#160;            <span class="keywordflow">break</span>;</div><div class="line"><a name="l00119"></a><span class="lineno">  119</span>&#160;        _end = _str.find_first_of(_delims, _beg);</div><div class="line"><a name="l00120"></a><span class="lineno">  120</span>&#160;        <span class="keywordflow">if</span>(_beg &lt; _end)</div><div class="line"><a name="l00121"></a><span class="lineno">  121</span>&#160;            _list.push_back(strop(_str.substr(_beg, _end - _beg)));</div><div class="line"><a name="l00122"></a><span class="lineno">  122</span>&#160;    }</div><div class="line"><a name="l00123"></a><span class="lineno">  123</span>&#160;    <span class="keywordflow">return</span> _list;</div><div class="line"><a name="l00124"></a><span class="lineno">  124</span>&#160;}</div><div class="ttc" id="namespace_n_a_m_e___t_i_m_html_add1957e32508eba19742c2c1b31118dd"><div class="ttname"><a href="../../de/de2/namespace_n_a_m_e___t_i_m.html#add1957e32508eba19742c2c1b31118dd">NAME_TIM::str_list_t</a></div><div class="ttdeci">std::deque&lt; std::string &gt; str_list_t</div><div class="ttdef"><b>Definition:</b> utility.hpp:59</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -529,7 +564,7 @@ template&lt;typename _Tp &gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;{</div><div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordtype">char</span>* env_var = std::getenv(env_id.c_str());</div><div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;    <span class="keywordflow">if</span>(env_var)</div><div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;    {</div><div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;        std::string str_var = std::string(env_var);</div><div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;        std::istringstream iss(str_var);</div><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        _Tp var = _Tp();</div><div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;        iss &gt;&gt; var;</div><div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        <span class="keywordflow">return</span> var;</div><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    }</div><div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;    <span class="comment">// return default if not specified in environment</span></div><div class="line"><a name="l00079"></a><span class="lineno">   79</span>&#160;    <span class="keywordflow">return</span> _default;</div><div class="line"><a name="l00080"></a><span class="lineno">   80</span>&#160;}</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00091"></a><span class="lineno">   91</span>&#160;{</div><div class="line"><a name="l00092"></a><span class="lineno">   92</span>&#160;    <span class="keywordtype">char</span>* env_var = std::getenv(env_id.c_str());</div><div class="line"><a name="l00093"></a><span class="lineno">   93</span>&#160;    <span class="keywordflow">if</span>(env_var)</div><div class="line"><a name="l00094"></a><span class="lineno">   94</span>&#160;    {</div><div class="line"><a name="l00095"></a><span class="lineno">   95</span>&#160;        std::string str_var = std::string(env_var);</div><div class="line"><a name="l00096"></a><span class="lineno">   96</span>&#160;        std::istringstream iss(str_var);</div><div class="line"><a name="l00097"></a><span class="lineno">   97</span>&#160;        _Tp var = _Tp();</div><div class="line"><a name="l00098"></a><span class="lineno">   98</span>&#160;        iss &gt;&gt; var;</div><div class="line"><a name="l00099"></a><span class="lineno">   99</span>&#160;        <span class="keywordflow">return</span> var;</div><div class="line"><a name="l00100"></a><span class="lineno">  100</span>&#160;    }</div><div class="line"><a name="l00101"></a><span class="lineno">  101</span>&#160;    <span class="comment">// return default if not specified in environment</span></div><div class="line"><a name="l00102"></a><span class="lineno">  102</span>&#160;    <span class="keywordflow">return</span> _default;</div><div class="line"><a name="l00103"></a><span class="lineno">  103</span>&#160;}</div></div><!-- fragment -->
 </div>
 </div>
 <a id="a25df2518725d65bfd24282f1640b4a46"></a>
@@ -748,6 +783,27 @@ template&lt;typename _Tp &gt; </div>
 <div class="fragment"><div class="line"><a name="l00514"></a><span class="lineno">  514</span>&#160;{</div><div class="line"><a name="l00515"></a><span class="lineno">  515</span>&#160;    os &lt;&lt; <span class="stringliteral">&quot;StackBackTrace() not available.&quot;</span> &lt;&lt; std::endl;</div><div class="line"><a name="l00516"></a><span class="lineno">  516</span>&#160;}</div></div><!-- fragment -->
 </div>
 </div>
+<a id="a33ede75326192ed0e528a1c8723c3c56"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a33ede75326192ed0e528a1c8723c3c56">&#9670;&nbsp;</a></span>type_mutex()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<div class="memtemplate">
+template&lt;typename _Tp &gt; </div>
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a>&amp; NAME_TIM::type_mutex </td>
+          <td>(</td>
+          <td class="paramtype">const uintmax_t &amp;&#160;</td>
+          <td class="paramname"><em>_n</em> = <code>0</code></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<div class="fragment"><div class="line"><a name="l00067"></a><span class="lineno">   67</span>&#160;{</div><div class="line"><a name="l00068"></a><span class="lineno">   68</span>&#160;    <span class="keyword">static</span> <a class="code" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a>* _mutex = <span class="keyword">new</span> <a class="code" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a>();</div><div class="line"><a name="l00069"></a><span class="lineno">   69</span>&#160;    <span class="keywordflow">if</span>(_n == 0)</div><div class="line"><a name="l00070"></a><span class="lineno">   70</span>&#160;        <span class="keywordflow">return</span> *_mutex;</div><div class="line"><a name="l00071"></a><span class="lineno">   71</span>&#160;</div><div class="line"><a name="l00072"></a><span class="lineno">   72</span>&#160;    <span class="keyword">static</span> std::vector&lt;mutex_t*&gt; _mutexes;</div><div class="line"><a name="l00073"></a><span class="lineno">   73</span>&#160;    <span class="keywordflow">if</span>(_n &gt; _mutexes.size())</div><div class="line"><a name="l00074"></a><span class="lineno">   74</span>&#160;        _mutexes.resize(_n, <span class="keyword">nullptr</span>);</div><div class="line"><a name="l00075"></a><span class="lineno">   75</span>&#160;    <span class="keywordflow">if</span>(!_mutexes[_n])</div><div class="line"><a name="l00076"></a><span class="lineno">   76</span>&#160;        _mutexes[_n] = <span class="keyword">new</span> <a class="code" href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">mutex_t</a>();</div><div class="line"><a name="l00077"></a><span class="lineno">   77</span>&#160;    <span class="keywordflow">return</span> *(_mutexes[_n-1]);</div><div class="line"><a name="l00078"></a><span class="lineno">   78</span>&#160;}</div><div class="ttc" id="namespace_n_a_m_e___t_i_m_html_a0fb3807e3a1e8e0d08e44dc9df28baf2"><div class="ttname"><a href="../../de/de2/namespace_n_a_m_e___t_i_m.html#a0fb3807e3a1e8e0d08e44dc9df28baf2">NAME_TIM::mutex_t</a></div><div class="ttdeci">std::mutex mutex_t</div><div class="ttdef"><b>Definition:</b> utility.hpp:60</div></div>
+</div><!-- fragment -->
+</div>
+</div>
 <h2 class="groupheader">Variable Documentation</h2>
 <a id="a3d1ddc76112cf479c65119aeff9333c4"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a3d1ddc76112cf479c65119aeff9333c4">&#9670;&nbsp;</a></span>l_instance</h2>
@@ -777,7 +833,7 @@ template&lt;typename _Tp &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html">NAME_TIM</a></li>
-    <li class="footer">Generated on Sun Feb 11 2018 15:35:42 for TiMemory by
+    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

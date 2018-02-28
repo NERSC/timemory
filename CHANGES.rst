@@ -1,6 +1,18 @@
 TiMemory
 ========
 
+Release: TiMemory 1.2.2
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Wed Feb 28 15:31:53 2018 -0800
+
+    - Improved testing + memory unit improvements
+    - Memory units are now always in multiples of 1024
+    - Added some thread-safety
+    - Updated README to deprecate is_class in decorator
+
+
 Release: TiMemory 1.2.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 

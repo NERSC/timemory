@@ -1,10 +1,10 @@
 <map id="timer.cpp" name="timer.cpp">
-<area shape="rect" id="node2" href="$df/d05/timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="1084,83,1209,112"/>
-<area shape="rect" id="node3" href="$db/d19/namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="1971,392,2131,421"/>
-<area shape="rect" id="node4" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="1068,160,1225,189"/>
-<area shape="rect" id="node5" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="1571,315,1730,344"/>
-<area shape="rect" id="node24" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="969,315,1084,344"/>
-<area shape="rect" id="node32" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="2667,315,2792,344"/>
-<area shape="rect" id="node39" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="2427,237,2613,267"/>
-<area shape="rect" id="node41" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="828,315,945,344"/>
+<area shape="rect" id="node2" href="$df/d05/timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="1863,83,1989,112"/>
+<area shape="rect" id="node3" href="$db/d19/namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="1973,392,2133,421"/>
+<area shape="rect" id="node4" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="1551,160,1709,189"/>
+<area shape="rect" id="node5" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="1137,315,1296,344"/>
+<area shape="rect" id="node24" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="1478,315,1593,344"/>
+<area shape="rect" id="node32" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="2545,315,2670,344"/>
+<area shape="rect" id="node41" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="2369,237,2555,267"/>
+<area shape="rect" id="node43" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="2115,315,2233,344"/>
 </map>

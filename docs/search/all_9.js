@@ -8,7 +8,7 @@ var searchData=
   ['instance',['instance',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#add31f1ab0b76b417f73894070007a035',1,'NAME_TIM::timing_manager']]],
   ['internal',['internal',['../d5/d40/namespaceinternal.html',1,'']]],
   ['is_5factive',['is_active',['../d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html#ab7a9781309be6ad75e909d473e266a7a',1,'NAME_TIM::signal_settings']]],
-  ['is_5fclass',['is_class',['../da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html#a7146dce05e47b29a8af7f3833bcb01fc',1,'tests.array_test.auto_array_weakref.is_class()'],['../de/d79/classtests_1_1array__test_1_1auto__disk__array.html#af28ccb759526771f7741ec114e9c3567',1,'tests.array_test.auto_disk_array.is_class()'],['../da/d81/classtests_1_1simple__test_1_1_fibonacci.html#ae7f26da8e8f40b0d1ba9a6a669d8dd4c',1,'tests.simple_test.Fibonacci.is_class()'],['../db/df0/classutil_1_1util_1_1base__decorator.html#acbe7cb643ad6b947b722501854dd5e78',1,'util.util.base_decorator.is_class()']]],
+  ['is_5fclass',['is_class',['../db/df0/classutil_1_1util_1_1base__decorator.html#acbe7cb643ad6b947b722501854dd5e78',1,'util::util::base_decorator']]],
   ['is_5fenabled',['is_enabled',['../de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html#af6f680136a1407b8a32571d8b212a1f2',1,'NAME_TIM::timing_manager']]],
   ['is_5fsteady',['is_steady',['../d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html#a57d23717dceec5c89ed930b9f15753cb',1,'NAME_TIM::base_clock']]],
   ['is_5fsupported',['is_supported',['../d2/de5/namespacempi__support_1_1mpi__support.html#a84618170f720e68b37503b2f8b5959e7',1,'mpi_support::mpi_support']]],
