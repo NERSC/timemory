@@ -33,7 +33,7 @@ from __future__ import absolute_import
 
 import os
 import sys
-
+import inspect
 
 #------------------------------------------------------------------------------#
 class base_decorator(object):
@@ -44,6 +44,15 @@ class base_decorator(object):
         self.key = key
         self.add_args = add_args
         self.is_class = is_class
+
+
+    # ------------------------------------------------------------------------ #
+    def parse_wrapped(self, func, args, kwargs):
+        if (len(args) > 0 and args[0] is not None and
+            inspect.isclass(type(args[0]))):
+                self.is_class = True
+        else:
+            self.is_class = False
 
 
     # ------------------------------------------------------------------------ #
@@ -112,6 +121,7 @@ class auto_timer(base_decorator):
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
+            self.parse_wrapped(func, args, kwargs)
 
             _key = '{}{}'.format(self.key, self.arg_string(args, kwargs))
 
@@ -180,6 +190,7 @@ class timer(base_decorator):
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
+            self.parse_wrapped(func, args, kwargs)
 
             _key = ''
             _args = self.arg_string(args, kwargs)
@@ -258,6 +269,7 @@ class rss_usage(base_decorator):
 
         @wraps(func)
         def function_wrapper(*args, **kwargs):
+            self.parse_wrapped(func, args, kwargs)
 
             _key = ''
             _args = self.arg_string(args, kwargs)

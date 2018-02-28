@@ -6,7 +6,7 @@ else(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE ON CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
 endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 
-set(TIMEMORY_VERSION 1.2.0 CACHE STRING "Version of TiMemory project" FORCE)
+set(TIMEMORY_VERSION 1.2.1 CACHE STRING "Version of TiMemory project" FORCE)
 mark_as_advanced(TIMEMORY_VERSION)
 
 if(GOOD_CMAKE)

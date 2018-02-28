@@ -54,7 +54,7 @@ class Fibonacci(object):
     def __init__(self, n):
         self.n = n
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def calculate(self):
         t = timemory.timer("> [pyc] fib({}) ".format(self.n))
         t.start()

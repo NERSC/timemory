@@ -65,7 +65,7 @@ class auto_array_weakref(object):
     finished = False
     ghost_attributes = ('resource', )
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def bind_finalizer(self, *attrs):
         """
         Enable __finalize__ on the current instance.
@@ -88,7 +88,7 @@ class auto_array_weakref(object):
         cls_wr_map[id_ref] = ref
         self.__wr_id = id_ref
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def remove_finalizer(self):
         """
         Disable __finalize__, provided it has been enabled.
@@ -99,39 +99,39 @@ class auto_array_weakref(object):
             del cls_wr_map[self.__wr_id]
             del self.__wr_id
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def enable_auto_rollback(self):
         self.bind_finalizer(*self.ghost_attributes)
 
-    #@timemory.util.auto_timer(is_class=True)
+    #@timemory.util.auto_timer()
     #def commit(self):
         #assert not self.finished
         #self.remove_finalizer()
         #self.do_commit()
         #self.finished = True
 
-    #@timemory.util.auto_timer(is_class=True)
+    #@timemory.util.auto_timer()
     #def rollback(self):
         #assert not self.finished
         #self.remove_finalizer()
         #self.do_rollback(auto=False)
         #self.finished = True
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def __finalize__(ghost):
         print('calling __finalize__')
         ghost.do_rollback(auto=True)
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def __init__(self, resource):
         self.resource = resource
         self.enable_auto_rollback()
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def do_commit(self):
         pass
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def do_rollback(self, auto):
         pass
 
@@ -142,7 +142,7 @@ class auto_disk_array(np.ndarray):
     A special wrapper class around an np.ndarray that handles synchronization
     between FsBuffer storage and memory
     """
-    @timemory.util.auto_timer()
+    #@timemory.util.auto_timer()
     def __new__(cls, input_array, _name):
         # Input array is an already formed ndarray instance
         # We first cast to be our class type
@@ -153,18 +153,18 @@ class auto_disk_array(np.ndarray):
         return obj
 
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def __array_finalize__(self, obj):
         # see InfoArray.__array_finalize__ for comments
         if obj is None: return
         self._name = getattr(obj, '_name', None)
 
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def __del__(self):
         print ('--> deleting {}({})...'.format(type(self).__name__, self._name))
 
-    @timemory.util.auto_timer(is_class=True)
+    @timemory.util.auto_timer()
     def __call__(self):
         print ('--> calling {}({})...'.format(type(self).__name__, self._name))
         return self
