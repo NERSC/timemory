@@ -123,24 +123,9 @@ if(NOT SUBPROJECT AND NOT WIN32)
     endif(NOT CMAKE_C_COMPILER_IS_INTEL)
 
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-
-        add(CMAKE_C_FLAGS "-DDEBUG")
-        add(CMAKE_CXX_FLAGS "-DDEBUG")
-
+        add_definitions(-DDEBUG)
     else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-
-        if(CMAKE_CXX_COMPILER_IS_INTEL)
-            add(CMAKE_CXX_FLAGS "-xHOST")
-        else(CMAKE_CXX_COMPILER_IS_INTEL)
-            add(CMAKE_CXX_FLAGS "-march=native")
-        endif(CMAKE_CXX_COMPILER_IS_INTEL)
-
-        if(CMAKE_C_COMPILER_IS_INTEL)
-            add(CMAKE_C_FLAGS "-xHOST")
-        else(CMAKE_C_COMPILER_IS_INTEL)
-            add(CMAKE_C_FLAGS "-march=native")
-        endif(CMAKE_C_COMPILER_IS_INTEL)
-
+        add_definitions(-DNDEBUG)
     endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 
     if(UNIX)
