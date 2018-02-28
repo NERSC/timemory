@@ -140,11 +140,11 @@ py::module load_module(const std::string& module,
 
 PYBIND11_MODULE(timemory, tim)
 {
+    //------------------------------------------------------------------------//
     py::add_ostream_redirect(tim, "ostream_redirect");
-
+    //------------------------------------------------------------------------//
     auto tman_init = [&] () { return new timing_manager_wrapper(); };
-
-
+    //------------------------------------------------------------------------//
     auto get_line = [] (int nback = 1)
     {
         auto locals = py::dict("back"_a = nback);
@@ -155,7 +155,7 @@ PYBIND11_MODULE(timemory, tim)
         auto ret = locals["result"].cast<int>();
         return ret;
     };
-
+    //------------------------------------------------------------------------//
     auto get_func = [] (int nback = 1)
     {
         auto locals = py::dict("back"_a = nback);
@@ -166,7 +166,7 @@ PYBIND11_MODULE(timemory, tim)
         auto ret = locals["result"].cast<std::string>();
         return ret;
     };
-
+    //------------------------------------------------------------------------//
     auto get_file = [] (int nback = 2, bool only_basename = true,
                     bool use_dirname = false, bool noquotes = false)
     {
@@ -205,7 +205,7 @@ PYBIND11_MODULE(timemory, tim)
         auto ret = locals["result"].cast<std::string>();
         return ret;
     };
-
+    //------------------------------------------------------------------------//
     auto set_timer_default_format = [=] (std::string format)
     {
         auto locals = py::dict("format"_a = format);
@@ -217,7 +217,7 @@ PYBIND11_MODULE(timemory, tim)
         tim_timer_t::set_default_format(format);
         return format;
     };
-
+    //------------------------------------------------------------------------//
     auto get_timer_default_format = [=] ()
     {
         auto locals = py::dict();
@@ -230,7 +230,7 @@ PYBIND11_MODULE(timemory, tim)
         tim_timer_t::set_default_format(format);
         return format;
     };
-
+    //------------------------------------------------------------------------//
     auto timer_init = [=] (std::string begin = "", std::string format = "")
     {
         if(begin.empty())
@@ -245,7 +245,7 @@ PYBIND11_MODULE(timemory, tim)
 
         return new tim_timer_t(begin, "", format, false, 3);
     };
-
+    //------------------------------------------------------------------------//
     auto auto_timer_init = [=] (const std::string& key = "",
                                 bool report_at_exit = false,
                                 int nback = 1,
@@ -271,7 +271,7 @@ PYBIND11_MODULE(timemory, tim)
         auto op_line = get_line();
         return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
     };
-
+    //------------------------------------------------------------------------//
     auto timer_decorator_init = [=] (const std::string& func,
                                      const std::string& file,
                                      int line,
@@ -303,12 +303,12 @@ PYBIND11_MODULE(timemory, tim)
         }
         return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
     };
-
+    //------------------------------------------------------------------------//
     auto rss_usage_init = [=] (bool record = false)
     {
         return (record) ? new rss_usage_t(0) : new rss_usage_t();
     };
-
+    //------------------------------------------------------------------------//
     auto signal_list_to_set = [=] (py::list signal_list) -> signal_set_t
     {
         signal_set_t signal_set;
@@ -316,12 +316,12 @@ PYBIND11_MODULE(timemory, tim)
             signal_set.insert(itr.cast<sys_signal_t>());
         return signal_set;
     };
-
+    //------------------------------------------------------------------------//
     auto get_default_signal_set = [=] () -> signal_set_t
     {
         return NAME_TIM::signal_settings::enabled();
     };
-
+    //------------------------------------------------------------------------//
     auto enable_signal_detection = [=] (py::list signal_list = py::list())
     {
         auto _sig_set = (signal_list.size() == 0)
@@ -329,26 +329,29 @@ PYBIND11_MODULE(timemory, tim)
                         : signal_list_to_set(signal_list);
         NAME_TIM::EnableSignalDetection(_sig_set);
     };
-
+    //------------------------------------------------------------------------//
     auto disable_signal_detection = [=] ()
     {
         NAME_TIM::DisableSignalDetection();
     };
+    //------------------------------------------------------------------------//
+
 
     //========================================================================//
     //
-    //  Binding implementation
+    //                  MAIN timemory MODULE (part 1)
     //
     //========================================================================//
-
     tim.def("LINE",
             get_line,
             "Function that emulates __LINE__ macro",
             py::arg("nback") = 1);
+    //------------------------------------------------------------------------//
     tim.def("FUNC",
             get_func,
             "Function that emulates __FUNC__ macro",
             py::arg("nback") = 1);
+    //------------------------------------------------------------------------//
     tim.def("FILE",
             get_file,
             "Function that emulates __FILE__ macro",
@@ -356,88 +359,112 @@ PYBIND11_MODULE(timemory, tim)
             py::arg("basename_only") = true,
             py::arg("use_dirname") = false,
             py::arg("noquotes") = false);
+    //------------------------------------------------------------------------//
     tim.def("set_max_depth",
             [=] (int32_t ndepth)
             { timing_manager_t::instance()->set_max_depth(ndepth); },
             "Max depth of auto-timers");
+    //------------------------------------------------------------------------//
     tim.def("get_max_depth",
             [=] ()
             { return timing_manager_t::instance()->get_max_depth(); },
             "Max depth of auto-timers");
+    //------------------------------------------------------------------------//
     tim.def("toggle",
             [=] (bool timers_on)
             { timing_manager_t::instance()->enable(timers_on); },
             "Enable/disable auto-timers",
             py::arg("timers_on") = true);
+    //------------------------------------------------------------------------//
     tim.def("enabled",
             [=] ()
             { return timing_manager_t::instance()->is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
+    //------------------------------------------------------------------------//
     tim.def("enable_signal_detection",
             enable_signal_detection,
             "Enable signal detection",
             py::arg("signal_list") = py::list());
+    //------------------------------------------------------------------------//
     tim.def("disable_signal_detection",
             disable_signal_detection,
             "Enable signal detection");
+    //------------------------------------------------------------------------//
     tim.attr("default_format")
             =  tim_timer_t::default_format;
+    //------------------------------------------------------------------------//
     tim.def("set_default_format",
             set_timer_default_format,
             "Set the default format of the timers");
+    //------------------------------------------------------------------------//
     tim.def("get_default_format",
             get_timer_default_format,
             "Get the default format of the timers");
+    //------------------------------------------------------------------------//
     tim.def("has_mpi_support",
             [=] ()
             { return NAME_TIM::has_mpi_support(); },
             "Return if the TiMemory library has MPI support");
+    //------------------------------------------------------------------------//
+
 
     //------------------------------------------------------------------------//
-    // Classes
-
+    //  Class declarations
+    //------------------------------------------------------------------------//
     py::class_<timing_manager_wrapper> tman(tim, "timing_manager");
     py::class_<tim_timer_t> timer(tim, "timer");
     py::class_<auto_timer_t> auto_timer(tim, "auto_timer");
     py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
     py::class_<rss_usage_t> rss_usage(tim, "rss_usage");
 
-    //------------------------------------------------------------------------//
 
+    //========================================================================//
+    //
+    //                          TIMER
+    //
+    //========================================================================//
     timer.def(py::init(timer_init),
               "Initialization",
               py::return_value_policy::take_ownership,
               py::arg("begin") = "", py::arg("format") = "");
+    //------------------------------------------------------------------------//
     timer.def("real_elapsed",
               [=] (py::object timer)
               { return timer.cast<tim_timer_t*>()->real_elapsed(); },
               "Elapsed wall clock");
+    //------------------------------------------------------------------------//
     timer.def("sys_elapsed",
               [=] (py::object timer)
               { return timer.cast<tim_timer_t*>()->system_elapsed(); },
               "Elapsed system clock");
+    //------------------------------------------------------------------------//
     timer.def("user_elapsed",
               [=] (py::object timer)
               { return timer.cast<tim_timer_t*>()->user_elapsed(); },
               "Elapsed user time");
+    //------------------------------------------------------------------------//
     timer.def("start",
               [=] (py::object timer)
               { timer.cast<tim_timer_t*>()->start(); },
               "Start timer");
+    //------------------------------------------------------------------------//
     timer.def("stop",
               [=] (py::object timer)
               { timer.cast<tim_timer_t*>()->stop(); },
               "Stop timer");
+    //------------------------------------------------------------------------//
     timer.def("report",
               [=] (py::object timer, bool no_min = true)
               { timer.cast<tim_timer_t*>()->print(no_min); },
               "Report timer",
               py::arg("no_min") = true);
+    //------------------------------------------------------------------------//
     timer.def("__str__",
               [=] (py::object timer, bool no_min = true)
               { return timer.cast<tim_timer_t*>()->as_string(no_min); },
               "Stringify timer",
               py::arg("no_min") = true);
+    //------------------------------------------------------------------------//
     timer.def("__iadd__",
              [=] (py::object timer, py::object _rss)
              {
@@ -446,6 +473,7 @@ PYBIND11_MODULE(timemory, tim)
                  return timer;
              },
              "Add RSS measurement");
+    //------------------------------------------------------------------------//
     timer.def("__isub__",
              [=] (py::object timer, py::object _rss)
              {
@@ -454,13 +482,21 @@ PYBIND11_MODULE(timemory, tim)
                  return timer;
              },
              "Subtract RSS measurement");
-
     //------------------------------------------------------------------------//
 
+
+    //========================================================================//
+    //
+    //                          TIMING MANAGER
+    //
+    //========================================================================//
     tman.attr("reported_files") = py::list();
+    //------------------------------------------------------------------------//
     tman.attr("serialized_files") = py::list();
+    //------------------------------------------------------------------------//
     tman.def(py::init<>(tman_init), "Initialization",
              py::return_value_policy::take_ownership);
+    //------------------------------------------------------------------------//
     tman.def("report",
              [=] (py::object tman, bool no_min = false, bool serialize = false,
                   std::string serial_filename = "")
@@ -541,6 +577,7 @@ PYBIND11_MODULE(timemory, tim)
              py::arg("no_min") = false,
              py::arg("serialize") = false,
              py::arg("serial_filename") = "");
+    //------------------------------------------------------------------------//
     tman.def("__str__",
              [=] (py::object tman)
              {
@@ -552,6 +589,7 @@ PYBIND11_MODULE(timemory, tim)
                  return ss.str();
              },
              "Stringify the timing manager report");
+    //------------------------------------------------------------------------//
     tman.def("set_output_file",
              [=] (py::object tman, std::string fname)
              {
@@ -564,14 +602,17 @@ PYBIND11_MODULE(timemory, tim)
                  _tman->set_output_stream(fname);
              },
              "Set the output stream file");
+    //------------------------------------------------------------------------//
     tman.def("size",
              [=] (py::object tman)
              { return tman.cast<timing_manager_wrapper*>()->get()->size(); },
              "Size of timing manager");
+    //------------------------------------------------------------------------//
     tman.def("clear",
              [=] (py::object tman)
              { tman.cast<timing_manager_wrapper*>()->get()->clear(); },
              "Clear the timing manager");
+    //------------------------------------------------------------------------//
     tman.def("serialize",
              [=] (py::object tman, std::string fname = "")
              {
@@ -593,14 +634,17 @@ PYBIND11_MODULE(timemory, tim)
              },
              "Serialize the timing manager to JSON",
              py::arg("fname") = "");
+    //------------------------------------------------------------------------//
     tman.def("set_max_depth",
              [=] (py::object tman, int depth)
              { tman.cast<timing_manager_wrapper*>()->get()->set_max_depth(depth); },
              "Set the max depth of the timers");
+    //------------------------------------------------------------------------//
     tman.def("get_max_depth",
              [=] (py::object tman)
              { return tman.cast<timing_manager_wrapper*>()->get()->get_max_depth(); },
              "Get the max depth of the timers");
+    //------------------------------------------------------------------------//
     tman.def("at",
              [=] (py::object tman, int i)
              {
@@ -609,11 +653,13 @@ PYBIND11_MODULE(timemory, tim)
              },
              "Set the max depth of the timers",
              py::return_value_policy::reference);
+    //------------------------------------------------------------------------//
     tman.def("merge",
              [=] (py::object tman, bool div_clocks)
              { tman.cast<timing_manager_wrapper*>()->get()->merge(div_clocks); },
              "Merge the thread-local timers",
              py::arg("div_clocks") = true);
+    //------------------------------------------------------------------------//
     tman.def("json",
              [=] (py::object tman)
              {
@@ -622,6 +668,7 @@ PYBIND11_MODULE(timemory, tim)
                  py::module _json = py::module::import("json");
                  return _json.attr("loads")(ss.str());
              }, "Get JSON serialization of timing manager");
+    //------------------------------------------------------------------------//
     tman.def("__iadd__",
              [=] (py::object tman, py::object _rss)
              {
@@ -630,6 +677,7 @@ PYBIND11_MODULE(timemory, tim)
                  return tman;
              },
              "Add RSS measurement");
+    //------------------------------------------------------------------------//
     tman.def("__isub__",
              [=] (py::object tman, py::object _rss)
              {
@@ -638,6 +686,7 @@ PYBIND11_MODULE(timemory, tim)
                  return tman;
              },
              "Subtract RSS measurement");
+    //------------------------------------------------------------------------//
     tman.def("write_ctest_notes",
              [=] (py::object tman, std::string directory, bool append)
              {
@@ -692,12 +741,14 @@ PYBIND11_MODULE(timemory, tim)
              "Write a CTestNotes.cmake file",
              py::arg("directory") = ".",
              py::arg("append") = false);
-
-    // keep from being garbage collected
-    tim.attr("_static_timing_manager") = new timing_manager_wrapper();
-
     //------------------------------------------------------------------------//
 
+
+    //========================================================================//
+    //
+    //                      AUTO TIMER
+    //
+    //========================================================================//
     auto_timer.def(py::init(auto_timer_init),
                    "Initialization",
                    py::arg("key") = "",
@@ -705,23 +756,30 @@ PYBIND11_MODULE(timemory, tim)
                    py::arg("nback") = 1,
                    py::arg("added_args") = false,
                    py::return_value_policy::take_ownership);
-
+    //------------------------------------------------------------------------//
     timer_decorator.def(py::init(timer_decorator_init),
                         "Initialization",
                         py::return_value_policy::automatic);
-
     //------------------------------------------------------------------------//
 
+
+    //========================================================================//
+    //
+    //                      RSS USAGE
+    //
+    //========================================================================//
     rss_usage.def(py::init(rss_usage_init),
                   "Initialization of RSS measurement class",
                   py::return_value_policy::take_ownership,
                   py::arg("record") = false);
+    //------------------------------------------------------------------------//
     rss_usage.def("record",
                   [=] (py::object self)
                   {
                       self.cast<rss_usage_t*>()->record();
                   },
                   "Record the RSS usage");
+    //------------------------------------------------------------------------//
     rss_usage.def("__str__",
                   [=] (py::object self)
                   {
@@ -730,6 +788,7 @@ PYBIND11_MODULE(timemory, tim)
                       return ss.str();
                   },
                   "Stringify the rss usage");
+    //------------------------------------------------------------------------//
     rss_usage.def("__iadd__",
                   [=] (py::object self, py::object rhs)
                   {
@@ -738,6 +797,7 @@ PYBIND11_MODULE(timemory, tim)
                       return self;
                   },
                   "Add rss usage");
+    //------------------------------------------------------------------------//
     rss_usage.def("__isub__",
                   [=] (py::object self, py::object rhs)
                   {
@@ -746,6 +806,7 @@ PYBIND11_MODULE(timemory, tim)
                       return self;
                   },
                   "Subtract rss usage");
+    //------------------------------------------------------------------------//
     rss_usage.def("__add__",
                   [=] (py::object self, py::object rhs)
                   {
@@ -756,6 +817,7 @@ PYBIND11_MODULE(timemory, tim)
                   },
                   "Add rss usage",
                   py::return_value_policy::take_ownership);
+    //------------------------------------------------------------------------//
     rss_usage.def("__sub__",
                   [=] (py::object self, py::object rhs)
                   {
@@ -766,38 +828,47 @@ PYBIND11_MODULE(timemory, tim)
                   },
                   "Subtract rss usage",
                   py::return_value_policy::take_ownership);
+    //------------------------------------------------------------------------//
     rss_usage.def("current",
                   [=] (py::object self)
                   {
                       return self.cast<rss_usage_t*>()->current();
                   },
                   "Return the current rss usage");
+    //------------------------------------------------------------------------//
     rss_usage.def("peak",
                   [=] (py::object self)
                   {
                       return self.cast<rss_usage_t*>()->peak();
                   },
                   "Return the current rss usage");
-
-
     //------------------------------------------------------------------------//
 
+
+    //========================================================================//
+    //
+    //                      MAIN timemory MODULE (part 2)
+    //
+    //========================================================================//
+    // keep timing_manager from being garbage collected
+    tim.attr("_static_timing_manager") = new timing_manager_wrapper();
+    //------------------------------------------------------------------------//
     tim.def("report",
             [=] (bool no_min = true)
             { timing_manager_t::instance()->report(no_min); },
             "Report the timing manager (default: no_min = True)",
             py::arg("no_min") = true);
-
+    //------------------------------------------------------------------------//
     tim.def("clear",
             [=] ()
             { timing_manager_t::instance()->clear(); },
             "Clear the timing manager");
-
+    //------------------------------------------------------------------------//
     tim.def("size",
             [=] ()
             { return timing_manager_t::instance()->size(); },
             "Size of the timing manager");
-
+    //------------------------------------------------------------------------//
     tim.def("set_exit_action",
             [=] (py::function func)
             {
@@ -812,22 +883,19 @@ PYBIND11_MODULE(timemory, tim)
                 NAME_TIM::signal_settings::set_exit_action(_f);
             },
             "Set the exit action when a signal is raised -- function must accept integer");
+    //------------------------------------------------------------------------//
+
 
     //========================================================================//
     //
     //      Signals submodule
     //
     //========================================================================//
-
     py::module sig = tim.def_submodule("signals",       "Signals submodule");
-
     //------------------------------------------------------------------------//
-
     py::enum_<sys_signal_t> sys_signal_enum(sig, "sys_signal", py::arithmetic(),
                                             "Signals for TiMemory module");
-
     //------------------------------------------------------------------------//
-
     sys_signal_enum
             .value("Hangup", sys_signal_t::sHangup)
             .value("Interrupt", sys_signal_t::sInterrupt)
@@ -850,17 +918,16 @@ PYBIND11_MODULE(timemory, tim)
             .value("FileSize", sys_signal_t::sFileSize)
             .value("VirtualAlarm", sys_signal_t::sVirtualAlarm)
             .value("ProfileAlarm", sys_signal_t::sProfileAlarm);
+    // ---------------------------------------------------------------------- //
+
 
     //========================================================================//
     //
     //      Options submodule
     //
     //========================================================================//
-
     py::module opts = tim.def_submodule("options", "I/O options submodule");
-
     // ---------------------------------------------------------------------- //
-
     opts.attr("report_file") = false;
     opts.attr("serial_file") = true;
     opts.attr("use_timers") = true;
@@ -870,79 +937,67 @@ PYBIND11_MODULE(timemory, tim)
     opts.attr("output_dir") = ".";
     opts.attr("echo_dart") = false;
     opts.attr("ctest_notes") = false;
-
     // ---------------------------------------------------------------------- //
-
     opts.def("default_max_depth",
-            [=]()
-    {
-        return std::numeric_limits<uint16_t>::max();
-    },
-    "Return the default max depth");
-
+            [=]() { return std::numeric_limits<uint16_t>::max(); },
+            "Return the default max depth");
     // ---------------------------------------------------------------------- //
-
     opts.def("ensure_directory_exists",
              [=] (std::string file_path)
-    {
-        auto locals = py::dict("file_path"_a = file_path);
-        py::exec(R"(
-                 import os
-                 from os.path import dirname
+             {
+                 auto locals = py::dict("file_path"_a = file_path);
+                 py::exec(R"(
+                          import os
+                          from os.path import dirname
 
-                 directory = dirname(file_path)
-                 if not os.path.exists(directory) and directory != '':
-                     os.makedirs(directory)
-                 )",
-                 py::globals(), locals);
+                          directory = dirname(file_path)
+                          if not os.path.exists(directory) and directory != '':
+                              os.makedirs(directory)
+                          )",
+                          py::globals(), locals);
 
-    },
-    "mkdir -p $(basename file_path)");
-
+             },
+             "mkdir -p $(basename file_path)");
     // ---------------------------------------------------------------------- //
-
     opts.def("set_report",
              [=] (std::string fname)
-    {
-        std::stringstream ss;
-        std::string output_dir = opts.attr("output_dir").cast<std::string>();
-        if(fname.find(output_dir) != 0)
-            ss << output_dir;
-        if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
-            ss << "/";
-        ss << fname;
-        opts.attr("report_filename") = ss.str().c_str();
-        opts.attr("report_file") = true;
-        return ss.str();
-    },
-    "Set the ASCII report filename");
+             {
+                 std::stringstream ss;
+                 std::string output_dir = opts.attr("output_dir").cast<std::string>();
+                 if(fname.find(output_dir) != 0)
+                     ss << output_dir;
+                 if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
+                     ss << "/";
+                 ss << fname;
+                 opts.attr("report_filename") = ss.str().c_str();
+                 opts.attr("report_file") = true;
+                 return ss.str();
+             },
+             "Set the ASCII report filename");
 
     // ---------------------------------------------------------------------- //
-
     opts.def("set_serial",
              [=] (std::string fname)
-    {
-        std::stringstream ss;
-        std::string output_dir = opts.attr("output_dir").cast<std::string>();
-        if(fname.find(output_dir) != 0)
-            ss << output_dir;
-        if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
-            ss << "/";
-        ss << fname;
-        opts.attr("serial_filename") = ss.str().c_str();
-        opts.attr("serial_file") = true;
-        return ss.str();
-    },
-    "Set the JSON serialization filename");
-
+             {
+                 std::stringstream ss;
+                 std::string output_dir = opts.attr("output_dir").cast<std::string>();
+                 if(fname.find(output_dir) != 0)
+                     ss << output_dir;
+                 if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
+                     ss << "/";
+                 ss << fname;
+                 opts.attr("serial_filename") = ss.str().c_str();
+                 opts.attr("serial_file") = true;
+                 return ss.str();
+             },
+             "Set the JSON serialization filename");
     // ---------------------------------------------------------------------- //
-
     opts.def("add_arguments",
              [=] (py::object parser = py::none(), std::string fname = "")
-    {
-        auto locals = py::dict("parser"_a = parser,
-                               "fname"_a = fname);
-        py::exec(R"(
+             {
+                 auto locals = py::dict("parser"_a = parser,
+                                        "fname"_a = fname);
+                 py::exec(R"(
                  import sys
                  import os
                  from os.path import dirname
@@ -992,27 +1047,25 @@ PYBIND11_MODULE(timemory, tim)
                                      help="Print DartMeasurementFile tag for plots",
                                      required=False, action='store_true')
                  parser.add_argument('--write-ctest-notes',
-                                     help="Write a CTestNotes.cmake file for TiMemory ASCII output",
+                        help="Write a CTestNotes.cmake file for TiMemory ASCII output",
                                      required=False, action='store_true')
 
                  parser.set_defaults(use_timers=True)
                  parser.set_defaults(serial_file=True)
                  parser.set_defaults(enable_dart=False)
                  parser.set_defaults(write_ctest_notes=False)
-                 )",
-                 py::globals(), locals);
-        return locals["parser"].cast<py::object>();
-    },
-    "Function to add default output arguments",
-    py::arg("parser") = py::none(), py::arg("fname") = "");
-
+                          )",
+                          py::globals(), locals);
+                 return locals["parser"].cast<py::object>();
+             },
+             "Function to add default output arguments",
+             py::arg("parser") = py::none(), py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
-
     opts.def("parse_args",
              [=] (py::object args)
-    {
-        auto locals = py::dict("args"_a = args);
-        py::exec(R"(
+             {
+                 auto locals = py::dict("args"_a = args);
+                 py::exec(R"(
                  import sys
                  import os
                  from os.path import dirname
@@ -1034,40 +1087,36 @@ PYBIND11_MODULE(timemory, tim)
                  import timemory
                  timemory.toggle(options.use_timers)
                  timemory.set_max_depth(options.max_timer_depth)
-                 )",
-                 py::globals(), locals);
-    },
-    "Function to handle the output arguments");
-
+                          )",
+                          py::globals(), locals);
+             },
+             "Function to handle the output arguments");
     // ---------------------------------------------------------------------- //
-
     opts.def("add_arguments_and_parse",
              [=] (py::object parser = py::none(), std::string fname = "")
-    {
-        auto locals = py::dict("parser"_a = parser,
-                               "fname"_a = fname);
-        py::exec(R"(
+             {
+                 auto locals = py::dict("parser"_a = parser,
+                                        "fname"_a = fname);
+                 py::exec(R"(
                  import timemory.options as options
 
                  # Combination of timing.add_arguments and timing.parse_args but returns
                  parser = options.add_arguments(parser, fname)
                  args = parser.parse_args()
                  options.parse_args(args)
-                 )",
-                 py::globals(), locals);
-        return locals["args"].cast<py::object>();
-    },
-    "Combination of timing.add_arguments and timing.parse_args but returns",
-    py::arg("parser") = py::none(), py::arg("fname") = "");
-
+                          )",
+                          py::globals(), locals);
+                 return locals["args"].cast<py::object>();
+             },
+             "Combination of timing.add_arguments and timing.parse_args but returns",
+             py::arg("parser") = py::none(), py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
-
     opts.def("add_args_and_parse_known",
              [=] (py::object parser = py::none(), std::string fname = "")
-    {
-        auto locals = py::dict("parser"_a = parser,
-                               "fname"_a = fname);
-        py::exec(R"(
+             {
+                 auto locals = py::dict("parser"_a = parser,
+                                        "fname"_a = fname);
+                 py::exec(R"(
                  import timemory.options as options
 
                  # Combination of timing.add_arguments and timing.parse_args but returns
@@ -1077,16 +1126,14 @@ PYBIND11_MODULE(timemory, tim)
                  options.parse_args(args)
                  # replace sys.argv with unknown args only
                  sys.argv = sys.argv[:1]+left
-                 )",
-                 py::globals(), locals);
-        return locals["args"].cast<py::object>();
-    },
-    "Combination of timing.add_arguments and timing.parse_args. Returns TiMemory args and "
-    "replaces sys.argv with the unknown args (used to fix issue with unittest module)",
-    py::arg("parser") = py::none(), py::arg("fname") = "");
-
+                          )",
+                          py::globals(), locals);
+                 return locals["args"].cast<py::object>();
+             },
+             "Combination of timing.add_arguments and timing.parse_args. Returns "
+             "TiMemory args and replaces sys.argv with the unknown args (used to "
+             "fix issue with unittest module)",
+             py::arg("parser") = py::none(), py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
-
-    //========================================================================//
 
 }

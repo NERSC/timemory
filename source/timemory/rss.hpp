@@ -39,6 +39,7 @@
 #include <stdio.h>
 #include <cstdint>
 #include <algorithm>
+#include <fstream>
 
 #include <cereal/cereal.hpp>
 #include <cereal/access.hpp>
@@ -78,15 +79,18 @@ namespace rss
     namespace units
     {
     const int64_t byte     = 1;
-    const int64_t kilobyte = 1000*byte;
-    const int64_t megabyte = 1000*kilobyte;
-    const int64_t gigabyte = 1000*megabyte;
-    const int64_t petabyte = 1000*gigabyte;
+    const int64_t kilobyte = 1024*byte;
+    const int64_t megabyte = 1024*kilobyte;
+    const int64_t gigabyte = 1024*megabyte;
+    const int64_t petabyte = 1024*gigabyte;
     const double  Bi       = 1.0;
     const double  KiB      = 1024.0 * Bi;
     const double  MiB      = 1024.0 * KiB;
     const double  GiB      = 1024.0 * MiB;
     const double  PiB      = 1024.0 * GiB;
+#if defined(_UNIX)
+    const int64_t page_size = sysconf(_SC_PAGESIZE);
+#endif
     }
 
     /**
@@ -101,9 +105,11 @@ namespace rss
         struct rusage rusage;
         getrusage( RUSAGE_SELF, &rusage );
 #   if defined(__APPLE__) && defined(__MACH__)
-        return (int64_t) (rusage.ru_maxrss / ((int64_t) units::KiB) * units::kilobyte);
+        // Darwin reports in bytes
+        return (int64_t) (rusage.ru_maxrss);
 #   else
-        return (int64_t) (rusage.ru_maxrss / ((int64_t) units::KiB) * units::megabyte);
+        // Linux reports in kilobytes
+        return (int64_t) (rusage.ru_maxrss * units::kilobyte);
 #   endif
 #elif defined(_WINDOWS)
         DWORD processID = GetCurrentProcessId();
@@ -146,21 +152,24 @@ namespace rss
         if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
                      (task_info_t) &info, &infoCount) != KERN_SUCCESS)
             return (int64_t) 0L;      /* Can't access? */
-        return (int64_t) (info.resident_size / ((int64_t) units::KiB) * units::kilobyte);
+        // Darwin reports in bytes
+        return (int64_t) (info.resident_size);
 
 #   else // Linux
-        long rss = 0L;
+
+        int64_t rss = 0;
         FILE* fp = fopen("/proc/self/statm", "r");
-        if(fp == nullptr)
-            return (int64_t) 0L;
-        if(fscanf(fp, "%*s%ld", &rss) != 1)
+        if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
         {
             fclose(fp);
-            return (int64_t) 0L;
+            return (int64_t) (rss * units::page_size);
         }
-        fclose(fp);
-        return (int64_t) (rss * (int64_t) sysconf( _SC_PAGESIZE) / ((int64_t) units::KiB) *
-                          units::kilobyte);
+
+        if(fp)
+            fclose(fp);
+
+        return (int64_t) (0);
+
 #   endif
 #elif defined(_WINDOWS)
         DWORD processID = GetCurrentProcessId();

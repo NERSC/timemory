@@ -137,12 +137,15 @@ If TiMemory is build from source, a set of C++ and Python tests are provided for
 
   - key : this is a custom key to append after function name. The default will add file and line number.
   - add_args : add the arguments to the auto-timer key. Will be over-ridden by key argument
-  - is_class : will add `'[{}]'.format(type(self).__name__)`` to the function name
+  - is_class : [DEPRECATED] will add `'[{}]'.format(type(self).__name__)`` to the function name
+
+    - Version 1.2.1 handles this automatically now
+
   - report_at_exit (auto_timer only) : at the end of the timing, report to stdout
 
 ```python
 # using decorators
-@timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
+@timemory.util.auto_timer(key="", add_args=False, report_at_exit=False)
 def function(...):
     time.sleep(1)
 
@@ -161,12 +164,12 @@ with timemory.util.auto_timer(report_at_exit=True):
 
 ```python
 # with decorator
-@timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
+@timemory.util.auto_timer(key="", add_args=False, report_at_exit=False)
 def function(...):
     time.sleep(1)
 
 # with context manager
-with timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False):
+with timemory.util.auto_timer(key="", add_args=False, report_at_exit=False):
     ret = np.ones(shape=[500, 500], dtype=np.float64)
     for i in [ 2.0, 3.5, 8.7 ]:
         n = i * np.ones(shape=[500, 500], dtype=np.float64)
@@ -186,12 +189,12 @@ with timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_
 
 ```python
 # with decorator
-@timemory.util.timer(key="", add_args=False, is_class=False)
+@timemory.util.timer(key="", add_args=False)
 def function(...):
     time.sleep(1)
 
 # with context manager
-with timemory.util.timer(key="", add_args=False, is_class=False):
+with timemory.util.timer(key="", add_args=False):
     ret = np.ones(shape=[500, 500], dtype=np.float64)
     for i in [ 2.0, 3.5, 8.7 ]:
         n = i * np.ones(shape=[500, 500], dtype=np.float64)
@@ -203,7 +206,7 @@ with timemory.util.timer(key="", add_args=False, is_class=False):
 ```
 # free function
 test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]
-# with is_class=True
+# with is_class=True (handled automatically in >= v1.2.1)
 test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 ```
 
@@ -211,12 +214,12 @@ test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user 
 
 ```python
 # with decorator
-@timemory.util.rss_usage(key="", add_args=False, is_class=False)
+@timemory.util.rss_usage(key="", add_args=False)
 def function(...):
     time.sleep(1)
 
 # with context manager
-with timemory.util.rss_usage(key="", add_args=False, is_class=False):
+with timemory.util.rss_usage(key="", add_args=False):
     ret = np.ones(shape=[500, 500], dtype=np.float64)
     for i in [ 2.0, 3.5, 8.7 ]:
         n = i * np.ones(shape=[500, 500], dtype=np.float64)

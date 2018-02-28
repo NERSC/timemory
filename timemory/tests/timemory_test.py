@@ -337,6 +337,41 @@ class timemory_test(unittest.TestCase):
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 
+    # ------------------------------------------------------------------------ #
+    # Test RSS usage validity
+    def test_rss_validity(self):
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
+
+        rss_init = timemory.rss_usage()
+        rss_pre = timemory.rss_usage()
+        rss_post = timemory.rss_usage()
+
+        rss_init.record()
+        rss_pre.record()
+
+        import numpy as np
+        # should be ~8 MB
+        nsize = 1000*1000
+        arr = np.ones([nsize], dtype=np.int64)
+
+        rss_post.record()
+
+        rss_pre -= rss_init
+        rss_post -= rss_init
+
+        # in kB
+        rss_corr = (8000) / 1.024
+        # convert from MB to kB
+        rss_real = rss_post.current() * 1024
+        # compute diff
+        rss_diff = rss_real - rss_corr
+        print('RSS real:  {} kB'.format(rss_real))
+        print('RSS ideal: {} kB'.format(rss_corr))
+        print('RSS diff:  {} kB'.format(rss_diff))
+        # allow some variability
+        self.assertTrue(abs(rss_diff) < 200)
+
+
 # ---------------------------------------------------------------------------- #
 def run_test():
     try:
@@ -353,6 +388,8 @@ def run_test():
         _test.test_timing()
         _test.setUp()
         _test.test_toggle()
+        _test.setUp()
+        _test.test_rss_validity()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

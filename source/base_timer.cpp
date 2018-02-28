@@ -288,6 +288,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
         ss << std::endl;
 
     // ensure thread-safety
+    NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
     recursive_lock_t rlock(w_mutex_map[&os]);
     // output to ostream
     os << ss.str();

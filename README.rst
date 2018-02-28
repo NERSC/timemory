@@ -167,15 +167,18 @@ Basic Python usage
       default will add file and line number.
    -  add\_args : add the arguments to the auto-timer key. Will be
       over-ridden by key argument
-   -  is\_class : will add \`'[{}]'.format(type(self).\ **name**)\`\` to
-      the function name
+   -  is\_class : [DEPRECATED] will add
+      \`'[{}]'.format(type(self).\ **name**)\`\` to the function name
+
+      -  Version 1.2.1 handles this automatically now
+
    -  report\_at\_exit (auto\_timer only) : at the end of the timing,
       report to stdout
 
 .. code:: python
 
   # using decorators
-  @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
+  @timemory.util.auto_timer(key="", add_args=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
 
@@ -195,12 +198,12 @@ Auto-timer example
 .. code:: python
 
   # with decorator
-  @timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False)
+  @timemory.util.auto_timer(key="", add_args=False, report_at_exit=False)
   def function(...):
       time.sleep(1)
 
   # with context manager
-  with timemory.util.auto_timer(key="", add_args=False, is_class=False, report_at_exit=False):
+  with timemory.util.auto_timer(key="", add_args=False, report_at_exit=False):
       ret = np.ones(shape=[500, 500], dtype=np.float64)
       for i in [ 2.0, 3.5, 8.7 ]:
           n = i * np.ones(shape=[500, 500], dtype=np.float64)
@@ -223,12 +226,12 @@ Timer example (will report to stdout at the end of the function)
 .. code:: python
 
   # with decorator
-  @timemory.util.timer(key="", add_args=False, is_class=False)
+  @timemory.util.timer(key="", add_args=False)
   def function(...):
       time.sleep(1)
 
   # with context manager
-  with timemory.util.timer(key="", add_args=False, is_class=False):
+  with timemory.util.timer(key="", add_args=False):
       ret = np.ones(shape=[500, 500], dtype=np.float64)
       for i in [ 2.0, 3.5, 8.7 ]:
           n = i * np.ones(shape=[500, 500], dtype=np.float64)
@@ -242,7 +245,7 @@ Timer example (will report to stdout at the end of the function)
 
   # free function
   test_func_timer@'timemory_test.py':240 :  2.087 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  4.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.0|140.6) [MB]
-  # with is_class=True
+  # with is_class=True (handled automatically in >= v1.2.1)
   test_decorator[timemory_test]@'timemory_test.py':210 :  7.092 wall,  0.040 user +  0.050 system =  0.090 CPU [sec] (  1.3%) : RSS {tot,self}_{curr,peak} : ( 52.5|193.2) | (  0.1|140.7) [MB]
 
 RSS usage example (will report to stdout at the end of the function)
@@ -251,12 +254,12 @@ RSS usage example (will report to stdout at the end of the function)
 .. code:: python
 
   # with decorator
-  @timemory.util.rss_usage(key="", add_args=False, is_class=False)
+  @timemory.util.rss_usage(key="", add_args=False)
   def function(...):
       time.sleep(1)
 
   # with context manager
-  with timemory.util.rss_usage(key="", add_args=False, is_class=False):
+  with timemory.util.rss_usage(key="", add_args=False):
       ret = np.ones(shape=[500, 500], dtype=np.float64)
       for i in [ 2.0, 3.5, 8.7 ]:
           n = i * np.ones(shape=[500, 500], dtype=np.float64)

@@ -31,19 +31,23 @@
 #ifndef TIMEMORY_UTIL_INTERNAL_HPP
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
-#include <iostream>
+#include <cstdint>
 #include <cstdlib>
-#include <set>
+#include <cstring>
+#include <cmath>
 #include <string>
 #include <sstream>
+#include <iostream>
 #include <iomanip>
-#include <cstring>
 #include <exception>
 #include <stdexcept>
 #include <functional>
 #include <deque>
-#include <cmath>
+#include <set>
 #include <vector>
+#include <atomic>
+#include <mutex>
+#include <thread>
 
 #include "timemory/namespace.hpp"
 
@@ -53,6 +57,25 @@ namespace NAME_TIM
 //----------------------------------------------------------------------------//
 
 typedef std::deque<std::string> str_list_t;
+typedef std::mutex                  mutex_t;
+typedef std::unique_lock<mutex_t>   auto_lock_t;
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp>
+mutex_t& type_mutex(const uintmax_t& _n = 0)
+{
+    static mutex_t* _mutex = new mutex_t();
+    if(_n == 0)
+        return *_mutex;
+
+    static std::vector<mutex_t*> _mutexes;
+    if(_n > _mutexes.size())
+        _mutexes.resize(_n, nullptr);
+    if(!_mutexes[_n])
+        _mutexes[_n] = new mutex_t();
+    return *(_mutexes[_n-1]);
+}
 
 //----------------------------------------------------------------------------//
 

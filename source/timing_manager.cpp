@@ -225,7 +225,8 @@ timing_manager::timer(const string_t& key,
     {
         std::stringstream ss;
         ss << "Error! Space found in tag: \"" << key << "\"";
-        throw std::runtime_error(ss.str().c_str());
+        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+        std::cerr << ss.str() << std::endl;
     }
 #endif
 
@@ -240,6 +241,7 @@ timing_manager::timer(const string_t& key,
 #if defined(HASH_DEBUG)
         for(const auto& itr : m_timer_list)
         {
+            NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
             if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
                 std::cout << "Found : " << itr << std::endl;
         }
@@ -325,9 +327,10 @@ void timing_manager::report(ostream_t* os, bool no_min) const
         ofstream_t* fos = get_ofstream(_os);
         if(fos && !(fos->is_open() && fos->good()))
         {
+            _os = &std::cout;
+            NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
             std::cerr << "Output stream for " << id << " is not open/valid. "
                       << "Redirecting to stdout..." << std::endl;
-            _os = &std::cout;
         }
     };
 
@@ -394,8 +397,11 @@ void timing_manager::set_output_stream(const string_t& fname)
             m_os = _fos;
         else
         {
-            std::cerr << "Warning! Unable to open file " << _fname << ". "
-                      << "Redirecting to stdout..." << std::endl;
+            {
+                NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+                std::cerr << "Warning! Unable to open file " << _fname << ". "
+                          << "Redirecting to stdout..." << std::endl;
+            }
             _fos->close();
             delete _fos;
             m_os = &std::cout;
@@ -542,6 +548,7 @@ void timing_manager::write_json_no_mpi(string_t _fname)
         std::stringstream _info;
         _info << "Writing serialization file: "
               << _fname << std::endl;
+        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
         std::cout << _info.str();
     }
 
@@ -679,6 +686,7 @@ void timing_manager::write_json_mpi(string_t _fname)
         std::stringstream _info;
         _info << "[" << mpi_rank() << "] Writing serialization file: "
               << _fname << std::endl;
+        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
         std::cout << _info.str();
     }
 
