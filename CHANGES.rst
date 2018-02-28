@@ -1,6 +1,18 @@
 TiMemory
 ========
 
+Release: TiMemory 1.2.1
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Wed Feb 28 02:49:51 2018 -0800
+
+    - added auto-detection of is_class in decorators
+    - Fixed build flags
+
+        - Removed -march=native (GNU) and -xHOST (Intel) from non-debug builds as these flags create illegal instructions in Docker -- specifically NERSC's Edison
+            
+
 Release: TiMemory 1.2.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
