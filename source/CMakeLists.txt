@@ -99,7 +99,7 @@ foreach(_FILE plotting mpi_support util)
 
     # install the folder
     install(DIRECTORY ${BINARY_DIR}/
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/${_FILE})
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_FILE})
 endforeach(_FILE plotting mpi_support util)
 
 #----------------------------------------------------------------------------
@@ -136,7 +136,7 @@ file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CX
 
 foreach(_TYPE exe c cxx)
     install(FILES ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/mpi_support)
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/mpi_support)
 endforeach(_TYPE exe c cxx)
 
 #----------------------------------------------------------------------------
@@ -162,25 +162,25 @@ endif(NOT SETUP_PY)
 
 # Python library target (linked to static target)
 install(TARGETS ${LIBNAME}
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 
 # it is in a folder that gets installed but still do it explicitly
 #install(TARGETS ${LIBNAME}
 #    DESTINATION ${CMAKE_INSTALL_PREFIX})
 
 install(TARGETS ${LIBNAME}
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 
 configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
     ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
 
 install(FILES ${PROJECT_BINARY_DIR}/timemory/timemory.py
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
     ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
 
 install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
-    DESTINATION ${CMAKE_INSTALL_PYTHONDIR})
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 
 export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)

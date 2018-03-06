@@ -75,11 +75,11 @@ add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 include(BuildSettings)
 include(Packages)
 
-set(CMAKE_INSTALL_PYTHONDIR
+set(TIMEMORY_INSTALL_PYTHONDIR
     ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
     CACHE PATH "Installation directory for python")
-set(CMAKE_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${CMAKE_INSTALL_PYTHONDIR})
-set(PYTHON_INSTALL_DIR      ${CMAKE_INSTALL_PYTHONDIR})
+set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
+set(PYTHON_INSTALL_DIR      ${TIMEMORY_INSTALL_PYTHONDIR})
 
 ################################################################################
 #
@@ -95,7 +95,7 @@ foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 
 if(SETUP_PY)
-    set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
+    set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
         "Installation prefix of python" FORCE)
 endif(SETUP_PY)
 
@@ -145,7 +145,7 @@ foreach(_FILE ${TEST_FILES})
 
     # install them though
     install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
-        DESTINATION ${CMAKE_INSTALL_PYTHONDIR}/tests)
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests)
 
 endforeach(_FILE ${TEST_FILES})
 
