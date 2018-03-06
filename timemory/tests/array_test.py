@@ -251,12 +251,12 @@ def run_test():
     main()
     dummy()
 
-    timing_manager = timemory.timing_manager()
-    timing_manager -= rss
-    print('\nTiming report:\n{}'.format(timing_manager))
+    manager = timemory.manager()
+    manager -= rss
+    print('\nTiming report:\n{}'.format(manager))
     freport = options.set_report("timing_array_test.out")
     fserial = options.set_serial("timing_array_test.json")
-    timing_manager.report(no_min = True)
+    manager.report(no_min = True)
     plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 
     measure('end', _rss = rss)
@@ -272,7 +272,7 @@ if __name__ == '__main__':
         run_test()
 
         if options.ctest_notes:
-            manager = timemory.timing_manager()
+            manager = timemory.manager()
             f = manager.write_ctest_notes(directory="test_output/array_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))
 

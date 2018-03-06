@@ -6,7 +6,7 @@ else(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE ON CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
 endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 
-set(TIMEMORY_VERSION 1.2.1 CACHE STRING "Version of TiMemory project" FORCE)
+set(TIMEMORY_VERSION 1.2.3 CACHE STRING "Version of TiMemory project" FORCE)
 mark_as_advanced(TIMEMORY_VERSION)
 
 if(GOOD_CMAKE)
@@ -43,7 +43,7 @@ endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 # By setting TIMEMORY_NAMESPACE, the project can directly
 # use TiMemory in its own namespace, e.g.:
 # TIMEMORY_NAMESPACE=mad
-#   tim::timing_manager --> mad::timing_manager
+#   tim::manager --> mad::manager
 #
 ################################################################################
 
@@ -58,9 +58,11 @@ if(NOT SUBPROJECT)
         set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
         set(CMAKE_BUILD_TYPE Release)
     endif()
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
     add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
     add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
     add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
+    add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 endif(NOT SUBPROJECT)
 add_feature(TIMEMORY_NAMESPACE "Top-level namespace for ${PROJECT_NAME}")
 

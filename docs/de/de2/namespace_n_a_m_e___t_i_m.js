@@ -5,6 +5,7 @@ var namespace_n_a_m_e___t_i_m =
     [ "auto_timer", "dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html", "dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer" ],
     [ "base_clock", "d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html", "d0/d54/class_n_a_m_e___t_i_m_1_1base__clock" ],
     [ "base_clock_data", "d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data.html", "d2/d7f/struct_n_a_m_e___t_i_m_1_1base__clock__data" ],
+    [ "manager", "df/dd1/class_n_a_m_e___t_i_m_1_1manager.html", "df/dd1/class_n_a_m_e___t_i_m_1_1manager" ],
     [ "signal_settings", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings.html", "d8/d0d/class_n_a_m_e___t_i_m_1_1signal__settings" ],
     [ "time_units", "d6/d92/struct_n_a_m_e___t_i_m_1_1time__units.html", null ],
     [ "time_units< std::centi >", "dc/d62/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1centi_01_4.html", "dc/d62/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1centi_01_4" ],
@@ -18,6 +19,5 @@ var namespace_n_a_m_e___t_i_m =
     [ "time_units< std::ratio< 3600 > >", "da/d71/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1ratio_3_013600_01_4_01_4.html", "da/d71/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1ratio_3_013600_01_4_01_4" ],
     [ "time_units< std::ratio< 60 > >", "dc/d27/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1ratio_3_0160_01_4_01_4.html", "dc/d27/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1ratio_3_0160_01_4_01_4" ],
     [ "timer", "dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html", "dc/dc8/class_n_a_m_e___t_i_m_1_1timer" ],
-    [ "timer_tuple", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple" ],
-    [ "timing_manager", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager" ]
+    [ "timer_tuple", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple" ]
 ];

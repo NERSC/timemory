@@ -33,7 +33,7 @@
 
 #include "timemory/namespace.hpp"
 #include "timemory/utility.hpp"
-#include "timemory/timing_manager.hpp"
+#include "timemory/manager.hpp"
 
 #include <string>
 #include <cstdint>
@@ -44,14 +44,22 @@ namespace NAME_TIM
 class auto_timer
 {
 public:
-    typedef NAME_TIM::timing_manager::tim_timer_t   tim_timer_t;
-    typedef auto_timer                              this_type;
+    typedef NAME_TIM::manager::tim_timer_t  tim_timer_t;
+    typedef auto_timer                      this_type;
+    typedef std::string                     string_t;
 
 public:
-    // Constructor and Destructors
-    auto_timer(const std::string&, const int32_t& lineno,
-               const std::string& = "cxx", bool report_at_exit = false);
+    // standard constructor
+    auto_timer(const string_t&, const int32_t& lineno,
+               const string_t& = "cxx", bool report_at_exit = false);
+    // construct from existing timer
+    auto_timer(tim_timer_t&, const int32_t& lineno,
+               const string_t& = "cxx", bool report_at_exit = false);
+    // destructor
     virtual ~auto_timer();
+
+    tim_timer_t* local_timer() const { return m_temp_timer; }
+    tim_timer_t* global_timer() const { return m_timer; }
 
 public:
     // static public functions
@@ -63,7 +71,7 @@ private:
     bool            m_report_at_exit;
     uint64_t        m_hash;
     tim_timer_t*    m_timer;
-    tim_timer_t     m_temp_timer;
+    tim_timer_t*    m_temp_timer;
 };
 
 //----------------------------------------------------------------------------//

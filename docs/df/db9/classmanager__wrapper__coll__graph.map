@@ -1,0 +1,6 @@
+<map id="manager_wrapper" name="manager_wrapper">
+<area shape="rect" id="node2" href="$df/dd1/class_n_a_m_e___t_i_m_1_1manager.html" title="{NAME_TIM::manager\n||+ manager()\l+ ~manager()\l+ merge()\l+ size()\l+ clear()\l+ timer()\l+ at()\l+ time()\l+ time()\l+ time()\land 31 more...\l+ instance()\l+ is_enabled()\l+ enable()\l+ write_json()\l+ write_json()\l+ max_depth()\l# string_hash()\l# const_merge()\l# get_prefix()\l# write_json_no_mpi()\l# write_json_mpi()\l# write_json_no_mpi()\l# write_json_mpi()\l# get_communicator_group()\l&#45; get_ofstream()\l&#45; report()\l}" alt="" coords="505,683,681,1219"/>
+<area shape="rect" id="node7" href="$d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html" title="{NAME_TIM::timer_tuple\n||+ timer_tuple()\l+ timer_tuple()\l+ operator=()\l+ operator==()\l+ operator!=()\l+ operator+=()\l+ operator+()\l+ key()\l+ key()\l+ level()\land 6 more...\l}" alt="" coords="275,173,425,432"/>
+<area shape="rect" id="node9" title="STL class. " alt="" coords="450,260,557,345"/>
+<area shape="rect" id="node12" title="STL class. " alt="" coords="29,908,119,993"/>
+</map>

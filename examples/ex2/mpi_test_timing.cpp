@@ -34,13 +34,13 @@
 
 #include <cassert>
 
-#include <timemory/timing_manager.hpp>
+#include <timemory/manager.hpp>
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
 
 typedef NAME_TIM::timer          tim_timer_t;
-typedef NAME_TIM::timing_manager timing_manager_t;
+typedef NAME_TIM::manager manager_t;
 
 // ASSERT_NEAR
 // EXPECT_EQ
@@ -102,7 +102,7 @@ void print_info(const std::string&);
 void print_size(const std::string&, int64_t, bool = true);
 void print_depth(const std::string&, int64_t, bool = true);
 void test_timing_pointer();
-void test_timing_manager();
+void test_manager();
 void test_timing_toggle();
 void test_timing_depth();
 void test_timing_thread();
@@ -137,7 +137,7 @@ int main(int argc, char** argv)
     try
     {
         RUN_TEST(test_timing_pointer);
-        RUN_TEST(test_timing_manager);
+        RUN_TEST(test_manager);
         RUN_TEST(test_timing_toggle);
         RUN_TEST(test_timing_depth);
         RUN_TEST(test_timing_thread);
@@ -169,11 +169,11 @@ int main(int argc, char** argv)
         rank_sout << std::endl;
         t.report();
         rank_sout << std::endl;
-        timing_manager_t::instance()->report(rank_sout);
+        manager_t::instance()->report(rank_sout);
         std::cout << rank_sout.str();
     }
 
-    delete timing_manager_t::instance();
+    delete manager_t::instance();
 
     MPI_Finalize();
 
@@ -199,7 +199,7 @@ void print_size(const std::string& func, int64_t line, bool extra_endl)
         std::cout << "[" << NAME_TIM::mpi_rank() << "] "
                   << func << "@" << line
                   << " : Timing manager size: "
-                  << timing_manager_t::instance()->size()
+                  << manager_t::instance()->size()
                   << std::endl;
 
         if(extra_endl)
@@ -216,7 +216,7 @@ void print_depth(const std::string& func, int64_t line, bool extra_endl)
         std::cout << "[" << NAME_TIM::mpi_rank() << "] "
                   << func << "@" << line
                   << " : Timing manager size: "
-                  << timing_manager_t::instance()->get_max_depth()
+                  << manager_t::instance()->get_max_depth()
                   << std::endl;
 
         if(extra_endl)
@@ -235,32 +235,32 @@ void test_timing_pointer()
 
     print_depth(__FUNCTION__, __LINE__, false);
     {
-        timing_manager_t::instance()->set_max_depth(4);
+        manager_t::instance()->set_max_depth(4);
     }
 
     print_depth(__FUNCTION__, __LINE__, false);
     {
-        get_depth = timing_manager_t::instance()->get_max_depth();
+        get_depth = manager_t::instance()->get_max_depth();
     }
 
     print_depth(__FUNCTION__, __LINE__, false);
     EXPECT_EQ(set_depth, get_depth);
-    timing_manager_t::instance()->set_max_depth(std::numeric_limits<uint16_t>::max());
+    manager_t::instance()->set_max_depth(std::numeric_limits<uint16_t>::max());
 }
 
 //============================================================================//
 
-void test_timing_manager()
+void test_manager()
 {
     print_info(__FUNCTION__);
 
-    auto tman = timing_manager_t::instance();
+    auto tman = manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
     tman->enable(true);
 
-    tim_timer_t& t = tman->timer("timing_manager_test");
+    tim_timer_t& t = tman->timer("manager_test");
     t.start();
 
     for(auto itr : { 34, 36, 39, 40, 42, 38, 34, 42 })
@@ -274,7 +274,7 @@ void test_timing_manager()
     tman->report();
     tman->write_json("timing_report.json");
 
-    EXPECT_EQ(timing_manager_t::instance()->size(), 32);
+    EXPECT_EQ(manager_t::instance()->size(), 32);
 
     for(const auto& itr : *tman)
     {
@@ -291,7 +291,7 @@ void test_timing_toggle()
 {
     print_info(__FUNCTION__);
 
-    auto tman = timing_manager_t::instance();
+    auto tman = manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -305,7 +305,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(timing_manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 10);
 
     tman->clear();
     tman->enable(false);
@@ -317,7 +317,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(timing_manager_t::instance()->size(), 0);
+    EXPECT_EQ(manager_t::instance()->size(), 0);
 
     tman->clear();
     tman->enable(true);
@@ -330,7 +330,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(timing_manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 10);
 
     tman->enable(_is_enabled);
 }
@@ -341,7 +341,7 @@ void test_timing_depth()
 {
     print_info(__FUNCTION__);
 
-    auto tman = timing_manager_t::instance();
+    auto tman = manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -362,7 +362,7 @@ void test_timing_depth()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(no_min = true);
-    EXPECT_EQ(timing_manager_t::instance()->size(), 7);
+    EXPECT_EQ(manager_t::instance()->size(), 7);
 
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
@@ -378,9 +378,9 @@ void thread_func(int32_t nfib, std::shared_future<void> fut)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    int32_t nsize = timing_manager_t::instance()->size();
+    int32_t nsize = manager_t::instance()->size();
     if(nsize > 0)
-        std::cerr << "thread-local timing_manager size: " << nsize << std::endl;
+        std::cerr << "thread-local manager size: " << nsize << std::endl;
 
     fut.get();
     time_fibonacci(nfib);
@@ -414,7 +414,7 @@ void test_timing_thread()
 {
     print_info(__FUNCTION__);
 
-    auto tman = timing_manager_t::instance();
+    auto tman = manager_t::instance();
     tman->clear();
 
     bool _is_enabled = tman->is_enabled();
@@ -457,7 +457,7 @@ void test_timing_thread()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(no_min = true);
-    ASSERT_TRUE(timing_manager_t::instance()->size() >= 36);
+    ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
     tman->enable(_is_enabled);
 }

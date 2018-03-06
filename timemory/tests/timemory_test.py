@@ -67,7 +67,7 @@ class timemory_test(unittest.TestCase):
         timemory.options.output_dir = self.output_dir
         timemory.options.use_timers = True
         timemory.options.serial_report = True
-        self.timing_manager = timemory.timing_manager()
+        self.manager = timemory.manager()
 
 
     # ------------------------------------------------------------------------ #
@@ -87,7 +87,7 @@ class timemory_test(unittest.TestCase):
             timer.stop()
 
 
-        self.timing_manager.clear()
+        self.manager.clear()
         t = timemory.timer("tmanager_test")
         t.start()
 
@@ -100,14 +100,14 @@ class timemory_test(unittest.TestCase):
             time_fibonacci(n)
             time_fibonacci(n + 1)
 
-        self.timing_manager.merge()
-        self.timing_manager.report()
+        self.manager.merge()
+        self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.timing_manager.size(), 12)
+        self.assertEqual(self.manager.size(), 12)
 
-        for i in range(0, self.timing_manager.size()):
-            t = self.timing_manager.at(i)
+        for i in range(0, self.manager.size()):
+            t = self.manager.at(i)
             self.assertFalse(t.real_elapsed() < 0.0)
             self.assertFalse(t.user_elapsed() < 0.0)
 
@@ -121,21 +121,21 @@ class timemory_test(unittest.TestCase):
 
         timemory.toggle(True)
         timemory.set_max_depth(timemory.options.default_max_depth())
-        self.timing_manager.clear()
+        self.manager.clear()
 
         timemory.toggle(True)
         if True:
             autotimer = timemory.auto_timer("on")
             fibonacci(27)
             del autotimer
-        self.assertEqual(self.timing_manager.size(), 1)
+        self.assertEqual(self.manager.size(), 1)
 
         timemory.toggle(False)
         if True:
             autotimer = timemory.auto_timer("off")
             fibonacci(27)
             del autotimer
-        self.assertEqual(self.timing_manager.size(), 1)
+        self.assertEqual(self.manager.size(), 1)
 
         timemory.toggle(True)
         if True:
@@ -145,11 +145,11 @@ class timemory_test(unittest.TestCase):
             fibonacci(27)
             del autotimer_off
             del autotimer_on
-        self.assertEqual(self.timing_manager.size(), 2)
+        self.assertEqual(self.manager.size(), 2)
 
         freport = timemory.options.set_report("timing_toggle.out")
         fserial = timemory.options.set_serial("timing_toggle.json")
-        self.timing_manager.report(no_min=True)
+        self.manager.report(no_min=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 
@@ -159,7 +159,7 @@ class timemory_test(unittest.TestCase):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
-        self.timing_manager.clear()
+        self.manager.clear()
 
         def create_timer(n):
             autotimer = timemory.auto_timer('{}'.format(n))
@@ -174,25 +174,25 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_depth.out")
         fserial = timemory.options.set_serial("timing_depth.json")
-        self.timing_manager.report()
+        self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.timing_manager.size(), ntimers)
+        self.assertEqual(self.manager.size(), ntimers)
 
 
     # ------------------------------------------------------------------------ #
-    # Test the persistancy of the timing_manager pointer
+    # Test the persistancy of the manager pointer
     def test_pointer(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         nval = 4
 
         def set_pointer_max(nmax):
-            self.timing_manager.set_max_depth(4)
-            return self.timing_manager.get_max_depth()
+            self.manager.set_max_depth(4)
+            return self.manager.get_max_depth()
 
         def get_pointer_max():
-            return timemory.timing_manager().get_max_depth()
+            return timemory.manager().get_max_depth()
 
         ndef = get_pointer_max()
         nnew = set_pointer_max(nval)
@@ -211,7 +211,7 @@ class timemory_test(unittest.TestCase):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
-        self.timing_manager.clear()
+        self.manager.clear()
 
         @auto_timer()
         def test_func_glob():
@@ -234,7 +234,7 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_decorator.out")
         fserial = timemory.options.set_serial("timing_decorator.json")
-        self.timing_manager.report(no_min=True)
+        self.manager.report(no_min=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
         self.assertEqual(timemory.size(), 4)
@@ -263,7 +263,7 @@ class timemory_test(unittest.TestCase):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
-        self.timing_manager.clear()
+        self.manager.clear()
 
         # timer test
         with timemory.util.timer():
@@ -333,7 +333,7 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_context_manager.out")
         fserial = timemory.options.set_serial("timing_context_manager.json")
-        self.timing_manager.report(no_min=True)
+        self.manager.report(no_min=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 
@@ -408,7 +408,7 @@ if __name__ == '__main__':
     except:
         raise
     finally:
-        manager = timemory.timing_manager()
+        manager = timemory.manager()
         if options.ctest_notes:
             f = manager.write_ctest_notes(directory="test_output/timemory_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))

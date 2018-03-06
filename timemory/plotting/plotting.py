@@ -191,9 +191,9 @@ def read(json_obj):
     mpi_size = len(data_0['ranks'])
     for i in range(0, len(data_0['ranks'])):
         data_1 = data_0['ranks'][i]
-        concurrency_sum += int(data_1['timing_manager']['omp_concurrency'])
-        for j in range(0, len(data_1['timing_manager']['timers'])):
-            data_2 = data_1['timing_manager']['timers'][j]
+        concurrency_sum += int(data_1['manager']['omp_concurrency'])
+        for j in range(0, len(data_1['manager']['timers'])):
+            data_2 = data_1['manager']['timers'][j]
             nlaps = int(data_2['timer.ref']['laps'])
             indent = ""
             nlevel = int(data_2['timer.level'])
@@ -203,8 +203,8 @@ def read(json_obj):
     timemory_functions = nested_dict()
     for i in range(0, len(data_0['ranks'])):
         data_1 = data_0['ranks'][i]
-        for j in range(0, len(data_1['timing_manager']['timers'])):
-            data_2 = data_1['timing_manager']['timers'][j]
+        for j in range(0, len(data_1['manager']['timers'])):
+            data_2 = data_1['manager']['timers'][j]
             nlaps = int(data_2['timer.ref']['laps'])
             indent = ""
             nlevel = int(data_2['timer.level'])

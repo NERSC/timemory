@@ -38,7 +38,7 @@ CEREAL_CLASS_VERSION(NAME_TIM::timer, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
-uint64_t NAME_TIM::timer::f_output_width = 10;
+uint64_t NAME_TIM::timer::f_output_width = 8;
 
 //============================================================================//
 
@@ -75,7 +75,6 @@ timer::timer(const string_t& _begin,
              uint16_t prec)
 : base_type(prec, _begin + default_format + _close),
   m_use_static_width(_use_static_width),
-  m_parent(nullptr),
   m_begin(_begin), m_close(_close)
 { }
 
@@ -88,20 +87,13 @@ timer::timer(const string_t& _begin,
              uint16_t prec)
 : base_type(prec, _begin + _fmt + _end),
   m_use_static_width(_use_static_width),
-  m_parent(nullptr),
   m_begin(_begin), m_close(_end)
 { }
 
 //============================================================================//
 
 timer::~timer()
-{
-    if(m_parent)
-    {
-        auto_lock_t l(m_mutex);
-        m_parent->get_accum() += m_accum;
-    }
-}
+{ }
 
 //============================================================================//
 
@@ -122,15 +114,6 @@ void timer::compose()
            << m_close;
     }
     m_format_string = ss.str();
-}
-
-//============================================================================//
-
-timer timer::clone() const
-{
-    this_type _clone(*this);
-    _clone.set_parent(const_cast<this_type*>(this));
-    return _clone;
 }
 
 //============================================================================//

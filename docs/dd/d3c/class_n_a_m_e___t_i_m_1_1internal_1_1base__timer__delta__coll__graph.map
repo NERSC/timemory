@@ -1,4 +1,4 @@
 <map id="NAME_TIM::internal::base_timer_delta" name="NAME_TIM::internal::base_timer_delta">
-<area shape="rect" id="node3" href="$d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html" title="{NAME_TIM::internal\l::base_rss_usage\n||+ init()\l+ record()\l+ total()\l+ self()\l+ total()\l+ self()\l+ max()\l+ operator+=()\l+ operator&#45;=()\l}" alt="" coords="95,584,226,825"/>
+<area shape="rect" id="node3" href="$d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html" title="{NAME_TIM::internal\l::base_rss_usage\n||+ init()\l+ record()\l+ total()\l+ self()\l+ total()\l+ self()\l+ total_min()\l+ self_min()\l+ total_min()\l+ self_min()\l+ max()\l+ operator+=()\l+ operator&#45;=()\l+ operator=()\l}" alt="" coords="95,619,226,947"/>
 <area shape="rect" id="node4" href="$df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html" title="{NAME_TIM::rss::usage\n||+ usage()\l+ usage()\l+ usage()\l+ operator=()\l+ record()\l+ record()\l+ operator()()\l+ operator+=()\l+ operator&#45;=()\l+ current()\l+ peak()\l+ serialize()\l+ max()\l+ min()\l}" alt="" coords="87,173,234,484"/>
 </map>

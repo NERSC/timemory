@@ -46,7 +46,7 @@ if (edges && edges.length) {
         </defs>
 
 <script type="text/javascript">
-var viewWidth = 718;
+var viewWidth = 688;
 var viewHeight = 101;
 var sectionId = 'dynsection-1';
 </script>
@@ -54,7 +54,7 @@ var sectionId = 'dynsection-1';
 <svg id="graph" class="graph">
 <g id="viewport">
 <title>timemory/auto_timer.hpp</title>
-<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-97 713.5,-97 713.5,4 -4,4"/>
+<polygon fill="#ffffff" stroke="transparent" points="-4,4 -4,-97 684,-97 684,4 -4,4"/>
 <!-- Node50 -->
 <g id="node1" class="node">
 <title>Node50</title>
@@ -125,32 +125,32 @@ var sectionId = 'dynsection-1';
 <!-- Node55 -->
 <g id="node6" class="node">
 <title>Node55</title>
-<g id="a_node6"><a xlink:href="../../d2/dfd/timemory_8cc.html" target="_top" xlink:title="timemory.cc">
-<polygon fill="#ffffff" stroke="#000000" points="528,-7 528,-28 593,-28 593,-7 528,-7"/>
-<text text-anchor="middle" x="560.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory.cc</text>
+<g id="a_node6"><a xlink:href="../../d0/db0/manager_8cpp.html" target="_top" xlink:title="manager.cpp">
+<polygon fill="#ffffff" stroke="#000000" points="528,-7 528,-28 597,-28 597,-7 528,-7"/>
+<text text-anchor="middle" x="562.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">manager.cpp</text>
 </a>
 </g>
 </g>
 <!-- Node50&#45;&gt;Node55 -->
 <g id="edge5" class="edge">
 <title>Node50&#45;&gt;Node55</title>
-<path fill="none" stroke="#191970" d="M443.5268,-67.4654C471.6125,-55.4685 510.7997,-38.7296 535.9137,-28.0021"/>
-<polygon fill="#191970" stroke="#191970" points="441.9181,-64.3465 434.0968,-71.4934 444.6679,-70.7838 441.9181,-64.3465"/>
+<path fill="none" stroke="#191970" d="M443.9775,-67.4654C472.4352,-55.4685 512.1415,-38.7296 537.5881,-28.0021"/>
+<polygon fill="#191970" stroke="#191970" points="442.2776,-64.3836 434.4226,-71.4934 444.9969,-70.8339 442.2776,-64.3836"/>
 </g>
 <!-- Node56 -->
 <g id="node7" class="node">
 <title>Node56</title>
-<g id="a_node7"><a xlink:href="../../d9/dad/timing__manager_8cpp.html" target="_top" xlink:title="timing_manager.cpp">
-<polygon fill="#ffffff" stroke="#000000" points="611.5,-7 611.5,-28 709.5,-28 709.5,-7 611.5,-7"/>
-<text text-anchor="middle" x="660.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timing_manager.cpp</text>
+<g id="a_node7"><a xlink:href="../../d2/dfd/timemory_8cc.html" target="_top" xlink:title="timemory.cc">
+<polygon fill="#ffffff" stroke="#000000" points="615,-7 615,-28 680,-28 680,-7 615,-7"/>
+<text text-anchor="middle" x="647.5" y="-14.4" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">timemory.cc</text>
 </a>
 </g>
 </g>
 <!-- Node50&#45;&gt;Node56 -->
 <g id="edge6" class="edge">
 <title>Node50&#45;&gt;Node56</title>
-<path fill="none" stroke="#191970" d="M465.7031,-69.1612C504.3178,-60.1328 556.6837,-47.4808 602.5,-35 610.314,-32.8714 618.6746,-30.4401 626.5461,-28.0807"/>
-<polygon fill="#191970" stroke="#191970" points="464.6404,-65.8149 455.6949,-71.492 466.2282,-72.6324 464.6404,-65.8149"/>
+<path fill="none" stroke="#191970" d="M474.6544,-69.355C513.4075,-61.1196 563.2828,-49.2647 606.5,-35 612.5265,-33.0109 618.8988,-30.5005 624.7772,-28.0069"/>
+<polygon fill="#191970" stroke="#191970" points="473.6131,-65.9971 464.5444,-71.4752 475.0499,-72.8481 473.6131,-65.9971"/>
 </g>
 </g>
 </svg>

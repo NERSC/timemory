@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.1</span>
+   &#160;<span id="projectnumber">1.2.3</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -179,7 +179,7 @@ Functions</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00084"></a><span class="lineno">   84</span>&#160;{ <span class="keywordflow">return</span> str; }</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00085"></a><span class="lineno">   85</span>&#160;{ <span class="keywordflow">return</span> str; }</div></div><!-- fragment -->
 </div>
 </div>
 <a id="a894418276b197ca38e8f2536201dbf1d"></a>
@@ -199,7 +199,7 @@ template&lt;int N&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00182"></a><span class="lineno">  182</span>&#160;{</div><div class="line"><a name="l00183"></a><span class="lineno">  183</span>&#160;    <span class="keywordflow">return</span> std::get&lt;N&gt;(<a class="code" href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">data</a>.start().time_since_epoch().count().data);</div><div class="line"><a name="l00184"></a><span class="lineno">  184</span>&#160;}</div><div class="ttc" id="namespaceplotting_1_1plotting_html_acd20acc8c2c0c342d978b30056454953"><div class="ttname"><a href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">plotting.plotting.data</a></div><div class="ttdeci">list data</div><div class="ttdef"><b>Definition:</b> plotting.py:501</div></div>
+<div class="fragment"><div class="line"><a name="l00218"></a><span class="lineno">  218</span>&#160;{</div><div class="line"><a name="l00219"></a><span class="lineno">  219</span>&#160;    <span class="keywordflow">return</span> std::get&lt;N&gt;(<a class="code" href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">data</a>.start().time_since_epoch().count().data);</div><div class="line"><a name="l00220"></a><span class="lineno">  220</span>&#160;}</div><div class="ttc" id="namespaceplotting_1_1plotting_html_acd20acc8c2c0c342d978b30056454953"><div class="ttname"><a href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">plotting.plotting.data</a></div><div class="ttdeci">list data</div><div class="ttdef"><b>Definition:</b> plotting.py:501</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -220,7 +220,7 @@ template&lt;int N&gt; </div>
         </tr>
       </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;{</div><div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;    <span class="keywordflow">return</span> std::get&lt;N&gt;(<a class="code" href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">data</a>.stop().time_since_epoch().count().data);</div><div class="line"><a name="l00192"></a><span class="lineno">  192</span>&#160;}</div><div class="ttc" id="namespaceplotting_1_1plotting_html_acd20acc8c2c0c342d978b30056454953"><div class="ttname"><a href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">plotting.plotting.data</a></div><div class="ttdeci">list data</div><div class="ttdef"><b>Definition:</b> plotting.py:501</div></div>
+<div class="fragment"><div class="line"><a name="l00226"></a><span class="lineno">  226</span>&#160;{</div><div class="line"><a name="l00227"></a><span class="lineno">  227</span>&#160;    <span class="keywordflow">return</span> std::get&lt;N&gt;(<a class="code" href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">data</a>.stop().time_since_epoch().count().data);</div><div class="line"><a name="l00228"></a><span class="lineno">  228</span>&#160;}</div><div class="ttc" id="namespaceplotting_1_1plotting_html_acd20acc8c2c0c342d978b30056454953"><div class="ttname"><a href="../../df/d23/namespaceplotting_1_1plotting.html#acd20acc8c2c0c342d978b30056454953">plotting.plotting.data</a></div><div class="ttdeci">list data</div><div class="ttdef"><b>Definition:</b> plotting.py:501</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -257,7 +257,7 @@ template&lt;int N&gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00469"></a><span class="lineno">  469</span>&#160;{</div><div class="line"><a name="l00470"></a><span class="lineno">  470</span>&#160;    <span class="keywordtype">bool</span> restart = !t.is_valid();</div><div class="line"><a name="l00471"></a><span class="lineno">  471</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00472"></a><span class="lineno">  472</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(t).stop();</div><div class="line"><a name="l00473"></a><span class="lineno">  473</span>&#160;    t.report(os);</div><div class="line"><a name="l00474"></a><span class="lineno">  474</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00475"></a><span class="lineno">  475</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(t).start();</div><div class="line"><a name="l00476"></a><span class="lineno">  476</span>&#160;</div><div class="line"><a name="l00477"></a><span class="lineno">  477</span>&#160;    <span class="keywordflow">return</span> os;</div><div class="line"><a name="l00478"></a><span class="lineno">  478</span>&#160;}</div></div><!-- fragment -->
+<div class="fragment"><div class="line"><a name="l00531"></a><span class="lineno">  531</span>&#160;{</div><div class="line"><a name="l00532"></a><span class="lineno">  532</span>&#160;    <span class="keywordtype">bool</span> restart = !t.is_valid();</div><div class="line"><a name="l00533"></a><span class="lineno">  533</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00534"></a><span class="lineno">  534</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(t).stop();</div><div class="line"><a name="l00535"></a><span class="lineno">  535</span>&#160;    t.report(os);</div><div class="line"><a name="l00536"></a><span class="lineno">  536</span>&#160;    <span class="keywordflow">if</span>(restart)</div><div class="line"><a name="l00537"></a><span class="lineno">  537</span>&#160;        <span class="keyword">const_cast&lt;</span>base_timer&amp;<span class="keyword">&gt;</span>(t).start();</div><div class="line"><a name="l00538"></a><span class="lineno">  538</span>&#160;</div><div class="line"><a name="l00539"></a><span class="lineno">  539</span>&#160;    <span class="keywordflow">return</span> os;</div><div class="line"><a name="l00540"></a><span class="lineno">  540</span>&#160;}</div></div><!-- fragment -->
 </div>
 </div>
 </div><!-- contents -->
@@ -266,7 +266,7 @@ template&lt;int N&gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html">NAME_TIM</a></li><li class="navelem"><a class="el" href="../../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html">internal</a></li>
-    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
+    <li class="footer">Generated on Tue Mar 6 2018 08:05:42 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

@@ -149,7 +149,7 @@ def run_test():
     try:
         main(args.nfib)
         print ('Timing manager size: {}'.format(timemory.size()))
-        tman = timemory.timing_manager()
+        tman = timemory.manager()
         tman -= rss
         tman.report()
         _jsonf = os.path.join(options.output_dir, 'nested_output.json')
@@ -178,7 +178,7 @@ if __name__ == '__main__':
         run_test()
 
         if options.ctest_notes:
-            manager = timemory.timing_manager()
+            manager = timemory.manager()
             f = manager.write_ctest_notes(directory="test_output/nested_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))
 

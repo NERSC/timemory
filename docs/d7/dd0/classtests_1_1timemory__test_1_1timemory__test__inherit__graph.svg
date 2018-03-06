@@ -16,7 +16,7 @@
 <text text-anchor="middle" x="77" y="-166.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">tests.timemory_test.timemory_test</text>
 <polyline fill="none" stroke="#000000" points="0,-159.5 154,-159.5 "/>
 <text text-anchor="start" x="8" y="-145.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ output_dir</text>
-<text text-anchor="start" x="8" y="-132.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ timing_manager</text>
+<text text-anchor="start" x="8" y="-132.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ manager</text>
 <polyline fill="none" stroke="#000000" points="0,-125.5 154,-125.5 "/>
 <text text-anchor="start" x="8" y="-111.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ __init__()</text>
 <text text-anchor="start" x="8" y="-98.9" font-family="Helvetica,sans-Serif" font-size="12.00" fill="#000000">+ setUp()</text>

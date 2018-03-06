@@ -7,5 +7,5 @@ var searchData=
   ['base_5ftime_5fpair_5ft',['base_time_pair_t',['../d5/d40/namespaceinternal.html#a765deb22a170dd29e91aaf023dc28612',1,'internal']]],
   ['base_5ftime_5fpoint_5ft',['base_time_point_t',['../d5/d40/namespaceinternal.html#ac24f0f549353600744425b6b1f868316',1,'internal']]],
   ['base_5ftimer_5ftuple_5ft',['base_timer_tuple_t',['../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html#a2859e73f2225f8575c230728e785ca2d',1,'NAME_TIM::internal']]],
-  ['base_5ftype',['base_type',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a3be4247e8cac6f68a22e2d5768628cbe',1,'NAME_TIM::timer::base_type()'],['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a4e1148cd4bc5c0e07890b040d0f5e319',1,'NAME_TIM::timer_tuple::base_type()']]]
+  ['base_5ftype',['base_type',['../d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html#a4e1148cd4bc5c0e07890b040d0f5e319',1,'NAME_TIM::timer_tuple::base_type()'],['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a3be4247e8cac6f68a22e2d5768628cbe',1,'NAME_TIM::timer::base_type()']]]
 ];

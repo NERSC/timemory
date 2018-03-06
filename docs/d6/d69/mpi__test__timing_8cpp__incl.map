@@ -1,5 +1,5 @@
 <map id="examples/ex2/mpi_test_timing.cpp" name="examples/ex2/mpi_test_timing.cpp">
-<area shape="rect" id="node11" href="$df/df2/timing__manager_8hpp.html" title="timemory/timing_manager.hpp" alt="" coords="1923,177,2107,207"/>
+<area shape="rect" id="node11" href="$da/d04/manager_8hpp.html" title="timemory/manager.hpp" alt="" coords="1942,177,2087,207"/>
 <area shape="rect" id="node47" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="657,427,842,456"/>
 <area shape="rect" id="node49" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="1523,504,1640,533"/>
 <area shape="rect" id="node50" href="$d8/d07/auto__timer_8hpp.html" title="timemory/auto_timer.hpp" alt="" coords="1123,100,1277,129"/>

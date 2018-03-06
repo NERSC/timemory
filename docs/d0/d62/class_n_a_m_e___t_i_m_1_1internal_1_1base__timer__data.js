@@ -8,6 +8,7 @@ var class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data =
     [ "this_type", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2dc559926dc144de54e04e6656e156a9", null ],
     [ "time_point_t", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ac14e1290ccbe2ba09bea1374448e1831", null ],
     [ "base_timer_data", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#af24df0bf37ff60aa33486a2a7db92641", null ],
+    [ "operator=", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#abacf65f6c16aeb114a484ebc8d96e65c", null ],
     [ "rss", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ad42c4f9a894e39ada1eb8cc255a24cf8", null ],
     [ "rss", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1b8e5e342947768a3882352aa215e6e3", null ],
     [ "rss_init", "d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a785e3c4ec393d58691945df5b4d985fc", null ],

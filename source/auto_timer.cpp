@@ -31,49 +31,95 @@ namespace NAME_TIM
 
 //============================================================================//
 
-uint64_t& auto_timer::nhash() { return timing_manager::instance()->hash(); }
+uint64_t& auto_timer::nhash() { return manager::instance()->hash(); }
 
 //============================================================================//
 
-uint64_t& auto_timer::ncount() { return timing_manager::instance()->count(); }
+uint64_t& auto_timer::ncount() { return manager::instance()->count(); }
 
 //============================================================================//
 
 bool auto_timer::alloc_next()
 {
-    return timing_manager::is_enabled() &&
-            (uint64_t) timing_manager::max_depth() > auto_timer::ncount();
+    return manager::is_enabled() &&
+            (uint64_t) manager::max_depth() > auto_timer::ncount();
 }
 
 //============================================================================//
 
-auto_timer::auto_timer(const std::string& timer_tag,
+auto_timer::auto_timer(const string_t& timer_tag,
                        const int32_t& lineno,
-                       const std::string& code_tag,
+                       const string_t& code_tag,
                        bool report_at_exit)
 : m_report_at_exit(report_at_exit),
   m_hash(10*lineno),
-  m_timer(nullptr)
+  m_timer(nullptr),
+  m_temp_timer(nullptr)
 {
-    m_hash += std::hash<std::string>()(timer_tag);
+    m_hash += std::hash<string_t>()(timer_tag);
     // for consistency, always increment hash keys
     ++auto_timer::ncount();
     auto_timer::nhash() += m_hash;
 
-    if(timing_manager::is_enabled() &&
-       (uint64_t) timing_manager::max_depth() > auto_timer::ncount() - 1)
+    if(manager::is_enabled() &&
+       (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
     {
-        m_timer = &timing_manager::instance()->timer(timer_tag, code_tag,
-                                                     auto_timer::ncount() - 1,
-                                                     auto_timer::nhash());
+        m_timer = &manager::instance()->timer(timer_tag, code_tag,
+                                              auto_timer::ncount() - 1,
+                                              auto_timer::nhash());
+
+        m_temp_timer = new tim_timer_t();
         if(m_report_at_exit)
         {
-            m_temp_timer.grab_metadata(*m_timer);
-            m_temp_timer.set_begin("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer.set_use_static_width(false);
+            m_temp_timer->grab_metadata(*m_timer);
+            m_temp_timer->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->set_use_static_width(false);
         }
+        m_temp_timer->start();
+    }
+}
 
-        m_temp_timer.start();
+//============================================================================//
+
+auto_timer::auto_timer(tim_timer_t& _atimer,
+                       const int32_t& lineno,
+                       const string_t& code_tag,
+                       bool report_at_exit)
+: m_report_at_exit(report_at_exit),
+  m_hash(10*lineno),
+  m_timer(nullptr),
+  m_temp_timer(nullptr)
+{
+    string_t timer_tag = _atimer.begin();
+    m_hash += std::hash<string_t>()(timer_tag);
+    // for consistency, always increment hash keys
+    ++auto_timer::ncount();
+    auto_timer::nhash() += m_hash;
+
+    if(manager::is_enabled() &&
+       (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
+    {
+        m_timer = &manager::instance()->timer(timer_tag, code_tag,
+                                              auto_timer::ncount() - 1,
+                                              auto_timer::nhash());
+        m_temp_timer = m_timer;
+        m_timer->sync(_atimer);
+        if(m_report_at_exit)
+        {
+            m_temp_timer->grab_metadata(*m_timer);
+            m_temp_timer->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->set_use_static_width(false);
+        }
+    }
+    else
+    {
+        m_temp_timer = new tim_timer_t();
+        m_temp_timer->sync(_atimer);
+        if(m_report_at_exit)
+        {
+            m_temp_timer->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->set_use_static_width(false);
+        }
     }
 }
 
@@ -87,11 +133,21 @@ auto_timer::~auto_timer()
 
     if(m_timer)
     {
-        m_temp_timer.stop();
-        *m_timer += m_temp_timer;
+        m_temp_timer->stop();
+        if(m_timer != m_temp_timer)
+            *m_timer += *m_temp_timer;
         if(m_report_at_exit)
-            m_temp_timer.report(std::cout, true, true);
+            m_temp_timer->report(std::cout, true, true);
     }
+    else if(m_temp_timer)
+    {
+        m_temp_timer->stop();
+        if(m_report_at_exit)
+            m_temp_timer->report(std::cout, true, true);
+    }
+
+    if(m_temp_timer && m_temp_timer != m_timer)
+        delete m_temp_timer;
 }
 
 //============================================================================//

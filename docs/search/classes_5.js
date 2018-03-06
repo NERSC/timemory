@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['rss_5fusage',['rss_usage',['../d1/d2e/classutil_1_1util_1_1rss__usage.html',1,'util::util']]]
+  ['plot_5fdata',['plot_data',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html',1,'plotting::plotting']]]
 ];

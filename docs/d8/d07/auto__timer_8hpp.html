@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.1</span>
+   &#160;<span id="projectnumber">1.2.3</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -92,7 +92,7 @@ $(document).ready(function(){initNavTree('d8/d07/auto__timer_8hpp.html','../../'
 <div class="contents">
 <div class="textblock"><code>#include &quot;<a class="el" href="../../">timemory/namespace.hpp</a>&quot;</code><br />
 <code>#include &quot;<a class="el" href="../../">timemory/utility.hpp</a>&quot;</code><br />
-<code>#include &quot;<a class="el" href="../../">timemory/timing_manager.hpp</a>&quot;</code><br />
+<code>#include &quot;<a class="el" href="../../">timemory/manager.hpp</a>&quot;</code><br />
 <code>#include &lt;string&gt;</code><br />
 <code>#include &lt;cstdint&gt;</code><br />
 </div><div class="textblock"><div id="dynsection-0" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
@@ -100,8 +100,7 @@ $(document).ready(function(){initNavTree('d8/d07/auto__timer_8hpp.html','../../'
 <div id="dynsection-0-summary" class="dynsummary" style="display:block;">
 </div>
 <div id="dynsection-0-content" class="dyncontent" style="display:none;">
-<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../de/db2/auto__timer_8hpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div>
-</div>
+<div class="center"><div class="zoom"><iframe scrolling="no" frameborder="0" src="../../de/db2/auto__timer_8hpp__incl.svg" width="100%" height="600"><p><b>This browser is not able to show SVG: try Firefox, Chrome, Safari, or Opera instead.</b></p></iframe></div></div>
 </div>
 </div><div class="textblock"><div id="dynsection-1" onclick="return toggleVisibility(this)" class="dynheader closed" style="cursor:pointer;">
   <img id="dynsection-1-trigger" src="../../closed.png" alt="+"/> This graph shows which files directly or indirectly include this file:</div>
@@ -296,9 +295,9 @@ Typedefs</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str) + <a class="code" href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a>(__FILE__, <a class="code" href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a> ), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:86</div></div>
-<div class="ttc" id="auto__timer_8hpp_html_aa627383e16ea66813a5245995ee6671f"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a></div><div class="ttdeci">#define LINE_STRING</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:82</div></div>
-<div class="ttc" id="auto__timer_8hpp_html_ac08058b08efd91db9b8e414d83782020"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a></div><div class="ttdeci">#define AUTO_TIMER_STR(A, B)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:89</div></div>
+<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str) + <a class="code" href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a>(__FILE__, <a class="code" href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a> ), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:94</div></div>
+<div class="ttc" id="auto__timer_8hpp_html_aa627383e16ea66813a5245995ee6671f"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#aa627383e16ea66813a5245995ee6671f">LINE_STRING</a></div><div class="ttdeci">#define LINE_STRING</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:90</div></div>
+<div class="ttc" id="auto__timer_8hpp_html_ac08058b08efd91db9b8e414d83782020"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#ac08058b08efd91db9b8e414d83782020">AUTO_TIMER_STR</a></div><div class="ttdeci">#define AUTO_TIMER_STR(A, B)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:97</div></div>
 <div class="ttc" id="class_n_a_m_e___t_i_m_1_1auto__timer_html"><div class="ttname"><a href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">NAME_TIM::auto_timer</a></div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:44</div></div>
 </div><!-- fragment -->
 </div>
@@ -318,7 +317,7 @@ Typedefs</h2></td></tr>
         </tr>
       </table>
 </div><div class="memdoc">
-<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:86</div></div>
+<b>Value:</b><div class="fragment"><div class="line"><a class="code" href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">auto_timer_t</a> <a class="code" href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a>(__LINE__)(std::string(__FUNCTION__) + \</div><div class="line">            std::string(str), __LINE__)</div><div class="ttc" id="auto__timer_8hpp_html_acac7c0387110c1c2cc15171a030b9877"><div class="ttname"><a href="../../d8/d07/auto__timer_8hpp.html#acac7c0387110c1c2cc15171a030b9877">AUTO_TIMER_NAME</a></div><div class="ttdeci">#define AUTO_TIMER_NAME(Y)</div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:94</div></div>
 <div class="ttc" id="class_n_a_m_e___t_i_m_1_1auto__timer_html"><div class="ttname"><a href="../../dc/dae/class_n_a_m_e___t_i_m_1_1auto__timer.html">NAME_TIM::auto_timer</a></div><div class="ttdef"><b>Definition:</b> auto_timer.hpp:44</div></div>
 </div><!-- fragment -->
 </div>
@@ -344,7 +343,7 @@ Typedefs</h2></td></tr>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../dir_4fd02b5fd43288e8282468be733f8250.html">timemory</a></li><li class="navelem"><a class="el" href="../../d8/d07/auto__timer_8hpp.html">auto_timer.hpp</a></li>
-    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
+    <li class="footer">Generated on Tue Mar 6 2018 08:05:41 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

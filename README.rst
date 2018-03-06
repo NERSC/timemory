@@ -157,8 +157,8 @@ Basic Python usage
    context managers
 -  One can also use auto\_timer, timer, and rss\_usage objects directly
    for same results
--  ``timemory.timing_manager`` class will record all auto-timers and can
-   be printed out at completions of application
+-  ``timemory.manager`` class will record all auto-timers and can be
+   printed out at completions of application
 -  The report from the timing manager can be plotted using
    ``timemory.plotting``
 -  All decorators and context managers take similar arguments
@@ -300,7 +300,7 @@ Signal detection example:
   #------------------------------------------------------------------------------#
   # create an exit action function, i.e. customization before quitting app
   def exit_action(errcode):
-      tman = timemory.timing_manager()
+      tman = timemory.manager()
       timemory.report(no_min=True)
       fname = 'signal_error_{}.out'.format(errcode)
       f = open(fname, 'w')
@@ -344,10 +344,10 @@ Basic C++ usage
   TIMEMORY_AUTO_TIMER_BASIC("[custom_string]")
 
   // later on
-  tim::timing_manager::instance()->report()
+  tim::manager::instance()->report()
 
--  The timing\_manager is thread-safe and should be accessed through
-   ``timing_manager::instance()``
+-  The manager is thread-safe and should be accessed through
+   ``manager::instance()``
 -  See the full documentation and examples (ex1 and ex2) for more
    information on the classes and usage
 
@@ -360,13 +360,13 @@ There are essentially two components of the output:
 
    -  general ASCII report
    -  to include this report as part of CDash dashboard (writing a
-      CTestNotes.cmake file), use the ``timemory.timing_manager`` member
+      CTestNotes.cmake file), use the ``timemory.manager`` member
       function ``write_ctest_notes``, e.g.
 
 .. code:: python
 
   if timemory.options.ctest_notes:
-      manager = timemory.timing_manager()
+      manager = timemory.manager()
       f = manager.write_ctest_notes(directory="test_output/simple_test")
       print('"{}" wrote CTest notes file : {}'.format(__file__, f))
 
@@ -748,8 +748,8 @@ here is general guide:
 -  In some instances, you may want to include the directory of the
    filename, for this use:
    ``autotimer = timemory.auto_timer(timemory.FILE(use_dirname = True))``
--  Add ``tman = timemory.timing_manager() ; tman.report()`` at the end
-   of your main file.
+-  Add ``tman = timemory.manager() ; tman.report()`` at the end of your
+   main file.
 
    -  It is generally recommended to do this in a different scope than
       the primary autotimer but not necessary.
@@ -812,17 +812,17 @@ here is general guide:
               main(args)
 
               # get the handle for the timing manager
-              timing_manager = timemory.timing_manager()
+              manager = timemory.manager()
 
               # will output to stdout if "set_report" not called
-              print ('{}'.format(timing_manager))
+              print ('{}'.format(manager))
 
               # serialization will be called in above if "set_serial" is called
               # but to serialize to file:
-              timing_manager.serialize(os.path.join(options.output_dir, 'output.json'))
+              manager.serialize(os.path.join(options.output_dir, 'output.json'))
 
               # get the serialization directly
-              json_objs = [ timemory.plotting.read(timing_manager.json()) ]
+              json_objs = [ timemory.plotting.read(manager.json()) ]
               print (json_objs[0])
 
               # get the serialization file ('output.json')
@@ -833,7 +833,7 @@ here is general guide:
               timemory.plotting.plot(json_objs, files=json_files, output_dir=options.output_dir)
 
               if options.ctest_notes:
-                  timing_manager.write_ctest_notes(directory=options.output_dir)
+                  manager.write_ctest_notes(directory=options.output_dir)
 
           except Exception as e:
               print (e)
@@ -893,7 +893,7 @@ TiMemory with CTest/CDash
           main()
 
           if options.ctest_notes:
-              manager = timemory.timing_manager()
+              manager = timemory.manager()
               f = manager.write_ctest_notes(directory="test_output/array_test")
 
       except Exception as e:

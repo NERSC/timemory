@@ -7,6 +7,6 @@ var annotated_dup =
     [ "tests", "d9/df4/namespacetests.html", "d9/df4/namespacetests" ],
     [ "util", "d6/d72/namespaceutil.html", "d6/d72/namespaceutil" ],
     [ "auto_timer_decorator", "da/da5/classauto__timer__decorator.html", "da/da5/classauto__timer__decorator" ],
-    [ "object", "dc/dd8/classobject.html", null ],
-    [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", "db/de1/classtiming__manager__wrapper" ]
+    [ "manager_wrapper", "d6/d64/classmanager__wrapper.html", "d6/d64/classmanager__wrapper" ],
+    [ "object", "dc/dd8/classobject.html", null ]
 ];

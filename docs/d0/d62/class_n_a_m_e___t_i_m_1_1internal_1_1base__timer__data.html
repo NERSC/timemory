@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.1</span>
+   &#160;<span id="projectnumber">1.2.3</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -142,6 +142,8 @@ Public Member Functions</h2></td></tr>
 <tr class="separator:ad42c4f9a894e39ada1eb8cc255a24cf8"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a1b8e5e342947768a3882352aa215e6e3"><td class="memItemLeft" align="right" valign="top">const <a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#acc8f8fde51060b0fed594d2d6c5206f2">rss_type</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1b8e5e342947768a3882352aa215e6e3">rss</a> () const</td></tr>
 <tr class="separator:a1b8e5e342947768a3882352aa215e6e3"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:abacf65f6c16aeb114a484ebc8d96e65c"><td class="memItemLeft" align="right" valign="top"><a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2dc559926dc144de54e04e6656e156a9">this_type</a> &amp;&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#abacf65f6c16aeb114a484ebc8d96e65c">operator=</a> (const <a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2dc559926dc144de54e04e6656e156a9">this_type</a> &amp;rhs)</td></tr>
+<tr class="separator:abacf65f6c16aeb114a484ebc8d96e65c"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a name="pro-attribs"></a>
 Protected Attributes</h2></td></tr>
@@ -275,13 +277,42 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00148"></a><span class="lineno">  148</span>&#160;: <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a>(<span class="keyword">false</span>), <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2671bd3788417a88d58b3e6875ef4d5e">data_type</a>()) { }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a2671bd3788417a88d58b3e6875ef4d5e"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2671bd3788417a88d58b3e6875ef4d5e">NAME_TIM::internal::base_timer_data::data_type</a></div><div class="ttdeci">std::tuple&lt; time_point_t, time_point_t &gt; data_type</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:143</div></div>
+<div class="fragment"><div class="line"><a name="l00173"></a><span class="lineno">  173</span>&#160;: <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a>(<span class="keyword">false</span>), <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2671bd3788417a88d58b3e6875ef4d5e">data_type</a>()) { }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a2671bd3788417a88d58b3e6875ef4d5e"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2671bd3788417a88d58b3e6875ef4d5e">NAME_TIM::internal::base_timer_data::data_type</a></div><div class="ttdeci">std::tuple&lt; time_point_t, time_point_t &gt; data_type</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:168</div></div>
 </div><!-- fragment -->
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="abacf65f6c16aeb114a484ebc8d96e65c"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#abacf65f6c16aeb114a484ebc8d96e65c">&#9670;&nbsp;</a></span>operator=()</h2>
+
+<div class="memitem">
+<div class="memproto">
+<table class="mlabels">
+  <tr>
+  <td class="mlabels-left">
+      <table class="memname">
+        <tr>
+          <td class="memname"><a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2dc559926dc144de54e04e6656e156a9">this_type</a>&amp; NAME_TIM::internal::base_timer_data::operator= </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a2dc559926dc144de54e04e6656e156a9">this_type</a> &amp;&#160;</td>
+          <td class="paramname"><em>rhs</em></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+  </td>
+  <td class="mlabels-right">
+<span class="mlabels"><span class="mlabel">inline</span></span>  </td>
+  </tr>
+</table>
+</div><div class="memdoc">
+<div class="fragment"><div class="line"><a name="l00197"></a><span class="lineno">  197</span>&#160;    {</div><div class="line"><a name="l00198"></a><span class="lineno">  198</span>&#160;        <span class="keywordflow">if</span>(<span class="keyword">this</span> != &amp;rhs)</div><div class="line"><a name="l00199"></a><span class="lineno">  199</span>&#160;        {</div><div class="line"><a name="l00200"></a><span class="lineno">  200</span>&#160;            <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = rhs.m_running;</div><div class="line"><a name="l00201"></a><span class="lineno">  201</span>&#160;            <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a> = rhs.m_data;</div><div class="line"><a name="l00202"></a><span class="lineno">  202</span>&#160;            <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a> = rhs.m_rss;</div><div class="line"><a name="l00203"></a><span class="lineno">  203</span>&#160;        }</div><div class="line"><a name="l00204"></a><span class="lineno">  204</span>&#160;        <span class="keywordflow">return</span> *<span class="keyword">this</span>;</div><div class="line"><a name="l00205"></a><span class="lineno">  205</span>&#160;    }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:210</div></div>
+</div><!-- fragment -->
+</div>
+</div>
 <a id="ad42c4f9a894e39ada1eb8cc255a24cf8"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#ad42c4f9a894e39ada1eb8cc255a24cf8">&#9670;&nbsp;</a></span>rss() <span class="overload">[1/2]</span></h2>
 
@@ -304,7 +335,7 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00168"></a><span class="lineno">  168</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:174</div></div>
+<div class="fragment"><div class="line"><a name="l00193"></a><span class="lineno">  193</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:210</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -330,7 +361,7 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00169"></a><span class="lineno">  169</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:174</div></div>
+<div class="fragment"><div class="line"><a name="l00194"></a><span class="lineno">  194</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:210</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -356,8 +387,8 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00165"></a><span class="lineno">  165</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>.<a class="code" href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a236e7772cf3dadc162d38fa6b43cf12b">init</a>(); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage_html_a236e7772cf3dadc162d38fa6b43cf12b"><div class="ttname"><a href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a236e7772cf3dadc162d38fa6b43cf12b">NAME_TIM::internal::base_rss_usage::init</a></div><div class="ttdeci">void init()</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:87</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:174</div></div>
+<div class="fragment"><div class="line"><a name="l00190"></a><span class="lineno">  190</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>.<a class="code" href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a236e7772cf3dadc162d38fa6b43cf12b">init</a>(); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage_html_a236e7772cf3dadc162d38fa6b43cf12b"><div class="ttname"><a href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#a236e7772cf3dadc162d38fa6b43cf12b">NAME_TIM::internal::base_rss_usage::init</a></div><div class="ttdeci">void init()</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:87</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:210</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -383,8 +414,8 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00166"></a><span class="lineno">  166</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>.<a class="code" href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#ad9ff34a4ada9355d507aebafd9f1f790">record</a>(); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage_html_ad9ff34a4ada9355d507aebafd9f1f790"><div class="ttname"><a href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#ad9ff34a4ada9355d507aebafd9f1f790">NAME_TIM::internal::base_rss_usage::record</a></div><div class="ttdeci">void record()</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:92</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:174</div></div>
+<div class="fragment"><div class="line"><a name="l00191"></a><span class="lineno">  191</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">m_rss</a>.<a class="code" href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#ad9ff34a4ada9355d507aebafd9f1f790">record</a>(); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage_html_ad9ff34a4ada9355d507aebafd9f1f790"><div class="ttname"><a href="../../d5/d6c/class_n_a_m_e___t_i_m_1_1internal_1_1base__rss__usage.html#ad9ff34a4ada9355d507aebafd9f1f790">NAME_TIM::internal::base_rss_usage::record</a></div><div class="ttdeci">void record()</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:92</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_ae11d6dab3e30c7829e7bb7bc2c663d80"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#ae11d6dab3e30c7829e7bb7bc2c663d80">NAME_TIM::internal::base_timer_data::m_rss</a></div><div class="ttdeci">rss_type m_rss</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:210</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -410,7 +441,7 @@ Protected Attributes</h2></td></tr>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00156"></a><span class="lineno">  156</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
+<div class="fragment"><div class="line"><a name="l00181"></a><span class="lineno">  181</span>&#160;{ <span class="keywordflow">return</span> <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a>; }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -449,7 +480,7 @@ template&lt;typename Archive &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00160"></a><span class="lineno">  160</span>&#160;    {</div><div class="line"><a name="l00161"></a><span class="lineno">  161</span>&#160;        ar(cereal::make_nvp(<span class="stringliteral">&quot;start&quot;</span>, std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>)),</div><div class="line"><a name="l00162"></a><span class="lineno">  162</span>&#160;           cereal::make_nvp(<span class="stringliteral">&quot;stop&quot;</span>,  std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>)));</div><div class="line"><a name="l00163"></a><span class="lineno">  163</span>&#160;    }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
+<div class="fragment"><div class="line"><a name="l00185"></a><span class="lineno">  185</span>&#160;    {</div><div class="line"><a name="l00186"></a><span class="lineno">  186</span>&#160;        ar(cereal::make_nvp(<span class="stringliteral">&quot;start&quot;</span>, std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>)),</div><div class="line"><a name="l00187"></a><span class="lineno">  187</span>&#160;           cereal::make_nvp(<span class="stringliteral">&quot;stop&quot;</span>,  std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>)));</div><div class="line"><a name="l00188"></a><span class="lineno">  188</span>&#160;    }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -475,8 +506,8 @@ template&lt;typename Archive &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00150"></a><span class="lineno">  150</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">true</span>; <span class="keywordflow">return</span> std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
+<div class="fragment"><div class="line"><a name="l00175"></a><span class="lineno">  175</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">true</span>; <span class="keywordflow">return</span> std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -502,8 +533,8 @@ template&lt;typename Archive &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00153"></a><span class="lineno">  153</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">true</span>; <span class="keywordflow">return</span> std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
+<div class="fragment"><div class="line"><a name="l00178"></a><span class="lineno">  178</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">true</span>; <span class="keywordflow">return</span> std::get&lt;0&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -529,8 +560,8 @@ template&lt;typename Archive &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00151"></a><span class="lineno">  151</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">false</span>; <span class="keywordflow">return</span> std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
+<div class="fragment"><div class="line"><a name="l00176"></a><span class="lineno">  176</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">false</span>; <span class="keywordflow">return</span> std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -556,8 +587,8 @@ template&lt;typename Archive &gt; </div>
   </tr>
 </table>
 </div><div class="memdoc">
-<div class="fragment"><div class="line"><a name="l00154"></a><span class="lineno">  154</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">false</span>; <span class="keywordflow">return</span> std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:173</div></div>
-<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:172</div></div>
+<div class="fragment"><div class="line"><a name="l00179"></a><span class="lineno">  179</span>&#160;{ <a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">m_running</a> = <span class="keyword">false</span>; <span class="keywordflow">return</span> std::get&lt;1&gt;(<a class="code" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">m_data</a>); }</div><div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a1772db46111591a68e0cdd86466f4eb9"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a1772db46111591a68e0cdd86466f4eb9">NAME_TIM::internal::base_timer_data::m_data</a></div><div class="ttdeci">data_type m_data</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:209</div></div>
+<div class="ttc" id="class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data_html_a4d465200da043e14144621d4fffe9995"><div class="ttname"><a href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a4d465200da043e14144621d4fffe9995">NAME_TIM::internal::base_timer_data::m_running</a></div><div class="ttdeci">bool m_running</div><div class="ttdef"><b>Definition:</b> base_timer.hpp:208</div></div>
 </div><!-- fragment -->
 </div>
 </div>
@@ -637,7 +668,7 @@ template&lt;typename Archive &gt; </div>
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
     <li class="navelem"><a class="el" href="../../de/de2/namespace_n_a_m_e___t_i_m.html">NAME_TIM</a></li><li class="navelem"><a class="el" href="../../d0/df5/namespace_n_a_m_e___t_i_m_1_1internal.html">internal</a></li><li class="navelem"><a class="el" href="../../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html">base_timer_data</a></li>
-    <li class="footer">Generated on Wed Feb 28 2018 15:33:48 for TiMemory by
+    <li class="footer">Generated on Tue Mar 6 2018 08:05:42 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="../../doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

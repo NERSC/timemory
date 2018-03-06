@@ -101,21 +101,44 @@ public:
     const rss_usage_t& total() const { return m_rss_tot; }
     const rss_usage_t& self() const { return m_rss_self; }
 
+    rss_usage_t& total_min() { return m_rss_tot_min; }
+    rss_usage_t& self_min()  { return m_rss_self_min; }
+
+    const rss_usage_t& total_min() const { return m_rss_tot_min; }
+    const rss_usage_t& self_min() const { return m_rss_self_min; }
+
     void max(const base_rss_usage& rhs)
     {
         m_rss_tot  = NAME_TIM::rss::usage::max(m_rss_tot, rhs.total());
         m_rss_self = NAME_TIM::rss::usage::max(m_rss_self, rhs.self());
+        m_rss_tot_min = NAME_TIM::rss::usage::min(m_rss_tot, rhs.total());
+        m_rss_self_min = NAME_TIM::rss::usage::min(m_rss_self, rhs.self());
     }
 
     inline this_type& operator+=(const rss_usage_t& rhs)
     {
         m_rss_tot += rhs;
+        m_rss_tot_min += rhs;
         return *this;
     }
 
     inline this_type& operator-=(const rss_usage_t& rhs)
     {
         m_rss_tot -= rhs;
+        m_rss_tot_min -= rhs;
+        return *this;
+    }
+
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            m_rss_tot = rhs.m_rss_tot;
+            m_rss_self = rhs.m_rss_self;
+            m_rss_tmp = rhs.m_rss_tmp;
+            m_rss_tot_min = rhs.m_rss_tot_min;
+            m_rss_self_min = rhs.m_rss_self_min;
+        }
         return *this;
     }
 
@@ -124,6 +147,8 @@ protected:
     rss_usage_t             m_rss_tot;
     rss_usage_t             m_rss_self;
     rss_usage_t             m_rss_tmp;
+    rss_usage_t             m_rss_tot_min;
+    rss_usage_t             m_rss_self_min;
 
 };
 
@@ -167,6 +192,17 @@ public:
 
     inline rss_type& rss() { return m_rss; }
     inline const rss_type& rss() const { return m_rss; }
+
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            m_running = rhs.m_running;
+            m_data = rhs.m_data;
+            m_rss = rhs.m_rss;
+        }
+        return *this;
+    }
 
 protected:
     mutable bool    m_running;
@@ -224,13 +260,25 @@ public:
         m_rss = rss_type();
     }
 
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            m_lap = rhs.m_lap;
+            m_sum = rhs.m_sum;
+            m_sqr = rhs.m_sqr;
+            m_rss = rhs.m_rss;
+        }
+        return *this;
+    }
+
     this_type& operator+=(const op_type& data)
     {
         auto _data = incr_type(compute<0>(data),
                                compute<1>(data),
                                compute<2>(data));
         compute_sum(_data);
-        //compute_sqr(_data);
+        compute_sqr(_data);
         m_lap += 1;
         m_rss.max(data.rss());
 
@@ -241,7 +289,7 @@ public:
     {
         m_lap += rhs.m_lap;
         compute_sum(rhs.m_sum);
-        //compute_sqr(rhs.m_sqr);
+        compute_sqr(rhs.m_sqr);
         m_rss.max(rhs.m_rss);
         return *this;
     }
@@ -263,7 +311,7 @@ public:
         if(rhs > 0)
         {
             divide_sum(rhs);
-            //divide_sqr(rhs);
+            divide_sqr(rhs);
         }
         return *this;
     }
@@ -283,37 +331,41 @@ protected:
         return (_te > _ts) ? (_te - _ts) : uint64_t(0);
     }
 
-    inline
-    void compute_sum(const incr_type& rhs)
+    inline void compute_sum(const incr_type& rhs)
     {
         std::get<0>(m_sum) += std::get<0>(rhs);
         std::get<1>(m_sum) += std::get<1>(rhs);
         std::get<2>(m_sum) += std::get<2>(rhs);
     }
 
-    inline
-    void compute_sqr(const incr_type& rhs)
+#if defined(TIMEMORY_STAT_TIMERS)
+    inline void compute_sqr(const incr_type& rhs)
     {
         std::get<0>(m_sum) += std::pow(std::get<0>(rhs), 2);
         std::get<1>(m_sum) += std::pow(std::get<1>(rhs), 2);
         std::get<2>(m_sum) += std::pow(std::get<2>(rhs), 2);
     }
+#else
+    inline void compute_sqr(const incr_type&) { }
+#endif
 
-    inline
-    void divide_sum(const uint64_t& rhs)
+    inline void divide_sum(const uint64_t& rhs)
     {
         std::get<0>(m_sum) /= rhs;
         std::get<1>(m_sum) /= rhs;
         std::get<2>(m_sum) /= rhs;
     }
 
-    inline
-    void divide_sqr(const uint64_t& rhs)
+#if defined(TIMEMORY_STAT_TIMERS)
+    inline void divide_sqr(const uint64_t& rhs)
     {
         std::get<0>(m_sum) /= rhs;
         std::get<1>(m_sum) /= rhs;
         std::get<2>(m_sum) /= rhs;
     }
+#else
+    inline void divide_sqr(const uint64_t&) {}
+#endif
 
 protected:
     uint_type m_lap;
@@ -387,6 +439,8 @@ public:
     inline void report_average(bool endline = true) const;
     inline void report_average(ostream_t& os, bool endline = true) const;
     bool above_min(bool no_min = false) const;
+    const string_t& format_string() const { return m_format_string; }
+    void sync(this_type& rhs);
 
 protected:
     typedef std::pair<size_type, timer_field>   fieldpos_t;
@@ -425,29 +479,37 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
+        auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>())
+                         / m_accum.get_sum<2>();
+        if(!std::isfinite(_cpu_util))
+            _cpu_util = 0.0;
+
         ar(cereal::make_nvp("laps", m_accum.size()),
            // user clock elapsed
            cereal::make_nvp("user_elapsed",     m_accum.get_sum<0>()),
-           //cereal::make_nvp("user_elapsed_sqr", m_accum.get_sqr<0>()),
            // system clock elapsed
-           cereal::make_nvp("system_elapsed",      m_accum.get_sum<1>()),
-           //cereal::make_nvp("system_elapsed_sqr",  m_accum.get_sqr<1>()),
+           cereal::make_nvp("system_elapsed",   m_accum.get_sum<1>()),
            // wall clock elapsed
            cereal::make_nvp("wall_elapsed",     m_accum.get_sum<2>()),
-           //cereal::make_nvp("wall_elapsed_sqr", m_accum.get_sqr<2>()),
            // cpu elapsed
            cereal::make_nvp("cpu_elapsed",
                             m_accum.get_sum<0>() + m_accum.get_sum<1>()),
            // cpu utilization
-           cereal::make_nvp("cpu_util",
-                            (m_accum.get_sum<0>() + m_accum.get_sum<1>())
-                            / m_accum.get_sum<2>()),
+           cereal::make_nvp("cpu_util",         _cpu_util),
+   #if defined(TIMEMORY_STAT_TIMERS)
+           cereal::make_nvp("wall_elapsed_sqr", m_accum.get_sqr<2>()),
+           cereal::make_nvp("user_elapsed_sqr", m_accum.get_sqr<0>()),
+           cereal::make_nvp("system_elapsed_sqr",  m_accum.get_sqr<1>()),
+   #endif
            // conversion to seconds
            cereal::make_nvp("to_seconds_ratio_num", ratio_t::num),
            cereal::make_nvp("to_seconds_ratio_den", ratio_t::den),
            // memory usage
            cereal::make_nvp("rss_max",  m_accum.rss().total()),
-           cereal::make_nvp("rss_self", m_accum.rss().self()));
+           cereal::make_nvp("rss_self", m_accum.rss().self()),
+           // memory usage (minimum)
+           cereal::make_nvp("rss_min",  m_accum.rss().total_min()),
+           cereal::make_nvp("rss_self_min", m_accum.rss().self_min()));
     }
 
 };

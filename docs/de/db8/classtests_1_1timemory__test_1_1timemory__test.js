@@ -9,6 +9,6 @@ var classtests_1_1timemory__test_1_1timemory__test =
     [ "test_rss_validity", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#ade7458431bd5be021eecab64bbafa95d", null ],
     [ "test_timing", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a569e2ef981eb4a80e9c65bef1dd2dc5c", null ],
     [ "test_toggle", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a88a227cd21dfe2d71c7359add05568bb", null ],
-    [ "output_dir", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a94b268480ca03a818899c2dedba044ab", null ],
-    [ "timing_manager", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a4b0875f7672cdf2b49c8d4f8790a1fd6", null ]
+    [ "manager", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#afb086181d05ec4f9cb47788aa5cdedec", null ],
+    [ "output_dir", "de/db8/classtests_1_1timemory__test_1_1timemory__test.html#a94b268480ca03a818899c2dedba044ab", null ]
 ];

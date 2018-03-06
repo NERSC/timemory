@@ -13,6 +13,8 @@ var hierarchy =
     [ "base_timer_tuple_t", null, [
       [ "NAME_TIM::timer_tuple", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html", null ]
     ] ],
+    [ "NAME_TIM::manager", "df/dd1/class_n_a_m_e___t_i_m_1_1manager.html", null ],
+    [ "manager_wrapper", "d6/d64/classmanager__wrapper.html", null ],
     [ "ndarray", null, [
       [ "tests.array_test.auto_disk_array", "de/d79/classtests_1_1array__test_1_1auto__disk__array.html", null ]
     ] ],
@@ -43,7 +45,5 @@ var hierarchy =
     [ "NAME_TIM::time_units< std::ratio< 60 > >", "dc/d27/struct_n_a_m_e___t_i_m_1_1time__units_3_01std_1_1ratio_3_0160_01_4_01_4.html", null ],
     [ "plotting.plotting.timemory_data", "d9/d35/classplotting_1_1plotting_1_1timemory__data.html", null ],
     [ "plotting.plotting.timemory_function", "d0/d20/classplotting_1_1plotting_1_1timemory__function.html", null ],
-    [ "NAME_TIM::timing_manager", "de/d41/class_n_a_m_e___t_i_m_1_1timing__manager.html", null ],
-    [ "timing_manager_wrapper", "db/de1/classtiming__manager__wrapper.html", null ],
     [ "NAME_TIM::rss::usage", "df/d64/struct_n_a_m_e___t_i_m_1_1rss_1_1usage.html", null ]
 ];

@@ -89,11 +89,6 @@ public:
         std::cout << this->as_string(no_min) << std::endl;
     }
 
-    this_type clone() const;
-    unique_ptr_type clone_to_unique_ptr() const;
-    shared_ptr_type clone_to_shared_ptr() const;
-    this_type* clone_to_pointer() const;
-
     this_type& operator+=(const this_type& rhs)
     {
         auto_lock_t l(m_mutex);
@@ -128,11 +123,9 @@ public:
 
 protected:
     virtual void compose() final;
-    void set_parent(this_type* parent) { m_parent = parent; }
 
 protected:
     bool        m_use_static_width;
-    this_type*  m_parent;
     string_t    m_begin;
     string_t    m_close;
 
@@ -147,30 +140,6 @@ public:
     }
 
 };
-
-//----------------------------------------------------------------------------//
-
-inline timer::unique_ptr_type
-timer::clone_to_unique_ptr() const
-{
-    return std::unique_ptr<timer>(new timer(this->clone()));
-}
-
-//----------------------------------------------------------------------------//
-
-inline timer::shared_ptr_type
-timer::clone_to_shared_ptr() const
-{
-    return std::shared_ptr<timer>(new timer(this->clone()));
-}
-
-//----------------------------------------------------------------------------//
-
-inline timer*
-timer::clone_to_pointer() const
-{
-    return new timer(this->clone());
-}
 
 //----------------------------------------------------------------------------//
 

@@ -56,7 +56,8 @@ namespace NAME_TIM
 
 //----------------------------------------------------------------------------//
 
-typedef std::deque<std::string> str_list_t;
+typedef std::string                 string_t;
+typedef std::deque<string_t>        str_list_t;
 typedef std::mutex                  mutex_t;
 typedef std::unique_lock<mutex_t>   auto_lock_t;
 
@@ -123,7 +124,10 @@ delimit(const std::string& _str, const std::string& _delims,
     return _list;
 }
 
-}
+//----------------------------------------------------------------------------//
 
+} // namespace NAME_TIM
+
+//----------------------------------------------------------------------------//
 
 #endif

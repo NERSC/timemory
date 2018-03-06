@@ -81,7 +81,7 @@ def main(nfib):
     print ('main: func() {}'.format(timemory.FUNC()))
     test()
     print ('')
-    tman = timemory.timing_manager()
+    tman = timemory.manager()
     fib = Fibonacci(int(nfib))
     ret = fib.calculate()
 
@@ -117,7 +117,7 @@ if __name__ == "__main__":
         run_test()
 
         if options.ctest_notes:
-            manager = timemory.timing_manager()
+            manager = timemory.manager()
             f = manager.write_ctest_notes(directory="test_output/simple_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))
 

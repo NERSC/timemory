@@ -105,6 +105,19 @@ base_timer& base_timer::operator=(const base_timer& rhs)
     }
     return *this;
 }
+
+//============================================================================//
+
+void base_timer::sync(this_type& rhs)
+{
+    if(this != &rhs)
+    {
+        m_os = rhs.m_os;
+        m_data = rhs.m_data;
+        m_accum = rhs.m_accum;
+    }
+}
+
 //============================================================================//
 
 void base_timer::parse_format()
@@ -181,6 +194,8 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     double _system = system_elapsed();
     double _cpu = _user + _system;
     double _perc = (_cpu / _real) * 100.0;
+    if(!std::isfinite(_perc))
+        _perc = 0.0;
 
     if(!above_min(no_min))
         return;

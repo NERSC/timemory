@@ -6,8 +6,8 @@ var files =
     [ "auto_timer.cpp", "d2/d80/auto__timer_8cpp.html", null ],
     [ "base_clock.cpp", "d5/db8/base__clock_8cpp.html", null ],
     [ "base_timer.cpp", "dd/d84/base__timer_8cpp.html", null ],
+    [ "manager.cpp", "d0/db0/manager_8cpp.html", "d0/db0/manager_8cpp" ],
     [ "signal_detection.cpp", "dc/d43/signal__detection_8cpp.html", "dc/d43/signal__detection_8cpp" ],
     [ "timemory.cc", "d2/dfd/timemory_8cc.html", "d2/dfd/timemory_8cc" ],
-    [ "timer.cpp", "dc/de5/timer_8cpp.html", null ],
-    [ "timing_manager.cpp", "d9/dad/timing__manager_8cpp.html", "d9/dad/timing__manager_8cpp" ]
+    [ "timer.cpp", "dc/de5/timer_8cpp.html", null ]
 ];

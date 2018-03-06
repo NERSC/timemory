@@ -1,7 +1,7 @@
 <map id="timemory/auto_timer.hpp" name="timemory/auto_timer.hpp">
 <area shape="rect" id="node2" href="$db/d19/namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="2495,487,2655,516"/>
 <area shape="rect" id="node3" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="2643,409,2769,439"/>
-<area shape="rect" id="node21" href="$df/df2/timing__manager_8hpp.html" title="timemory/timing_manager.hpp" alt="" coords="1671,83,1855,112"/>
+<area shape="rect" id="node21" href="$da/d04/manager_8hpp.html" title="timemory/manager.hpp" alt="" coords="1691,83,1836,112"/>
 <area shape="rect" id="node33" href="$df/d05/timer_8hpp.html" title="timemory/timer.hpp" alt="" coords="1902,169,2027,198"/>
 <area shape="rect" id="node50" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="1523,409,1641,439"/>
 <area shape="rect" id="node34" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="1407,255,1565,284"/>
