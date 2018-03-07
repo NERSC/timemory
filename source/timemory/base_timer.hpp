@@ -481,7 +481,7 @@ public:
     {
         auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>())
                          / m_accum.get_sum<2>();
-        if(!std::isfinite(_cpu_util))
+        if(!NAME_TIM::isfinite(_cpu_util))
             _cpu_util = 0.0;
 
         ar(cereal::make_nvp("laps", m_accum.size()),

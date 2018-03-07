@@ -57,24 +57,25 @@
 
 #include "timemory/namespace.hpp"
 
-#if defined(_WINDOWS)
-namespace std
-{
 //----------------------------------------------------------------------------//
-// Windows seems to be missing std::isfinite
-template <typename _Tp>
-inline bool isfinite(_Tp arg)
-{
-    return (arg == arg &&
-            arg !=  std::numeric_limits<_Tp>::infinity() &&
-            arg != -std::numeric_limits<_Tp>::infinity()) ? true : false;
-}
-//----------------------------------------------------------------------------//
-}
-#endif
 
 namespace NAME_TIM
 {
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline bool isfinite(const _Tp& arg)
+{
+    #if defined(_WINDOWS)
+    // Windows seems to be missing std::isfinite
+    return (arg == arg &&
+            arg !=  std::numeric_limits<_Tp>::infinity() &&
+            arg != -std::numeric_limits<_Tp>::infinity()) ? true : false;
+    #else
+    return std::isfinite(arg);
+    #endif
+}
 
 //----------------------------------------------------------------------------//
 

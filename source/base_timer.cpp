@@ -196,7 +196,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     double _system = system_elapsed();
     double _cpu = _user + _system;
     double _perc = (_cpu / _real) * 100.0;
-    if(!std::isfinite(_perc))
+    if(!NAME_TIM::isfinite(_perc))
         _perc = 0.0;
 
     if(!above_min(no_min))
