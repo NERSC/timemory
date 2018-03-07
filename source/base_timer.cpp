@@ -28,9 +28,11 @@
  * Not directly used
  */
 
-#include "timemory/base_timer.hpp"
 #include <cassert>
 #include <algorithm>
+
+#include "timemory/base_timer.hpp"
+#include "timemory/utility.hpp"
 
 //============================================================================//
 

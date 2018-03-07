@@ -33,6 +33,10 @@
 
 //----------------------------------------------------------------------------//
 
+#include <cstdint>
+#include <string>
+#include <memory>
+
 #include "timemory/namespace.hpp"
 #include "timemory/base_timer.hpp"
 

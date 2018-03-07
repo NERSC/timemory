@@ -33,15 +33,15 @@
 
 //----------------------------------------------------------------------------//
 
+#include <fstream>
+#include <string>
+#include <atomic>
+
 #include "timemory/namespace.hpp"
 #include "timemory/base_clock.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/signal_detection.hpp"
-
-#include <fstream>
-#include <string>
-#include <atomic>
 
 #include <cereal/cereal.hpp>
 #include <cereal/access.hpp>

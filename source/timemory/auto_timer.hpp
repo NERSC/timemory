@@ -31,12 +31,12 @@
 #ifndef auto_timer_hpp_
 #define auto_timer_hpp_
 
+#include <string>
+#include <cstdint>
+
 #include "timemory/namespace.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/manager.hpp"
-
-#include <string>
-#include <cstdint>
 
 namespace NAME_TIM
 {

@@ -31,25 +31,47 @@
 #ifndef TIMEMORY_UTIL_INTERNAL_HPP
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
+// C library
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <cmath>
+// I/O
 #include <string>
 #include <sstream>
 #include <iostream>
 #include <iomanip>
+// general
 #include <exception>
 #include <stdexcept>
 #include <functional>
+#include <limits>
+// container
 #include <deque>
 #include <set>
 #include <vector>
+// threading
 #include <atomic>
 #include <mutex>
 #include <thread>
 
 #include "timemory/namespace.hpp"
+
+#if defined(_WINDOWS)
+namespace std
+{
+//----------------------------------------------------------------------------//
+// Windows seems to be missing std::isfinite
+template <typename _Tp>
+inline bool isfinite(_Tp arg)
+{
+    return (arg == arg &&
+            arg !=  std::numeric_limits<_Tp>::infinity() &&
+            arg != -std::numeric_limits<_Tp>::infinity()) ? true : false;
+}
+//----------------------------------------------------------------------------//
+}
+#endif
 
 namespace NAME_TIM
 {
