@@ -28,6 +28,33 @@ from __future__ import absolute_import
 import os
 import sys
 import imp
+import ctypes
+from ctypes.util import find_library
+
+# if compiled with shared library linking
+if "@SHARED_PYTHON_LINKING@" == "ON":
+
+    _verbose = 0
+    try:
+        _verbose = int(os.environ['TIMEMORY_VERBOSE'])
+    except Exception as e:
+        print(e)
+        _verbose = 0
+
+    # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.
+    tim_lib_path = find_library("timemory")
+
+    # if not found, go to hard-coded path from installation
+    if tim_lib_path is None:
+        if _verbose > 2:
+            print('find_library("timemory") returned None. Falling back to installation path')
+        tim_lib_path = "@CMAKE_INSTALL_FULL_LIBDIR@/libtimemory@CMAKE_SHARED_LIBRARY_SUFFIX@"
+
+    if _verbose > 0:
+        print('Using TiMemory shared library: {}'.format(tim_lib_path))
+
+    # open the shared library for RPATH resolution
+    lib = ctypes.CDLL(tim_lib_path, mode=ctypes.RTLD_GLOBAL)
 
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))

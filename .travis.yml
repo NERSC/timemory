@@ -34,7 +34,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && SHARED_LINK=OFF"
     # GCC 5
     - os: linux
       dist: trusty
@@ -52,7 +52,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && SHARED_LINK=ON"
     # GCC 6
     - os: linux
       dist: trusty
@@ -70,7 +70,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && SHARED_LINK=OFF"
     # GCC 7
     - os: linux
       dist: trusty
@@ -88,7 +88,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && SHARED_LINK=ON"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -107,7 +107,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && SHARED_LINK=OFF"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -126,7 +126,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && SHARED_LINK=ON"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.4
@@ -149,7 +149,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && SHARED_LINK=OFF"
     # GCC 5
     - os: linux
       dist: trusty
@@ -167,7 +167,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && SHARED_LINK=ON"
     # GCC 6
     - os: linux
       dist: trusty
@@ -185,7 +185,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && SHARED_LINK=OFF"
     # GCC 7
     - os: linux
       dist: trusty
@@ -203,7 +203,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && SHARED_LINK=ON"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -222,7 +222,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && SHARED_LINK=OFF"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -241,7 +241,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && SHARED_LINK=ON"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.5
@@ -264,7 +264,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && SHARED_LINK=ON"
     # GCC 5
     - os: linux
       dist: trusty
@@ -282,7 +282,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && SHARED_LINK=OFF"
     # GCC 6
     - os: linux
       dist: trusty
@@ -300,7 +300,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && SHARED_LINK=ON"
     # GCC 7
     - os: linux
       dist: trusty
@@ -318,7 +318,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && SHARED_LINK=OFF"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -337,7 +337,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && SHARED_LINK=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -356,7 +356,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && SHARED_LINK=OFF"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6
@@ -379,7 +379,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9)"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && SHARED_LINK=ON"
     # GCC 5
     - os: linux
       dist: trusty
@@ -397,7 +397,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && SHARED_LINK=OFF"
     # GCC 6
     - os: linux
       dist: trusty
@@ -415,7 +415,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6)"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && SHARED_LINK=ON"
     # GCC 7
     - os: linux
       dist: trusty
@@ -433,7 +433,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && SHARED_LINK=OFF"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -452,7 +452,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && SHARED_LINK=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -471,7 +471,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && SHARED_LINK=OFF"
     # ------------------------------------------------------------------------ #
 
 
@@ -508,7 +508,8 @@ install:
         -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python)
         -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX}
         -DBUILD_TESTING=ON -DCTEST_SITE=travis -DCTEST_MODEL=Continous
-        -DCTEST_LOCAL_CHECKOUT=ON ${PWD}/..
+        -DCTEST_LOCAL_CHECKOUT=ON -DSHARED_PYTHON_LINKING=${SHARED_LINK}
+        ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
     #

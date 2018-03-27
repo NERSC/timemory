@@ -44,8 +44,6 @@ timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
 memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
     'self_current_rss')
 
-concurrency = 1
-mpi_size = 1
 min_time = 0.005
 min_memory = 1
 img_dpi = 75
@@ -122,7 +120,7 @@ class timemory_data():
 
     def get_order(self, include_keys):
         order = []
-        sorted_keys = sorted(self.sums, key=lambda x: self.sums[x])
+        sorted_keys = sorted(self.sums, key=lambda x: abs(self.sums[x]))
         for key in sorted_keys:
             if key in include_keys:
                 order.append(key)
@@ -142,10 +140,11 @@ class timemory_function():
         _user = obj['user_elapsed'] / denom
         _sys = obj['system_elapsed'] / denom
         _cpu = obj['cpu_elapsed'] / denom
-        _tpeak = obj['rss_max']['peak']
-        _tcurr = obj['rss_max']['current']
-        _speak = obj['rss_self']['peak']
-        _scurr = obj['rss_self']['current']
+        _MB = (1024.0*1024.0)
+        _tpeak = obj['rss_max']['peak'] / _MB
+        _tcurr = obj['rss_max']['current'] / _MB
+        _speak = obj['rss_self']['peak'] / _MB
+        _scurr = obj['rss_self']['current'] / _MB
         _perc = (_cpu / _wall) * 100.0 if _wall > 0.0 else 100.0
         if _wall > min_time or abs(_speak) > min_memory or abs(_scurr) > min_memory:
             self.timing.append([_wall, _sys, _user, _cpu, _perc])
@@ -178,7 +177,7 @@ class plot_data():
 
     def get_title(self):
         return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
-                mpi_size, int(concurrency))
+                self.mpi_size, int(self.concurrency))
 
 
 #==============================================================================#
@@ -188,12 +187,18 @@ def read(json_obj):
 
     max_level = 0
     concurrency_sum = 0
+    manager_tag = 'timing_manager'
     mpi_size = len(data_0['ranks'])
     for i in range(0, len(data_0['ranks'])):
         data_1 = data_0['ranks'][i]
-        concurrency_sum += int(data_1['manager']['omp_concurrency'])
-        for j in range(0, len(data_1['manager']['timers'])):
-            data_2 = data_1['manager']['timers'][j]
+        try:
+            _tmp = int(data_1[manager_tag]['omp_concurrency'])
+        except:
+            manager_tag = 'manager'
+
+        concurrency_sum += int(data_1[manager_tag]['omp_concurrency'])
+        for j in range(0, len(data_1[manager_tag]['timers'])):
+            data_2 = data_1[manager_tag]['timers'][j]
             nlaps = int(data_2['timer.ref']['laps'])
             indent = ""
             nlevel = int(data_2['timer.level'])
@@ -203,8 +208,8 @@ def read(json_obj):
     timemory_functions = nested_dict()
     for i in range(0, len(data_0['ranks'])):
         data_1 = data_0['ranks'][i]
-        for j in range(0, len(data_1['manager']['timers'])):
-            data_2 = data_1['manager']['timers'][j]
+        for j in range(0, len(data_1[manager_tag]['timers'])):
+            data_2 = data_1[manager_tag]['timers'][j]
             nlaps = int(data_2['timer.ref']['laps'])
             indent = ""
             nlevel = int(data_2['timer.level'])
@@ -297,7 +302,7 @@ def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
         err = stds[key]
         p = None
         if lk is None:
-            p = plt.barh(ind, data, thickness, xerr=err)
+            p = plt.barh(ind, data, thickness, xerr=err, alpha=0.6, antialiased=False)
         else:
             p = plt.barh(ind, data, thickness, xerr=err, bottom=lk)
         #lk = avgs[key]
@@ -346,7 +351,7 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
         matplotlib.use(_matplotlib_backend)
         import matplotlib.pyplot as plt
 
-    iter_order = ['self_peak_rss', 'self_current_rss']
+    iter_order = ['total_peak_rss', 'total_current_rss', 'self_peak_rss', 'self_current_rss']
     filename = _plot_data.filename
     title = _plot_data.get_title()
     memory_data_dict = _plot_data.timemory_functions
@@ -407,6 +412,7 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
     plots = []
     lk = None
     iter_order.reverse()
+    n = 0
     for key in iter_order:
         data = avgs[key]
         if len(data) == 0:
@@ -414,11 +420,12 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
         err = stds[key]
         p = None
         if lk is None:
-            p = plt.barh(ind, data, thickness, xerr=err)
+            p = plt.barh(ind, data, thickness, xerr=err, alpha=0.6, antialiased=False)
         else:
             p = plt.barh(ind, data, thickness, xerr=err, bottom=lk)
         #lk = avgs[key]
         plots.append(p)
+        n += 1
 
     if len(plots) == 0:
         return

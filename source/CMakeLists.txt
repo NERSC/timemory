@@ -1,6 +1,11 @@
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
+#if(SHARED_PYTHON_LINKING)
+#    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
+#    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
+#endif(SHARED_PYTHON_LINKING)
+
 ################################################################################
 #
 #        Cereal
@@ -68,6 +73,11 @@ else(WIN32)
     set(LINK_TYPE static)
 endif(WIN32)
 
+add_option(SHARED_PYTHON_LINKING
+    "Link the TiMemory PyBind11 module to the shared library" OFF)
+if(SHARED_PYTHON_LINKING)
+    set(LINK_TYPE shared)
+endif(SHARED_PYTHON_LINKING)
 
 
 #----------------------------------------------------------------------------
@@ -76,7 +86,7 @@ endif(WIN32)
 message(STATUS "External libraries: ${EXTERNAL_LIBRARIES}")
 pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
-target_link_libraries(${LIBNAME} PRIVATE ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
+target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 
 set_target_properties(${LIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
