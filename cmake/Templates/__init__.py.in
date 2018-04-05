@@ -38,7 +38,6 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
     try:
         _verbose = int(os.environ['TIMEMORY_VERBOSE'])
     except Exception as e:
-        print(e)
         _verbose = 0
 
     # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.

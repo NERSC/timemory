@@ -108,7 +108,11 @@ $(document).ready(function(){initNavTree('index.html','');});
 </ul>
 </li>
 <li>reports produce a call tree &ndash; i.e. TiMemory distiguished between same timers accessed through different pathways, provided the calling function(s) is also using an auto-timer</li>
-<li>the Python interface can be downloaded via PyPi (e.g. <code>pip install timemory</code>)</li>
+<li>the Python interface can be downloaded via PyPi (e.g. <code>pip install timemory</code>)<ul>
+<li>PyPi installation will link the static TiMemory library (i.e. <code>libtimemory.a</code>) to the TiMemory Python module</li>
+<li>If TiMemory is intended to be used in both Python and C++ code, TiMemory (currently) must be built from source with the CMake option <code>-DPYTHON_SHARED_LINKING=ON</code> enabled. Please be aware that in this situation, the installation should be in the PYTHONPATH or else the C++ TiMemory will be recording the timers to a separate instance of the manager than the PyPi TiMemory and as a result, printing out the TiMemory results from Python will not include the C++ timing results</li>
+</ul>
+</li>
 </ul>
 <h3>Dependancies</h3>
 <ul>
@@ -416,7 +420,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Tue Mar 6 2018 08:05:42 for TiMemory by
+    <li class="footer">Generated on Thu Apr 5 2018 13:56:56 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

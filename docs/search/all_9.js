@@ -13,5 +13,6 @@ var searchData=
   ['is_5fsteady',['is_steady',['../d0/d54/class_n_a_m_e___t_i_m_1_1base__clock.html#a57d23717dceec5c89ed930b9f15753cb',1,'NAME_TIM::base_clock']]],
   ['is_5fsupported',['is_supported',['../d2/de5/namespacempi__support_1_1mpi__support.html#a84618170f720e68b37503b2f8b5959e7',1,'mpi_support::mpi_support']]],
   ['is_5fvalid',['is_valid',['../dd/dea/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer.html#a0cc9e1219dfa161396e345a32b735caf',1,'NAME_TIM::internal::base_timer']]],
+  ['isfinite',['isfinite',['../de/de2/namespace_n_a_m_e___t_i_m.html#ae91dfa26073542724551cdcd54e376ed',1,'NAME_TIM']]],
   ['iterator',['iterator',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#aed566bcdc1e95d9cae133b3a29260833',1,'NAME_TIM::manager']]]
 ];

@@ -1,9 +1,9 @@
 <map id="base_timer.cpp" name="base_timer.cpp">
-<area shape="rect" id="node2" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="2173,83,2330,112"/>
-<area shape="rect" id="node3" href="$db/d19/namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="1169,315,1329,344"/>
-<area shape="rect" id="node4" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="1721,237,1880,267"/>
-<area shape="rect" id="node23" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="2289,237,2403,267"/>
-<area shape="rect" id="node31" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="682,237,807,267"/>
-<area shape="rect" id="node40" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="824,160,1009,189"/>
-<area shape="rect" id="node42" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="1503,237,1621,267"/>
+<area shape="rect" id="node4" href="$d6/d01/base__timer_8hpp.html" title="timemory/base_timer.hpp" alt="" coords="2263,83,2421,112"/>
+<area shape="rect" id="node33" href="$d1/d4e/utility_8hpp.html" title="timemory/utility.hpp" alt="" coords="709,237,834,267"/>
+<area shape="rect" id="node8" href="$db/d19/namespace_8hpp.html" title="timemory/namespace.hpp" alt="" coords="1242,315,1402,344"/>
+<area shape="rect" id="node9" href="$d8/d4e/base__clock_8hpp.html" title="timemory/base_clock.hpp" alt="" coords="1792,237,1951,267"/>
+<area shape="rect" id="node28" href="$d9/dd2/rss_8hpp.html" title="timemory/rss.hpp" alt="" coords="2379,237,2494,267"/>
+<area shape="rect" id="node42" href="$da/d8e/signal__detection_8hpp.html" title="timemory/signal_detection.hpp" alt="" coords="915,160,1100,189"/>
+<area shape="rect" id="node44" href="$d0/d5d/mpi_8hpp.html" title="timemory/mpi.hpp" alt="" coords="1571,237,1689,267"/>
 </map>

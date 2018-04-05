@@ -93,19 +93,6 @@ protected:
 
 //============================================================================//
 
-/*class timing_manager_wrapper : public manager_wrapper
-{
-public:
-    timing_manager_wrapper()
-    : manager_wrapper()
-    { }
-
-    ~timing_manager_wrapper()
-    { }
-};*/
-
-//============================================================================//
-
 class auto_timer_decorator
 {
 public:

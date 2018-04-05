@@ -16,7 +16,7 @@ var searchData=
   ['compute',['compute',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a3301e5cab4258e601f5cca4875df77ca',1,'NAME_TIM::internal::base_timer_delta']]],
   ['compute_5fsqr',['compute_sqr',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#a15fd2135e53d8cb5cb41e65337cde6d9',1,'NAME_TIM::internal::base_timer_delta']]],
   ['compute_5fsum',['compute_sum',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#aede0ba2adf340545fcccc495522f1fec',1,'NAME_TIM::internal::base_timer_delta']]],
-  ['concurrency',['concurrency',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#aba3d1e576a21f0e817f384837a664eb3',1,'plotting.plotting.plot_data.concurrency()'],['../df/d23/namespaceplotting_1_1plotting.html#af7f2bab15035a7d5ee34bbf543fd537b',1,'plotting.plotting.concurrency()']]],
+  ['concurrency',['concurrency',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#aba3d1e576a21f0e817f384837a664eb3',1,'plotting::plotting::plot_data']]],
   ['const_5fiterator',['const_iterator',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#adec7ca784e66197e3929b9fb978b4e57',1,'NAME_TIM::manager']]],
   ['const_5fmerge',['const_merge',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#a0c48417b9eb718029c75d4fdf589f70b',1,'NAME_TIM::manager']]],
   ['count',['count',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#a6a322339de51174ce4e9965a392c58e8',1,'NAME_TIM::manager::count()'],['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#a696edefe525c1c034e3ec33119f63b50',1,'NAME_TIM::manager::count() const']]],

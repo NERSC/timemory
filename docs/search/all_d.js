@@ -69,7 +69,7 @@ var searchData=
   ['mpi_5fint',['MPI_INT',['../d0/d5d/mpi_8hpp.html#a43ed7cd86d20f84db849adc64a09415e',1,'mpi.hpp']]],
   ['mpi_5fis_5finitialized',['mpi_is_initialized',['../de/de2/namespace_n_a_m_e___t_i_m.html#a7307dc24b7e28c29a8917a0bbd2562f4',1,'NAME_TIM']]],
   ['mpi_5frank',['mpi_rank',['../de/de2/namespace_n_a_m_e___t_i_m.html#adb47fa1ebbfba1f842b239745bf77d3c',1,'NAME_TIM']]],
-  ['mpi_5fsize',['mpi_size',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#abad08aa2e8de5e883d686981c080df4e',1,'plotting.plotting.plot_data.mpi_size()'],['../df/d23/namespaceplotting_1_1plotting.html#a57538c075e8a08a43bd863bc11481541',1,'plotting.plotting.mpi_size()'],['../de/de2/namespace_n_a_m_e___t_i_m.html#a246af968516365768e09b6702b6a5e40',1,'NAME_TIM::mpi_size()']]],
+  ['mpi_5fsize',['mpi_size',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#abad08aa2e8de5e883d686981c080df4e',1,'plotting.plotting.plot_data.mpi_size()'],['../de/de2/namespace_n_a_m_e___t_i_m.html#a246af968516365768e09b6702b6a5e40',1,'NAME_TIM::mpi_size()']]],
   ['mpi_5fsupport',['mpi_support',['../d6/d05/namespacempi__support.html',1,'mpi_support'],['../d2/de5/namespacempi__support_1_1mpi__support.html',1,'mpi_support.mpi_support']]],
   ['mpi_5fsupport_2epy',['mpi_support.py',['../d5/dc4/mpi__support_8py.html',1,'']]],
   ['mpi_5ftest_5ftiming_2ecpp',['mpi_test_timing.cpp',['../dd/d0a/mpi__test__timing_8cpp.html',1,'']]],

@@ -42,5 +42,5 @@ var searchData=
   ['mib',['MiB',['../d6/d75/namespace_n_a_m_e___t_i_m_1_1rss_1_1units.html#aa0ba6f8cbec361f821ced2f0f8b83275',1,'NAME_TIM::rss::units']]],
   ['min_5fmemory',['min_memory',['../df/d23/namespaceplotting_1_1plotting.html#a94a316daffd65cd8ff346821c3e6371c',1,'plotting::plotting']]],
   ['min_5ftime',['min_time',['../df/d23/namespaceplotting_1_1plotting.html#a809e013d71c47ba712e7dc6d5581ed37',1,'plotting::plotting']]],
-  ['mpi_5fsize',['mpi_size',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#abad08aa2e8de5e883d686981c080df4e',1,'plotting.plotting.plot_data.mpi_size()'],['../df/d23/namespaceplotting_1_1plotting.html#a57538c075e8a08a43bd863bc11481541',1,'plotting.plotting.mpi_size()']]]
+  ['mpi_5fsize',['mpi_size',['../d6/d77/classplotting_1_1plotting_1_1plot__data.html#abad08aa2e8de5e883d686981c080df4e',1,'plotting::plotting::plot_data']]]
 ];
