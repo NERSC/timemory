@@ -37,6 +37,8 @@ TiMemory is summarized by the following:
   - reports produce a call tree -- i.e. TiMemory distiguished between same timers accessed through different pathways, provided the calling function(s) is also using an auto-timer
   - the Python interface can be downloaded via PyPi (e.g. `pip install timemory`)
 
+    - PyPi installation will link the static TiMemory library (i.e. `libtimemory.a`) to the TiMemory Python module
+    - If TiMemory is intended to be used in both Python and C++ code, TiMemory (currently) must be built from source with the CMake option `-DPYTHON_SHARED_LINKING=ON` enabled. Please be aware that in this situation, the installation should be in the PYTHONPATH or else the C++ TiMemory will be recording the timers to a separate instance of the manager than the PyPi TiMemory and as a result, printing out the TiMemory results from Python will not include the C++ timing results
 
 ### Dependancies
 
