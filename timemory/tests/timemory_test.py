@@ -353,8 +353,7 @@ class timemory_test(unittest.TestCase):
         # should be ~8 MB
         nsize = 1000*1000
         arr = np.ones(size=[nsize], dtype=np.int64)
-        arr = np.ones(size=[nsize], dtype=np.int64)
-        arr = np.ones(size=[nsize], dtype=np.int64)
+        arr += np.ones(size=[nsize], dtype=np.int64)
         rss_post.record()
 
         rss_pre -= rss_init

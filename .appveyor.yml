@@ -48,6 +48,7 @@ install:
       if ($env:PLATFORM -eq "x64") { $env:PYTHON = "$env:PYTHON-x64" }
       $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
       pip install --disable-pip-version-check --user --upgrade pip wheel
+      $env:PYTHON_EXE = "C:\Python$env:PYTHON\python
     } elseif ($env:CONDA) {
       if ($env:CONDA -eq "27") { $env:CONDA = "" }
       if ($env:PLATFORM -eq "x64") { $env:CONDA = "$env:CONDA-x64" }
@@ -56,6 +57,7 @@ install:
       conda update -y -q -n base conda
       conda install -y -q pip
       python -m pip install -U pip
+      $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python
     }
     pip install -U setuptools disttools
     pip install -U matplotlib numpy pillow
@@ -64,7 +66,7 @@ build_script:
 - mkdir build-timemory
 - cd build-timemory
 - cmake -DCMAKE_SUPPRESS_REGENERATION=1
-    -DSHARED_PYTHON_LINKING=OFF -DUSE_MPI=OFF -DPYTHON_EXECUTABLE=python
+    -DSHARED_PYTHON_LINKING=OFF -DUSE_MPI=OFF -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DBUILD_TESTING=ON -DCTEST_LOCAL_CHECKOUT=OFF -DCTEST_SITE=AppVeyor
     -DCTEST_MODEL=Continuous .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 #- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
