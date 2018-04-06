@@ -36,8 +36,8 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(NAME_TIM::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(NAME_TIM::internal::base_timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::internal::base_timer, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_clock_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_clock_data_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_duration_t, TIMEMORY_TIMER_VERSION)
@@ -46,7 +46,7 @@ CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
-namespace NAME_TIM
+namespace tim
 {
 namespace internal
 {
@@ -196,7 +196,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     double _system = system_elapsed();
     double _cpu = _user + _system;
     double _perc = (_cpu / _real) * 100.0;
-    if(!NAME_TIM::isfinite(_perc))
+    if(!tim::isfinite(_perc))
         _perc = 0.0;
 
     if(!above_min(no_min))
@@ -305,7 +305,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
         ss << std::endl;
 
     // ensure thread-safety
-    NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+    tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
     recursive_lock_t rlock(w_mutex_map[&os]);
     // output to ostream
     os << ss.str();
@@ -313,7 +313,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
 
 } // namespace internal
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //============================================================================//
 

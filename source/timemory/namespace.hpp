@@ -23,23 +23,13 @@
 //  SOFTWARE.
 
 /** \file namespace.hpp
- * Defines NAME_TIM if not defined
+ * Defines tim if not defined
  *
  */
 
 #ifndef namespace_hpp_
 #define namespace_hpp_
 
-// The namespace can be configured with CMake:
-//      -DTIMEMORY_NAMESPACE=<new top-level namespace>
-//
-// Below is not really needed if TiMemory is imported via TiMemoryConfig.cmake
-//
-// Top-level namespace (default = tim)
-
-#if !defined(NAME_TIM)
-#   define NAME_TIM tim
-#endif
 
 // sort out the operating system
 #if defined(_WIN32) || defined(_WIN64)

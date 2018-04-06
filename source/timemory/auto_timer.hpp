@@ -38,13 +38,13 @@
 #include "timemory/utility.hpp"
 #include "timemory/manager.hpp"
 
-namespace NAME_TIM
+namespace tim
 {
 
 class auto_timer
 {
 public:
-    typedef NAME_TIM::manager::tim_timer_t  tim_timer_t;
+    typedef tim::manager::tim_timer_t  tim_timer_t;
     typedef auto_timer                      this_type;
     typedef std::string                     string_t;
 
@@ -76,18 +76,13 @@ private:
 
 //----------------------------------------------------------------------------//
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //----------------------------------------------------------------------------//
 
-typedef NAME_TIM::auto_timer                     auto_timer_t;
+typedef tim::auto_timer                     auto_timer_t;
 
 #if !defined(TIMEMORY_AUTO_TIMER)
-
-// stringify some macro
-#   define STRINGIZE(X) STRINGIZE2(X)
-#   define STRINGIZE2(X) #X
-#   define LINE_STRING STRINGIZE(__LINE__)
 
 // helper macros for assembling unique variable name
 #   define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
@@ -95,7 +90,8 @@ typedef NAME_TIM::auto_timer                     auto_timer_t;
 
 // helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
 #   define AUTO_TIMER_STR(A, B) std::string("@'") + \
-    std::string( A ).substr(std::string( A ).find_last_of("/")+1) + std::string("':") + B
+    std::string( A ).substr(std::string( A ).find_last_of("/")+1) + \
+    std::string("':") + B
 
 // simple tagging w/ function name + optional extra string
 #   define TIMEMORY_AUTO_TIMER_BASIC(str) \
@@ -105,7 +101,8 @@ typedef NAME_TIM::auto_timer                     auto_timer_t;
 // standard tagging with function name + optional extra string + "@'filename':##"
 #   define TIMEMORY_AUTO_TIMER(str) \
     auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
-            std::string(str) + AUTO_TIMER_STR(__FILE__, LINE_STRING ), __LINE__)
+            std::string(str) + \
+            AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
 
 #endif
 

@@ -40,25 +40,128 @@ import numpy as np
 import os
 import copy
 
-timing_types = ('wall', 'sys', 'user', 'cpu', 'perc')
-memory_types = ('total_peak_rss', 'total_current_rss', 'self_peak_rss',
-    'self_current_rss')
+""" Default timing data to extract from JSON """
+_default_timing_types = ['wall', 'sys', 'user', 'cpu', 'perc']
 
-min_time = 0.005
-min_memory = 1
-img_dpi = 75
-img_size = {'w': 1200, 'h': 800}
+""" Default memory data to extract from JSON """
+_default_memory_types = ['total_peak_rss', 'total_current_rss',
+                         'self_peak_rss', 'self_current_rss']
 
+
+""" Default fields for reducing # of timing plot functions displayed """
+_default_timing_fields = ['wall', ]
+
+""" Default fields for reducing # of memory plot functions displayed """
+_default_memory_fields = ['total_current_rss',
+                          'self_peak_rss', 'self_current_rss']
+
+""" Default minimum percent of max when reducing # of timing functions plotted """
+_default_timing_min_percent = 5.0 # 5% of max
+
+""" Default minimum percent of max when reducing # of memory functions plotted """
+_default_memory_min_percent = 5.0 # 5% of max
+
+""" Default image dots-per-square inch """
+_default_img_dpi = 75
+
+""" Default image size """
+_default_img_size = {'w': 1600, 'h': 800}
+
+""" Default image type """
+_default_img_type = 'jpeg'
+
+""" A list of all files that have been plotted """
 plotted_files = []
 
+""" Data fields stored in timemory_data """
+timemory_types = _default_timing_types + _default_memory_types
+
 #==============================================================================#
-def echo_dart_tag(name, filepath):
+"""
+A class for reducing the amount of data in plot by specifying a minimum
+percentage of the max value and the fields to check against
+"""
+class plot_parameters():
+
+    """ Global timing plotting params (these should be modified instead of _default_*) """
+    timing_types = copy.copy(_default_timing_types)
+    timing_fields = copy.copy(_default_timing_fields)
+    timing_min_percent = copy.copy(_default_timing_min_percent)
+
+    """ Global memory plotting params (these should be modified instead of _default_*) """
+    memory_types = copy.copy(_default_memory_types)
+    memory_fields = copy.copy(_default_memory_fields)
+    memory_min_percent = copy.copy(_default_memory_min_percent)
+
+    """ Global image plotting params (these should be modified instead of _default_*) """
+    img_dpi = copy.copy(_default_img_dpi)
+    img_size = copy.copy(_default_img_size)
+    img_type = copy.copy(_default_img_type)
+
+    def __init__(self,
+                 # timing
+                 _timing_types = timing_types,
+                 _timing_min_percent = timing_min_percent,
+                 _timing_fields = timing_fields,
+                 # memory
+                 _memory_types = memory_types,
+                 _memory_min_percent = memory_min_percent,
+                 _memory_fields = memory_fields,
+                 # image
+                 _img_dpi = img_dpi,
+                 _img_size = img_size,
+                 _img_type = img_type):
+        # timing
+        self.timing_types = _timing_types
+        self.timing_min_percent = _timing_min_percent
+        self.timing_fields = _timing_fields
+        # memory
+        self.memory_types = _memory_types
+        self.memory_min_percent = _memory_min_percent
+        self.memory_fields = _memory_fields
+        # image
+        self.img_dpi = _img_dpi
+        self.img_size = _img_size
+        self.img_type = _img_type
+        # max values
+        self.timing_max_value = 0.0
+        self.memory_max_value = 0.0
+
+    def __str__(self):
+        # timing
+        _a = 'Timing: {} = {}, {} = {}, {} = {}, {} = {}'.format(
+            'types', self.timing_types,
+            'min %', self.timing_min_percent,
+            'fields', self.timing_fields,
+            'max', self.timing_max_value)
+        # memory
+        _b = 'Memory: {} = {}, {} = {}, {} = {}, {} = {}'.format(
+            'types', self.memory_types,
+            'min %', self.memory_min_percent,
+            'fields', self.memory_fields,
+            'max', self.memory_max_value)
+        # image
+        _c = 'Image: {} = {}, {} = {}, {} = {}'.format(
+            'dpi', self.img_dpi,
+            'size', self.img_size,
+            'type', self.img_type)
+        return '[{}] [{}] [{}]'.format(_a, _b, _c)
+
+
+#==============================================================================#
+def echo_dart_tag(name, filepath, img_type=plot_parameters.img_type):
+    """
+    Printing this string will upload the results to CDash when running CTest
+    """
     print('<DartMeasurementFile name="{}" '.format(name) +
-    'type="image/png">{}</DartMeasurementFile>'.format(filepath))
+    'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath))
 
 
 #==============================================================================#
 def add_plotted_files(name, filepath, echo_dart):
+    """
+    Adds a file to the plotted file list and print CDash dart string
+    """
     global plotted_files
     if echo_dart:
         echo_dart_tag(name, filepath)
@@ -73,6 +176,9 @@ def add_plotted_files(name, filepath, echo_dart):
 
 #==============================================================================#
 def make_output_directory(directory):
+    """
+    mkdir -p
+    """
     if not os.path.exists(directory) and directory != '':
         os.makedirs(directory)
 
@@ -84,58 +190,31 @@ def nested_dict():
 
 #==============================================================================#
 class timemory_data():
-
-    def __init__(self, types):
-        self.data = nested_dict()
+    """
+    This class is for internal usage. It holds the JSON data
+    """
+    # ------------------------------------------------------------------------ #
+    def __init__(self, func, types = timemory_types, extract_data=None):
+        self.laps = 0
         self.types = types
+        self.func = func
+        self.data = nested_dict()
         self.sums = {}
         for key in self.types:
             self.data[key] = []
-
-    def append(self, _data):
-        n = 0
-        for key in self.types:
-            self.data[key].append(_data[n])
-            if not key in self.sums.keys():
-                self.sums[key] = 0.0
-            self.sums[key] += _data[n]
-            n += 1
-
-    def __add__(self, rhs):
-        for key in self.types:
-            self.data[key].extend(rhs.data[key])
-            for k, v in rhs.data.items():
-                if not k in self.sums.keys():
-                    self.sums[k] = 0.0
-                self.sums[k] += v
-
-    def reset(self):
-        self.data = nested_dict()
-        for key in self.types:
-            self.data[key] = []
             self.sums[key] = 0.0
+        # populate data and sums from existing data
+        if extract_data is not None:
+            self.laps = extract_data.laps
+            for key in self.types:
+                self.data[key] = extract_data.data[key]
+                self.sums[key] = extract_data.sums[key]
 
-    def __getitem__(self, key):
-        return self.data[key]
-
-    def get_order(self, include_keys):
-        order = []
-        sorted_keys = sorted(self.sums, key=lambda x: abs(self.sums[x]))
-        for key in sorted_keys:
-            if key in include_keys:
-                order.append(key)
-        return order
-
-
-#==============================================================================#
-class timemory_function():
-
-    def __init__(self):
-        self.timing = timemory_data(timing_types)
-        self.memory = timemory_data(memory_types)
-        self.laps = 0
-
+    # ------------------------------------------------------------------------ #
     def process(self, denom, obj, nlap):
+        """
+        record data from JSON object
+        """
         _wall = obj['wall_elapsed'] / denom
         _user = obj['user_elapsed'] / denom
         _sys = obj['system_elapsed'] / denom
@@ -146,93 +225,373 @@ class timemory_function():
         _speak = obj['rss_self']['peak'] / _MB
         _scurr = obj['rss_self']['current'] / _MB
         _perc = (_cpu / _wall) * 100.0 if _wall > 0.0 else 100.0
-        if _wall > min_time or abs(_speak) > min_memory or abs(_scurr) > min_memory:
-            self.timing.append([_wall, _sys, _user, _cpu, _perc])
-            self.memory.append([_tpeak, _tcurr, _speak, _scurr])
+        _dict = {
+            'wall' : _wall,
+            'sys' : _sys,
+            'user' :_user,
+            'cpu' : _cpu,
+            'perc' : _perc,
+            'total_peak_rss' : _tpeak,
+            'total_current_rss' : _tcurr,
+            'self_peak_rss' : _speak,
+            'self_current_rss' : _scurr }
+        self.append(_dict)
         self.laps += nlap
 
-    def __getitem__(self, key):
-        return self.timing[key]
+    # ------------------------------------------------------------------------ #
+    def plottable(self, plot_params):
+        """
+        valid data above minimum
+        """
+        # compute the minimum values
+        t_min = (0.01 * plot_params.timing_min_percent) * plot_params.timing_max_value
+        m_min = (0.01 * plot_params.memory_min_percent) * plot_params.memory_max_value
 
-    def length(self):
-        return max(len(self.timing['cpu']), len(self.memory['self_peak_rss']))
+        # function for checking passes test
+        def is_valid(key, min_value):
+            if key in self.sums.keys():
+                # compute it's "percentage" w.r.t. max value
+                return abs(self.sums[key]) > min_value
+            return False
+
+        # check the timing fields
+        for field in plot_params.timing_fields:
+            if is_valid(field, t_min):
+                return True
+        # check the memory fields
+        for field in plot_params.memory_fields:
+            if is_valid(field, m_min):
+                return True
+
+        # all values below minimum --> do not plot
+        return False
+
+    # ------------------------------------------------------------------------ #
+    def append(self, _dict):
+        """
+        append data to dataset
+        """
+        for key in self.types:
+            self.data[key].append(_dict[key])
+            # add entry if not exist
+            self.sums[key] += _dict[key]
+
+    # ------------------------------------------------------------------------ #
+    def __add__(self, rhs):
+        """
+        for combining results (typically from different MPI processes)
+        """
+        for key in self.types:
+            self.data[key].extend(rhs.data[key])
+            for k, v in rhs.data.items():
+                self.sums[k] += v
+        self.laps += rhs.laps
+
+    # ------------------------------------------------------------------------ #
+    def __sub__(self, rhs):
+        """
+        for differencing results (typically from two different runs)
+        """
+        for key in self.types:
+            # if the lengths are the same, compute difference
+            if len(self.data[key]) == len(rhs.data[key]):
+                for i in len(self.data[key]):
+                    self.data[key][i] -= rhs.data[key][i]
+            else: # the lengths are different, insert the entries as neg values
+                for entry in rhs.data[key]:
+                    self.data[key].append(-entry)
+            # compute the sums
+            for k, v in rhs.data.items():
+                self.sums[k] += v
+        # this is a weird situation
+        if self.laps != rhs.laps:
+            self.laps = max(self.laps, rhs.laps)
+
+    # ------------------------------------------------------------------------ #
+    def reset(self):
+        """
+        clear all the data
+        """
+        self.data = nested_dict()
+        for key in self.types:
+            self.data[key] = []
+            self.sums[key] = 0.0
+
+    # ------------------------------------------------------------------------ #
+    def __getitem__(self, key):
+        """
+        array indexing
+        """
+        return self.data[key]
+
+    # ------------------------------------------------------------------------ #
+    def keys(self):
+        """
+        get the keys
+        """
+        return self.data.keys()
+
+    # ------------------------------------------------------------------------ #
+    def __len__(self):
+        """
+        length operator
+        """
+        _maxlen = 0
+        for key in rhs.data.keys():
+            _maxlen = max(_maxlen, len(self.data[key]))
+        return _maxlen
+
+    # ------------------------------------------------------------------------ #
+    def get_order(self, include_keys):
+        """
+        for getting an order based on a set of keys
+        """
+        order = []
+        sorted_keys = sorted(self.sums, key=lambda x: abs(self.sums[x]))
+        for key in sorted_keys:
+            if key in include_keys:
+                order.append(key)
+        return order
 
 
 #==============================================================================#
 class plot_data():
+    """
+    A custom configuration for the data to be plotted
 
-    def __init__(self, filename = "output", concurrency = 1, mpi_size = 1,
-                 timemory_functions = [], title = ""):
+    Args:
+        filename (str):
+            the input filename (JSON file) to be processed
+            also used to generate the output image name unless "output_name"
+            is specified
+        concurrency (int):
+            the concurrency used
+        mpi_size (int):
+            the number of MPI processes
+        title (str):
+            title for plot
+        plot_params (plot_parameters instance):
+            the plotting parameters
+        output_name (str):
+    """
+    def __init__(self,
+                 filename = "output",
+                 concurrency = 1, mpi_size = 1,
+                 timemory_functions = [],
+                 title = "",
+                 plot_params = plot_parameters(),
+                 output_name = None):
+
         self.filename = filename
         self.concurrency = concurrency
         self.mpi_size = mpi_size
         self.timemory_functions = timemory_functions
         self.title = title
+        self.plot_params = plot_params
+        self.output_name = output_name
+        if self.output_name is None:
+            self.output_name = self.filename
+        # calc max values
+        for key, obj in self.timemory_functions.items():
+            # calc timing max
+            for _key in self.plot_params.timing_fields:
+                _max = self.plot_params.timing_max_value
+                _val = obj.sums[_key]
+                #print('max = {}, sum [{}] = {}'.format(_max, _key, _val))
+                self.plot_params.timing_max_value = max([_max, _val])
+            # calc memory max
+            for _key in self.plot_params.memory_fields:
+                _max = self.plot_params.memory_max_value
+                _val = obj.sums[_key]
+                #print('max = {}, sum [{}] = {}'.format(_max, _key, _val))
+                self.plot_params.memory_max_value = max([_max, _val])
 
+    # ------------------------------------------------------------------------ #
+    def update_parameters(self, params = None):
+        """
+        Update plot parameters (i.e. recalculate maxes)
+        """
+        if params is not None:
+            self.plot_params = params
+        self.plot_params.timing_max_value = 0.0
+        self.plot_params.timing_min_value = 0.0
+        # calc max values
+        for key, obj in self.timemory_functions.items():
+            # calc timing max
+            for _key in self.plot_params.timing_fields:
+                _max = self.plot_params.timing_max_value
+                _val = obj.sums[_key]
+                #print('max = {}, sum [{}] = {}'.format(_max, _key, _val))
+                self.plot_params.timing_max_value = max([_max, _val])
+            # calc memory max
+            for _key in self.plot_params.memory_fields:
+                _max = self.plot_params.memory_max_value
+                _val = obj.sums[_key]
+                #print('max = {}, sum [{}] = {}'.format(_max, _key, _val))
+                self.plot_params.memory_max_value = max([_max, _val])
 
+    # ------------------------------------------------------------------------ #
+    def get_timing(self):
+        """
+        Process the functions for timing plotting
+        """
+        self.update_parameters()
+        _dict = nested_dict()
+        for key, obj in self.timemory_functions.items():
+            subset = timemory_data(key, types = self.plot_params.timing_types,
+                                   extract_data = obj)
+            if subset.plottable(self.plot_params):
+                _dict[key] = subset
+        return _dict
+
+    # ------------------------------------------------------------------------ #
+    def get_memory(self):
+        """
+        Process the functions for memory plotting
+        """
+        self.update_parameters()
+        _dict = nested_dict()
+        for key, obj in self.timemory_functions.items():
+            subset = timemory_data(key, types = self.plot_params.memory_types,
+                                   extract_data = obj)
+            if subset.plottable(self.plot_params):
+                _dict[key] = subset
+        return _dict
+
+    # ------------------------------------------------------------------------ #
+    def __len__(self):
+        """
+        Get the length
+        """
+        return len(self.timemory_functions)
+
+    # ------------------------------------------------------------------------ #
+    def keys(self):
+        """
+        Get the dictionary keys
+        """
+        return self.timemory_functions.keys()
+
+    # ------------------------------------------------------------------------ #
+    def items(self):
+        """
+        Get the dictionary items
+        """
+        return self.timemory_functions.items()
+
+    # ------------------------------------------------------------------------ #
     def __str__(self):
-        return '\tFilename: {}\n\tConcurrency: {}\n\tMPI ranks: {}\n\t# functions: {}\n\tTitle: {}'.format(
-            self.filename, self.concurrency, self.mpi_size, len(self.timemory_functions), self.title)
+        """
+        String repr
+        """
+        _list = [
+            ('Filename', self.filename),
+            ('Concurrency', self.concurrency),
+            ('MPI ranks', self.mpi_size),
+            ('# functions', len(self)),
+            ('Title', self.title),
+            ('Parameters', self.plot_params) ]
+        _str = '\n'
+        for entry in _list:
+            _str = '{}\t{} : "{}"\n'.format(_str, entry[0], entry[1])
+        return _str
 
-
+    # ------------------------------------------------------------------------ #
     def get_title(self):
+        """
+        Construct the title for the plot
+        """
         return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
                 self.mpi_size, int(self.concurrency))
 
 
 #==============================================================================#
-def read(json_obj):
+def read(json_obj, plot_params=plot_parameters()):
+    """
+    Read the JSON data -- i.e. process JSON object of TiMemory data
+    """
 
-    data_0 = json_obj
-
+    # some fields
+    data0 = json_obj
     max_level = 0
     concurrency_sum = 0
-    manager_tag = 'timing_manager'
-    mpi_size = len(data_0['ranks'])
-    for i in range(0, len(data_0['ranks'])):
-        data_1 = data_0['ranks'][i]
-        try:
-            _tmp = int(data_1[manager_tag]['omp_concurrency'])
-        except:
-            manager_tag = 'manager'
-
-        concurrency_sum += int(data_1[manager_tag]['omp_concurrency'])
-        for j in range(0, len(data_1[manager_tag]['timers'])):
-            data_2 = data_1[manager_tag]['timers'][j]
-            nlaps = int(data_2['timer.ref']['laps'])
-            indent = ""
-            nlevel = int(data_2['timer.level'])
-            max_level = max([max_level, nlevel])
-
-    concurrency = concurrency_sum / mpi_size
+    manager_tag = 'manager'
+    concurrency_tag = 'concurrency'
+    mpi_size = len(data0['ranks'])
     timemory_functions = nested_dict()
-    for i in range(0, len(data_0['ranks'])):
-        data_1 = data_0['ranks'][i]
-        for j in range(0, len(data_1[manager_tag]['timers'])):
-            data_2 = data_1[manager_tag]['timers'][j]
-            nlaps = int(data_2['timer.ref']['laps'])
+
+    # ------------------------------------------------------------------------ #
+    # loop over MPI ranks
+    for i in range(0, len(data0['ranks'])):
+        # shorthand
+        data1 = data0['ranks'][i]
+        # --------------------------------------------------#
+        def get_manager_tag():
+            # this is for backwards-compatibility
+            _tag = 'timing_manager'
+            try:
+                _tmp = int(data1[_tag]['timers'])
+            except:
+                _tag = 'manager'
+            return _tag
+        # --------------------------------------------------#
+        def get_concurrency_tag(_man_tag):
+            # this is for backwards-compatibility
+            _tag = 'omp_concurrency'
+            try:
+                _tmp = int(data1[_man_tag]['omp_concurrency'])
+            except:
+                _tag = 'concurrency'
+            return _tag
+        # --------------------------------------------------#
+
+        manager_tag = get_manager_tag()
+        concurrency_tag = get_concurrency_tag(manager_tag)
+
+        concurrency_sum += int(data1[manager_tag][concurrency_tag])
+        for j in range(0, len(data1[manager_tag]['timers'])):
+            data2 = data1[manager_tag]['timers'][j]
+            max_level = max(max_level, int(data2['timer.level']))
+
+    # ------------------------------------------------------------------------ #
+    # loop over ranks
+    for i in range(0, len(data0['ranks'])):
+        # shorthand
+        data1 = data0['ranks'][i]
+
+        # loop over timers
+        for j in range(0, len(data1[manager_tag]['timers'])):
+            data2 = data1[manager_tag]['timers'][j]
             indent = ""
-            nlevel = int(data_2['timer.level'])
-            for n in range(0, nlevel):
+            # for display
+            for n in range(0, int(data2['timer.level'])):
                 indent = '|{}'.format(indent)
-            tag = '{} {}'.format(indent, data_2['timer.tag'])
 
+            # construct the tag
+            tag = '{} {}'.format(indent, data2['timer.tag'])
+
+            # create timemory_data object if doesn't exist yet
             if not tag in timemory_functions:
-                timemory_functions[tag] = timemory_function()
+                timemory_functions[tag] = timemory_data(func = tag)
+            # get timemory_data object
             timemory_func = timemory_functions[tag]
-            data_3 = data_2['timer.ref']
-            timemory_func.process(data_3['to_seconds_ratio_den'], data_3, nlaps)
 
-            if timemory_func.length() == 0:
-                del timemory_functions[tag]
+            # process the function data
+            timemory_func.process(data2['timer.ref']['to_seconds_ratio_den'],
+                                  data2['timer.ref'],
+                                  int(data2['timer.ref']['laps']))
 
-    return plot_data(concurrency = concurrency,
+    # ------------------------------------------------------------------------ #
+    # return a plot_data object
+    return plot_data(concurrency = concurrency_sum / mpi_size,
                      mpi_size = mpi_size,
-                     timemory_functions = timemory_functions)
+                     timemory_functions = timemory_functions,
+                     plot_params = plot_params)
 
 
 #==============================================================================#
-def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
+def plot_timing(_plot_data,
+                disp=False, output_dir=".", echo_dart=False):
 
     try:
         import tornado
@@ -247,30 +606,32 @@ def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
     iter_order = ['wall', 'cpu', 'sys']
 
     filename = _plot_data.filename
+    plot_params = _plot_data.plot_params
     title = _plot_data.get_title()
-    timing_data_dict = _plot_data.timemory_functions
+    timing_data_dict = _plot_data.get_timing()
 
     ntics = len(timing_data_dict)
     ytics = []
 
     if ntics == 0:
-        print ('{} had no timing data less than the minimum time ({} s)'.format(filename,
-                                                                            min_time))
+        print ('{} had no timing data less than the minimum time ({} s)'.format(
+               filename,
+               0.01 * plot_params.timing_max_value * plot_params.timing_min_percent))
         return()
 
     avgs = nested_dict()
     stds = nested_dict()
-    for key in timing_types:
+    for key in plot_params.timing_types:
         avgs[key] = []
         stds[key] = []
 
     _f = True
     for func, obj in timing_data_dict.items():
         if _f is True:
-            iter_order = obj.timing.get_order(iter_order)
+            iter_order = obj.get_order(iter_order)
             _f = False
         ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-        for key in timing_types:
+        for key in plot_params.timing_types:
             data = obj[key]
             avgs[key].append(np.mean(data))
             if len(data) > 1:
@@ -283,14 +644,15 @@ def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
     # the thickness of the bars: can also be len(x) sequence
     thickness = 0.8
 
-    f = plt.figure(figsize=(img_size['w'] / img_dpi, img_size['h'] / img_dpi),
-                   dpi=img_dpi)
+    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
+                            plot_params.img_size['h'] / plot_params.img_dpi),
+                   dpi=plot_params.img_dpi)
     ax = f.add_subplot(111)
     ax.yaxis.tick_right()
     f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
 
     ytics.reverse()
-    for key in timing_types:
+    for key in plot_params.timing_types:
         avgs[key].reverse()
         stds[key].reverse()
 
@@ -323,21 +685,22 @@ def plot_timing(_plot_data, disp=False, output_dir=".", echo_dart=False):
         imgfname = imgfname.replace('.', '_timing.')
         if not '_timing.' in imgfname:
             imgfname += "_timing."
-        imgfname = imgfname.replace('.json', '.png')
-        imgfname = imgfname.replace('.py', '.png')
-        if not '.png' in imgfname:
-            imgfname += '.png'
+        imgfname = imgfname.replace('.json', '.{}'.format(plot_params.img_type))
+        imgfname = imgfname.replace('.py', '.{}'.format(plot_params.img_type))
+        if not '.{}'.format(plot_params.img_type) in imgfname:
+            imgfname += '.{}'.format(plot_params.img_type)
 
         add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
 
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname, dpi=img_dpi)
+        plt.savefig(imgfname, dpi=plot_params.img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
+def plot_memory(_plot_data,
+                disp=False, output_dir=".", echo_dart=False):
 
     global plotted_files
 
@@ -353,31 +716,33 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
 
     iter_order = ['total_peak_rss', 'total_current_rss', 'self_peak_rss', 'self_current_rss']
     filename = _plot_data.filename
+    plot_params = _plot_data.plot_params
     title = _plot_data.get_title()
-    memory_data_dict = _plot_data.timemory_functions
+    memory_data_dict = _plot_data.get_memory()
 
     ntics = len(memory_data_dict)
     ytics = []
 
     if ntics == 0:
         print ('{} had no memory data less than the minimum memory ({} MB)'.format(
-            filename, min_memory))
+               filename,
+               0.01 * plot_params.memory_max_value * plot_params.memory_min_percent))
         return()
 
     avgs = nested_dict()
     stds = nested_dict()
-    for key in memory_types:
+    for key in plot_params.memory_types:
         avgs[key] = []
         stds[key] = []
 
     _f = True
     for func, obj in memory_data_dict.items():
         if _f is True:
-            iter_order = obj.memory.get_order(iter_order)
+            iter_order = obj.get_order(iter_order)
             _f = False
         ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-        for key in memory_types:
-            data = obj.memory[key]
+        for key in plot_params.memory_types:
+            data = obj[key]
             if len(data) == 0:
                 avgs[key].append(0.0)
                 stds[key].append(0.0)
@@ -393,19 +758,20 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
     # the thickness of the bars: can also be len(x) sequence
     thickness = 0.8
 
-    f = plt.figure(figsize=(img_size['w'] / img_dpi, img_size['h'] / img_dpi),
-                   dpi=img_dpi)
+    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
+                            plot_params.img_size['h'] / plot_params.img_dpi),
+                   dpi=plot_params.img_dpi)
     ax = f.add_subplot(111)
     ax.yaxis.tick_right()
     f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
 
     ytics.reverse()
-    for key in memory_types:
+    for key in plot_params.memory_types:
         if len(avgs[key]) == 0:
             del avgs[key]
             del stds[key]
 
-    for key in memory_types:
+    for key in plot_params.memory_types:
         avgs[key].reverse()
         stds[key].reverse()
 
@@ -445,22 +811,37 @@ def plot_memory(_plot_data, disp=False, output_dir=".", echo_dart=False):
         imgfname = imgfname.replace('.', '_memory.')
         if not '_memory.' in imgfname:
             imgfname += "_memory."
-        imgfname = imgfname.replace('.json', '.png')
-        imgfname = imgfname.replace('.py', '.png')
-        if not '.png' in imgfname:
-            imgfname += '.png'
+        imgfname = imgfname.replace('.json', '.{}'.format(plot_params.img_type))
+        imgfname = imgfname.replace('.py', '.{}'.format(plot_params.img_type))
+        if not '.{}'.format(plot_params.img_type) in imgfname:
+            imgfname += '.{}'.format(plot_params.img_type)
 
         add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
 
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname, dpi=img_dpi)
+        plt.savefig(imgfname, dpi=plot_params.img_dpi)
         plt.close()
 
 
 #==============================================================================#
-def plot(data = [], files = [], display=False, output_dir='.', echo_dart=None):
+def plot(data = [], files = [], plot_params=plot_parameters(),
+         combine=False, display=False, output_dir='.', echo_dart=None):
+    """
+    A function to plot JSON data
 
+    Args:
+        - data (list):
+            - list of "plot_data" objects
+            - should contain their own plot_parameters object
+        - files (list):
+            - list of JSON files
+            - "plot_params" argument object will be applied to these files
+        - combine (bool):
+            - if specified, the plot_data objects from "data" and "files"
+              will be combined into one "plot_data" object
+            - the plot_params object will be used for this
+    """
     import timemory.options as options
     if echo_dart is None and options.echo_dart:
         echo_dart = True
@@ -476,6 +857,16 @@ def plot(data = [], files = [], display=False, output_dir='.', echo_dart=None):
             _data.filename = filename
             _data.title = filename
             data.append(_data)
+
+    data_sum = None
+    if combine:
+        for _data in data:
+            if data_sum is None:
+                data_sum = _data
+            else:
+                data_sum += _data
+        data_sum.update_params(plot_params)
+        data = [data_sum]
 
     for _data in data:
         try:

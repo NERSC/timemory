@@ -34,13 +34,14 @@
 #include <sstream>
 #include <algorithm>
 #include <thread>
+#include <cstdint>
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(NAME_TIM::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(NAME_TIM::manager, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
-namespace NAME_TIM
+namespace tim
 {
 
 //============================================================================//
@@ -78,6 +79,18 @@ bool manager::f_enabled = true;
 //============================================================================//
 
 manager::mutex_t manager::f_mutex;
+
+//============================================================================//
+
+manager::get_num_threads_func_t
+        manager::f_get_num_threads = std::bind(&get_max_threads);
+
+//============================================================================//
+
+void manager::set_get_num_threads_func(get_num_threads_func_t f)
+{
+    f_get_num_threads = std::bind(f);
+}
 
 //============================================================================//
 // static function
@@ -119,7 +132,7 @@ manager::~manager()
     };
 
 #if defined(DEBUG)
-    if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "deleting thread-local instance of manager..."
                   << "\nglobal instance: \t" << f_instance
                   << "\nlocal instance:  \t" << l_instance
@@ -145,7 +158,7 @@ manager::~manager()
 void manager::clear()
 {
 #if defined(DEBUG)
-    if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "Clearing " << l_instance << "..." << std::endl;
 #endif
 
@@ -225,7 +238,7 @@ manager::timer(const string_t& key,
     {
         std::stringstream ss;
         ss << "Error! Space found in tag: \"" << key << "\"";
-        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cerr << ss.str() << std::endl;
     }
 #endif
@@ -241,7 +254,7 @@ manager::timer(const string_t& key,
 #if defined(HASH_DEBUG)
         for(const auto& itr : m_timer_list)
         {
-            NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
             if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
                 std::cout << "Found : " << itr << std::endl;
         }
@@ -288,7 +301,7 @@ void manager::report(bool no_min) const
     const_cast<this_type*>(this)->merge();
 
     int32_t _default = (mpi_is_initialized()) ? 1 : 0;
-    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
+    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
 
     if(mpi_rank() == 0 && _verbose > 0)
     {
@@ -328,7 +341,7 @@ void manager::report(ostream_t* os, bool no_min) const
         if(fos && !(fos->is_open() && fos->good()))
         {
             _os = &std::cout;
-            NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
             std::cerr << "Output stream for " << id << " is not open/valid. "
                       << "Redirecting to stdout..." << std::endl;
         }
@@ -398,7 +411,7 @@ void manager::set_output_stream(const string_t& fname)
         else
         {
             {
-                NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+                tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
                           << "Redirecting to stdout..." << std::endl;
             }
@@ -428,7 +441,7 @@ void manager::add(pointer_type ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
-    if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "Adding " << ptr << " to " << this << "..." << std::endl;
 #endif
     m_daughters.insert(ptr);
@@ -452,7 +465,7 @@ void manager::merge(bool div_clock)
             continue;
 
 #if defined(DEBUG)
-    if(NAME_TIM::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "Merging " << itr << "..." << std::endl;
 #endif
 
@@ -540,7 +553,7 @@ void manager::write_json_no_mpi(ostream_t& fss)
 // static function
 void manager::write_json_no_mpi(string_t _fname)
 {
-    int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
 
     if(mpi_rank() == 0 && _verbose > 0)
     {
@@ -548,7 +561,7 @@ void manager::write_json_no_mpi(string_t _fname)
         std::stringstream _info;
         _info << "Writing serialization file: "
               << _fname << std::endl;
-        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cout << _info.str();
     }
 
@@ -686,7 +699,7 @@ void manager::write_json_mpi(string_t _fname)
         std::stringstream _info;
         _info << "[" << mpi_rank() << "] Writing serialization file: "
               << _fname << std::endl;
-        NAME_TIM::auto_lock_t lock(NAME_TIM::type_mutex<std::iostream>());
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cout << _info.str();
     }
 
@@ -716,12 +729,12 @@ manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    const int32_t nthreads = NAME_TIM::get_env<int32_t>("OMP_NUM_THREADS", 1);
+    const int32_t nthreads = tim::get_env<int32_t>("OMP_NUM_THREADS", 1);
     int32_t max_processes = max_concurrency / nthreads;
     int32_t mpi_node_default = mpi_size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
-    int32_t mpi_node_count = NAME_TIM::get_env<int32_t>("TIMEMORY_NODE_COUNT",
+    int32_t mpi_node_count = tim::get_env<int32_t>("TIMEMORY_NODE_COUNT",
                                                      mpi_node_default);
     int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
 
@@ -752,4 +765,4 @@ manager::get_communicator_group()
 
 //============================================================================//
 
-} // namespace NAME_TIM
+} // namespace tim

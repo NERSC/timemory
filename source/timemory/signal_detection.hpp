@@ -132,7 +132,7 @@
 
 //============================================================================//
 
-namespace NAME_TIM
+namespace tim
 {
 
 // No    Name         Default Action       Description
@@ -222,7 +222,7 @@ private:
 
 //----------------------------------------------------------------------------//
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //============================================================================//
 
@@ -230,7 +230,7 @@ private:
 
 //============================================================================//
 
-namespace NAME_TIM
+namespace tim
 {
 
 //----------------------------------------------------------------------------//
@@ -496,7 +496,7 @@ inline void DisableSignalDetection()
 
 //----------------------------------------------------------------------------//
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //============================================================================//
 
@@ -504,7 +504,7 @@ inline void DisableSignalDetection()
 
 //============================================================================//
 
-namespace NAME_TIM
+namespace tim
 {
 static bool EnableSignalDetection(signal_settings::signal_set_t
                                   = signal_settings::signal_set_t())
@@ -515,7 +515,7 @@ inline void StackBackTrace(std::ostream& os)
     os << "StackBackTrace() not available." << std::endl;
 }
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //============================================================================//
 

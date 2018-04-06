@@ -64,39 +64,30 @@
 #include "timemory/timer.hpp"
 #include "timemory/mpi.hpp"
 
-namespace NAME_TIM
+namespace tim
 {
-
-//----------------------------------------------------------------------------//
-
-inline int32_t get_max_threads()
-{
-#ifdef _OPENMP
-    return omp_get_max_threads();
-#else
-    return 1;
-#endif
-}
 
 //----------------------------------------------------------------------------//
 
 namespace internal
 {
 typedef std::tuple<uint64_t, uint64_t, std::string,
-                   std::shared_ptr<NAME_TIM::timer>> base_timer_tuple_t;
+                   std::shared_ptr<tim::timer>> base_timer_tuple_t;
 }
+
+//----------------------------------------------------------------------------//
 
 struct timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
     typedef std::string                     string_t;
-    typedef NAME_TIM::timer           tim_timer_t;
+    typedef tim::timer                 tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef uint64_t                        first_type;
     typedef uint64_t                        second_type;
     typedef string_t                        third_type;
     typedef timer_ptr_t                     fourth_type;
-    typedef internal::base_timer_tuple_t     base_type;
+    typedef internal::base_timer_tuple_t    base_type;
 
     timer_tuple(const base_type& _data) : base_type(_data) { }
     timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
@@ -175,7 +166,7 @@ public:
     using uomap = std::unordered_map<_Key, _Mapped>;
 
     typedef manager                  this_type;
-    typedef NAME_TIM::timer                 tim_timer_t;
+    typedef tim::timer                 tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
@@ -186,7 +177,7 @@ public:
     typedef uomap<uint64_t, timer_ptr_t>    timer_map_t;
     typedef tim_timer_t::ostream_t          ostream_t;
     typedef tim_timer_t::ofstream_t         ofstream_t;
-    typedef NAME_TIM::timer_field           timer_field;
+    typedef tim::timer_field           timer_field;
     typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
     typedef std::mutex                      mutex_t;
     typedef uomap<uint64_t, mutex_t>        mutex_map_t;
@@ -194,6 +185,7 @@ public:
     typedef this_type*                      pointer_type;
     typedef std::set<this_type*>            daughter_list_t;
     typedef tim_timer_t::rss_usage_t        rss_usage_t;
+    typedef std::function<intmax_t()>       get_num_threads_func_t;
 
 public:
     // Constructor and Destructors
@@ -208,7 +200,7 @@ public:
     static void write_json(string_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
     static int32_t& max_depth() { return f_max_depth; }
-    void merge(bool div_clock = true);
+    static void set_get_num_threads_func(get_num_threads_func_t f);
 
 protected:
     static void write_json_no_mpi(string_t _fname);
@@ -218,6 +210,7 @@ protected:
 
 public:
     // Public member functions
+    void merge(bool div_clock = true);
     size_type size() const { return m_timer_list.size(); }
     void clear();
 
@@ -300,6 +293,7 @@ protected:
     // protected static functions and vars
     static comm_group_t get_communicator_group();
     static mutex_t  f_mutex;
+    static get_num_threads_func_t f_get_num_threads;
 
 private:
     // Private functions
@@ -394,8 +388,8 @@ template <typename Archive>
 inline void
 manager::serialize(Archive& ar, const unsigned int /*version*/)
 {
-    uint32_t omp_nthreads = get_max_threads();
-    ar(cereal::make_nvp("omp_concurrency", omp_nthreads));
+    uint32_t _nthreads = f_get_num_threads();
+    ar(cereal::make_nvp("concurrency", _nthreads));
     ar(cereal::make_nvp("timers", m_timer_list));
 }
 //----------------------------------------------------------------------------//
@@ -406,10 +400,10 @@ manager::string_hash(const string_t& str) const
 }
 //----------------------------------------------------------------------------//
 
-} // namespace NAME_TIM
+} // namespace tim
 
 // for backwards-compatibility
-namespace NAME_TIM { typedef manager timing_manager; }
+namespace tim { typedef manager timing_manager; }
 
 #pragma GCC diagnostic pop
 

@@ -40,10 +40,6 @@ endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 #
 # The license for TiMemory allows it to be included directly in the source
 # tree of another project
-# By setting TIMEMORY_NAMESPACE, the project can directly
-# use TiMemory in its own namespace, e.g.:
-# TIMEMORY_NAMESPACE=mad
-#   tim::manager --> mad::manager
 #
 ################################################################################
 
@@ -100,12 +96,6 @@ if(SETUP_PY)
     set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
         "Installation prefix of python" FORCE)
 endif(SETUP_PY)
-
-if(WIN32)
-    add_definitions(/DNAME_TIM=${TIMEMORY_NAMESPACE})
-else(WIN32)
-    add_definitions(-DNAME_TIM=${TIMEMORY_NAMESPACE})
-endif(WIN32)
 
 add_subdirectory(source)
 

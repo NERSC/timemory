@@ -39,8 +39,8 @@
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
 
-typedef NAME_TIM::timer          tim_timer_t;
-typedef NAME_TIM::manager manager_t;
+typedef tim::timer          tim_timer_t;
+typedef tim::manager manager_t;
 
 // ASSERT_NEAR
 // EXPECT_EQ
@@ -111,12 +111,12 @@ void test_timing_thread();
 
 int main(int /*argc*/, char** argv)
 {
-    NAME_TIM::EnableSignalDetection({
-                                        NAME_TIM::sys_signal::sHangup,
-                                        NAME_TIM::sys_signal::sInterrupt,
-                                        NAME_TIM::sys_signal::sIllegal,
-                                        NAME_TIM::sys_signal::sSegFault,
-                                        NAME_TIM::sys_signal::sFPE
+    tim::EnableSignalDetection({
+                                        tim::sys_signal::sHangup,
+                                        tim::sys_signal::sInterrupt,
+                                        tim::sys_signal::sIllegal,
+                                        tim::sys_signal::sSegFault,
+                                        tim::sys_signal::sFPE
                                     });
 
     tim_timer_t t = tim_timer_t("Total time");
@@ -165,8 +165,8 @@ int main(int /*argc*/, char** argv)
 
 void print_info(const std::string& func)
 {
-    if(NAME_TIM::mpi_rank() == 0)
-        std::cout << "\n[" << NAME_TIM::mpi_rank() << "]\e[1;31m TESTING \e[0m["
+    if(tim::mpi_rank() == 0)
+        std::cout << "\n[" << tim::mpi_rank() << "]\e[1;31m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n" << std::endl;
 }
@@ -175,9 +175,9 @@ void print_info(const std::string& func)
 
 void print_size(const std::string& func, int64_t line, bool extra_endl)
 {
-    if(NAME_TIM::mpi_rank() == 0)
+    if(tim::mpi_rank() == 0)
     {
-        std::cout << "[" << NAME_TIM::mpi_rank() << "] "
+        std::cout << "[" << tim::mpi_rank() << "] "
                   << func << "@" << line
                   << " : Timing manager size: "
                   << manager_t::instance()->size()
@@ -192,9 +192,9 @@ void print_size(const std::string& func, int64_t line, bool extra_endl)
 
 void print_depth(const std::string& func, int64_t line, bool extra_endl)
 {
-    if(NAME_TIM::mpi_rank() == 0)
+    if(tim::mpi_rank() == 0)
     {
-        std::cout << "[" << NAME_TIM::mpi_rank() << "] "
+        std::cout << "[" << tim::mpi_rank() << "] "
                   << func << "@" << line
                   << " : Timing manager size: "
                   << manager_t::instance()->get_max_depth()

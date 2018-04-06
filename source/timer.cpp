@@ -34,15 +34,15 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(NAME_TIM::timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
-uint64_t NAME_TIM::timer::f_output_width = 8;
+uint64_t tim::timer::f_output_width = 8;
 
 //============================================================================//
 
-std::string NAME_TIM::timer::default_format
+std::string tim::timer::default_format
     =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
        // bash expansion:
        //   total_RSS_current, total_RSS_peak
@@ -53,7 +53,7 @@ std::string NAME_TIM::timer::default_format
 
 //============================================================================//
 
-namespace NAME_TIM
+namespace tim
 {
 
 //============================================================================//
@@ -129,4 +129,4 @@ void timer::grab_metadata(const this_type& rhs)
 
 //============================================================================//
 
-} // namespace NAME_TIM
+} // namespace tim

@@ -59,7 +59,25 @@
 
 //----------------------------------------------------------------------------//
 
-namespace NAME_TIM
+// stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
+//   "stringify-ing" after the macro has been substituted by it's result
+#if !defined(TIMEMORY_STRINGIZE)
+#   define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#endif
+
+// actual stringifying
+#if !defined(TIMEMORY_STRINGIZE2)
+#   define TIMEMORY_STRINGIZE2(X) #X
+#endif
+
+// stringify the __LINE__ macro
+#if !defined(TIMEMORY_LINE_STRING)
+#   define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#endif
+
+//----------------------------------------------------------------------------//
+
+namespace tim
 {
 
 //----------------------------------------------------------------------------//
@@ -149,7 +167,25 @@ delimit(const std::string& _str, const std::string& _delims,
 
 //----------------------------------------------------------------------------//
 
-} // namespace NAME_TIM
+inline int32_t get_max_threads()
+{
+#if defined(_OPENMP)
+    int32_t _fallback = omp_get_max_threads();
+#else
+    int32_t _fallback = 1;
+#endif
+
+#ifdef ENV_NUM_THREADS_PARAM
+    return get_env<int32_t>( TIMEMORY_STRINGIZE( ENV_NUM_THREADS_PARAM ),
+                             _fallback );
+#else
+    return _fallback;
+#endif
+}
+
+//----------------------------------------------------------------------------//
+
+} // namespace tim
 
 //----------------------------------------------------------------------------//
 

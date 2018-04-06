@@ -52,7 +52,7 @@
 
 //----------------------------------------------------------------------------//
 
-namespace NAME_TIM
+namespace tim
 {
 
 enum class timer_field
@@ -82,7 +82,7 @@ class base_rss_usage
 {
 public:
     typedef base_rss_usage          this_type;
-    typedef NAME_TIM::rss::usage    rss_usage_t;
+    typedef tim::rss::usage    rss_usage_t;
 
     inline void init()
     {
@@ -109,10 +109,10 @@ public:
 
     void max(const base_rss_usage& rhs)
     {
-        m_rss_tot  = NAME_TIM::rss::usage::max(m_rss_tot, rhs.total());
-        m_rss_self = NAME_TIM::rss::usage::max(m_rss_self, rhs.self());
-        m_rss_tot_min = NAME_TIM::rss::usage::min(m_rss_tot, rhs.total());
-        m_rss_self_min = NAME_TIM::rss::usage::min(m_rss_self, rhs.self());
+        m_rss_tot  = tim::rss::usage::max(m_rss_tot, rhs.total());
+        m_rss_self = tim::rss::usage::max(m_rss_self, rhs.self());
+        m_rss_tot_min = tim::rss::usage::min(m_rss_tot, rhs.total());
+        m_rss_self_min = tim::rss::usage::min(m_rss_self, rhs.self());
     }
 
     inline this_type& operator+=(const rss_usage_t& rhs)
@@ -163,7 +163,7 @@ class base_timer_data
 public:
     typedef base_timer_data                             this_type;
     typedef std::micro                                  ratio_t;
-    typedef NAME_TIM::base_clock<ratio_t>               clock_t;
+    typedef tim::base_clock<ratio_t>               clock_t;
     typedef clock_t::time_point                         time_point_t;
     typedef std::tuple<time_point_t, time_point_t>      data_type;
     typedef base_rss_usage                              rss_type;
@@ -242,7 +242,7 @@ public:
     typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
     typedef base_timer_data                             op_type;
     typedef base_rss_usage                              rss_type;
-    typedef NAME_TIM::rss::usage                        rss_usage_t;
+    typedef tim::rss::usage                        rss_usage_t;
 
 public:
     base_timer_delta()
@@ -405,7 +405,7 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    typedef NAME_TIM::rss::usage                rss_usage_t;
+    typedef tim::rss::usage                rss_usage_t;
     typedef base_rss_usage                      rss_type;
 
 public:
@@ -481,7 +481,7 @@ public:
     {
         auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>())
                          / m_accum.get_sum<2>();
-        if(!NAME_TIM::isfinite(_cpu_util))
+        if(!tim::isfinite(_cpu_util))
             _cpu_util = 0.0;
 
         ar(cereal::make_nvp("laps", m_accum.size()),
@@ -577,14 +577,14 @@ void base_timer::start()
     else
     {
 #if !defined(NDEBUG)
-        int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+        int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
         if(_verbose > 0)
         {
             std::stringstream _msg;
             _msg << "Warning! base_timer::start() called but already "
                  << "running..." << std::endl;
             if(_verbose > 1)
-                NAME_TIM::StackBackTrace(_msg);
+                tim::StackBackTrace(_msg);
             std::cerr << _msg.str();
         }
 #endif
@@ -604,14 +604,14 @@ void base_timer::stop()
     else
     {
 #if !defined(NDEBUG)
-        int32_t _verbose = NAME_TIM::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+        int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
         if(_verbose > 0)
         {
             std::stringstream _msg;
             _msg << "Warning! base_timer::stop() called but already "
                  << "stopped..." << std::endl;
             if(_verbose > 1)
-                NAME_TIM::StackBackTrace(_msg);
+                tim::StackBackTrace(_msg);
             std::cerr << _msg.str();
         }
 #endif
@@ -655,15 +655,15 @@ void base_timer::report_average(ostream_t& os, bool endline) const
 
 } // namespace internal
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //----------------------------------------------------------------------------//
 
 namespace internal
 {
-typedef typename NAME_TIM::internal::base_timer_data::ratio_t base_ratio_t;
-typedef NAME_TIM::base_clock<base_ratio_t>   base_clock_t;
-typedef NAME_TIM::base_clock_data<base_ratio_t> base_clock_data_t;
+typedef typename tim::internal::base_timer_data::ratio_t base_ratio_t;
+typedef tim::base_clock<base_ratio_t>   base_clock_t;
+typedef tim::base_clock_data<base_ratio_t> base_clock_data_t;
 typedef std::chrono::duration<base_clock_data_t, base_ratio_t> base_duration_t;
 typedef std::chrono::time_point<base_clock_t, base_duration_t>  base_time_point_t;
 typedef std::tuple<base_time_point_t, base_time_point_t> base_time_pair_t;

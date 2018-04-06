@@ -62,13 +62,13 @@ using namespace py::literals;
 #include "timemory/rss.hpp"
 #include "timemory/mpi.hpp"
 
-typedef NAME_TIM::manager                manager_t;
-typedef NAME_TIM::timer                         tim_timer_t;
-typedef NAME_TIM::auto_timer                    auto_timer_t;
-typedef NAME_TIM::rss::usage                    rss_usage_t;
-typedef NAME_TIM::rss::usage                    rss_usage_t;
-typedef NAME_TIM::sys_signal                    sys_signal_t;
-typedef NAME_TIM::signal_settings               signal_settings_t;
+typedef tim::manager                manager_t;
+typedef tim::timer                         tim_timer_t;
+typedef tim::auto_timer                    auto_timer_t;
+typedef tim::rss::usage                    rss_usage_t;
+typedef tim::rss::usage                    rss_usage_t;
+typedef tim::sys_signal                    sys_signal_t;
+typedef tim::signal_settings               signal_settings_t;
 typedef signal_settings_t::signal_set_t         signal_set_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
@@ -327,7 +327,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     auto get_default_signal_set = [=] () -> signal_set_t
     {
-        return NAME_TIM::signal_settings::enabled();
+        return tim::signal_settings::enabled();
     };
     //------------------------------------------------------------------------//
     auto enable_signal_detection = [=] (py::list signal_list = py::list())
@@ -335,12 +335,12 @@ PYBIND11_MODULE(timemory, tim)
         auto _sig_set = (signal_list.size() == 0)
                         ? get_default_signal_set()
                         : signal_list_to_set(signal_list);
-        NAME_TIM::EnableSignalDetection(_sig_set);
+        tim::EnableSignalDetection(_sig_set);
     };
     //------------------------------------------------------------------------//
     auto disable_signal_detection = [=] ()
     {
-        NAME_TIM::DisableSignalDetection();
+        tim::DisableSignalDetection();
     };
     //------------------------------------------------------------------------//
 
@@ -411,7 +411,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     tim.def("has_mpi_support",
             [=] ()
-            { return NAME_TIM::has_mpi_support(); },
+            { return tim::has_mpi_support(); },
             "Return if the TiMemory library has MPI support");
     //------------------------------------------------------------------------//
 
@@ -925,7 +925,7 @@ PYBIND11_MODULE(timemory, tim)
                 typedef std::function<void(int)> signal_function_t;
                 using std::placeholders::_1;
                 signal_function_t _f = std::bind<void>(_func, _1);
-                NAME_TIM::signal_settings::set_exit_action(_f);
+                tim::signal_settings::set_exit_action(_f);
             },
             "Set the exit action when a signal is raised -- function must accept integer");
     //------------------------------------------------------------------------//

@@ -68,7 +68,7 @@
 
 // RSS - Resident set size (physical memory use, not in swap)
 
-namespace NAME_TIM
+namespace tim
 {
 
 namespace rss
@@ -369,7 +369,7 @@ namespace rss
 
 } // namespace rss
 
-} // namespace NAME_TIM
+} // namespace tim
 
 //----------------------------------------------------------------------------//
 

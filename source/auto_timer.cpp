@@ -26,7 +26,7 @@
 #include "timemory/utility.hpp"
 #include "timemory/namespace.hpp"
 
-namespace NAME_TIM
+namespace tim
 {
 
 //============================================================================//
@@ -152,4 +152,4 @@ auto_timer::~auto_timer()
 
 //============================================================================//
 
-} // namespace NAME_TIM
+} // namespace tim
