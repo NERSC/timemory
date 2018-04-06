@@ -458,7 +458,7 @@ setup(name='TiMemory',
     cmdclass=dict(build_ext=CMakeBuild, test=CMakeTest, install_egg_info=CMakeInstallEggInfo),
     zip_safe=False,
     # extra
-    install_requires=[ 'numpy', 'matplotlib' ],
+    install_requires=[ 'numpy', 'matplotlib', 'pillow' ],
     setup_requires=[ 'setuptools', 'disttools' ],
     #provides=[ 'timemory' ],
     packages=[ 'timemory', 'timemory.mpi_support', 'timemory.plotting', 'timemory.util', 'timemory.tests' ],
