@@ -64,7 +64,7 @@ build_script:
 - mkdir build-timemory
 - cd build-timemory
 - cmake -DCMAKE_SUPPRESS_REGENERATION=1
-    -DSHARED_PYTHON_LINKING=OFF -DUSE_MPI=OFF
+    -DSHARED_PYTHON_LINKING=OFF -DUSE_MPI=OFF -DPYTHON_EXECUTABLE=python
     -DBUILD_TESTING=ON -DCTEST_LOCAL_CHECKOUT=OFF -DCTEST_SITE=AppVeyor
     -DCTEST_MODEL=Continuous .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 #- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"

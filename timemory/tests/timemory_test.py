@@ -352,8 +352,9 @@ class timemory_test(unittest.TestCase):
         import numpy as np
         # should be ~8 MB
         nsize = 1000*1000
-        arr = np.ones([nsize], dtype=np.int64)
-
+        arr = np.ones(size=[nsize], dtype=np.int64)
+        arr = np.ones(size=[nsize], dtype=np.int64)
+        arr = np.ones(size=[nsize], dtype=np.int64)
         rss_post.record()
 
         rss_pre -= rss_init
@@ -369,6 +370,7 @@ class timemory_test(unittest.TestCase):
         print('RSS ideal: {} kB'.format(rss_corr))
         print('RSS diff:  {} kB'.format(rss_diff))
         # allow some variability
+        if rss_real > 0.0:
         self.assertTrue(abs(rss_diff) < 200)
 
 
