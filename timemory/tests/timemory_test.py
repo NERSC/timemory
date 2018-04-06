@@ -72,8 +72,9 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test if the timers are working if not disabled at compilation
-    def test_timing(self):
+    def test_2_timing(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
+        self.manager.clear()
 
         freport = options.set_report("timing_report.out")
         fserial = options.set_serial("timing_report.json")
@@ -116,7 +117,7 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test the timing on/off toggle functionalities
-    def test_toggle(self):
+    def test_6_toggle(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
@@ -155,7 +156,7 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test the timing on/off toggle functionalities
-    def test_max_depth(self):
+    def test_4_max_depth(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
@@ -182,7 +183,7 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test the persistancy of the manager pointer
-    def test_pointer(self):
+    def test_5_pointer(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         nval = 4
@@ -207,7 +208,7 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test decorator
-    def test_decorator(self):
+    def test_3_decorator(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
@@ -259,7 +260,7 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test context manager
-    def test_context_manager(self):
+    def test_7_context_manager(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
@@ -339,24 +340,30 @@ class timemory_test(unittest.TestCase):
 
     # ------------------------------------------------------------------------ #
     # Test RSS usage validity
-    def test_rss_validity(self):
+    def test_1_rss_validity(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         rss_init = timemory.rss_usage()
-        rss_pre = timemory.rss_usage()
         rss_post = timemory.rss_usage()
 
         rss_init.record()
-        rss_pre.record()
+        print('(A) RSS post: {}'.format(rss_post))
+        print('(A) RSS init: {}'.format(rss_init))
 
         import numpy as np
         # should be ~8 MB
         nsize = 1000*1000
         arr1 = np.ones(shape=[nsize], dtype=np.int64)
+
         rss_post.record()
 
-        rss_pre -= rss_init
+        print('(B) RSS post: {}'.format(rss_post))
+        print('(B) RSS init: {}'.format(rss_init))
+
         rss_post -= rss_init
+
+        print('(C) RSS post: {}'.format(rss_post))
+        print('(C) RSS init: {}'.format(rss_init))
 
         # in kB
         rss_corr = (8000) / 1.024
@@ -376,19 +383,19 @@ def run_test():
     try:
         _test = timemory_test()
         _test.setUp()
-        _test.test_context_manager()
+        _test.test_1_rss_validity()
         _test.setUp()
-        _test.test_decorator()
+        _test.test_2_timing()
         _test.setUp()
-        _test.test_max_depth()
+        _test.test_3_decorator()
         _test.setUp()
-        _test.test_pointer()
+        _test.test_4_max_depth()
         _test.setUp()
-        _test.test_timing()
+        _test.test_5_pointer()
         _test.setUp()
-        _test.test_toggle()
+        _test.test_6_toggle()
         _test.setUp()
-        _test.test_rss_validity()
+        _test.test_7_context_manager()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
@@ -403,6 +410,7 @@ if __name__ == '__main__':
     args = options.add_args_and_parse_known(parser)
 
     try:
+        loader = unittest.defaultTestLoader.sortTestMethodsUsing = None
         unittest.main(verbosity=5, buffer=False)
     except:
         raise
