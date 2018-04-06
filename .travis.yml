@@ -497,7 +497,7 @@ install:
     - env
     - echo "--> ${PWD}"
     - export SOURCE_DIR=${PWD}
-    - pip install matplotlib numpy
+    - pip install matplotlib numpy pillow
     - mkdir -p build-timemory
     - cd build-timemory
     - export BUILD_DIR=${PWD}

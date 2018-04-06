@@ -58,18 +58,20 @@ install:
       python -m pip install -U pip
     }
     pip install -U setuptools disttools
+    pip install -U matplotlib numpy pillow
 
 build_script:
-#- mkdir build-timemory
-#- cd build-timemory
-#- cmake -DCMAKE_SUPPRESS_REGENERATION=1 -DCTEST_LOCAL_CHECKOUT=ON -DCTEST_SITE=AppVeyor
-#    -DCTEST_MODEL=Continuous .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
+- mkdir build-timemory
+- cd build-timemory
+- cmake -DCMAKE_SUPPRESS_REGENERATION=1
+    -DSHARED_PYTHON_LINKING=OFF -DUSE_MPI=OFF
+    -DBUILD_TESTING=ON -DCTEST_LOCAL_CHECKOUT=OFF -DCTEST_SITE=AppVeyor
+    -DCTEST_MODEL=Continuous .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 #- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 #- cmake --build . --config %CONFIG% --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 #- cmake --build . --config %CONFIG% --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
-#- ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
-#- cd ..
-- ls
+- ctest --config %CONFIG% -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
+- cd ..
 - pip install .
 - cd ..
 - python -c "import timemory ; timemory.tests.run()"
