@@ -50,7 +50,7 @@ manager::pointer_type manager::f_instance = nullptr;
 
 //============================================================================//
 
-static thread_local manager::pointer_type l_instance = nullptr;
+tim_static_thread_local manager::pointer_type l_instance = nullptr;
 
 //============================================================================//
 

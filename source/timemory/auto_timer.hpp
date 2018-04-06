@@ -34,7 +34,7 @@
 #include <string>
 #include <cstdint>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/manager.hpp"
 

@@ -48,7 +48,7 @@
 #include <cereal/types/deque.hpp>
 #include <cereal/types/vector.hpp>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 
 //============================================================================//
 

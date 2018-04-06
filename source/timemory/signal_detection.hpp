@@ -55,7 +55,7 @@
 #include <cmath>
 #include <vector>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/mpi.hpp"
 

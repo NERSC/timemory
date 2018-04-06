@@ -24,7 +24,7 @@
 
 #include "timemory/auto_timer.hpp"
 #include "timemory/utility.hpp"
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 
 namespace tim
 {

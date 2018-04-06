@@ -62,14 +62,17 @@ add_option(SHARED_PYTHON_LINKING
     "Link the TiMemory PyBind11 module to the shared library" OFF)
 
 if(WIN32)
-    if(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
-        message(AUTHOR_WARNING "Shared Python linking on Windows is might not work")
-        _build_library(shared ${LIBNAME}-shared ${sources} ${headers})
-    else(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
-        _build_library(static ${LIBNAME}-archive ${sources} ${headers})
-        set(LINK_TYPE static)
-    endif(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
+
+    if(SHARED_PYTHON_LINKING)
+        message(AUTHOR_WARNING "Shared Python linking for Windows is currently "
+            "not available because Windows is terrible")
+        #_build_library(shared ${LIBNAME}-shared ${sources} ${headers})
+    endif(SHARED_PYTHON_LINKING)
+    _build_library(static ${LIBNAME}-archive ${sources} ${headers})
+    set(LINK_TYPE static)
+
 else(WIN32)
+
     message(STATUS "")
     message(STATUS "Building ${PROJECT_NAME} with object library...")
     message(STATUS "")
@@ -77,17 +80,15 @@ else(WIN32)
     _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
     _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
     set(LINK_TYPE static)
-endif(WIN32)
-
-if(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
-    set(LINK_TYPE shared)
-    if(PYTHON_DEVELOPER_INSTALL)
-        # C++ shared library
+    if(SHARED_PYTHON_LINKING)
+        set(LINK_TYPE shared)
+        # C++ shared library fallback installation
         install(TARGETS ${LIBNAME}-shared
             DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
             COMPONENT python)
-    endif(PYTHON_DEVELOPER_INSTALL)
-endif(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
+    endif(SHARED_PYTHON_LINKING)
+
+endif(WIN32)
 
 
 #----------------------------------------------------------------------------

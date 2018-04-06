@@ -59,7 +59,7 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/mpi.hpp"

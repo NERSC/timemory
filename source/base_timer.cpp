@@ -48,12 +48,9 @@ CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
 
 namespace tim
 {
+
 namespace internal
 {
-
-//============================================================================//
-
-//thread_local base_timer::data_map_ptr_t base_timer::f_data_map = nullptr;
 
 //============================================================================//
 
@@ -188,9 +185,6 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
     if(m_timer().running())
         const_cast<base_timer*>(this)->stop();
 
-    // for average reporting (no longer supported)
-    double div = 1.0;
-
     double _real = real_elapsed();
     double _user = user_elapsed();
     double _system = system_elapsed();
@@ -241,22 +235,22 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
             case timer_field::wall:
                 // the real elapsed time
                 ss << std::setw(noff+m_precision)
-                   << (_real * div);
+                   << (_real);
                 break;
             case timer_field::user:
                 // CPU time of non-system calls
                 ss << std::setw(noff+m_precision)
-                   << (_user * div);
+                   << (_user);
                 break;
             case timer_field::system:
                 // thread specific CPU time, e.g. thread creation overhead
                 ss << std::setw(noff+m_precision)
-                   << (_system * div);
+                   << (_system);
                 break;
             case timer_field::cpu:
                 // total CPU time
                 ss << std::setw(noff+m_precision)
-                   << (_cpu * div);
+                   << (_cpu);
                 break;
             case timer_field::percent:
                 // percent CPU utilization
@@ -316,6 +310,3 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
 } // namespace tim
 
 //============================================================================//
-
-
-

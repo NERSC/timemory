@@ -53,7 +53,7 @@ namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/rss.hpp"

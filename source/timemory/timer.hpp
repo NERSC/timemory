@@ -37,7 +37,7 @@
 #include <string>
 #include <memory>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/base_timer.hpp"
 
 namespace tim

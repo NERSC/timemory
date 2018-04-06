@@ -51,7 +51,7 @@
 #include <cereal/types/deque.hpp>
 #include <cereal/access.hpp>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 
 #if defined(_UNIX)
 

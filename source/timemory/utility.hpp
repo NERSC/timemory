@@ -55,7 +55,7 @@
 #include <mutex>
 #include <thread>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 
 //----------------------------------------------------------------------------//
 

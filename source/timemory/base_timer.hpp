@@ -37,7 +37,7 @@
 #include <string>
 #include <atomic>
 
-#include "timemory/namespace.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/base_clock.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/utility.hpp"
@@ -470,9 +470,7 @@ protected:
     poslist_t               m_format_positions;
 
 private:
-    // hash and data fields
-    //static thread_local data_map_ptr_t  f_data_map;
-    // world mutex map, thread-safe ostreams
+    // world mutex map for thread-safe ostreams
     static mutex_map_t                  w_mutex_map;
 
 public:
