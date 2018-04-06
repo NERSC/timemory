@@ -84,13 +84,7 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     endif(WIN32)
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
-# cmake installation folder
-set(PROJECT_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
-    CACHE PATH "Installation directory for CMake package config files")
-
 # used by configure_package_*
-set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
-set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 set(LIBNAME                 timemory)
 
 # set the compiler flags if not on Windows

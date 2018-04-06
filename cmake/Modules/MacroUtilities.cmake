@@ -683,55 +683,72 @@ function(print_features)
     print_disabled_features()
 endfunction()
 
+
 #------------------------------------------------------------------------------#
-macro(DETERMINE_LIBDIR_DEFAULT)
-  set(LIBDIR_DEFAULT "lib")
-  # Override this default 'lib' with 'lib64' if:
-  #  - we are on Linux system but NOT cross-compiling
-  #  - we are NOT on debian
-  #  - we are on a 64 bits system
-  # reason is: amd64 ABI: http://www.x86-64.org/documentation/abi.pdf
-  # Note that the future of multi-arch handling may be even
-  # more complicated than that: http://wiki.debian.org/Multiarch
-  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
-      set(__LAST_LIBDIR_DEFAULT "lib")
-      # __LAST_LIBDIR_DEFAULT is the default value that we compute from
-      # _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX, not a cache entry for
-      # the value that was last used as the default.
-      # This value is used to figure out whether the user changed the
-      # CMAKE_INSTALL_LIBDIR value manually, or if the value was the
-      # default one. When CMAKE_INSTALL_PREFIX changes, the value is
-      # updated to the new default, unless the user explicitly changed it.
-  endif()
-  if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU)$"
-      AND NOT CMAKE_CROSSCOMPILING)
-      if (EXISTS "/etc/debian_version") # is this a debian system ?
-          if(CMAKE_LIBRARY_ARCHITECTURE)
-              if("${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
-                  set(_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
-              endif()
-              if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX
-                 AND "${_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
-                  set(__LAST_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
-              endif()
-          endif()
-      else() # not debian, rely on CMAKE_SIZEOF_VOID_P:
-          if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
-              message(AUTHOR_WARNING
-                  "Unable to determine default CMAKE_INSTALL_LIBDIR directory "
-                  "because no target architecture is known. "
-                  "Please enable at least one language before including GNUInstallDirs.")
-          else()
-              if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
-                  set(_LIBDIR_DEFAULT "lib64")
-                  if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
-                      set(__LAST_LIBDIR_DEFAULT "lib64")
-                  endif()
-              endif()
-          endif()
-      endif()
-  endif()
+macro(DETERMINE_LIBDIR_DEFAULT VAR)
+    set(_LIBDIR_DEFAULT "lib")
+    # Override this default 'lib' with 'lib64' iff:
+    #  - we are on Linux system but NOT cross-compiling
+    #  - we are NOT on debian
+    #  - we are on a 64 bits system
+    # reason is: amd64 ABI: https://github.com/hjl-tools/x86-psABI/wiki/X86-psABI
+    # For Debian with multiarch, use 'lib/${CMAKE_LIBRARY_ARCHITECTURE}' if
+    # CMAKE_LIBRARY_ARCHITECTURE is set (which contains e.g. "i386-linux-gnu"
+    # and CMAKE_INSTALL_PREFIX is "/usr"
+    # See http://wiki.debian.org/Multiarch
+    if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+        set(__LAST_LIBDIR_DEFAULT "lib")
+        # __LAST_LIBDIR_DEFAULT is the default value that we compute from
+        # _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX, not a cache entry for
+        # the value that was last used as the default.
+        # This value is used to figure out whether the user changed the
+        # LIBDIR_DEFAULT value manually, or if the value was the
+        # default one. When CMAKE_INSTALL_PREFIX changes, the value is
+        # updated to the new default, unless the user explicitly changed it.
+    endif()
+    if(CMAKE_SYSTEM_NAME MATCHES "^(Linux|kFreeBSD|GNU)$"
+            AND NOT CMAKE_CROSSCOMPILING)
+        if (EXISTS "/etc/debian_version") # is this a debian system ?
+            if(CMAKE_LIBRARY_ARCHITECTURE)
+                if("${CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                    set(_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+                endif()
+                if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX
+                        AND "${_GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX}" MATCHES "^/usr/?$")
+                    set(__LAST_LIBDIR_DEFAULT "lib/${CMAKE_LIBRARY_ARCHITECTURE}")
+                endif()
+            endif()
+        else() # not debian, rely on CMAKE_SIZEOF_VOID_P:
+            if(NOT DEFINED CMAKE_SIZEOF_VOID_P)
+                message(AUTHOR_WARNING
+                    "Unable to determine default LIBDIR_DEFAULT directory "
+                    "because no target architecture is known. "
+                    "Please enable at least one language before including GNUInstallDirs.")
+            else()
+                if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+                    set(_LIBDIR_DEFAULT "lib64")
+                    if(DEFINED _GNUInstallDirs_LAST_CMAKE_INSTALL_PREFIX)
+                        set(__LAST_LIBDIR_DEFAULT "lib64")
+                    endif()
+                endif()
+            endif()
+        endif()
+    endif()
+
+    # if assign to another variable
+    if(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
+        set(${VAR} "${_LIBDIR_DEFAULT}")
+    endif(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
+
+    # cache the value
+    if(NOT DEFINED LIBDIR_DEFAULT)
+        set(LIBDIR_DEFAULT "${_LIBDIR_DEFAULT}" CACHE PATH "Object code libraries (${_LIBDIR_DEFAULT})" FORCE)
+    elseif(DEFINED __LAST_LIBDIR_DEFAULT
+            AND "${__LAST_LIBDIR_DEFAULT}" STREQUAL "${LIBDIR_DEFAULT}")
+        set_property(CACHE LIBDIR_DEFAULT PROPERTY VALUE "${_LIBDIR_DEFAULT}")
+    endif()
 endmacro()
+
 
 #------------------------------------------------------------------------------#
 # macro CACHE_VARIABLES_FOR_REFERENCE(...)
@@ -744,6 +761,8 @@ macro(CACHE_VARIABLES_FOR_REFERENCE)
             "Cached reference of ${_var} under ${_var}_REF for later comparison")
     endforeach()
 endmacro()
+
+
 #------------------------------------------------------------------------------#
 # macro CACHE_VARIABLES_FOR_REFERENCE(...)
 #           Provide a list of variables that will be stored in the cache
@@ -752,10 +771,15 @@ endmacro()
 macro(UPDATE_REFERENCE_CACHE_VARIABLES)
     foreach(_var ${ARGN})
         set(${_var}_REF ${${_var}} CACHE STRING
-            "Cached reference of ${_var} under ${_var}_REF for later comparison" FORCE)
+            "Cached reference of ${_var} under ${_var}_REF for later comparison"
+            FORCE)
     endforeach()
 endmacro()
+
+
 #------------------------------------------------------------------------------#
+# always determine the default lib directory
+DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)
 
 cmake_policy(POP)
 

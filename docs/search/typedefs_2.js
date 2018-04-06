@@ -1,7 +1,7 @@
 var searchData=
 [
-  ['clock_5ft',['clock_t',['../d0/d62/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__data.html#a6e8f860910584b83df6893f9cb5f5095',1,'NAME_TIM::internal::base_timer_data']]],
-  ['clone_5ffunction_5ft',['clone_function_t',['../dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html#a53dc52ac64985903ce13b313493d067a',1,'NAME_TIM::timer']]],
-  ['comm_5fgroup_5ft',['comm_group_t',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#ad31f156ffca5e4e220bf6a3b9f02bf20',1,'NAME_TIM::manager']]],
-  ['const_5fiterator',['const_iterator',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#adec7ca784e66197e3929b9fb978b4e57',1,'NAME_TIM::manager']]]
+  ['clock_5ft',['clock_t',['../da/d4a/classtim_1_1internal_1_1base__timer__data.html#a246581aca57d2ab80b6c5c32fe11f2c3',1,'tim::internal::base_timer_data']]],
+  ['clone_5ffunction_5ft',['clone_function_t',['../dd/dd9/classtim_1_1timer.html#ae006abb416539eab0795e514499a92b8',1,'tim::timer']]],
+  ['comm_5fgroup_5ft',['comm_group_t',['../d8/d14/classtim_1_1manager.html#a4471b8c70fd2f79a65ddb58dc571ade4',1,'tim::manager']]],
+  ['const_5fiterator',['const_iterator',['../d8/d14/classtim_1_1manager.html#ad36ecef6aeb9283bd063c472f8238639',1,'tim::manager']]]
 ];

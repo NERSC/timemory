@@ -7,17 +7,21 @@
 # root of the source directory)
 
 include(MacroUtilities)
+include(CMakeDependentOption)
 
 #-----------------------------------------------------------------------
 
 add_option(DOXYGEN_DOCS "Make a `doc` make target" OFF)
 
-if(DOXYGEN_DOCS)
-  option(BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF)
-  mark_as_advanced(BUILD_DOXYGEN_DOCS)
-endif()
+if(SETUP_PY AND DOXYGEN_DOCS)
+    message(AUTHOR_WARNING "Skipping documentation generation because SETUP_PY=ON")
+    set(DOXYGEN_DOCS OFF CACHE BOOL "Make a `doc` make target" FORCE)
+endif(SETUP_PY AND DOXYGEN_DOCS)
 
-include(CMakeDependentOption)
+if(DOXYGEN_DOCS)
+    option(BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF)
+    mark_as_advanced(BUILD_DOXYGEN_DOCS)
+endif()
 
 if(DOXYGEN_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
@@ -97,11 +101,12 @@ if(DOXYGEN_DOCS)
         endforeach()
     endif()
 
-    # get the buildtree directories
+    # get the documentation include directories
     get_property(BUILDTREE_INCLUDE_DIRS GLOBAL
-                 PROPERTY BUILDTREE_INCLUDE_DIRS)
+                 PROPERTY TIMEMORY_DOCUMENTATION_INCLUDE_DIRS)
+
     if("${BUILDTREE_INCLUDE_DIRS}" STREQUAL "")
-        message(FATAL_ERROR "Property BUILDTREE_INCLUDE_DIRS is empty")
+        message(FATAL_ERROR "Property TIMEMORY_DOCUMENTATION_INCLUDE_DIRS is empty")
     endif()
 
     LIST(REMOVE_DUPLICATES BUILDTREE_INCLUDE_DIRS)
@@ -218,21 +223,25 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
             install(DIRECTORY   ${PROJECT_BINARY_DIR}/doc/man/
                     DESTINATION ${CMAKE_INSTALL_MANDIR}
                     OPTIONAL
+                    COMPONENT documentation
             )
 
             install(DIRECTORY   ${PROJECT_BINARY_DIR}/doc/html
                     DESTINATION ${CMAKE_INSTALL_DOCDIR}
                     OPTIONAL
+                    COMPONENT documentation
             )
 
             install(DIRECTORY   ${PROJECT_BINARY_DIR}/doc/latex
                     DESTINATION ${CMAKE_INSTALL_DOCDIR}
                     OPTIONAL
+                    COMPONENT documentation
             )
 
             install(FILES       ${PROJECT_BINARY_DIR}/doc/${PROJECT_NAME}_Documentation.html
                     DESTINATION ${CMAKE_INSTALL_DOCDIR}
                     OPTIONAL
+                    COMPONENT documentation
             )
 
         ELSE( DOXYFILE_FOUND )

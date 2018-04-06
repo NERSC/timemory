@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['plotting',['plotting',['../d5/d81/namespaceplotting.html',1,'plotting'],['../df/d23/namespaceplotting_1_1plotting.html',1,'plotting.plotting']]]
+  ['chrono',['chrono',['../d4/d0c/namespacestd_1_1chrono.html',1,'std']]]
 ];

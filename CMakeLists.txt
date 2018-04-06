@@ -1,12 +1,21 @@
 cmake_minimum_required(VERSION 2.8.12)
 
+################################################################################
+#
+#   CMake settings
+#
+################################################################################
+
 if(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE OFF CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
 else(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE ON CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
 endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 
-set(TIMEMORY_VERSION 1.2.3 CACHE STRING "Version of TiMemory project" FORCE)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/.version.txt" VERSION_STRING
+    LIMIT_COUNT 1)
+set(TIMEMORY_VERSION 1.3.0 CACHE STRING "Version of TiMemory project" FORCE)
+message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 mark_as_advanced(TIMEMORY_VERSION)
 
 if(GOOD_CMAKE)
@@ -36,131 +45,26 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(SUBPROJECT ON)
 endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
-################################################################################
-#
-# The license for TiMemory allows it to be included directly in the source
-# tree of another project
-#
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
+
 ################################################################################
 
-include(Compilers)
 include(MacroUtilities)
-
-add_option(SETUP_PY "Python build from setup.py" OFF NO_FEATURE)
-
-set(TIMEMORY_NAMESPACE tim CACHE STRING "Top-level namespace for ${PROJECT_NAME}")
-if(NOT SUBPROJECT)
-    if(NOT CMAKE_BUILD_TYPE)
-        set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
-        set(CMAKE_BUILD_TYPE Release)
-    endif()
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" _CONFIG)
-    add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
-    add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
-    add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
-    add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
-endif(NOT SUBPROJECT)
-add_feature(TIMEMORY_NAMESPACE "Top-level namespace for ${PROJECT_NAME}")
-
-set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-if(WIN32)
-    set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ STL standard")
-else(WIN32)
-    set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
-endif(WIN32)
-add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
-
+include(Compilers)
+include(GNUInstallDirs)
+include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
 
-set(TIMEMORY_INSTALL_PYTHONDIR
-    ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
-    CACHE PATH "Installation directory for python")
-set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
-set(PYTHON_INSTALL_DIR      ${TIMEMORY_INSTALL_PYTHONDIR})
-
 ################################################################################
-#
-#        TiMemory
-#
+#   TiMemory source
 ################################################################################
-
-safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
-safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-
-foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
-
-if(SETUP_PY)
-    set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
-        "Installation prefix of python" FORCE)
-endif(SETUP_PY)
 
 add_subdirectory(source)
-
 add_subdirectory(examples)
 
-include(CMakePackageConfigHelpers)
+################################################################################
+#   Package setup
+################################################################################
 
-configure_package_config_file(
-    ${CMAKE_CURRENT_LIST_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-    INSTALL_DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
-    PATH_VARS
-        INCLUDE_INSTALL_DIR
-        LIB_INSTALL_DIR
-        PYTHON_INSTALL_DIR)
-
-write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-    VERSION ${PROJECT_VERSION}
-    COMPATIBILITY SameMajorVersion)
-
-if(NOT SETUP_PY)
-    install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${PROJECT_INSTALL_CMAKEDIR})
-endif(NOT SETUP_PY)
-
-set(TEST_FILES timemory_test.py simple_test.py nested_test.py array_test.py __init__.py tests.py)
-foreach(_FILE ${TEST_FILES})
-    # only copy *_test.py files to binary directory
-    if("${_FILE}" MATCHES "_test.py")
-        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-            ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
-    endif("${_FILE}" MATCHES "_test.py")
-
-    # copy to binary: timemory/tests/${_FILE}
-    configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} COPYONLY)
-
-    # install them though
-    install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests)
-
-endforeach(_FILE ${TEST_FILES})
-
-if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
-    include(Testing)
-endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Modules/Testing.cmake")
-
-
-if(NOT SUBPROJECT)
-    # documentation
-    set_property(GLOBAL APPEND PROPERTY BUILDTREE_INCLUDE_DIRS
-        ${PROJECT_SOURCE_DIR}/source
-        ${PROJECT_SOURCE_DIR}/timemory
-        ${PROJECT_SOURCE_DIR}/examples)
-    
-    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
-    include(Documentation)
-    
-    if(DOXYGEN_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
-        Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif()
-
-    print_features()
-endif(NOT SUBPROJECT)
+include(PackageConfigure)

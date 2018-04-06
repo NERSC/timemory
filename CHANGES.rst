@@ -1,6 +1,23 @@
 TiMemory
 ========
 
+Release: TiMemory 1.3.0
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Fri Apr 6 06:50:00 2018 -0700
+
+    - Custom TiMemory namespace was removed, now just tim
+    - Large rewrite of plotting utilities resulting in a significant improvement
+    - Replaced timing_manager with manager but typedef in C++ and Python to allow backwards-compatibility
+    - Added new features to auto_timer
+    - Removed clone from timer
+    - Added rss_{tot,self}_min
+    - Updated pybind11 to v2.2.2
+    - Updated docs and README.rst
+    - Shared library linking + plotting fixes
+
+
 Release: TiMemory 1.2.2
 ~~~~~~~~~~~~~~~~~~~~~~~
 

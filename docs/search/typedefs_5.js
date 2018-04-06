@@ -1,5 +1,4 @@
 var searchData=
 [
-  ['incr_5ftype',['incr_type',['../dc/d73/class_n_a_m_e___t_i_m_1_1internal_1_1base__timer__delta.html#afb97a5d28e8be4e7ca52b057113cea39',1,'NAME_TIM::internal::base_timer_delta']]],
-  ['iterator',['iterator',['../df/dd1/class_n_a_m_e___t_i_m_1_1manager.html#aed566bcdc1e95d9cae133b3a29260833',1,'NAME_TIM::manager']]]
+  ['get_5fnum_5fthreads_5ffunc_5ft',['get_num_threads_func_t',['../d8/d14/classtim_1_1manager.html#a68049372c556c4c06af9a62eb60c62c7',1,'tim::manager']]]
 ];

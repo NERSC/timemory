@@ -1,3 +1,0 @@
-<map id="NAME_TIM::internal::base_timer" name="NAME_TIM::internal::base_timer">
-<area shape="rect" id="node2" href="$dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html" title="{NAME_TIM::timer\n|+ default_format\l+ default_precision\l# m_use_static_width\l# m_begin\l# m_close\l&#45; f_output_width\l|+ timer()\l+ timer()\l+ ~timer()\l+ stop_and_return()\l+ begin()\l+ close()\l+ as_string()\l+ print()\l+ operator+=()\l+ operator/=()\land 7 more...\l+ propose_output_width()\l+ get_output_width()\l+ set_output_width()\l+ set_default_format()\l# compose()\l}" alt="" coords="5,537,164,969"/>
-</map>

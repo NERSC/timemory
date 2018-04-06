@@ -36,4 +36,7 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
 add_executable(mpi_test_timing mpi_test_timing.cpp)
 target_link_libraries(mpi_test_timing ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
 
-install(TARGETS mpi_test_timing DESTINATION bin)
+if(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
+    install(TARGETS mpi_test_timing DESTINATION bin)
+else(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
+endif(NOT DEFINED SETUP_PY OR NOT SETUP_PY)

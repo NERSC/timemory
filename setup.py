@@ -17,7 +17,14 @@ from setuptools.command.install_egg_info import install_egg_info
 
 # ---------------------------------------------------------------------------- #
 def get_project_version():
-    return '1.2.3rc0'
+    # open ".version.txt"
+    with open(os.path.join(os.getcwd(), '.version.txt'), 'r') as f:
+        data = f.read().replace('\n', '')
+    # make sure is string
+    if isinstance(data, list) or isinstance(data, tuple):
+        return data[0]
+    else:
+        return data
 
 
 # ---------------------------------------------------------------------------- #
@@ -43,7 +50,9 @@ class CMakeBuild(build_ext, Command):
     cmake_prefix_path = ''
     cmake_include_path = ''
     cmake_library_path = ''
-
+    devel_install = ''
+    shared_linking = 'OFF'
+    pybind11_install = 'OFF'
 
     def check_env(self, var, key):
         ret = var
@@ -131,6 +140,9 @@ class CMakeBuild(build_ext, Command):
         self.cmake_prefix_path = self.check_env(self.cmake_prefix_path, compose("cmake_prefix_path"))
         self.cmake_include_path = self.check_env(self.cmake_include_path, compose("cmake_include_path"))
         self.cmake_library_path = self.check_env(self.cmake_library_path, compose("cmake_library_path"))
+        self.devel_install = self.check_env(self.devel_install, compose("devel_install"))
+        self.shared_linking = self.check_env(self.shared_linking, compose("shared_linking"))
+        self.pybind11_install = self.check_env(self.pybind11_install, compose("pybind11_install"))
 
         _valid_type = False
         for _type in [ 'Release', 'Debug', 'RelWithDebInfo', 'MinSizeRel' ]:
@@ -143,6 +155,7 @@ class CMakeBuild(build_ext, Command):
 
         cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
         cmake_args += [ '-DUSE_MPI={}'.format(str.upper(self.use_mpi)) ]
+        cmake_args += [ '-DSHARED_PYTHON_LINKING={}'.format(str.upper(self.shared_linking)) ]
 
         if platform.system() != "Windows":
             cmake_args += [ '-DBUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
@@ -174,15 +187,28 @@ class CMakeBuild(build_ext, Command):
         if valid_string(self.cmake_include_path):
             cmake_args += [ '-DCMAKE_INCLUDE_PATH={}'.format(self.cmake_include_path) ]
 
+        devel_install_path = None
+        if valid_string(self.devel_install) and str.upper(self.devel_install) != 'OFF':
+            if str.upper(self.devel_install) == 'ON':
+                self.devel_install = sys.prefix
+            devel_install_path = self.devel_install
+            if not os.path.isabs(devel_install_path):
+                devel_install_path = os.path.realpath(devel_install_path)
+            cmake_args += [ '-DPYTHON_DEVELOPER_INSTALL=ON' ]
+            cmake_args += [ '-DTIMEMORY_INSTALL_PREFIX={}'.format(devel_install_path) ]
+            cmake_args += [ '-DPYBIND11_INSTALL={}'.format(str.upper(self.pybind11_install)) ]
+
+
         cmake_args += [ '-DTIMEMORY_EXCEPTIONS={}'.format(str.upper(self.timemory_exceptions)) ]
 
         build_args = [ '--config', self.build_type ]
-        install_args = [ '--config', self.build_type ]
+        install_args = [ '-DBUILD_TYPE={}'.format(self.build_type),
+                         '-P', 'cmake_install.cmake' ]
+
         if platform.system() == "Windows":
             if sys.maxsize > 2**32:
                 cmake_args += ['-A', 'x64']
             build_args += ['--target', 'ALL_BUILD', '--', '/m' ]
-            install_args += ['--target', 'INSTALL', '--', '/m' ]
         else:
             nproc = '-j4'
             try:
@@ -191,7 +217,6 @@ class CMakeBuild(build_ext, Command):
             except:
                 pass
             build_args += [ '--', nproc ]
-            install_args += [ '--target', 'install' ]
 
         env = os.environ.copy()
         env['CXXFLAGS'] = '{}'.format(
@@ -220,10 +245,16 @@ class CMakeBuild(build_ext, Command):
                               cwd=self.build_temp, env=env)
 
         # install the CMake build
-        subprocess.check_call(['cmake', '--build', self.build_temp] + install_args,
+        subprocess.check_call(['cmake', '-DCOMPONENTS=python' ] + install_args,
+                              cwd=self.build_temp, env=env)
+
+        # install the development
+        if devel_install_path is not None:
+            subprocess.check_call(['cmake', '-DCOMPONENT=development' ] + install_args,
                               cwd=self.build_temp, env=env)
 
         CMakeInstallEggInfo.dirs[self.build_temp] = extdir
+
         print()  # Add an empty line for cleaner output
 
 

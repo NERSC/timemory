@@ -132,8 +132,9 @@ manager::~manager()
     };
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "deleting thread-local instance of manager..."
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+        std::cout << "tim::manager::" << __FUNCTION__
+                  << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t" << f_instance
                   << "\nlocal instance:  \t" << l_instance
                   << std::endl;
@@ -159,7 +160,8 @@ void manager::clear()
 {
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "Clearing " << l_instance << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
+                  << l_instance << "..." << std::endl;
 #endif
 
     if(this == f_instance)
@@ -237,7 +239,8 @@ manager::timer(const string_t& key,
     if(key.find(" ") != string_t::npos)
     {
         std::stringstream ss;
-        ss << "Error! Space found in tag: \"" << key << "\"";
+        ss << "tim::manager::" << __FUNCTION__
+           << " Warning! Space found in tag: \"" << key << "\"";
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cerr << ss.str() << std::endl;
     }
@@ -256,7 +259,8 @@ manager::timer(const string_t& key,
         {
             tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
             if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
-                std::cout << "Found : " << itr << std::endl;
+                std::cout << "tim::manager::" << __FUNCTION__ << " Found : "
+                          << itr << std::endl;
         }
 #endif
         return *(m_timer_map[ref].get());
@@ -288,7 +292,8 @@ manager::timer(const string_t& key,
     m_timer_list.push_back(_tuple);
 
 #if defined(HASH_DEBUG)
-    std::cout << "Created : " << _tuple << std::endl;
+    std::cout << "tim::manager::" << __FUNCTION__ << " Created : "
+              << _tuple << std::endl;
 #endif
 
     return *(m_timer_map[ref].get());
@@ -441,8 +446,9 @@ void manager::add(pointer_type ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "Adding " << ptr << " to " << this << "..." << std::endl;
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+        std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
+                  << ptr << " to " << this << "..." << std::endl;
 #endif
     m_daughters.insert(ptr);
 }
@@ -466,7 +472,8 @@ void manager::merge(bool div_clock)
 
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "Merging " << itr << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
+                  << "..." << std::endl;
 #endif
 
         for(const auto& mitr : itr->map())
@@ -744,20 +751,21 @@ manager::get_communicator_group()
     MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
-    int32_t local_mpi_size = mpi_size(local_mpi_comm);
-    int32_t local_mpi_file = mpi_rank() / local_mpi_size;
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    {
+        int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
+        int32_t local_mpi_size = mpi_size(local_mpi_comm);
+        int32_t local_mpi_file = mpi_rank() / local_mpi_size;
 
-    printf("WORLD RANK/SIZE: %d/%d --> ROW RANK/SIZE: %d/%d\n",
-        mpi_rank(), mpi_size(), local_mpi_rank, local_mpi_size);
-
-    std::stringstream _info;
-    _info << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
-    _info << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
-    _info << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
-    _info << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
-    _info << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
-    std::cout << _info.str();
+        std::stringstream _info;
+        _info << "\t" << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
+        _info << "\t" << mpi_rank() << " Size      : " << mpi_size() << std::endl;
+        _info << "\t" << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
+        _info << "\t" << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
+        _info << "\t" << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
+        _info << "\t" << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
+    }
 #endif
 
     return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));

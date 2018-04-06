@@ -9,7 +9,7 @@ var dir_4fd02b5fd43288e8282468be733f8250 =
     [ "rss.hpp", "d9/dd2/rss_8hpp.html", "d9/dd2/rss_8hpp" ],
     [ "signal_detection.hpp", "da/d8e/signal__detection_8hpp.html", "da/d8e/signal__detection_8hpp" ],
     [ "timer.hpp", "df/d05/timer_8hpp.html", [
-      [ "timer", "dc/dc8/class_n_a_m_e___t_i_m_1_1timer.html", "dc/dc8/class_n_a_m_e___t_i_m_1_1timer" ]
+      [ "timer", "dd/dd9/classtim_1_1timer.html", "dd/dd9/classtim_1_1timer" ]
     ] ],
     [ "utility.hpp", "d1/d4e/utility_8hpp.html", "d1/d4e/utility_8hpp" ]
 ];

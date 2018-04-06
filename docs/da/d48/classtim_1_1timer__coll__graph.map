@@ -1,0 +1,15 @@
+<map id="tim::timer" name="tim::timer">
+<area shape="rect" id="node2" href="$d6/d0e/classtim_1_1internal_1_1base__timer.html" title="{tim::internal::base\l_timer\n||+ base_timer()\l+ ~base_timer()\l+ base_timer()\l+ operator=()\l+ start()\l+ stop()\l+ is_valid()\l+ real_elapsed()\l+ system_elapsed()\l+ user_elapsed()\land 15 more...\l# parse_format()\l# compose()\l# m_timer()\l# get_accum()\l# get_accum()\l}" alt="" coords="693,1492,820,1855"/>
+<area shape="rect" id="node3" href="$da/d4a/classtim_1_1internal_1_1base__timer__data.html" title="{tim::internal::base\l_timer_data\n||+ base_timer_data()\l+ start()\l+ stop()\l+ start()\l+ stop()\l+ running()\l+ serialize()\l+ rss_init()\l+ rss_record()\l+ rss()\l+ rss()\l+ operator=()\l}" alt="" coords="189,1081,319,1375"/>
+<area shape="rect" id="node6" href="$d9/d4f/classtim_1_1internal_1_1base__rss__usage.html" title="{tim::internal::base\l_rss_usage\n||+ init()\l+ record()\l+ total()\l+ self()\l+ total()\l+ self()\l+ total_min()\l+ self_min()\l+ total_min()\l+ self_min()\l+ max()\l+ operator+=()\l+ operator&#45;=()\l+ operator=()\l}" alt="" coords="575,619,693,947"/>
+<area shape="rect" id="node17" href="$dc/d37/classtim_1_1internal_1_1base__timer__delta.html" title="{tim::internal::base\l_timer_delta\n||+ base_timer_delta()\l+ reset()\l+ operator=()\l+ operator+=()\l+ operator+=()\l+ operator+=()\l+ operator&#45;=()\l+ operator/=()\l+ get_sum()\l+ get_sqr()\l+ size()\l+ rss()\l+ rss()\l# compute()\l# compute_sum()\l# compute_sqr()\l# divide_sum()\l# divide_sqr()\l}" alt="" coords="419,1029,551,1427"/>
+<area shape="rect" id="node7" href="$de/df3/structtim_1_1rss_1_1usage.html" title="{tim::rss::usage\n||+ usage()\l+ usage()\l+ usage()\l+ operator=()\l+ record()\l+ record()\l+ operator()()\l+ operator+=()\l+ operator&#45;=()\l+ current()\l+ peak()\l+ serialize()\l+ max()\l+ min()\l}" alt="" coords="584,173,684,484"/>
+<area shape="rect" id="node13" title="STL class. " alt="" coords="815,740,920,825"/>
+<area shape="rect" id="node20" title="STL class. " alt="" coords="944,731,1073,834"/>
+<area shape="rect" id="node15" title="STL class. " alt="" coords="1069,1185,1143,1271"/>
+<area shape="rect" id="node16" title="STL class. " alt="" coords="1097,731,1213,834"/>
+<area shape="rect" id="node22" title="STL class. " alt="" coords="1211,1185,1299,1271"/>
+<area shape="rect" id="node23" title="STL class. " alt="" coords="1238,731,1361,834"/>
+<area shape="rect" id="node24" title="STL class. " alt="" coords="1229,286,1370,371"/>
+<area shape="rect" id="node25" title="STL class. " alt="" coords="1253,5,1346,91"/>
+</map>

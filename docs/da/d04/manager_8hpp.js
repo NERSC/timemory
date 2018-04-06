@@ -1,8 +1,7 @@
 var manager_8hpp =
 [
-    [ "timer_tuple", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple.html", "d4/ddd/struct_n_a_m_e___t_i_m_1_1timer__tuple" ],
-    [ "manager", "df/dd1/class_n_a_m_e___t_i_m_1_1manager.html", "df/dd1/class_n_a_m_e___t_i_m_1_1manager" ],
-    [ "base_timer_tuple_t", "da/d04/manager_8hpp.html#a2859e73f2225f8575c230728e785ca2d", null ],
-    [ "timing_manager", "da/d04/manager_8hpp.html#a24bdbbfaab97bcac9af2e5a9bc167284", null ],
-    [ "get_max_threads", "da/d04/manager_8hpp.html#a25df2518725d65bfd24282f1640b4a46", null ]
+    [ "timer_tuple", "df/d44/structtim_1_1timer__tuple.html", "df/d44/structtim_1_1timer__tuple" ],
+    [ "manager", "d8/d14/classtim_1_1manager.html", "d8/d14/classtim_1_1manager" ],
+    [ "base_timer_tuple_t", "da/d04/manager_8hpp.html#a1e1bf2760e8210ec874ece9502603730", null ],
+    [ "timing_manager", "da/d04/manager_8hpp.html#a3be5b8db104716611739dfec4807a994", null ]
 ];

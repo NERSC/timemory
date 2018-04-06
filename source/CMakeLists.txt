@@ -58,11 +58,17 @@ endmacro(_BUILD_LIBRARY TYPE)
 
 # library type to link pybind11 module to
 set(LINK_TYPE static)
+add_option(SHARED_PYTHON_LINKING
+    "Link the TiMemory PyBind11 module to the shared library" OFF)
 
 if(WIN32)
-    #_build_library(shared ${LIBNAME}-shared ${sources} ${headers})
-    _build_library(static ${LIBNAME}-archive ${sources} ${headers})
-    set(LINK_TYPE static)
+    if(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
+        message(AUTHOR_WARNING "Shared Python linking on Windows is might not work")
+        _build_library(shared ${LIBNAME}-shared ${sources} ${headers})
+    else(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
+        _build_library(static ${LIBNAME}-archive ${sources} ${headers})
+        set(LINK_TYPE static)
+    endif(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
 else(WIN32)
     message(STATUS "")
     message(STATUS "Building ${PROJECT_NAME} with object library...")
@@ -73,11 +79,15 @@ else(WIN32)
     set(LINK_TYPE static)
 endif(WIN32)
 
-add_option(SHARED_PYTHON_LINKING
-    "Link the TiMemory PyBind11 module to the shared library" OFF)
-if(SHARED_PYTHON_LINKING)
+if(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
     set(LINK_TYPE shared)
-endif(SHARED_PYTHON_LINKING)
+    if(PYTHON_DEVELOPER_INSTALL)
+        # C++ shared library
+        install(TARGETS ${LIBNAME}-shared
+            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
+            COMPONENT python)
+    endif(PYTHON_DEVELOPER_INSTALL)
+endif(SHARED_PYTHON_LINKING OR PYTHON_DEVELOPER_INSTALL)
 
 
 #----------------------------------------------------------------------------
@@ -109,7 +119,8 @@ foreach(_FILE plotting mpi_support util)
 
     # install the folder
     install(DIRECTORY ${BINARY_DIR}/
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_FILE})
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_FILE}
+        COMPONENT python)
 endforeach(_FILE plotting mpi_support util)
 
 #----------------------------------------------------------------------------
@@ -153,44 +164,41 @@ endforeach(_TYPE exe c cxx)
 # Install the targets and export
 #
 
-if(NOT SETUP_PY)
+if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
     # C++ compiled libraries
     install(TARGETS ${INSTALL_LIBRARIES}
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}LibraryDepends)
+        DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}LibraryDepends
+        COMPONENT development)
 
     # C++ development headers
     install(FILES ${headers}
-        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory)
+        DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory
+        COMPONENT development)
 
     # Install the export set for use with the install-tree
     install(EXPORT ${PROJECT_NAME}LibraryDepends
-        DESTINATION ${PROJECT_INSTALL_CMAKEDIR}
-        COMPONENT dev)
+        DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
+        COMPONENT development)
 
-endif(NOT SETUP_PY)
-
-# Python library target (linked to static target)
-install(TARGETS ${LIBNAME}
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
-
-# it is in a folder that gets installed but still do it explicitly
-#install(TARGETS ${LIBNAME}
-#    DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-install(TARGETS ${LIBNAME}
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
+endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
 
 configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
     ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
-
-install(FILES ${PROJECT_BINARY_DIR}/timemory/timemory.py
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
-
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
     ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
 
+# Python library target (linked to static target)
+install(TARGETS ${LIBNAME}
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
+    COMPONENT python)
+
+install(FILES ${PROJECT_BINARY_DIR}/timemory/timemory.py
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
+    COMPONENT python)
+
 install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
+    COMPONENT python)
 
 export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)

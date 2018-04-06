@@ -101,14 +101,14 @@ endif(THREADS_FOUND)
 #
 ################################################################################
 
-if(NOT SETUP_PY)
-    add_option(PYBIND11_INSTALL "PyBind11 installation" ON)
-else(NOT SETUP_PY)
+if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+    add_dependent_option(PYBIND11_INSTALL "PyBind11 installation" OFF
+        "PYTHON_DEVELOPER_INSTALL" ON)
+else(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
     set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11" FORCE)
-endif(NOT SETUP_PY)
+endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
 
-set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-    CACHE STRING "PyBind11 CXX standard" FORCE)
+# checkout PyBind11 if not checked out
 if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
     find_package(Git REQUIRED)
     execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
@@ -119,9 +119,22 @@ if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
     endif(RET GREATER 0)
 endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
 
+# make sure pybind11 gets installed in same place as TiMemory
+if(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+    set(PYBIND11_CMAKECONFIG_INSTALL_DIR
+        "${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/pybind11"
+        CACHE STRING "install path for pybind11Config.cmake" FORCE)
+    set(CMAKE_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_INCLUDEDIR}
+        CACHE PATH "Include file installation path" FORCE)
+endif(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+
+# C++ standard
+set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+    CACHE STRING "PyBind11 CXX standard" FORCE)
+
+# add PyBind11 to project
 add_subdirectory(pybind11)
 
-unset(PYBIND11_PYTHON_VERSION)
 if(NOT PYBIND11_PYTHON_VERSION)
     execute_process(COMMAND ${PYTHON_EXECUTABLE}
         -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
@@ -141,3 +154,10 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
     ERROR_QUIET)
 
 string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
+
+# including the directories
+safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
+safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
+foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+    include_directories(SYSTEM ${_DIR})
+endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})

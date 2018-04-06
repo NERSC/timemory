@@ -29,7 +29,7 @@
  <tr style="height: 56px;">
   <td id="projectalign" style="padding-left: 0.5em;">
    <div id="projectname">TiMemory
-   &#160;<span id="projectnumber">1.2.3</span>
+   &#160;<span id="projectnumber">1.3.0</span>
    </div>
    <div id="projectbrief">C++ and Python Timing and Memory Tracking</div>
   </td>
@@ -109,8 +109,11 @@ $(document).ready(function(){initNavTree('index.html','');});
 </li>
 <li>reports produce a call tree &ndash; i.e. TiMemory distiguished between same timers accessed through different pathways, provided the calling function(s) is also using an auto-timer</li>
 <li>the Python interface can be downloaded via PyPi (e.g. <code>pip install timemory</code>)<ul>
-<li>PyPi installation will link the static TiMemory library (i.e. <code>libtimemory.a</code>) to the TiMemory Python module</li>
-<li>If TiMemory is intended to be used in both Python and C++ code, TiMemory (currently) must be built from source with the CMake option <code>-DPYTHON_SHARED_LINKING=ON</code> enabled. Please be aware that in this situation, the installation should be in the PYTHONPATH or else the C++ TiMemory will be recording the timers to a separate instance of the manager than the PyPi TiMemory and as a result, printing out the TiMemory results from Python will not include the C++ timing results</li>
+<li>PyPi installation will link the shared TiMemory library (i.e. <code>libtimemory.{so,dylib,dll}</code>) to the TiMemory Python module by default and install the C++ header files (to <code>&lt;sys.prefix&gt;/include</code>), the libraries to the platform-specific library directory (e.g. <code>&lt;sys.prefix&gt;/lib</code>, <code>&lt;sys.prefix&gt;/lib64</code>), and the CMake config files (to <code>&lt;sys.prefix&gt;/share/cmake</code>)</li>
+<li>If TiMemory is intended to be used in both Python and C++ code, one should either use the pip installed development files or build against a separate installation where this Python installation precedes any pip installations. Please be aware that in order for the C++ TiMemory and Python TiMemory to properly communicate, both should be using the same shared library<ul>
+<li>If the Python TiMemory usage is locating a different TiMemory shared library, the C++ TiMemory will be recording the timers to a separate instance of the manager than the Python TiMemory and as a result, printing out the TiMemory results from Python will not include the C++ timing results</li>
+</ul>
+</li>
 </ul>
 </li>
 </ul>
@@ -174,6 +177,9 @@ $(document).ready(function(){initNavTree('index.html','');});
 <li>cmake_prefix_path = ""</li>
 <li>cmake_library_path = ""</li>
 <li>cmake_include_path = ""</li>
+<li>devel_install=ON (can also be a &ndash;prefix or OFF)</li>
+<li>shared_linking=ON (default shared linking)</li>
+<li>pybind11_install=OFF (don't install PyBind11 C++ dev files)</li>
 </ul>
 </li>
 </ul>
@@ -239,7 +245,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <ul>
 <li>In C++ code, easiest usage for the auto_timers is with the TiMemory macro</li>
 </ul>
-<div class="fragment"><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;@&#39;&lt;file&gt;&#39;:&lt;line&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(<span class="stringliteral">&quot;[custom_string]&quot;</span>)</div><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a050238c7eb3c1481b0c108ef9eb357db">TIMEMORY_AUTO_TIMER_BASIC</a>(&quot;[custom_string]&quot;)</div><div class="line"></div><div class="line"><span class="comment">// later on</span></div><div class="line">tim::<a class="code" href="d9/d25/namespacetests_1_1array__test.html#a64c38049bf28954ec9c6d87d82daea88">manager</a>::instance()-&gt;report()</div></div><!-- fragment --><ul>
+<div class="fragment"><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;@&#39;&lt;file&gt;&#39;:&lt;line&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a41455eb59dfd7a1395fb464cfa6f75d9">TIMEMORY_AUTO_TIMER</a>(<span class="stringliteral">&quot;[custom_string]&quot;</span>)</div><div class="line"><span class="comment">// tags the timer in the format &lt;function&gt;&lt;custom&gt;</span></div><div class="line"><a class="code" href="d8/d07/auto__timer_8hpp.html#a050238c7eb3c1481b0c108ef9eb357db">TIMEMORY_AUTO_TIMER_BASIC</a>(&quot;[custom_string]&quot;)</div><div class="line"></div><div class="line"><span class="comment">// later on</span></div><div class="line"><a class="code" href="d8/d68/namespacetim.html">tim</a>::<a class="code" href="d9/d25/namespacetests_1_1array__test.html#a64c38049bf28954ec9c6d87d82daea88">manager</a>::instance()-&gt;report()</div></div><!-- fragment --><ul>
 <li>The manager is thread-safe and should be accessed through <code>manager::instance()</code></li>
 <li>See the full documentation and examples (ex1 and ex2) for more information on the classes and usage</li>
 </ul>
@@ -420,7 +426,7 @@ $(document).ready(function(){initNavTree('index.html','');});
 <!-- start footer part -->
 <div id="nav-path" class="navpath"><!-- id is needed for treeview function! -->
   <ul>
-    <li class="footer">Generated on Thu Apr 5 2018 13:56:56 for TiMemory by
+    <li class="footer">Generated on Fri Apr 6 2018 06:44:29 for TiMemory by
     <a href="http://www.doxygen.org/index.html">
     <img class="footer" src="doxygen.png" alt="doxygen"/></a> 1.8.13 </li>
   </ul>

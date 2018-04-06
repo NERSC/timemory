@@ -239,13 +239,13 @@ class timemory_data():
         self.laps += nlap
 
     # ------------------------------------------------------------------------ #
-    def plottable(self, plot_params):
+    def plottable(self, _params):
         """
         valid data above minimum
         """
         # compute the minimum values
-        t_min = (0.01 * plot_params.timing_min_percent) * plot_params.timing_max_value
-        m_min = (0.01 * plot_params.memory_min_percent) * plot_params.memory_max_value
+        t_min = (0.01 * _params.timing_min_percent) * _params.timing_max_value
+        m_min = (0.01 * _params.memory_min_percent) * _params.memory_max_value
 
         # function for checking passes test
         def is_valid(key, min_value):
@@ -255,11 +255,11 @@ class timemory_data():
             return False
 
         # check the timing fields
-        for field in plot_params.timing_fields:
+        for field in _params.timing_fields:
             if is_valid(field, t_min):
                 return True
         # check the memory fields
-        for field in plot_params.memory_fields:
+        for field in _params.memory_fields:
             if is_valid(field, m_min):
                 return True
 
