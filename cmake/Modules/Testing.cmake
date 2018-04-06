@@ -46,14 +46,16 @@ endfunction()
 if(BUILD_TESTING)
     find_package(Git REQUIRED)
 
-    execute_process(COMMAND ${GIT_EXECUTABLE} branch --color=never --contains
+    execute_process(COMMAND ${GIT_EXECUTABLE} name-rev --name-only HEAD
         OUTPUT_VARIABLE CMAKE_SOURCE_BRANCH
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE)
-    string(REPLACE "* " "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
-    string(REPLACE "*" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
-    # removes things such as : '(HEAD detached at 3109eab) master' -> 'master'
-    STRING(REGEX REPLACE "(\\\(.*\\\) )" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+    string(REGEX REPLACE "~[0-9]" "" CMAKE_SOURCE_BRANCH "${CMAKE_SOURCE_BRANCH}")
+
+    execute_process(COMMAND ${GIT_EXECUTABLE} rev-parse --verify HEAD
+        OUTPUT_VARIABLE CMAKE_SOURCE_REVISION
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 endif(BUILD_TESTING)
 
