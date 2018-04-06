@@ -352,8 +352,7 @@ class timemory_test(unittest.TestCase):
         import numpy as np
         # should be ~8 MB
         nsize = 1000*1000
-        arr = np.ones(size=[nsize], dtype=np.int64)
-        arr += np.ones(size=[nsize], dtype=np.int64)
+        arr1 = np.ones(shape=[nsize], dtype=np.int64)
         rss_post.record()
 
         rss_pre -= rss_init
