@@ -364,9 +364,9 @@ type="image/png">/Users/somebody/timemory/build/timing_report_timing.png</DartMe
 This `<DartMeasurementFile>` tag is recognized by CTest in the output and the following plots get uploaded to dashboard. Outputting this string is enabled with the option `--enable-dart` or by setting
 `timemory.options.enable_dart=True` prior to calling `timemory.plotting.plot(...)`
 
-![](/images/timing.png)
+![](https://jrmadsen.github.io/TiMemory/images/timing.png)
 
-![](/images/memory.png)
+![](https://jrmadsen.github.io/TiMemory/images/memory.png)
 
 ### Timemory ASCII Sample Output
 

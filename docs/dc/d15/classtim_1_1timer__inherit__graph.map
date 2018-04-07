@@ -1,3 +1,0 @@
-<map id="tim::timer" name="tim::timer">
-<area shape="rect" id="node2" href="$d6/d0e/classtim_1_1internal_1_1base__timer.html" title="{tim::internal::base\l_timer\n|# m_precision\l# m_os\l# m_format_string\l# m_mutex\l# m_data\l# m_accum\l# m_format_positions\l&#45; w_mutex_map\l|+ base_timer()\l+ ~base_timer()\l+ base_timer()\l+ operator=()\l+ start()\l+ stop()\l+ is_valid()\l+ real_elapsed()\l+ system_elapsed()\l+ user_elapsed()\land 15 more...\l# parse_format()\l# compose()\l# m_timer()\l# get_accum()\l# get_accum()\l}" alt="" coords="16,5,153,489"/>
-</map>

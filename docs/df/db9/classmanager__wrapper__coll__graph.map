@@ -1,6 +1,0 @@
-<map id="manager_wrapper" name="manager_wrapper">
-<area shape="rect" id="node2" href="$d8/d14/classtim_1_1manager.html" title="{tim::manager\n||+ manager()\l+ ~manager()\l+ merge()\l+ size()\l+ clear()\l+ timer()\l+ at()\l+ time()\l+ time()\l+ time()\land 31 more...\l+ instance()\l+ is_enabled()\l+ enable()\l+ write_json()\l+ write_json()\l+ max_depth()\l+ set_get_num_threads_func()\l# string_hash()\l# const_merge()\l# get_prefix()\l# write_json_no_mpi()\l# write_json_mpi()\l# write_json_no_mpi()\l# write_json_mpi()\l# get_communicator_group()\l&#45; get_ofstream()\l&#45; report()\l}" alt="" coords="572,683,757,1236"/>
-<area shape="rect" id="node7" href="$df/d44/structtim_1_1timer__tuple.html" title="{tim::timer_tuple\n||+ timer_tuple()\l+ timer_tuple()\l+ operator=()\l+ operator==()\l+ operator!=()\l+ operator+=()\l+ operator+()\l+ key()\l+ key()\l+ level()\land 6 more...\l}" alt="" coords="313,173,417,432"/>
-<area shape="rect" id="node9" title="STL class. " alt="" coords="441,260,547,345"/>
-<area shape="rect" id="node14" title="STL class. " alt="" coords="104,917,193,1002"/>
-</map>

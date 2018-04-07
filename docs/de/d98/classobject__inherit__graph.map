@@ -1,8 +1,0 @@
-<map id="object" name="object">
-<area shape="rect" id="node2" href="$da/d5d/classtests_1_1array__test_1_1auto__array__weakref.html" title="{tests.array_test.auto\l_array_weakref\n|+ resource\l+ finished\l+ ghost_attributes\l&#45; __wr_map\l&#45; __wr_id\l|+ bind_finalizer()\l+ remove_finalizer()\l+ enable_auto_rollback()\l+ __finalize__()\l+ __init__()\l+ do_commit()\l+ do_rollback()\l}" alt="" coords="5,139,160,415"/>
-<area shape="rect" id="node3" href="$da/d81/classtests_1_1simple__test_1_1_fibonacci.html" title="{tests.simple_test.Fibonacci\n|+ n\l|+ __init__()\l+ calculate()\l}" alt="" coords="185,225,351,328"/>
-<area shape="rect" id="node4" href="$db/df0/classutil_1_1util_1_1base__decorator.html" title="{util.util.base_decorator\n|+ key\l+ add_args\l+ is_class\l|+ __init__()\l+ parse_wrapped()\l+ class_string()\l+ arg_string()\l}" alt="" coords="375,191,518,363"/>
-<area shape="rect" id="node5" href="$d3/df4/classutil_1_1util_1_1auto__timer.html" title="{util.util.auto_timer\n|+ report_at_exit\l+ key\l&#45; _self_obj\l|+ __init__()\l+ __call__()\l+ __enter__()\l+ __exit__()\l}" alt="" coords="249,463,365,635"/>
-<area shape="rect" id="node6" href="$d1/d2e/classutil_1_1util_1_1rss__usage.html" title="{util.util.rss_usage\n|+ key\l&#45; _self_obj\l&#45; _self_key\l|+ __init__()\l+ __call__()\l+ __enter__()\l+ __exit__()\l}" alt="" coords="389,463,504,635"/>
-<area shape="rect" id="node7" href="$d9/dca/classutil_1_1util_1_1timer.html" title="{util.util.timer\n|+ key\l&#45; _self_obj\l|+ __init__()\l+ __call__()\l+ __enter__()\l+ __exit__()\l}" alt="" coords="529,471,623,626"/>
-</map>

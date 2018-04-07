@@ -7,7 +7,7 @@ temporary memory calculation
 `TiMemory on GitHub <https://github.com/jrmadsen/TiMemory>`__
 
 `Doxygen source code documentation for
-TiMemory <https://jrmadsen.github.io/TiMemory>`__
+TiMemory <https://jrmadsen.github.io/TiMemory/doxy/index.html>`__
 
 Introduction
 ~~~~~~~~~~~~

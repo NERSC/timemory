@@ -36,3 +36,7 @@ timing_report*
 
 # unused examples
 /examples/ex3
+
+# documentation
+/html
+/docs
