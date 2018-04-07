@@ -54,7 +54,7 @@ namespace internal
 
 //============================================================================//
 
-base_timer::mutex_map_t base_timer::w_mutex_map;
+base_timer::mutex_map_t base_timer::f_mutex_map;
 
 //============================================================================//
 
@@ -300,7 +300,7 @@ void base_timer::report(std::ostream& os, bool endline, bool no_min) const
 
     // ensure thread-safety
     tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-    recursive_lock_t rlock(w_mutex_map[&os]);
+    recursive_lock_t rlock(f_mutex_map[&os]);
     // output to ostream
     os << ss.str();
 }

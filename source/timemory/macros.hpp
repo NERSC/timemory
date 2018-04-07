@@ -167,23 +167,32 @@
 #   define EXTERN_C_BEGIN extern "C" {
 #   define EXTERN_C_END   }
 #else
-#   define EXTERN_C       /* Nothing */
-#   define EXTERN_C_BEGIN /* Nothing */
-#   define EXTERN_C_END   /* Nothing */
+#   define EXTERN_C
+#   define EXTERN_C_BEGIN
+#   define EXTERN_C_END
 #endif
 
 //----------------------------------------------------------------------------//
 
+// Define macros for WIN32 for importing/exporting external symbols to DLLs
 #if defined(_WINDOWS)
-    // Define DLL export macro for WIN32 systems for importing/exporting
-    // external symbols to DLLs
 #   define TIM_DLL_EXPORT __declspec( dllexport )
 #   define TIM_DLL_IMPORT __declspec( dllimport )
+#
+#   if defined(TIMEMORY_DLL)
+#       define TIM_API __declspec( dllexport )
+#       define static_api static __declspec( dllexport )
+#   else
+#       define TIM_API __declspec( dllimport )
+#       define static_api static __declspec( dllimport )
+#   endif
 //----------------------------------------------------------------------------//
 
 #else
 #   define TIM_DLL_EXPORT
 #   define TIM_DLL_IMPORT
+#   define TIM_API
+#   define static_api static
 #endif
 
 //============================================================================//

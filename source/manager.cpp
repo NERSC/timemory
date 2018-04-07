@@ -46,30 +46,42 @@ namespace tim
 
 //============================================================================//
 
-manager::pointer_type manager::f_instance = nullptr;
+manager::pointer_type& local_instance()
+{
+    tim_static_thread_local manager::pointer_type _instance = nullptr;
+    return _instance;
+}
 
 //============================================================================//
 
-tim_static_thread_local manager::pointer_type l_instance = nullptr;
+manager::pointer_type& global_instance()
+{
+    static manager::pointer_type _instance = nullptr;
+    return _instance;
+}
 
 //============================================================================//
 
 int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
+
+std::atomic<int> manager::f_manager_instance_count;
+
+//============================================================================//
 // static function
 manager::pointer_type manager::instance()
 {
-    if(!l_instance)
+    if(!local_instance())
     {
-        l_instance = new manager();
-        f_instance->add(l_instance);
+        local_instance() = new manager();
+        global_instance()->add(local_instance());
     }
 
-    if(l_instance != f_instance)
-        f_instance->set_merge(true);
+    if(local_instance() != global_instance())
+        global_instance()->set_merge(true);
 
-    return l_instance;
+    return local_instance();
 }
 
 //============================================================================//
@@ -103,13 +115,14 @@ void manager::enable(bool val)
 
 manager::manager()
 : m_merge(false),
-  m_hash((f_instance) ? f_instance->hash() : 0),
-  m_count((f_instance) ? f_instance->count() : 0),
+  m_hash((global_instance()) ? global_instance()->hash() : 0),
+  m_count((global_instance()) ? global_instance()->count() : 0),
   m_report(&std::cout)
 {
-    if(!f_instance)
-        f_instance = this;
-    else if(f_instance && l_instance)
+    ++f_manager_instance_count;
+    if(!global_instance())
+        global_instance() = this;
+    else if(global_instance() && local_instance())
     {
         std::ostringstream ss;
         ss << "manager singleton has already been created";
@@ -121,6 +134,7 @@ manager::manager()
 
 manager::~manager()
 {
+    --f_manager_instance_count;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
         ofstream_t* m_fos = get_ofstream(m_os);
@@ -135,15 +149,15 @@ manager::~manager()
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t" << f_instance
-                  << "\nlocal instance:  \t" << l_instance
+                  << "\nglobal instance: \t" << global_instance()
+                  << "\nlocal instance:  \t" << local_instance()
                   << std::endl;
 #endif
 
     close_ostream(m_report);
 
-    if(f_instance == l_instance)
-        f_instance = nullptr;
+    if(global_instance() == local_instance())
+        global_instance() = nullptr;
 
     for(auto& itr : m_daughters)
         if(itr != this)
@@ -161,10 +175,10 @@ void manager::clear()
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
-                  << l_instance << "..." << std::endl;
+                  << local_instance() << "..." << std::endl;
 #endif
 
-    if(this == f_instance)
+    if(this == global_instance())
         tim_timer_t::set_output_width(10);
 
     m_timer_list.clear();
@@ -391,8 +405,11 @@ void manager::set_output_stream(ostream_t& _os)
 
 //============================================================================//
 
-void manager::set_output_stream(const string_t& fname)
+void manager::set_output_stream(const path_t& fname)
 {
+    if(fname.find(fname.os()) != std::string::npos)
+        tim::makedir(fname.substr(0, fname.find_last_of(fname.os())));
+
     auto ostreamop = [&] (ostream_t*& m_os, const string_t& _fname)
     {
         if(m_os != &std::cout)
@@ -467,7 +484,7 @@ void manager::merge(bool div_clock)
     uomap<uint64_t, uint64_t> clock_div_count;
     for(auto& itr : m_daughters)
     {
-        if(itr == f_instance)
+        if(itr == global_instance())
             continue;
 
 #if defined(DEBUG)
@@ -531,8 +548,11 @@ std::pair<int32_t, bool> manager::write_json(ostream_t& ofss)
 
 //============================================================================//
 // static function
-void manager::write_json(string_t _fname)
+void manager::write_json(const path_t& _fname)
 {
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
     (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
 }
 
@@ -558,7 +578,7 @@ void manager::write_json_no_mpi(ostream_t& fss)
 
 //============================================================================//
 // static function
-void manager::write_json_no_mpi(string_t _fname)
+void manager::write_json_no_mpi(path_t _fname)
 {
     int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
 
@@ -699,7 +719,7 @@ std::pair<int32_t, bool> manager::write_json_mpi(ostream_t& ofss)
 
 //============================================================================//
 // static function
-void manager::write_json_mpi(string_t _fname)
+void manager::write_json_mpi(path_t _fname)
 {
     {
         // notify so if it takes too long, user knows why

@@ -471,7 +471,7 @@ protected:
 
 private:
     // world mutex map for thread-safe ostreams
-    static mutex_map_t                  w_mutex_map;
+    static_api mutex_map_t      f_mutex_map;
 
 public:
     template <typename Archive> void

@@ -3,7 +3,7 @@ C++ and Python Timing + Memory Utilities including auto-timers and temporary mem
 
 [TiMemory on GitHub](https://github.com/jrmadsen/TiMemory)
 
-[Doxygen source code documentation for TiMemory](https://jrmadsen.github.io/TiMemory)
+[Doxygen source code documentation for TiMemory](https://jrmadsen.github.io/TiMemory/doxy/index.html)
 
 ### Introduction
 

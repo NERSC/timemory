@@ -31,6 +31,8 @@
 #ifndef manager_hpp_
 #define manager_hpp_
 
+#include "timemory/macros.hpp"
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wuninitialized"
@@ -59,7 +61,6 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 
-#include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/mpi.hpp"
@@ -194,19 +195,19 @@ public:
 
 public:
     // Public static functions
-    static pointer_type instance();
-    static bool is_enabled() { return f_enabled; }
-    static void enable(bool val = true);
-    static void write_json(string_t _fname);
-    static std::pair<int32_t, bool> write_json(ostream_t& os);
-    static int32_t& max_depth() { return f_max_depth; }
-    static void set_get_num_threads_func(get_num_threads_func_t f);
+    static_api pointer_type instance();
+    static_api bool is_enabled() { return f_enabled; }
+    static_api void enable(bool val = true);
+    static_api void write_json(const path_t& _fname);
+    static_api std::pair<int32_t, bool> write_json(ostream_t& os);
+    static_api int32_t& max_depth() { return f_max_depth; }
+    static_api void set_get_num_threads_func(get_num_threads_func_t f);
 
 protected:
-    static void write_json_no_mpi(string_t _fname);
-    static void write_json_mpi(string_t _fname);
-    static void write_json_no_mpi(ostream_t& os);
-    static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
+    static_api void write_json_no_mpi(path_t _fname);
+    static_api void write_json_mpi(path_t _fname);
+    static_api void write_json_no_mpi(ostream_t& os);
+    static_api std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
 
 public:
     // Public member functions
@@ -253,11 +254,11 @@ public:
     void report(bool no_min = false) const;
     void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
     void set_output_stream(ostream_t&);
-    void set_output_stream(const string_t&);
+    void set_output_stream(const path_t&);
     void print(bool no_min = false) { this->report(no_min); }
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
-    void write_serialization(string_t _fname) const { write_json(_fname); }
+    void write_serialization(const path_t& _fname) const { write_json(_fname); }
     void write_serialization(std::ostream& os) const;
 
     void add(pointer_type ptr);
@@ -290,10 +291,10 @@ protected:
     string_t get_prefix() const;
 
 protected:
-    // protected static functions and vars
-    static comm_group_t get_communicator_group();
-    static mutex_t  f_mutex;
-    static get_num_threads_func_t f_get_num_threads;
+    // protected static_api functions and vars
+    static_api comm_group_t get_communicator_group();
+    static_api mutex_t                  f_mutex;
+    static_api get_num_threads_func_t   f_get_num_threads;
 
 private:
     // Private functions
@@ -302,11 +303,12 @@ private:
 
 private:
     // Private variables
-    static pointer_type     f_instance;
     // for temporary enabling/disabling
-    static bool             f_enabled;
+    static_api bool             f_enabled;
     // max depth of timers
-    static int32_t          f_max_depth;
+    static_api int32_t          f_max_depth;
+    // number of timing manager instances
+    static_api std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
     // hash counting
@@ -389,6 +391,8 @@ inline void
 manager::serialize(Archive& ar, const unsigned int /*version*/)
 {
     uint32_t _nthreads = f_get_num_threads();
+    if(_nthreads == 1)
+        _nthreads = f_manager_instance_count;
     ar(cereal::make_nvp("concurrency", _nthreads));
     ar(cereal::make_nvp("timers", m_timer_list));
 }

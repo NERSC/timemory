@@ -41,6 +41,8 @@
 #   define MPI_COMM_WORLD 0
 #endif
 
+#include "timemory/utility.hpp"
+
 namespace tim
 {
 
@@ -64,7 +66,7 @@ inline int32_t mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
     if(mpi_is_initialized())
         MPI_Comm_rank(comm, &_rank);
 #else
-    comm = _rank;
+    consume_parameters(comm);
 #endif
     return std::max(_rank, (int32_t) 0);
 }
@@ -78,7 +80,7 @@ inline int32_t mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
     if(mpi_is_initialized())
         MPI_Comm_size(comm, &_size);
 #else
-    comm = _size;
+    consume_parameters(comm);
 #endif
     return std::max(_size, (int32_t) 1);
 }
@@ -91,7 +93,7 @@ inline void mpi_barrier(MPI_Comm comm = MPI_COMM_WORLD)
     if(mpi_is_initialized())
         MPI_Barrier(comm);
 #else
-    comm = 0;
+    consume_parameters(comm);
 #endif
 }
 

@@ -251,9 +251,9 @@ void test_manager()
 
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    tman->set_output_stream("timing_report.out");
+    tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
-    tman->write_json("timing_report.json");
+    tman->write_json("test_output/cxx_timing_report.json");
 
     EXPECT_EQ(manager_t::instance()->size(), 32);
 
@@ -262,7 +262,6 @@ void test_manager()
         ASSERT_FALSE(itr.timer().real_elapsed() < 0.0);
         ASSERT_FALSE(itr.timer().user_elapsed() < 0.0);
     }
-
     tman->enable(_is_enabled);
 }
 
@@ -312,7 +311,7 @@ void test_timing_toggle()
     print_size(__FUNCTION__, __LINE__);
     tman->report();
     EXPECT_EQ(manager_t::instance()->size(), 10);
-
+    tman->write_serialization("test_output/cxx_timing_toggle.json");
     tman->enable(_is_enabled);
 }
 
@@ -345,6 +344,7 @@ void test_timing_depth()
     tman->report(no_min = true);
     EXPECT_EQ(manager_t::instance()->size(), 7);
 
+    tman->write_serialization("test_output/cxx_timing_depth.json");
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
@@ -439,7 +439,7 @@ void test_timing_thread()
     print_size(__FUNCTION__, __LINE__);
     tman->report(no_min = true);
     ASSERT_TRUE(manager_t::instance()->size() >= 36);
-
+    tman->write_serialization("test_output/cxx_timing_thread.json");
     tman->enable(_is_enabled);
 }
 

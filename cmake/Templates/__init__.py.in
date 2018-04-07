@@ -48,16 +48,24 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
 
     # if not found, go to hard-coded path from installation
     if tim_lib_path is None:
+        # when installed, we want to fallback to the installation path first
         alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@", os.path.join(this_path, "lib") ]
+
+        # in the build tree (when testing), we want to fallback to the build path first
+        if this_path == "@PROJECT_BINARY_DIR@/timemory":
+            alt_paths.reverse()
 
         if _verbose > 2:
             print('find_library("timemory") returned None. Trying fallback paths {}...'.format(alt_paths))
 
         for alt_path in alt_paths:
-            _test_path = os.path.join(alt_path, "libtimemory@CMAKE_SHARED_LIBRARY_SUFFIX@")
-            if os.path.exists(_test_path):
-                tim_lib_path = _test_path
-                break
+            # try to find exact match first, then major version match, then generic
+            for _suffix in [ ".@TIMEMORY_VERSION@", "@TIMEMORY_VERSION_MAJOR@", "" ]:
+                _suffix += "@CMAKE_SHARED_LIBRARY_SUFFIX@"
+                _test_path = os.path.join(alt_path, "libtimemory{}".format(_suffix))
+                if os.path.exists(_test_path):
+                    tim_lib_path = _test_path
+                    break
 
     if _verbose > 0:
         print('Using TiMemory shared library: {}'.format(tim_lib_path))

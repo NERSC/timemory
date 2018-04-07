@@ -62,34 +62,30 @@ add_option(SHARED_PYTHON_LINKING
     "Link the TiMemory PyBind11 module to the shared library" OFF)
 
 if(WIN32)
-
-    if(SHARED_PYTHON_LINKING)
-        message(AUTHOR_WARNING "Shared Python linking for Windows is currently "
-            "not available because Windows is terrible")
-        #_build_library(shared ${LIBNAME}-shared ${sources} ${headers})
-    endif(SHARED_PYTHON_LINKING)
-    _build_library(static ${LIBNAME}-archive ${sources} ${headers})
-    set(LINK_TYPE static)
-
-else(WIN32)
-
-    message(STATUS "")
-    message(STATUS "Building ${PROJECT_NAME} with object library...")
-    message(STATUS "")
-    add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-    _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
-    _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
-    set(LINK_TYPE static)
-    if(SHARED_PYTHON_LINKING)
-        set(LINK_TYPE shared)
-        # C++ shared library fallback installation
-        install(TARGETS ${LIBNAME}-shared
-            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
-            COMPONENT python)
-    endif(SHARED_PYTHON_LINKING)
-
+    set_source_files_properties(${sources} PROPERTIES
+        COMPILE_DEFINITIONS TIMEMORY_DLL)
 endif(WIN32)
 
+# this includes compile definitions for headers
+add_subdirectory(timemory)
+
+message(STATUS "")
+message(STATUS "Building ${PROJECT_NAME} with object library...")
+message(STATUS "")
+add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
+_build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+_build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+set(LINK_TYPE static)
+
+if(SHARED_PYTHON_LINKING)
+    set(LINK_TYPE shared)
+    set_target_properties(${LIBNAME}-shared PROPERTIES
+        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib)
+    # C++ shared library fallback installation
+    install(TARGETS ${LIBNAME}-shared
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
+        COMPONENT python)
+endif(SHARED_PYTHON_LINKING)
 
 #----------------------------------------------------------------------------
 # PyBind11
@@ -123,6 +119,18 @@ foreach(_FILE plotting mpi_support util)
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_FILE}
         COMPONENT python)
 endforeach(_FILE plotting mpi_support util)
+
+# install the plotting.py file as an executable
+configure_file(${PROJECT_BINARY_DIR}/timemory/plotting/plotting.py
+    ${PROJECT_BINARY_DIR}/timemory-plotter COPYONLY)
+
+install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
+    DESTINATION ${TIMEMORY_INSTALL_BINDIR}
+    COMPONENT python
+    PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ
+    WORLD_EXECUTE WORLD_READ)
 
 #----------------------------------------------------------------------------
 # MPI info

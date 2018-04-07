@@ -32,6 +32,7 @@
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
 // C library
+#include <stdint.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -56,6 +57,20 @@
 #include <thread>
 
 #include "timemory/macros.hpp"
+
+#if defined(_UNIX)
+#   include <stdio.h>
+#   include <string.h>
+#   include <errno.h>
+#   include <sys/stat.h>
+#   include <sys/types.h>
+#elif defined(_WINDOWS)
+#   include <direct.h>
+#endif
+
+#if !defined(DEFAULT_UMASK)
+#   define DEFAULT_UMASK 0777
+#endif
 
 //----------------------------------------------------------------------------//
 
@@ -163,6 +178,117 @@ delimit(const std::string& _str, const std::string& _delims,
             _list.push_back(strop(_str.substr(_beg, _end - _beg)));
     }
     return _list;
+}
+
+//----------------------------------------------------------------------------//
+
+class path_t : public std::string
+{
+public:
+    typedef std::string         string_t;
+    typedef string_t::size_type size_type;
+
+    // OS-dependent representation
+    static_api string_t osrepr(string_t _path)
+    {
+        //auto _orig = _path;
+    #if defined(_WINDOWS)
+        while(_path.find("/") != std::string::npos)
+            _path.replace(_path.find("/"), 1, "\\\\");
+    #elif defined(_UNIX)
+        while(_path.find("\\\\") != std::string::npos)
+            _path.replace(_path.find("\\\\"), 2, "/");
+        while(_path.find("\\") != std::string::npos)
+            _path.replace(_path.find("\\"), 1, "/");
+    #endif
+        //std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
+        //          << _path << "\"..." << std::endl;
+        return _path;
+    }
+
+public:
+    path_t(const std::string& _path)    : string_t(osrepr(_path)) { }
+    path_t(char* _path)                 : string_t(osrepr(string_t(_path))) { }
+    path_t(const path_t& rhs)           : string_t(osrepr(rhs)) { }
+    path_t(const char* _path)
+    : string_t(osrepr(string_t(const_cast<char*>(_path)))) { }
+
+
+    path_t& operator=(const string_t& rhs)
+    {
+        string_t::operator=(osrepr(rhs));
+        return *this;
+    }
+
+    path_t& operator=(const path_t& rhs)
+    {
+        if(this != &rhs)
+            string_t::operator=(osrepr(rhs));
+        return *this;
+    }
+
+    path_t& insert(size_type __pos, const string_t& __s)
+    {
+        string_t::operator=(osrepr(string_t::insert(__pos, __s)));
+        return *this;
+    }
+
+    path_t& insert(size_type __pos, const path_t& __s)
+    {
+        string_t::operator=(osrepr(string_t::insert(__pos, __s)));
+        return *this;
+    }
+
+    string_t os() const
+    {
+    #if defined(_WINDOWS)
+        return "\\\\";
+    #elif defined(_UNIX)
+        return "/";
+    #endif
+    }
+
+    string_t inverse() const
+    {
+    #if defined(_WINDOWS)
+        return "/";
+    #elif defined(_UNIX)
+        return "\\\\";
+    #endif
+    }
+
+};
+
+//----------------------------------------------------------------------------//
+// use this function to get rid of "unused parameter" warnings
+template <typename _Tp, typename... _Args>
+void consume_parameters(_Tp, _Args...)
+{ }
+
+//----------------------------------------------------------------------------//
+
+inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
+{
+#if defined(_UNIX)
+    if(mkdir(_dir.c_str(), umask) != 0)
+    {
+        std::stringstream _sdir;
+        _sdir << "mkdir -p " << _dir;
+        return system(_sdir.str().c_str());
+    }
+#elif defined(_WINDOWS)
+    consume_parameters<int>(umask);
+    while(_dir.find("/") != std::string::npos)
+        _dir.replace(_dir.find("/"), 1, "\\\\");
+
+    if(_mkdir(_dir) != 0)
+    {
+        std::stringstream _sdir;
+        _sdir << "dir " << _dir;
+        return system(_sdir.str().c_str());
+    }
+#endif
+    return 0;
 }
 
 //----------------------------------------------------------------------------//

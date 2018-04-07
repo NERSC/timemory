@@ -44,9 +44,9 @@ namespace tim
 class auto_timer
 {
 public:
-    typedef tim::manager::tim_timer_t  tim_timer_t;
-    typedef auto_timer                      this_type;
-    typedef std::string                     string_t;
+    typedef tim::manager::tim_timer_t   tim_timer_t;
+    typedef auto_timer                  this_type;
+    typedef std::string                 string_t;
 
 public:
     // standard constructor
@@ -63,9 +63,9 @@ public:
 
 public:
     // static public functions
-    static uint64_t& ncount();
-    static uint64_t& nhash();
-    static bool alloc_next();
+    static_api uint64_t& ncount();
+    static_api uint64_t& nhash();
+    static_api bool alloc_next();
 
 private:
     bool            m_report_at_exit;
@@ -80,7 +80,7 @@ private:
 
 //----------------------------------------------------------------------------//
 
-typedef tim::auto_timer                     auto_timer_t;
+typedef     tim::auto_timer     auto_timer_t;
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 

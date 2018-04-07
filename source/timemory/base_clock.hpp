@@ -52,6 +52,7 @@
 #include <cereal/access.hpp>
 
 #include "timemory/macros.hpp"
+#include "timemory/utility.hpp"
 
 #if defined(_UNIX)
 
@@ -59,7 +60,7 @@
 #   include <sys/times.h>
 
 // avoid no symbols warning
-struct dummy { static int32_t asymbol; };
+struct dummy { static_api int32_t asymbol; };
 
 #elif defined(_WINDOWS)
 //
@@ -109,41 +110,41 @@ namespace tim
 template <typename Ratio> struct time_units;
 
 template<> struct time_units<std::pico>
-{ static constexpr const char* str = "psec"; };
+{ static_api constexpr const char* str = "psec"; };
 template<> struct time_units<std::nano>
-{ static constexpr const char* str = "nsec"; };
+{ static_api constexpr const char* str = "nsec"; };
 template<> struct time_units<std::micro>
-{ static constexpr const char* str = "usec"; };
+{ static_api constexpr const char* str = "usec"; };
 template<> struct time_units<std::milli>
-{ static constexpr const char* str = "msec"; };
+{ static_api constexpr const char* str = "msec"; };
 template<> struct time_units<std::centi>
-{ static constexpr const char* str = "csec"; };
+{ static_api constexpr const char* str = "csec"; };
 template<> struct time_units<std::deci>
-{ static constexpr const char* str = "dsec"; };
+{ static_api constexpr const char* str = "dsec"; };
 template<> struct time_units<std::ratio<1>>
-{ static constexpr const char* str = "sec"; };
+{ static_api constexpr const char* str = "sec"; };
 template<> struct time_units<std::ratio<60>>
-{ static constexpr const char* str = "min"; };
+{ static_api constexpr const char* str = "min"; };
 template<> struct time_units<std::ratio<3600>>
-{ static constexpr const char* str = "hr"; };
+{ static_api constexpr const char* str = "hr"; };
 template<> struct time_units<std::ratio<3600*24>>
-{ static constexpr const char* str = "day"; };
+{ static_api constexpr const char* str = "day"; };
 
 //----------------------------------------------------------------------------//
 
 template <typename Precision>
-static std::intmax_t clock_tick()
+static_api intmax_t clock_tick()
 {
     auto _get_sys_tick = [] ()
     {
-#if defined(_WINDOWS)
+    #if defined(_WINDOWS)
         return CLOCKS_PER_SEC;
-#else
+    #else
         return ::sysconf(_SC_CLK_TCK);
-#endif
+    #endif
     };
 
-    static std::intmax_t result = 0;
+    static intmax_t result = 0;
     if (result == 0)
     {
         result = _get_sys_tick();
@@ -167,8 +168,6 @@ static std::intmax_t clock_tick()
         else
         {
             result = Precision::den / _get_sys_tick();
-            //std::cout << "1 tick is " << result << ' '
-            //          << time_units<_Prec>::str;
         }
     }
     return result;
@@ -181,15 +180,15 @@ struct base_clock_data
 {
     typedef _Prec                                               precision;
     typedef base_clock_data<_Prec>                              this_type;
-    typedef std::tuple<std::intmax_t,
-                       std::intmax_t,
+    typedef std::tuple<intmax_t,
+                       intmax_t,
                        std::chrono::high_resolution_clock::rep> rep;
 
     rep data;
 
     base_clock_data(int _val = 0)
-    : data(std::make_tuple(std::intmax_t(_val),
-                           std::intmax_t(_val),
+    : data(std::make_tuple(intmax_t(_val),
+                           intmax_t(_val),
                            std::chrono::high_resolution_clock::rep(_val)))
     { }
 
@@ -238,7 +237,7 @@ public:
 
     static constexpr bool is_steady = true;
 
-    static time_point now() noexcept
+    static_api time_point now() noexcept
     {
         typedef std::chrono::high_resolution_clock              clock_type;
         typedef std::chrono::duration<clock_type::rep, period>  duration_type;

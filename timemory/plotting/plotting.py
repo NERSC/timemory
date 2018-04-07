@@ -49,17 +49,17 @@ _default_memory_types = ['total_peak_rss', 'total_current_rss',
 
 
 """ Default fields for reducing # of timing plot functions displayed """
-_default_timing_fields = ['wall', ]
+_default_timing_fields = ['wall', 'sys', 'user']
 
 """ Default fields for reducing # of memory plot functions displayed """
-_default_memory_fields = ['total_current_rss',
+_default_memory_fields = ['total_peak_rss', 'total_current_rss',
                           'self_peak_rss', 'self_current_rss']
 
 """ Default minimum percent of max when reducing # of timing functions plotted """
-_default_timing_min_percent = 5.0 # 5% of max
+_default_timing_min_percent = 0.05 # 5% of max
 
 """ Default minimum percent of max when reducing # of memory functions plotted """
-_default_memory_min_percent = 5.0 # 5% of max
+_default_memory_min_percent = 0.05 # 5% of max
 
 """ Default image dots-per-square inch """
 _default_img_dpi = 75
@@ -590,6 +590,130 @@ def read(json_obj, plot_params=plot_parameters()):
 
 
 #==============================================================================#
+def plot_generic(_plot_data, _types, _data_dict,
+                 _type_str, _type_min, _type_unit):
+
+    try:
+        import tornado
+        import matplotlib
+        import matplotlib.pyplot as plt
+    except:
+        _matplotlib_backend = 'agg'
+        import matplotlib
+        matplotlib.use(_matplotlib_backend)
+        import matplotlib.pyplot as plt
+
+    filename = _plot_data.filename
+    plot_params = _plot_data.plot_params
+    title = _plot_data.get_title()
+    nitem = len(_types)
+    ntics = len(_data_dict) * nitem
+    ytics = []
+
+    if ntics == 0:
+        print ('{} had no {} data less than the minimum time ({} {})'.format(
+               filename, _type_str, _type_min, _type_unit))
+        return()
+
+    avgs = nested_dict()
+    stds = nested_dict()
+    for key in _types:
+        avgs[key] = []
+        stds[key] = []
+
+    # _n is the major index
+    _n = 0
+    for func, obj in _data_dict.items():
+        # _c is the minor index
+        _c = 0
+        for key in _types:
+            if _n % nitem == 0:
+                ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+            else:
+                ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+                #ytics.append('')
+
+            data = obj[key]
+            for _i in range(0, nitem):
+                if _i == _c:
+                    avgs[key].append(np.mean(data))
+                    stds[key].append(np.std(data) if len(data) > 1 else 0.0)
+                else:
+                    avgs[key].append(0.0)
+                    stds[key].append(0.0)
+            _n += 1
+            _c += 1
+
+    ytics[len(ytics)-1] = ''
+    # the x locations for the groups
+    ind = np.arange(ntics)
+    # the thickness of the bars: can also be len(x) sequence
+    thickness = 1.0
+
+    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
+                            plot_params.img_size['h'] / plot_params.img_dpi),
+                   dpi=plot_params.img_dpi)
+    ax = f.add_subplot(111)
+    ax.yaxis.tick_right()
+    f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
+
+    # put largest at top
+    ytics.reverse()
+    for key in _types:
+        avgs[key].reverse()
+        stds[key].reverse()
+
+    # construct the plots
+    plots = []
+    for key in _types:
+        p = plt.barh(ind, avgs[key], thickness, xerr=stds[key],
+                     align='edge', alpha=1.0, antialiased=False)
+        plots.append(p)
+
+    if len(plots) == 0:
+        return
+
+    grid_lines = []
+    for i in range(0, ntics):
+        if i % nitem == 0:
+            grid_lines.append(i)
+
+
+    #plt.minorticks_on()
+    plt.yticks(ind, ytics, ha='left')
+    plt.setp(ax.get_yticklabels(), fontsize='smaller')
+    #plt.legend(plots, _types, loc='lower left', bbox_to_anchor=(0.0, 0.0))
+    # Shrink current axis's height by 10% on the bottom
+    box = ax.get_position()
+    ax.set_position([box.x0, box.y0 + box.height * 0.1,
+                     box.width, box.height * 0.9])
+
+    # Put a legend below current axis
+    ax.legend(plots, _types, loc='upper center', bbox_to_anchor=(0.5, -0.05),
+              fancybox=True, shadow=True, ncol=nitem)
+
+    #ax.xaxis.set_major_locator(plt.IndexLocator(1, 0))
+    ax.yaxis.set_major_locator(plt.IndexLocator(nitem, 0))
+    ax.xaxis.grid()
+    ax.yaxis.grid(markevery=nitem)
+
+    #for xmaj in ax.xaxis.get_majorticklocs():
+    #    ax.axvline(x=xmaj, ls='--')
+    #for xmin in ax.xaxis.get_minorticklocs():
+    #    ax.axvline(x=xmin, ls='--')
+
+    #for ymaj in ax.yaxis.get_majorticklocs():
+    #    print('y major: {}'.format(ymaj))
+    #    ax.axhline(y=ymaj, ls='--')
+    #for ymin in ax.yaxis.get_minorticklocs():
+    #    print('y minor: {}'.format(ymin))
+    #    ax.axhline(y=ymin, ls='--')
+    #plt.gca().grid(b=True, which='major', axis='y', markevery=nitem)
+    #plt.gca().set_markevery()
+
+
+
+#==============================================================================#
 def plot_timing(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
@@ -603,98 +727,44 @@ def plot_timing(_plot_data,
         matplotlib.use(_matplotlib_backend)
         import matplotlib.pyplot as plt
 
-    iter_order = ['wall', 'cpu', 'sys']
-
     filename = _plot_data.filename
-    plot_params = _plot_data.plot_params
     title = _plot_data.get_title()
-    timing_data_dict = _plot_data.get_timing()
+    _params = _plot_data.plot_params
+    _ext = 'timing'
 
-    ntics = len(timing_data_dict)
-    ytics = []
+    _plot_min = (_params.timing_max_value *
+                 (0.01 * _params.timing_min_percent))
 
-    if ntics == 0:
-        print ('{} had no timing data less than the minimum time ({} s)'.format(
-               filename,
-               0.01 * plot_params.timing_max_value * plot_params.timing_min_percent))
-        return()
+    plot_generic(_plot_data,
+                 _params.timing_fields,
+                 _plot_data.get_timing(),
+                 _ext,
+                 _plot_min,
+                 's')
 
-    avgs = nested_dict()
-    stds = nested_dict()
-    for key in plot_params.timing_types:
-        avgs[key] = []
-        stds[key] = []
-
-    _f = True
-    for func, obj in timing_data_dict.items():
-        if _f is True:
-            iter_order = obj.get_order(iter_order)
-            _f = False
-        ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-        for key in plot_params.timing_types:
-            data = obj[key]
-            avgs[key].append(np.mean(data))
-            if len(data) > 1:
-                stds[key].append(np.std(data))
-            else:
-                stds[key].append(0.0)
-
-    # the x locations for the groups
-    ind = np.arange(ntics)
-    # the thickness of the bars: can also be len(x) sequence
-    thickness = 0.8
-
-    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
-                            plot_params.img_size['h'] / plot_params.img_dpi),
-                   dpi=plot_params.img_dpi)
-    ax = f.add_subplot(111)
-    ax.yaxis.tick_right()
-    f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
-
-    ytics.reverse()
-    for key in plot_params.timing_types:
-        avgs[key].reverse()
-        stds[key].reverse()
-
-    plots = []
-    lk = None
-    iter_order.reverse()
-    for key in iter_order:
-        data = avgs[key]
-        err = stds[key]
-        p = None
-        if lk is None:
-            p = plt.barh(ind, data, thickness, xerr=err, alpha=0.6, antialiased=False)
-        else:
-            p = plt.barh(ind, data, thickness, xerr=err, bottom=lk)
-        #lk = avgs[key]
-        plots.append(p)
-
-    plt.grid()
     plt.xlabel('Time [seconds]')
     plt.title('Timing report for {}'.format(title))
-    plt.yticks(ind, ytics, ha='left')
-    plt.setp(ax.get_yticklabels(), fontsize='smaller')
-    plt.legend(plots, iter_order)
     if disp:
         print('Displaying plot...')
         plt.show()
     else:
         make_output_directory(output_dir)
         imgfname = os.path.basename(filename)
-        imgfname = imgfname.replace('.', '_timing.')
-        if not '_timing.' in imgfname:
-            imgfname += "_timing."
-        imgfname = imgfname.replace('.json', '.{}'.format(plot_params.img_type))
-        imgfname = imgfname.replace('.py', '.{}'.format(plot_params.img_type))
-        if not '.{}'.format(plot_params.img_type) in imgfname:
-            imgfname += '.{}'.format(plot_params.img_type)
+        imgfname = imgfname.replace('.', '_{}.'.format(_ext))
+        if not '_{}.'.format(_ext) in imgfname:
+            imgfname += '_{}.'.format(_ext)
+        imgfname = imgfname.replace('.json', '.{}'.format(_params.img_type))
+        imgfname = imgfname.replace('.py', '.{}'.format(_params.img_type))
+        if not '.{}'.format(_params.img_type) in imgfname:
+            imgfname += '.{}'.format(_params.img_type)
+        while '..' in imgfname:
+            imgfname = imgfname.replace('..', '.')
 
         add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
 
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname, dpi=plot_params.img_dpi)
+        plt.savefig(imgfname, dpi=_params.img_dpi)
         plt.close()
 
 
@@ -714,113 +784,44 @@ def plot_memory(_plot_data,
         matplotlib.use(_matplotlib_backend)
         import matplotlib.pyplot as plt
 
-    iter_order = ['total_peak_rss', 'total_current_rss', 'self_peak_rss', 'self_current_rss']
     filename = _plot_data.filename
-    plot_params = _plot_data.plot_params
     title = _plot_data.get_title()
-    memory_data_dict = _plot_data.get_memory()
+    _params = _plot_data.plot_params
+    _ext = 'memory'
 
-    ntics = len(memory_data_dict)
-    ytics = []
+    _plot_min = (_params.timing_max_value *
+                 (0.01 * _params.timing_min_percent))
 
-    if ntics == 0:
-        print ('{} had no memory data less than the minimum memory ({} MB)'.format(
-               filename,
-               0.01 * plot_params.memory_max_value * plot_params.memory_min_percent))
-        return()
+    plot_generic(_plot_data,
+                 _params.memory_fields,
+                 _plot_data.get_memory(),
+                 _ext,
+                 _plot_min,
+                 'MB')
 
-    avgs = nested_dict()
-    stds = nested_dict()
-    for key in plot_params.memory_types:
-        avgs[key] = []
-        stds[key] = []
-
-    _f = True
-    for func, obj in memory_data_dict.items():
-        if _f is True:
-            iter_order = obj.get_order(iter_order)
-            _f = False
-        ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-        for key in plot_params.memory_types:
-            data = obj[key]
-            if len(data) == 0:
-                avgs[key].append(0.0)
-                stds[key].append(0.0)
-                continue
-            avgs[key].append(np.mean(data))
-            if len(data) > 1:
-                stds[key].append(np.std(data))
-            else:
-                stds[key].append(0.0)
-
-    # the x locations for the groups
-    ind = np.arange(ntics)
-    # the thickness of the bars: can also be len(x) sequence
-    thickness = 0.8
-
-    f = plt.figure(figsize=(plot_params.img_size['w'] / plot_params.img_dpi,
-                            plot_params.img_size['h'] / plot_params.img_dpi),
-                   dpi=plot_params.img_dpi)
-    ax = f.add_subplot(111)
-    ax.yaxis.tick_right()
-    f.subplots_adjust(left=0.05, right=0.75, bottom=0.05, top=0.90)
-
-    ytics.reverse()
-    for key in plot_params.memory_types:
-        if len(avgs[key]) == 0:
-            del avgs[key]
-            del stds[key]
-
-    for key in plot_params.memory_types:
-        avgs[key].reverse()
-        stds[key].reverse()
-
-    plots = []
-    lk = None
-    iter_order.reverse()
-    n = 0
-    for key in iter_order:
-        data = avgs[key]
-        if len(data) == 0:
-            continue
-        err = stds[key]
-        p = None
-        if lk is None:
-            p = plt.barh(ind, data, thickness, xerr=err, alpha=0.6, antialiased=False)
-        else:
-            p = plt.barh(ind, data, thickness, xerr=err, bottom=lk)
-        #lk = avgs[key]
-        plots.append(p)
-        n += 1
-
-    if len(plots) == 0:
-        return
-
-    plt.grid()
     plt.xlabel('Memory [MB]')
     plt.title('Memory report for {}'.format(title))
-    plt.yticks(ind, ytics, ha='left')
-    plt.setp(ax.get_yticklabels(), fontsize='smaller')
-    plt.legend(plots, iter_order)
     if disp:
-        #print('Displaying plot...')
+        print('Displaying plot...')
         plt.show()
     else:
         make_output_directory(output_dir)
         imgfname = os.path.basename(filename)
-        imgfname = imgfname.replace('.', '_memory.')
-        if not '_memory.' in imgfname:
-            imgfname += "_memory."
-        imgfname = imgfname.replace('.json', '.{}'.format(plot_params.img_type))
-        imgfname = imgfname.replace('.py', '.{}'.format(plot_params.img_type))
-        if not '.{}'.format(plot_params.img_type) in imgfname:
-            imgfname += '.{}'.format(plot_params.img_type)
+        imgfname = imgfname.replace('.', '_{}.'.format(_ext))
+        if not '_{}.'.format(_ext) in imgfname:
+            imgfname += '_{}.'.format(_ext)
+        imgfname = imgfname.replace('.json', '.{}'.format(_params.img_type))
+        imgfname = imgfname.replace('.py', '.{}'.format(_params.img_type))
+        if not '.{}'.format(_params.img_type) in imgfname:
+            imgfname += '.{}'.format(_params.img_type)
+        while '..' in imgfname:
+            imgfname = imgfname.replace('..', '.')
 
         add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
 
         imgfname = os.path.join(output_dir, imgfname)
         print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname, dpi=plot_params.img_dpi)
+        plt.savefig(imgfname, dpi=_params.img_dpi)
         plt.close()
 
 
@@ -845,7 +846,7 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
     import timemory.options as options
     if echo_dart is None and options.echo_dart:
         echo_dart = True
-    else:
+    elif echo_dart is None:
         echo_dart = False
 
     if len(files) > 0:
@@ -873,6 +874,7 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
             print ('Plotting {}...'.format(_data.filename))
             plot_timing(_data, display, output_dir, echo_dart)
             plot_memory(_data, display, output_dir, echo_dart)
+
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
@@ -885,26 +887,48 @@ if __name__ == "__main__":
     import argparse
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument("-f", "--files", nargs='*', help="File input")
+        parser.add_argument("-f", "--files", nargs='*', help="File input", type=str)
         parser.add_argument("-d", "--display", required=False, action='store_true',
                             help="Display plot", dest='display_plot')
-        parser.add_argument("-t", "--titles", nargs='*', help="Plot titles")
+        parser.add_argument("-t", "--titles", nargs='*', help="Plot titles", type=str)
+        parser.add_argument('-c', "--combine", required=False, action='store_true',
+                            help="Combined data into a single plot")
+        parser.add_argument('-o', '--output-dir', help="Output directory", type=str,
+                            required=False)
+        parser.add_argument('-e', '--echo-dart', help="echo Dart measurement for CDash",
+                            required=False, action='store_true')
 
         parser.set_defaults(display_plot=False)
+        parser.set_defaults(combine=False)
+        parser.set_defaults(output_dir=".")
+        parser.set_defaults(echo_dart=False)
 
         args = parser.parse_args()
         print('Files: {}'.format(args.files))
+        print('Titles: {}'.format(args.titles))
+
         if len(args.titles) != 1 and len(args.titles) != len(args.files):
             raise Exception("Error must provide one title or a title for each file")
+
         data = []
-        for i in range(len(args.files)):
+        for i in range(len(args.files)):                                                                
             f = open(args.files[i], "r")
             _data = read(json.load(f))
+            _data.filename = args.files[i].replace('.json', '')
             if len(args.titles) == 1:
                 _data.title = args.titles[0]
             else:
                 _data.title = args.titles[i]
-        plot(data, args.display)
+            print('### --> Processing "{}" from "{}"...'.format(_data.title,
+                                                                args.files[i]))
+            data.append(_data)
+        print('Echo DART: {}'.format(args.echo_dart))
+        plot(data=data,
+             display=args.display_plot,
+             combine=args.combine,
+             output_dir=args.output_dir,
+             echo_dart=args.echo_dart)
+
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
