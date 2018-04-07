@@ -281,7 +281,7 @@ inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
     while(_dir.find("/") != std::string::npos)
         _dir.replace(_dir.find("/"), 1, "\\\\");
 
-    if(_mkdir(_dir) != 0)
+    if(_mkdir(_dir.c_str()) != 0)
     {
         std::stringstream _sdir;
         _sdir << "dir " << _dir;

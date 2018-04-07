@@ -133,7 +133,7 @@ template<> struct time_units<std::ratio<3600*24>>
 //----------------------------------------------------------------------------//
 
 template <typename Precision>
-static_api intmax_t clock_tick()
+intmax_t clock_tick()
 {
     auto _get_sys_tick = [] ()
     {

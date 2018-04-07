@@ -6,6 +6,8 @@ temporary memory calculation
 
 `TiMemory on GitHub <https://github.com/jrmadsen/TiMemory>`__
 
+`TiMemory GitHub Pages <https://jrmadsen.github.io/TiMemory>`__
+
 `Doxygen source code documentation for
 TiMemory <https://jrmadsen.github.io/TiMemory/doxy/index.html>`__
 
@@ -438,10 +440,10 @@ string is enabled with the option ``--enable-dart`` or by setting
 ``timemory.options.enable_dart=True`` prior to calling
 ``timemory.plotting.plot(...)``
 
-.. figure:: /images/timing.png
+.. figure:: https://jrmadsen.github.io/TiMemory/images/timing.png
    :alt: 
 
-.. figure:: /images/memory.png
+.. figure:: https://jrmadsen.github.io/TiMemory/images/memory.png
    :alt: 
 
 Timemory ASCII Sample Output
