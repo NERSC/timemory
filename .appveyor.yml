@@ -53,7 +53,6 @@ install:
     # Python environment
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") {
-        $env:PYTHON = "$env:PYTHON$env:PYTHON-x64"
         $env:PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
@@ -86,6 +85,8 @@ install:
 build_script:
 - mkdir build-timemory
 - cd build-timemory
+- echo "PATH: %PATH%"
+- echo "PYTHON_EXE: %PYTHON_EXE%"
 - cmake -DUSE_MPI=OFF -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DCTEST_LOCAL_CHECKOUT=ON -DSHARED_PYTHON_LINKING=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%" -DCMAKE_INSTALL_PREFIX=../install-timemory
