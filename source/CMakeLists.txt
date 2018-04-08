@@ -54,14 +54,27 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
 		    OUTPUT_NAME ${OUTPUT_NAME}
 			COMPILE_DEFINITIONS TIMEMORY_DLL
 			LANGUAGE CXX
-			POSITION_INDEPENDENT_CODE ON)
+            # C++ shared library fallback installation
+            LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+            POSITION_INDEPENDENT_CODE ON)
 		target_compile_options(${OUTPUT_NAME}-${TYPE} PRIVATE /MP /bigobj /Tp)
 	else(WIN32)
-	    set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
-		    OUTPUT_NAME ${OUTPUT_NAME}
-			VERSION ${PROJECT_VERSION}
-			SOVERSION ${PROJECT_VERSION_MAJOR}
-			POSITION_INDEPENDENT_CODE ON)
+        if(XCODE)
+            # xcode has issue with "cmake_symlink_library"
+            set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
+                OUTPUT_NAME ${OUTPUT_NAME}
+                # C++ shared library fallback installation
+                LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                POSITION_INDEPENDENT_CODE ON)
+        else(XCODE)
+            set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
+                OUTPUT_NAME ${OUTPUT_NAME}
+                VERSION ${PROJECT_VERSION}
+                SOVERSION ${PROJECT_VERSION_MAJOR}
+                # C++ shared library fallback installation
+                LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                POSITION_INDEPENDENT_CODE ON)
+        endif(XCODE)
 	endif(WIN32)
     list(APPEND INSTALL_LIBRARIES ${LIBNAME}-${TYPE})
 endmacro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
@@ -72,9 +85,14 @@ add_subdirectory(timemory)
 message(STATUS "")
 message(STATUS "Building ${PROJECT_NAME} with object library...")
 message(STATUS "")
-add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-_build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
-_build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+if(NOT XCODE)
+    add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
+    _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+    _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+else(NOT XCODE)
+    _build_library(shared ${LIBNAME} ${sources} ${headers})
+    _build_library(static ${LIBNAME} ${sources} ${headers})
+endif(NOT XCODE)
 
 # library type to link pybind11 module to
 add_option(SHARED_PYTHON_LINKING
@@ -83,9 +101,6 @@ set(LINK_TYPE static)
 
 if(SHARED_PYTHON_LINKING)
     set(LINK_TYPE shared)
-    set_target_properties(${LIBNAME}-shared PROPERTIES
-        LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib)
-    # C++ shared library fallback installation
     install(TARGETS ${LIBNAME}-shared
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
         COMPONENT python)

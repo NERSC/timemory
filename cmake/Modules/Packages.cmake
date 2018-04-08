@@ -161,3 +161,20 @@ safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
 foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
     include_directories(SYSTEM ${_DIR})
 endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+
+
+################################################################################
+#
+#   Python installation directories
+#
+################################################################################
+if(SETUP_PY)
+    set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
+        "Installation prefix of python" FORCE)
+else(SETUP_PY)
+    set(TIMEMORY_INSTALL_PYTHONDIR
+        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
+        CACHE PATH "Installation directory for python")
+endif(SETUP_PY)
+
+set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})

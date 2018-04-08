@@ -49,7 +49,14 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
     # if not found, go to hard-coded path from installation
     if tim_lib_path is None:
         # when installed, we want to fallback to the installation path first
-        alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@", os.path.join(this_path, "lib") ]
+        # Visual Studio and Xcode put libraries in
+        # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
+        alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@",
+                      os.path.join(this_path, "lib/Debug"),
+                      os.path.join(this_path, "lib/MinSizeRel"),
+                      os.path.join(this_path, "lib/RelWithDebInfo"),
+                      os.path.join(this_path, "lib/Release"),
+                      os.path.join(this_path, "lib") ]
 
         # in the build tree (when testing), we want to fallback to the build path first
         if this_path == "@PROJECT_BINARY_DIR@/timemory":
@@ -81,6 +88,16 @@ timemory_py = __load_module('timemory', os.path.join(this_path, 'timemory.py'))
 
 # the dynamic library name
 timemory_dylib_name = '@LIBNAME@@PYTHON_MODULE_EXTENSION@'
+
+timemory_dylib_path = os.path.join(this_path, '@LIBNAME@@PYTHON_MODULE_EXTENSION@')
+if not os.path.exists(timemory_dylib_path):
+    # Visual Studio and Xcode put libraries in
+    # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
+    for build_type in [ "Release", "RelWithDebInfo", "MinSizeRel", "Debug" ]:
+        timemory_dylib_path = os.path.join(this_path, '{}/@LIBNAME@@PYTHON_MODULE_EXTENSION@'.format(build_type))
+        if os.path.exists(timemory_dylib_path):
+            timemory_dylib_name = os.path.join(build_type, timemory_dylib_name)
+            break
 
 # import the compiled TiMemory module
 timemory = timemory_py.__bootstrap__(timemory_dylib_name)

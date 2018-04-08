@@ -81,19 +81,3 @@ foreach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     set(PROJECT_INSTALL_FULL_${_TYPE}DIR ${TIMEMORY_INSTALL_FULL_${TYPE}DIR})
 
 endforeach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
-
-################################################################################
-#
-#   Python installation directories
-#
-################################################################################
-if(SETUP_PY)
-    set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
-        "Installation prefix of python" FORCE)
-else(SETUP_PY)
-    set(TIMEMORY_INSTALL_PYTHONDIR
-        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
-        CACHE PATH "Installation directory for python")
-endif(SETUP_PY)
-
-set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
