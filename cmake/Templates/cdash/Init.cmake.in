@@ -118,21 +118,23 @@ if(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
     if(WIN32)
         find_program(COPY_CMD xcopy)
         set(COPY_ARGS "/S /I")
+        string(REPLACE "/" "\\" _LOCAL_DIRECTORY "${CTEST_LOCAL_DIRECTORY}")
+        string(REPLACE "/" "\\" _SOURCE_DIRECTORY "${CTEST_SOURCE_DIRECTORY}")
+        set(CTEST_CHECKOUT_COMMAND "${COPY_CMD} ${COPY_ARGS} ${_LOCAL_DIRECTORY} ${_SOURCE_DIRECTORY}")
     else()
         find_program(COPY_CMD rsync)
         set(COPY_ARGS "-ruv")
+        set(CTEST_CHECKOUT_COMMAND "${COPY_CMD} ${COPY_ARGS} ${CTEST_LOCAL_DIRECTORY}/ ${CTEST_SOURCE_DIRECTORY}")
     endif()
-
-    set(CTEST_CHECKOUT_COMMAND "${COPY_CMD} ${COPY_ARGS} ${CTEST_LOCAL_DIRECTORY}/ ${CTEST_SOURCE_DIRECTORY}")
 
 else(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
 
     set(CTEST_CHECKOUT_COMMAND
         "${CTEST_GIT_COMMAND} clone -b ${CTEST_BRANCH} --recurse-submodules https://github.com/jrmadsen/@PROJECT_NAME@ ${CTEST_SOURCE_DIRECTORY}")
+    set(CTEST_UPDATE_COMMAND        "${CTEST_GIT_COMMAND} checkout -qf ${CTEST_REVISION}")
 
 endif(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
 
-set(CTEST_UPDATE_COMMAND        "${CTEST_GIT_COMMAND} checkout -qf ${CTEST_REVISION}")
 set(CTEST_CONFIGURATION_TYPE    "@CMAKE_BUILD_TYPE@")
 set(CTEST_CONFIGURE_COMMAND     "${CTEST_CMAKE_COMMAND} ${CTEST_CONFIG_OPTIONS} -DBUILD_TESTING=ON -DDASHBOARD_MODE=ON -DCMAKE_INSTALL_PREFIX=${CTEST_INSTALL_DIRECTORY} -Wno-dev ${CTEST_SOURCE_DIRECTORY} -G ${CTEST_CMAKE_GENERATOR}")
 
@@ -236,10 +238,6 @@ macro(SETUP KEY)
         configure_ctest_files()
 
         ctest_start(${MODEL}   TRACK ${MODEL})
-        # update command
-        if(NOT CTEST_LOCAL_CHECKOUT)
-            ctest_update()
-        endif(NOT CTEST_LOCAL_CHECKOUT)
         configure_ctest_files()
         ## -- read CTestCustom.cmake file
         ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
