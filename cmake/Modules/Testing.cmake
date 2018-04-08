@@ -32,9 +32,13 @@ endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
 # ------------------------------------------------------------------------ #
 # -- Function to create a temporary directory
 # ------------------------------------------------------------------------ #
-function(GET_TEMPORARY_DIRECTORY DIR_VAR DIR_BASE DIR_MODEL)
+function(GET_TEMPORARY_DIRECTORY DIR_VAR DIR_MODEL)
     # create a root working directory
-    set(_TMP_ROOT "${CMAKE_BINARY_DIR}/cdash/${DIR_MODEL}")
+    if(WIN32)
+        set(_TMP_ROOT "$ENV{TEMP}/${PROJECT_NAME}/cdash/${DIR_MODEL}")
+    else(WIN32)
+        set(_TMP_ROOT "/tmp/${PROJECT_NAME}/cdash/${DIR_MODEL}")
+    endif(WIN32)
     set(${DIR_VAR} "${_TMP_ROOT}" PARENT_SCOPE)
     execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${_TMP_ROOT}) 
 endfunction()
@@ -115,8 +119,7 @@ endmacro(add_ctest_options VARIABLE )
 if(NOT DASHBOARD_MODE AND BUILD_TESTING)
     # get temporary directory for dashboard testing
     if(NOT DEFINED CMAKE_DASHBOARD_ROOT)
-        GET_TEMPORARY_DIRECTORY(CMAKE_DASHBOARD_ROOT
-            "${CMAKE_PROJECT_NAME}-cdash" ${CTEST_MODEL})
+        GET_TEMPORARY_DIRECTORY(CMAKE_DASHBOARD_ROOT ${CTEST_MODEL})
     endif(NOT DEFINED CMAKE_DASHBOARD_ROOT)
     
     # set the CMake configure options
