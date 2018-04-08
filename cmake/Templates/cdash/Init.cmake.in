@@ -114,11 +114,28 @@ set(CTEST_COMPILER_IS_CLANG     "@CMAKE_CXX_COMPILER_IS_CLANG@")
 set(CTEST_COMPILER_IS_INTEL     "@CMAKE_CXX_COMPILER_IS_INTEL@")
 
 if(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
-    set(CTEST_CHECKOUT_COMMAND
-        "rsync -ruv --exclude ${CTEST_LOCAL_DIRECTORY}/build-@PROJECT_NAME@ --exclude build-@PROJECT_NAME@ --exclude build-timemory --exclude ${CTEST_LOCAL_DIRECTORY}/build-timemory ${CTEST_LOCAL_DIRECTORY}/ ${CTEST_SOURCE_DIRECTORY}")
+    set(EXCLUDE_DIRS "--exclude build-@PROJECT_NAME@"
+                     "--exclude build-timemory")
+    if(WIN32)
+        find_program(COPY_CMD cp)
+        set(COPY_ARGS "-Recurse")
+        set(EXCLUDE_ARG "-Exclude")
+    else()
+        find_program(COPY_CMD rsync)
+        set(COPY_ARGS "-ruv")
+        set(EXCLUDE_ARG "--exclude")
+    endif()
+    foreach(_DIR ${EXCLUDE_DIRS})
+        set(COPY_ARGS "${COPY_ARGS} ${EXCLUDE_ARG} ${_DIR} ${EXCLUDE_ARG} ${CTEST_LOCAL_DIRECTORY}/${_DIR}")
+    endforeach(_DIR ${EXCLUDE_DIRS})
+
+    set(CTEST_CHECKOUT_COMMAND "${COPY_CMD} ${COPY_ARGS} ${CTEST_LOCAL_DIRECTORY}/ ${CTEST_SOURCE_DIRECTORY}")
+
 else(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
+
     set(CTEST_CHECKOUT_COMMAND
         "${CTEST_GIT_COMMAND} clone -b ${CTEST_BRANCH} --recurse-submodules https://github.com/jrmadsen/@PROJECT_NAME@ ${CTEST_SOURCE_DIRECTORY}")
+
 endif(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
 
 set(CTEST_UPDATE_COMMAND        "${CTEST_GIT_COMMAND} checkout -qf ${CTEST_REVISION}")
@@ -217,22 +234,33 @@ endmacro(SUBMIT KEY)
 # -- Setup the test
 # ---------------------------------------------------------------------------- #
 macro(SETUP KEY)
+
     if("${TRIGGER}" STREQUAL "Any" OR "${KEY}" STREQUAL "Build")
+
         message(STATUS "Key (${KEY}) triggered a fresh build...")
         clean_directories()
         configure_ctest_files()
+
         ctest_start(${MODEL}   TRACK ${MODEL})
+        # update command
+        if(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
+            ctest_update(${MODULE} TRACK ${MODEL})
+        endif(NOT "${CTEST_LOCAL_DIRECTORY}" STREQUAL "")
         configure_ctest_files()
         ## -- read CTestCustom.cmake file
         ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
         ctest_configure (BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE ret)
         ctest_build     (BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE ret)
+
     else("${TRIGGER}" STREQUAL "Any" OR "${KEY}" STREQUAL "Build")
+
         unset(CTEST_CHECKOUT_COMMAND)
         configure_ctest_files()    
         ctest_start(${MODEL}   TRACK ${MODEL} APPEND)
         configure_ctest_files()    
         ## -- read CTestCustom.cmake file
         ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
+
     endif("${TRIGGER}" STREQUAL "Any" OR "${KEY}" STREQUAL "Build")
+
 endmacro(SETUP KEY)
