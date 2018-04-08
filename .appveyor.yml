@@ -85,8 +85,6 @@ install:
 build_script:
 - mkdir build-timemory
 - cd build-timemory
-- echo "PATH: %PATH%"
-- echo "PYTHON_EXE: %PYTHON_EXE%"
 - cmake -DUSE_MPI=OFF -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DCTEST_LOCAL_CHECKOUT=ON -DSHARED_PYTHON_LINKING=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%" -DCMAKE_INSTALL_PREFIX=../install-timemory
