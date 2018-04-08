@@ -435,9 +435,7 @@ public:
 
 public:
     void report(ostream_t&, bool endline = true, bool no_min = false) const;
-    inline void report(bool endline = true) const;
-    inline void report_average(bool endline = true) const;
-    inline void report_average(ostream_t& os, bool endline = true) const;
+    void report(bool endline = true) const;
     bool above_min(bool no_min = false) const;
     const string_t& format_string() const { return m_format_string; }
     void sync(this_type& rhs);
@@ -471,7 +469,7 @@ protected:
 
 private:
     // world mutex map for thread-safe ostreams
-    static_api mutex_map_t      f_mutex_map;
+    static mutex_map_t     f_mutex_map;
 
 public:
     template <typename Archive> void
@@ -630,24 +628,6 @@ inline const char* base_timer::clock_time() const
     std::time ( &rawtime );
     timeinfo = localtime ( &rawtime );
     return asctime (timeinfo);
-}
-//----------------------------------------------------------------------------//
-inline
-void base_timer::report(bool endline) const
-{
-    this->report(*m_os, endline);
-}
-//----------------------------------------------------------------------------//
-inline
-void base_timer::report_average(bool endline) const
-{
-    this->report(*m_os, endline, true);
-}
-//----------------------------------------------------------------------------//
-inline
-void base_timer::report_average(ostream_t& os, bool endline) const
-{
-    this->report(os, endline, true);
 }
 //----------------------------------------------------------------------------//
 

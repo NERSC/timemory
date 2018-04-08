@@ -261,7 +261,7 @@ namespace rss
         bool operator()(const this_type& rhs) const
         { return *this < rhs; }
 
-        static_api usage max(const usage& lhs, const usage& rhs)
+        static usage max(const usage& lhs, const usage& rhs)
         {
             usage ret;
             ret.m_curr_rss = ::std::max(lhs.m_curr_rss, rhs.m_curr_rss);
@@ -269,7 +269,7 @@ namespace rss
             return ret;
         }
 
-        static_api usage min(const usage& lhs, const usage& rhs)
+        static usage min(const usage& lhs, const usage& rhs)
         {
             usage ret;
             ret.m_curr_rss = ::std::min(lhs.m_curr_rss, rhs.m_curr_rss);

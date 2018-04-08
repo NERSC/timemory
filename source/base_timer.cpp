@@ -177,6 +177,13 @@ bool base_timer::above_min(bool no_min) const
 
 //============================================================================//
 
+void base_timer::report(bool endline) const
+{
+	this->report(*m_os, endline);
+}
+
+//============================================================================//
+
 void base_timer::report(std::ostream& os, bool endline, bool no_min) const
 {
     const_cast<base_timer*>(this)->parse_format();

@@ -198,28 +198,28 @@ public:
     typedef std::function<void(int)> signal_function_t;
 
 public:
-    static_api bool is_active() { return signals_active; }
-    static_api void set_active(bool val) { signals_active = val; }
-    static_api void enable(const sys_signal&);
-    static_api void disable(const sys_signal&);
-    static_api std::string str(const sys_signal&);
-    static_api std::string str();
-    static_api void check_environment();
-    static_api void set_exit_action(signal_function_t _f) { signals_exit_func = _f; }
-    static_api void exit_action(int errcode) { signals_exit_func(errcode); }
+    static bool is_active() { return signals_active; }
+    static void set_active(bool val) { signals_active = val; }
+    static void enable(const sys_signal&);
+    static void disable(const sys_signal&);
+    static std::string str(const sys_signal&);
+    static std::string str();
+    static void check_environment();
+    static void set_exit_action(signal_function_t _f) { signals_exit_func = _f; }
+    static void exit_action(int errcode) { signals_exit_func(errcode); }
 
-    static_api const signal_set_t& enabled() { check_environment(); return signals_enabled; }
-    static_api const signal_set_t& disabled() { check_environment(); return signals_disabled; }
-    static_api const signal_set_t& get_enabled() { return signals_enabled; }
-    static_api const signal_set_t& get_disabled() { return signals_disabled; }
-    static_api const signal_set_t& get_default() { return signals_default; }
+    static const signal_set_t& enabled() { check_environment(); return signals_enabled; }
+    static const signal_set_t& disabled() { check_environment(); return signals_disabled; }
+    static const signal_set_t& get_enabled() { return signals_enabled; }
+    static const signal_set_t& get_disabled() { return signals_disabled; }
+    static const signal_set_t& get_default() { return signals_default; }
 
 private:
-    static_api bool                 signals_active;
-    static_api signal_set_t         signals_default;
-    static_api signal_set_t         signals_enabled;
-    static_api signal_set_t         signals_disabled;
-    static_api signal_function_t    signals_exit_func;
+    static bool                 signals_active;
+    static signal_set_t         signals_default;
+    static signal_set_t         signals_enabled;
+    static signal_set_t         signals_disabled;
+    static signal_function_t    signals_exit_func;
 };
 
 //----------------------------------------------------------------------------//

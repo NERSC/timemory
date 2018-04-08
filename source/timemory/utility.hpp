@@ -188,31 +188,12 @@ public:
     typedef std::string         string_t;
     typedef string_t::size_type size_type;
 
-    // OS-dependent representation
-    static_api string_t osrepr(string_t _path)
-    {
-        //auto _orig = _path;
-    #if defined(_WINDOWS)
-        while(_path.find("/") != std::string::npos)
-            _path.replace(_path.find("/"), 1, "\\\\");
-    #elif defined(_UNIX)
-        while(_path.find("\\\\") != std::string::npos)
-            _path.replace(_path.find("\\\\"), 2, "/");
-        while(_path.find("\\") != std::string::npos)
-            _path.replace(_path.find("\\"), 1, "/");
-    #endif
-        //std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
-        //          << _path << "\"..." << std::endl;
-        return _path;
-    }
-
 public:
     path_t(const std::string& _path)    : string_t(osrepr(_path)) { }
     path_t(char* _path)                 : string_t(osrepr(string_t(_path))) { }
     path_t(const path_t& rhs)           : string_t(osrepr(rhs)) { }
     path_t(const char* _path)
     : string_t(osrepr(string_t(const_cast<char*>(_path)))) { }
-
 
     path_t& operator=(const string_t& rhs)
     {
@@ -257,6 +238,23 @@ public:
     #endif
     }
 
+	// OS-dependent representation
+	string_t osrepr(string_t _path)
+	{
+		//auto _orig = _path;
+#if defined(_WINDOWS)
+		while (_path.find("/") != std::string::npos)
+			_path.replace(_path.find("/"), 1, "\\\\");
+#elif defined(_UNIX)
+		while (_path.find("\\\\") != std::string::npos)
+			_path.replace(_path.find("\\\\"), 2, "/");
+		while (_path.find("\\") != std::string::npos)
+			_path.replace(_path.find("\\"), 1, "/");
+#endif
+		//std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
+		//          << _path << "\"..." << std::endl;
+		return _path;
+	}
 };
 
 //----------------------------------------------------------------------------//

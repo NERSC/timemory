@@ -195,19 +195,19 @@ public:
 
 public:
     // Public static functions
-    static_api pointer_type instance();
-    static_api bool is_enabled() { return f_enabled; }
-    static_api void enable(bool val = true);
-    static_api void write_json(const path_t& _fname);
-    static_api std::pair<int32_t, bool> write_json(ostream_t& os);
-    static_api int32_t& max_depth() { return f_max_depth; }
-    static_api void set_get_num_threads_func(get_num_threads_func_t f);
+    static pointer_type instance();
+    static void enable(bool val = true);
+    static void write_json(const path_t& _fname);
+    static std::pair<int32_t, bool> write_json(ostream_t& os);
+    static void set_get_num_threads_func(get_num_threads_func_t f);
+	static int32_t& max_depth() { return f_max_depth; }
+	static bool is_enabled() { return f_enabled; }
 
 protected:
-    static_api void write_json_no_mpi(path_t _fname);
-    static_api void write_json_mpi(path_t _fname);
-    static_api void write_json_no_mpi(ostream_t& os);
-    static_api std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
+    static void write_json_no_mpi(path_t _fname);
+    static void write_json_mpi(path_t _fname);
+    static void write_json_no_mpi(ostream_t& os);
+    static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
 
 public:
     // Public member functions
@@ -259,7 +259,7 @@ public:
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
     void write_serialization(const path_t& _fname) const { write_json(_fname); }
-    void write_serialization(std::ostream& os) const;
+	void write_serialization(std::ostream& os) const { write_json(os); }
 
     void add(pointer_type ptr);
 
@@ -283,6 +283,9 @@ public:
     void operator+=(const rss_usage_t& rhs);
     void operator-=(const rss_usage_t& rhs);
 
+protected:
+	// protected functions
+	static_api comm_group_t get_communicator_group();
 
 protected:
     // protected functions
@@ -291,10 +294,9 @@ protected:
     string_t get_prefix() const;
 
 protected:
-    // protected static_api functions and vars
-    static_api comm_group_t get_communicator_group();
-    static_api mutex_t                  f_mutex;
-    static_api get_num_threads_func_t   f_get_num_threads;
+	// protected static variables
+    static mutex_t                  f_mutex;
+    static get_num_threads_func_t   f_get_num_threads;
 
 private:
     // Private functions
@@ -304,11 +306,11 @@ private:
 private:
     // Private variables
     // for temporary enabling/disabling
-    static_api bool             f_enabled;
+    static bool             f_enabled;
     // max depth of timers
-    static_api int32_t          f_max_depth;
+    static int32_t          f_max_depth;
     // number of timing manager instances
-    static_api std::atomic<int> f_manager_instance_count;
+    static std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
     // hash counting

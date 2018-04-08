@@ -110,25 +110,25 @@ namespace tim
 template <typename Ratio> struct time_units;
 
 template<> struct time_units<std::pico>
-{ static_api constexpr const char* str = "psec"; };
+{ static constexpr const char* str = "psec"; };
 template<> struct time_units<std::nano>
-{ static_api constexpr const char* str = "nsec"; };
+{ static constexpr const char* str = "nsec"; };
 template<> struct time_units<std::micro>
-{ static_api constexpr const char* str = "usec"; };
+{ static constexpr const char* str = "usec"; };
 template<> struct time_units<std::milli>
-{ static_api constexpr const char* str = "msec"; };
+{ static constexpr const char* str = "msec"; };
 template<> struct time_units<std::centi>
-{ static_api constexpr const char* str = "csec"; };
+{ static constexpr const char* str = "csec"; };
 template<> struct time_units<std::deci>
-{ static_api constexpr const char* str = "dsec"; };
+{ static constexpr const char* str = "dsec"; };
 template<> struct time_units<std::ratio<1>>
-{ static_api constexpr const char* str = "sec"; };
+{ static constexpr const char* str = "sec"; };
 template<> struct time_units<std::ratio<60>>
-{ static_api constexpr const char* str = "min"; };
+{ static constexpr const char* str = "min"; };
 template<> struct time_units<std::ratio<3600>>
-{ static_api constexpr const char* str = "hr"; };
+{ static constexpr const char* str = "hr"; };
 template<> struct time_units<std::ratio<3600*24>>
-{ static_api constexpr const char* str = "day"; };
+{ static constexpr const char* str = "day"; };
 
 //----------------------------------------------------------------------------//
 
@@ -237,7 +237,7 @@ public:
 
     static constexpr bool is_steady = true;
 
-    static_api time_point now() noexcept
+    static time_point now() noexcept
     {
         typedef std::chrono::high_resolution_clock              clock_type;
         typedef std::chrono::duration<clock_type::rep, period>  duration_type;

@@ -70,12 +70,12 @@ public:
     virtual ~timer();
 
 public:
-    static_api string_t default_format;
-    static_api uint16_t default_precision;
-    static_api void propose_output_width(uint64_t);
-    static_api uint64_t get_output_width() { return f_output_width; }
-    static_api void set_output_width(uint64_t n) { f_output_width = n; }
-    static_api void set_default_format(const string_t& str) { default_format = str; }
+    static string_t default_format;
+    static uint16_t default_precision;
+    static void propose_output_width(uint64_t);
+    static uint64_t get_output_width() { return f_output_width; }
+    static void set_output_width(uint64_t n) { f_output_width = n; }
+    static void set_default_format(const string_t& str) { default_format = str; }
 
 public:
     timer& stop_and_return() { this->stop(); return *this; }
@@ -134,7 +134,7 @@ protected:
     string_t    m_close;
 
 private:
-    static_api uint64_t f_output_width;
+    static uint64_t f_output_width;
 
 public:
     template <typename Archive> void

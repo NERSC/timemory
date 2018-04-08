@@ -63,9 +63,9 @@ public:
 
 public:
     // static public functions
-    static_api uint64_t& ncount();
-    static_api uint64_t& nhash();
-    static_api bool alloc_next();
+    static uint64_t& ncount();
+    static uint64_t& nhash();
+    static bool alloc_next();
 
 private:
     bool            m_report_at_exit;

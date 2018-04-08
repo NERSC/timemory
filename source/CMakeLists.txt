@@ -45,26 +45,26 @@ file(GLOB headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 set(INSTALL_LIBRARIES )
 
 # macro to build a library of type: shared, static
-macro(_BUILD_LIBRARY type output_name)
-    string(TOUPPER "${type}" LIB_TYPE)
-    add_library(${LIBNAME}-${type} ${LIB_TYPE} ${ARGN})
-    target_link_libraries(${LIBNAME}-${type} ${EXTERNAL_LIBRARIES})
-    set_target_properties(${LIBNAME}-${type} PROPERTIES
-        OUTPUT_NAME ${output_name}
-        VERSION ${PROJECT_VERSION}
-        SOVERSION ${PROJECT_VERSION_MAJOR})
-    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-${type})
-endmacro(_BUILD_LIBRARY TYPE)
-
-# library type to link pybind11 module to
-set(LINK_TYPE static)
-add_option(SHARED_PYTHON_LINKING
-    "Link the TiMemory PyBind11 module to the shared library" OFF)
-
-if(WIN32)
-    set_source_files_properties(${sources} PROPERTIES
-        COMPILE_DEFINITIONS TIMEMORY_DLL)
-endif(WIN32)
+macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
+    string(TOUPPER "${TYPE}" LIB_TYPE)
+    add_library(${OUTPUT_NAME}-${TYPE} ${LIB_TYPE} ${ARGN})
+    target_link_libraries(${OUTPUT_NAME}-${TYPE} PUBLIC ${EXTERNAL_LIBRARIES})
+	if(WIN32)
+	    set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
+		    OUTPUT_NAME ${OUTPUT_NAME}
+			COMPILE_DEFINITIONS TIMEMORY_DLL
+			LANGUAGE CXX
+			POSITION_INDEPENDENT_CODE ON)
+		target_compile_options(${OUTPUT_NAME}-${TYPE} PRIVATE /MP /bigobj /Tp)
+	else(WIN32)
+	    set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
+		    OUTPUT_NAME ${OUTPUT_NAME}
+			VERSION ${PROJECT_VERSION}
+			SOVERSION ${PROJECT_VERSION_MAJOR}
+			POSITION_INDEPENDENT_CODE ON)
+	endif(WIN32)
+    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-${TYPE})
+endmacro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
 
 # this includes compile definitions for headers
 add_subdirectory(timemory)
@@ -75,6 +75,10 @@ message(STATUS "")
 add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
 _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
 _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
+
+# library type to link pybind11 module to
+add_option(SHARED_PYTHON_LINKING
+    "Link the TiMemory PyBind11 module to the shared library" OFF)
 set(LINK_TYPE static)
 
 if(SHARED_PYTHON_LINKING)
@@ -91,9 +95,19 @@ endif(SHARED_PYTHON_LINKING)
 # PyBind11
 #
 message(STATUS "External libraries: ${EXTERNAL_LIBRARIES}")
-pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
+if(WIN32 AND SHARED_PYTHON_LINKING)
+	pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc $<TARGET_OBJECTS:${LIBNAME}-object>)
+else(WIN32 AND SHARED_PYTHON_LINKING)
+	pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
+endif(WIN32 AND SHARED_PYTHON_LINKING)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
+if(WIN32)
+	set_target_properties(${OUTPUT_NAME} PROPERTIES
+		COMPILE_FLAGS "/MP /bigobj /Tp"
+		LANGUAGE CXX
+		POSITION_INDEPENDENT_CODE ON)
+endif(WIN32)
 
 set_target_properties(${LIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
