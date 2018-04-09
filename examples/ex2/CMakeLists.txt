@@ -14,10 +14,17 @@ cmake_policy(SET CMP0042 NEW)
 #----------------------------------------------------------------------------
 project(TiMemory-Example2-MPI)
 
-if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
+set(EXE_NAME mpi_test_timing)
+
+if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     include_directories(${CMAKE_SOURCE_DIR}/source
         ${CMAKE_SOURCE_DIR}/source/cereal/include)
+    set_property(TARGET timemory-static PROPERTY
+        IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+    set_property(TARGET timemory-shared
+        PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
     set(TiMemory_LIBRARIES timemory-shared ${EXTERNAL_LIBRARIES})
+    set(PROJECT_DEPENDS timemory-static timemory-shared)
 else()
     find_package(TiMemory REQUIRED)
     foreach(_DIR ${TiMemory_INCLUDE_DIRS})
@@ -33,13 +40,13 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
 #----------------------------------------------------------------------------
 # Add the executable, and link it to the TiMemory libraries
 #
-add_executable(mpi_test_timing mpi_test_timing.cpp)
-target_link_libraries(mpi_test_timing ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
-if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
-    add_dependencies(mpi_test_timing timemory-shared)
-endif(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
+add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
+target_link_libraries(${EXE_NAME} ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+
+if(DEFINED PROJECT_DEPENDS)
+    add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})
+endif(DEFINED PROJECT_DEPENDS)
 
 if(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
-    install(TARGETS mpi_test_timing DESTINATION bin)
-else(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
+    install(TARGETS ${EXE_NAME} DESTINATION bin)
 endif(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
