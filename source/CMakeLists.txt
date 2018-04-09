@@ -110,13 +110,11 @@ endif(SHARED_PYTHON_LINKING)
 # PyBind11
 #
 message(STATUS "External libraries: ${EXTERNAL_LIBRARIES}")
-if(WIN32 AND SHARED_PYTHON_LINKING)
-	pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc $<TARGET_OBJECTS:${LIBNAME}-object>)
-else(WIN32 AND SHARED_PYTHON_LINKING)
-	pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
-endif(WIN32 AND SHARED_PYTHON_LINKING)
+pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cc)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
+add_dependencies(${LIBNAME} ${LIBNAME}-${LINK_TYPE})
+
 if(WIN32)
 	set_target_properties(${OUTPUT_NAME} PROPERTIES
 		COMPILE_FLAGS "/MP /bigobj /Tp"

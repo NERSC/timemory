@@ -35,6 +35,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
 #
 add_executable(test_timing test_timing.cpp)
 target_link_libraries(test_timing ${TiMemory_LIBRARIES})
+if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
+    add_dependencies(test_timing timemory-shared)
+endif(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_SOURCE_DIR}")
 
 if(NOT DEFINED SETUP_PY OR NOT SETUP_PY)
     install(TARGETS test_timing DESTINATION bin)
