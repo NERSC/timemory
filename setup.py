@@ -155,10 +155,7 @@ class CMakeBuild(build_ext, Command):
 
         cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
         cmake_args += [ '-DUSE_MPI={}'.format(str.upper(self.use_mpi)) ]
-        if platform.system() == "Windows":
-            cmake_args += [ '-DSHARED_PYTHON_LINKING=OFF' ]
-        else:
-            cmake_args += [ '-DSHARED_PYTHON_LINKING={}'.format(str.upper(self.shared_linking)) ]
+        cmake_args += [ '-DSHARED_PYTHON_LINKING={}'.format(str.upper(self.shared_linking)) ]
 
         if platform.system() != "Windows":
             cmake_args += [ '-DBUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]

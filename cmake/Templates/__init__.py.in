@@ -52,11 +52,12 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
         # Visual Studio and Xcode put libraries in
         # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
         alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@",
-                      os.path.join(this_path, "lib/Debug"),
-                      os.path.join(this_path, "lib/MinSizeRel"),
-                      os.path.join(this_path, "lib/RelWithDebInfo"),
-                      os.path.join(this_path, "lib/Release"),
-                      os.path.join(this_path, "lib") ]
+                      os.path.join(this_path, os.path.join("lib", "Debug")),
+                      os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
+                      os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
+                      os.path.join(this_path, os.path.join("lib", "Release")),
+                      os.path.join(this_path, "lib"),
+                      "lib" ]
 
         # in the build tree (when testing), we want to fallback to the build path first
         if this_path == "@PROJECT_BINARY_DIR@/timemory":
@@ -69,11 +70,11 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
             # try to find exact match first, then major version match, then generic
             for _suffix in [ ".@TIMEMORY_VERSION@", "@TIMEMORY_VERSION_MAJOR@", "" ]:
                 _suffix += "@CMAKE_SHARED_LIBRARY_SUFFIX@"
-                _test_path = os.path.join(alt_path, "libtimemory{}".format(_suffix))
+                _test_path = os.path.join(alt_path, "@CMAKE_SHARED_LIBRARY_PREFIX@timemory{}".format(_suffix))
                 if os.path.exists(_test_path):
                     tim_lib_path = _test_path
                     break
-
+    
     if _verbose > 0:
         print('Using TiMemory shared library: {}'.format(tim_lib_path))
 
