@@ -81,6 +81,7 @@ install:
     # pip installation
     pip install -U setuptools disttools
     pip install -U matplotlib numpy pillow
+    $env:TIMEMORY_DEBUG=4
 
 build_script:
 - mkdir build-timemory

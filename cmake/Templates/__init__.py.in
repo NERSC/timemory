@@ -74,10 +74,10 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
         # Visual Studio and Xcode put libraries in
         # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
         alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@",
-                      #os.path.join(this_path, os.path.join("lib", "Debug")),
-                      #os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
-                      #os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
-                      #os.path.join(this_path, os.path.join("lib", "Release")),
+                      os.path.join(this_path, os.path.join("lib", "Debug")),
+                      os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
+                      os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
+                      os.path.join(this_path, os.path.join("lib", "Release")),
                       os.path.join(this_path, "lib")
                     ]
 
@@ -103,9 +103,6 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
                     break
                 elif _verbose > 1:
                     print('Alternative path not valid: "{}"'.format(_test_path))
-
-        if this_path == "@PROJECT_BINARY_DIR@/timemory":
-            tim_lib_path = timemory_info_data["timemory_shared_library"]
 
         if tim_lib_path is None and "timemory_shared_library" in timemory_info_data.keys():
             tim_lib_path = timemory_info_data["timemory_shared_library"]
