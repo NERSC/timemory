@@ -375,7 +375,7 @@ class timemory_test(unittest.TestCase):
         print('RSS ideal: {} kB'.format(rss_corr))
         print('RSS diff:  {} kB'.format(rss_diff))
         # allow some variability
-        self.assertTrue(abs(rss_diff) < 200)
+        self.assertTrue(abs(rss_diff) < 250)
 
 
 # ---------------------------------------------------------------------------- #
