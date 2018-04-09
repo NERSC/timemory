@@ -92,8 +92,8 @@ build_script:
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config "%CONFIG%" --target ZERO_CHECK -- /m /v:m /logger:%MSBuildLogger%
-- ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -V --output-on-failure
-- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+- ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure
+#- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - cd ..
 - pip install .
 - cd ..
