@@ -721,6 +721,10 @@ PYBIND11_MODULE(timemory, tim)
                  for(const auto& itr : filenames)
                  {
                      std::string fname = itr.cast<std::string>();
+                     #if defined(_WIN32)
+                        while(fname.find("\\") != std::string::npos)
+                            fname = fname.replace(fname.find("\\"), 1, "/");
+                     #endif
                      ss << "LIST(APPEND CTEST_NOTES_FILES \"" << fname << "\")" << std::endl;
                  }
 
