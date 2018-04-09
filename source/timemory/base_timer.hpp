@@ -409,14 +409,14 @@ public:
     typedef base_rss_usage                      rss_type;
 
 public:
-    base_timer(uint16_t = 3, const string_t& =
+    TIM_API base_timer(uint16_t = 3, const string_t& =
                "%w wall, %u user + %s system = %t CPU [sec] (%p%)"
                " : total rss %C | %M  : self rss %c | %m [MB]\n",
                ostream_t* = &std::cout);
-    virtual ~base_timer();
+	TIM_API virtual ~base_timer();
 
-    base_timer(const base_timer& rhs);
-    base_timer& operator=(const base_timer& rhs);
+	TIM_API base_timer(const base_timer& rhs);
+	TIM_API base_timer& operator=(const base_timer& rhs);
 
 public:
     inline void start();
@@ -434,8 +434,8 @@ public:
     inline void reset() { m_accum.reset(); }
 
 public:
-    void report(ostream_t&, bool endline = true, bool no_min = false) const;
-    void report(bool endline = true) const;
+	TIM_API void report(ostream_t&, bool endline = true, bool no_min = false) const;
+	TIM_API void report(bool endline = true) const;
     bool above_min(bool no_min = false) const;
     const string_t& format_string() const { return m_format_string; }
     void sync(this_type& rhs);

@@ -51,7 +51,7 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
     target_link_libraries(${OUTPUT_NAME}-${TYPE} PUBLIC ${EXTERNAL_LIBRARIES})
 	if(WIN32)
 	    set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
-		    OUTPUT_NAME ${OUTPUT_NAME}
+		    OUTPUT_NAME ${OUTPUT_NAME}-${TYPE}
 			COMPILE_DEFINITIONS TIMEMORY_DLL
 			LANGUAGE CXX
             # C++ shared library fallback installation
@@ -85,14 +85,14 @@ add_subdirectory(timemory)
 message(STATUS "")
 message(STATUS "Building ${PROJECT_NAME} with object library...")
 message(STATUS "")
-if(NOT XCODE)
+if(NOT XCODE AND NOT WIN32)
     add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
     _build_library(shared ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
     _build_library(static ${LIBNAME} $<TARGET_OBJECTS:${LIBNAME}-object>)
-else(NOT XCODE)
+else(NOT XCODE AND NOT WIN32)
     _build_library(shared ${LIBNAME} ${sources} ${headers})
     _build_library(static ${LIBNAME} ${sources} ${headers})
-endif(NOT XCODE)
+endif(NOT XCODE AND NOT WIN32)
 
 # library type to link pybind11 module to
 add_option(SHARED_PYTHON_LINKING

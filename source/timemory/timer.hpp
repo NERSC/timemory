@@ -58,21 +58,21 @@ public:
     typedef std::shared_ptr<this_type>  shared_ptr_type;
 
 public:
-    timer(const string_t& _begin = "",
+	TIM_API timer(const string_t& _begin = "",
           const string_t& _close = "",
           bool _use_static_width = false,
           uint16_t prec = default_precision);
-    timer(const string_t& _begin,
+	TIM_API timer(const string_t& _begin,
           const string_t& _close,
           const string_t& _fmt,
           bool _use_static_width = false,
           uint16_t prec = default_precision);
-    virtual ~timer();
+	TIM_API virtual ~timer();
 
 public:
-    static string_t default_format;
-    static uint16_t default_precision;
-    static void propose_output_width(uint64_t);
+    static_api string_t default_format;
+    static_api uint16_t default_precision;
+    static_api void propose_output_width(uint64_t);
     static uint64_t get_output_width() { return f_output_width; }
     static void set_output_width(uint64_t n) { f_output_width = n; }
     static void set_default_format(const string_t& str) { default_format = str; }
@@ -126,7 +126,7 @@ public:
     void set_use_static_width(bool _val) { m_use_static_width = _val; }
 
 protected:
-    virtual void compose() final;
+	TIM_API virtual void compose() final;
 
 protected:
     bool        m_use_static_width;

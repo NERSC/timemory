@@ -50,22 +50,22 @@ public:
 
 public:
     // standard constructor
-    auto_timer(const string_t&, const int32_t& lineno,
+	TIM_API auto_timer(const string_t&, const int32_t& lineno,
                const string_t& = "cxx", bool report_at_exit = false);
     // construct from existing timer
-    auto_timer(tim_timer_t&, const int32_t& lineno,
+	TIM_API auto_timer(tim_timer_t&, const int32_t& lineno,
                const string_t& = "cxx", bool report_at_exit = false);
     // destructor
-    virtual ~auto_timer();
+	TIM_API virtual ~auto_timer();
 
-    tim_timer_t* local_timer() const { return m_temp_timer; }
-    tim_timer_t* global_timer() const { return m_timer; }
+	TIM_API tim_timer_t* local_timer() const { return m_temp_timer; }
+	TIM_API tim_timer_t* global_timer() const { return m_timer; }
 
 public:
     // static public functions
-    static uint64_t& ncount();
-    static uint64_t& nhash();
-    static bool alloc_next();
+    static_api uint64_t& ncount();
+    static_api uint64_t& nhash();
+    static_api bool alloc_next();
 
 private:
     bool            m_report_at_exit;

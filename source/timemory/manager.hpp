@@ -195,31 +195,31 @@ public:
 
 public:
     // Public static functions
-    static pointer_type instance();
-    static void enable(bool val = true);
-    static void set_get_num_threads_func(get_num_threads_func_t f);
+    static_api pointer_type instance();
+    static_api void enable(bool val = true);
+    static_api void set_get_num_threads_func(get_num_threads_func_t f);
 	static int32_t& max_depth() { return f_max_depth; }
 	static bool is_enabled() { return f_enabled; }
     // JSON writing
-    static void write_json(path_t _fname);
-    static std::pair<int32_t, bool> write_json(ostream_t& os);
+    static_api void write_json(path_t _fname);
+    static_api std::pair<int32_t, bool> write_json(ostream_t& os);
 
 protected:
-    static void write_json_no_mpi(path_t _fname);
-    static void write_json_mpi(path_t _fname);
-    static void write_json_no_mpi(ostream_t& os);
-    static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
+    static_api void write_json_no_mpi(path_t _fname);
+    static_api void write_json_mpi(path_t _fname);
+    static_api void write_json_no_mpi(ostream_t& os);
+    static_api std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
 
 public:
     // Public member functions
-    void merge(bool div_clock = true);
+	TIM_API void merge(bool div_clock = true);
     size_type size() const { return m_timer_list.size(); }
-    void clear();
+	TIM_API void clear();
 
-    tim_timer_t& timer(const string_t& key,
-                       const string_t& tag = "cxx",
-                       int32_t ncount = 0,
-                       int32_t nhash = 0);
+	TIM_API tim_timer_t& timer(const string_t& key,
+					           const string_t& tag = "cxx",
+							   int32_t ncount = 0,
+                               int32_t nhash = 0);
 
     tim_timer_t& at(size_t i) { return m_timer_list.at(i).timer(); }
 
@@ -252,10 +252,10 @@ public:
     const_iterator  end() const     { return m_timer_list.cend(); }
     const_iterator  cend() const    { return m_timer_list.cend(); }
 
-    void report(bool no_min = false) const;
-    void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
-    void set_output_stream(ostream_t&);
-    void set_output_stream(const path_t&);
+	TIM_API void report(bool no_min = false) const;
+	TIM_API void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
+	TIM_API void set_output_stream(ostream_t&);
+	TIM_API void set_output_stream(const path_t&);
     void print(bool no_min = false) { this->report(no_min); }
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
@@ -286,7 +286,7 @@ public:
 
 protected:
 	// protected functions
-    static comm_group_t get_communicator_group();
+    static_api comm_group_t get_communicator_group();
 
 protected:
     // protected functions
@@ -307,11 +307,11 @@ private:
 private:
     // Private variables
     // for temporary enabling/disabling
-    static bool             f_enabled;
+    static_api bool             f_enabled;
     // max depth of timers
-    static int32_t          f_max_depth;
+    static_api int32_t          f_max_depth;
     // number of timing manager instances
-    static std::atomic<int> f_manager_instance_count;
+    static_api std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
     // hash counting

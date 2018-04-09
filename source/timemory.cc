@@ -23,6 +23,14 @@
 // SOFTWARE.
 //
 
+#include "timemory/macros.hpp"
+
+//#if defined(_WINDOWS)
+//#if		defined(_DLL)
+//#			undef _DLL
+//#	endif
+//#endif
+
 #include <future>
 #include <chrono>
 #include <functional>

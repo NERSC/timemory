@@ -211,6 +211,7 @@
 #pragma warning(disable:4996) // function may be unsafe
 #pragma warning(disable:4267) // possible loss of data
 #pragma warning(disable:4700) // uninitialized local variable used
+#pragma warning(disable:4217) // locally defined symbol
 #endif
 
 //============================================================================//

@@ -237,7 +237,7 @@ public:
 
     static constexpr bool is_steady = true;
 
-    static time_point now() noexcept
+    static_api time_point now() noexcept
     {
         typedef std::chrono::high_resolution_clock              clock_type;
         typedef std::chrono::duration<clock_type::rep, period>  duration_type;
