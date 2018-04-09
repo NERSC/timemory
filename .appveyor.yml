@@ -69,7 +69,7 @@ install:
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
       } else {
-        $env:PATH = "C:\Miniconda$env:CONDA-x64\;C:\Miniconda$env:CONDA-x64\Scripts\;$env:PATH"
+        $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
