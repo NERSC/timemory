@@ -209,7 +209,7 @@ class CMakeBuild(build_ext, Command):
                          '-P', 'cmake_install.cmake' ]
 
         if platform.system() == "Windows":
-            if sys.maxsize > 2**32:
+            if sys.maxsize > 2**32 or platform.architecture()[0] == '64bit':
                 cmake_args += ['-A', 'x64']
             build_args += ['--target', 'ALL_BUILD', '--', '/m' ]
         else:
