@@ -191,14 +191,14 @@ set_tests_properties(Python_Array PROPERTIES
 
 if(BUILD_EXAMPLES)
     add_test(NAME Cxx_Test
-        COMMAND ${PROJECT_BINARY_DIR}/test_timing
+        COMMAND $<TARGET_FILE:test_timing>
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     set_tests_properties(Cxx_Test PROPERTIES
         LABELS "CXX;UnitTest" TIMEOUT 7200)
 
     if(USE_MPI AND MPI_FOUND)
         add_test(NAME Cxx_MPI_Test
-            COMMAND ${MPIEXEC_EXECUTABLE} -np 2 ${PROJECT_BINARY_DIR}/mpi_test_timing
+            COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:mpi_test_timing>
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         set_tests_properties(Cxx_MPI_Test PROPERTIES
             LABELS "CXX;UnitTest" TIMEOUT 7200)

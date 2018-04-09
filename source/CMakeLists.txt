@@ -197,6 +197,21 @@ foreach(_TYPE exe c cxx)
 endforeach(_TYPE exe c cxx)
 
 #----------------------------------------------------------------------------
+# Installation info for Python
+set(TIMEMORY_INFO_FILE ${CMAKE_BINARY_DIR}/timemory/lib/timemory_pathinfo.txt)
+add_custom_target(${PROJECT_NAME}-shared-library-path ALL
+    COMMAND ${CMAKE_COMMAND}
+        -DOUTPUT=${TIMEMORY_INFO_FILE}
+        -DLENGTH=2
+        -DNAMES="timemory_shared_library\;timemory_dynamic_library"
+        -DVALUES="$<TARGET_FILE:${LIBNAME}-shared>\;$<TARGET_FILE:${LIBNAME}>"
+        -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
+    COMMENT "Generating timemory_pathinfo.txt..."
+    VERBATIM)
+
+install(FILES ${TIMEMORY_INFO_FILE}
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib)
+#----------------------------------------------------------------------------
 # Install the targets and export
 #
 

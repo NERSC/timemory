@@ -34,14 +34,36 @@ from ctypes.util import find_library
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
+# verbosity
+_verbose = 0
+try:
+    _verbose = int(os.environ['TIMEMORY_DEBUG'])
+except Exception as e:
+    _verbose = 0
+
+# construct info dictionary (used for build)
+timemory_info_file = os.path.join(this_path, os.path.join("lib", "timemory_pathinfo.txt"))
+timemory_info_data = {}
+if os.path.exists(timemory_info_file):
+    f = open(timemory_info_file, "r")
+    data = f.read().splitlines()
+    for d in data:
+        entry = d.split(" ")
+        if len(entry) == 0:
+            continue
+        elif len(entry) == 2:
+            if _verbose > 2:
+                print('Adding timemory info data: "{}" = "{}"...'.format(entry[0], entry[1]))
+            timemory_info_data[entry[0]] = entry[1]
+    f.close()
+    if _verbose > 0:
+        print('\n### TiMemory info:')
+        for key, val in timemory_info_data.items():
+            print('\t"{}" : "{}"'.format(key, val))
+        print ('')
+
 # if compiled with shared library linking
 if "@SHARED_PYTHON_LINKING@" == "ON":
-
-    _verbose = 0
-    try:
-        _verbose = int(os.environ['TIMEMORY_VERBOSE'])
-    except Exception as e:
-        _verbose = 0
 
     # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.
     tim_lib_path = find_library("timemory")
@@ -52,12 +74,12 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
         # Visual Studio and Xcode put libraries in
         # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
         alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@",
-                      os.path.join(this_path, os.path.join("lib", "Debug")),
-                      os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
-                      os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
-                      os.path.join(this_path, os.path.join("lib", "Release")),
-                      os.path.join(this_path, "lib"),
-                      "lib" ]
+                      #os.path.join(this_path, os.path.join("lib", "Debug")),
+                      #os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
+                      #os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
+                      #os.path.join(this_path, os.path.join("lib", "Release")),
+                      os.path.join(this_path, "lib")
+                    ]
 
         # in the build tree (when testing), we want to fallback to the build path first
         if this_path == "@PROJECT_BINARY_DIR@/timemory":
@@ -67,14 +89,27 @@ if "@SHARED_PYTHON_LINKING@" == "ON":
             print('find_library("timemory") returned None. Trying fallback paths {}...'.format(alt_paths))
 
         for alt_path in alt_paths:
+            # we found library path in previous iteration
+            if tim_lib_path is not None and os.path.exists(tim_lib_path):
+                break
             # try to find exact match first, then major version match, then generic
-            for _suffix in [ ".@TIMEMORY_VERSION@", "@TIMEMORY_VERSION_MAJOR@", "" ]:
+            for _suffix in [ ".@TIMEMORY_VERSION@", ".@TIMEMORY_VERSION_MAJOR@", "" ]:
                 _suffix += "@CMAKE_SHARED_LIBRARY_SUFFIX@"
                 _test_path = os.path.join(alt_path, "@CMAKE_SHARED_LIBRARY_PREFIX@timemory{}".format(_suffix))
                 if os.path.exists(_test_path):
+                    if _verbose > 1:
+                        print('Found matching alternative path: "{}"'.format(_test_path))
                     tim_lib_path = _test_path
                     break
-    
+                elif _verbose > 1:
+                    print('Alternative path not valid: "{}"'.format(_test_path))
+
+        if this_path == "@PROJECT_BINARY_DIR@/timemory":
+            tim_lib_path = timemory_info_data["timemory_shared_library"]
+
+        if tim_lib_path is None and "timemory_shared_library" in timemory_info_data.keys():
+            tim_lib_path = timemory_info_data["timemory_shared_library"]
+
     if _verbose > 0:
         print('Using TiMemory shared library: {}'.format(tim_lib_path))
 
@@ -91,32 +126,43 @@ timemory_py = __load_module('timemory', os.path.join(this_path, 'timemory.py'))
 timemory_dylib_name = '@LIBNAME@@PYTHON_MODULE_EXTENSION@'
 
 timemory_dylib_path = os.path.join(this_path, '@LIBNAME@@PYTHON_MODULE_EXTENSION@')
+
+# this is generally only used from the build tree
 if not os.path.exists(timemory_dylib_path):
+    # info file should have paths we need
+    if "timemory_dynamic_library" in timemory_info_data.keys():
+        timemory_dylib_path = timemory_info_data["timemory_dynamic_library"]
+
     # Visual Studio and Xcode put libraries in
     # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
-    for build_type in [ "Release", "RelWithDebInfo", "MinSizeRel", "Debug" ]:
-        timemory_dylib_path = os.path.join(this_path, '{}/@LIBNAME@@PYTHON_MODULE_EXTENSION@'.format(build_type))
-        if os.path.exists(timemory_dylib_path):
-            timemory_dylib_name = os.path.join(build_type, timemory_dylib_name)
-            break
+    if not os.path.exists(timemory_dylib_path):
+        for build_type in [ "Release", "RelWithDebInfo", "MinSizeRel", "Debug" ]:
+            timemory_dylib_path = os.path.join(this_path,
+                '{}/@LIBNAME@@PYTHON_MODULE_EXTENSION@'.format(build_type))
+            if os.path.exists(timemory_dylib_path):
+                timemory_dylib_name = os.path.join(build_type, timemory_dylib_name)
+                break
 
 # import the compiled TiMemory module
 timemory = timemory_py.__bootstrap__(timemory_dylib_name)
 
 # define the version_info
-timemory.__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@) )
+timemory.__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@,
+                                      @TIMEMORY_VERSION_MINOR@,
+                                      @TIMEMORY_VERSION_PATCH@) )
 
 # define the version string
 timemory.__setattr__("version", "@TIMEMORY_VERSION@" )
 
-timemory.__setattr__("build_info", { "date" : "@TIMEMORY_INSTALL_DATE@",
-                                     "library_architecture" : "@CMAKE_SYSTEM_PROCESSOR@",
-                                     "system_name" : "@CMAKE_SYSTEM_NAME@",
-                                     "system_version" : "@CMAKE_SYSTEM_VERSION@",
-                                     "build_type" : "@CMAKE_BUILD_TYPE@",
-                                     "compiler" : "@CMAKE_CXX_COMPILER@",
-                                     "compiler_id" : "@CMAKE_CXX_COMPILER_ID@",
-                                     "compiler_version" : "@CMAKE_CXX_COMPILER_VERSION@" } )
+timemory.__setattr__("build_info",
+                     { "date" : "@TIMEMORY_INSTALL_DATE@",
+                       "library_architecture" : "@CMAKE_SYSTEM_PROCESSOR@",
+                       "system_name" : "@CMAKE_SYSTEM_NAME@",
+                       "system_version" : "@CMAKE_SYSTEM_VERSION@",
+                       "build_type" : "@CMAKE_BUILD_TYPE@",
+                       "compiler" : "@CMAKE_CXX_COMPILER@",
+                       "compiler_id" : "@CMAKE_CXX_COMPILER_ID@",
+                       "compiler_version" : "@CMAKE_CXX_COMPILER_VERSION@" } )
 
 # load the submodule
 __init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))

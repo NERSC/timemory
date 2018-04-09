@@ -535,6 +535,16 @@ void manager::merge(bool div_clock)
 //============================================================================//
 
 // static function
+void manager::write_json(path_t _fname)
+{
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
+    (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
+}
+
+//============================================================================//
+// static function
 std::pair<int32_t, bool> manager::write_json(ostream_t& ofss)
 {
     if(mpi_is_initialized())
@@ -544,16 +554,6 @@ std::pair<int32_t, bool> manager::write_json(ostream_t& ofss)
         write_json_no_mpi(ofss);
         return std::pair<int32_t, bool>(0, true);
     }
-}
-
-//============================================================================//
-// static function
-void manager::write_json(const path_t& _fname)
-{
-    if(_fname.find(_fname.os()) != std::string::npos)
-        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
-
-    (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
 }
 
 //============================================================================//

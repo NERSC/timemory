@@ -197,11 +197,12 @@ public:
     // Public static functions
     static pointer_type instance();
     static void enable(bool val = true);
-    static void write_json(const path_t& _fname);
-    static std::pair<int32_t, bool> write_json(ostream_t& os);
     static void set_get_num_threads_func(get_num_threads_func_t f);
 	static int32_t& max_depth() { return f_max_depth; }
 	static bool is_enabled() { return f_enabled; }
+    // JSON writing
+    static void write_json(path_t _fname);
+    static std::pair<int32_t, bool> write_json(ostream_t& os);
 
 protected:
     static void write_json_no_mpi(path_t _fname);
