@@ -1,9 +1,5 @@
 
-if(WIN32)
-    add_option(BUILD_EXAMPLES "Build the C++ examples" OFF)
-else(WIN32)
-    add_option(BUILD_EXAMPLES "Build the C++ examples" ON)
-endif(WIN32)
+add_option(BUILD_EXAMPLES "Build the C++ examples" ON)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(ex1)
