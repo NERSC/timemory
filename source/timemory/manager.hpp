@@ -285,7 +285,7 @@ public:
 
 protected:
 	// protected functions
-	static_api comm_group_t get_communicator_group();
+    static comm_group_t get_communicator_group();
 
 protected:
     // protected functions

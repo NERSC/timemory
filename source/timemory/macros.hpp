@@ -202,12 +202,15 @@
 //============================================================================//
 
 #if defined(_WINDOWS)
-#pragma warning ( disable : 4786 ) // ID truncated to '255' char in debug info
-#pragma warning ( disable : 4068 ) // unknown pragma
-#pragma warning ( disable : 4003 ) // not enough actual params
-#pragma warning ( disable : 4244 ) // possible loss of data
-#pragma warning ( disable : 4146 ) // unsigned
-#pragma warning ( disable : 4129 ) // unrecognized char escape
+#pragma warning(disable:4786) // ID truncated to '255' char in debug info
+#pragma warning(disable:4068) // unknown pragma
+#pragma warning(disable:4003) // not enough actual params
+#pragma warning(disable:4244) // possible loss of data
+#pragma warning(disable:4146) // unsigned
+#pragma warning(disable:4129) // unrecognized char escape
+#pragma warning(disable:4996) // function may be unsafe
+#pragma warning(disable:8029) // incremental build issue
+//#pragma warning(disable:4274) // inconsistent dll linkage
 #endif
 
 //============================================================================//
