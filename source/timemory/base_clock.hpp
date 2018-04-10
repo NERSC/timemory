@@ -222,7 +222,7 @@ public:
 //----------------------------------------------------------------------------//
 
 template <typename _precision>
-class base_clock
+class tim_api base_clock
 {
 #if defined(__GNUC__) && !defined(__clang__)
     static_assert(std::chrono::__is_ratio<_precision>::value,
