@@ -20,8 +20,8 @@ target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRA
 add_dependencies(${LIBNAME} ${LIBNAME}-${LINK_TYPE})
 
 if(WIN32)
-    set_target_properties(${OUTPUT_NAME} PROPERTIES
-        COMPILE_FLAGS "/MP /bigobj /Tp"
+    set_target_properties(${LIBNAME} PROPERTIES
+        #COMPILE_FLAGS "/MP /bigobj /Tp"
         LANGUAGE CXX
         POSITION_INDEPENDENT_CODE ON)
 endif(WIN32)
