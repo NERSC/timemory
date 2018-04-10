@@ -5,7 +5,7 @@ Release: TiMemory 1.3.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
 Author: Jonathan R. Madsen
-Date:   Fri Apr 6 06:50:00 2018 -0700
+Date:   Tue Apr 10 07:40:01 2018 -0700
 
     - Custom TiMemory namespace was removed, now just tim
     - Large rewrite of plotting utilities resulting in a significant improvement
@@ -16,6 +16,8 @@ Date:   Fri Apr 6 06:50:00 2018 -0700
     - Updated pybind11 to v2.2.2
     - Updated docs and README.rst
     - Shared library linking + plotting fixes
+    - All cmake options are not prefixed with TIMEMORY_
+    - Improved Windows DLL support
 
 
 Release: TiMemory 1.2.2

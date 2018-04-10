@@ -136,7 +136,7 @@ Python setup.py installation
    -  cmake\_library\_path = ""
    -  cmake\_include\_path = ""
    -  devel\_install=ON (can also be a --prefix or OFF)
-   -  shared\_linking=ON (default shared linking)
+   -  dynamic\_link=ON (default shared linking)
    -  pybind11\_install=OFF (don't install PyBind11 C++ dev files)
 
 Python Testing/Validation
