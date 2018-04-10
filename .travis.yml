@@ -504,11 +504,18 @@ install:
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "--> ${PWD}"
-    - cmake -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR} -DUSE_MPI=ON
-        -DCMAKE_BUILD_TYPE=Release -DPYTHON_EXECUTABLE=$(which python)
-        -DCMAKE_C_COMPILER=${CC} -DCMAKE_CXX_COMPILER=${CXX}
-        -DBUILD_TESTING=ON -DCTEST_SITE=travis -DCTEST_MODEL=Continuous
-        -DCTEST_LOCAL_CHECKOUT=ON -DTIMEMORY_DYNAMIC_LINK=${DYNAMIC_LINK}
+    - cmake
+        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_C_COMPILER=${CC}
+        -DCMAKE_CXX_COMPILER=${CXX}
+        -DCTEST_SITE=travis
+        -DCTEST_MODEL=Continuous
+        -DCTEST_LOCAL_CHECKOUT=ON
+        -DPYTHON_EXECUTABLE=$(which python)
+        -DTIMEMORY_USE_MPI=ON
+        -DTIMEMORY_BUILD_TESTING=ON
+        -DTIMEMORY_DYNAMIC_LINK=${DYNAMIC_LINK}
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure

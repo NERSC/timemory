@@ -6,6 +6,7 @@ import sys
 import sysconfig
 import platform
 import subprocess
+import shutil
 
 from distutils.version import LooseVersion
 from setuptools import setup, Extension
@@ -121,7 +122,7 @@ class CMakeBuild(build_ext, Command):
             os.path.dirname(self.get_ext_fullpath(ext.name)))
         #extdir = os.path.join(extdir, 'timemory')
         cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DSETUP_PY=ON',
+                      '-DTIMEMORY_SETUP_PY=ON',
                       '-DCMAKE_INSTALL_PREFIX=' + extdir,
                       ]
 
@@ -154,11 +155,11 @@ class CMakeBuild(build_ext, Command):
             self.build_type = 'Release'
 
         cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
-        cmake_args += [ '-DUSE_MPI={}'.format(str.upper(self.use_mpi)) ]
+        cmake_args += [ '-DTIMEMORY_USE_MPI={}'.format(str.upper(self.use_mpi)) ]
         cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK={}'.format(str.upper(self.dynamic_link)) ]
 
         if platform.system() != "Windows":
-            cmake_args += [ '-DBUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
+            cmake_args += [ '-DTIMEMORY_BUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
 
         _cxxstd = int(self.cxx_standard)
         if _cxxstd < 14 and platform.system() != "Windows":
@@ -194,7 +195,7 @@ class CMakeBuild(build_ext, Command):
             devel_install_path = self.devel_install
             if not os.path.isabs(devel_install_path):
                 devel_install_path = os.path.realpath(devel_install_path)
-            cmake_args += [ '-DPYTHON_DEVELOPER_INSTALL=ON' ]
+            cmake_args += [ '-DTIMEMORY_DEVELOPER_INSTALL=ON' ]
             cmake_args += [ '-DTIMEMORY_INSTALL_PREFIX={}'.format(devel_install_path) ]
             cmake_args += [ '-DPYBIND11_INSTALL={}'.format(str.upper(self.pybind11_install)) ]
 
@@ -248,7 +249,7 @@ class CMakeBuild(build_ext, Command):
                               cwd=self.build_temp, env=env)
 
         # install the CMake build
-        subprocess.check_call(['cmake', '-DCOMPONENTS=python' ] + install_args,
+        subprocess.check_call(['cmake', '-DCOMPONENT=python' ] + install_args,
                               cwd=self.build_temp, env=env)
 
         # install the development
@@ -327,19 +328,30 @@ class CMakeTest(TestCommand):
 # ---------------------------------------------------------------------------- #
 class CMakeInstallEggInfo(install_egg_info):
     dirs = {}
+    files = []
     def run(self):
         install_egg_info.run(self)
+
+        for f in CMakeInstallEggInfo.files:
+            print ('Adding "{}"...'.format(f))
+            self.outputs.append(f)
+
         # read the install manifest from CMake
         for tmpdir, libdir in CMakeInstallEggInfo.dirs.items():
-            fname = os.path.join(tmpdir, 'install_manifest.txt')
-            f = open(fname, 'r')
-            if libdir[len(libdir)-1] != '/':
-                libdir += '/'
-            for l in f.read().splitlines():
-                b = l.replace(libdir, '')
-                f = os.path.join(self.install_dir, b)
-                print ('Adding "{}"...'.format(f))
-                self.outputs.append(f)
+            for manifest in [ 'install_manifest.txt',
+                              'install_manifest_development.txt',
+                              'install_manifest_python.txt' ]:
+                fname = os.path.join(tmpdir, manifest)
+                if not os.path.exists(fname):
+                    continue
+                f = open(fname, 'r')
+                if libdir[len(libdir)-1] != '/':
+                    libdir += '/'
+                for l in f.read().splitlines():
+                    b = l.replace(libdir, '')
+                    f = os.path.join(self.install_dir, b)
+                    print ('Adding "{}"...'.format(f))
+                    self.outputs.append(f)
                 
         #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyc'))
         #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyo'))

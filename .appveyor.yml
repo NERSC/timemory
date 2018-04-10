@@ -1,17 +1,22 @@
 version: 1.0.{build}
 
+
 image:
 - Visual Studio 2015
 - Visual Studio 2017
 
+
 test: off
+
 
 build:
   parallel: true
 
+
 platform:
 - x64
 - x86
+
 
 environment:
   matrix:
@@ -25,6 +30,7 @@ environment:
     CPP: 17
     CONFIG: Release
 
+
 matrix:
   exclude:
   - image: Visual Studio 2015
@@ -34,6 +40,7 @@ matrix:
     platform: x86
 #  - image: Visual Studio 2015
 #    platform: x86
+
 
 install:
 - ps: |
@@ -83,18 +90,25 @@ install:
     pip install -U matplotlib numpy pillow
     $env:TIMEMORY_DEBUG=4
 
+
 build_script:
 - mkdir build-timemory
 - cd build-timemory
-- cmake -DUSE_MPI=OFF -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
-    -DCTEST_LOCAL_CHECKOUT=ON -DTIMEMORY_DYNAMIC_LINK=ON
-    -DCMAKE_BUILD_TYPE="%CONFIG%" -DCMAKE_INSTALL_PREFIX=../install-timemory
-    -DBUILD_EXAMPLES=ON -DCTEST_SITE=AppVeyor -DCTEST_MODEL=Continuous 
+- cmake
+    -DCMAKE_BUILD_TYPE="%CONFIG%"
+    -DCMAKE_INSTALL_PREFIX=../install-timemory
+    -DCTEST_LOCAL_CHECKOUT=ON
+    -DCTEST_SITE=AppVeyor
+    -DCTEST_MODEL=Continuous
+    -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
+    -DTIMEMORY_BUILD_TESTING=ON
+    -DTIMEMORY_USE_MPI=OFF
+    -DTIMEMORY_DYNAMIC_LINK=ON
+    -DTIMEMORY_BUILD_EXAMPLES=ON
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config "%CONFIG%" --target ZERO_CHECK -- /m /v:m /logger:%MSBuildLogger%
+- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure
-#- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - cd ..
 - pip install -v -v -v --no-cache-dir .
 - cd ..

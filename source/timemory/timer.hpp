@@ -70,12 +70,14 @@ public:
     virtual ~timer();
 
 public:
-    static string_t default_format;
-    static uint16_t default_precision;
     static void propose_output_width(uint64_t);
     static uint64_t get_output_width() { return f_output_width; }
     static void set_output_width(uint64_t n) { f_output_width = n; }
+
     static void set_default_format(const string_t& str) { default_format = str; }
+    static string_t get_default_format() { return default_format; }
+    static void set_default_precision(const uint16_t& val) { default_precision = val; }
+    static uint16_t get_default_precision() { return default_precision; }
 
 public:
     timer& stop_and_return() { this->stop(); return *this; }
@@ -134,6 +136,8 @@ protected:
     string_t    m_close;
 
 private:
+    static string_t default_format;
+    static uint16_t default_precision;
     static uint64_t f_output_width;
 
 public:

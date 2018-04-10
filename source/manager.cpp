@@ -304,9 +304,9 @@ manager::timer(const string_t& key,
     ss << std::left << key;
     timer::propose_output_width(ss.str().length());
 
-    const uint16_t precision = tim_timer_t::default_precision;
-    m_timer_map[ref] = timer_ptr_t(new tim_timer_t(ss.str(), string_t(""),
-                                                   true, precision));
+    m_timer_map[ref] =
+            timer_ptr_t(new tim_timer_t(ss.str(), string_t(""),true,
+                                        tim_timer_t::get_default_precision()));
 
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;

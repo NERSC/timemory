@@ -42,14 +42,11 @@ uint64_t tim::timer::f_output_width = 8;
 
 //============================================================================//
 
+// bash expansion:
+//   total_RSS_current, total_RSS_peak
+//   self_RSS_current self_RSS_peak
 std::string tim::timer::default_format
-    =  " : %w wall, %u user + %s system = %t CPU [sec] (%p%)"
-       // bash expansion:
-       //   total_RSS_current, total_RSS_peak
-       //   self_RSS_current self_RSS_peak
-       " : RSS {tot,self}_{curr,peak}"
-       " : (%C|%M)"
-       " | (%c|%m) [MB]";
+    =  std::string(" : %w wall, %u user + %s system = %t CPU [sec] (%p%) : RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [MB]");
 
 //============================================================================//
 

@@ -5,10 +5,6 @@
 #
 ################################################################################
 
-# library type to link pybind11 module to
-add_option(TIMEMORY_DYNAMIC_LINK
-    "Link the TiMemory PyBind11 module to the shared library" ON)
-
 if(TIMEMORY_DYNAMIC_LINK)
     set(LINK_TYPE shared)
 else(TIMEMORY_DYNAMIC_LINK)
@@ -18,7 +14,6 @@ endif(TIMEMORY_DYNAMIC_LINK)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-message(STATUS "External libraries: ${EXTERNAL_LIBRARIES}")
 pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp)
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
@@ -74,7 +69,7 @@ install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
 set(MPI_EXE_INFO "MPI not supported")
 set(MPI_C_INFO "MPI not supported")
 set(MPI_CXX_INFO "MPI not supported")
-if(USE_MPI AND MPI_FOUND)
+if(TIMEMORY_USE_MPI AND MPI_FOUND)
 
     execute_process(COMMAND ${MPIEXEC_EXECUTABLE} --version
         OUTPUT_VARIABLE MPI_EXE_INFO
@@ -94,7 +89,7 @@ if(USE_MPI AND MPI_FOUND)
         OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
 
-endif(USE_MPI AND MPI_FOUND)
+endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
 file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
 file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")

@@ -778,8 +778,28 @@ endmacro()
 
 
 #------------------------------------------------------------------------------#
+# macro GET_HOSTNAME(<VAR>)
+#
+function(GET_HOSTNAME VAR)
+    find_program(HOSTNAME_CMD hostname)
+    execute_process(COMMAND ${HOSTNAME_CMD}
+        OUTPUT_VARIABLE _HOSTNAME
+        WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(${VAR} "${_HOSTNAME}" PARENT_SCOPE)
+endfunction(GET_HOSTNAME VAR)
+
+
+#------------------------------------------------------------------------------#
 # always determine the default lib directory
 DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)
+
+
+#------------------------------------------------------------------------------#
+# get the hostname
+get_hostname(HOSTNAME)
+string(REPLACE ".local" "" HOSTNAME "${HOSTNAME}")
+
 
 cmake_policy(POP)
 

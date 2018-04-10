@@ -3,9 +3,8 @@
 #                               MPI
 #
 ################################################################################
-add_option(USE_MPI "Enable MPI usage" ON)
 
-if(USE_MPI)
+if(TIMEMORY_USE_MPI)
 
     if(WIN32)
         if(EXISTS "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI")
@@ -74,7 +73,7 @@ if(USE_MPI)
 
     endif(MPI_FOUND)
 
-endif(USE_MPI)
+endif(TIMEMORY_USE_MPI)
 
 
 ################################################################################
@@ -100,16 +99,8 @@ endif(THREADS_FOUND)
 #                               PyBind11
 #
 ################################################################################
-add_option(TIMEMORY_PYTHON_BINDING "Build Python binds for TiMemory" ON)
 
-if(TIMEMORY_PYTHON_BINDING)
-
-    if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
-        add_dependent_option(PYBIND11_INSTALL "PyBind11 installation" OFF
-            "PYTHON_DEVELOPER_INSTALL" ON)
-    else(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
-        set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11" FORCE)
-    endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+if(TIMEMORY_USE_PYTHON_BINDING)
 
     # checkout PyBind11 if not checked out
     if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
@@ -123,13 +114,13 @@ if(TIMEMORY_PYTHON_BINDING)
     endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
 
     # make sure pybind11 gets installed in same place as TiMemory
-    if(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+    if(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
         set(PYBIND11_CMAKECONFIG_INSTALL_DIR
             "${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/pybind11"
             CACHE STRING "install path for pybind11Config.cmake" FORCE)
         set(CMAKE_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_INCLUDEDIR}
             CACHE PATH "Include file installation path" FORCE)
-    endif(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+    endif(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
 
     # C++ standard
     set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
@@ -161,17 +152,17 @@ if(TIMEMORY_PYTHON_BINDING)
     ########################################
     #   Python installation directories
     ########################################
-    if(SETUP_PY)
+    if(TIMEMORY_SETUP_PY)
         set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
             "Installation prefix of python" FORCE)
-    else(SETUP_PY)
+    else(TIMEMORY_SETUP_PY)
         set(TIMEMORY_INSTALL_PYTHONDIR
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
             CACHE PATH "Installation directory for python")
-    endif(SETUP_PY)
+    endif(TIMEMORY_SETUP_PY)
     set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
 
-endif(TIMEMORY_PYTHON_BINDING)
+endif(TIMEMORY_USE_PYTHON_BINDING)
 
 
 ################################################################################

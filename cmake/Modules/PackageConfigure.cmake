@@ -25,12 +25,12 @@ write_basic_package_version_file(
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
-if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
     install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
         DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
         COMPONENT development)
-endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+endif(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
 
 set(TEST_FILES timemory_test.py simple_test.py nested_test.py array_test.py __init__.py tests.py)
 foreach(_FILE ${TEST_FILES})
@@ -66,11 +66,12 @@ if(NOT SUBPROJECT)
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
     include(Documentation)
 
-    if(DOXYGEN_DOCS)
+    if(TIMEMORY_DOXYGEN_DOCS)
         SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif()
+    endif(TIMEMORY_DOXYGEN_DOCS)
 
     print_features()
+
 endif(NOT SUBPROJECT)

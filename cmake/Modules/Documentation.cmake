@@ -9,28 +9,24 @@
 include(MacroUtilities)
 include(CMakeDependentOption)
 
-#-----------------------------------------------------------------------
+#------------------------------------------------------------------------------#
 
-add_option(DOXYGEN_DOCS "Make a `doc` make target" OFF)
+if(TIMEMORY_SETUP_PY AND TIMEMORY_DOXYGEN_DOCS)
+    message(AUTHOR_WARNING "Skipping documentation generation because TIMEMORY_SETUP_PY=ON")
+    set(TIMEMORY_DOXYGEN_DOCS OFF CACHE BOOL "Make a `doc` make target" FORCE)
+endif(TIMEMORY_SETUP_PY AND TIMEMORY_DOXYGEN_DOCS)
 
-if(SETUP_PY AND DOXYGEN_DOCS)
-    message(AUTHOR_WARNING "Skipping documentation generation because SETUP_PY=ON")
-    set(DOXYGEN_DOCS OFF CACHE BOOL "Make a `doc` make target" FORCE)
-endif(SETUP_PY AND DOXYGEN_DOCS)
+#------------------------------------------------------------------------------#
 
-if(DOXYGEN_DOCS)
-    option(BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF)
-    mark_as_advanced(BUILD_DOXYGEN_DOCS)
-endif()
-
-if(DOXYGEN_DOCS)
+if(TIMEMORY_DOXYGEN_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
-    CMAKE_DEPENDENT_OPTION(DOXYGEN_DOCS_QUIET "Suppress standard output when making the docs" ON
+    CMAKE_DEPENDENT_OPTION(TIMEMORY_DOXYGEN_DOCS_QUIET
+        "Suppress standard output when making the docs" ON
         "BUILD_DOXYGEN_DOCS" OFF)
-    mark_as_advanced(DOXYGEN_DOCS_QUIET)
+    mark_as_advanced(TIMEMORY_DOXYGEN_DOCS_QUIET)
 
-    if(DOXYGEN_DOCS_QUIET)
+    if(TIMEMORY_DOXYGEN_DOCS_QUIET)
         set(DOXYGEN_QUIET YES)
     else()
         set(DOXYGEN_QUIET NO)
@@ -66,13 +62,13 @@ if(DOXYGEN_DOCS)
             set(_default "ON")
         endif()
         # add option
-        option(ENABLE_DOXYGEN_${_doc_format}_DOCS "Build documentation with ${_doc_format} format"
-            ${_default})
+        option(ENABLE_DOXYGEN_${_doc_format}_DOCS
+            "Build documentation with ${_doc_format} format" ${_default})
         mark_as_advanced(ENABLE_DOXYGEN_${_doc_format}_DOCS)
     endforeach()
 
-    # loop over doc formats and set GENERATE_DOXYGEN_${_doc_format}_DOC to YES/NO
-    # GENERATE_DOXYGEN_${_doc_format}_DOC is used in configure_file @ONLY
+    # loop over doc formats and set GENERATE_DOXYGEN_${_doc_format}_DOC to
+    # YES/NO GENERATE_DOXYGEN_${_doc_format}_DOC is used in configure_file @ONLY
     foreach(_doc_format ${AVAILABLE_DOXYGEN_DOC_FORMATS})
         if(ENABLE_DOXYGEN_${_doc_format}_DOCS)
             set(GENERATE_DOXYGEN_${_doc_format}_DOC YES)
@@ -92,7 +88,8 @@ if(DOXYGEN_DOCS)
             option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ON)
             mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
-            # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file @ONLY
+            # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file
+            # @ONLY
             if(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
                 set(GENERATE_DOXYGEN_${_graph_type}_GRAPH YES)
             else()
@@ -144,16 +141,13 @@ if(DOXYGEN_DOCS)
         mark_as_advanced(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
 
         if(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
-            set(_${SUBPROJECT}_DIRS
-                ${${SUBPROJECT}_ROOT_SOURCE_DIR}
-                )
+            set(_${SUBPROJECT}_DIRS ${${SUBPROJECT}_ROOT_SOURCE_DIR})
             set(_SUB_DIRS ${_${SUBPROJECT}_DIRS})
             while(NOT "${_SUB_DIRS}" STREQUAL "")
                 set(_loop_sub_dirs )
                 foreach(_dir ${_SUB_DIRS})
                     list_subdirectories(_sub ${_dir} FALSE)
                     if(NOT "${_sub}" STREQUAL "")
-                        #message(STATUS "SUBDIRECTORIES : ${_sub}")
                         list(APPEND _${SUBPROJECT}_DIRS ${_sub})
                         list(APPEND _loop_sub_dirs ${_sub})
                     endif()
@@ -179,18 +173,16 @@ if(DOXYGEN_DOCS)
 
     configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/Doxyfile.in
                    ${PROJECT_BINARY_DIR}/doc/Doxyfile.${PROJECT_NAME}
-                   @ONLY
-    )
+                   @ONLY)
 
     if(ENABLE_DOXYGEN_HTML_DOCS)
       FILE(WRITE ${PROJECT_BINARY_DIR}/doc/${PROJECT_NAME}_Documentation.html
           "<meta http-equiv=\"refresh\" content=\"1;url=html/index.html\">")
     endif()
 
-endif() # DOXYGEN_DOCS
+endif() # TIMEMORY_DOXYGEN_DOCS
 
-#-----------------------------------------------------------------------
-
+#------------------------------------------------------------------------------#
 # Macro to generate documentation
 # from:
 #   http://www.cmake.org/pipermail/cmake/2007-May/014174.html
@@ -198,7 +190,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
     FIND_PACKAGE(Doxygen)
     if(NOT Doxygen_FOUND)
-	 message(STATUS "Doxygen executable cannot be found. Unable to generate doxygen doc. Disable DOXYGEN_DOCS to remove this message")
+     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_DOXYGEN_DOCS")
 	 return()
     endif()
     SET(DOXYFILE_FOUND false)
@@ -253,8 +245,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
 ENDMACRO(GENERATE_DOCUMENTATION)
 
-#-----------------------------------------------------------------------
-
+#------------------------------------------------------------------------------#
 # Macro to generate PDF manual from LaTeX using pdflatex
 # assumes manual is in ${CMAKE_SOURCE_DIR}/doc
 MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
@@ -273,17 +264,15 @@ MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
 
         configure_file(${CMAKE_SOURCE_DIR}/doc/${MANUAL_TEX}
                        ${MANUAL_BUILD_PATH}/${MANUAL_NAME}
-                       COPYONLY
-        )
+                       COPYONLY)
 
         foreach(_file ${EXTRA_FILES_TO_COPY})
             configure_file(${CMAKE_SOURCE_DIR}/doc/${_file}
                            ${MANUAL_BUILD_PATH}/${_file}
-                           COPYONLY
-            )
+                           COPYONLY)
         endforeach()
 
-        ADD_CUSTOM_TARGET(man
+        add_custom_target(man
                             ${PDFLATEX} "${MANUAL_NAME}"
                           WORKING_DIRECTORY
                             ${MANUAL_BUILD_PATH}

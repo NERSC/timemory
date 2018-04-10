@@ -1,22 +1,11 @@
 
 include_directories(${CMAKE_CURRENT_LIST_DIR})
 
-#if(TIMEMORY_DYNAMIC_LINK)
-#    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_FULL_LIBDIR})
-#    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-#endif(TIMEMORY_DYNAMIC_LINK)
-
 ################################################################################
 #
 #        Cereal
 #
 ################################################################################
-
-# cereal options
-add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
-add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
-add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
-add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
 set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
 # this gets annoying
@@ -25,14 +14,14 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
     FORCE)
 
 # add cereal
-if(NOT SETUP_PY)
+if(NOT TIMEMORY_SETUP_PY)
     add_subdirectory(cereal)
-endif(NOT SETUP_PY)
+endif(NOT TIMEMORY_SETUP_PY)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
     FORCE)
-#message(STATUS "Dev warnings: ${DEV_WARNINGS}")
+
 include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 
 ################################################################################
@@ -113,7 +102,7 @@ endmacro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
 add_subdirectory(timemory)
 
 if(NOT XCODE AND NOT WIN32)
-    message(STATUS "\nBuilding ${PROJECT_NAME} with object library...\n")
+    message(STATUS "Building ${PROJECT_NAME} with object library...")
     # build an object library
     add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
     set(LIBRARY_SOURCES $<TARGET_OBJECTS:${LIBNAME}-object>)
@@ -128,7 +117,7 @@ _build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
 #------------------------------------------------------------------------------#
 # Install the targets and export
 #
-if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
     # C++ compiled libraries
     install(TARGETS ${INSTALL_LIBRARIES}
         DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
@@ -148,13 +137,13 @@ if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
     export(TARGETS ${INSTALL_LIBRARIES}
         FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
 
-endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+endif(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
 
 
 #------------------------------------------------------------------------------#
 # Python bindings
 #
-if(TIMEMORY_PYTHON_BINDING)
+if(TIMEMORY_USE_PYTHON_BINDING)
 
     add_subdirectory(python)
 
@@ -165,5 +154,5 @@ if(TIMEMORY_PYTHON_BINDING)
             COMPONENT python)
     endif(TIMEMORY_DYNAMIC_LINK)
 
-endif(TIMEMORY_PYTHON_BINDING)
+endif(TIMEMORY_USE_PYTHON_BINDING)
 

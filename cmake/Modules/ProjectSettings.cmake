@@ -18,15 +18,7 @@ endif(WIN32)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "TiMemory installation prefix")
-
-add_option(SETUP_PY "Python build from setup.py" OFF NO_FEATURE)
-add_option(PYTHON_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF NO_FEATURE)
-add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
-add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
-add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
 add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
-add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
-add_feature(TIMEMORY_INSTALL_PREFIX "TiMemory installation")
 
 ################################################################################
 #
@@ -34,7 +26,7 @@ add_feature(TIMEMORY_INSTALL_PREFIX "TiMemory installation")
 #
 ################################################################################
 
-if(PYTHON_DEVELOPER_INSTALL)
+if(TIMEMORY_DEVELOPER_INSTALL)
 
     set(TIMEMORY_INSTALL_DATAROOTDIR ${CMAKE_INSTALL_DATAROOTDIR})
     if(NOT IS_ABSOLUTE ${TIMEMORY_INSTALL_DATAROOTDIR})
@@ -55,7 +47,7 @@ if(PYTHON_DEVELOPER_INSTALL)
     set(TIMEMORY_INSTALL_DOCDIR ${TIMEMORY_INSTALL_DATAROOTDIR}/doc
         CACHE PATH "Installation for executables" FORCE)
 
-else(PYTHON_DEVELOPER_INSTALL)
+else(TIMEMORY_DEVELOPER_INSTALL)
 
     # cmake installation folder
     set(TIMEMORY_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
@@ -65,7 +57,7 @@ else(PYTHON_DEVELOPER_INSTALL)
         set(TIMEMORY_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${_TYPE}DIR})
     endforeach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
 
-endif(PYTHON_DEVELOPER_INSTALL)
+endif(TIMEMORY_DEVELOPER_INSTALL)
 
 # create the full path version and generic path versions
 foreach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)

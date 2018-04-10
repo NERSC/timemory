@@ -5,11 +5,9 @@
 ################################################################################
 
 include(GNUInstallDirs)
-add_option(TIMEMORY_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
 
 if(NOT SUBPROJECT)
     set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
-    add_option(ENABLE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
     if(WIN32)
@@ -17,14 +15,9 @@ if(NOT SUBPROJECT)
     else(WIN32)
         set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
     endif(WIN32)
-    add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 
     if(GOOD_CMAKE)
-
-        add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
-        add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
         set(CMAKE_INSTALL_MESSAGE LAZY)
-
     endif(GOOD_CMAKE)
 
     # ensure only C++11, C++14, or C++17
@@ -85,13 +78,13 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
 endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
 
 # used by configure_package_*
-set(LIBNAME                 timemory)
+set(LIBNAME timemory)
 
 # set the compiler flags if not on Windows
 if(NOT SUBPROJECT AND NOT WIN32)
 
     add(CMAKE_CXX_FLAGS "-W -Wall -Wextra -faligned-new ${CXXFLAGS} $ENV{CXXFLAGS}")
-    add(CMAKE_CXX_FLAGS "-Wno-unused-parameter")
+    add(CMAKE_CXX_FLAGS "-Wno-unused-parameter -Wno-unknown-pragmas")
     add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
 
     if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
@@ -127,10 +120,10 @@ if(NOT SUBPROJECT AND NOT WIN32)
         add(CMAKE_C_FLAGS "-pthread")
     endif(UNIX)
 
-    if(ENABLE_SANITIZE)
+    if(TIMEMORY_USE_SANITIZE)
         add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
         add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
-    endif(ENABLE_SANITIZE)
+    endif(TIMEMORY_USE_SANITIZE)
 
     add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")

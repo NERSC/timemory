@@ -208,11 +208,6 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     auto set_timer_default_format = [=] (std::string format)
     {
-        auto locals = py::dict("format"_a = format);
-        py::exec(R"(
-                 import timemory as tim
-                 tim.default_format = format
-                 )", py::globals(), locals);
         // update C++
         tim_timer_t::set_default_format(format);
         return format;
@@ -220,15 +215,8 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     auto get_timer_default_format = [=] ()
     {
-        auto locals = py::dict();
-        py::exec(R"(
-                 import timemory as tim
-                 format = tim.default_format
-                 )", py::globals(), locals);
-        auto format = locals["format"].cast<std::string>();
         // in case changed in python, update C++
-        tim_timer_t::set_default_format(format);
-        return format;
+        return tim_timer_t::get_default_format();
     };
     //------------------------------------------------------------------------//
     auto timer_init = [=] (std::string begin = "", std::string format = "")
@@ -397,9 +385,6 @@ PYBIND11_MODULE(timemory, tim)
     tim.def("disable_signal_detection",
             disable_signal_detection,
             "Enable signal detection");
-    //------------------------------------------------------------------------//
-    tim.attr("default_format")
-            =  tim_timer_t::default_format;
     //------------------------------------------------------------------------//
     tim.def("set_default_format",
             set_timer_default_format,

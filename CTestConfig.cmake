@@ -16,13 +16,14 @@ if(NOT DEFINED CTEST_SITE)
     set(_HOSTNAME "@CTEST_SITE@")
     # [B] if CTEST_SITE not set at configure, grab the HOSTNAME
     if("${_HOSTNAME}" STREQUAL "")
-        execute_process(COMMAND uname -n
+        find_program(HOSTNAME_CMD hostname)
+        execute_process(COMMAND ${HOSTNAME_CMD}
             OUTPUT_VARIABLE _HOSTNAME
             WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR}
             OUTPUT_STRIP_TRAILING_WHITESPACE)
     endif("${_HOSTNAME}" STREQUAL "")
     # either [A] or [B]
-    set(CTEST_SITE              "${_HOSTNAME}")
+    set(CTEST_SITE  "${_HOSTNAME}" CACHE STRING "CTest site" FORCE)
     unset(_HOSTNAME)
 endif(NOT DEFINED CTEST_SITE)
 

@@ -1,25 +1,21 @@
 
-add_option(BUILD_TESTING "Build testing for dashboard" OFF NO_FEATURE)
-mark_as_advanced(BUILD_TESTING)
+## -- CTest Config
+if(EXISTS "${CMAKE_SOURCE_DIR}/CTestConfig.cmake")
+    configure_file(${CMAKE_SOURCE_DIR}/CTestConfig.cmake
+        ${CMAKE_BINARY_DIR}/CTestConfig.cmake @ONLY)
+endif(EXISTS "${CMAKE_SOURCE_DIR}/CTestConfig.cmake")
 
 # testing
 ENABLE_TESTING()
-if(BUILD_TESTING)
+if(TIMEMORY_BUILD_TESTING)
     include(CTest)
-endif(BUILD_TESTING)
+endif(TIMEMORY_BUILD_TESTING)
 
-# if this is directory we are running CDash (don't set to ON)
-add_option(DASHBOARD_MODE "Internally used to skip generation of CDash files" OFF NO_FEATURE)
-mark_as_advanced(DASHBOARD_MODE)
-add_feature(CTEST_MODEL "CDash submission track")
-add_feature(CTEST_SITE "CDash submission site")
 
 # ------------------------------------------------------------------------ #
 # -- Miscellaneous
 # ------------------------------------------------------------------------ #
-if(NOT DASHBOARD_MODE AND BUILD_TESTING)
-    add_option(CTEST_LOCAL_CHECKOUT "Use the local source tree for CTest/CDash"
-        OFF NO_FEATURE)
+if(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
     if(CTEST_LOCAL_CHECKOUT)
         set(CMAKE_LOCAL_DIRECTORY "${CMAKE_SOURCE_DIR}")
         set(CTEST_MODEL "Continuous" CACHE STRING "Model for CTest")
@@ -28,7 +24,7 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
     endif(CTEST_LOCAL_CHECKOUT)
     mark_as_advanced(CTEST_MODEL)
     mark_as_advanced(CTEST_LOCAL_CHECKOUT)
-endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
+endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
 
 
 # ------------------------------------------------------------------------ #
@@ -51,7 +47,8 @@ endfunction()
 # ------------------------------------------------------------------------ #
 # -- Configure Branch label
 # ------------------------------------------------------------------------ #
-if(BUILD_TESTING)
+if(TIMEMORY_BUILD_TESTING)
+
     find_package(Git REQUIRED)
 
     execute_process(COMMAND ${GIT_EXECUTABLE} name-rev --name-only HEAD
@@ -65,7 +62,7 @@ if(BUILD_TESTING)
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-endif(BUILD_TESTING)
+endif(TIMEMORY_BUILD_TESTING)
 
 
 # ------------------------------------------------------------------------ #
@@ -120,7 +117,8 @@ endmacro(add_ctest_options VARIABLE )
 # ------------------------------------------------------------------------ #
 # -- Configure CTest for CDash
 # ------------------------------------------------------------------------ #
-if(NOT DASHBOARD_MODE AND BUILD_TESTING)
+if(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
+
     # get temporary directory for dashboard testing
     if(NOT DEFINED CMAKE_DASHBOARD_ROOT)
         GET_TEMPORARY_DIRECTORY(CMAKE_DASHBOARD_ROOT ${CTEST_MODEL})
@@ -133,12 +131,6 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
         MPI_C_COMPILER MPI_CXX_COMPILER
         CTEST_MODEL CTEST_SITE)
 
-    ## -- CTest Config
-    if(EXISTS "${CMAKE_SOURCE_DIR}/CTestConfig.cmake")
-        configure_file(${CMAKE_SOURCE_DIR}/CTestConfig.cmake
-            ${CMAKE_BINARY_DIR}/CTestConfig.cmake @ONLY)
-    endif(EXISTS "${CMAKE_SOURCE_DIR}/CTestConfig.cmake")
-
     set(cdash_templates Init Build Test Submit Glob Stages)
     if(USE_COVERAGE)
         list(APPEND cdash_templates Coverage)
@@ -146,6 +138,7 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
     if(MEMORYCHECK_COMMAND)
         list(APPEND cdash_templates MemCheck)
     endif(MEMORYCHECK_COMMAND)
+
     foreach(_type ${cdash_templates})
         ## -- CTest Setup
         if(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Templates/cdash/${_type}.cmake.in")
@@ -160,13 +153,13 @@ if(NOT DASHBOARD_MODE AND BUILD_TESTING)
             ${CMAKE_BINARY_DIR}/CTestCustom.cmake @ONLY)
     endif(EXISTS "${CMAKE_SOURCE_DIR}/cmake/Templates/CTestCustom.cmake.in")
 
-endif(NOT DASHBOARD_MODE AND BUILD_TESTING)
+endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
 
 
 # ---------------------------------------------------------------------------- #
 # -- Add tests
 # ---------------------------------------------------------------------------- #
-if(TIMEMORY_PYTHON_BINDING)
+if(TIMEMORY_USE_PYTHON_BINDING)
 
     add_test(NAME Python_Simple
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
@@ -198,7 +191,7 @@ if(TIMEMORY_PYTHON_BINDING)
     set_tests_properties(Python_Array PROPERTIES
         LABELS "Python;UnitTest" TIMEOUT 7200)
 
-endif(TIMEMORY_PYTHON_BINDING)
+endif(TIMEMORY_USE_PYTHON_BINDING)
 
 if(BUILD_EXAMPLES)
 
@@ -208,12 +201,12 @@ if(BUILD_EXAMPLES)
     set_tests_properties(Cxx_Test PROPERTIES
         LABELS "CXX;UnitTest" TIMEOUT 7200)
 
-    if(USE_MPI AND MPI_FOUND)
+    if(TIMEMORY_USE_MPI AND MPI_FOUND)
         add_test(NAME Cxx_MPI_Test
             COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:mpi_test_timing>
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         set_tests_properties(Cxx_MPI_Test PROPERTIES
             LABELS "CXX;UnitTest" TIMEOUT 7200)
-    endif(USE_MPI AND MPI_FOUND)
+    endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
 endif(BUILD_EXAMPLES)

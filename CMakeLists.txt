@@ -6,17 +6,16 @@ cmake_minimum_required(VERSION 2.8.12)
 #
 ################################################################################
 
-if(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE OFF CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
-else(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE ON CACHE BOOL "Old version of CMake not support CMAKE_CXX_STANDARD" FORCE)
-endif(CMAKE_VERSION VERSION_LESS 3.1.3)
-
-file(READ "${CMAKE_CURRENT_LIST_DIR}/.version.txt" VERSION_STRING
-    LIMIT_COUNT 1)
-set(TIMEMORY_VERSION 1.3.0 CACHE STRING "Version of TiMemory project" FORCE)
+file(READ "${CMAKE_CURRENT_LIST_DIR}/.version.txt" VERSION_STRING LIMIT_COUNT 1)
+string(REGEX REPLACE "(\n|\r)" "" VERSION_STRING "${VERSION_STRING}")
+set(TIMEMORY_VERSION "${VERSION_STRING}" CACHE STRING "Version of TiMemory project" FORCE)
 message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
-mark_as_advanced(TIMEMORY_VERSION)
+
+if(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE OFF CACHE INTERNAL "CMake does not support CMAKE_CXX_STANDARD" FORCE)
+else(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE ON CACHE INTERNAL "CMake supports CMAKE_CXX_STANDARD" FORCE)
+endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 
 if(GOOD_CMAKE)
     cmake_policy(SET CMP0048 NEW)
@@ -31,25 +30,21 @@ else(GOOD_CMAKE)
     list(GET _VERSION_LIST 2 PROJECT_VERSION_PATCH)
 endif(GOOD_CMAKE)
 
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
+
 foreach(_TYPE MAJOR MINOR PATCH)
     set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}} CACHE STRING "Timemory ${_TYPE} version" FORCE)
     mark_as_advanced(TIMEMORY_VERSION_${_TYPE})
 endforeach(_TYPE MAJOR MINOR PATCH)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
-    ${CMAKE_MODULE_PATH})
-
-if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
-    set(SUBPROJECT OFF)
-else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
-    set(SUBPROJECT ON)
-endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
-
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
+mark_as_advanced(TIMEMORY_VERSION)
 
 ################################################################################
 
 include(MacroUtilities)
+include(Options)
 include(Compilers)
 include(GNUInstallDirs)
 include(ProjectSettings)
