@@ -47,7 +47,7 @@ namespace tim
 // Main timer class
 //============================================================================//
 
-class timer : public internal::base_timer
+class tim_api timer : public internal::base_timer
 {
 public:
     typedef base_timer      base_type;

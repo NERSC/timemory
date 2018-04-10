@@ -116,7 +116,7 @@ TIMEMORY_BUILD_TYPE=RelWithDebInfo pip install timemory
   - cmake_library_path = ""
   - cmake_include_path = ""
   - devel_install=ON (can also be a --prefix or OFF)
-  - shared_linking=ON (default shared linking)
+  - dynamic_link=ON (default shared linking)
   - pybind11_install=OFF (don't install PyBind11 C++ dev files)
 
 ### Python Testing/Validation

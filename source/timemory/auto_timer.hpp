@@ -41,7 +41,7 @@
 namespace tim
 {
 
-class auto_timer
+class tim_api auto_timer
 {
 public:
     typedef tim::manager::tim_timer_t   tim_timer_t;

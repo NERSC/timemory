@@ -190,7 +190,7 @@ enum class sys_signal : int
 
 //----------------------------------------------------------------------------//
 
-class signal_settings
+class tim_api signal_settings
 {
 public:
     typedef std::set<sys_signal> signal_set_t;
@@ -198,28 +198,35 @@ public:
     typedef std::function<void(int)> signal_function_t;
 
 public:
-    static bool is_active() { return signals_active; }
-    static void set_active(bool val) { signals_active = val; }
+    static bool is_active();
+    static void set_active(bool val);
     static void enable(const sys_signal&);
     static void disable(const sys_signal&);
     static std::string str(const sys_signal&);
     static std::string str();
     static void check_environment();
-    static void set_exit_action(signal_function_t _f) { signals_exit_func = _f; }
-    static void exit_action(int errcode) { signals_exit_func(errcode); }
+    static void set_exit_action(signal_function_t _f);
+    static void exit_action(int errcode);
 
-    static const signal_set_t& enabled() { check_environment(); return signals_enabled; }
-    static const signal_set_t& disabled() { check_environment(); return signals_disabled; }
-    static const signal_set_t& get_enabled() { return signals_enabled; }
-    static const signal_set_t& get_disabled() { return signals_disabled; }
-    static const signal_set_t& get_default() { return signals_default; }
+    static const signal_set_t& enabled();
+    static const signal_set_t& disabled();
+    static const signal_set_t& get_enabled();
+    static const signal_set_t& get_disabled();
+    static const signal_set_t& get_default();
 
-private:
-    static bool                 signals_active;
-    static signal_set_t         signals_default;
-    static signal_set_t         signals_enabled;
-    static signal_set_t         signals_disabled;
-    static signal_function_t    signals_exit_func;
+protected:
+    struct signals_data_t
+    {
+        signals_data_t();
+        bool                 signals_active;
+        signal_set_t         signals_default;
+        signal_set_t         signals_enabled;
+        signal_set_t         signals_disabled;
+        signal_function_t    signals_exit_func;
+    };
+
+    static signals_data_t f_signals;
+
 };
 
 //----------------------------------------------------------------------------//
@@ -237,7 +244,7 @@ namespace tim
 
 //----------------------------------------------------------------------------//
 
-static_api struct sigaction signal_termaction, signal_oldaction;
+static struct sigaction signal_termaction, signal_oldaction;
 
 // declarations
 inline bool EnableSignalDetection(signal_settings::signal_set_t ops
@@ -374,11 +381,41 @@ inline void TerminationSignalMessage(int sig, siginfo_t* sinfo,
                     message << "Invalid permissions for mapped object.";
                     break;
                 default:
-                    message << "Unknown error: " << sinfo->si_code << ".";
+                    message << "Unknown segmentation fault error: "
+                            << sinfo->si_code << ".";
                     break;
             }
         else
             message << "Segmentation fault (unknown).";
+    }
+    else if(sig == SIGFPE)
+    {
+        if(sinfo)
+            switch (sinfo->si_code)
+            {
+                case FE_DIVBYZERO:
+                    message << "Floating point divide by zero.";
+                    break;
+                case FE_OVERFLOW:
+                    message << "Floating point overflow.";
+                    break;
+                case FE_UNDERFLOW:
+                    message << "Floating point underflow.";
+                    break;
+                case FE_INEXACT:
+                    message << "Floating point inexact result.";
+                    break;
+                case FE_INVALID:
+                    message << "Floating point invalid operation.";
+                    break;
+                default:
+                    message << "Unknown floating point exception error: "
+                            << sinfo->si_code << ".";
+                    break;
+
+            }
+        else
+            message << "Unknown error: " << sinfo->si_code << ".";
     }
 
     message << std::endl;

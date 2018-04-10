@@ -51,7 +51,7 @@ class CMakeBuild(build_ext, Command):
     cmake_include_path = ''
     cmake_library_path = ''
     devel_install = ''
-    shared_linking = 'OFF'
+    dynamic_link = 'OFF'
     pybind11_install = 'OFF'
 
     def check_env(self, var, key):
@@ -141,7 +141,7 @@ class CMakeBuild(build_ext, Command):
         self.cmake_include_path = self.check_env(self.cmake_include_path, compose("cmake_include_path"))
         self.cmake_library_path = self.check_env(self.cmake_library_path, compose("cmake_library_path"))
         self.devel_install = self.check_env(self.devel_install, compose("devel_install"))
-        self.shared_linking = self.check_env(self.shared_linking, compose("shared_linking"))
+        self.dynamic_link = self.check_env(self.dynamic_link, compose("dynamic_link"))
         self.pybind11_install = self.check_env(self.pybind11_install, compose("pybind11_install"))
 
         _valid_type = False
@@ -155,7 +155,7 @@ class CMakeBuild(build_ext, Command):
 
         cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
         cmake_args += [ '-DUSE_MPI={}'.format(str.upper(self.use_mpi)) ]
-        cmake_args += [ '-DSHARED_PYTHON_LINKING={}'.format(str.upper(self.shared_linking)) ]
+        cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK={}'.format(str.upper(self.dynamic_link)) ]
 
         if platform.system() != "Windows":
             cmake_args += [ '-DBUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]

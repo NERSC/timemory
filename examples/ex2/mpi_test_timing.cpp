@@ -101,6 +101,7 @@ int64_t time_fibonacci(int32_t n)
 void print_info(const std::string&);
 void print_size(const std::string&, int64_t, bool = true);
 void print_depth(const std::string&, int64_t, bool = true);
+void test_rss_usage();
 void test_timing_pointer();
 void test_manager();
 void test_timing_toggle();
@@ -136,6 +137,7 @@ int main(int argc, char** argv)
 
     try
     {
+        RUN_TEST(test_rss_usage);
         RUN_TEST(test_timing_pointer);
         RUN_TEST(test_manager);
         RUN_TEST(test_timing_toggle);
@@ -209,6 +211,17 @@ void print_size(const std::string& func, int64_t line, bool extra_endl)
 
 //============================================================================//
 
+void print_string(const std::string& str)
+{
+    std::stringstream _ss;
+    _ss << "[" << tim::mpi_rank() << "] "
+        << str
+        << std::endl;
+    std::cout << _ss.str();
+}
+
+//============================================================================//
+
 void print_depth(const std::string& func, int64_t line, bool extra_endl)
 {
     if(tim::mpi_rank() == 0)
@@ -222,6 +235,41 @@ void print_depth(const std::string& func, int64_t line, bool extra_endl)
         if(extra_endl)
             std::cout << std::endl;
     }
+}
+
+//============================================================================//
+
+void test_rss_usage()
+{
+    print_info(__FUNCTION__);
+
+    typedef std::vector<double> vector_t;
+    tim::rss::usage _rss_init;
+    tim::rss::usage _rss_end;
+    tim::rss::usage_format _format("RSS [current = %c MB] [peak = %m MB]",
+                                   tim::rss::units::megabyte, 2, 5, 'c', 'm');
+
+    size_t n = 1000;
+    _rss_init.record();
+    print_string("init  : " + _rss_init.str());
+    {
+        tim::rss::usage _rss_diff;
+        vector_t* v = new vector_t(n*n, 1.0);
+
+        _rss_diff.record();
+        print_string("alloc : " + _rss_diff.str());
+
+        _rss_diff -= _rss_init;
+        v->clear();
+        delete v;
+
+        _rss_diff.set_format(_format);
+        print_string("diff  : " + _rss_diff.str());
+    }
+    _rss_end.set_format(_format);
+    _rss_end.record();
+
+    print_string("final : " + _rss_end.str());
 }
 
 //============================================================================//

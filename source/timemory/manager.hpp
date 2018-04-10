@@ -78,7 +78,7 @@ typedef std::tuple<uint64_t, uint64_t, std::string,
 
 //----------------------------------------------------------------------------//
 
-struct timer_tuple : public internal::base_timer_tuple_t
+struct tim_api timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
     typedef std::string                     string_t;
@@ -160,7 +160,7 @@ struct timer_tuple : public internal::base_timer_tuple_t
 
 //----------------------------------------------------------------------------//
 
-class manager
+class tim_api manager
 {
 public:
     template <typename _Key, typename _Mapped>
@@ -198,8 +198,8 @@ public:
     static pointer_type instance();
     static void enable(bool val = true);
     static void set_get_num_threads_func(get_num_threads_func_t f);
-	static int32_t& max_depth() { return f_max_depth; }
-	static bool is_enabled() { return f_enabled; }
+    static int32_t& max_depth();
+    static bool is_enabled();
     // JSON writing
     static void write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);

@@ -78,7 +78,7 @@ namespace internal
 //
 //============================================================================//
 
-class base_rss_usage
+class tim_api base_rss_usage
 {
 public:
     typedef base_rss_usage          this_type;
@@ -158,7 +158,7 @@ protected:
 //
 //============================================================================//
 
-class base_timer_data
+class tim_api base_timer_data
 {
 public:
     typedef base_timer_data                             this_type;
@@ -233,7 +233,7 @@ uint64_t get_stop(const base_timer_data& data)
 //
 //============================================================================//
 
-class base_timer_delta
+class tim_api base_timer_delta
 {
 public:
     typedef base_timer_delta                            this_type;
@@ -382,7 +382,7 @@ protected:
 //============================================================================//
 
 
-class base_timer
+class tim_api base_timer
 {
 public:
     template <typename _Key, typename _Mapped>

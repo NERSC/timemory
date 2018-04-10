@@ -182,7 +182,7 @@ delimit(const std::string& _str, const std::string& _delims,
 
 //----------------------------------------------------------------------------//
 
-class path_t : public std::string
+class tim_api path_t : public std::string
 {
 public:
     typedef std::string         string_t;

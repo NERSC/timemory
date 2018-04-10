@@ -42,49 +42,46 @@ namespace internal { void dummy_func(int) { return; } }
 
 //============================================================================//
 
-bool signal_settings::signals_active = false;
-
-//============================================================================//
-
-std::set<sys_signal> signal_settings::signals_default =
+signal_settings::signals_data_t::signals_data_t()
+: signals_active(false),
+  signals_default({
+                  sys_signal::sHangup,
+                  sys_signal::sInterrupt,
+                  sys_signal::sQuit,
+                  sys_signal::sIllegal,
+                  sys_signal::sTrap,
+                  sys_signal::sAbort,
+                  sys_signal::sEmulate,
+                  sys_signal::sKill,
+                  sys_signal::sBus,
+                  sys_signal::sSegFault,
+                  sys_signal::sSystem,
+                  sys_signal::sPipe,
+                  sys_signal::sAlarm,
+                  sys_signal::sTerminate,
+                  sys_signal::sUrgent,
+                  sys_signal::sStop,
+                  sys_signal::sCPUtime,
+                  sys_signal::sFileSize,
+                  sys_signal::sVirtualAlarm,
+                  sys_signal::sProfileAlarm,
+              }),
+  signals_enabled(signals_default),
+  signals_disabled(),
+  signals_exit_func(internal::dummy_func)
 {
-    sys_signal::sHangup,
-    sys_signal::sInterrupt,
-    sys_signal::sQuit,
-    sys_signal::sIllegal,
-    sys_signal::sTrap,
-    sys_signal::sAbort,
-    sys_signal::sEmulate,
-    sys_signal::sKill,
-    sys_signal::sBus,
-    sys_signal::sSegFault,
-    sys_signal::sSystem,
-    sys_signal::sPipe,
-    sys_signal::sAlarm,
-    sys_signal::sTerminate,
-    sys_signal::sUrgent,
-    sys_signal::sStop,
-    sys_signal::sCPUtime,
-    sys_signal::sFileSize,
-    sys_signal::sVirtualAlarm,
-    sys_signal::sProfileAlarm,
-};
+#if defined(DEBUG)
+    signals_default.insert(sys_signal::sFPE);
+    signals_enabled.insert(sys_signal::sFPE);
+#else
+    signals_disabled.insert(sys_signal::sFPE);
+#endif
+}
 
 //============================================================================//
 
-std::set<sys_signal> signal_settings::signals_enabled = signal_settings::signals_default;
-
-//============================================================================//
-
-std::set<sys_signal> signal_settings::signals_disabled =
-{
-    sys_signal::sFPE
-};
-
-//============================================================================//
-
-signal_settings::signal_function_t signal_settings::signals_exit_func =
-        internal::dummy_func;
+signal_settings::signals_data_t signal_settings::f_signals =
+        signal_settings::signals_data_t();
 
 //============================================================================//
 
@@ -104,14 +101,14 @@ insert_and_remove(const sys_signal& _type,             // signal type
 
 void signal_settings::enable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &signals_enabled, &signals_disabled);
+    insert_and_remove(_type, &f_signals.signals_enabled, &f_signals.signals_disabled);
 }
 
 //============================================================================//
 
 void signal_settings::disable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &signals_disabled, &signals_enabled);
+    insert_and_remove(_type, &f_signals.signals_disabled, &f_signals.signals_enabled);
 }
 
 //============================================================================//
@@ -158,12 +155,12 @@ void signal_settings::check_environment()
 
     int _enable_all = get_env<int>("SIGNAL_ENABLE_ALL", 0);
     if(_enable_all > 0)
-        for(const auto& itr : signal_settings::signals_disabled)
+        for(const auto& itr : f_signals.signals_disabled)
             signal_settings::enable(itr);
 
     int _disable_all = get_env<int>("SIGNAL_DISABLE_ALL", 0);
     if(_disable_all > 0)
-        for(const auto& itr : signal_settings::signals_enabled)
+        for(const auto& itr : f_signals.signals_enabled)
             signal_settings::disable(itr);
 
 }
@@ -244,11 +241,11 @@ std::string signal_settings::str()
        << std::endl;
 
     ss << spacer() << "Enabled:" << std::endl;
-    for(const auto& itr : signals_enabled)
+    for(const auto& itr : f_signals.signals_enabled)
         ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
 
     ss << "\n" << spacer() << "Disabled:" << std::endl;
-    for(const auto& itr : signals_disabled)
+    for(const auto& itr : f_signals.signals_disabled)
         ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
 
 #else
@@ -260,6 +257,71 @@ std::string signal_settings::str()
 #endif
 
     return ss.str();
+}
+
+//============================================================================//
+
+bool signal_settings::is_active()
+{
+    return f_signals.signals_active;
+}
+
+//============================================================================//
+
+void signal_settings::set_active(bool val)
+{
+    f_signals.signals_active = val;
+}
+
+//============================================================================//
+
+void signal_settings::set_exit_action(signal_function_t _f)
+{
+    f_signals.signals_exit_func = _f;
+}
+
+//============================================================================//
+
+void signal_settings::exit_action(int errcode)
+{
+    f_signals.signals_exit_func(errcode);
+}
+
+//============================================================================//
+
+const signal_settings::signal_set_t& signal_settings::enabled()
+{
+    check_environment();
+    return f_signals.signals_enabled;
+}
+
+//============================================================================//
+
+const signal_settings::signal_set_t& signal_settings::disabled()
+{
+    check_environment();
+    return f_signals.signals_disabled;
+}
+
+//============================================================================//
+
+const signal_settings::signal_set_t& signal_settings::get_enabled()
+{
+    return f_signals.signals_enabled;
+}
+
+//============================================================================//
+
+const signal_settings::signal_set_t& signal_settings::get_disabled()
+{
+    return f_signals.signals_disabled;
+}
+
+//============================================================================//
+
+const signal_settings::signal_set_t& signal_settings::get_default()
+{
+    return f_signals.signals_default;
 }
 
 //============================================================================//

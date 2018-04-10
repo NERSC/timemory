@@ -84,10 +84,11 @@ install:
     $env:TIMEMORY_DEBUG=4
 
 build_script:
+- pip install .
 - mkdir build-timemory
 - cd build-timemory
 - cmake -DUSE_MPI=OFF -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
-    -DCTEST_LOCAL_CHECKOUT=ON -DSHARED_PYTHON_LINKING=ON
+    -DCTEST_LOCAL_CHECKOUT=ON -DTIMEMORY_DYNAMIC_LINK=ON
     -DCMAKE_BUILD_TYPE="%CONFIG%" -DCMAKE_INSTALL_PREFIX=../install-timemory
     -DBUILD_EXAMPLES=ON -DCTEST_SITE=AppVeyor -DCTEST_MODEL=Continuous 
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"

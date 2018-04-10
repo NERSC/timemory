@@ -1,6 +1,6 @@
 ################################################################################
 #
-#        MPI
+#                               MPI
 #
 ################################################################################
 add_option(USE_MPI "Enable MPI usage" ON)
@@ -79,7 +79,7 @@ endif(USE_MPI)
 
 ################################################################################
 #
-#        Threading
+#                               Threading
 #
 ################################################################################
 
@@ -97,63 +97,88 @@ endif(THREADS_FOUND)
 
 ################################################################################
 #
-#        PyBind11
+#                               PyBind11
 #
 ################################################################################
+add_option(TIMEMORY_PYTHON_BINDING "Build Python binds for TiMemory" ON)
 
-if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
-    add_dependent_option(PYBIND11_INSTALL "PyBind11 installation" OFF
-        "PYTHON_DEVELOPER_INSTALL" ON)
-else(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
-    set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11" FORCE)
-endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+if(TIMEMORY_PYTHON_BINDING)
 
-# checkout PyBind11 if not checked out
-if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
-    find_package(Git REQUIRED)
-    execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-        RESULT_VARIABLE RET)
-    if(RET GREATER 0)
-        message(FATAL_ERROR "Failure checking out submodules")
-    endif(RET GREATER 0)
-endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
+    if(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+        add_dependent_option(PYBIND11_INSTALL "PyBind11 installation" OFF
+            "PYTHON_DEVELOPER_INSTALL" ON)
+    else(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
+        set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11" FORCE)
+    endif(NOT SETUP_PY OR PYTHON_DEVELOPER_INSTALL)
 
-# make sure pybind11 gets installed in same place as TiMemory
-if(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
-    set(PYBIND11_CMAKECONFIG_INSTALL_DIR
-        "${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/pybind11"
-        CACHE STRING "install path for pybind11Config.cmake" FORCE)
-    set(CMAKE_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_INCLUDEDIR}
-        CACHE PATH "Include file installation path" FORCE)
-endif(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+    # checkout PyBind11 if not checked out
+    if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
+        find_package(Git REQUIRED)
+        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+            RESULT_VARIABLE RET)
+        if(RET GREATER 0)
+            message(FATAL_ERROR "Failure checking out submodules")
+        endif(RET GREATER 0)
+    endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
 
-# C++ standard
-set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-    CACHE STRING "PyBind11 CXX standard" FORCE)
+    # make sure pybind11 gets installed in same place as TiMemory
+    if(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
+        set(PYBIND11_CMAKECONFIG_INSTALL_DIR
+            "${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/pybind11"
+            CACHE STRING "install path for pybind11Config.cmake" FORCE)
+        set(CMAKE_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_INCLUDEDIR}
+            CACHE PATH "Include file installation path" FORCE)
+    endif(PYBIND11_INSTALL AND PYTHON_DEVELOPER_INSTALL)
 
-# add PyBind11 to project
-add_subdirectory(pybind11)
+    # C++ standard
+    set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+        CACHE STRING "PyBind11 CXX standard" FORCE)
 
-if(NOT PYBIND11_PYTHON_VERSION)
+    # add PyBind11 to project
+    add_subdirectory(pybind11)
+
+    if(NOT PYBIND11_PYTHON_VERSION)
+        execute_process(COMMAND ${PYTHON_EXECUTABLE}
+            -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
+            OUTPUT_VARIABLE PYTHON_VERSION
+            OUTPUT_STRIP_TRAILING_WHITESPACE)
+        message(STATUS "Python version: ${PYTHON_VERSION}")
+        set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}"
+            CACHE STRING "Python version" FORCE)
+    endif(NOT PYBIND11_PYTHON_VERSION)
+
+    add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
+
     execute_process(COMMAND ${PYTHON_EXECUTABLE}
-        -c "import sys; print('{}.{}'.format(sys.version_info[0], sys.version_info[1]))"
-        OUTPUT_VARIABLE PYTHON_VERSION
-        OUTPUT_STRIP_TRAILING_WHITESPACE)
-    message(STATUS "Python version: ${PYTHON_VERSION}")
-    set(PYBIND11_PYTHON_VERSION "${PYTHON_VERSION}"
-        CACHE STRING "Python version" FORCE)
-endif(NOT PYBIND11_PYTHON_VERSION)
+        -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
+        OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET)
 
-add_feature(PYBIND11_PYTHON_VERSION "PyBind11 Python version")
+    string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 
-execute_process(COMMAND ${PYTHON_EXECUTABLE}
-    -c "import time ; print('{} {}'.format(time.ctime(), time.tzname[0]))"
-    OUTPUT_VARIABLE TIMEMORY_INSTALL_DATE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET)
+    ########################################
+    #   Python installation directories
+    ########################################
+    if(SETUP_PY)
+        set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
+            "Installation prefix of python" FORCE)
+    else(SETUP_PY)
+        set(TIMEMORY_INSTALL_PYTHONDIR
+            ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
+            CACHE PATH "Installation directory for python")
+    endif(SETUP_PY)
+    set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
 
-string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
+endif(TIMEMORY_PYTHON_BINDING)
+
+
+################################################################################
+#
+#        External variables
+#
+################################################################################
 
 # including the directories
 safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
@@ -163,18 +188,3 @@ foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
 
 
-################################################################################
-#
-#   Python installation directories
-#
-################################################################################
-if(SETUP_PY)
-    set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
-        "Installation prefix of python" FORCE)
-else(SETUP_PY)
-    set(TIMEMORY_INSTALL_PYTHONDIR
-        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
-        CACHE PATH "Installation directory for python")
-endif(SETUP_PY)
-
-set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})

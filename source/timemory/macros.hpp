@@ -175,24 +175,24 @@
 //----------------------------------------------------------------------------//
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if defined(_WINDOWS)
-#   define TIM_DLL_EXPORT __declspec( dllexport )
-#   define TIM_DLL_IMPORT __declspec( dllimport )
+#if defined(_WINDOWS) && !defined(_TIMEMORY_STATIC)
+#   define TIM_DLL_EXPORT __declspec(dllexport)
+#   define TIM_DLL_IMPORT __declspec(dllimport)
 #
-#   if defined(TIMEMORY_DLL)
-#       define TIM_API __declspec( dllexport )
-#       define static_api static __declspec( dllexport )
+#   if defined(_TIMEMORY_DLL)
+#       define tim_api __declspec(dllexport)
+#       define tim_api_static static __declspec(dllexport)
 #   else
-#       define TIM_API __declspec( dllimport )
-#       define static_api static __declspec( dllimport )
+#       define tim_api __declspec(dllimport)
+#       define tim_api_static static __declspec(dllimport)
 #   endif
 //----------------------------------------------------------------------------//
 
 #else
 #   define TIM_DLL_EXPORT
 #   define TIM_DLL_IMPORT
-#   define TIM_API
-#   define static_api static
+#   define tim_api
+#   define tim_api_static static
 #endif
 
 //============================================================================//
@@ -258,6 +258,19 @@
 #   define tim_thread_local
 
 #endif
+
+//============================================================================//
+//
+//      FLOATING POINT EXCEPTIONS
+//
+//============================================================================//
+#include <cfenv>
+#include <cmath>
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunknown-pragmas"
+#pragma STDC FENV_ACCESS ON
+#pragma GCC diagnostic pop
 
 //============================================================================//
 //

@@ -1,5 +1,6 @@
 
-add_option(BUILD_EXAMPLES "Build the C++ examples" ON)
+add_dependent_option(BUILD_EXAMPLES "Build the C++ examples" ON
+    "BUILD_TESTING" OFF)
 
 if(BUILD_EXAMPLES)
     add_subdirectory(ex1)

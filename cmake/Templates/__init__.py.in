@@ -63,7 +63,7 @@ if os.path.exists(timemory_info_file):
         print ('')
 
 # if compiled with shared library linking
-if "@SHARED_PYTHON_LINKING@" == "ON":
+if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
 
     # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.
     tim_lib_path = find_library("timemory")

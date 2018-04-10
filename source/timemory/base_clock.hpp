@@ -60,7 +60,7 @@
 #   include <sys/times.h>
 
 // avoid no symbols warning
-struct dummy { static_api int32_t asymbol; };
+struct dummy { static int32_t asymbol; };
 
 #elif defined(_WINDOWS)
 //
