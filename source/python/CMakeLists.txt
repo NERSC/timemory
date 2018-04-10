@@ -24,6 +24,13 @@ pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp)
 target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 add_dependencies(${LIBNAME} ${LIBNAME}-${LINK_TYPE})
 
+if(WIN32)
+    set_target_properties(${OUTPUT_NAME} PROPERTIES
+        COMPILE_FLAGS "/MP /bigobj /Tp"
+        LANGUAGE CXX
+        POSITION_INDEPENDENT_CODE ON)
+endif(WIN32)
+
 set_target_properties(${LIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     #ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory

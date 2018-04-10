@@ -78,7 +78,7 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
                 LANGUAGE CXX
                 POSITION_INDEPENDENT_CODE ON)
         endif("${LIB_TYPE}" STREQUAL "SHARED")
-        #target_compile_options(${OUTPUT_NAME}-${TYPE} PRIVATE /MP /bigobj /Tp)
+        target_compile_options(${OUTPUT_NAME}-${TYPE} PRIVATE /MP /bigobj /Tp)
 
 	else(WIN32)
 
