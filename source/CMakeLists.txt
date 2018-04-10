@@ -65,7 +65,7 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
             set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
                 OUTPUT_NAME lib${OUTPUT_NAME}
                 COMPILE_DEFINITIONS _TIMEMORY_DLL
-                COMPILE_FLAGS "/MP /bigobj /Tp"
+                #COMPILE_FLAGS "/MP /bigobj /Tp"
                 LANGUAGE CXX
                 # C++ shared library fallback installation
                 LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
@@ -76,7 +76,7 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
             set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
                 OUTPUT_NAME lib${OUTPUT_NAME}-archive
                 COMPILE_DEFINITIONS _TIMEMORY_STATIC
-                COMPILE_FLAGS "/MP /bigobj /Tp"
+                #COMPILE_FLAGS "/MP /bigobj /Tp"
                 LANGUAGE CXX
                 POSITION_INDEPENDENT_CODE ON)
         endif("${LIB_TYPE}" STREQUAL "SHARED")
