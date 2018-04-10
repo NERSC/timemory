@@ -2,8 +2,8 @@
 #
 # MIT License
 #
-# Copyright (c) 2018, The Regents of the University of California, 
-# through Lawrence Berkeley National Laboratory (subject to receipt of any 
+# Copyright (c) 2018, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -219,7 +219,7 @@ class timemory_data():
         _user = obj['user_elapsed'] / denom
         _sys = obj['system_elapsed'] / denom
         _cpu = obj['cpu_elapsed'] / denom
-        _MB = (1024.0*1024.0)
+        _MB = (1.0)
         _tpeak = obj['rss_max']['peak'] / _MB
         _tcurr = obj['rss_max']['current'] / _MB
         _speak = obj['rss_self']['peak'] / _MB
@@ -572,6 +572,7 @@ def read(json_obj, plot_params=plot_parameters()):
 
             # create timemory_data object if doesn't exist yet
             if not tag in timemory_functions:
+                print('Tag {} does not exist'.format(tag))
                 timemory_functions[tag] = timemory_data(func = tag)
             # get timemory_data object
             timemory_func = timemory_functions[tag]
@@ -623,15 +624,18 @@ def plot_generic(_plot_data, _types, _data_dict,
 
     # _n is the major index
     _n = 0
+    _l = ''
     for func, obj in _data_dict.items():
+        print('Plotting function: {}'.format(func))
         # _c is the minor index
         _c = 0
         for key in _types:
             if _n % nitem == 0:
                 ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+                _l = ytics[len(ytics)-1]
             else:
-                ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-                #ytics.append('')
+                #ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+                ytics.append('')
 
             data = obj[key]
             for _i in range(0, nitem):
@@ -645,6 +649,8 @@ def plot_generic(_plot_data, _types, _data_dict,
             _c += 1
 
     ytics[len(ytics)-1] = ''
+    ytics.append('')
+
     # the x locations for the groups
     ind = np.arange(ntics)
     # the thickness of the bars: can also be len(x) sequence
@@ -678,7 +684,6 @@ def plot_generic(_plot_data, _types, _data_dict,
         if i % nitem == 0:
             grid_lines.append(i)
 
-
     #plt.minorticks_on()
     plt.yticks(ind, ytics, ha='left')
     plt.setp(ax.get_yticklabels(), fontsize='smaller')
@@ -693,9 +698,10 @@ def plot_generic(_plot_data, _types, _data_dict,
               fancybox=True, shadow=True, ncol=nitem)
 
     #ax.xaxis.set_major_locator(plt.IndexLocator(1, 0))
-    ax.yaxis.set_major_locator(plt.IndexLocator(nitem, 0))
+    ax.yaxis.set_major_locator(plt.IndexLocator(1, 0))
     ax.xaxis.grid()
-    ax.yaxis.grid(markevery=nitem)
+    #ax.yaxis.grid(markevery=nitem)
+    ax.yaxis.grid()
 
     #for xmaj in ax.xaxis.get_majorticklocs():
     #    ax.axvline(x=xmaj, ls='--')
@@ -843,11 +849,15 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
               will be combined into one "plot_data" object
             - the plot_params object will be used for this
     """
-    import timemory.options as options
-    if echo_dart is None and options.echo_dart:
-        echo_dart = True
-    elif echo_dart is None:
-        echo_dart = False
+    try:
+        # try here in case running as main on C++ output
+        import timemory.options as options
+        if echo_dart is None and options.echo_dart:
+            echo_dart = True
+        elif echo_dart is None:
+            echo_dart = False
+    except:
+        pass
 
     if len(files) > 0:
         for filename in files:
@@ -897,21 +907,53 @@ if __name__ == "__main__":
                             required=False)
         parser.add_argument('-e', '--echo-dart', help="echo Dart measurement for CDash",
                             required=False, action='store_true')
+        parser.add_argument('--timing-percent', required=False, type=float,
+            help="Exclude plotting times below this percentage of maximum")
+        parser.add_argument('--memory-percent', required=False, type=float,
+            help="Exclude plotting RSS values below this percentage of maximum")
+        parser.add_argument('--timing-fields', required=False, nargs='*',
+            help='Timing types to plot {}'.format(plot_parameters.timing_fields))
+        parser.add_argument('--memory-fields', required=False, nargs='*',
+            help='Memory types to plot {}'.format(plot_parameters.memory_fields))
+        parser.add_argument('--img-dpi', help="Image dots per sq inch",
+            required=False, type=int)
+        parser.add_argument('--img-size', help="Image dimensions", nargs=2,
+            required=False, type=int)
+        parser.add_argument('--img-type', help="Image type",
+            required=False, type=str)
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
         parser.set_defaults(output_dir=".")
         parser.set_defaults(echo_dart=False)
+        parser.set_defaults(timing_percent=plot_parameters.timing_min_percent)
+        parser.set_defaults(memory_percent=plot_parameters.memory_min_percent)
+        parser.set_defaults(timing_fields=plot_parameters.timing_fields)
+        parser.set_defaults(memory_fields=plot_parameters.memory_fields)
+        parser.set_defaults(img_dpi=plot_parameters.img_dpi)
+        parser.set_defaults(img_size=[ plot_parameters.img_size['w'],
+                                       plot_parameters.img_size['h'] ])
+        parser.set_defaults(img_type=plot_parameters.img_type)
 
         args = parser.parse_args()
+
         print('Files: {}'.format(args.files))
         print('Titles: {}'.format(args.titles))
+
+        params = plot_parameters(_timing_min_percent = args.timing_percent,
+                                 _timing_fields = args.timing_fields,
+                                 _memory_min_percent = args.memory_percent,
+                                 _memory_fields = args.memory_fields,
+                                 _img_dpi = args.img_dpi,
+                                 _img_size = { 'w' : args.img_size[0],
+                                               'h' : args.img_size[1] },
+                                 _img_type = args.img_type)
 
         if len(args.titles) != 1 and len(args.titles) != len(args.files):
             raise Exception("Error must provide one title or a title for each file")
 
         data = []
-        for i in range(len(args.files)):                                                                
+        for i in range(len(args.files)):
             f = open(args.files[i], "r")
             _data = read(json.load(f))
             _data.filename = args.files[i].replace('.json', '')
@@ -919,11 +961,13 @@ if __name__ == "__main__":
                 _data.title = args.titles[0]
             else:
                 _data.title = args.titles[i]
+            _data.plot_params = params
             print('### --> Processing "{}" from "{}"...'.format(_data.title,
                                                                 args.files[i]))
             data.append(_data)
-        print('Echo DART: {}'.format(args.echo_dart))
+
         plot(data=data,
+             plot_params=params,
              display=args.display_plot,
              combine=args.combine,
              output_dir=args.output_dir,
