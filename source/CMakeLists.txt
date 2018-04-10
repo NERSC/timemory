@@ -68,10 +68,12 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
                 LANGUAGE CXX
                 # C++ shared library fallback installation
                 LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib 
                 POSITION_INDEPENDENT_CODE ON)
         else("${LIB_TYPE}" STREQUAL "SHARED")
             set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
-                OUTPUT_NAME lib${OUTPUT_NAME}
+                OUTPUT_NAME lib${OUTPUT_NAME}-archive
                 COMPILE_DEFINITIONS _TIMEMORY_STATIC
                 LANGUAGE CXX
                 POSITION_INDEPENDENT_CODE ON)

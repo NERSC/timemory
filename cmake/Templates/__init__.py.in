@@ -29,10 +29,22 @@ import os
 import sys
 import imp
 import ctypes
+import platform
 from ctypes.util import find_library
 
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
+
+_tim_pypath = '@TIMEMORY_INSTALL_FULL_PYTHONDIR@'
+_tim_libpath = '@TIMEMORY_INSTALL_FULL_LIBDIR@'
+_tim_buildpath = '@PROJECT_BINARY_DIR@'
+
+if platform.system() == "Windows":
+    _tim_pypath = _tim_pypath.replace("/", "\\")
+    _tim_libpath = _tim_libpath.replace("/", "\\")
+    _tim_buildpath = _tim_buildpath.replace("/", "\\")
+
+_tim_buildpath = os.path.join(_tim_buildpath, "timemory")
 
 # verbosity
 _verbose = 0
@@ -67,13 +79,15 @@ if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
 
     # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.
     tim_lib_path = find_library("timemory")
-
+    if tim_lib_path is None:
+        tim_lib_path = find_library("libtimemory")
+    
     # if not found, go to hard-coded path from installation
     if tim_lib_path is None:
         # when installed, we want to fallback to the installation path first
         # Visual Studio and Xcode put libraries in
         # <LIBRARY_OUTPUT_DIRECTORY>/<CMAKE_BUILD_TYPE> in the build tree
-        alt_paths = [ "@TIMEMORY_INSTALL_FULL_LIBDIR@",
+        alt_paths = [ _tim_libpath,
                       os.path.join(this_path, os.path.join("lib", "Debug")),
                       os.path.join(this_path, os.path.join("lib", "MinSizeRel")),
                       os.path.join(this_path, os.path.join("lib", "RelWithDebInfo")),
@@ -82,7 +96,7 @@ if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
                     ]
 
         # in the build tree (when testing), we want to fallback to the build path first
-        if this_path == "@PROJECT_BINARY_DIR@/timemory":
+        if this_path == _tim_buildpath:
             alt_paths.reverse()
 
         if _verbose > 2:
@@ -95,7 +109,7 @@ if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
             # try to find exact match first, then major version match, then generic
             for _suffix in [ ".@TIMEMORY_VERSION@", ".@TIMEMORY_VERSION_MAJOR@", "" ]:
                 _suffix += "@CMAKE_SHARED_LIBRARY_SUFFIX@"
-                _test_path = os.path.join(alt_path, "@CMAKE_SHARED_LIBRARY_PREFIX@timemory{}".format(_suffix))
+                _test_path = os.path.join(alt_path, "libtimemory{}".format(_suffix))
                 if os.path.exists(_test_path):
                     if _verbose > 1:
                         print('Found matching alternative path: "{}"'.format(_test_path))
@@ -111,7 +125,12 @@ if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
         print('Using TiMemory shared library: {}'.format(tim_lib_path))
 
     # open the shared library for RPATH resolution
-    lib = ctypes.CDLL(tim_lib_path, mode=ctypes.RTLD_GLOBAL)
+    lib = None
+    try:
+        lib = ctypes.CDLL(tim_lib_path, mode=ctypes.RTLD_GLOBAL)
+    except Exception as e:
+        print('Exception! Error opening TiMemory shared library @ "{}"'.format(tim_lib_path))
+        print(e)
 
 def __load_module(module_name, path):
     return imp.load_module(module_name, open(path), path, ('py', 'U', imp.PY_SOURCE))
@@ -124,6 +143,12 @@ timemory_dylib_name = '@LIBNAME@@PYTHON_MODULE_EXTENSION@'
 
 timemory_dylib_path = os.path.join(this_path, '@LIBNAME@@PYTHON_MODULE_EXTENSION@')
 
+if not os.path.exists(timemory_dylib_path):
+    timemory_dylib_path = os.path.join(_tim_pypath, '@LIBNAME@@PYTHON_MODULE_EXTENSION@')
+    if os.path.exists(timemory_dylib_path):
+        sys.path.append(_tim_pypath)
+        timemory_dylib_name = timemory_dylib_path
+
 # this is generally only used from the build tree
 if not os.path.exists(timemory_dylib_path):
     # info file should have paths we need
@@ -135,10 +160,14 @@ if not os.path.exists(timemory_dylib_path):
     if not os.path.exists(timemory_dylib_path):
         for build_type in [ "Release", "RelWithDebInfo", "MinSizeRel", "Debug" ]:
             timemory_dylib_path = os.path.join(this_path,
-                '{}/@LIBNAME@@PYTHON_MODULE_EXTENSION@'.format(build_type))
+                os.path.join('{}'.format(build_type), '@LIBNAME@@PYTHON_MODULE_EXTENSION@'))
             if os.path.exists(timemory_dylib_path):
-                timemory_dylib_name = os.path.join(build_type, timemory_dylib_name)
+                sys.path.append(os.path.join(this_path, build_type))
                 break
+    timemory_dylib_name = timemory_dylib_path
+
+if _verbose > 1:
+    print('Bootstrapping "{}" from "{}"...'.format(timemory_dylib_name, timemory_dylib_path))
 
 # import the compiled TiMemory module
 timemory = timemory_py.__bootstrap__(timemory_dylib_name)
