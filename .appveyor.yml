@@ -84,7 +84,6 @@ install:
     $env:TIMEMORY_DEBUG=4
 
 build_script:
-- pip install .
 - mkdir build-timemory
 - cd build-timemory
 - cmake -DUSE_MPI=OFF -DBUILD_TESTING=ON -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
@@ -97,6 +96,6 @@ build_script:
 - ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure
 #- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
 - cd ..
-- pip install .
+- pip install -v -v -v --no-cache-dir .
 - cd ..
 - python -c "import timemory ; timemory.tests.run()"
