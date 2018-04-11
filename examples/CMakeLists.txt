@@ -16,7 +16,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
 else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
-    if(BUILD_EXAMPLES)
+    if(TIMEMORY_BUILD_EXAMPLES)
         add_subdirectory(ex1)
         if(TIMEMORY_USE_MPI AND MPI_FOUND)
             add_subdirectory(ex2)
@@ -34,7 +34,7 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
                 ERROR_QUIET)
         endforeach(example_dir ${example_dirs})
 
-    endif(BUILD_EXAMPLES)
+    endif(TIMEMORY_BUILD_EXAMPLES)
 
     set_property(GLOBAL APPEND PROPERTY
         BUILDTREE_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR})
