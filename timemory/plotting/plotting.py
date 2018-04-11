@@ -572,7 +572,7 @@ def read(json_obj, plot_params=plot_parameters()):
 
             # create timemory_data object if doesn't exist yet
             if not tag in timemory_functions:
-                print('Tag {} does not exist'.format(tag))
+                #print('Tag {} does not exist'.format(tag))
                 timemory_functions[tag] = timemory_data(func = tag)
             # get timemory_data object
             timemory_func = timemory_functions[tag]
@@ -626,7 +626,7 @@ def plot_generic(_plot_data, _types, _data_dict,
     _n = 0
     _l = ''
     for func, obj in _data_dict.items():
-        print('Plotting function: {}'.format(func))
+        #print('Plotting function: {}'.format(func))
         # _c is the minor index
         _c = 0
         for key in _types:
