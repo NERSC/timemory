@@ -17,19 +17,28 @@ project(TiMemory-Example1)
 set(EXE_NAME test_timing)
 
 if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
     include_directories(${CMAKE_SOURCE_DIR}/source
         ${CMAKE_SOURCE_DIR}/source/cereal/include)
-    set_property(TARGET timemory-static PROPERTY
-        IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-    set_property(TARGET timemory-shared
-        PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-    set(TiMemory_LIBRARIES timemory-shared ${EXTERNAL_LIBRARIES})
-    set(PROJECT_DEPENDS timemory-static timemory-shared)
+    if(TIMEMORY_DYNAMIC_LINK)
+        set_property(TARGET timemory-shared
+            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        set(TiMemory_LIBRARIES timemory-shared ${EXTERNAL_LIBRARIES})
+        set(PROJECT_DEPENDS timemory-shared)
+    else()
+        set_property(TARGET timemory-static PROPERTY
+            IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        set(TiMemory_LIBRARIES timemory-static ${EXTERNAL_LIBRARIES})
+        set(PROJECT_DEPENDS timemory-static)
+    endif()
+
 else()
+
     find_package(TiMemory REQUIRED)
     foreach(_DIR ${TiMemory_INCLUDE_DIRS})
         include_directories(SYSTEM ${_DIR})
     endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
+
 endif()
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
