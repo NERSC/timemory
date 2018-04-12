@@ -80,10 +80,10 @@ macro(add_ctest_options VARIABLE )
     list(SORT _vars)
     set(_set_vars ${ARGN})
     foreach(_var ${_vars})
-        STRING(REGEX MATCH "^USE_" _use_found "${_var}")
+        STRING(REGEX MATCH "^TIMEMORY_USE_" _use_found "${_var}")
         STRING(REGEX MATCH ".*(_ROOT|_LIBRARY|_INCLUDE_DIR|_EXECUTABLE)$"
             _root_found "${_var}")
-        STRING(REGEX MATCH "^(PREVIOUS_|CMAKE_|OSX_|DEFAULT_|EXTERNAL_|_|CTEST_)"
+        STRING(REGEX MATCH "^(PREVIOUS_|CMAKE_|OSX_|DEFAULT_|EXTERNAL_|_|CTEST_|DOXYGEN_|QT_)"
             _skip_prefix "${_var}")
         STRING(REGEX MATCH ".*(_AVAILABLE|_LIBRARIES|_INCLUDE_DIRS)$"
             _skip_suffix "${_var}")
@@ -129,7 +129,11 @@ if(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
         CMAKE_BUILD_TYPE
         CMAKE_C_COMPILER CMAKE_CXX_COMPILER
         MPI_C_COMPILER MPI_CXX_COMPILER
-        CTEST_MODEL CTEST_SITE)
+        CTEST_MODEL CTEST_SITE
+        TIMEMORY_EXCEPTIONS
+        TIMEMORY_DYNAMIC_LINK
+        TIMEMORY_BUILD_EXAMPLES
+        TIMEMORY_TEST_MPI)
 
     set(cdash_templates Init Build Test Submit Glob Stages)
     if(USE_COVERAGE)
@@ -201,12 +205,12 @@ if(TIMEMORY_BUILD_EXAMPLES)
     set_tests_properties(Cxx_Test PROPERTIES
         LABELS "CXX;UnitTest" TIMEOUT 7200)
 
-    if(TIMEMORY_USE_MPI AND MPI_FOUND)
+    if(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
         add_test(NAME Cxx_MPI_Test
             COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:mpi_test_timing>
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         set_tests_properties(Cxx_MPI_Test PROPERTIES
             LABELS "CXX;UnitTest" TIMEOUT 7200)
-    endif(TIMEMORY_USE_MPI AND MPI_FOUND)
+    endif(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
 
 endif(TIMEMORY_BUILD_EXAMPLES)

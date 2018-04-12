@@ -14,9 +14,9 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
     FORCE)
 
 # add cereal
-if(NOT TIMEMORY_SETUP_PY)
+if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
     add_subdirectory(cereal)
-endif(NOT TIMEMORY_SETUP_PY)
+endif(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
@@ -118,6 +118,7 @@ _build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
 # Install the targets and export
 #
 if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
+
     # C++ compiled libraries
     install(TARGETS ${INSTALL_LIBRARIES}
         DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
@@ -156,3 +157,18 @@ if(TIMEMORY_USE_PYTHON_BINDING)
 
 endif(TIMEMORY_USE_PYTHON_BINDING)
 
+#------------------------------------------------------------------------------#
+# install the plotting.py module as a Python executable
+# named 'timemory-plotter' as C++ JSON outputs can use this
+# to generate plots
+#
+configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/plotting.py
+    ${PROJECT_BINARY_DIR}/timemory-plotter COPYONLY)
+
+install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
+    DESTINATION ${TIMEMORY_INSTALL_BINDIR}
+    COMPONENT development
+    PERMISSIONS
+    OWNER_EXECUTE OWNER_READ OWNER_WRITE
+    GROUP_EXECUTE GROUP_READ
+    WORLD_EXECUTE WORLD_READ)

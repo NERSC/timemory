@@ -62,4 +62,5 @@ add_subdirectory(examples)
 #   Package setup
 ################################################################################
 
+include(Testing)
 include(PackageConfigure)

@@ -128,6 +128,13 @@ if(NOT SUBPROJECT AND NOT WIN32)
     add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
     add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
 
+elseif(NOT WIN32)
+
+    if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+        add(CMAKE_CXX_FLAGS "-Wno-exceptions")
+        add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+    endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+
 endif(NOT SUBPROJECT AND NOT WIN32)
 
 if(TIMEMORY_EXCEPTIONS)

@@ -51,18 +51,6 @@ foreach(_FILE plotting mpi_support util)
         COMPONENT python)
 endforeach(_FILE plotting mpi_support util)
 
-# install the plotting.py file as an executable
-configure_file(${PROJECT_BINARY_DIR}/timemory/plotting/plotting.py
-    ${PROJECT_BINARY_DIR}/timemory-plotter COPYONLY)
-
-install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
-    DESTINATION ${TIMEMORY_INSTALL_BINDIR}
-    COMPONENT python
-    PERMISSIONS
-    OWNER_EXECUTE OWNER_READ OWNER_WRITE
-    GROUP_EXECUTE GROUP_READ
-    WORLD_EXECUTE WORLD_READ)
-
 #----------------------------------------------------------------------------
 # MPI info
 #
@@ -138,3 +126,32 @@ install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
     COMPONENT python)
 
 export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
+
+#----------------------------------------------------------------------------
+# Python testing
+#
+set(TEST_FILES
+    __init__.py
+    tests.py
+    timemory_test.py
+    simple_test.py
+    nested_test.py
+    array_test.py)
+
+foreach(_FILE ${TEST_FILES})
+    # only copy *_test.py files to binary directory
+    if("${_FILE}" MATCHES "_test.py")
+        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+            ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+    endif("${_FILE}" MATCHES "_test.py")
+
+    # copy to binary: timemory/tests/${_FILE}
+    configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} COPYONLY)
+
+    # install them though
+    install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests
+        COMPONENT python)
+
+endforeach(_FILE ${TEST_FILES})

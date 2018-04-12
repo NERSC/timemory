@@ -18,6 +18,8 @@ Date:   Tue Apr 10 07:40:01 2018 -0700
     - Shared library linking + plotting fixes
     - All cmake options are not prefixed with TIMEMORY_
     - Improved Windows DLL support
+    - setup.py will install CMake config properly
+    - platform-default settings on whether to use dynamic linking (Windows=OFF, else=ON)
 
 
 Release: TiMemory 1.2.2

@@ -30,6 +30,9 @@
 #ifndef mpi_hpp_
 #define mpi_hpp_
 
+#include "timemory/macros.hpp"
+#include "timemory/utility.hpp"
+
 #include <cstdint>
 #include <algorithm>
 
@@ -122,13 +125,19 @@ inline bool has_mpi_support()
 #   define MPI_Gather(send_data, send_count, send_type, \
                       recv_data, recv_count, recv_type, \
                       root, communicator) \
-                      { ; }
+    { tim::consume_parameters(send_data, send_count, \
+                              recv_data, recv_count,  \
+                              root, communicator); }
+
 #   define MPI_Gatherv(send_buf, send_count, send_type, \
                        recv_buf, recv_count, group_size, \
                        recv_type, root, communicator) \
-                       { ; }
-#   define MPI_Comm_free(comm) { ; }
-#   define MPI_Comm_split(comm, color, key, new_comm) { ; }
+    { tim::consume_parameters(send_buf, send_count, \
+                              recv_buf, recv_count,  \
+                              root, communicator); }
+#   define MPI_Comm_free(comm) { tim::consume_parameters(comm); }
+#   define MPI_Comm_split(comm, color, key, new_comm) { \
+    tim::consume_parameters(color, key, new_comm); }
 
 #endif
 

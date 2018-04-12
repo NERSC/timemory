@@ -103,15 +103,9 @@ endif(THREADS_FOUND)
 if(TIMEMORY_USE_PYTHON_BINDING)
 
     # checkout PyBind11 if not checked out
-    if(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
-        find_package(Git REQUIRED)
-        execute_process(COMMAND ${GIT_EXECUTABLE} submodule update --init --recursive
-            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-            RESULT_VARIABLE RET)
-        if(RET GREATER 0)
-            message(FATAL_ERROR "Failure checking out submodules")
-        endif(RET GREATER 0)
-    endif(NOT EXISTS "${CMAKE_SOURCE_DIR}/pybind11/CMakeLists.txt")
+    checkout_cmake_submodule(RECURSIVE
+        RELATIVE_PATH pybind11
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # make sure pybind11 gets installed in same place as TiMemory
     if(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
@@ -152,17 +146,50 @@ if(TIMEMORY_USE_PYTHON_BINDING)
     ########################################
     #   Python installation directories
     ########################################
+    set(TIMEMORY_STAGING_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH
+        "Installation prefix (relevant in pip staged builds)")
+
     if(TIMEMORY_SETUP_PY)
-        set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory CACHE PATH
+
+        set(TIMEMORY_INSTALL_PYTHONDIR ${TIMEMORY_STAGING_PREFIX}/timemory CACHE PATH
             "Installation prefix of python" FORCE)
+
+        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
+            ${CMAKE_INSTALL_PREFIX}/lib/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
+
+        add_feature(TIMEMORY_INSTALL_PYTHONDIR "TiMemory Python installation directory")
+        add_feature(TIMEMORY_STAGING_PREFIX "Installation prefix (relevant in pip staged builds)")
+
     else(TIMEMORY_SETUP_PY)
+
         set(TIMEMORY_INSTALL_PYTHONDIR
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory
             CACHE PATH "Installation directory for python")
+
+        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
+            ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
+
     endif(TIMEMORY_SETUP_PY)
-    set(TIMEMORY_INSTALL_FULL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
+
+    set(TIMEMORY_CONFIG_PYTHONDIR
+        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
+
+else(TIMEMORY_USE_PYTHON_BINDING)
+
+    set(TIMEMORY_CONFIG_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
 
 endif(TIMEMORY_USE_PYTHON_BINDING)
+
+
+################################################################################
+#
+#        Checkout Cereal if not checked out
+#
+################################################################################
+
+checkout_cmake_submodule(RECURSIVE
+    RELATIVE_PATH source/cereal
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 
 ################################################################################

@@ -93,6 +93,22 @@ manager::pointer_type manager::instance()
 }
 
 //============================================================================//
+// static function
+manager::pointer_type manager::master_instance()
+{
+    if(!local_instance())
+    {
+        local_instance() = new manager();
+        global_instance()->add(local_instance());
+    }
+
+    if(local_instance() != global_instance())
+        global_instance()->set_merge(true);
+
+    return global_instance();
+}
+
+//============================================================================//
 
 bool manager::f_enabled = true;
 
@@ -123,8 +139,10 @@ void manager::enable(bool val)
 
 manager::manager()
 : m_merge(false),
-  m_hash((global_instance()) ? global_instance()->hash() : 0),
-  m_count((global_instance()) ? global_instance()->count() : 0),
+  m_hash(0),
+  m_count(0),
+  m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
+  m_p_count((global_instance()) ? global_instance()->count().load() : 0),
   m_report(&std::cout)
 {
     ++f_manager_instance_count;
@@ -271,7 +289,7 @@ manager::timer(const string_t& key,
     uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount+2) * (nhash+2);
 
     // thread-safe
-    auto_lock_t lock(f_mutex);
+    //auto_lock_t lock(f_mutex);
 
     // if already exists, return it
     if(m_timer_map.find(ref) != m_timer_map.end())
@@ -305,7 +323,7 @@ manager::timer(const string_t& key,
     timer::propose_output_width(ss.str().length());
 
     m_timer_map[ref] =
-            timer_ptr_t(new tim_timer_t(ss.str(), string_t(""),true,
+            timer_ptr_t(new tim_timer_t(ss.str(), string_t(""), true,
                                         tim_timer_t::get_default_precision()));
 
     std::stringstream tag_ss;
@@ -507,7 +525,6 @@ void manager::merge(bool div_clock)
                 m_timer_map[mitr.first] = mitr.second;
             else
                 clock_div_count[mitr.first] += 1;
-
         }
 
         for(const auto& litr : itr->list())
@@ -534,6 +551,28 @@ void manager::merge(bool div_clock)
         if(itr != this)
             itr->clear();
 
+}
+
+//============================================================================//
+
+void manager::sync_hierarchy()
+{
+    for(auto& itr : m_daughters)
+    {
+        if(itr->hash() > 0)
+            // add difference to current hash
+            itr->hash() += (m_hash - itr->parent_hash());
+        // set the parent count to this count
+        itr->parent_hash() = m_hash.load();
+
+        if(itr->count() > 0)
+            // add difference to current hash
+            itr->count() += (m_count - itr->parent_count());
+        // set the parent count to this count
+        itr->parent_count() = m_count.load();
+
+        itr->sync_hierarchy();
+    }
 }
 
 //============================================================================//

@@ -47,6 +47,7 @@ public:
     typedef tim::manager::tim_timer_t   tim_timer_t;
     typedef auto_timer                  this_type;
     typedef std::string                 string_t;
+    typedef tim::manager::counter_t     counter_t;
 
 public:
     // standard constructor
@@ -63,8 +64,10 @@ public:
 
 public:
     // static public functions
-    static uint64_t& ncount();
-    static uint64_t& nhash();
+    static counter_t& ncount();
+    static counter_t& nhash();
+    static counter_t& pcount();
+    static counter_t& phash();
     static bool alloc_next();
 
 private:
@@ -84,25 +87,145 @@ typedef     tim::auto_timer     auto_timer_t;
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 
+//----------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
-#   define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
-#   define AUTO_TIMER_NAME(Y) AUTO_TIMER_NAME_COMBINE(macro_auto_timer, Y)
-
+#define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
+#define AUTO_TIMER_NAME(Y) AUTO_TIMER_NAME_COMBINE(macro_auto_timer, Y)
 // helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
-#   define AUTO_TIMER_STR(A, B) std::string("@'") + \
+#define AUTO_TIMER_STR(A, B) std::string("@'") + \
     std::string( A ).substr(std::string( A ).find_last_of("/")+1) + \
     std::string("':") + B
 
-// simple tagging w/ function name + optional extra string
-#   define TIMEMORY_AUTO_TIMER_BASIC(str) \
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_BASIC_AUTO_SIGN(str)
+ *
+ * helper macro for "__FUNC__" + str tagging
+ *
+ * Usage:
+ *
+ *      void func()
+ *      {
+ *          auto_timer_t timer(TIMEMORY_AUTO_SIGN_BASIC("example"), __LINE__)
+ *          ...
+ *      }
+ */
+#   define TIMEMORY_BASIC_AUTO_SIGN(str) \
+        std::string(std::string(__FUNCTION__) + std::string(str))
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_AUTO_SIGN(str)
+ *
+ * helper macro for "__FUNC__" + str + '@__FILE__':__LINE__" tagging
+ *
+ * Usage:
+ *
+ *      void func()
+ *      {
+ *          auto_timer_t timer(TIMEMORY_AUTO_SIGN("example"), __LINE__)
+ *          ...
+ *      }
+ */
+#   define TIMEMORY_AUTO_SIGN(str) \
+        std::string(std::string(__FUNCTION__) + std::string(str) + \
+                    AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ))
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_BASIC_AUTO_TIMER(str)
+ *
+ * simple tagging with <function name> + <string> where the string param
+ * \a str is optional
+ *
+ * Signature:
+ *      __FUNC__ + str
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_BASIC_AUTO_TIMER();
+ *          ...
+ *      }
+ *
+ * Example where str == "(15)":
+ *
+ *      > [pyc] some_func(15) :  0.363 wall, ... etc.
+ */
+#define TIMEMORY_BASIC_AUTO_TIMER(str) \
         auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
             std::string(str), __LINE__)
 
-// standard tagging with function name + optional extra string + "@'filename':##"
-#   define TIMEMORY_AUTO_TIMER(str) \
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_AUTO_TIMER(str)
+ *
+ * standard tagging with <function name> + <string> + "@'<filename>':<line>"
+ * where the string param \a str is optional
+ *
+ * Signature:
+ *
+ *      __FUNC__ + str + '@__FILE__':__LINE__
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_AUTO_TIMER();
+ *          ...
+ *      }
+ *
+ * Example where str == "(15)":
+ *
+ *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
+ */
+#define TIMEMORY_AUTO_TIMER(str) \
     auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
             std::string(str) + \
             AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
+
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_BASIC_AUTO_TIMER_OBJ(str)
+ *
+ * Similar to \ref TIMEMORY_BASIC_AUTO_TIMER(str) but assignable.
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          auto_timer_t* timer = new TIMEMORY_BASIC_AUTO_TIMER_OBJ();
+ *          ...
+ *      }
+*/
+#define TIMEMORY_BASIC_AUTO_TIMER_OBJ(str) \
+    auto_timer_t(std::string(__FUNCTION__) + std::string(str), __LINE__)
+
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_AUTO_TIMER_OBJ(str)
+ *
+ * Similar to \ref TIMEMORY_AUTO_TIMER(str) but assignable.
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          auto_timer_t* timer = new TIMEMORY_AUTO_TIMER_OBJ();
+ *          ...
+ *      }
+ *
+ */
+#define TIMEMORY_AUTO_TIMER_OBJ(str) \
+    auto_timer_t(std::string(__FUNCTION__) + std::string(str) + \
+                 AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
+
+
+//----------------------------------------------------------------------------//
+/*! \def TIMEMORY_AUTO_TIMER_BASIC(str)
+ *
+ * backwards compatibility for \ref TIMEMORY_BASIC_AUTO_TIMER(str)
+ *
+ */
+#define TIMEMORY_AUTO_TIMER_BASIC(str) TIMEMORY_BASIC_AUTO_TIMER(str)
 
 #endif
 

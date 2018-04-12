@@ -31,11 +31,31 @@ namespace tim
 
 //============================================================================//
 
-uint64_t& auto_timer::nhash() { return manager::instance()->hash(); }
+auto_timer::counter_t& auto_timer::nhash()
+{
+    return manager::instance()->hash();
+}
 
 //============================================================================//
 
-uint64_t& auto_timer::ncount() { return manager::instance()->count(); }
+auto_timer::counter_t& auto_timer::ncount()
+{
+    return manager::instance()->count();
+}
+
+//============================================================================//
+
+auto_timer::counter_t& auto_timer::phash()
+{
+    return manager::instance()->parent_hash();
+}
+
+//============================================================================//
+
+auto_timer::counter_t& auto_timer::pcount()
+{
+    return manager::instance()->parent_count();
+}
 
 //============================================================================//
 
@@ -65,7 +85,9 @@ auto_timer::auto_timer(const string_t& timer_tag,
        (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
     {
         m_timer = &manager::instance()->timer(timer_tag, code_tag,
+                                              auto_timer::pcount() +
                                               auto_timer::ncount() - 1,
+                                              auto_timer::phash() +
                                               auto_timer::nhash());
 
         m_temp_timer = new tim_timer_t();
@@ -100,7 +122,9 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
        (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
     {
         m_timer = &manager::instance()->timer(timer_tag, code_tag,
+                                              auto_timer::pcount() +
                                               auto_timer::ncount() - 1,
+                                              auto_timer::phash() +
                                               auto_timer::nhash());
         m_temp_timer = m_timer;
         m_timer->sync(_atimer);

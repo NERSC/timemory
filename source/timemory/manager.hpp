@@ -187,6 +187,7 @@ public:
     typedef std::set<this_type*>            daughter_list_t;
     typedef tim_timer_t::rss_usage_t        rss_usage_t;
     typedef std::function<intmax_t()>       get_num_threads_func_t;
+    typedef std::atomic<uint64_t>           counter_t;
 
 public:
     // Constructor and Destructors
@@ -196,6 +197,7 @@ public:
 public:
     // Public static functions
     static pointer_type instance();
+    static pointer_type master_instance();
     static void enable(bool val = true);
     static void set_get_num_threads_func(get_num_threads_func_t f);
     static int32_t& max_depth();
@@ -203,6 +205,7 @@ public:
     // JSON writing
     static void write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
+    static int get_instance_count() { return f_manager_instance_count.load(); }
 
 protected:
     static void write_json_no_mpi(path_t _fname);
@@ -270,11 +273,17 @@ public:
     const timer_map_t& map() const { return m_timer_map; }
     const timer_list_t& list() const { return m_timer_list; }
 
-    uint64_t& hash() { return m_hash; }
-    uint64_t& count() { return m_count; }
+    counter_t& hash() { return m_hash; }
+    counter_t& count() { return m_count; }
+    counter_t& parent_hash() { return m_p_hash; }
+    counter_t& parent_count() { return m_p_count; }
 
-    const uint64_t& hash() const { return m_hash; }
-    const uint64_t& count() const { return m_count; }
+    const counter_t& hash() const { return m_hash; }
+    const counter_t& count() const { return m_count; }
+    const counter_t& parent_hash() const { return m_p_hash; }
+    const counter_t& parent_count() const { return m_p_count; }
+
+    void sync_hierarchy();
 
     daughter_list_t& daughters() { return m_daughters; }
     const daughter_list_t& daughters() const { return m_daughters; }
@@ -283,6 +292,12 @@ public:
 
     void operator+=(const rss_usage_t& rhs);
     void operator-=(const rss_usage_t& rhs);
+
+    ostream_t* get_output_stream() const { return m_report; }
+    bool is_reporting_to_file() const
+    {
+        return (m_report != &std::cout) && (m_report != &std::cerr);
+    }
 
 protected:
 	// protected functions
@@ -315,9 +330,13 @@ private:
     // merge checking
     std::atomic<bool>       m_merge;
     // hash counting
-    uint64_t                m_hash;
+    counter_t               m_hash;
     // auto timer counting
-    uint64_t                m_count;
+    counter_t               m_count;
+    // parent auto timer sync point for hashing
+    counter_t               m_p_hash;
+    // parent auto timer sync point
+    counter_t               m_p_count;
     // hashed string map for fast lookup
     timer_map_t             m_timer_map;
     // ordered list for output (outputs in order of timer instantiation)

@@ -11,6 +11,7 @@ import shutil
 from distutils.version import LooseVersion
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+from setuptools.command.install import install
 from setuptools import Command
 from setuptools.command.test import test as TestCommand
 from setuptools.command.install_egg_info import install_egg_info
@@ -51,10 +52,12 @@ class CMakeBuild(build_ext, Command):
     cmake_prefix_path = ''
     cmake_include_path = ''
     cmake_library_path = ''
-    devel_install = ''
-    dynamic_link = 'OFF'
+    devel_install = 'ON'
+    dynamic_link = 'PLATFORM-DEFAULT'
     pybind11_install = 'OFF'
 
+
+    #--------------------------------------------------------------------------#
     def check_env(self, var, key):
         ret = var
         try:
@@ -64,6 +67,7 @@ class CMakeBuild(build_ext, Command):
         return ret
 
 
+    #--------------------------------------------------------------------------#
     def cmake_version_error(self):
         """
         Raise exception about CMake
@@ -77,6 +81,7 @@ class CMakeBuild(build_ext, Command):
         raise RuntimeError(mt)
 
 
+    #--------------------------------------------------------------------------#
     def init_cmake(self):
         """
         Ensure cmake is in PATH
@@ -100,6 +105,8 @@ class CMakeBuild(build_ext, Command):
             except:
                 self.cmake_version_error()
 
+
+    #--------------------------------------------------------------------------#
     # run
     def run(self):
         self.init_cmake()
@@ -114,23 +121,63 @@ class CMakeBuild(build_ext, Command):
             self.build_extension(ext)
 
 
+    #--------------------------------------------------------------------------#
     # build extension
     def build_extension(self, ext):
+
         self.init_cmake()
 
-        extdir = os.path.abspath(
-            os.path.dirname(self.get_ext_fullpath(ext.name)))
-        #extdir = os.path.join(extdir, 'timemory')
-        cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-DTIMEMORY_SETUP_PY=ON',
-                      '-DCMAKE_INSTALL_PREFIX=' + extdir,
-                      ]
+        # check function for setup.cfg
+        def valid_string(_str):
+            if len(_str) > 0 and _str != '""' and _str != "''":
+                return True
+            return False
 
         # allow environment to over-ride setup.cfg
         # options are prefixed with TIMEMORY_ if not already
         def compose(str):
             return 'TIMEMORY_{}'.format(str.upper())
 
+        extdir = os.path.abspath(
+            os.path.dirname(self.get_ext_fullpath(ext.name)))
+
+        # Always the same
+        cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
+                      '-DTIMEMORY_SETUP_PY=ON',
+                      ]
+
+        #----------------------------------------------------------------------#
+        #
+        #   Developer installation processing
+        #
+        #----------------------------------------------------------------------#
+        devel_install_path = None
+
+        if platform.system() == "Windows":
+            self.devel_install = 'OFF'
+
+        if valid_string(self.devel_install) and str.upper(self.devel_install) != 'OFF':
+            if str.upper(self.devel_install) == 'ON':
+                if install.user_options[0][1] is None:
+                    self.devel_install = sys.prefix
+                else:
+                    self.devel_install = unstall.user_options[0][1]
+            devel_install_path = self.devel_install
+            if not os.path.isabs(devel_install_path):
+                devel_install_path = os.path.realpath(devel_install_path)
+            cmake_args += [ '-DCMAKE_INSTALL_PREFIX={}'.format(devel_install_path) ]
+            cmake_args += [ '-DTIMEMORY_DEVELOPER_INSTALL=ON' ]
+            cmake_args += [ '-DPYBIND11_INSTALL={}'.format(str.upper(self.pybind11_install)) ]
+            cmake_args += [ '-DTIMEMORY_STAGING_PREFIX={}'.format(extdir) ]
+        else:
+            cmake_args += [ '-DCMAKE_INSTALL_PREFIX={}'.format(extdir) ]
+            cmake_args += [ '-DTIMEMORY_DEVELOPER_INSTALL=OFF' ]
+
+        #----------------------------------------------------------------------#
+        #
+        #   Process options
+        #
+        #----------------------------------------------------------------------#
         self.build_type = self.check_env(self.build_type, compose("build_type"))
         self.use_mpi = self.check_env(self.use_mpi, compose("use_mpi"))
         self.timemory_exceptions = self.check_env(self.timemory_exceptions, "TIMEMORY_EXCEPTIONS")
@@ -156,7 +203,15 @@ class CMakeBuild(build_ext, Command):
 
         cmake_args += [ '-DCMAKE_BUILD_TYPE={}'.format(self.build_type) ]
         cmake_args += [ '-DTIMEMORY_USE_MPI={}'.format(str.upper(self.use_mpi)) ]
-        cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK={}'.format(str.upper(self.dynamic_link)) ]
+
+        # Windows has some shared library issues
+        if str.upper(self.dynamic_link) == 'PLATFORM-DEFAULT':
+            if platform.system() == "Windows":
+                cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK=OFF' ]
+            else:
+                cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK=ON' ]
+        else:
+            cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK={}'.format(str.upper(self.dynamic_link)) ]
 
         if platform.system() != "Windows":
             cmake_args += [ '-DTIMEMORY_BUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
@@ -167,11 +222,6 @@ class CMakeBuild(build_ext, Command):
 
         if _cxxstd == 11 or _cxxstd == 14 or _cxxstd == 17:
             cmake_args += [ '-DCMAKE_CXX_STANDARD={}'.format(self.cxx_standard) ]
-
-        def valid_string(_str):
-            if len(_str) > 0 and _str != '""' and _str != "''":
-                return True
-            return False
 
         if valid_string(self.mpicc):
             cmake_args += [ '-DMPI_C_COMPILER={}'.format(self.mpicc) ]
@@ -187,21 +237,6 @@ class CMakeBuild(build_ext, Command):
 
         if valid_string(self.cmake_include_path):
             cmake_args += [ '-DCMAKE_INCLUDE_PATH={}'.format(self.cmake_include_path) ]
-
-        devel_install_path = None
-        if valid_string(self.devel_install) and str.upper(self.devel_install) != 'OFF':
-            if str.upper(self.devel_install) == 'ON':
-                self.devel_install = sys.prefix
-            devel_install_path = self.devel_install
-            if not os.path.isabs(devel_install_path):
-                devel_install_path = os.path.realpath(devel_install_path)
-            cmake_args += [ '-DTIMEMORY_DEVELOPER_INSTALL=ON' ]
-            cmake_args += [ '-DTIMEMORY_INSTALL_PREFIX={}'.format(devel_install_path) ]
-            cmake_args += [ '-DPYBIND11_INSTALL={}'.format(str.upper(self.pybind11_install)) ]
-
-        if platform.system() == "Windows":
-            devel_install_path = None
-            self.devel_install = ''
 
         cmake_args += [ '-DTIMEMORY_EXCEPTIONS={}'.format(str.upper(self.timemory_exceptions)) ]
 
@@ -272,7 +307,8 @@ class CMakeTest(TestCommand):
     ctest_version = '2.7.12'
     ctest_min_version = '2.8.12'
 
-    #
+
+    #--------------------------------------------------------------------------#
     def ctest_version_error(self):
         """
         Raise exception about CMake
@@ -286,6 +322,7 @@ class CMakeTest(TestCommand):
         raise RuntimeError(mt)
 
 
+    #--------------------------------------------------------------------------#
     def init_ctest(self):
         """
         Ensure ctest is in PATH
@@ -310,6 +347,7 @@ class CMakeTest(TestCommand):
                 self.ctest_version_error()
 
 
+    #--------------------------------------------------------------------------#
     def distutils_dir_name(self, dname):
         """Returns the name of a distutils build directory"""
         dir_name = "{dirname}.{platform}-{version[0]}.{version[1]}"
@@ -317,6 +355,8 @@ class CMakeTest(TestCommand):
                                platform=sysconfig.get_platform(),
                                version=sys.version_info)
 
+
+    #--------------------------------------------------------------------------#
     def run(self):
         self.init_ctest()
         print("\nRunning CMake/CTest tests...\n")
@@ -327,8 +367,12 @@ class CMakeTest(TestCommand):
 
 # ---------------------------------------------------------------------------- #
 class CMakeInstallEggInfo(install_egg_info):
+
     dirs = {}
     files = []
+
+
+    #--------------------------------------------------------------------------#
     def run(self):
         install_egg_info.run(self)
 
@@ -352,11 +396,6 @@ class CMakeInstallEggInfo(install_egg_info):
                     f = os.path.join(self.install_dir, b)
                     print ('Adding "{}"...'.format(f))
                     self.outputs.append(f)
-                
-        #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyc'))
-        #self.outputs.append(os.path.join(self.install_dir, 'timemory/timemory.pyo'))
-        #self.outputs.append(os.path.join(self.install_dir, 'timemory/__init__.pyc'))
-        #self.outputs.append(os.path.join(self.install_dir, 'timemory/__init__.pyo'))
         
         # old files not tracked
         for i in ['plotting/__init__.py',
