@@ -103,7 +103,7 @@ build_script:
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_BUILD_TESTING=ON
     -DTIMEMORY_USE_MPI=OFF
-    -DTIMEMORY_DYNAMIC_LINK=ON
+    -DTIMEMORY_DYNAMIC_LINK=OFF
     -DTIMEMORY_BUILD_EXAMPLES=ON
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
