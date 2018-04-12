@@ -1,10 +1,12 @@
 # direct includes
 include CMakeLists.txt
+include .version.txt
 include LICENSE
 include .LICENSE
 include README.md
 include CHANGES.rst
 include timemory/timemory.py
+include cmake/Scripts/generator2file.cmake
 # recursive includes
 recursive-include cmake *
 recursive-include examples *
@@ -18,4 +20,4 @@ global-exclude *__pycache__*
 # recursive excludes
 recursive-exclude pybind11/docs/.build *
 recursive-exclude examples/ex3 *
-recursive-exclude cmake/Scripts *
+recursive-exclude cmake/Scripts *.sh

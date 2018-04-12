@@ -8,6 +8,7 @@ cmake_minimum_required(VERSION 2.8.12)
 
 file(READ "${CMAKE_CURRENT_LIST_DIR}/.version.txt" VERSION_STRING LIMIT_COUNT 1)
 string(REGEX REPLACE "(\n|\r)" "" VERSION_STRING "${VERSION_STRING}")
+string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${VERSION_STRING}")
 set(TIMEMORY_VERSION "${VERSION_STRING}" CACHE STRING "Version of TiMemory project" FORCE)
 message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 

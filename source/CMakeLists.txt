@@ -101,15 +101,15 @@ endmacro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
 # this includes compile definitions for headers
 add_subdirectory(timemory)
 
-if(NOT XCODE AND NOT WIN32)
+if(NOT XCODE)
     message(STATUS "Building ${PROJECT_NAME} with object library...")
     # build an object library
     add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
     set(LIBRARY_SOURCES $<TARGET_OBJECTS:${LIBNAME}-object>)
-else(NOT XCODE AND NOT WIN32)
+else(NOT XCODE)
     # directly compile sources
     set(LIBRARY_SOURCES ${sources} ${headers})
-endif(NOT XCODE AND NOT WIN32)
+endif(NOT XCODE)
 
 _build_library(shared ${LIBNAME} ${LIBRARY_SOURCES})
 _build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
