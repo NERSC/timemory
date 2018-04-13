@@ -35,6 +35,8 @@ include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 # - headers are included so they will show up in IDEs
 file(GLOB sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 file(GLOB headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+# this is only needed for windows
+file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 
 # libraries to install
 set(INSTALL_LIBRARIES )
@@ -53,19 +55,13 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
         if("${LIB_TYPE}" STREQUAL "SHARED")
             set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
                 OUTPUT_NAME lib${OUTPUT_NAME}
-                COMPILE_DEFINITIONS _TIMEMORY_DLL
-                #COMPILE_FLAGS "/MP /bigobj /Tp"
+				COMPILE_DEFINITIONS _TIMEMORY_DLL
                 LANGUAGE CXX
-                # C++ shared library fallback installation
-                #LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
-                #RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
-                #ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
                 POSITION_INDEPENDENT_CODE ON)
         else("${LIB_TYPE}" STREQUAL "SHARED")
             set_target_properties(${OUTPUT_NAME}-${TYPE} PROPERTIES
                 OUTPUT_NAME lib${OUTPUT_NAME}-archive
-                COMPILE_DEFINITIONS _TIMEMORY_STATIC
-                #COMPILE_FLAGS "/MP /bigobj /Tp"
+				COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE
                 LANGUAGE CXX
                 POSITION_INDEPENDENT_CODE ON)
         endif("${LIB_TYPE}" STREQUAL "SHARED")
@@ -101,20 +97,43 @@ endmacro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
 # this includes compile definitions for headers
 add_subdirectory(timemory)
 
-if(NOT XCODE AND NOT WIN32)
-    message(STATUS "Building ${PROJECT_NAME} with object library...")
-    # build an object library
-    add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
-    set(LIBRARY_SOURCES $<TARGET_OBJECTS:${LIBNAME}-object>)
-else(NOT XCODE AND NOT WIN32)
-    # directly compile sources
-    set(LIBRARY_SOURCES ${sources} ${headers})
-endif(NOT XCODE AND NOT WIN32)
+if(WIN32)
+	# directly compile sources
+	set(LIBRARY_SOURCES ${sources} ${headers})
 
-if(TIMEMORY_DYNAMIC_LINK OR NOT WIN32)
-    _build_library(shared ${LIBNAME} ${LIBRARY_SOURCES})
-endif(TIMEMORY_DYNAMIC_LINK OR NOT WIN32)
-_build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
+	# Windows DLLs restrict the code from compiling both
+	if(TIMEMORY_DYNAMIC_LINK)
+
+		set_source_files_properties(${LIBRARY_SOURCES} ${pysources} PROPERTIES
+			COMPILE_DEFINITIONS _TIMEMORY_DLL)
+
+		_build_library(shared ${LIBNAME} ${LIBRARY_SOURCES})
+
+	else(TIMEMORY_DYNAMIC_LINK)
+
+		set_source_files_properties(${LIBRARY_SOURCES} ${pysources} PROPERTIES
+			COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
+
+		_build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
+
+	endif(TIMEMORY_DYNAMIC_LINK)
+
+else(WIN32)
+
+	if(XCODE)
+		# directly compile sources
+		set(LIBRARY_SOURCES ${sources} ${headers})
+	else(XCODE)
+		# build an object library
+		add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
+		set(LIBRARY_SOURCES $<TARGET_OBJECTS:${LIBNAME}-object>)
+	endif(XCODE)
+
+	_build_library(shared ${LIBNAME} ${LIBRARY_SOURCES})
+	_build_library(static ${LIBNAME} ${LIBRARY_SOURCES})
+
+endif(WIN32)
+
 
 #------------------------------------------------------------------------------#
 # Install the targets and export

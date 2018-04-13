@@ -3,24 +3,114 @@ include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
 @PACKAGE_INIT@
 
+#------------------------------------------------------------------------------#
+#   Settings
+#------------------------------------------------------------------------------#
+set(@PROJECT_NAME@_C_FLAGS "@CMAKE_C_FLAGS@")
+set(@PROJECT_NAME@_CXX_FLAGS "@CMAKE_CXX_FLAGS@ -std=c++${CMAKE_CXX_STANDARD}")
+set(TIMEMORY_USE_MPI @MPI_FOUND@)
+set(TIMEMORY_EXCEPTIONS @TIMEMORY_EXCEPTIONS@)
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_USE_PYTHON_BINDING@)
-set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
-set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
-if(TIMEMORY_PYTHON_BINDINGS)
-    set_and_check(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
-endif(TIMEMORY_PYTHON_BINDINGS)
+set(TIMEMORY_DYNAMIC_LINK @TIMEMORY_DYNAMIC_LINK@)
 
-foreach(_TYPE LIB INCLUDE PYTHON)
-    set(@PROJECT_NAME@_${_TYPE}_DIRS ${@PROJECT_NAME@_${_TYPE}_DIR})
-endforeach(_TYPE LIB INCLUDE PYTHON)
+#------------------------------------------------------------------------------#
+#   Determine install tree or build tree
+#------------------------------------------------------------------------------#
+if("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
+    # in the build tree
+    set(_TIMEMORY_BUILD_TREE ON)
+else("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
+    # in the install tree
+    set(_TIMEMORY_INSTALL_TREE ON)
+endif("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
 
-set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS @EXTERNAL_INCLUDE_DIRS@)
+if(_TIMEMORY_INSTALL_TREE)
+
+    set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
+    set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
+    if(TIMEMORY_PYTHON_BINDINGS)
+        set_and_check(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
+    endif(TIMEMORY_PYTHON_BINDINGS)
+
+    foreach(_TYPE LIB INCLUDE PYTHON)
+        set(@PROJECT_NAME@_${_TYPE}_DIRS ${@PROJECT_NAME@_${_TYPE}_DIR})
+    endforeach(_TYPE LIB INCLUDE PYTHON)
+
+    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
+    check_required_components(@PROJECT_NAME@)
+
+    #--------------------------------------------------------------------------#
+    #   try to get imported location
+    #--------------------------------------------------------------------------#
+    foreach(_LIBTYPE SHARED STATIC)
+
+        string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
+        if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+            set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
+        else("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+            set(IMPORTED_LOCATION_BUILD )
+        endif("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+
+        foreach(_LOC
+                IMPORTED_LOCATION
+                ${IMPORTED_LOCATION_BUILD}
+                IMPORTED_LOCATION_RELEASE
+                IMPORTED_LOCATION_RELWITHDEBINFO
+                IMPORTED_LOCATION_DEBUG
+                IMPORTED_LOCATION_MINSIZEREL)
+            if(NOT _${_LIBTYPE}_LOCATION)
+                get_target_property(_SHARED_LOCATION @LIBNAME@-shared ${_LOC})
+            endif(NOT _${_LIBTYPE}_LOCATION)
+        endforeach(_LOC
+                IMPORTED_LOCATION
+                ${IMPORTED_LOCATION_BUILD}
+                IMPORTED_LOCATION_RELEASE
+                IMPORTED_LOCATION_RELWITHDEBINFO
+                IMPORTED_LOCATION_DEBUG
+                IMPORTED_LOCATION_MINSIZEREL)
+
+        STRING(TOLOWER "${_LIBTYPE}" _LIBTAG)
+        if(_${_LIBTYPE}_LOCATION)
+            set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY ${_${_LIBTYPE}_LOCATION}
+                CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
+        else(_${_LIBTYPE}_LOCATION)
+            set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY @LIBNAME@-${_LIBTAG}
+                CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
+        endif(_${_LIBTYPE}_LOCATION)
+
+        unset(_${_LIBTYPE}_LOCATION)
+
+    endforeach(_LIBTYPE SHARED STATIC)
+
+else(_TIMEMORY_INSTALL_TREE)
+
+    set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
+        "@PROJECT_SOURCE_DIR@/source/cereal/include")
+    set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
+    if(TIMEMORY_PYTHON_BINDINGS)
+        set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
+    endif(TIMEMORY_PYTHON_BINDINGS)
+    if(TIMEMORY_DYNAMIC_LINK)
+        set_property(TARGET @LIBNAME@-shared
+            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        set(PROJECT_DEPENDS @LIBNAME@-shared)
+    else()
+        set_property(TARGET @LIBNAME@-static PROPERTY
+            IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        set(PROJECT_DEPENDS @LIBNAME@-static)
+    endif()
+
+endif(_TIMEMORY_INSTALL_TREE)
+
+set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
+set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS "@EXTERNAL_INCLUDE_DIRS@")
 foreach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
     list(APPEND @PROJECT_NAME@_INCLUDE_DIRS SYSTEM ${_DIR})
 endforeach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
 
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
-
+#------------------------------------------------------------------------------#
+#   CXX standard
+#------------------------------------------------------------------------------#
 if(DEFINED CMAKE_CXX_STANDARD)
     if("${CMAKE_CXX_STANDARD}" VERSION_LESS 11 OR
         "${CMAKE_CXX_STANDARD}" VERSION_GREATER 17)
@@ -33,72 +123,37 @@ else(DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
 endif(DEFINED CMAKE_CXX_STANDARD)
 
-check_required_components(@PROJECT_NAME@)
+#------------------------------------------------------------------------------#
+#   Linking type
+#------------------------------------------------------------------------------#
+if(TIMEMORY_DYNAMIC_LINK)
+    set(TIMEMORY_LINK_TYPE shared)
+else(TIMEMORY_DYNAMIC_LINK)
+    set(TIMEMORY_LINK_TYPE static)
+    add_definitions(-D_TIMEMORY_ARCHIVE)
+endif(TIMEMORY_DYNAMIC_LINK)
 
-get_target_property(_STATIC_LOCATION @LIBNAME@-static IMPORTED_LOCATION_RELEASE)
+#------------------------------------------------------------------------------#
+#   Alias to TiMemory link target
+#------------------------------------------------------------------------------#
+add_library(@LIBNAME@-library ALIAS @LIBNAME@-${TIMEMORY_LINK_TYPE})
+#message(STATUS "TiMemory library is alias to @LIBNAME@-${TIMEMORY_LINK_TYPE}")
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-library)
 
-# try to get imported location
-foreach(_LIBTYPE SHARED STATIC)
-
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
-    if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-        set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-    else("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-        set(IMPORTED_LOCATION_BUILD )
-    endif("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-
-    foreach(_LOC
-            IMPORTED_LOCATION
-            ${IMPORTED_LOCATION_BUILD}
-            IMPORTED_LOCATION_RELEASE
-            IMPORTED_LOCATION_RELWITHDEBINFO
-            IMPORTED_LOCATION_DEBUG
-            IMPORTED_LOCATION_MINSIZEREL)
-        if(NOT _${_LIBTYPE}_LOCATION)
-            get_target_property(_SHARED_LOCATION @LIBNAME@-shared ${_LOC})
-        endif(NOT _${_LIBTYPE}_LOCATION)
-    endforeach(_LOC
-            IMPORTED_LOCATION
-            ${IMPORTED_LOCATION_BUILD}
-            IMPORTED_LOCATION_RELEASE
-            IMPORTED_LOCATION_RELWITHDEBINFO
-            IMPORTED_LOCATION_DEBUG
-            IMPORTED_LOCATION_MINSIZEREL)
-
-    STRING(TOLOWER "${_LIBTYPE}" _LIBTAG)
-    if(_${_LIBTYPE}_LOCATION)
-        set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY ${_${_LIBTYPE}_LOCATION}
-            CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
-    else(_${_LIBTYPE}_LOCATION)
-        set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY @LIBNAME@-${_LIBTAG}
-            CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
-    endif(_${_LIBTYPE}_LOCATION)
-
-    unset(_${_LIBTYPE}_LOCATION)
-
-endforeach(_LIBTYPE SHARED STATIC)
-
-if(BUILD_SHARED_LIBRARIES)
-    set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-shared)
-elseif(BUILD_STATIC_LIBRARIES)
-    set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-static)
-else()
-    set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-shared)
-endif(BUILD_SHARED_LIBRARIES)
-
-add_definitions(-DNAME_TIM=@TIMEMORY_NAMESPACE@)
-if(@TIMEMORY_EXCEPTIONS@)
+#------------------------------------------------------------------------------#
+#   Definitions
+#------------------------------------------------------------------------------#
+if(TIMEMORY_EXCEPTIONS)
     add_definitions(-DTIMEMORY_EXCEPTIONS)
-endif(@TIMEMORY_EXCEPTIONS@)
-
-set(@PROJECT_NAME@_C_FLAGS "@CMAKE_C_FLAGS@")
-set(@PROJECT_NAME@_CXX_FLAGS "@CMAKE_CXX_FLAGS@ -std=c++${CMAKE_CXX_STANDARD}")
-set(TIMEMORY_USE_MPI @MPI_FOUND@)
+endif(TIMEMORY_EXCEPTIONS)
 
 if(TIMEMORY_USE_MPI)
     add_definitions(-DTIMEMORY_USE_MPI)
 endif(TIMEMORY_USE_MPI)
 
+#------------------------------------------------------------------------------#
+#   find_package variables
+#------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set UnitTest++_FOUND to TRUE
 # if all listed variables are TRUE

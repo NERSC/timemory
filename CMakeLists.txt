@@ -57,11 +57,18 @@ include(Packages)
 ################################################################################
 
 add_subdirectory(source)
-add_subdirectory(examples)
 
 ################################################################################
 #   Package setup
 ################################################################################
 
-include(Testing)
 include(PackageConfigure)
+
+################################################################################
+#   Examples and Testing
+################################################################################
+
+set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING 
+    "TiMemory install directory" FORCE)
+add_subdirectory(examples)
+include(Testing)

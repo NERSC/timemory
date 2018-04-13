@@ -16,45 +16,26 @@ project(TiMemory-Example2-MPI)
 
 set(EXE_NAME mpi_test_timing)
 
-if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+find_package(MPI REQUIRED)
+find_package(TiMemory REQUIRED)
+foreach(_DIR ${TiMemory_INCLUDE_DIRS})
+    include_directories(SYSTEM ${_DIR})
+endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
 
-    include_directories(${CMAKE_SOURCE_DIR}/source
-        ${CMAKE_SOURCE_DIR}/source/cereal/include)
-    if(TIMEMORY_DYNAMIC_LINK)
-        set_property(TARGET timemory-shared
-            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        set(TiMemory_LIBRARIES timemory-shared ${EXTERNAL_LIBRARIES})
-        set(PROJECT_DEPENDS timemory-shared)
-    else()
-        set_property(TARGET timemory-static PROPERTY
-            IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        set(TiMemory_LIBRARIES timemory-static ${EXTERNAL_LIBRARIES})
-        set(PROJECT_DEPENDS timemory-static)
-    endif()
+# Add the MPI-specific compiler and linker flags
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
+set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
+include_directories(${MPI_INCLUDE_PATH}
+    ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
 
-else()
+foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+    set(_TYPE MPI_${_TYPE})
+    if(${_TYPE})
+        list(APPEND MPI_LIBRARIES ${${_TYPE}})
+    endif(${_TYPE})
+endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
 
-    find_package(MPI REQUIRED)
-    find_package(TiMemory REQUIRED)
-    foreach(_DIR ${TiMemory_INCLUDE_DIRS})
-        include_directories(SYSTEM ${_DIR})
-    endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
-
-    # Add the MPI-specific compiler and linker flags
-    set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-    include_directories(${MPI_INCLUDE_PATH}
-        ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
-
-    foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-        set(_TYPE MPI_${_TYPE})
-        if(${_TYPE})
-            list(APPEND MPI_LIBRARIES ${${_TYPE}})
-        endif(${_TYPE})
-    endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-
-    list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
-endif()
+list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
 
 if(NOT DEFINED CMAKE_CXX_STANDARD)
     set(CMAKE_CXX_STANDARD 11)

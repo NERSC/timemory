@@ -9,10 +9,10 @@ if(TIMEMORY_DYNAMIC_LINK)
     set(LINK_TYPE shared)
 else(TIMEMORY_DYNAMIC_LINK)
     set(LINK_TYPE static)
-	if(WIN32)
-		set_source_files_properties(${LIBNAME}.cpp PROPERTIES
-			COMPILE_DEFINITIONS _TIMEMORY_STATIC)
-	endif(WIN32)
+    if(WIN32)
+        set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
+            PROPERTIES COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
+    endif(WIN32)
 endif(TIMEMORY_DYNAMIC_LINK)
 
 #----------------------------------------------------------------------------

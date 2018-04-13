@@ -175,7 +175,7 @@
 //----------------------------------------------------------------------------//
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if defined(_WINDOWS) && !defined(_TIMEMORY_STATIC)
+#if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
 #   define TIM_DLL_EXPORT __declspec(dllexport)
 #   define TIM_DLL_IMPORT __declspec(dllimport)
 #
