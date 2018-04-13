@@ -57,8 +57,8 @@ macro(_BUILD_LIBRARY TYPE OUTPUT_NAME)
                 #COMPILE_FLAGS "/MP /bigobj /Tp"
                 LANGUAGE CXX
                 # C++ shared library fallback installation
-                LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
-                RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                #LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
+                #RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
                 #ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory/lib
                 POSITION_INDEPENDENT_CODE ON)
         else("${LIB_TYPE}" STREQUAL "SHARED")
