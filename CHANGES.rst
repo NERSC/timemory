@@ -1,6 +1,14 @@
 TiMemory
 ========
 
+Release: TiMemory 1.3.1
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Thu Apr 12 02:02:20 2018 -0700
+
+    - Fixes to Windows
+
 Release: TiMemory 1.3.0
 ~~~~~~~~~~~~~~~~~~~~~~~
 
