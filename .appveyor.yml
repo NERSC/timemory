@@ -81,16 +81,16 @@ install:
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
       }
-      conda update -y -q -n base conda
-      conda install -y -q pip
-      python -m pip install -U pip
+      conda update -y -q -n base conda & exit 0
+      conda install -y -q pip & exit 0
+      python -m pip install -U pip & exit 0
     }
     # pip installation
-    pip install -U setuptools disttools
-    pip install -U matplotlib numpy pillow
-    $env:TIMEMORY_DEBUG=4
-    mkdir C:\Users\appveyor\CTestTemp
-    $env:TEMP = C:\Users\appveyor\CTestTemp
+    pip install -U setuptools disttools & exit 0
+    pip install -U matplotlib numpy pillow & exit 0
+    $env:TIMEMORY_DEBUG = 4
+    mkdir "C:\Users\appveyor\CTestTemp"
+    $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
 build_script:
 - mkdir build-timemory
