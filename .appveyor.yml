@@ -81,13 +81,13 @@ install:
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
       }
-      conda update -y -q -n base conda & exit 0
-      conda install -y -q pip & exit 0
-      python -m pip install -U pip & exit 0
+      conda update -y -q -n base conda
+      conda install -y -q pip
+      python -m pip install -U pip
     }
     # pip installation
-    pip install -U setuptools disttools & exit 0
-    pip install -U matplotlib numpy pillow & exit 0
+    python -m pip install -U setuptools disttools
+    python -m pip install -U matplotlib numpy pillow
     $env:TIMEMORY_DEBUG = 4
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
@@ -107,12 +107,14 @@ build_script:
     -DTIMEMORY_DYNAMIC_LINK=OFF
     -DTIMEMORY_BUILD_EXAMPLES=ON
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+#
+#- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 #
 #- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger% & exit 0
 #
+#- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
+#
 - ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure & exit 0
-- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
 - cd ..
 - pip install -v -v -v --no-cache-dir .
 - cd ..
