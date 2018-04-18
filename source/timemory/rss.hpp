@@ -24,6 +24,7 @@
 //
 
 /** \file rss.hpp
+ * \headerfile rss.hpp "timemory/rss.hpp"
  * Resident set size handler
  *
  */

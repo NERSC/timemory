@@ -22,7 +22,8 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
     FORCE)
 
-include_directories(${CMAKE_CURRENT_LIST_DIR}/cereal/include)
+include_directories(SYSTEM ${CMAKE_CURRENT_LIST_DIR}/cereal/include)
+file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 
 ################################################################################
 #
@@ -99,7 +100,7 @@ add_subdirectory(timemory)
 
 if(WIN32)
 	# directly compile sources
-	set(LIBRARY_SOURCES ${sources} ${headers})
+    set(LIBRARY_SOURCES ${sources} ${headers} ${cereal_headers})
 
 	# Windows DLLs restrict the code from compiling both
 	if(TIMEMORY_DYNAMIC_LINK)
@@ -122,10 +123,10 @@ else(WIN32)
 
 	if(XCODE)
 		# directly compile sources
-		set(LIBRARY_SOURCES ${sources} ${headers})
+        set(LIBRARY_SOURCES ${sources} ${headers} ${cereal_headers})
 	else(XCODE)
 		# build an object library
-		add_library(${LIBNAME}-object OBJECT ${sources} ${headers})
+        add_library(${LIBNAME}-object OBJECT ${sources} ${headers} ${cereal_headers})
 		set(LIBRARY_SOURCES $<TARGET_OBJECTS:${LIBNAME}-object>)
 	endif(XCODE)
 

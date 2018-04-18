@@ -24,6 +24,7 @@
 //
 
 /** \file manager.hpp
+ * \headerfile manager.hpp "timemory/manager.hpp"
  * Static singleton handler of auto-timers
  *
  */

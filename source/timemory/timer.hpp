@@ -24,6 +24,7 @@
 //
 
 /** \file timer.hpp
+ * \headerfile timer.hpp "timemory/timer.hpp"
  * Primary timer class
  * Inherits from base_timer
  */

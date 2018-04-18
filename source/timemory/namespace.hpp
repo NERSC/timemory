@@ -21,13 +21,15 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
+//
+
+/** \file namespace.hpp
+ * \headerfile namespace.hpp "timemory/namespace.hpp"
+ * Replaced by "macros.hpp" after removal of NAME_TIM customizable namespace
+ */
 
 #ifndef namespace_hpp_
 #define namespace_hpp_
-
-/** \file namespace.hpp
- * Replaced by "macros.hpp" after removal of NAME_TIM customizable namespace
- */
 
 //----------------------------------------------------------------------------//
 

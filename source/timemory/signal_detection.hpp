@@ -23,7 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file signal_detection.hpp
+/** \file timemory/signal_detection.hpp
+ * \headerfile signal_detection.hpp "timemory/signal_detection.hpp"
  * Handles signals emitted by application
  *
  */

@@ -24,6 +24,7 @@
 //
 
 /** \file base_timer.hpp
+ * \headerfile base_timer.hpp "timemory/base_timer.hpp"
  * Base class for the timer class
  * Not directly used
  */

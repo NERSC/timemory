@@ -5,6 +5,8 @@
 #
 ################################################################################
 
+file(GLOB_RECURSE pybind_headers ${PROJECT_SOURCE_DIR}/pybind11/include/*.h)
+
 if(TIMEMORY_DYNAMIC_LINK)
     set(LINK_TYPE shared)
 else(TIMEMORY_DYNAMIC_LINK)
@@ -18,7 +20,7 @@ endif(TIMEMORY_DYNAMIC_LINK)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp)
+pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp ${pybind_headers})
 # link to static library so no need for RPATH resolution
 target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
 add_dependencies(${LIBNAME} ${LIBNAME}-${LINK_TYPE})

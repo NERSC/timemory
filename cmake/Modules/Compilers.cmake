@@ -307,5 +307,9 @@ foreach(LANG C CXX)
             SET_COMPILER_VAR(${TYPE} OFF)
         endif()
     endforeach()
-endforeach()
 
+    if(APPLE)
+        set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
+    endif(APPLE)
+
+endforeach()

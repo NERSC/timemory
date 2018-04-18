@@ -24,6 +24,7 @@
 //
 
 /** \file utility.hpp
+ * \headerfile utility.hpp "timemory/utility.hpp"
  * General utility functions
  *
  */

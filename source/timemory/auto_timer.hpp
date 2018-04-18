@@ -24,8 +24,13 @@
 //
 
 /** \file auto_timer.hpp
+ * \headerfile auto_timer.hpp "timemory/auto_timer.hpp"
  * Automatic timers
- * Just use \param TIMEMORY_AUTO_TIMER()
+ * Usage with macros (recommended):
+ *    \param TIMEMORY_AUTO_TIMER()
+ *    \param TIMEMORY_BASIC_AUTO_TIMER()
+ *    \param auto t = TIMEMORY_AUTO_TIMER_OBJ()
+ *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_OBJ()
  */
 
 #ifndef auto_timer_hpp_

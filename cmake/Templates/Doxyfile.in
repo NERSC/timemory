@@ -9,7 +9,7 @@ PROJECT_NUMBER         = @PROJECT_VERSION@
 PROJECT_BRIEF          = "C++ and Python Timing and Memory Tracking"
 PROJECT_LOGO           =
 OUTPUT_DIRECTORY       = doc
-CREATE_SUBDIRS         = YES
+CREATE_SUBDIRS         = NO
 ALLOW_UNICODE_NAMES    = YES
 OUTPUT_LANGUAGE        = English
 BRIEF_MEMBER_DESC      = YES
@@ -22,10 +22,10 @@ STRIP_FROM_PATH        = @PROJECT_SOURCE_DIR@ \
                          @PROJECT_SOURCE_DIR@/source
 STRIP_FROM_INC_PATH    = @PROJECT_SOURCE_DIR@ \
                          @PROJECT_SOURCE_DIR@/source
-SHORT_NAMES            = NO
+SHORT_NAMES            = YES
 JAVADOC_AUTOBRIEF      = NO
 QT_AUTOBRIEF           = NO
-MULTILINE_CPP_IS_BRIEF = YES
+MULTILINE_CPP_IS_BRIEF = NO
 INHERIT_DOCS           = YES
 SEPARATE_MEMBER_PAGES  = NO
 TAB_SIZE               = 4
@@ -47,11 +47,11 @@ BUILTIN_STL_SUPPORT    = YES
 CPP_CLI_SUPPORT        = NO
 SIP_SUPPORT            = NO
 IDL_PROPERTY_SUPPORT   = YES
-DISTRIBUTE_GROUP_DOC   = YES
+DISTRIBUTE_GROUP_DOC   = NO
 GROUP_NESTED_COMPOUNDS = NO
-SUBGROUPING            = YES
-INLINE_GROUPED_CLASSES = YES
-INLINE_SIMPLE_STRUCTS  = NO
+SUBGROUPING            = NO
+INLINE_GROUPED_CLASSES = NO
+INLINE_SIMPLE_STRUCTS  = YES
 TYPEDEF_HIDES_STRUCT   = NO
 LOOKUP_CACHE_SIZE      = 5
 #---------------------------------------------------------------------------
@@ -73,8 +73,8 @@ CASE_SENSE_NAMES       = NO
 HIDE_SCOPE_NAMES       = NO
 HIDE_COMPOUND_REFERENCE= NO
 SHOW_INCLUDE_FILES     = YES
-SHOW_GROUPED_MEMB_INC  = YES
-FORCE_LOCAL_INCLUDES   = NO
+SHOW_GROUPED_MEMB_INC  = NO
+FORCE_LOCAL_INCLUDES   = YES
 INLINE_INFO            = YES
 SORT_MEMBER_DOCS       = YES
 SORT_BRIEF_DOCS        = NO
@@ -123,14 +123,14 @@ FILE_PATTERNS          = *.h \
                          *.tcc \
                          *.py
 RECURSIVE              = YES
-EXCLUDE                = @EXCLUDE_LIST@
+EXCLUDE                = @EXCLUDE_LIST@ serializer.hpp
 EXCLUDE_SYMLINKS       = YES
 EXCLUDE_PATTERNS       = */.svn/* \
                          *UnitTest* \
                          *gtest* \
                          */.git/*
 EXCLUDE_SYMBOLS        =
-EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples
+EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples @PROJECT_SOURCE_DIR@/timemory
 EXAMPLE_PATTERNS       = *.hh \
                          *.hpp \
                          *.cc \
@@ -149,7 +149,7 @@ USE_MDFILE_AS_MAINPAGE = @PROJECT_SOURCE_DIR@/README.md
 #---------------------------------------------------------------------------
 SOURCE_BROWSER         = YES
 INLINE_SOURCES         = YES
-STRIP_CODE_COMMENTS    = YES
+STRIP_CODE_COMMENTS    = NO
 REFERENCED_BY_RELATION = YES
 REFERENCES_RELATION    = YES
 REFERENCES_LINK_SOURCE = YES
@@ -160,7 +160,7 @@ VERBATIM_HEADERS       = YES
 # Configuration options related to the alphabetical class index
 #---------------------------------------------------------------------------
 ALPHABETICAL_INDEX     = YES
-COLS_IN_ALPHA_INDEX    = 20
+COLS_IN_ALPHA_INDEX    = 5
 IGNORE_PREFIX          =
 #---------------------------------------------------------------------------
 # Configuration options related to the HTML output
@@ -179,12 +179,12 @@ HTML_COLORSTYLE_SAT    = 100
 HTML_COLORSTYLE_GAMMA  = 80
 HTML_TIMESTAMP         = YES
 HTML_DYNAMIC_SECTIONS  = YES
-HTML_INDEX_NUM_ENTRIES = 100
+HTML_INDEX_NUM_ENTRIES = 1000
 GENERATE_DOCSET        = @GENERATE_DOCSET_IF_XCODE@
 DOCSET_FEEDNAME        = "Doxygen generated docs"
 DOCSET_BUNDLE_ID       = org.doxygen.@PROJECT_NAME@
-DOCSET_PUBLISHER_ID    = org.doxygen.Publisher
-DOCSET_PUBLISHER_NAME  = Publisher
+DOCSET_PUBLISHER_ID    = org.doxygen.jrmadsen
+DOCSET_PUBLISHER_NAME  = "Jonathan Madsen"
 GENERATE_HTMLHELP      = NO
 CHM_FILE               =
 HHC_LOCATION           =
@@ -201,7 +201,7 @@ QHP_CUST_FILTER_ATTRS  =
 QHP_SECT_FILTER_ATTRS  =
 QHG_LOCATION           =
 GENERATE_ECLIPSEHELP   = NO
-ECLIPSE_DOC_ID         = org.doxygen.Project
+ECLIPSE_DOC_ID         = org.doxygen.TiMemory
 DISABLE_INDEX          = NO
 GENERATE_TREEVIEW      = YES
 ENUM_VALUES_PER_LINE   = 1

@@ -24,6 +24,7 @@
 //
 
 /** \file base_clock.hpp
+ * \headerfile base_clock.hpp "timemory/base_clock.hpp"
  * Base class for timing clocks
  * Not directly used
  */
@@ -212,9 +213,9 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar & cereal::make_nvp("user", std::get<0>(data))
-           & cereal::make_nvp("sys",  std::get<1>(data))
-           & cereal::make_nvp("wall", std::get<2>(data));
+        ar(cereal::make_nvp("user", std::get<0>(data)),
+           cereal::make_nvp("sys",  std::get<1>(data)),
+           cereal::make_nvp("wall", std::get<2>(data)));
     }
 
 };

@@ -21,10 +21,15 @@
 //  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
+//
 
-/** \file namespace.hpp
- * Defines tim if not defined
- *
+/** \file macros.hpp
+ * \headerfile macros.hpp "timemory/macros.hpp"
+ * Useful macros for:
+ *   - Operating system
+ *   - Language
+ *   - Compiler
+ *   - Windows-specific macros
  */
 
 #ifndef macros_hpp_
