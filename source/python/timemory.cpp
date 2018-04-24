@@ -61,15 +61,18 @@ using namespace py::literals;
 #include "timemory/signal_detection.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/mpi.hpp"
+#include "timemory/formatters.hpp"
 
-typedef tim::manager                manager_t;
-typedef tim::timer                         tim_timer_t;
-typedef tim::auto_timer                    auto_timer_t;
-typedef tim::rss::usage                    rss_usage_t;
-typedef tim::rss::usage                    rss_usage_t;
-typedef tim::sys_signal                    sys_signal_t;
-typedef tim::signal_settings               signal_settings_t;
+typedef tim::manager                            manager_t;
+typedef tim::timer                              tim_timer_t;
+typedef tim::auto_timer                         auto_timer_t;
+typedef tim::rss::usage                         rss_usage_t;
+typedef tim::sys_signal                         sys_signal_t;
+typedef tim::signal_settings                    signal_settings_t;
 typedef signal_settings_t::signal_set_t         signal_set_t;
+typedef tim::format::timer                      timer_format_t;
+typedef tim::format::rss                        rss_format_t;
+typedef tim::format::base_formatter::unit_type  unit_type;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
@@ -209,14 +212,14 @@ PYBIND11_MODULE(timemory, tim)
     auto set_timer_default_format = [=] (std::string format)
     {
         // update C++
-        tim_timer_t::set_default_format(format);
+        tim::format::timer::set_default_format(format);
         return format;
     };
     //------------------------------------------------------------------------//
     auto get_timer_default_format = [=] ()
     {
         // in case changed in python, update C++
-        return tim_timer_t::get_default_format();
+        return tim::format::timer::get_default_format();
     };
     //------------------------------------------------------------------------//
     auto timer_init = [=] (std::string begin = "", std::string format = "")
@@ -231,7 +234,7 @@ PYBIND11_MODULE(timemory, tim)
         if(format.empty())
             format = get_timer_default_format();
 
-        return new tim_timer_t(begin, "", format, false, 3);
+        return new tim_timer_t(begin, format);
     };
     //------------------------------------------------------------------------//
     auto auto_timer_init = [=] (const std::string& key = "",
@@ -331,6 +334,27 @@ PYBIND11_MODULE(timemory, tim)
         tim::DisableSignalDetection();
     };
     //------------------------------------------------------------------------//
+    auto timing_fmt_init = [=] (const std::string& begin = "",
+                           const std::string& format = timer_format_t::get_default_format(),
+                           unit_type unit = timer_format_t::get_default_unit(),
+                           py::object rss_format = py::none(),
+                           bool align_width = false)
+    {
+        rss_format_t _rss_format = tim::format::timer::get_default_rss_format();
+        if(!rss_format.is_none())
+            _rss_format = *rss_format.cast<rss_format_t*>();
+
+        return new timer_format_t(begin, format, unit, _rss_format, align_width);
+    };
+    //------------------------------------------------------------------------//
+    auto memory_fmt_init = [=] (const std::string& begin = "",
+                           const std::string& format = rss_format_t::get_default_format(),
+                           unit_type unit = rss_format_t::get_default_unit(),
+                           bool align_width = false)
+    {
+        return new rss_format_t(begin, format, unit, align_width);
+    };
+    //------------------------------------------------------------------------//
 
 
     //========================================================================//
@@ -400,6 +424,43 @@ PYBIND11_MODULE(timemory, tim)
             "Return if the TiMemory library has MPI support");
     //------------------------------------------------------------------------//
 
+
+    //========================================================================//
+    //
+    //      Format submodule
+    //
+    //========================================================================//
+    py::module fmt = tim.def_submodule("format", "timing and memory format submodule");
+    py::class_<tim::format::timer> timing_fmt(fmt, "timer");
+    py::class_<tim::format::rss> memory_fmt(fmt, "rss");
+
+    timing_fmt.def(py::init(timing_fmt_init),
+                   "Initialize timing formatter",
+                   py::return_value_policy::take_ownership,
+                   py::arg("begin") = "",
+                   py::arg("format") = timer_format_t::get_default_format(),
+                   py::arg("unit") = timer_format_t::get_default_unit(),
+                   py::arg("rss_format") = py::none(),
+                   py::arg("align_width") = false);
+
+    timing_fmt.def("set_default_format",
+                   [=] (const std::string& _val) { timer_format_t::set_default_format(_val); },
+                   "Set the default timer format");
+    timing_fmt.def("set_default_rss_format",
+                   [=] (const std::string& _val) { timer_format_t::set_default_rss_format(_val); },
+                   "Set the default timer format");
+
+    memory_fmt.def(py::init(memory_fmt_init),
+                   "Initialize memory formatter",
+                   py::return_value_policy::take_ownership,
+                   py::arg("begin") = "",
+                   py::arg("format") = rss_format_t::get_default_format(),
+                   py::arg("unit") = rss_format_t::get_default_unit(),
+                   py::arg("align_width") = false);
+
+    memory_fmt.def("set_default_format",
+                   [=] (const std::string& _val) { rss_format_t::set_default_format(_val); },
+                   "Set the default rss format");
 
     //------------------------------------------------------------------------//
     //  Class declarations
@@ -784,7 +845,7 @@ PYBIND11_MODULE(timemory, tim)
                        tim_timer_t _global = *_auto_timer->global_timer();
                        if(_auto_timer->global_timer() != _auto_timer->local_timer())
                            _global += _local;
-                       _global.set_use_static_width(false);
+                       _global.format()->set_use_align_width(false);
                        _global.report(_ss, false, true);
                        return _ss.str();
                    },

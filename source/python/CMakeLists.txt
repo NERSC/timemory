@@ -5,7 +5,7 @@
 #
 ################################################################################
 
-file(GLOB_RECURSE pybind_headers ${PROJECT_SOURCE_DIR}/pybind11/include/*.h)
+file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 
 if(TIMEMORY_DYNAMIC_LINK)
     set(LINK_TYPE shared)

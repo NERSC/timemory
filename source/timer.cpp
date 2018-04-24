@@ -29,24 +29,14 @@
  */
 
 #include "timemory/timer.hpp"
+#include "timemory/serializer.hpp"
+
 #include <algorithm>
 #include <cassert>
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
-
-//============================================================================//
-
-uint64_t tim::timer::f_output_width = 8;
-
-//============================================================================//
-
-// bash expansion:
-//   total_RSS_current, total_RSS_peak
-//   self_RSS_current self_RSS_peak
-std::string tim::timer::default_format
-    =  std::string(" : %w wall, %u user + %s system = %t CPU [sec] (%p%) : RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [MB]");
+CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 
@@ -55,36 +45,19 @@ namespace tim
 
 //============================================================================//
 
-uint16_t timer::default_precision = 3;
-
-//============================================================================//
-
-void timer::propose_output_width(uint64_t _w)
-{
-    f_output_width = std::max(f_output_width, _w);
-}
-
-//============================================================================//
-
 timer::timer(const string_t& _begin,
-             const string_t& _close,
-             bool _use_static_width,
-             uint16_t prec)
-: base_type(prec, _begin + default_format + _close),
-  m_use_static_width(_use_static_width),
-  m_begin(_begin), m_close(_close)
+             const string_t& _format)
+: base_type(timer_format_t(new format_type(_begin, _format)))
 { }
 
 //============================================================================//
+timer::timer(const format_type& _format)
+: base_type(timer_format_t(new format_type(_format)))
+{ }
 
-timer::timer(const string_t& _begin,
-             const string_t& _end,
-             const string_t& _fmt,
-             bool _use_static_width,
-             uint16_t prec)
-: base_type(prec, _begin + _fmt + _end),
-  m_use_static_width(_use_static_width),
-  m_begin(_begin), m_close(_end)
+//============================================================================//
+timer::timer(timer_format_t _format)
+: base_type(_format)
 { }
 
 //============================================================================//
@@ -94,34 +67,9 @@ timer::~timer()
 
 //============================================================================//
 
-void timer::compose()
-{
-    std::stringstream ss;
-    if(m_use_static_width)
-    {
-        ss << std::setw(f_output_width + 1)
-           << std::left << m_begin
-           << std::right << default_format
-           << m_close;
-    }
-    else
-    {
-        ss << std::left << m_begin
-           << std::right << default_format
-           << m_close;
-    }
-    m_format_string = ss.str();
-}
-
-//============================================================================//
-
 void timer::grab_metadata(const this_type& rhs)
 {
-    m_begin = rhs.m_begin;
-    m_close = rhs.m_close;
-    m_use_static_width = rhs.m_use_static_width;
-    m_precision = rhs.m_precision;
-    m_format_string = rhs.m_format_string;
+    m_format = rhs.m_format;
 }
 
 //============================================================================//

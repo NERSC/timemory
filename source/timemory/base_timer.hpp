@@ -43,32 +43,13 @@
 #include "timemory/rss.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/signal_detection.hpp"
-
-#include <cereal/cereal.hpp>
-#include <cereal/access.hpp>
-#include <cereal/macros.hpp>
-#include <cereal/types/chrono.hpp>
-#include <cereal/types/deque.hpp>
-#include <cereal/types/vector.hpp>
+#include "timemory/formatters.hpp"
+#include "timemory/serializer.hpp"
 
 //----------------------------------------------------------------------------//
 
 namespace tim
 {
-
-enum class timer_field
-{
-    wall,
-    user,
-    system,
-    cpu,
-    percent,
-    total_curr,
-    total_peak,
-    self_curr,
-    self_peak
-
-};
 
 namespace internal
 {
@@ -83,7 +64,7 @@ class tim_api base_rss_usage
 {
 public:
     typedef base_rss_usage          this_type;
-    typedef tim::rss::usage    rss_usage_t;
+    typedef tim::rss::usage         rss_usage_t;
 
     inline void init()
     {
@@ -164,7 +145,7 @@ class tim_api base_timer_data
 public:
     typedef base_timer_data                             this_type;
     typedef std::micro                                  ratio_t;
-    typedef tim::base_clock<ratio_t>               clock_t;
+    typedef tim::base_clock<ratio_t>                    clock_t;
     typedef clock_t::time_point                         time_point_t;
     typedef std::tuple<time_point_t, time_point_t>      data_type;
     typedef base_rss_usage                              rss_type;
@@ -184,8 +165,8 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar(cereal::make_nvp("start", std::get<0>(m_data)),
-           cereal::make_nvp("stop",  std::get<1>(m_data)));
+        ar(serializer::make_nvp("start", std::get<0>(m_data)),
+           serializer::make_nvp("stop",  std::get<1>(m_data)));
     }
 
     inline void rss_init() { m_rss.init(); }
@@ -243,7 +224,7 @@ public:
     typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
     typedef base_timer_data                             op_type;
     typedef base_rss_usage                              rss_type;
-    typedef tim::rss::usage                        rss_usage_t;
+    typedef tim::rss::usage                             rss_usage_t;
 
 public:
     base_timer_delta()
@@ -406,13 +387,13 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    typedef tim::rss::usage                rss_usage_t;
+    typedef tim::rss::usage                     rss_usage_t;
     typedef base_rss_usage                      rss_type;
+    typedef format::timer                       format_type;
+    typedef std::shared_ptr<format_type>        timer_format_t;
 
 public:
-    base_timer(uint16_t = 3, const string_t& =
-               "%w wall, %u user + %s system = %t CPU [sec] (%p%)"
-               " : total rss %C | %M  : self rss %c | %m [MB]\n",
+    base_timer(timer_format_t = timer_format_t(),
                ostream_t* = &std::cout);
     virtual ~base_timer();
 
@@ -420,6 +401,7 @@ public:
     base_timer& operator=(const base_timer& rhs);
 
 public:
+    // public member functions
     inline void start();
     inline void stop();
     inline bool is_valid() const;
@@ -433,40 +415,34 @@ public:
     inline void rss_init();
     inline void rss_record();
     inline void reset() { m_accum.reset(); }
+    inline data_accum_t& accum() { return m_accum; }
+    inline const data_accum_t& accum() const { return m_accum; }
+    inline timer_format_t format() const { return m_format; }
+    inline void set_format(const format_type& _format);
+    inline void set_format(timer_format_t _format);
 
 public:
+    // public member functions
     void report(ostream_t&, bool endline = true, bool no_min = false) const;
     void report(bool endline = true) const;
     bool above_min(bool no_min = false) const;
-    const string_t& format_string() const { return m_format_string; }
     void sync(this_type& rhs);
 
 protected:
-    typedef std::pair<size_type, timer_field>   fieldpos_t;
-    typedef std::pair<string_t,  timer_field>   fieldstr_t;
-    typedef std::vector<fieldpos_t>             poslist_t;
-    typedef std::vector<fieldstr_t>             strlist_t;
-
-protected:
-    void parse_format();
-    virtual void compose() = 0;
-
+    // protected member functions
     data_t& m_timer() const { return m_data; }
     data_accum_t& get_accum() { return m_accum; }
     const data_accum_t& get_accum() const { return m_accum; }
 
 protected:
-    // PODs
-    uint16_t                m_precision;
+    // protected member variables
     // pointers
     ostream_t*              m_os;
     // objects
-    string_t                m_format_string;
     mutex_t                 m_mutex;
     mutable data_t          m_data;
     mutable data_accum_t    m_accum;
-    // lists
-    poslist_t               m_format_positions;
+    timer_format_t          m_format;
 
 private:
     // world mutex map for thread-safe ostreams
@@ -481,36 +457,48 @@ public:
         if(!tim::isfinite(_cpu_util))
             _cpu_util = 0.0;
 
-        ar(cereal::make_nvp("laps", m_accum.size()),
+        ar(serializer::make_nvp("laps", m_accum.size()),
            // user clock elapsed
-           cereal::make_nvp("user_elapsed",     m_accum.get_sum<0>()),
+           serializer::make_nvp("user_elapsed",     m_accum.get_sum<0>()),
            // system clock elapsed
-           cereal::make_nvp("system_elapsed",   m_accum.get_sum<1>()),
+           serializer::make_nvp("system_elapsed",   m_accum.get_sum<1>()),
            // wall clock elapsed
-           cereal::make_nvp("wall_elapsed",     m_accum.get_sum<2>()),
+           serializer::make_nvp("wall_elapsed",     m_accum.get_sum<2>()),
            // cpu elapsed
-           cereal::make_nvp("cpu_elapsed",
+           serializer::make_nvp("cpu_elapsed",
                             m_accum.get_sum<0>() + m_accum.get_sum<1>()),
            // cpu utilization
-           cereal::make_nvp("cpu_util",         _cpu_util),
+           serializer::make_nvp("cpu_util",         _cpu_util),
    #if defined(TIMEMORY_STAT_TIMERS)
-           cereal::make_nvp("wall_elapsed_sqr", m_accum.get_sqr<2>()),
-           cereal::make_nvp("user_elapsed_sqr", m_accum.get_sqr<0>()),
-           cereal::make_nvp("system_elapsed_sqr",  m_accum.get_sqr<1>()),
+           serializer::make_nvp("wall_elapsed_sqr", m_accum.get_sqr<2>()),
+           serializer::make_nvp("user_elapsed_sqr", m_accum.get_sqr<0>()),
+           serializer::make_nvp("system_elapsed_sqr",  m_accum.get_sqr<1>()),
    #endif
            // conversion to seconds
-           cereal::make_nvp("to_seconds_ratio_num", ratio_t::num),
-           cereal::make_nvp("to_seconds_ratio_den", ratio_t::den),
+           serializer::make_nvp("to_seconds_ratio_num", ratio_t::num),
+           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den),
            // memory usage
-           cereal::make_nvp("rss_max",  m_accum.rss().total()),
-           cereal::make_nvp("rss_self", m_accum.rss().self()),
+           serializer::make_nvp("rss_max",  m_accum.rss().total()),
+           serializer::make_nvp("rss_self", m_accum.rss().self()),
            // memory usage (minimum)
-           cereal::make_nvp("rss_min",  m_accum.rss().total_min()),
-           cereal::make_nvp("rss_self_min", m_accum.rss().self_min()));
+           serializer::make_nvp("rss_min",  m_accum.rss().total_min()),
+           serializer::make_nvp("rss_self_min", m_accum.rss().self_min()));
     }
 
 };
 
+//----------------------------------------------------------------------------//
+inline
+void base_timer::set_format(const format_type& _format)
+{
+    m_format = timer_format_t(new format_type(_format));
+}
+//----------------------------------------------------------------------------//
+inline
+void base_timer::set_format(timer_format_t _format)
+{
+    m_format = _format;
+}
 //----------------------------------------------------------------------------//
 inline void base_timer::rss_init()
 {

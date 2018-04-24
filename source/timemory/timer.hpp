@@ -39,6 +39,7 @@
 #include <memory>
 
 #include "timemory/macros.hpp"
+#include "timemory/formatters.hpp"
 #include "timemory/base_timer.hpp"
 
 namespace tim
@@ -51,39 +52,28 @@ namespace tim
 class tim_api timer : public internal::base_timer
 {
 public:
-    typedef base_timer      base_type;
-    typedef timer           this_type;
-    typedef std::string     string_t;
-    typedef void (*clone_function_t)(const this_type&);
-    typedef std::unique_ptr<this_type>  unique_ptr_type;
-    typedef std::shared_ptr<this_type>  shared_ptr_type;
+    typedef base_timer                      base_type;
+    typedef timer                           this_type;
+    typedef std::string                     string_t;
+    typedef std::unique_ptr<this_type>      unique_ptr_type;
+    typedef std::shared_ptr<this_type>      shared_ptr_type;
+    typedef format::timer                   format_type;
+    typedef std::shared_ptr<format_type>    timer_format_t;
 
 public:
     timer(const string_t& _begin = "",
-          const string_t& _close = "",
-          bool _use_static_width = false,
-          uint16_t prec = default_precision);
-    timer(const string_t& _begin,
-          const string_t& _close,
-          const string_t& _fmt,
-          bool _use_static_width = false,
-          uint16_t prec = default_precision);
+          const string_t& _format = format::timer::get_default_format());
+    timer(const format_type& _format);
+    timer(timer_format_t _format);
     virtual ~timer();
 
 public:
-    static void propose_output_width(uint64_t);
-    static uint64_t get_output_width() { return f_output_width; }
-    static void set_output_width(uint64_t n) { f_output_width = n; }
+    timer& stop_and_return()
+    {
+        this->stop();
+        return *this;
+    }
 
-    static void set_default_format(const string_t& str) { default_format = str; }
-    static string_t get_default_format() { return default_format; }
-    static void set_default_precision(const uint16_t& val) { default_precision = val; }
-    static uint16_t get_default_precision() { return default_precision; }
-
-public:
-    timer& stop_and_return() { this->stop(); return *this; }
-    string_t begin() const { return m_begin; }
-    string_t close() const { return m_close; }
     std::string as_string(bool no_min = true) const
     {
         std::stringstream ss;
@@ -123,23 +113,6 @@ public:
     }
 
     void grab_metadata(const this_type& rhs);
-
-    void set_begin(const string_t& _val) { m_begin = _val; }
-    void set_close(const string_t& _val) { m_close = _val; }
-    void set_use_static_width(bool _val) { m_use_static_width = _val; }
-
-protected:
-    virtual void compose() final;
-
-protected:
-    bool        m_use_static_width;
-    string_t    m_begin;
-    string_t    m_close;
-
-private:
-    static string_t default_format;
-    static uint16_t default_precision;
-    static uint64_t f_output_width;
 
 public:
     template <typename Archive> void

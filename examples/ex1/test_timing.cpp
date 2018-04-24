@@ -107,6 +107,7 @@ void test_manager();
 void test_timing_toggle();
 void test_timing_depth();
 void test_timing_thread();
+void test_serialize();
 
 //============================================================================//
 
@@ -131,6 +132,7 @@ int main(int /*argc*/, char** argv)
 
     try
     {
+        RUN_TEST(test_serialize);
         RUN_TEST(test_rss_usage);
         RUN_TEST(test_timing_pointer);
         RUN_TEST(test_manager);
@@ -220,6 +222,14 @@ void print_depth(const std::string& func, int64_t line, bool extra_endl)
 
 //============================================================================//
 
+void test_serialize()
+{
+    print_info(__FUNCTION__);
+
+}
+
+//============================================================================//
+
 void test_rss_usage()
 {
     print_info(__FUNCTION__);
@@ -227,30 +237,49 @@ void test_rss_usage()
     typedef std::vector<double> vector_t;
     tim::rss::usage _rss_init;
     tim::rss::usage _rss_end;
-    tim::rss::usage_format _format("RSS [current = %c MB] [peak = %m MB]",
-                                   tim::rss::units::megabyte, 2, 5, 'c', 'm');
+    tim::format::rss _format("", " : RSS [current = %c %A] [peak = %m %A]",
+                             tim::units::kilobyte, false);
+    tim::format::rss _rformat("", "%C %A, %M %A, %c %A, %m %A",
+                              tim::units::kilobyte, false);
+    tim::format::timer _tformat(__FUNCTION__,
+                                " : %w %T, %u %T, %s %T, %t %T, %p%, %R, x%l",
+                                tim::units::msec, _rformat, false);
+
+    auto rt = tim::timer(__FUNCTION__);
+    auto ct = tim::timer(_tformat);
+    rt.start();
+    ct.start();
 
     size_t n = 1000;
     _rss_init.record();
-    print_string("init  : " + _rss_init.str());
+    print_string("init   " + _rss_init.str());
     {
         tim::rss::usage _rss_diff;
         vector_t* v = new vector_t(n*n, 1.0);
 
         _rss_diff.record();
-        print_string("alloc : " + _rss_diff.str());
+        print_string("alloc  " + _rss_diff.str());
 
         _rss_diff -= _rss_init;
         v->clear();
         delete v;
 
         _rss_diff.set_format(_format);
-        print_string("diff  : " + _rss_diff.str());
+        print_string("diff   " + _rss_diff.str());
     }
-    _rss_end.set_format(_format);
     _rss_end.record();
 
-    print_string("final : " + _rss_end.str());
+    print_string("final_a" + _rss_end.str());
+    _rss_end.set_format(_format);
+    print_string("final_b" + _rss_end.str());
+
+    fibonacci(36);
+
+    rt.stop();
+    ct.stop();
+
+    print_string(rt.as_string());
+    print_string(ct.as_string());
 }
 
 //============================================================================//

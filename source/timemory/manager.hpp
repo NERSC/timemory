@@ -51,20 +51,10 @@
 #   include <omp.h>
 #endif
 
-#include <cereal/cereal.hpp>
-#include <cereal/types/deque.hpp>
-#include <cereal/access.hpp>
-#include <cereal/types/unordered_map.hpp>
-#include <cereal/types/chrono.hpp>
-#include <cereal/archives/adapters.hpp>
-#include <cereal/archives/binary.hpp>
-#include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/xml.hpp>
-
 #include "timemory/utility.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/mpi.hpp"
+#include "timemory/serializer.hpp"
 
 namespace tim
 {
@@ -83,7 +73,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
     typedef std::string                     string_t;
-    typedef tim::timer                 tim_timer_t;
+    typedef tim::timer                      tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef uint64_t                        first_type;
     typedef uint64_t                        second_type;
@@ -141,10 +131,10 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar(cereal::make_nvp("timer.key", key()),
-           cereal::make_nvp("timer.level", level()),
-           cereal::make_nvp("timer.tag", tag()),
-           cereal::make_nvp("timer.ref", timer()));
+        ar(serializer::make_nvp("timer.key", key()),
+           serializer::make_nvp("timer.level", level()),
+           serializer::make_nvp("timer.tag", tag()),
+           serializer::make_nvp("timer.ref", timer()));
     }
 
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
@@ -179,7 +169,6 @@ public:
     typedef uomap<uint64_t, timer_ptr_t>    timer_map_t;
     typedef tim_timer_t::ostream_t          ostream_t;
     typedef tim_timer_t::ofstream_t         ofstream_t;
-    typedef tim::timer_field           timer_field;
     typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
     typedef std::mutex                      mutex_t;
     typedef uomap<uint64_t, mutex_t>        mutex_map_t;
@@ -243,10 +232,6 @@ public:
     template <typename _Func, typename... _Args>
     void time(const string_t& key, _Func, _Args...);
 
-    // serialization function
-    template <typename Archive> void
-    serialize(Archive& ar, const unsigned int /*version*/);
-
     // iteration of timers
     iterator        begin()         { return m_timer_list.begin(); }
     const_iterator  begin() const   { return m_timer_list.cbegin(); }
@@ -299,6 +284,11 @@ public:
     {
         return (m_report != &std::cout) && (m_report != &std::cerr);
     }
+
+public:
+    // serialization function
+    template <typename Archive> void
+    serialize(Archive& ar, const unsigned int version);
 
 protected:
 	// protected functions
@@ -416,8 +406,8 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     uint32_t _nthreads = f_get_num_threads();
     if(_nthreads == 1)
         _nthreads = f_manager_instance_count;
-    ar(cereal::make_nvp("concurrency", _nthreads));
-    ar(cereal::make_nvp("timers", m_timer_list));
+    ar(serializer::make_nvp("concurrency", _nthreads));
+    ar(serializer::make_nvp("timers", m_timer_list));
 }
 //----------------------------------------------------------------------------//
 inline uint64_t

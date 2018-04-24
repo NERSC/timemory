@@ -30,6 +30,7 @@
 
 #include "timemory/manager.hpp"
 #include "timemory/auto_timer.hpp"
+#include "timemory/serializer.hpp"
 
 #include <sstream>
 #include <algorithm>
@@ -38,8 +39,8 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
+CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
+CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
 namespace tim
 {
@@ -205,7 +206,7 @@ void manager::clear()
 #endif
 
     if(this == global_instance())
-        tim_timer_t::set_output_width(10);
+        tim::format::timer::set_default_width(10);
 
     m_timer_list.clear();
     m_timer_map.clear();
@@ -320,11 +321,17 @@ manager::timer(const string_t& key,
     }
 
     ss << std::left << key;
-    timer::propose_output_width(ss.str().length());
+    tim::format::timer::propose_default_width(ss.str().length());
 
     m_timer_map[ref] =
-            timer_ptr_t(new tim_timer_t(ss.str(), string_t(""), true,
-                                        tim_timer_t::get_default_precision()));
+            timer_ptr_t(
+                new tim_timer_t(
+                    tim::format::timer(
+                        ss.str(),
+                        tim::format::timer::get_default_format(),
+                        tim::format::timer::get_default_unit(),
+                        tim::format::timer::get_default_rss_format(),
+                        true)));
 
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;
@@ -403,18 +410,18 @@ void manager::report(ostream_t* os, bool no_min) const
         *os << "> rank " << mpi_rank() << std::endl;
 
     // temporarily store output width
-    uint64_t _width = tim_timer_t::get_output_width();
+    auto _width = tim::format::timer::get_default_width();
     // reset output width
-    tim_timer_t::set_output_width(10);
+    tim::format::timer::set_default_width(10);
 
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
         if(itr.timer().above_min(no_min))
-            tim_timer_t::propose_output_width(itr.timer().begin().length());
+            tim::format::timer::propose_default_width(itr.timer().format()->begin().length());
 
     // don't make it longer
-    if(_width > 10 && _width < tim_timer_t::get_output_width())
-        tim_timer_t::set_output_width(_width);
+    if(_width > 10 && _width < tim::format::timer::get_default_width())
+        tim::format::timer::set_default_width(_width);
 
     for(const auto& itr : *this)
         itr.timer().report(*os, true, no_min);
@@ -617,7 +624,7 @@ void manager::write_json_no_mpi(ostream_t& fss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 4);
         cereal::JSONOutputArchive oa(fss, opts);
 
-        oa(cereal::make_nvp("manager", *manager::instance()));
+        oa(serializer::make_nvp("manager", *manager::instance()));
     }
 
     fss << "]" << "\n}" << std::endl;
@@ -673,7 +680,7 @@ std::pair<int32_t, bool> manager::write_json_mpi(ostream_t& ofss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 1);
         cereal::JSONOutputArchive oa(fss, opts);
 
-        oa(cereal::make_nvp("manager", *manager::instance()));
+        oa(serializer::make_nvp("manager", *manager::instance()));
     }
 
     // if another entry follows

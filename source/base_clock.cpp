@@ -56,6 +56,6 @@ clock_t times (struct tms* __buffer)
 
 #else
 
-int32_t dummy::asymbol = 0;
+int32_t base_clock_dummy::asymbol = 0;
 
 #endif

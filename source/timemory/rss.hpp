@@ -42,14 +42,9 @@
 #include <algorithm>
 #include <fstream>
 
-#include <cereal/cereal.hpp>
-#include <cereal/access.hpp>
-#include <cereal/macros.hpp>
-#include <cereal/types/chrono.hpp>
-#include <cereal/types/deque.hpp>
-#include <cereal/types/vector.hpp>
-
 #include "timemory/macros.hpp"
+#include "timemory/formatters.hpp"
+#include "timemory/serializer.hpp"
 
 //============================================================================//
 
@@ -64,7 +59,7 @@
 #   include <stdio.h>
 #   include <psapi.h>
 #else
-#   error "Cannot define getPeakRSS( ) or getCurrentRSS( ) for an unknown OS."
+#   error "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
 #endif
 
 // RSS - Resident set size (physical memory use, not in swap)
@@ -74,26 +69,6 @@ namespace tim
 
 namespace rss
 {
-
-//----------------------------------------------------------------------------//
-// Using the SI convention for kilo-, mega-, giga-, and peta-
-// because this is more intuitive
-namespace units
-{
-    const int64_t byte     = 1;
-    const int64_t kilobyte = 1024*byte;
-    const int64_t megabyte = 1024*kilobyte;
-    const int64_t gigabyte = 1024*megabyte;
-    const int64_t petabyte = 1024*gigabyte;
-    const double  Bi       = 1.0;
-    const double  KiB      = 1024.0 * Bi;
-    const double  MiB      = 1024.0 * KiB;
-    const double  GiB      = 1024.0 * MiB;
-    const double  PiB      = 1024.0 * GiB;
-#   if defined(_UNIX)
-    const int64_t page_size = sysconf(_SC_PAGESIZE);
-#   endif
-}
 
 //----------------------------------------------------------------------------//
 
@@ -205,57 +180,13 @@ int64_t get_current_rss()
 
 //============================================================================//
 
-class usage; // declaration for usage_format
-
-//============================================================================//
-
-class tim_api usage_format
-{
-public:
-    typedef std::stringstream   stringstream_t;
-    typedef std::string         string_t;
-    typedef int16_t             size_type;
-
-public:
-    usage_format(string_t _format = "RSS {curr,peak} : (%C|%M) [MB]",
-                 int64_t _unit = units::megabyte,
-                 size_type _prec = 1,
-                 size_type _width = 5,
-                 char _curr = 'C',
-                 char _peak = 'M')
-    : m_precision(_prec),
-      m_width(_width),
-      m_unit(_unit),
-      m_curr(""),
-      m_peak(""),
-      m_format(_format)
-    {
-        stringstream_t _ss_c, _ss_p;
-        _ss_c << "%" << _curr;
-        _ss_p << "%" << _peak;
-        m_curr = _ss_c.str();
-        m_peak = _ss_p.str();
-    }
-
-    string_t operator()(const usage* m) const;
-
-protected:
-    size_type   m_precision;
-    size_type   m_width;
-    int64_t     m_unit;
-    string_t    m_curr;
-    string_t    m_peak;
-    string_t    m_format;
-};
-
-//============================================================================//
-
 class tim_api usage
 {
 public:
     typedef usage                           this_type;
     typedef int64_t                         size_type;
-    typedef std::shared_ptr<usage_format>   usage_format_t;
+    typedef format::rss                     format_type;
+    typedef std::shared_ptr<format_type>    usage_format_t;
 
 public:
     usage(usage_format_t _fmt = usage_format_t())
@@ -303,7 +234,7 @@ public:
     }
 
 public:
-    void set_format(const usage_format& _format);
+    void set_format(const format_type& _format);
     void set_format(usage_format_t _format);
     usage_format_t format() const;
 
@@ -339,8 +270,8 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar(cereal::make_nvp("current", current()),
-           cereal::make_nvp("peak",    peak()));
+        ar(serializer::make_nvp("current", current()),
+           serializer::make_nvp("peak",    peak()));
     }
 
     std::string str() const
@@ -442,8 +373,8 @@ public:
     //------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const usage& m)
     {
-        usage_format _format = (m.format().get())
-                               ? (*(m.format().get())) : usage_format();
+        format_type _format = (m.format().get())
+                               ? (*(m.format().get())) : format_type();
         os << _format(&m);
         return os;
     }
@@ -456,9 +387,9 @@ protected:
 
 //----------------------------------------------------------------------------//
 inline
-void usage::set_format(const usage_format& _format)
+void usage::set_format(const format_type& _format)
 {
-    m_format = usage_format_t(new usage_format(_format));
+    m_format = usage_format_t(new format_type(_format));
 }
 //----------------------------------------------------------------------------//
 inline
@@ -487,42 +418,6 @@ inline void usage::record(const usage& rhs)
                           get_current_rss() - rhs.m_curr_rss);
     m_peak_rss = std::max(m_peak_rss - rhs.m_peak_rss,
                           get_peak_rss() - rhs.m_peak_rss);
-}
-//----------------------------------------------------------------------------//
-inline
-usage_format::string_t usage_format::operator()(const usage* m) const
-{
-    using std::setw;
-    stringstream_t ss_c;
-    stringstream_t ss_p;
-
-    ss_c.precision(m_precision);
-    ss_p.precision(m_precision);
-
-    ss_c << std::fixed << setw(m_width) << m->current(m_unit);
-    ss_p << std::fixed << setw(m_width) << m->peak(m_unit);
-
-    string_t _str = m_format;
-
-    /*
-    int _n = 0;
-    auto _debug = [&] ()
-    {
-        std::cout << "(" << _n++ <<") STR: \"" << _str
-                  << "\", m_curr = \"" << m_curr
-                  << "\", m_peak = \"" << m_peak << "\"...\n" << std::endl;
-    };
-    _debug();
-    */
-
-    while(_str.find(m_curr) != string_t::npos)
-        _str = _str.replace(_str.find(m_curr), m_curr.length(), ss_c.str().c_str());
-
-    while(_str.find(m_peak) != string_t::npos)
-        _str = _str.replace(_str.find(m_peak), m_peak.length(), ss_p.str().c_str());
-
-
-    return _str;
 }
 //----------------------------------------------------------------------------//
 

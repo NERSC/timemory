@@ -34,17 +34,37 @@
 #include "timemory/macros.hpp"
 
 #include <type_traits>
-#include <string>
 #include <ostream>
 #include <istream>
 #include <fstream>
+#include <ios>
+#include <memory>
+#include <initializer_list>
+
+#include <string>
 #include <vector>
 #include <map>
 #include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <deque>
-#include <ios>
+
+#include <cereal/cereal.hpp>
+#include <cereal/access.hpp>
+#include <cereal/macros.hpp>
+
+#include <cereal/types/deque.hpp>
+#include <cereal/types/unordered_map.hpp>
+#include <cereal/types/chrono.hpp>
+#include <cereal/types/vector.hpp>
+
+#include <cereal/archives/adapters.hpp>
+#include <cereal/archives/binary.hpp>
+#include <cereal/archives/json.hpp>
+#include <cereal/archives/portable_binary.hpp>
+#include <cereal/archives/xml.hpp>
+
+#define CLASS_VERSION(_class, _version) CEREAL_CLASS_VERSION(_class, _version)
 
 //============================================================================//
 
@@ -53,128 +73,18 @@ namespace serializer
 
 //----------------------------------------------------------------------------//
 
+using cereal::make_nvp;
+
+//----------------------------------------------------------------------------//
+
 template <bool B, typename T = void>
-using _enable_if_t = typename enable_if<B, T>::type;
+using _enable_if_t = typename std::enable_if<B, T>::type;
 
 //----------------------------------------------------------------------------//
 
-inline std::string quote()
-{
-    return "\"";
-}
+} // namespace serializer
 
-//----------------------------------------------------------------------------//
-
-template <typename _Tp>
-std::string as_string(_Tp val)
-{
-    std::stringstream ss;
-    ss << val;
-    return ss.str();
-}
-
-//----------------------------------------------------------------------------//
-
-class tag
-{
-public:
-    tag(const std::string& _str) : m_tag(_str) { }
-    std::string& operator()() { return m_tag; }
-    const std::string& operator()() const { return m_tag; }
-
-    friend std::ostream& operator<<(std::ostream& os, const tag& obj)
-    {
-        os << quote() << obj() << quote() << " : ";
-        return os;
-    }
-
-protected:
-    std::string m_tag;
-};
-
-//----------------------------------------------------------------------------//
-
-template <typename _Os, typename _Tp,
-          typename = _enable_if_t<std::is_integral<_Tp>::value>>
-void serialize_object(_Os& os, const _Tp& obj)
-{
-    std::stringstream ss;
-    ss << obj;
-    os << ss.str();
-}
-
-//----------------------------------------------------------------------------//
-
-template <typename _Os, typename _Tp,
-          typename = _enable_if_t<std::is_floating_point<_Tp>::value>>
-void serialize_object(_Os& os, const _Tp& obj)
-{
-    std::stringstream ss;
-    ss << std::hexfloat << obj;
-    os << ss.str();
-}
-
-//----------------------------------------------------------------------------//
-
-template <typename _Os, typename _Tp,
-          typename = _enable_if_t<std::is_same<_Tp, std::string>::value>>
-void serialize_object(_Os& os, const _Tp& obj)
-{
-    std::stringstream ss;
-    ss << quote() << obj << quote();
-    os << ss.str();
-}
-
-//----------------------------------------------------------------------------//
-
-template <typename _Os, typename _Key, typename _Tp>
-void serialize_object(_Os& os, const std::map<_Key, _Tp>& obj)
-{
-    std::stringstream ss;
-    ss << "[ ";
-    for(const auto& itr : obj)
-    {
-        tag _tag(as_string(itr.first));
-        ss << _tag;
-        object<_Tp> _obj(itr.second);
-        ss << _obj;
-    }
-    ss << " ]";
-    os << ss.str();
-}
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp>
-class object
-{
-public:
-    typedef typename std::remove_cv<_Tp>::type  value_type;
-
-public:
-    object(value_type _val) : m_obj(_val) { }
-    value_type& operator()() { return m_obj; }
-    const value_type& operator()() const { return m_obj; }
-
-    template <typename _Up>
-    friend std::ostream& operator<<(std::ostream& os, const object<_Up>& obj)
-    {
-        serialize_object<std::ostream, _Up>(os, obj());
-        os << ", ";
-        return os;
-    }
-
-protected:
-    value_type m_obj;
-};
-
-
-
-}
-
-//----------------------------------------------------------------------------//
-
-//----------------------------------------------------------------------------//
+//============================================================================//
 
 #endif
 

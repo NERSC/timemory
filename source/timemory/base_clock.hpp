@@ -47,13 +47,9 @@
 #include <cstdint>
 #include <type_traits>
 
-#include <cereal/cereal.hpp>
-#include <cereal/types/chrono.hpp>
-#include <cereal/types/deque.hpp>
-#include <cereal/access.hpp>
-
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
+#include "timemory/serializer.hpp"
 
 #if defined(_UNIX)
 
@@ -61,7 +57,7 @@
 #   include <sys/times.h>
 
 // avoid no symbols warning
-struct dummy { static int32_t asymbol; };
+struct base_clock_dummy { static int32_t asymbol; };
 
 #elif defined(_WINDOWS)
 //
@@ -213,9 +209,9 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        ar(cereal::make_nvp("user", std::get<0>(data)),
-           cereal::make_nvp("sys",  std::get<1>(data)),
-           cereal::make_nvp("wall", std::get<2>(data)));
+        ar(serializer::make_nvp("user", std::get<0>(data)),
+           serializer::make_nvp("sys",  std::get<1>(data)),
+           serializer::make_nvp("wall", std::get<2>(data)));
     }
 
 };
