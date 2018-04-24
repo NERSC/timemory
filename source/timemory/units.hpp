@@ -33,16 +33,6 @@
 
 #if defined(_UNIX)
 #   include <unistd.h>
-#   include <sys/resource.h>
-#   if defined(_MACOS)
-#       include <mach/mach.h>
-#   endif
-#elif defined(_WINDOWS)
-#   include <windows.h>
-#   include <stdio.h>
-#   include <psapi.h>
-#else
-#   error "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
 #endif
 
 namespace tim
