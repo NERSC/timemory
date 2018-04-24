@@ -42,6 +42,8 @@
 #include <iomanip>
 #include <cstdint>
 #include <cstdio>
+#include <vector>
+#include <utility>
 
 #if defined(_UNIX)
 #   include <unistd.h>
