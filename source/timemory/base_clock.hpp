@@ -71,7 +71,7 @@ struct base_clock_dummy { static int32_t asymbol; };
 
 #include <sys/timeb.h>
 #include <sys/types.h>
-#include <winsock2.h>
+#include <winsock.h>
 
 EXTERN_C int gettimeofday(struct timeval* t, void* timezone);
 

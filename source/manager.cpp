@@ -39,8 +39,8 @@
 
 //============================================================================//
 
-CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
-CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
 namespace tim
 {
@@ -624,7 +624,7 @@ void manager::write_json_no_mpi(ostream_t& fss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 4);
         cereal::JSONOutputArchive oa(fss, opts);
 
-        oa(serializer::make_nvp("manager", *manager::instance()));
+        oa(cereal::make_nvp("manager", *manager::instance()));
     }
 
     fss << "]" << "\n}" << std::endl;
@@ -680,7 +680,7 @@ std::pair<int32_t, bool> manager::write_json_mpi(ostream_t& ofss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 1);
         cereal::JSONOutputArchive oa(fss, opts);
 
-        oa(serializer::make_nvp("manager", *manager::instance()));
+        oa(cereal::make_nvp("manager", *manager::instance()));
     }
 
     // if another entry follows

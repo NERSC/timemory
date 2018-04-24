@@ -36,7 +36,7 @@
 
 //============================================================================//
 
-CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 

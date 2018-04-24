@@ -64,7 +64,7 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 
-#define CLASS_VERSION(_class, _version) CEREAL_CLASS_VERSION(_class, _version)
+//#define CLASS_VERSION(_class, _version) CEREAL_CLASS_VERSION(_class, _version)
 
 //============================================================================//
 
@@ -77,8 +77,8 @@ using cereal::make_nvp;
 
 //----------------------------------------------------------------------------//
 
-template <bool B, typename T = void>
-using _enable_if_t = typename std::enable_if<B, T>::type;
+//template <bool B, typename T = void>
+//using _enable_if_t = typename std::enable_if<B, T>::type;
 
 //----------------------------------------------------------------------------//
 
