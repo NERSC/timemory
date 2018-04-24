@@ -65,7 +65,9 @@ struct base_clock_dummy { static int32_t asymbol; };
 //
 
 // without this, windows will define macros for min and max
+#ifndef NOMINMIX
 #define NOMINMAX
+#endif
 
 #include <sys/timeb.h>
 #include <sys/types.h>

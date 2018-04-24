@@ -412,5 +412,10 @@
 #    endif
 #endif  // defined(_WINDOWS)
 
+#if defined(_WINDOWS)
+#   if !defined(NOMINMAX)
+#       define NOMINMAX
+#   endif
+#endif
 
 #endif // macros_hpp_

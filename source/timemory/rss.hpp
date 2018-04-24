@@ -55,6 +55,9 @@
 #       include <mach/mach.h>
 #   endif
 #elif defined(_WINDOWS)
+#   if !defined(NOMINMAX)
+#       define NOMINMAX
+#   endif
 #   include <windows.h>
 #   include <stdio.h>
 #   include <psapi.h>
