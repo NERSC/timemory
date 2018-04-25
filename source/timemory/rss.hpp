@@ -192,6 +192,9 @@ public:
     typedef std::shared_ptr<format_type>    usage_format_t;
 
 public:
+    //------------------------------------------------------------------------//
+    //      Default constructor variants with usage_format_t
+    //------------------------------------------------------------------------//
     usage(usage_format_t _fmt = usage_format_t())
     : m_curr_rss(0), m_peak_rss(0), m_format(_fmt)
     { }
@@ -219,6 +222,41 @@ public:
     : m_curr_rss(_curr), m_peak_rss(_peak), m_format(_fmt)
     { }
 
+    //------------------------------------------------------------------------//
+    //      Constructor variants with format_type
+    //------------------------------------------------------------------------//
+    usage(format_type _fmt)
+    : m_curr_rss(0), m_peak_rss(0),
+      m_format(usage_format_t(new format_type(_fmt)))
+    { }
+
+    usage(size_type minus, format_type _fmt)
+    : m_curr_rss(0), m_peak_rss(0),
+      m_format(usage_format_t(new format_type(_fmt)))
+    {
+        record();
+        if(minus > 0)
+        {
+            if(minus < m_curr_rss)
+                m_curr_rss -= minus;
+            else
+                m_curr_rss = 1;
+
+            if(minus < m_peak_rss)
+                m_peak_rss -= minus;
+            else
+                m_peak_rss = 1;
+        }
+    }
+
+    usage(size_type _curr, size_type _peak, format_type _fmt)
+    : m_curr_rss(_curr), m_peak_rss(_peak),
+      m_format(usage_format_t(new format_type(_fmt)))
+    { }
+
+    //------------------------------------------------------------------------//
+    //      Copy construct and assignment
+    //------------------------------------------------------------------------//
     usage(const usage& rhs)
     : m_curr_rss(rhs.m_curr_rss),
       m_peak_rss(rhs.m_peak_rss),

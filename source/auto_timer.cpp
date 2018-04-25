@@ -94,7 +94,7 @@ auto_timer::auto_timer(const string_t& timer_tag,
         if(m_report_at_exit)
         {
             m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
             m_temp_timer->format()->set_use_align_width(false);
         }
         m_temp_timer->start();
@@ -112,7 +112,7 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
   m_timer(nullptr),
   m_temp_timer(nullptr)
 {
-    string_t timer_tag = _atimer.format()->begin();
+    string_t timer_tag = _atimer.format()->prefix();
     m_hash += std::hash<string_t>()(timer_tag);
     // for consistency, always increment hash keys
     ++auto_timer::ncount();
@@ -131,7 +131,7 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
         if(m_report_at_exit)
         {
             m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
             m_temp_timer->format()->set_use_align_width(false);
         }
     }
@@ -141,7 +141,7 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
         m_temp_timer->sync(_atimer);
         if(m_report_at_exit)
         {
-            m_temp_timer->format()->set_begin("> [" + code_tag + "] " + timer_tag);
+            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
             m_temp_timer->format()->set_use_align_width(false);
         }
     }

@@ -167,7 +167,7 @@ def run_test():
     print("RSS usage at initialization: {}".format(rss))
     t -= rss
     t.report()
-    print("RSS usage at finalization: {}\n".format(timemory.rss_usage(record=True)))
+    print("{}\n".format(timemory.rss_usage(record=True, prefix="RSS usage at finalization")))
 
     timemory.disable_signal_detection()
 

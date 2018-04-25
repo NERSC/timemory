@@ -410,8 +410,8 @@ class timemory_test(unittest.TestCase):
 
         t1 = timemory.timer("format_test")
         t2 = timemory.timer("format_test")
-        u1 = timemory.rss_usage()
-        u2 = timemory.rss_usage()
+        u1 = timemory.rss_usage("format_test")
+        u2 = timemory.rss_usage("format_test")
 
         t2.set_format(t2.get_format().copy_from(default_timer_fmt))
         u2.set_format(u2.get_format().copy_from(default_rss_fmt))
@@ -458,8 +458,8 @@ class timemory_test(unittest.TestCase):
         u2.record()
 
         print('\n')
-        print('format_test {}'.format(u1))
-        print('format_test {}'.format(u2))
+        print('{}'.format(t1))
+        print('{}'.format(t2))
 
         t1.stop()
         t2.stop()

@@ -78,8 +78,8 @@ public:
 
 public:
     // public constructors
-    base_formatter(string_t _begin,
-                   string_t _close,
+    base_formatter(string_t _prefix,
+                   string_t _suffix,
                    string_t _format,
                    unit_type _unit,
                    bool _align_width,
@@ -89,8 +89,8 @@ public:
       m_precision(_prec),
       m_width(_width),
       m_unit(_unit),
-      m_begin(_begin),
-      m_close(_close),
+      m_prefix(_prefix),
+      m_suffix(_suffix),
       m_format(_format)
     {}
 
@@ -98,15 +98,15 @@ public:
 
 public:
     // public member functions
-    void set_begin(const string_t& _val) { m_begin = _val; }
-    void set_close(const string_t& _val) { m_close = _val; }
+    void set_prefix(const string_t& _val) { m_prefix = _val; }
+    void set_suffix(const string_t& _val) { m_suffix = _val; }
     void set_format(const string_t& _val) { m_format = _val; }
     void set_unit(const unit_type& _val) { m_unit = _val; }
     void set_precision(const size_type& _val) { m_precision = _val; }
     void set_width(const size_type& _val) { m_width = _val; }
 
-    const string_t& begin() const { return m_begin; }
-    const string_t& close() const { return m_close; }
+    const string_t& prefix() const { return m_prefix; }
+    const string_t& suffix() const { return m_suffix; }
     const string_t& format() const { return m_format; }
     const unit_type& unit() const { return m_unit; }
     const size_type& precision() const { return m_precision; }
@@ -124,8 +124,8 @@ protected:
     size_type   m_precision;
     size_type   m_width;
     unit_type   m_unit;
-    string_t    m_begin;
-    string_t    m_close;
+    string_t    m_prefix;
+    string_t    m_suffix;
     string_t    m_format;
 };
 
@@ -149,11 +149,11 @@ public:
     typedef std::vector<field_pair_t>   field_list_t;
 
 public:
-    rss(string_t _begin = "",
+    rss(string_t _prefix = "",
         string_t _format = get_default_format(),
         unit_type _unit = get_default_unit(),
         bool _align_width = false)
-    : base_formatter(_begin, "", _format, _unit, _align_width,
+    : base_formatter(_prefix, "", _format, _unit, _align_width,
                      get_default_precision(),
                      get_default_width())
     { }
@@ -220,12 +220,12 @@ public:
 
 public:
     // public constructors
-    timer(string_t _begin = "",
+    timer(string_t _prefix = "",
           string_t _format = get_default_format(),
           unit_type _unit = get_default_unit(),
           rss_format_t _rss_format = get_default_rss_format(),
           bool _align_width = false)
-    : base_formatter(_begin, "", _format, _unit, _align_width,
+    : base_formatter(_prefix, "", _format, _unit, _align_width,
                      get_default_precision(),
                      get_default_width()),
       m_rss_format(_rss_format)

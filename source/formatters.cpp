@@ -120,15 +120,15 @@ format::timer::compose() const
     if(m_align_width)
     {
         _ss << std::setw(f_default_width + 1)
-            << std::left << m_begin << " "
+            << std::left << m_prefix << " "
             << std::right << m_format
-            << std::left << m_close;
+            << std::left << m_suffix;
     }
     else
     {
-        _ss << std::left << m_begin << " "
+        _ss << std::left << m_prefix << " "
             << std::right << m_format
-            << std::left << m_close;
+            << std::left << m_suffix;
     }
     return _ss.str();
 }
@@ -274,15 +274,15 @@ format::rss::compose() const
     if(m_align_width)
     {
         _ss << std::setw(f_default_width + 1)
-            << std::left << m_begin << " "
+            << std::left << m_prefix << " "
             << std::right << m_format
-            << std::left << m_close;
+            << std::left << m_suffix;
     }
     else
     {
-        _ss << std::left << m_begin << " "
+        _ss << std::left << m_prefix << " "
             << std::right << m_format
-            << std::left << m_close;
+            << std::left << m_suffix;
     }
     return _ss.str();
 }

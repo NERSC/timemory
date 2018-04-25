@@ -417,7 +417,7 @@ void manager::report(ostream_t* os, bool no_min) const
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
         if(itr.timer().above_min(no_min))
-            tim::format::timer::propose_default_width(itr.timer().format()->begin().length());
+            tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
     if(_width > 10 && _width < tim::format::timer::get_default_width())

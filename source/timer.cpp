@@ -45,9 +45,9 @@ namespace tim
 
 //============================================================================//
 
-timer::timer(const string_t& _begin,
+timer::timer(const string_t& _prefix,
              const string_t& _format)
-: base_type(timer_format_t(new format_type(_begin, _format)))
+: base_type(timer_format_t(new format_type(_prefix, _format)))
 { }
 
 //============================================================================//

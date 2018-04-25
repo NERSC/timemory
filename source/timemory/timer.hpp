@@ -61,7 +61,7 @@ public:
     typedef std::shared_ptr<format_type>    timer_format_t;
 
 public:
-    timer(const string_t& _begin = "",
+    timer(const string_t& _prefix = "",
           const string_t& _format = format::timer::get_default_format());
     timer(const format_type& _format);
     timer(timer_format_t _format);

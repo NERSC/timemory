@@ -223,19 +223,19 @@ PYBIND11_MODULE(timemory, tim)
         return tim::format::timer::get_default_format();
     };
     //------------------------------------------------------------------------//
-    auto timer_init = [=] (std::string begin = "", std::string format = "")
+    auto timer_init = [=] (std::string prefix = "", std::string format = "")
     {
-        if(begin.empty())
+        if(prefix.empty())
         {
             std::stringstream keyss;
             keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
-            begin = keyss.str();
+            prefix = keyss.str();
         }
 
         if(format.empty())
             format = get_timer_default_format();
 
-        return new tim_timer_t(begin, format);
+        return new tim_timer_t(prefix, format);
     };
     //------------------------------------------------------------------------//
     auto auto_timer_init = [=] (const std::string& key = "",
@@ -304,9 +304,16 @@ PYBIND11_MODULE(timemory, tim)
         return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
     };
     //------------------------------------------------------------------------//
-    auto rss_usage_init = [=] (bool record = false)
+    auto rss_usage_init = [=] (std::string prefix = "",
+                               bool record = false,
+                               std::string format = "")
     {
-        return (record) ? new rss_usage_t(0) : new rss_usage_t();
+        rss_format_t _fmt(prefix);
+        if(format.length() > 0)
+            _fmt.set_format(format);
+        rss_usage_t* _rss = (record)
+                            ? new rss_usage_t(0, _fmt) : new rss_usage_t(_fmt);
+        return _rss;
     };
     //------------------------------------------------------------------------//
     auto signal_list_to_set = [=] (py::list signal_list) -> signal_set_t
@@ -335,7 +342,7 @@ PYBIND11_MODULE(timemory, tim)
         tim::DisableSignalDetection();
     };
     //------------------------------------------------------------------------//
-    auto timing_fmt_init = [=] (const std::string& begin = "",
+    auto timing_fmt_init = [=] (const std::string& prefix = "",
                            const std::string& format = timer_format_t::get_default_format(),
                            unit_type unit = timer_format_t::get_default_unit(),
                            py::object rss_format = py::none(),
@@ -345,15 +352,15 @@ PYBIND11_MODULE(timemory, tim)
         if(!rss_format.is_none())
             _rss_format = *rss_format.cast<rss_format_t*>();
 
-        return new timer_format_t(begin, format, unit, _rss_format, align_width);
+        return new timer_format_t(prefix, format, unit, _rss_format, align_width);
     };
     //------------------------------------------------------------------------//
-    auto memory_fmt_init = [=] (const std::string& begin = "",
+    auto memory_fmt_init = [=] (const std::string& prefix = "",
                            const std::string& format = rss_format_t::get_default_format(),
                            unit_type unit = rss_format_t::get_default_unit(),
                            bool align_width = false)
     {
-        return new rss_format_t(begin, format, unit, align_width);
+        return new rss_format_t(prefix, format, unit, align_width);
     };
     //------------------------------------------------------------------------//
 
@@ -464,7 +471,7 @@ PYBIND11_MODULE(timemory, tim)
     timing_fmt.def(py::init(timing_fmt_init),
                    "Initialize timing formatter",
                    py::return_value_policy::take_ownership,
-                   py::arg("begin") = "",
+                   py::arg("prefix") = "",
                    py::arg("format") = timer_format_t::get_default_format(),
                    py::arg("unit") = timer_format_t::get_default_unit(),
                    py::arg("rss_format") = py::none(),
@@ -554,6 +561,20 @@ PYBIND11_MODULE(timemory, tim)
                    [=] (py::object obj, bool _val)
                    { obj.cast<timer_format_t*>()->set_use_align_width(_val); },
                    "Set the timer to use the alignment width");
+    timing_fmt.def("set_prefix",
+                   [=] (py::object self, std::string prefix)
+                   {
+                       timer_format_t* _self = self.cast<timer_format_t*>();
+                       _self->set_prefix(prefix);
+                   },
+                   "Set the prefix of timer format");
+    timing_fmt.def("set_suffix",
+                   [=] (py::object self, std::string suffix)
+                   {
+                       timer_format_t* _self = self.cast<timer_format_t*>();
+                       _self->set_suffix(suffix);
+                   },
+                   "Set the suffix of timer format");
 
     //------------------------------------------------------------------------//
     //      format.rss
@@ -563,7 +584,7 @@ PYBIND11_MODULE(timemory, tim)
     memory_fmt.def(py::init(memory_fmt_init),
                    "Initialize memory formatter",
                    py::return_value_policy::take_ownership,
-                   py::arg("begin") = "",
+                   py::arg("prefix") = "",
                    py::arg("format") = rss_format_t::get_default_format(),
                    py::arg("unit") = rss_format_t::get_default_unit(),
                    py::arg("align_width") = false);
@@ -628,6 +649,20 @@ PYBIND11_MODULE(timemory, tim)
                    [=] (py::object obj, bool _val)
                    { obj.cast<rss_format_t*>()->set_use_align_width(_val); },
                    "Set the RSS to use the alignment width");
+    memory_fmt.def("set_prefix",
+                   [=] (py::object self, std::string prefix)
+                   {
+                       rss_format_t* _self = self.cast<rss_format_t*>();
+                       _self->set_prefix(prefix);
+                   },
+                   "Set the prefix of RSS format");
+    memory_fmt.def("set_suffix",
+                   [=] (py::object self, std::string suffix)
+                   {
+                       rss_format_t* _self = self.cast<rss_format_t*>();
+                       _self->set_suffix(suffix);
+                   },
+                   "Set the suffix of RSS format");
 
     //------------------------------------------------------------------------//
     //  Class declarations
@@ -648,7 +683,7 @@ PYBIND11_MODULE(timemory, tim)
     timer.def(py::init(timer_init),
               "Initialization",
               py::return_value_policy::take_ownership,
-              py::arg("begin") = "", py::arg("format") = "");
+              py::arg("prefix") = "", py::arg("format") = "");
     //------------------------------------------------------------------------//
     timer.def("as_auto_timer",
               [=] (py::object timer, bool report_at_exit = false)
@@ -1057,7 +1092,9 @@ PYBIND11_MODULE(timemory, tim)
     rss_usage.def(py::init(rss_usage_init),
                   "Initialization of RSS measurement class",
                   py::return_value_policy::take_ownership,
-                  py::arg("record") = false);
+                  py::arg("prefix") = "",
+                  py::arg("record") = false,
+                  py::arg("format") = "");
     //------------------------------------------------------------------------//
     rss_usage.def("record",
                   [=] (py::object self)
