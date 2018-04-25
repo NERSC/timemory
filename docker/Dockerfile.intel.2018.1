@@ -1,0 +1,126 @@
+###############################################################################
+#
+#   Build with Intel C++ and MPI
+#   - requires access to NERSC private shifter registry and NERSC's
+#     Intel license server. If you have access to the NERSC shifter
+#     registry but do not know how to connect to NERSC's Intel license
+#     server, instructions are provided at the beginning of the attempt
+#     to build (which will fail if a connection to the license server
+#     cannot be made)
+#
+###############################################################################
+FROM registry.services.nersc.gov/nersc/intel_cxx_mpi_devel:2018.1 as builder
+
+ENV DEBIAN_FRONTEND noninteractive
+WORKDIR /root
+USER root
+ENV HOME /root
+ENV LANG en_US.UTF-8
+ENV LANGUAGE en_US
+ENV LC_ALL C
+ENV TZ "America/Los_Angeles"
+
+
+###############################################################################
+# Build arguments
+###############################################################################
+# pass --build-arg PYTHON=python to enable Python 2.7
+# default is Python 3.5
+ARG PYTHON=python3
+
+
+###############################################################################
+# Install some packages.
+###############################################################################
+COPY config/bash_init.sh /root/.bash_init.sh
+
+#
+# needed for CMake - intel environment scripts are already sourced
+#
+ENV CC /opt/intel/bin/icc
+ENV CXX /opt/intel/bin/icpc
+
+RUN . /root/.bash_init.sh && \
+    apt-get update \
+    && \
+    apt-get -y --no-install-recommends install \
+        cmake git-core ninja-build gpg rsync \
+        ${PYTHON} ${PYTHON}-pip ${PYTHON}-dev ${PYTHON}-minimal && \
+    apt-get -y autoclean && rm -rf /var/lib/apt/lists/* && \
+    update-alternatives --install \
+        /usr/bin/docker-python \
+        python \
+        /usr/bin/python$(get-python-version ${PYTHON}) \
+        50 \
+    && \
+    docker-python -m pip install -U pip setuptools && \
+    docker-python -m pip install -U disttools && \
+    docker-python -m pip install -U numpy pillow matplotlib && \
+    git clone https://github.com/jrmadsen/TiMemory.git ${HOME}/TiMemory && \
+    mkdir -p ${HOME}/build-timemory && \
+    cd ${HOME}/build-timemory && \
+    cmake \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DCMAKE_INSTALL_PREFIX=/opt/local \
+        -DCMAKE_CXX_STANDARD=14 \
+        -DCTEST_SITE=docker \
+        -DCTEST_MODEL=Continuous \
+        -DCTEST_LOCAL_CHECKOUT=ON \
+        -DPYTHON_EXECUTABLE=$(which docker-python) \
+        -DTIMEMORY_BUILD_EXAMPLES=ON \
+        -DTIMEMORY_BUILD_TESTING=ON \
+        -DTIMEMORY_USE_MPI=ON \
+        -DTIMEMORY_USE_PYTHON_BINDING=ON \
+        -DTIMEMORY_DYNAMIC_LINK=ON \
+        -DTIMEMORY_TEST_MPI=OFF \
+        ${HOME}/TiMemory -G Ninja \
+    && \
+    ninja -v && ninja install && \
+    ctest -VV -S cdash/Test.cmake && \
+    cd ${HOME} && rm -rf ${HOME}/TiMemory ${HOME}/build-timemory && \
+    write-timemory-ld-config && \
+    export TIMEMORY_CONFIG=/etc/profile.d/timemory.sh && \
+    printf "%s\n\n" '#!/bin/sh' > ${TIMEMORY_CONFIG} && chmod 755 ${TIMEMORY_CONFIG} && \
+    printf "PYTHONPATH=/opt/local/lib/python%s/site-packages:\${PYTHONPATH}\nexport PYTHONPATH\n" "$(get-python-version ${PYTHON})" >> ${TIMEMORY_CONFIG}
+
+###############################################################################
+# Runtime image
+###############################################################################
+FROM registry.services.nersc.gov/nersc/intel_cxx_mpi_runtime:2018.1
+
+ARG PYTHON=python3
+
+ENV DEBIAN_FRONTEND noninteractive
+WORKDIR /root
+USER root
+ENV HOME /root
+
+# copy pip installs
+COPY --from=builder /usr/local/ /usr/local
+# copy timemory installs
+COPY --from=builder /opt/local/ /opt/local
+# copy ld config
+COPY --from=builder /etc/ld.so.conf.d/timemory.conf /etc/ld.so.conf.d/timemory.conf
+# copy env setup
+COPY --from=builder /etc/profile.d/timemory.sh /etc/profile.d/timemory.sh
+# some helper functions
+COPY config/bash_init.sh /root/.bash_init.sh
+
+# validate TiMemory is installed
+RUN . /root/.bash_init.sh && \
+    apt-get update && \
+    apt-get -y --no-install-recommends install gpg ${PYTHON} ${PYTHON}-minimal && \
+    apt-get -y autoclean && rm -rf /var/lib/apt/lists/* /tmp/* && \
+    update-alternatives --install \
+        /usr/local/bin/python \
+        python \
+        /usr/bin/python$(get-python-version ${PYTHON}) \
+        50 \
+    && \
+    mkdir ${HOME}/test_run && cd ${HOME}/test_run && \
+    ${PYTHON} -c "import timemory ; timemory.tests.run()" && \
+    cd ${HOME} && rm -rf test_run
+
+COPY config/runtime-entrypoint.sh /timemory-entrypoint.sh
+SHELL [ "/bin/bash", "--login", "-c" ]
+ENTRYPOINT [ "/timemory-entrypoint.sh" ]
