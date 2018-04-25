@@ -384,37 +384,47 @@ class timemory_test(unittest.TestCase):
     # Test if the timers are working if not disabled at compilation
     def test_8_format(self):
 
-        # Python 2.7 doesn't like timemory.format.{timer,rss} without instance
-        if sys.version_info[0] < 3:
-            return
-
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
         self.manager.clear()
-
-        timer_rss_fmt = timemory.format.rss()
-        timer_rss_fmt.set_format("%C, %M, %c, %m")
-        timer_rss_fmt.set_precision(0)
-        timer_rss_fmt.set_unit(timemory.units.kilobyte)
-
-        default_timer_fmt = timemory.format.timer.get_default()
-        timemory.format.timer.set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %R")
-        timemory.format.timer.set_default_rss_format("%C, %M, %c, %m")
-        timemory.format.timer.set_default_rss_format(timer_rss_fmt)
-        timemory.format.timer.set_default_unit(timemory.units.msec)
-        timemory.format.timer.set_default_precision(1)
-
-        default_rss_fmt = timemory.format.rss.get_default()
-        timemory.format.rss.set_default_format(": [ c, p %A ] : %C, %M")
-        timemory.format.rss.set_default_unit(timemory.units.kilobyte)
-        timemory.format.rss.set_default_precision(3)
 
         t1 = timemory.timer("format_test")
         t2 = timemory.timer("format_test")
         u1 = timemory.rss_usage("format_test")
         u2 = timemory.rss_usage("format_test")
 
-        t2.set_format(t2.get_format().copy_from(default_timer_fmt))
-        u2.set_format(u2.get_format().copy_from(default_rss_fmt))
+        # Python 2.7 doesn't like timemory.format.{timer,rss} without instance
+        if sys.version_info[0] > 2:
+            timer_rss_fmt = timemory.format.rss()
+            timer_rss_fmt.set_format("%C, %M, %c, %m")
+            timer_rss_fmt.set_precision(0)
+            timer_rss_fmt.set_unit(timemory.units.kilobyte)
+
+            default_timer_fmt = timemory.format.timer.get_default()
+            timemory.format.timer.set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %R")
+            timemory.format.timer.set_default_rss_format("%C, %M, %c, %m")
+            timemory.format.timer.set_default_rss_format(timer_rss_fmt)
+            timemory.format.timer.set_default_unit(timemory.units.msec)
+            timemory.format.timer.set_default_precision(1)
+
+            default_rss_fmt = timemory.format.rss.get_default()
+            timemory.format.rss.set_default_format("[ c, p %A ] : %C, %M")
+            timemory.format.rss.set_default_unit(timemory.units.kilobyte)
+            timemory.format.rss.set_default_precision(3)
+
+            t1 = timemory.timer("format_test")
+            t2 = timemory.timer("format_test")
+            u1 = timemory.rss_usage("format_test")
+            u2 = timemory.rss_usage("format_test")
+
+            t2.set_format(t2.get_format().copy_from(default_timer_fmt))
+            u2.set_format(u2.get_format().copy_from(default_rss_fmt))
+
+        else:
+            t1 = timemory.timer("format_test", format="[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m")
+            t2 = timemory.timer("format_test")
+            u1 = timemory.rss_usage("format_test", format="[ c, p %A ] : %C, %M")
+            u2 = timemory.rss_usage("format_test")
+
 
         freport = options.set_report("timing_format.out")
         fserial = options.set_serial("timing_format.json")
@@ -458,15 +468,15 @@ class timemory_test(unittest.TestCase):
         u2.record()
 
         print('\n')
-        print('{}'.format(t1))
-        print('{}'.format(t2))
+        print('[memory] {}'.format(u1))
+        print('[memory] {}'.format(u2))
 
         t1.stop()
         t2.stop()
 
         print('\n')
-        print('{}'.format(t1))
-        print('{}'.format(t2))
+        print('[timing] {}'.format(t1))
+        print('[timing] {}'.format(t2))
 
         print('\n')
 

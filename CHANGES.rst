@@ -1,6 +1,22 @@
 TiMemory
 ========
 
+Release: TiMemory 2.0.0
+~~~~~~~~~~~~~~~~~~~~~~~
+
+Author: Jonathan R. Madsen
+Date:   Wed Apr 25 12:59:06 2018 -0700
+
+    - Large re-write of formatting
+    - Python format module with classes `timemory.format.rss` and `timemory.format.timer`
+    - Python units module
+    - format names variables prefix/suffix instead of begin/close
+    - timemory.rss_usage has more initialization options
+    - Intel -xHOST and -axMIC-AVX512 flags enabled for Intel compilers
+    - Added units.hpp
+    - Added formatters.{hpp,cpp}
+    - Some minor serialization updates
+
 Release: TiMemory 1.3.1
 ~~~~~~~~~~~~~~~~~~~~~~~
 
