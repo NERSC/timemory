@@ -108,11 +108,13 @@ class timemory_test(unittest.TestCase):
         self.assertEqual(self.manager.size(), 12)
 
         for i in range(0, self.manager.size()):
-            t = self.manager.at(i)
-            self.assertFalse(t.real_elapsed() < 0.0)
-            self.assertFalse(t.user_elapsed() < 0.0)
+            _t = self.manager.at(i)
+            self.assertFalse(_t.real_elapsed() < 0.0)
+            self.assertFalse(_t.user_elapsed() < 0.0)
 
         timemory.toggle(True)
+        t.stop()
+        print('{}'.format(t))
 
 
     # ------------------------------------------------------------------------ #
@@ -378,6 +380,92 @@ class timemory_test(unittest.TestCase):
         self.assertTrue(abs(rss_diff) < 250)
 
 
+    # ------------------------------------------------------------------------ #
+    # Test if the timers are working if not disabled at compilation
+    def test_8_format(self):
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
+        self.manager.clear()
+
+        timer_rss_fmt = timemory.format.rss()
+        timer_rss_fmt.set_format("%C, %M, %c, %m")
+        timer_rss_fmt.set_precision(0)
+        timer_rss_fmt.set_unit(timemory.units.kilobyte)
+
+        default_timer_fmt = timemory.format.timer.get_default()
+        timemory.format.timer.set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %R")
+        timemory.format.timer.set_default_rss_format("%C, %M, %c, %m")
+        timemory.format.timer.set_default_rss_format(timer_rss_fmt)
+        timemory.format.timer.set_default_unit(timemory.units.msec)
+        timemory.format.timer.set_default_precision(1)
+
+        default_rss_fmt = timemory.format.rss.get_default()
+        timemory.format.rss.set_default_format(": [ c, p %A ] : %C, %M")
+        timemory.format.rss.set_default_unit(timemory.units.kilobyte)
+        timemory.format.rss.set_default_precision(3)
+
+        t1 = timemory.timer("format_test")
+        t2 = timemory.timer("format_test")
+        u1 = timemory.rss_usage()
+        u2 = timemory.rss_usage()
+
+        t2.set_format(t2.get_format().copy_from(default_timer_fmt))
+        u2.set_format(u2.get_format().copy_from(default_rss_fmt))
+
+        freport = options.set_report("timing_format.out")
+        fserial = options.set_serial("timing_format.json")
+
+        def time_fibonacci(n):
+            atimer = timemory.auto_timer('({})@{}'.format(n, timemory.FILE(use_dirname=True)))
+            key = ('fibonacci(%i)' % n)
+            timer = timemory.timer(key)
+            timer.start()
+            fibonacci(n)
+            timer.stop()
+
+        self.manager.clear()
+
+        t1.start()
+        t2.start()
+
+        for i in [39, 35, 39]:
+            # python is too slow with these values that run in a couple
+            # seconds in C/C++
+            n = i - 12
+            time_fibonacci(n - 2)
+            time_fibonacci(n - 1)
+            time_fibonacci(n)
+            time_fibonacci(n + 1)
+
+        self.manager.report()
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
+
+        self.assertEqual(self.manager.size(), 8)
+
+        for i in range(0, self.manager.size()):
+            _t = self.manager.at(i)
+            self.assertFalse(_t.real_elapsed() < 0.0)
+            self.assertFalse(_t.user_elapsed() < 0.0)
+
+        timemory.toggle(True)
+        self.manager.clear()
+
+        u1.record()
+        u2.record()
+
+        print('\n')
+        print('format_test {}'.format(u1))
+        print('format_test {}'.format(u2))
+
+        t1.stop()
+        t2.stop()
+
+        print('\n')
+        print('{}'.format(t1))
+        print('{}'.format(t2))
+
+        print('\n')
+
+
 # ---------------------------------------------------------------------------- #
 def run_test():
     try:
@@ -396,6 +484,8 @@ def run_test():
         _test.test_6_toggle()
         _test.setUp()
         _test.test_7_context_manager()
+        _test.setUp()
+        _test.test_8_format()
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
@@ -406,12 +496,16 @@ def run_test():
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--run-explicit", action='store_true', default=False)
     # this variant will remove TiMemory arguments from sys.argv
     args = options.add_args_and_parse_known(parser)
 
     try:
-        loader = unittest.defaultTestLoader.sortTestMethodsUsing = None
-        unittest.main(verbosity=5, buffer=False)
+        if args.run_explicit:
+            run_test()
+        else:
+            loader = unittest.defaultTestLoader.sortTestMethodsUsing = None
+            unittest.main(verbosity=5, buffer=False)
     except:
         raise
     finally:

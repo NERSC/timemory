@@ -53,14 +53,14 @@ format::timer::unit_type        format::timer::f_default_unit       = units::sec
 //============================================================================//
 
 format::rss::string_t
-format::rss::f_default_format       = std::string(" : RSS {curr,peak} : (%C|%M) [%A]");
+format::rss::f_default_format       = std::string(": RSS {curr,peak} : (%C|%M) [%A]");
 
 format::timer::string_t
-format::timer::f_default_format     = std::string(" : %w wall, %u user + %s system = %t CPU [%T] (%p%)") +
+format::timer::f_default_format     = std::string(": %w wall, %u user + %s system = %t CPU [%T] (%p%)") +
                                       std::string("%R (x%l laps)");
 format::timer::rss_format_t
 format::timer::f_default_rss_format = format::rss("",
-                                                  " : RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
+                                                  ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
                                                   format::rss::get_default_unit(),
                                                   false);
 
@@ -93,10 +93,16 @@ format::timer::field_list_t   format::timer::f_field_list =
 };
 
 //============================================================================//
+//
+//                          BASE_FORMATTER
+//
+//============================================================================//
+
+
 
 //============================================================================//
 //
-//                                  TIMING
+//                          TIMING
 //
 //============================================================================//
 
@@ -114,13 +120,13 @@ format::timer::compose() const
     if(m_align_width)
     {
         _ss << std::setw(f_default_width + 1)
-            << std::left << m_begin
+            << std::left << m_begin << " "
             << std::right << m_format
             << std::left << m_close;
     }
     else
     {
-        _ss << std::left << m_begin
+        _ss << std::left << m_begin << " "
             << std::right << m_format
             << std::left << m_close;
     }
@@ -219,8 +225,44 @@ format::timer::operator()(const internal::base_timer* t) const
 }
 
 //============================================================================//
+
+void format::timer::set_default(const timer& rhs)
+{
+    format::timer::set_default_format(rhs.format());
+    format::timer::set_default_precision(rhs.precision());
+    format::timer::set_default_rss_format(rhs.rss_format());
+    format::timer::set_default_unit(rhs.unit());
+    format::timer::set_default_width(rhs.width());
+}
+
+//============================================================================//
+
+format::timer format::timer::get_default()
+{
+    format::timer obj;
+    obj.set_format(format::timer::get_default_format());
+    obj.set_precision(format::timer::get_default_precision());
+    obj.set_rss_format(format::timer::get_default_rss_format());
+    obj.set_unit(format::timer::get_default_unit());
+    obj.set_width(format::timer::get_default_width());
+    return obj;
+}
+
+//============================================================================//
+
+format::timer* format::timer::copy_from(const timer* rhs)
+{
+    m_precision = rhs->precision();
+    m_width = rhs->width();
+    m_unit = rhs->unit();
+    m_format = rhs->format();
+    m_rss_format = rhs->rss_format();
+    return this;
+}
+
+//============================================================================//
 //
-//                                  RSS
+//                          RSS
 //
 //============================================================================//
 
@@ -232,13 +274,13 @@ format::rss::compose() const
     if(m_align_width)
     {
         _ss << std::setw(f_default_width + 1)
-            << std::left << m_begin
+            << std::left << m_begin << " "
             << std::right << m_format
             << std::left << m_close;
     }
     else
     {
-        _ss << std::left << m_begin
+        _ss << std::left << m_begin << " "
             << std::right << m_format
             << std::left << m_close;
     }
@@ -275,7 +317,7 @@ format::rss::operator()(const tim::rss::usage* m) const
             case format::rss::field::total_curr:
             case format::rss::field::self_curr:
                 // RSS (current)
-                _ss.precision(1);
+                _ss.precision(m_precision);
                 _ss << std::setw(wrss+1)
                    << _curr;
                 break;
@@ -283,12 +325,12 @@ format::rss::operator()(const tim::rss::usage* m) const
             case format::rss::field::total_peak:
             case format::rss::field::self_peak:
                 // RSS (peak)
-                _ss.precision(1);
+                _ss.precision(m_precision);
                 _ss << std::setw(wrss+1)
                    << _peak;
                 break;
             case format::rss::field::memory_unit:
-                _ss.precision(1);
+                _ss.precision(m_precision);
                 _ss << tim::units::mem_repr(m_unit);
                 break;
             default:
@@ -387,6 +429,39 @@ format::rss::operator()(const tim::internal::base_rss_usage* m,
     }
 
     return _str;
+}
+
+//============================================================================//
+
+void format::rss::set_default(const rss& rhs)
+{
+    format::rss::set_default_format(rhs.format());
+    format::rss::set_default_precision(rhs.precision());
+    format::rss::set_default_unit(rhs.unit());
+    format::rss::set_default_width(rhs.width());
+}
+
+//============================================================================//
+
+format::rss format::rss::get_default()
+{
+    format::rss obj;
+    obj.set_format(format::rss::get_default_format());
+    obj.set_precision(format::rss::get_default_precision());
+    obj.set_unit(format::rss::get_default_unit());
+    obj.set_width(format::rss::get_default_width());
+    return obj;
+}
+
+//============================================================================//
+
+format::rss* format::rss::copy_from(const rss* rhs)
+{
+    m_precision = rhs->precision();
+    m_width = rhs->width();
+    m_unit = rhs->unit();
+    m_format = rhs->format();
+    return this;
 }
 
 //============================================================================//

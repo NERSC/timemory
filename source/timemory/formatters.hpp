@@ -165,6 +165,7 @@ public:
     string_t operator()(const tim::rss::usage* m) const;
     string_t operator()(const tim::internal::base_rss_usage* m,
                         const string_t& base_string = "") const;
+    rss* copy_from(const rss* rhs);
 
 public:
     // public static functions
@@ -179,6 +180,9 @@ public:
     static const unit_type& get_default_unit() { return f_default_unit; }
     static const size_type& get_default_precision() { return f_default_precision; }
     static const size_type& get_default_width() { return f_default_width; }
+
+    static void set_default(const rss& rhs);
+    static rss  get_default();
 
 protected:
     // protected member functions
@@ -232,6 +236,9 @@ public:
 public:
     // public member functions
     string_t operator()(const internal::base_timer* m) const;
+    void set_rss_format(const rss_format_t& _val) { m_rss_format = _val; }
+    const rss_format_t& rss_format() const { return m_rss_format; }
+    timer* copy_from(const timer* rhs);
 
 public:
     // public static functions
@@ -248,6 +255,9 @@ public:
     static const size_type& get_default_precision() { return f_default_precision; }
     static const size_type& get_default_width() { return f_default_width; }
     static const rss_format_t& get_default_rss_format() { return f_default_rss_format; }
+
+    static void  set_default(const timer& rhs);
+    static timer get_default();
 
 protected:
     // protected member functions

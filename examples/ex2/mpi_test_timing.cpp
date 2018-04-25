@@ -107,6 +107,8 @@ void test_manager();
 void test_timing_toggle();
 void test_timing_depth();
 void test_timing_thread();
+void test_serialize();
+void test_format();
 
 //============================================================================//
 
@@ -137,12 +139,14 @@ int main(int argc, char** argv)
 
     try
     {
+        RUN_TEST(test_serialize);
         RUN_TEST(test_rss_usage);
         RUN_TEST(test_timing_pointer);
         RUN_TEST(test_manager);
         RUN_TEST(test_timing_toggle);
         RUN_TEST(test_timing_depth);
         RUN_TEST(test_timing_thread);
+        RUN_TEST(test_format);
     }
     catch(std::exception& e)
     {
@@ -239,6 +243,13 @@ void print_depth(const std::string& func, int64_t line, bool extra_endl)
 
 //============================================================================//
 
+void test_serialize()
+{
+    print_info(__FUNCTION__);
+}
+
+//============================================================================//
+
 void test_rss_usage()
 {
     print_info(__FUNCTION__);
@@ -246,12 +257,12 @@ void test_rss_usage()
     typedef std::vector<double> vector_t;
     tim::rss::usage _rss_init;
     tim::rss::usage _rss_end;
-    tim::format::rss _format("", " : RSS [current = %c %A] [peak = %m %A]",
+    tim::format::rss _format("", ": RSS [current = %c %A] [peak = %m %A]",
                              tim::units::kilobyte, false);
     tim::format::rss _rformat("", "%C %A, %M %A, %c %A, %m %A",
                               tim::units::kilobyte, false);
     tim::format::timer _tformat(__FUNCTION__,
-                                " : %w %T, %u %T, %s %T, %t %T, %p%, %R, x%l",
+                                ": %w %T, %u %T, %s %T, %t %T, %p%, %R, x%l",
                                 tim::units::msec, _rformat, false);
 
     auto rt = tim::timer(__FUNCTION__);
@@ -530,6 +541,58 @@ void test_timing_thread()
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
     tman->enable(_is_enabled);
+}
+
+//============================================================================//
+
+void test_format()
+{
+    print_info(__FUNCTION__);
+
+    tim::format::timer::set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m");
+    tim::format::timer::set_default_unit(tim::units::msec);
+    tim::format::timer::set_default_precision(1);
+    tim::format::rss::set_default_format("[ c, p %A ] : %C, %M");
+    tim::format::rss::set_default_unit(tim::units::kilobyte);
+    tim::format::rss::set_default_precision(0);
+
+    auto tman = manager_t::instance();
+    tman->clear();
+
+    bool _is_enabled = tman->is_enabled();
+    tman->enable(true);
+
+    tim_timer_t& t = tman->timer("test_format");
+    t.start();
+
+    for(auto itr : { 34, 36, 39, 40 })
+        time_fibonacci(itr);
+
+    t.stop();
+
+    print_size(__FUNCTION__, __LINE__);
+    // reports to stdout
+    tman->report();
+    tman->set_output_stream("test_output/mpi_cxx_timing_format.out");
+    // reports to file
+    tman->report();
+    tman->write_json("test_output/mpi_cxx_timing_format.json");
+
+    EXPECT_EQ(manager_t::instance()->size(), 18);
+
+    for(const auto& itr : *tman)
+    {
+        ASSERT_FALSE(itr.timer().real_elapsed() < 0.0);
+        ASSERT_FALSE(itr.timer().user_elapsed() < 0.0);
+    }
+    tman->enable(_is_enabled);
+
+    tman->clear();
+
+    tim::rss::usage usage;
+    usage.record();
+
+    std::cout << "\nUsage " << usage << std::endl;
 }
 
 //============================================================================//
