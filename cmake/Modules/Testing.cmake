@@ -13,21 +13,6 @@ endif(TIMEMORY_BUILD_TESTING)
 
 
 # ------------------------------------------------------------------------ #
-# -- Miscellaneous
-# ------------------------------------------------------------------------ #
-if(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
-    if(CTEST_LOCAL_CHECKOUT)
-        set(CMAKE_LOCAL_DIRECTORY "${CMAKE_SOURCE_DIR}")
-        set(CTEST_MODEL "Continuous" CACHE STRING "Model for CTest")
-    else(CTEST_LOCAL_CHECKOUT)
-        set(CTEST_MODEL "Nightly" CACHE STRING "Model for CTest")
-    endif(CTEST_LOCAL_CHECKOUT)
-    mark_as_advanced(CTEST_MODEL)
-    mark_as_advanced(CTEST_LOCAL_CHECKOUT)
-endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
-
-
-# ------------------------------------------------------------------------ #
 # -- Function to create a temporary directory
 # ------------------------------------------------------------------------ #
 function(GET_TEMPORARY_DIRECTORY DIR_VAR DIR_MODEL)

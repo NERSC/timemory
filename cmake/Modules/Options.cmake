@@ -22,12 +22,8 @@ add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF NO_FEATURE)
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)
 add_dependent_option(TIMEMORY_DYNAMIC_LINK
     "Link the TiMemory PyBind11 module to the shared library" OFF "WIN32" ON)
-if(DEFINED TIMEMORY_BUILD_EXAMPLES)
-    add_option(TIMEMORY_BUILD_EXAMPLES "Build the C++ examples" OFF)
-else(DEFINED TIMEMORY_BUILD_EXAMPLES)
-    add_dependent_option(TIMEMORY_BUILD_EXAMPLES "Build the C++ examples"
-        ON "TIMEMORY_BUILD_TESTING;TIMEMORY_BUILD_EXAMPLES" OFF)
-endif(DEFINED TIMEMORY_BUILD_EXAMPLES)
+add_dependent_option(TIMEMORY_BUILD_EXAMPLES "Build the C++ examples"
+    ON "TIMEMORY_BUILD_TESTING" OFF)
 if(TIMEMORY_USE_MPI)
     add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON)
 endif(TIMEMORY_USE_MPI)
@@ -58,6 +54,7 @@ endif(TIMEMORY_DOXYGEN_DOCS)
 mark_as_advanced(TIMEMORY_BUILD_TESTING)
 
 set(CTEST_SITE "${HOSTNAME}" CACHE STRING "CDash submission site")
+set(CTEST_MODEL "Continuous" CACHE STRING "CDash submission track")
 if(TIMEMORY_BUILD_TESTING)
     # if this is directory we are running CDash (don't set to ON)
     add_option(TIMEMORY_DASHBOARD_MODE
