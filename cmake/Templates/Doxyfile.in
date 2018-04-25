@@ -128,7 +128,9 @@ EXCLUDE_SYMLINKS       = YES
 EXCLUDE_PATTERNS       = */.svn/* \
                          *UnitTest* \
                          *gtest* \
-                         */.git/*
+                         */.git/* \
+                         @PROJECT_SOURCE_DIR@/source/cereal/* \
+                         @PROJECT_SOURCE_DIR@/source/python/pybind11/*
 EXCLUDE_SYMBOLS        =
 EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples @PROJECT_SOURCE_DIR@/timemory
 EXAMPLE_PATTERNS       = *.hh \

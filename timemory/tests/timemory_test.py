@@ -383,6 +383,11 @@ class timemory_test(unittest.TestCase):
     # ------------------------------------------------------------------------ #
     # Test if the timers are working if not disabled at compilation
     def test_8_format(self):
+
+        # Python 2.7 doesn't like timemory.format.{timer,rss} without instance
+        if sys.version_info[0] < 3:
+            return
+
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
         self.manager.clear()
 

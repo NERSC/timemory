@@ -49,7 +49,8 @@ if(NOT SUBPROJECT)
         ${PROJECT_SOURCE_DIR}/timemory
         ${PROJECT_SOURCE_DIR}/examples)
 
-    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal)
+    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal
+        ${PROJECT_SOURCE_DIR}/source/python/pybind11)
     include(Documentation)
 
     if(TIMEMORY_DOXYGEN_DOCS)
