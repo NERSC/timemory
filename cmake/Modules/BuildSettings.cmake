@@ -7,6 +7,20 @@
 include(GNUInstallDirs)
 
 if(NOT SUBPROJECT)
+
+    # Special Intel compiler flags for NERSC Cori
+    foreach(_LANG C CXX)
+        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+            add_option(TIMEMORY_INTEL_${_LANG}_AVX512 "Enable -axMIC-AVX512 flags ${_LANG} compiler" ON)
+            if(TIMEMORY_INTEL_${_LANG}_AVX512)
+                set(INTEL_${_LANG}_COMPILER_FLAGS "-xHOST -axMIC-AVX512")
+            else(TIMEMORY_INTEL_${_LANG}_AVX512)
+                set(INTEL_${_LANG}_COMPILER_FLAGS "-xHOST")
+            endif(TIMEMORY_INTEL_${_LANG}_AVX512)
+            add_feature(INTEL_${_LANG}_COMPILER_FLAGS "Intel ${_LANG} compiler flags")
+        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+    endforeach(_LANG C CXX)
+
     set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
@@ -96,6 +110,12 @@ if(NOT SUBPROJECT AND NOT WIN32)
         add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
         add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
     endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+
+    foreach(_LANG C CXX)
+        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+            add(CMAKE_${_LANG}_FLAGS "${INTEL_${_LANG}_COMPILER_FLAGS}")
+        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+    endforeach(_LANG C CXX)
 
     add(CMAKE_C_FLAGS "-W -Wall -Wextra ${CFLAGS} $ENV{CFLAGS}")
     add(CMAKE_C_FLAGS "-Wno-unused-parameter")
