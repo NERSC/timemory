@@ -134,11 +134,11 @@ else(TIMEMORY_DYNAMIC_LINK)
 endif(TIMEMORY_DYNAMIC_LINK)
 
 #------------------------------------------------------------------------------#
-#   Alias to TiMemory link target
+#   TiMemory link target
 #------------------------------------------------------------------------------#
-add_library(@LIBNAME@-library ALIAS @LIBNAME@-${TIMEMORY_LINK_TYPE})
+#add_library(@LIBNAME@-library ALIAS @LIBNAME@-${TIMEMORY_LINK_TYPE})
 #message(STATUS "TiMemory library is alias to @LIBNAME@-${TIMEMORY_LINK_TYPE}")
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-library)
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-${TIMEMORY_LINK_TYPE})
 
 #------------------------------------------------------------------------------#
 #   Definitions
