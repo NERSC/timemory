@@ -260,7 +260,7 @@ public:
     usage(const usage& rhs)
     : m_curr_rss(rhs.m_curr_rss),
       m_peak_rss(rhs.m_peak_rss),
-      m_format(rhs.m_format)
+      m_format(usage_format_t(new format_type(*(rhs.m_format.get()))))
     { }
 
     usage& operator=(const usage& rhs)
@@ -269,6 +269,11 @@ public:
         {
             m_curr_rss = rhs.m_curr_rss;
             m_peak_rss = rhs.m_peak_rss;
+            if(!m_format.get())
+                m_format = usage_format_t(new format_type());
+            if(rhs.m_format.get())
+                *m_format = *(rhs.m_format.get());
+
             m_format = rhs.m_format;
         }
         return *this;
@@ -462,6 +467,170 @@ inline void usage::record(const usage& rhs)
 }
 //----------------------------------------------------------------------------//
 
+//============================================================================//
+//
+//  Class for handling the RSS memory usage (total and self)
+//
+//============================================================================//
+
+class tim_api usage_delta
+{
+public:
+    typedef usage_delta                     this_type;
+    typedef usage                           base_type;
+    typedef format::rss                     format_type;
+    typedef std::shared_ptr<format_type>    usage_format_t;
+
+public:
+    //------------------------------------------------------------------------//
+    //      Default constructor variants with usage_format_t
+    //------------------------------------------------------------------------//
+    usage_delta(usage_format_t _fmt = usage_format_t())
+    : m_format(_fmt)
+    { }
+
+    //------------------------------------------------------------------------//
+    //      Constructor variants with format_type
+    //------------------------------------------------------------------------//
+    usage_delta(format_type _fmt)
+    : m_format(usage_format_t(new format_type(_fmt)))
+    { }
+
+    //------------------------------------------------------------------------//
+    //      Copy construct
+    //------------------------------------------------------------------------//
+    usage_delta(const usage_delta& rhs)
+    : m_rss_tot(rhs.m_rss_tot),
+      m_rss_self(rhs.m_rss_self),
+      m_rss_tmp(rhs.m_rss_tmp),
+      m_rss_tot_min(rhs.m_rss_tot_min),
+      m_rss_self_min(rhs.m_rss_self_min),
+      m_format(usage_format_t(new format_type(*(rhs.m_format.get()))))
+    { }
+
+public:
+    void set_format(const format_type& _format);
+    void set_format(usage_format_t _format);
+    usage_format_t format() const;
+
+    inline void init()
+    {
+        m_rss_tmp.record();
+    }
+
+    inline void record()
+    {
+        m_rss_self.record(m_rss_tmp);
+        m_rss_tot.record();
+    }
+
+    base_type& total() { return m_rss_tot; }
+    base_type& self()  { return m_rss_self; }
+
+    const base_type& total() const { return m_rss_tot; }
+    const base_type& self() const { return m_rss_self; }
+
+    base_type& total_min() { return m_rss_tot_min; }
+    base_type& self_min()  { return m_rss_self_min; }
+
+    const base_type& total_min() const { return m_rss_tot_min; }
+    const base_type& self_min() const { return m_rss_self_min; }
+
+    void max(const this_type& rhs)
+    {
+        m_rss_tot  = tim::rss::usage::max(m_rss_tot, rhs.total());
+        m_rss_self = tim::rss::usage::max(m_rss_self, rhs.self());
+        m_rss_tot_min = tim::rss::usage::min(m_rss_tot, rhs.total());
+        m_rss_self_min = tim::rss::usage::min(m_rss_self, rhs.self());
+    }
+
+    std::string str() const
+    {
+        std::stringstream ss;
+        ss << (*this);
+        return ss.str();
+    }
+
+public:
+    //------------------------------------------------------------------------//
+    //          operator +=
+    //------------------------------------------------------------------------//
+    inline this_type& operator+=(const base_type& rhs)
+    {
+        m_rss_tot += rhs;
+        m_rss_tot_min += rhs;
+        return *this;
+    }
+    //------------------------------------------------------------------------//
+    //          operator -=
+    //------------------------------------------------------------------------//
+    inline this_type& operator-=(const base_type& rhs)
+    {
+        m_rss_tot -= rhs;
+        m_rss_tot_min -= rhs;
+        return *this;
+    }
+    //------------------------------------------------------------------------//
+    //          operator =
+    //------------------------------------------------------------------------//
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            if(!m_format.get())
+                m_format = usage_format_t(new format_type(format::timer::get_default_rss_format()));
+            if(rhs.m_format.get())
+                *m_format = *(rhs.m_format.get());
+            m_rss_tot = rhs.m_rss_tot;
+            m_rss_self = rhs.m_rss_self;
+            m_rss_tmp = rhs.m_rss_tmp;
+            m_rss_tot_min = rhs.m_rss_tot_min;
+            m_rss_self_min = rhs.m_rss_self_min;
+        }
+        return *this;
+    }
+    //------------------------------------------------------------------------//
+    //          operator <<
+    //------------------------------------------------------------------------//
+    friend std::ostream& operator<<(std::ostream& os, const this_type& m)
+    {
+        format_type _format = (m.format().get())
+                               ? (*(m.format().get()))
+                               : format::timer::get_default_rss_format();
+        os << _format(&m);
+        return os;
+    }
+
+protected:
+    // memory usage
+    base_type       m_rss_tot;
+    base_type       m_rss_self;
+    base_type       m_rss_tmp;
+    base_type       m_rss_tot_min;
+    base_type       m_rss_self_min;
+    usage_format_t  m_format;
+
+};
+
+//----------------------------------------------------------------------------//
+inline
+void usage_delta::set_format(const format_type& _format)
+{
+    m_format = usage_format_t(new format_type(_format));
+}
+//----------------------------------------------------------------------------//
+inline
+void usage_delta::set_format(usage_format_t _format)
+{
+    m_format = _format;
+}
+//----------------------------------------------------------------------------//
+inline
+usage_delta::usage_format_t usage_delta::format() const
+{
+    return m_format;
+}
+//----------------------------------------------------------------------------//
 
 } // namespace rss
 

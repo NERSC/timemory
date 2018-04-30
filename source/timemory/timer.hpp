@@ -59,6 +59,8 @@ public:
     typedef std::shared_ptr<this_type>      shared_ptr_type;
     typedef format::timer                   format_type;
     typedef std::shared_ptr<format_type>    timer_format_t;
+    typedef base_type::rss_type             rss_type;
+    typedef rss_type::base_type             base_rss_type;
 
 public:
     timer(const string_t& _prefix = "",
@@ -88,7 +90,7 @@ public:
 
     this_type& operator+=(const this_type& rhs)
     {
-        auto_lock_t l(m_mutex);
+        //auto_lock_t l(m_mutex);
         m_accum += rhs.get_accum();
         return *this;
     }
@@ -100,13 +102,13 @@ public:
         return *this;
     }
 
-    this_type& operator+=(const rss_usage_t& rhs)
+    this_type& operator+=(const base_rss_type& rhs)
     {
         m_accum += rhs;
         return *this;
     }
 
-    this_type& operator-=(const rss_usage_t& rhs)
+    this_type& operator-=(const base_rss_type& rhs)
     {
         m_accum -= rhs;
         return *this;

@@ -56,86 +56,6 @@ namespace internal
 
 //============================================================================//
 //
-//  Class for handling the RSS (resident set size) memory usage
-//
-//============================================================================//
-
-class tim_api base_rss_usage
-{
-public:
-    typedef base_rss_usage          this_type;
-    typedef tim::rss::usage         rss_usage_t;
-
-    inline void init()
-    {
-        m_rss_tmp.record();
-    }
-
-    inline void record()
-    {
-        m_rss_self.record(m_rss_tmp);
-        m_rss_tot.record();
-    }
-
-    rss_usage_t& total() { return m_rss_tot; }
-    rss_usage_t& self()  { return m_rss_self; }
-
-    const rss_usage_t& total() const { return m_rss_tot; }
-    const rss_usage_t& self() const { return m_rss_self; }
-
-    rss_usage_t& total_min() { return m_rss_tot_min; }
-    rss_usage_t& self_min()  { return m_rss_self_min; }
-
-    const rss_usage_t& total_min() const { return m_rss_tot_min; }
-    const rss_usage_t& self_min() const { return m_rss_self_min; }
-
-    void max(const base_rss_usage& rhs)
-    {
-        m_rss_tot  = tim::rss::usage::max(m_rss_tot, rhs.total());
-        m_rss_self = tim::rss::usage::max(m_rss_self, rhs.self());
-        m_rss_tot_min = tim::rss::usage::min(m_rss_tot, rhs.total());
-        m_rss_self_min = tim::rss::usage::min(m_rss_self, rhs.self());
-    }
-
-    inline this_type& operator+=(const rss_usage_t& rhs)
-    {
-        m_rss_tot += rhs;
-        m_rss_tot_min += rhs;
-        return *this;
-    }
-
-    inline this_type& operator-=(const rss_usage_t& rhs)
-    {
-        m_rss_tot -= rhs;
-        m_rss_tot_min -= rhs;
-        return *this;
-    }
-
-    this_type& operator=(const this_type& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_rss_tot = rhs.m_rss_tot;
-            m_rss_self = rhs.m_rss_self;
-            m_rss_tmp = rhs.m_rss_tmp;
-            m_rss_tot_min = rhs.m_rss_tot_min;
-            m_rss_self_min = rhs.m_rss_self_min;
-        }
-        return *this;
-    }
-
-protected:
-    // memory usage
-    rss_usage_t             m_rss_tot;
-    rss_usage_t             m_rss_self;
-    rss_usage_t             m_rss_tmp;
-    rss_usage_t             m_rss_tot_min;
-    rss_usage_t             m_rss_self_min;
-
-};
-
-//============================================================================//
-//
 //  Class for handling the timing and memory data
 //
 //============================================================================//
@@ -148,7 +68,7 @@ public:
     typedef tim::base_clock<ratio_t>                    clock_t;
     typedef clock_t::time_point                         time_point_t;
     typedef std::tuple<time_point_t, time_point_t>      data_type;
-    typedef base_rss_usage                              rss_type;
+    typedef tim::rss::usage_delta                       rss_type;
     typedef std::chrono::duration<clock_t, ratio_t>     duration_t;
 
 public:
@@ -223,8 +143,8 @@ public:
     typedef std::tuple<uint_type, uint_type, uint_type> data_type;
     typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
     typedef base_timer_data                             op_type;
-    typedef base_rss_usage                              rss_type;
-    typedef tim::rss::usage                             rss_usage_t;
+    typedef tim::rss::usage_delta                       rss_type;
+    typedef rss_type::base_type                         base_rss_type;
 
 public:
     base_timer_delta()
@@ -276,13 +196,13 @@ public:
         return *this;
     }
 
-    this_type& operator+=(const rss_usage_t& rhs)
+    this_type& operator+=(const base_rss_type& rhs)
     {
         m_rss += rhs;
         return *this;
     }
 
-    this_type& operator-=(const rss_usage_t& rhs)
+    this_type& operator-=(const base_rss_type& rhs)
     {
         m_rss -= rhs;
         return *this;
@@ -350,10 +270,10 @@ protected:
 #endif
 
 protected:
-    uint_type m_lap;
-    data_type m_sum;
-    data_type m_sqr;
-    rss_type  m_rss;
+    uint_type   m_lap;
+    data_type   m_sum;
+    data_type   m_sqr;
+    rss_type    m_rss;
 
 };
 
@@ -387,8 +307,7 @@ public:
     typedef base_timer_delta                    data_accum_t;
     typedef data_t::duration_t                  duration_t;
     typedef base_timer                          this_type;
-    typedef tim::rss::usage                     rss_usage_t;
-    typedef base_rss_usage                      rss_type;
+    typedef tim::rss::usage_delta               rss_type;
     typedef format::timer                       format_type;
     typedef std::shared_ptr<format_type>        timer_format_t;
 

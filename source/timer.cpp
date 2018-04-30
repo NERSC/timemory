@@ -69,7 +69,13 @@ timer::~timer()
 
 void timer::grab_metadata(const this_type& rhs)
 {
-    m_format = rhs.m_format;
+    if(!rhs.m_format.get())
+        return;
+
+    if(!m_format.get())
+        m_format = timer_format_t(new format_type());
+
+    *(m_format.get()) = *(rhs.m_format.get());
 }
 
 //============================================================================//
