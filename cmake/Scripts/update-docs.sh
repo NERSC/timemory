@@ -17,7 +17,7 @@ directory-exists()
 {
     for i in $@
     do
-        if [ ! -z "${i}" ]; then
+        if [ ! -d "${i}" ]; then
             echo -e "Directory ${i} does not exist!"
             exit 1
         fi
