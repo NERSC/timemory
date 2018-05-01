@@ -357,7 +357,7 @@ format::rss::operator()(const tim::rss::usage* m) const
 //============================================================================//
 
 format::rss::string_t
-format::rss::operator()(const tim::internal::base_rss_usage* m,
+format::rss::operator()(const tim::rss::usage_delta* m,
                         const string_t& _base) const
 {
     string_t _str = (_base.length() == 0) ? this->compose() : _base;

@@ -302,16 +302,26 @@ class timemory_test(unittest.TestCase):
 
 
         # auto timer test with args
-        with timemory.util.auto_timer('{}({})'.format(timemory.FUNC(), ['test', 'context']),
-                                      report_at_exit=True):
-            time.sleep(1)
+        @timemory.util.auto_timer()
+        def auto_timer_with_args(nc=2):
+            # construct context-manager with args
+            with timemory.util.auto_timer('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
+                time.sleep(nc)
 
-            ret = np.ones(shape=[500, 500], dtype=np.float64)
-            for i in [ 2.0, 3.5, 8.7 ]:
-                n = i * np.ones(shape=[500, 500], dtype=np.float64)
-                ret += n
-                del n
+                with timemory.util.auto_timer('{}({})'.format(timemory.FUNC(), ['test', 'context']), report_at_exit=True):
+                    ret = np.ones(shape=[500, 500], dtype=np.float64)
+                    for i in [ 2.0, 3.5, 8.7 ]:
+                        n = i * np.ones(shape=[500, 500], dtype=np.float64)
+                        ret += n
+                        del n
+                # recursive
+                if nc > 1:
+                    auto_timer_with_args(nc=1)
 
+        auto_timer_with_args()
+
+
+        print('\n\n{}\n\n'.format(self.manager))
 
         # rss test
         with timemory.util.rss_usage():
@@ -420,11 +430,32 @@ class timemory_test(unittest.TestCase):
             u2.set_format(u2.get_format().copy_from(default_rss_fmt))
 
         else:
-            t1 = timemory.timer("format_test", format="[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m")
+            timer_rss_fmt = timemory.format.rss()
+            timer_rss_fmt.set_format("%C, %M, %c, %m")
+            timer_rss_fmt.set_precision(0)
+            timer_rss_fmt.set_unit(timemory.units.kilobyte)
+
+            timer_format = timemory.format.timer()
+            default_timer_fmt = timer_format.get_default()
+            timer_format.set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %R")
+            timer_format.set_default_rss_format("%C, %M, %c, %m")
+            timer_format.set_default_rss_format(timer_rss_fmt)
+            timer_format.set_default_unit(timemory.units.msec)
+            timer_format.set_default_precision(1)
+
+            rss_format = timemory.format.rss()
+            default_rss_fmt = rss_format.get_default()
+            rss_format.set_default_format("[ c, p %A ] : %C, %M")
+            rss_format.set_default_unit(timemory.units.kilobyte)
+            rss_format.set_default_precision(3)
+
+            t1 = timemory.timer("format_test")
             t2 = timemory.timer("format_test")
-            u1 = timemory.rss_usage("format_test", format="[ c, p %A ] : %C, %M")
+            u1 = timemory.rss_usage("format_test")
             u2 = timemory.rss_usage("format_test")
 
+            t2.set_format(t2.get_format().copy_from(default_timer_fmt))
+            u2.set_format(u2.get_format().copy_from(default_rss_fmt))
 
         freport = options.set_report("timing_format.out")
         fserial = options.set_serial("timing_format.json")

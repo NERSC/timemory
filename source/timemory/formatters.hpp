@@ -56,9 +56,12 @@ namespace tim
 namespace internal
 {
     class base_timer; // declaration for format::timer
-    class base_rss_usage; // declaration for format::timer
 }
-namespace rss { class usage; } // declaration for format::rss
+namespace rss
+{
+    class usage; // declaration for format::rss
+    class usage_delta; // declaration for format::rss_usage
+}
 //============================================================================//
 
 //----------------------------------------------------------------------------//
@@ -163,7 +166,7 @@ public:
 public:
     // public member functions
     string_t operator()(const tim::rss::usage* m) const;
-    string_t operator()(const tim::internal::base_rss_usage* m,
+    string_t operator()(const tim::rss::usage_delta* m,
                         const string_t& base_string = "") const;
     rss* copy_from(const rss* rhs);
 

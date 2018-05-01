@@ -39,6 +39,73 @@ import collections
 import numpy as np
 import os
 import copy
+import warnings
+
+_matplotlib_backend = None
+
+#------------------------------------------------------------------------------#
+# determine the matplotlib backend
+#------------------------------------------------------------------------------#
+with warnings.catch_warnings():
+
+    if sys.version_info[0] < 3:
+        if sys.platform == "darwin":
+            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+        else:
+            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+    else:
+        if sys.platform == "darwin":
+            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+        else:
+            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                         'WXAgg', 'WX', 'GTK3Agg', 'GTK3Cairo' )
+
+    try:
+        import timemory.options
+        if timemory.options.matplotlib_backend != "default":
+            _matplotlib_backend = timemory.options.matplotlib_backend
+    except:
+        pass
+
+    # import the necessary module for matplotlib
+    if _matplotlib_backend is not None:
+        try:
+            import matplotlib
+            matplotlib.use(_matplotlib_backend)
+            import matplotlib.pyplot as plt
+        except:
+            for _backend in _matplotlib_backend_opts:
+                try:
+                    import matplotlib
+                    matplotlib.use(_backend)
+                    import matplotlib.pyplot as plt
+                    _matplotlib_backend = _backend
+                    break # successfull backend set
+                except:
+                    pass
+    else:
+        # try using tornado
+        try:
+            import tornado
+            import matplotlib
+            import matplotlib.pyplot as plt
+            _matplotlib_backend = 'default'
+        except:
+            for _backend in _matplotlib_backend_opts:
+                try:
+                    import matplotlib
+                    matplotlib.use(_backend)
+                    import matplotlib.pyplot as plt
+                    _matplotlib_backend = _backend
+                    break # successfull backend set
+                except:
+                    pass
+
+#------------------------------------------------------------------------------#
+
 
 """ Default timing data to extract from JSON """
 _default_timing_types = ['wall', 'sys', 'user', 'cpu', 'perc']
@@ -594,15 +661,9 @@ def read(json_obj, plot_params=plot_parameters()):
 def plot_generic(_plot_data, _types, _data_dict,
                  _type_str, _type_min, _type_unit):
 
-    try:
-        import tornado
-        import matplotlib
-        import matplotlib.pyplot as plt
-    except:
-        _matplotlib_backend = 'agg'
-        import matplotlib
-        matplotlib.use(_matplotlib_backend)
-        import matplotlib.pyplot as plt
+    if _matplotlib_backend is None:
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        return
 
     filename = _plot_data.filename
     plot_params = _plot_data.plot_params
@@ -723,15 +784,9 @@ def plot_generic(_plot_data, _types, _data_dict,
 def plot_timing(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
-    try:
-        import tornado
-        import matplotlib
-        import matplotlib.pyplot as plt
-    except:
-        _matplotlib_backend = 'agg'
-        import matplotlib
-        matplotlib.use(_matplotlib_backend)
-        import matplotlib.pyplot as plt
+    if _matplotlib_backend is None:
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        return
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -778,17 +833,9 @@ def plot_timing(_plot_data,
 def plot_memory(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
-    global plotted_files
-
-    try:
-        import tornado
-        import matplotlib
-        import matplotlib.pyplot as plt
-    except:
-        _matplotlib_backend = 'agg'
-        import matplotlib
-        matplotlib.use(_matplotlib_backend)
-        import matplotlib.pyplot as plt
+    if _matplotlib_backend is None:
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        return
 
     filename = _plot_data.filename
     title = _plot_data.get_title()

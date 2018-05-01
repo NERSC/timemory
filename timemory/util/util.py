@@ -38,7 +38,7 @@ import inspect
 #------------------------------------------------------------------------------#
 class base_decorator(object):
     """
-    A base class for the decorators
+    A base class for the decorators and context managers
     """
     def __init__(self, key="", add_args=False, is_class=False):
         self.key = key
@@ -95,7 +95,7 @@ class base_decorator(object):
 
 #------------------------------------------------------------------------------#
 class auto_timer(base_decorator):
-    """ A decorator for the auto-timer, e.g.:
+    """ A decorator or context-manager for the auto-timer, e.g.:
         @timemory.util.auto_timer(add_args=True)
         def main(n=5):
             for i in range(2):
@@ -147,7 +147,7 @@ class auto_timer(base_decorator):
         _key = ''
         _args = self.arg_string(args, kwargs)
         if self.key == "":
-            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+            _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
         else:
             _key = '{}{}'.format(self.key, _args)
 
@@ -165,11 +165,11 @@ class auto_timer(base_decorator):
 
 #------------------------------------------------------------------------------#
 class timer(base_decorator):
-    """ A decorator for the timer, e.g.:
+    """ A decorator or context-manager for the timer, e.g.:
 
         class someclass(object):
 
-            @timemory.util.timer(is_class=True)
+            @timemory.util.timer()
             def __init__(self):
                 self.some_obj = None
         # ...
@@ -196,7 +196,7 @@ class timer(base_decorator):
             _args = self.arg_string(args, kwargs)
             if self.key == "":
                 _func = func.__name__
-                _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+                _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
             else:
                 _key = '{}{}'.format(self.key, _args)
 
@@ -224,7 +224,7 @@ class timer(base_decorator):
         _key = ''
         _args = self.arg_string(args, kwargs)
         if self.key == "":
-            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+            _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
         else:
             _key = '{}{}'.format(self.key, _args)
 
@@ -243,11 +243,11 @@ class timer(base_decorator):
 
 #------------------------------------------------------------------------------#
 class rss_usage(base_decorator):
-    """ A decorator for the rss usage, e.g.:
+    """ A decorator or context-manager for the rss usage, e.g.:
 
         class someclass(object):
 
-            @timemory.util.rss_usage(is_class=True)
+            @timemory.util.rss_usage()
             def __init__(self):
                 self.some_obj = None
         # ...
@@ -256,7 +256,6 @@ class rss_usage(base_decorator):
     def __init__(self, key="", add_args=False, is_class=False):
         super(rss_usage, self).__init__(key, add_args, is_class)
         self._self_obj = None
-        self._self_key = None
 
 
     # ------------------------------------------------------------------------ #
@@ -275,26 +274,16 @@ class rss_usage(base_decorator):
             _args = self.arg_string(args, kwargs)
             if self.key == "":
                 _func = func.__name__
-                _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+                _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
             else:
                 _key = '{}{}'.format(self.key, _args)
 
-            # initial values
-            rss_done = timemory.rss_usage()
-            rss_self = timemory.rss_usage()
-            # record pre-function
-            rss_self.record()
+            self._self_obj = timemory.rss_delta(_key)
             # run function
             ret = func(*args, **kwargs)
-            # record at end
-            rss_done.record()
-            # calc self
-            rss_self = rss_done - rss_self
-
-            print('{} : RSS {}total,self{}_{}current,peak{} : ({}|{}) | ({}|{}) [MB]'.format(
-                _key, '{', '}', '{', '}',
-                rss_done.current(), rss_done.peak(),
-                rss_self.current(), rss_self.peak()))
+            # record
+            self._self_obj.record()
+            print('{}'.format(self._self_obj))
 
             return ret
 
@@ -304,7 +293,7 @@ class rss_usage(base_decorator):
     # ------------------------------------------------------------------------ #
     def __enter__(self, *args, **kwargs):
         """
-        Context manager
+        Context manager entrance
         """
         import timemory
         _file = timemory.FILE(3)
@@ -314,30 +303,20 @@ class rss_usage(base_decorator):
         _key = ''
         _args = self.arg_string(args, kwargs)
         if self.key == "":
-            _key = '{}{}@{}{}'.format(_func, _args, _file, _line)
+            _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
         else:
             _key = '{}{}'.format(self.key, _args)
 
-        self._self_obj = timemory.rss_usage()
-        self._self_key = _key
-        self._self_obj.record()
+        self._self_obj = timemory.rss_delta(_key)
 
 
     # ------------------------------------------------------------------------ #
     def __exit__(self, exc_type, exc_value, traceback):
-        import timemory
-        _key = '{}'.format(self._self_key)
-        rss_done = timemory.rss_usage()
-        rss_self = self._self_obj
-        # record at end
-        rss_done.record()
-        # calc self
-        rss_self = rss_done - rss_self
-
-        print('{} : RSS {}total,self{}_{}current,peak{} : ({}|{}) | ({}|{}) [MB]'.format(
-            _key, '{', '}', '{', '}',
-            rss_done.current(), rss_done.peak(),
-            rss_self.current(), rss_self.peak()))
+        """
+        Context manager exit
+        """
+        self._self_obj.record()
+        print('{}'.format(self._self_obj))
 
         if exc_type is not None and exc_value is not None and traceback is not None:
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

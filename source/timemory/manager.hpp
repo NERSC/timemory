@@ -157,8 +157,8 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                  this_type;
-    typedef tim::timer                 tim_timer_t;
+    typedef manager                         this_type;
+    typedef tim::timer                      tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef tim_timer_t::string_t           string_t;
     typedef timer_tuple                     timer_tuple_t;
@@ -175,7 +175,8 @@ public:
     typedef std::lock_guard<mutex_t>        auto_lock_t;
     typedef this_type*                      pointer_type;
     typedef std::set<this_type*>            daughter_list_t;
-    typedef tim_timer_t::rss_usage_t        rss_usage_t;
+    typedef tim_timer_t::rss_type           rss_type;
+    typedef rss_type::base_type             base_rss_type;
     typedef std::function<intmax_t()>       get_num_threads_func_t;
     typedef std::atomic<uint64_t>           counter_t;
 
@@ -276,8 +277,8 @@ public:
 
     void set_merge(bool val) { m_merge.store(val); }
 
-    void operator+=(const rss_usage_t& rhs);
-    void operator-=(const rss_usage_t& rhs);
+    void operator+=(const base_rss_type& rhs);
+    void operator-=(const base_rss_type& rhs);
 
     ostream_t* get_output_stream() const { return m_report; }
     bool is_reporting_to_file() const
@@ -339,19 +340,19 @@ private:
     // daughter list
     daughter_list_t         m_daughters;
     // baseline rss
-    rss_usage_t             m_rss_usage;
+    base_rss_type           m_rss_usage;
 };
 
 //----------------------------------------------------------------------------//
 inline void
-manager::operator+=(const rss_usage_t& rhs)
+manager::operator+=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
         *(std::get<3>(itr).get()) += rhs;
 }
 //----------------------------------------------------------------------------//
 inline void
-manager::operator-=(const rss_usage_t& rhs)
+manager::operator-=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
         *(std::get<3>(itr).get()) -= rhs;

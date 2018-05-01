@@ -126,7 +126,9 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
                                               auto_timer::ncount() - 1,
                                               auto_timer::phash() +
                                               auto_timer::nhash());
-        m_temp_timer = m_timer;
+        m_temp_timer = (m_report_at_exit)
+                       ? new tim_timer_t()
+                       : m_timer;
         m_timer->sync(_atimer);
         if(m_report_at_exit)
         {
@@ -158,10 +160,15 @@ auto_timer::~auto_timer()
     if(m_timer)
     {
         m_temp_timer->stop();
-        if(m_timer != m_temp_timer)
-            *m_timer += *m_temp_timer;
+        // report timer at exit
         if(m_report_at_exit)
             m_temp_timer->report(std::cout, true, true);
+
+        // if same timer, don't add to itself
+        if(m_timer != m_temp_timer)
+            *m_timer += *m_temp_timer;
+        else // ensure manager reporting uses align width
+            m_temp_timer->format()->set_use_align_width(true);
     }
     else if(m_temp_timer)
     {

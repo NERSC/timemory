@@ -27,7 +27,7 @@ ENV TZ "America/Los_Angeles"
 # pass --build-arg PYTHON=python to enable Python 2.7
 # default is Python 3.5
 ARG PYTHON=python3
-
+ARG BRANCH=master
 
 ###############################################################################
 # Install some packages.
@@ -56,7 +56,7 @@ RUN . /root/.bash_init.sh && \
     docker-python -m pip install -U pip setuptools && \
     docker-python -m pip install -U disttools && \
     docker-python -m pip install -U numpy pillow matplotlib && \
-    git clone https://github.com/jrmadsen/TiMemory.git ${HOME}/TiMemory && \
+    git clone -b ${BRANCH} https://github.com/jrmadsen/TiMemory.git ${HOME}/TiMemory && \
     mkdir -p ${HOME}/build-timemory && \
     cd ${HOME}/build-timemory && \
     cmake \
