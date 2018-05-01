@@ -9,8 +9,8 @@ execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
     OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
     OUTPUT_STRIP_TRAILING_WHITESPACE)
-message(STATUS "Python major version: ${PYTHON_MAJOR_VERSION}")
 add_definitions(-D_PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
+
 file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 
 if(TIMEMORY_DYNAMIC_LINK)

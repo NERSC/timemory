@@ -1,8 +1,8 @@
 #!/bin/bash -l
 
-#set -v
 set -e
 unset PYTHONPATH
+export PATH=${PATH}:/opt/local/bin
 
 if [ -z "${1}" ]; then
     exec /bin/bash
