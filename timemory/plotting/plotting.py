@@ -42,67 +42,78 @@ import copy
 import warnings
 
 _matplotlib_backend = None
+try:
+    import matplotlib
+    _matplotlib_backend = matplotlib.get_backend()
+except:
+    pass
 
 #------------------------------------------------------------------------------#
 # determine the matplotlib backend
 #------------------------------------------------------------------------------#
 with warnings.catch_warnings():
 
-    if sys.version_info[0] < 3:
-        if sys.platform == "darwin":
-            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-        else:
-            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-    else:
-        if sys.platform == "darwin":
-            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-        else:
-            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTK3Agg', 'GTK3Cairo' )
-
     try:
-        import timemory.options
-        if timemory.options.matplotlib_backend != "default":
-            _matplotlib_backend = timemory.options.matplotlib_backend
+        if sys.version_info[0] < 3:
+            if sys.platform == "darwin":
+                _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+            else:
+                _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+        else:
+            if sys.platform == "darwin":
+                _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+            else:
+                _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
+                                             'WXAgg', 'WX', 'GTK3Agg', 'GTK3Cairo' )
+
+        try:
+            import timemory.options
+            if timemory.options.matplotlib_backend != "default" and _matplotlib_backend is None:
+                _matplotlib_backend = timemory.options.matplotlib_backend
+        except:
+            pass
+
+        # import the necessary module for matplotlib
+        if _matplotlib_backend is not None:
+            try:
+                import matplotlib
+                if matplotlib.get_backend() != _matplotlib_backend:
+                    matplotlib.use(_matplotlib_backend)
+                import matplotlib.pyplot as plt
+            except:
+                for _backend in _matplotlib_backend_opts:
+                    try:
+                        import matplotlib
+                        if matplotlib.get_backend() != _matplotlib_backend:
+                            matplotlib.use(_backend)
+                        import matplotlib.pyplot as plt
+                        _matplotlib_backend = matplotlib.get_backend()
+                        break # successfull backend set
+                    except:
+                        pass
+        else:
+            # try using tornado
+            try:
+                import tornado
+                import matplotlib
+                import matplotlib.pyplot as plt
+                _matplotlib_backend = matplotlib.get_backend()
+            except:
+                for _backend in _matplotlib_backend_opts:
+                    try:
+                        import matplotlib
+                        if matplotlib.get_backend() != _matplotlib_backend:
+                            matplotlib.use(_backend)
+                        import matplotlib.pyplot as plt
+                        _matplotlib_backend = matplotlib.get_backend()
+                        break # successfull backend set
+                    except:
+                        pass
     except:
         pass
-
-    # import the necessary module for matplotlib
-    if _matplotlib_backend is not None:
-        try:
-            import matplotlib
-            matplotlib.use(_matplotlib_backend)
-            import matplotlib.pyplot as plt
-        except:
-            for _backend in _matplotlib_backend_opts:
-                try:
-                    import matplotlib
-                    matplotlib.use(_backend)
-                    import matplotlib.pyplot as plt
-                    _matplotlib_backend = _backend
-                    break # successfull backend set
-                except:
-                    pass
-    else:
-        # try using tornado
-        try:
-            import tornado
-            import matplotlib
-            import matplotlib.pyplot as plt
-            _matplotlib_backend = 'default'
-        except:
-            for _backend in _matplotlib_backend_opts:
-                try:
-                    import matplotlib
-                    matplotlib.use(_backend)
-                    import matplotlib.pyplot as plt
-                    _matplotlib_backend = _backend
-                    break # successfull backend set
-                except:
-                    pass
 
 #------------------------------------------------------------------------------#
 
