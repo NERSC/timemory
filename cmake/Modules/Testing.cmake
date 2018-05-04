@@ -149,54 +149,84 @@ endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
 # ---------------------------------------------------------------------------- #
 # -- Add tests
 # ---------------------------------------------------------------------------- #
+
+# ---------------------------------------------------------------------------- #
+#   Python tests
+#
 if(TIMEMORY_USE_PYTHON_BINDING)
 
-    add_test(NAME Python_Simple
+    add_test(NAME python_simple
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
             --enable-dart --write-ctest-notes
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(Python_Simple PROPERTIES
-        LABELS "Python;UnitTest" TIMEOUT 7200)
+    set_tests_properties(python_simple PROPERTIES
+        LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME Python_UnitTest
+    add_test(NAME python_unit_test
         # we don't enable dart because this always print
         # (unittest will repeat DartMeasurementFiles)
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/timemory_test.py
             --write-ctest-notes
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(Python_UnitTest PROPERTIES
-        LABELS "Python;UnitTest" TIMEOUT 7200)
+    set_tests_properties(python_unit_test PROPERTIES
+        LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME Python_Nested
+    add_test(NAME python_nested
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/nested_test.py
             --enable-dart --write-ctest-notes
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(Python_Nested PROPERTIES
-        LABELS "Python;UnitTest" TIMEOUT 7200)
+    set_tests_properties(python_nested PROPERTIES
+        LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME Python_Array
+    add_test(NAME python_array
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/array_test.py
             --enable-dart --write-ctest-notes
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(Python_Array PROPERTIES
-        LABELS "Python;UnitTest" TIMEOUT 7200)
+    set_tests_properties(python_array PROPERTIES
+        LABELS "python;unit_test" TIMEOUT 7200)
 
 endif(TIMEMORY_USE_PYTHON_BINDING)
 
+# ---------------------------------------------------------------------------- #
+#   Compiled tests
+#
 if(TIMEMORY_BUILD_EXAMPLES)
 
-    add_test(NAME Cxx_Test
-        COMMAND $<TARGET_FILE:test_timing>
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(Cxx_Test PROPERTIES
-        LABELS "CXX;UnitTest" TIMEOUT 7200)
-
     if(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
-        add_test(NAME Cxx_MPI_Test
-            COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:mpi_test_timing>
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        set_tests_properties(Cxx_MPI_Test PROPERTIES
-            LABELS "CXX;UnitTest" TIMEOUT 7200)
+        set(_TEST_MPI ON)
+    else(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
+        set(_TEST_MPI OFF)
     endif(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
+
+    #----------------------------------------------#
+    #   C
+    #
+    add_test(NAME c_test
+        COMMAND $<TARGET_FILE:test_c_timing>
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(c_test PROPERTIES
+        LABELS "c;unit_test" TIMEOUT 7200)
+
+    #----------------------------------------------#
+    #   CXX
+    #
+    add_test(NAME cxx_test
+        COMMAND $<TARGET_FILE:test_cxx_timing>
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(cxx_test PROPERTIES
+        LABELS "cxx;unit_test" TIMEOUT 7200)
+
+    #----------------------------------------------#
+    #   CXX + MPI
+    #
+    if(_TEST_MPI)
+        add_test(NAME cxx_mpi_test
+            COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:test_cxx_mpi_timing>
+            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+        set_tests_properties(cxx_mpi_test PROPERTIES
+            LABELS "cxx;unit_test;mpi" TIMEOUT 7200)
+    endif(_TEST_MPI)
+
+    unset(_TEST_MPI)
 
 endif(TIMEMORY_BUILD_EXAMPLES)

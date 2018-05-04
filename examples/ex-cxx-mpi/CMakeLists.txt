@@ -12,9 +12,9 @@ endif(GOOD_CMAKE)
 cmake_policy(SET CMP0042 NEW)
 
 #----------------------------------------------------------------------------
-project(TiMemory-Example2-MPI)
+project(TiMemory-CXX-MPI-Example C CXX)
 
-set(EXE_NAME mpi_test_timing)
+set(EXE_NAME test_cxx_mpi_timing)
 
 find_package(MPI REQUIRED)
 find_package(TiMemory REQUIRED)

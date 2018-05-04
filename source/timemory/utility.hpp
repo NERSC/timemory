@@ -34,6 +34,7 @@
 
 // C library
 #include <stdint.h>
+#include <stdlib.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -266,9 +267,41 @@ void consume_parameters(_Tp, _Args...)
 
 //----------------------------------------------------------------------------//
 
+inline std::string dirname(std::string _fname)
+{
+    char* _cfname = realpath(_fname.c_str(), NULL);
+    _fname = std::string(_cfname);
+    free(_cfname);
+
+#if defined(_UNIX)
+    while(_fname.find("\\\\") != std::string::npos)
+        _fname.replace(_fname.find("\\\\"), 2, "/");
+    while(_fname.find("\\") != std::string::npos)
+        _fname.replace(_fname.find("\\"), 1, "/");
+
+    return _fname.substr(0, _fname.find_last_of("/"));
+#elif defined(_WINDOWS)
+    while(_fname.find("/") != std::string::npos)
+        _fname.replace(_fname.find("/"), 1, "\\\\");
+
+    _fname = _fname.substr(0, _fname.find_last_of("\\"));
+    return (_fname.at(_fname.length()-1) == '\\')
+            ? _fname.substr(0, _fname.length()-1)
+            : _fname;
+#endif
+}
+
+//----------------------------------------------------------------------------//
+
 inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
 {
+
 #if defined(_UNIX)
+    while(_dir.find("\\\\") != std::string::npos)
+        _dir.replace(_dir.find("\\\\"), 2, "/");
+    while(_dir.find("\\") != std::string::npos)
+        _dir.replace(_dir.find("\\"), 1, "/");
+
     if(mkdir(_dir.c_str(), umask) != 0)
     {
         std::stringstream _sdir;

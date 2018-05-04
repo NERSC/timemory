@@ -192,26 +192,51 @@ auto_timer::~auto_timer()
 //============================================================================//
 
 extern "C"
-bool cxx_timemory_enabled(void)
+int cxx_timemory_enabled(void)
 {
-    return tim::manager::instance()->is_enabled();
+    return (int) tim::manager::instance()->is_enabled();
 }
 
 //============================================================================//
 
 extern "C"
-void* cxx_create_auto_timer(const char* timer_tag,
-                            int lineno,
-                            const char* code_tag,
-                            bool report)
+void* cxx_timemory_create_auto_timer(const char* timer_tag,
+                                     int lineno,
+                                     const char* code_tag,
+                                     int report)
 {
-    return (void*) new auto_timer_t(timer_tag, lineno, code_tag, report);
+    return (void*) new auto_timer_t(timer_tag, lineno, code_tag, (bool) report);
 }
 
 //============================================================================//
 
 extern "C"
-void* cxx_delete_auto_timer(void* ctimer)
+void cxx_timemory_report(const char* fname)
+{
+    std::string _fname(fname);
+    for(auto itr : {".txt", ".out", ".json"})
+    {
+        if(_fname.find(itr) != std::string::npos)
+            _fname = _fname.substr(0, _fname.find(itr));
+    }
+    _fname = _fname.substr(0, _fname.find_last_of("."));
+
+    tim::path_t _fpath_report = _fname + std::string(".out");
+    tim::path_t _fpath_serial = _fname + std::string(".json");
+    tim::manager::master_instance()->set_output_stream(_fpath_report);
+    tim::makedir(tim::dirname(_fpath_report));
+    std::ofstream ofs_report(_fpath_report);
+    std::ofstream ofs_serial(_fpath_serial);
+    if(ofs_report)
+        tim::manager::master_instance()->report(ofs_report);
+    if(ofs_serial)
+        tim::manager::master_instance()->write_json(ofs_serial);
+}
+
+//============================================================================//
+
+extern "C"
+void* cxx_timemory_delete_auto_timer(void* ctimer)
 {
     auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
     delete cxxtimer;
@@ -222,7 +247,7 @@ void* cxx_delete_auto_timer(void* ctimer)
 //============================================================================//
 
 extern "C"
-const char* cxx_combine_char(const char* _a, const char* _b)
+const char* cxx_timemory_string_combine(const char* _a, const char* _b)
 {
     std::stringstream _ss;
     _ss << _a << _b;
@@ -232,8 +257,8 @@ const char* cxx_combine_char(const char* _a, const char* _b)
 //============================================================================//
 
 extern "C"
-const char* cxx_auto_timer_str(const char* _a, const char* _b,
-                               const char* _c, const char* _d)
+const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
+                                        const char* _c, const char* _d)
 {
     std::stringstream _ss;
     _ss << _a

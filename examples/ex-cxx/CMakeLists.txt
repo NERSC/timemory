@@ -12,9 +12,9 @@ endif(GOOD_CMAKE)
 cmake_policy(SET CMP0042 NEW)
 
 #----------------------------------------------------------------------------
-project(TiMemory-Example1)
+project(TiMemory-CXX-Example C CXX)
 
-set(EXE_NAME test_timing)
+set(EXE_NAME test_cxx_timing)
 
 find_package(TiMemory REQUIRED)
 foreach(_DIR ${TiMemory_INCLUDE_DIRS})

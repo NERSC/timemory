@@ -44,9 +44,16 @@ import warnings
 _matplotlib_backend = None
 try:
     import matplotlib
+    import matplotlib.pyplot as plt
     _matplotlib_backend = matplotlib.get_backend()
 except:
-    pass
+    try:
+        import matplotlib
+        matplotlib.use("agg")
+        import matplotlib.pyplot as plt
+        _matplotlib_backend = matplotlib.get_backend()
+    except:
+        pass
 
 #------------------------------------------------------------------------------#
 # determine the matplotlib backend
@@ -56,18 +63,14 @@ with warnings.catch_warnings():
     try:
         if sys.version_info[0] < 3:
             if sys.platform == "darwin":
-                _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+                _matplotlib_backend_opts = ( 'macosx', 'agg', 'cairo', 'pdf', 'ps', 'svg' )
             else:
-                _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+                _matplotlib_backend_opts = ( 'agg', 'cairo', 'pdf', 'ps', 'svg' )
         else:
             if sys.platform == "darwin":
-                _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                             'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
+                _matplotlib_backend_opts = ( 'macosx', 'agg', 'cairo', 'pdf', 'ps', 'svg' )
             else:
-                _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                             'WXAgg', 'WX', 'GTK3Agg', 'GTK3Cairo' )
+                _matplotlib_backend_opts = ( 'agg', 'cairo', 'pdf', 'ps', 'svg' )
 
         try:
             import timemory.options
@@ -94,7 +97,9 @@ with warnings.catch_warnings():
                         break # successfull backend set
                     except:
                         pass
-        else:
+
+        # if above failed
+        if _matplotlib_backend is not None:
             # try using tornado
             try:
                 import tornado

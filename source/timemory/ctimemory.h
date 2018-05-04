@@ -35,41 +35,12 @@
 
 //----------------------------------------------------------------------------//
 
-/*
-typedef struct tim_c_auto_timer
-{
-    void* cxx_auto_timer;
-}
-tim_c_auto_timer;
-*/
-
-//----------------------------------------------------------------------------//
-// declaration of C++ defined function (timemory/auto_timer.hpp)
-extern bool cxx_timemory_enabled(void);
-
-//----------------------------------------------------------------------------//
-// declaration of C++ defined function (timemory/auto_timer.hpp)
-extern void* cxx_create_auto_timer(const char*, int, const char*, bool);
-
-//----------------------------------------------------------------------------//
-// declaration of C++ defined function (timemory/auto_timer.hpp)
-extern void* cxx_delete_auto_timer(void*);
-
-//----------------------------------------------------------------------------//
-// declaration of C++ defined function (timemory/auto_timer.hpp)
-extern const char* cxx_combine_char(const char*, const char*);
-
-//----------------------------------------------------------------------------//
-// declaration of C++ defined function (timemory/auto_timer.hpp)
-extern const char* cxx_auto_timer_str(const char*, const char*, const char*, const char*);
-
-//----------------------------------------------------------------------------//
-
-void* c_create_auto_timer(const char*, int);
-
-//----------------------------------------------------------------------------//
-
-void c_delete_auto_timer(void*);
+void*       c_timemory_create_auto_timer    (const char*, int);
+void        c_timemory_report               (const char*);
+void        c_timemory_delete_auto_timer    (void*);
+const char* c_timemory_string_combine       (const char*, const char*);
+const char* c_timemory_auto_timer_str       (const char*, const char*,
+                                             const char*, const char*);
 
 //----------------------------------------------------------------------------//
 
@@ -105,9 +76,10 @@ void c_delete_auto_timer(void*);
  *          TIMEMORY_C_AUTO_TIMER_DELETE(timer);
  *      }
 */
-#define TIMEMORY_BASIC_C_AUTO_TIMER(c_str) \
-    c_create_auto_timer(cxx_string_combine(__FUNCTION__, c_str), __LINE__)
-
+#if !defined(TIMEMORY_BASIC_C_AUTO_TIMER)
+#   define TIMEMORY_BASIC_C_AUTO_TIMER(c_str) \
+    c_timemory_create_auto_timer(c_timemory_string_combine(__FUNCTION__, c_str), __LINE__)
+#endif
 
 //----------------------------------------------------------------------------//
 /*! \def TIMEMORY_C_AUTO_TIMER(str)
@@ -118,15 +90,17 @@ void c_delete_auto_timer(void*);
  *      {
  *          void* timer = new TIMEMORY_C_AUTO_TIMER("");
  *          ...
- *          TIMEMORY_C_AUTO_TIMER_FREE(timer);
+ *          FREE_TIMEMORY_C_AUTO_TIMER(timer);
  *      }
  *
  */
-#define TIMEMORY_C_AUTO_TIMER(c_str) \
-    c_create_auto_timer(cxx_auto_timer_str(__FUNCTION__, c_str, __FILE__, TIMEMORY_C_LINE_STRING), __LINE__)
+#if !defined(TIMEMORY_C_AUTO_TIMER)
+#   define TIMEMORY_C_AUTO_TIMER(c_str) \
+    c_timemory_create_auto_timer(c_timemory_auto_timer_str(__FUNCTION__, c_str, __FILE__, TIMEMORY_C_LINE_STRING), __LINE__)
+#endif
 
 //----------------------------------------------------------------------------//
-/*! \def TIMEMORY_C_AUTO_TIMER_FREE(ctimer)
+/*! \def FREE_TIMEMORY_C_AUTO_TIMER(ctimer)
  *
  * Usage:
  *
@@ -134,12 +108,19 @@ void c_delete_auto_timer(void*);
  *      {
  *          void* timer = new TIMEMORY_C_AUTO_TIMER("");
  *          ...
- *          TIMEMORY_C_AUTO_TIMER_FREE(timer);
+ *          FREE_TIMEMORY_C_AUTO_TIMER(timer);
  *      }
 */
-#define TIMEMORY_C_AUTO_TIMER_FREE(ctimer) \
-    c_delete_auto_timer((void*) ctimer);
+#if !defined(FREE_TIMEMORY_C_AUTO_TIMER)
+#   define FREE_TIMEMORY_C_AUTO_TIMER(ctimer) \
+    c_timemory_delete_auto_timer((void*) ctimer);
+#endif
 
+//----------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_C_REPORT)
+#   define TIMEMORY_C_REPORT(fname) c_timemory_report(fname)
+#endif
 //----------------------------------------------------------------------------//
 
 #endif

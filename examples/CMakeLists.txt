@@ -8,29 +8,31 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         find_package(MPI)
     endif(TIMEMORY_USE_MPI)
 
-    add_subdirectory(ex1)
+    add_subdirectory(ex-c)
+    add_subdirectory(ex-cxx)
     if(TIMEMORY_USE_MPI AND MPI_FOUND)
-        add_subdirectory(ex2)
+        add_subdirectory(ex-cxx-mpi)
     endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
 
 else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     if(TIMEMORY_BUILD_EXAMPLES)
-        add_subdirectory(ex1)
+        add_subdirectory(ex-c)
+        add_subdirectory(ex-cxx)
         if(TIMEMORY_USE_MPI AND MPI_FOUND)
-            add_subdirectory(ex2)
+            add_subdirectory(ex-cxx-mpi)
         endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
         execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory
             ${CMAKE_BINARY_DIR}/examples
             ERROR_QUIET)
 
-        set(example_dirs ex1 ex2)
+        set(example_dirs c cxx cxx-mpi)
         foreach(example_dir ${example_dirs})
             execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
-                ${CMAKE_CURRENT_LIST_DIR}/${example_dir}
-                ${CMAKE_BINARY_DIR}/examples/${example_dir}
+                ${CMAKE_CURRENT_LIST_DIR}/ex-${example_dir}
+                ${CMAKE_BINARY_DIR}/examples/ex-${example_dir}
                 ERROR_QUIET)
         endforeach(example_dir ${example_dirs})
 
