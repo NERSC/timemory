@@ -68,6 +68,7 @@ if(TIMEMORY_USE_MPI)
 
     else(MPI_FOUND)
 
+        set(TIMEMORY_USE_MPI OFF)
         message(WARNING "MPI not found. Proceeding without MPI")
         remove_definitions(-DTIMEMORY_USE_MPI)
 

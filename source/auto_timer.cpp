@@ -184,3 +184,64 @@ auto_timer::~auto_timer()
 //============================================================================//
 
 } // namespace tim
+
+//============================================================================//
+//
+//                      C interface
+//
+//============================================================================//
+
+extern "C"
+bool cxx_timemory_enabled(void)
+{
+    return tim::manager::instance()->is_enabled();
+}
+
+//============================================================================//
+
+extern "C"
+void* cxx_create_auto_timer(const char* timer_tag,
+                            int lineno,
+                            const char* code_tag,
+                            bool report)
+{
+    return (void*) new auto_timer_t(timer_tag, lineno, code_tag, report);
+}
+
+//============================================================================//
+
+extern "C"
+void* cxx_delete_auto_timer(void* ctimer)
+{
+    auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
+    delete cxxtimer;
+    ctimer = NULL;
+    return ctimer;
+}
+
+//============================================================================//
+
+extern "C"
+const char* cxx_combine_char(const char* _a, const char* _b)
+{
+    std::stringstream _ss;
+    _ss << _a << _b;
+    return _ss.str().c_str();
+}
+
+//============================================================================//
+
+extern "C"
+const char* cxx_auto_timer_str(const char* _a, const char* _b,
+                               const char* _c, const char* _d)
+{
+    std::stringstream _ss;
+    _ss << _a
+        << _b
+        << "@'"
+        << std::string(_c).substr(std::string(_c).find_last_of("/")+1)
+        << "':" << _d;
+    return _ss.str().c_str();
+}
+
+//============================================================================//

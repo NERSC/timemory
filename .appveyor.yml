@@ -38,11 +38,11 @@ matrix:
   - image: Visual Studio 2017
     CPP: latest
     platform: x86
-#  - image: Visual Studio 2015
-#    platform: x86
 
 
 install:
+
+# Configure environment
 - ps: |
     # CMake architecture
     if ($env:PLATFORM -eq "x64") {
@@ -63,23 +63,31 @@ install:
         $env:PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
+        $env:TIMEMORY_BUILD_SHARED = "ON"
+        $env:TIMEMORY_USE_MPI = "ON"
       } else {
         $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
+        $env:TIMEMORY_BUILD_SHARED = "OFF"
+        $env:TIMEMORY_USE_MPI = "ON"
       }
-      pip install --disable-pip-version-check --user --upgrade pip wheel
+      python -m pip install --disable-pip-version-check --user --upgrade pip wheel
     } elseif ($env:CONDA) {
       if ($env:PLATFORM -eq "x64") {
         $env:PATH = "C:\Miniconda$env:CONDA-x64\;C:\Miniconda$env:CONDA-x64\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64\;C:\Miniconda$env:CONDA-x64\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
+        $env:TIMEMORY_BUILD_SHARED = "ON"
+        $env:TIMEMORY_USE_MPI = "ON"
       } else {
         $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
+        $env:TIMEMORY_BUILD_SHARED = "OFF"
+        $env:TIMEMORY_USE_MPI = "OFF"
       }
       conda update -y -q -n base conda
       conda install -y -q pip
@@ -92,6 +100,16 @@ install:
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
+# Install MS-MPI
+- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
+- MSMpiSetup.exe -unattend
+- set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
+
+# Install MS-MPI SDK
+- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
+- msmpisdk.msi /passive
+- set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
+
 build_script:
 - mkdir build-timemory
 - cd build-timemory
@@ -103,8 +121,8 @@ build_script:
     -DCTEST_MODEL=Continuous
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_BUILD_TESTING=ON
-    -DTIMEMORY_USE_MPI=OFF
-    -DTIMEMORY_DYNAMIC_LINK=OFF
+    -DTIMEMORY_USE_MPI=ON
+    -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DTIMEMORY_BUILD_EXAMPLES=ON
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 #

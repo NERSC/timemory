@@ -53,7 +53,7 @@ class CMakeBuild(build_ext, Command):
     cmake_include_path = ''
     cmake_library_path = ''
     devel_install = 'ON'
-    dynamic_link = 'PLATFORM-DEFAULT'
+    build_shared = 'PLATFORM-DEFAULT'
     pybind11_install = 'OFF'
 
 
@@ -189,7 +189,7 @@ class CMakeBuild(build_ext, Command):
         self.cmake_include_path = self.check_env(self.cmake_include_path, compose("cmake_include_path"))
         self.cmake_library_path = self.check_env(self.cmake_library_path, compose("cmake_library_path"))
         self.devel_install = self.check_env(self.devel_install, compose("devel_install"))
-        self.dynamic_link = self.check_env(self.dynamic_link, compose("dynamic_link"))
+        self.build_shared = self.check_env(self.build_shared, compose("build_shared"))
         self.pybind11_install = self.check_env(self.pybind11_install, compose("pybind11_install"))
 
         _valid_type = False
@@ -205,13 +205,10 @@ class CMakeBuild(build_ext, Command):
         cmake_args += [ '-DTIMEMORY_USE_MPI={}'.format(str.upper(self.use_mpi)) ]
 
         # Windows has some shared library issues
-        if str.upper(self.dynamic_link) == 'PLATFORM-DEFAULT':
-            if platform.system() == "Windows":
-                cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK=OFF' ]
-            else:
-                cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK=ON' ]
+        if str.upper(self.build_shared) == 'PLATFORM-DEFAULT':
+            cmake_args += [ '-DBUILD_SHARED_LIBS=ON' ]
         else:
-            cmake_args += [ '-DTIMEMORY_DYNAMIC_LINK={}'.format(str.upper(self.dynamic_link)) ]
+            cmake_args += [ '-DBUILD_SHARED_LIBS={}'.format(str.upper(self.build_shared)) ]
 
         if platform.system() != "Windows":
             cmake_args += [ '-DTIMEMORY_BUILD_EXAMPLES={}'.format(str.upper(self.build_examples)) ]
