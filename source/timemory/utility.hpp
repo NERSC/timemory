@@ -269,11 +269,11 @@ void consume_parameters(_Tp, _Args...)
 
 inline std::string dirname(std::string _fname)
 {
+#if defined(_UNIX)
     char* _cfname = realpath(_fname.c_str(), NULL);
     _fname = std::string(_cfname);
     free(_cfname);
 
-#if defined(_UNIX)
     while(_fname.find("\\\\") != std::string::npos)
         _fname.replace(_fname.find("\\\\"), 2, "/");
     while(_fname.find("\\") != std::string::npos)
