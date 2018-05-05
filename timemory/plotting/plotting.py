@@ -42,6 +42,14 @@ import copy
 import warnings
 
 _matplotlib_backend = None
+
+# tornado helps set the matplotlib backend but is not necessary
+try:
+    import tornado
+except:
+    pass
+
+# import matplotlib and pyplot but don't fail
 try:
     import matplotlib
     import matplotlib.pyplot as plt
@@ -49,7 +57,7 @@ try:
 except:
     try:
         import matplotlib
-        matplotlib.use("agg")
+        matplotlib.use("agg", warn=False)
         import matplotlib.pyplot as plt
         _matplotlib_backend = matplotlib.get_backend()
     except:
@@ -57,69 +65,6 @@ except:
 
 #------------------------------------------------------------------------------#
 # determine the matplotlib backend
-#------------------------------------------------------------------------------#
-with warnings.catch_warnings():
-
-    try:
-        if sys.version_info[0] < 3:
-            if sys.platform == "darwin":
-                _matplotlib_backend_opts = ( 'macosx', 'agg', 'cairo', 'pdf', 'ps', 'svg' )
-            else:
-                _matplotlib_backend_opts = ( 'agg', 'cairo', 'pdf', 'ps', 'svg' )
-        else:
-            if sys.platform == "darwin":
-                _matplotlib_backend_opts = ( 'macosx', 'agg', 'cairo', 'pdf', 'ps', 'svg' )
-            else:
-                _matplotlib_backend_opts = ( 'agg', 'cairo', 'pdf', 'ps', 'svg' )
-
-        try:
-            import timemory.options
-            if timemory.options.matplotlib_backend != "default" and _matplotlib_backend is None:
-                _matplotlib_backend = timemory.options.matplotlib_backend
-        except:
-            pass
-
-        # import the necessary module for matplotlib
-        if _matplotlib_backend is not None:
-            try:
-                import matplotlib
-                if matplotlib.get_backend() != _matplotlib_backend:
-                    matplotlib.use(_matplotlib_backend)
-                import matplotlib.pyplot as plt
-            except:
-                for _backend in _matplotlib_backend_opts:
-                    try:
-                        import matplotlib
-                        if matplotlib.get_backend() != _matplotlib_backend:
-                            matplotlib.use(_backend)
-                        import matplotlib.pyplot as plt
-                        _matplotlib_backend = matplotlib.get_backend()
-                        break # successfull backend set
-                    except:
-                        pass
-
-        # if above failed
-        if _matplotlib_backend is not None:
-            # try using tornado
-            try:
-                import tornado
-                import matplotlib
-                import matplotlib.pyplot as plt
-                _matplotlib_backend = matplotlib.get_backend()
-            except:
-                for _backend in _matplotlib_backend_opts:
-                    try:
-                        import matplotlib
-                        if matplotlib.get_backend() != _matplotlib_backend:
-                            matplotlib.use(_backend)
-                        import matplotlib.pyplot as plt
-                        _matplotlib_backend = matplotlib.get_backend()
-                        break # successfull backend set
-                    except:
-                        pass
-    except:
-        pass
-
 #------------------------------------------------------------------------------#
 
 
@@ -678,7 +623,7 @@ def plot_generic(_plot_data, _types, _data_dict,
                  _type_str, _type_min, _type_unit):
 
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
         return
 
     filename = _plot_data.filename
@@ -801,7 +746,7 @@ def plot_timing(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
         return
 
     filename = _plot_data.filename
@@ -850,7 +795,7 @@ def plot_memory(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
+        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
         return
 
     filename = _plot_data.filename
