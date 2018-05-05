@@ -25,7 +25,7 @@ int main(int argc, char** argv)
     printf("%s @ %i\n", __FUNCTION__, __LINE__);
 
     void* timer = TIMEMORY_C_AUTO_TIMER("");
-    int64_t n = fibonacci(45);
+    int64_t n = fibonacci(44);
     printf("\nANSWER = %lli\n", (long long int) n);
     FREE_TIMEMORY_C_AUTO_TIMER(timer);
 
