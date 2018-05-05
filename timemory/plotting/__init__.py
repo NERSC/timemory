@@ -31,6 +31,9 @@ import sys
 import os
 import imp
 
+if os.environ.get("DISPLAY") is None and os.environ.get("MPLBACKEND") is None:
+    os.environ.setdefault("MPLBACKEND", "agg")
+
 # get the path to this directory
 __this_path = os.path.abspath(os.path.dirname(__file__))
 

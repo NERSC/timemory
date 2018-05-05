@@ -43,13 +43,38 @@ import warnings
 
 _matplotlib_backend = None
 
+#------------------------------------------------------------------------------#
+# check with timemory.options
+#
+try:
+    import timemory.options
+    if timemory.options.matplotlib_backend != "default":
+        _matplotlib_backend = timemory.options.matplotlib_backend
+except:
+    pass
+
+
+#------------------------------------------------------------------------------#
+# if not display variable we probably want to use agg
+#
+if (os.environ.get("DISPLAY") is None and
+    os.environ.get("MPLBACKEND") is None and
+    _matplotlib_backend is None):
+    os.environ.setdefault("MPLBACKEND", "agg")
+
+
+#------------------------------------------------------------------------------#
 # tornado helps set the matplotlib backend but is not necessary
+#
 try:
     import tornado
 except:
     pass
 
+
+#------------------------------------------------------------------------------#
 # import matplotlib and pyplot but don't fail
+#
 try:
     import matplotlib
     import matplotlib.pyplot as plt
@@ -63,11 +88,10 @@ except:
     except:
         pass
 
-#------------------------------------------------------------------------------#
-# determine the matplotlib backend
-#------------------------------------------------------------------------------#
 
-
+#------------------------------------------------------------------------------#
+#
+#
 """ Default timing data to extract from JSON """
 _default_timing_types = ['wall', 'sys', 'user', 'cpu', 'perc']
 
