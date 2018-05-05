@@ -35,7 +35,7 @@ extern void*        cxx_timemory_create_auto_timer  (const char*, int,
 extern void*        cxx_timemory_delete_auto_timer  (void*);
 extern const char*  cxx_timemory_string_combine     (const char*, const char*);
 extern const char*  cxx_timemory_auto_timer_str     (const char*, const char*,
-                                                     const char*, const char*);
+                                                     const char*, int);
 
 //============================================================================//
 
@@ -74,12 +74,12 @@ const char* c_timemory_string_combine(const char* _a, const char* _b)
 //============================================================================//
 
 const char* c_timemory_auto_timer_str(const char* _a, const char* _b,
-                                      const char* _c, const char* _d)
+                                      const char* _c, int _d)
 {
-    char* buff = (char*) malloc(sizeof(char) * 256);
-    sprintf(buff, "%s%s@'%s':%s", _a, _b, _c, _d);
-    return (const char*) buff;
-    //return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
+    //char* buff = (char*) malloc(sizeof(char) * 256);
+    //sprintf(buff, "%s%s@'%s':%i", _a, _b, _c, _d);
+    //return (const char*) buff;
+    return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }
 
 //============================================================================//

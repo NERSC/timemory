@@ -40,7 +40,7 @@ void        c_timemory_report               (const char*);
 void        c_timemory_delete_auto_timer    (void*);
 const char* c_timemory_string_combine       (const char*, const char*);
 const char* c_timemory_auto_timer_str       (const char*, const char*,
-                                             const char*, const char*);
+                                             const char*, int);
 
 //----------------------------------------------------------------------------//
 
@@ -96,7 +96,7 @@ const char* c_timemory_auto_timer_str       (const char*, const char*,
  */
 #if !defined(TIMEMORY_C_AUTO_TIMER)
 #   define TIMEMORY_C_AUTO_TIMER(c_str) \
-    c_timemory_create_auto_timer(c_timemory_auto_timer_str(__FUNCTION__, c_str, __FILE__, TIMEMORY_C_LINE_STRING), __LINE__)
+    c_timemory_create_auto_timer(c_timemory_auto_timer_str(__FUNCTION__, c_str, __FILE__, __LINE__), __LINE__)
 #endif
 
 //----------------------------------------------------------------------------//
