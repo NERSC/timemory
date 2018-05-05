@@ -32,16 +32,95 @@
 #include <stdlib.h>
 #include <stddef.h>
 
+//============================================================================//
+//
+//      Operating System
+//
+//============================================================================//
+
+// machine bits
+#if defined(__x86_64__)
+#   if !defined(_64BIT)
+#       define _64BIT
+#   endif
+#else
+#   if !defined(_32BIT)
+#       define _32BIT
+#   endif
+#endif
+
+//----------------------------------------------------------------------------//
+// base operating system
+
+#if defined(_WIN32) || defined(_WIN64)
+#   if !defined(_WINDOWS)
+#       define _WINDOWS
+#   endif
 //----------------------------------------------------------------------------//
 
-void*       c_timemory_create_auto_timer    (const char*, int);
-void        c_timemory_report               (const char*);
-void        c_timemory_delete_auto_timer    (void*);
-const char* c_timemory_string_combine       (const char*, const char*);
-const char* c_timemory_auto_timer_str       (const char*, const char*,
-                                             const char*, int);
-
+#elif defined(__APPLE__) || defined(__MACH__)
+#   if !defined(_MACOS)
+#       define _MACOS
+#   endif
+#   if !defined(_UNIX)
+#       define _UNIX
+#   endif
 //----------------------------------------------------------------------------//
+
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#   if !defined(_LINUX)
+#       define _LINUX
+#   endif
+#   if !defined(_UNIX)
+#       define _UNIX
+#   endif
+//----------------------------------------------------------------------------//
+
+#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#   if !defined(_UNIX)
+#       define _UNIX
+#   endif
+#endif
+
+//============================================================================//
+//
+//      Windows DLL settings
+//
+//============================================================================//
+
+// Define macros for WIN32 for importing/exporting external symbols to DLLs
+#if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
+#   if defined(_TIMEMORY_DLL)
+#       define tim_api __declspec(dllexport)
+#       define tim_api_static static __declspec(dllexport)
+#   else
+#       define tim_api __declspec(dllimport)
+#       define tim_api_static static __declspec(dllimport)
+#   endif
+#else
+#   define tim_api
+#   define tim_api_static static
+#endif
+
+//============================================================================//
+//
+//      C function declaration
+//
+//============================================================================//
+
+
+tim_api void*       c_timemory_create_auto_timer    (const char*, int);
+tim_api void        c_timemory_report               (const char*);
+tim_api void        c_timemory_delete_auto_timer    (void*);
+tim_api const char* c_timemory_string_combine       (const char*, const char*);
+tim_api const char* c_timemory_auto_timer_str       (const char*, const char*,
+                                                     const char*, int);
+
+//============================================================================//
+//
+//      C timemory macros
+//
+//============================================================================//
 
 #if !defined(__FUNCTION__) && defined(__func__)
 #   define __FUNCTION__ __func__
