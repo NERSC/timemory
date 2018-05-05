@@ -255,9 +255,9 @@ void* cxx_timemory_delete_auto_timer(void* ctimer)
 extern "C"
 const char* cxx_timemory_string_combine(const char* _a, const char* _b)
 {
-    std::stringstream _ss;
-    _ss << _a << _b;
-    return _ss.str().c_str();
+    char* buff = (char*) malloc(sizeof(char) * 256);
+    sprintf(buff, "%s%s", _a, _b);
+    return (const char*) buff;
 }
 
 //============================================================================//
@@ -270,15 +270,6 @@ const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
     char* buff = (char*) malloc(sizeof(char) * 256);
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
-
-    //std::stringstream _ss;
-    //_ss << std::string(_a)
-    //    << std::string(_b)
-    //    << "@'"
-    //    << std::string(_c).substr(std::string(_c).find_last_of("/")+1);
-    //    << "':" << std::string(_d);
-    //return _ss.str().c_str();
-
 }
 
 //============================================================================//
