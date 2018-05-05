@@ -65,7 +65,10 @@ void c_timemory_report(const char* fname)
 
 const char* c_timemory_string_combine(const char* _a, const char* _b)
 {
-    return cxx_timemory_string_combine(_a, _b);
+    char* buff = (char*) malloc(sizeof(char) * 256);
+    sprintf(buff, "%s%s", _a, _b);
+    return (const char*) buff;
+    //return cxx_timemory_string_combine(_a, _b);
 }
 
 //============================================================================//
@@ -73,7 +76,10 @@ const char* c_timemory_string_combine(const char* _a, const char* _b)
 const char* c_timemory_auto_timer_str(const char* _a, const char* _b,
                                       const char* _c, const char* _d)
 {
-    return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
+    char* buff = (char*) malloc(sizeof(char) * 256);
+    sprintf(buff, "%s%s@'%s':%s", _a, _b, _c, _d);
+    return (const char*) buff;
+    //return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }
 
 //============================================================================//

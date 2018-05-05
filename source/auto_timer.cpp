@@ -261,11 +261,11 @@ const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
                                         const char* _c, const char* _d)
 {
     std::stringstream _ss;
-    _ss << _a
-        << _b
+    _ss << std::string(_a)
+        << std::string(_b)
         << "@'"
         << std::string(_c).substr(std::string(_c).find_last_of("/")+1)
-        << "':" << _d;
+        << "':" << std::string(_d);
     return _ss.str().c_str();
 }
 
