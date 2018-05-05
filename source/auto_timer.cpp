@@ -22,9 +22,9 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#include "timemory/macros.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/utility.hpp"
-#include "timemory/macros.hpp"
 
 namespace tim
 {
@@ -191,7 +191,7 @@ auto_timer::~auto_timer()
 //
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 int cxx_timemory_enabled(void)
 {
     return (tim::manager::instance()->is_enabled()) ? 1 : 0;
@@ -199,7 +199,7 @@ int cxx_timemory_enabled(void)
 
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 void* cxx_timemory_create_auto_timer(const char* timer_tag,
                                      int lineno,
                                      const char* code_tag,
@@ -216,7 +216,7 @@ void* cxx_timemory_create_auto_timer(const char* timer_tag,
 
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 void cxx_timemory_report(const char* fname)
 {
     std::string _fname(fname);
@@ -241,7 +241,7 @@ void cxx_timemory_report(const char* fname)
 
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 void* cxx_timemory_delete_auto_timer(void* ctimer)
 {
     auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
@@ -252,7 +252,7 @@ void* cxx_timemory_delete_auto_timer(void* ctimer)
 
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 const char* cxx_timemory_string_combine(const char* _a, const char* _b)
 {
     char* buff = (char*) malloc(sizeof(char) * 256);
@@ -262,7 +262,7 @@ const char* cxx_timemory_string_combine(const char* _a, const char* _b)
 
 //============================================================================//
 
-extern "C"
+extern "C" tim_api
 const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
                                         const char* _c, int _d)
 {
