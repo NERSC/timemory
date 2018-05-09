@@ -48,11 +48,8 @@ if platform.system() == "Windows":
 _tim_buildpath = os.path.join(_tim_buildpath, "timemory")
 
 # verbosity
-_verbose = 0
-try:
-    _verbose = int(os.environ['TIMEMORY_DEBUG'])
-except Exception as e:
-    _verbose = 0
+_verbose = 0 if os.environ.get('TIMEMORY_DEBUG') is None \
+    else int(os.environ.get('TIMEMORY_DEBUG'))
 
 # construct info dictionary (used for build)
 timemory_info_file = os.path.join(this_path, os.path.join("lib", "timemory_pathinfo.txt"))

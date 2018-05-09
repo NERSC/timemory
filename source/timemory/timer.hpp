@@ -64,12 +64,34 @@ public:
 
 public:
     timer(const string_t& _prefix = "",
-          const string_t& _format = format::timer::get_default_format());
-    timer(const format_type& _format);
-    timer(timer_format_t _format);
+          const string_t& _format = format::timer::default_format(),
+          bool _record_memory = timer::default_record_memory());
+
+    timer(const format_type& _format,
+          bool _record_memory = timer::default_record_memory());
+
+    timer(timer_format_t _format,
+          bool _record_memory = timer::default_record_memory());
+
+    timer(const string_t& _prefix,
+          const timer* rhs,         // can be nullptr
+          bool _align_width = false,
+          bool _record_memory = timer::default_record_memory());
+
     virtual ~timer();
 
 public:
+    // copy and assign
+    timer(const this_type&);
+    this_type& operator=(const this_type&);
+
+public:
+    // public static functions
+    static void default_record_memory(bool _val)    { f_record_memory = _val; }
+    static bool default_record_memory()             { return f_record_memory; }
+
+public:
+    // public member functions
     timer& stop_and_return()
     {
         this->stop();
@@ -88,6 +110,18 @@ public:
         std::cout << this->as_string(no_min) << std::endl;
     }
 
+    void grab_metadata(const this_type& rhs);
+
+    template <typename Archive> void
+    serialize(Archive& ar, const unsigned int version)
+    {
+        internal::base_timer::serialize(ar, version);
+    }
+
+public:
+    //------------------------------------------------------------------------//
+    //      operator += timer
+    //
     this_type& operator+=(const this_type& rhs)
     {
         //auto_lock_t l(m_mutex);
@@ -95,6 +129,19 @@ public:
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= timer
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        //auto_lock_t l(m_mutex);
+        m_accum -= rhs.get_accum();
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //      operator /= integer
+    //
     this_type& operator/=(const uint64_t& rhs)
     {
         auto_lock_t l(m_mutex);
@@ -102,26 +149,45 @@ public:
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator += RSS
+    //
     this_type& operator+=(const base_rss_type& rhs)
     {
         m_accum += rhs;
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= RSS
+    //
     this_type& operator-=(const base_rss_type& rhs)
     {
         m_accum -= rhs;
         return *this;
     }
 
-    void grab_metadata(const this_type& rhs);
-
 public:
-    template <typename Archive> void
-    serialize(Archive& ar, const unsigned int version)
+    //------------------------------------------------------------------------//
+    //                          FRIEND operators
+    //------------------------------------------------------------------------//
+    //      operator - timer
+    //
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
     {
-        internal::base_timer::serialize(ar, version);
+        return this_type(lhs) -= rhs;
     }
+
+    //------------------------------------------------------------------------//
+    //      operator + timer
+    //
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) += rhs;
+    }
+
+private:
+    static bool f_record_memory;
 
 };
 

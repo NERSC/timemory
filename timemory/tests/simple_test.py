@@ -108,6 +108,8 @@ def run_test():
 
     main(args.nfib)
 
+    print("{}".format(timemory.get_overhead_report()))
+
     timemory.disable_signal_detection()
 
 

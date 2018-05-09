@@ -115,15 +115,17 @@ void test_format();
 int main(int /*argc*/, char** argv)
 {
     tim::EnableSignalDetection({
-                                        tim::sys_signal::sHangup,
-                                        tim::sys_signal::sInterrupt,
-                                        tim::sys_signal::sIllegal,
-                                        tim::sys_signal::sSegFault,
-                                        tim::sys_signal::sFPE
-                                    });
+                                   tim::sys_signal::sHangup,
+                                   tim::sys_signal::sInterrupt,
+                                   tim::sys_signal::sIllegal,
+                                   tim::sys_signal::sSegFault,
+                                   tim::sys_signal::sFPE
+                               });
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
+
+    tim::format::timer::push();
 
     int num_fail = 0;
     int num_test = 0;
@@ -161,6 +163,9 @@ int main(int /*argc*/, char** argv)
     std::cout << std::endl;
     t.report();
     std::cout << std::endl;
+    tim::format::timer::pop();
+
+    manager_t::instance()->write_overhead();
 
     delete manager_t::instance();
 
@@ -332,7 +337,7 @@ void test_manager()
     tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/cxx_timing_report.json");
-
+    tman->write_overhead();
     EXPECT_EQ(manager_t::instance()->size(), 32);
 
     for(const auto& itr : *tman)
@@ -392,6 +397,7 @@ void test_timing_toggle()
     EXPECT_EQ(manager_t::instance()->size(), 10);
 
     tman->write_serialization("test_output/cxx_timing_toggle.json");
+    tman->write_overhead();
     tman->enable(_is_enabled);
 }
 
@@ -425,6 +431,7 @@ void test_timing_depth()
     EXPECT_EQ(manager_t::instance()->size(), 7);
 
     tman->write_serialization("test_output/cxx_timing_depth.json");
+    tman->write_overhead();
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
@@ -521,6 +528,7 @@ void test_timing_thread()
     ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
+    tman->write_overhead();
     tman->enable(_is_enabled);
 }
 
@@ -530,12 +538,12 @@ void test_format()
 {
     print_info(__FUNCTION__);
 
-    tim::format::timer::set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m");
-    tim::format::timer::set_default_unit(tim::units::msec);
-    tim::format::timer::set_default_precision(1);
-    tim::format::rss::set_default_format("[ c, p %A ] : %C, %M");
-    tim::format::rss::set_default_unit(tim::units::kilobyte);
-    tim::format::rss::set_default_precision(0);
+    tim::format::timer::default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m");
+    tim::format::timer::default_unit(tim::units::msec);
+    tim::format::timer::default_precision(1);
+    tim::format::rss::default_format("[ c, p %A ] : %C, %M");
+    tim::format::rss::default_unit(tim::units::kilobyte);
+    tim::format::rss::default_precision(0);
 
     auto tman = manager_t::instance();
     tman->clear();
@@ -558,6 +566,7 @@ void test_format()
     // reports to file
     tman->report();
     tman->write_json("test_output/cxx_timing_format.json");
+    tman->write_overhead();
 
     EXPECT_EQ(manager_t::instance()->size(), 18);
 

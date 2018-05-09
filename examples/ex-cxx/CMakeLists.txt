@@ -4,14 +4,11 @@ if(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE OFF)
 else(CMAKE_VERSION VERSION_LESS 3.1.3)
     set(GOOD_CMAKE ON)
-endif(CMAKE_VERSION VERSION_LESS 3.1.3)
-
-if(GOOD_CMAKE)
     cmake_policy(SET CMP0048 NEW)
-endif(GOOD_CMAKE)
+endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 cmake_policy(SET CMP0042 NEW)
 
-#----------------------------------------------------------------------------
+#------------------------------------------------------------------------------#
 project(TiMemory-CXX-Example C CXX)
 
 set(EXE_NAME test_cxx_timing)
@@ -28,7 +25,7 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
 
-#----------------------------------------------------------------------------
+#------------------------------------------------------------------------------#
 # Add the executable, and link it to the TiMemory libraries
 #
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)

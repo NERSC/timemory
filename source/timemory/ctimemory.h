@@ -115,6 +115,7 @@ tim_api void        c_timemory_delete_auto_timer    (void*);
 tim_api const char* c_timemory_string_combine       (const char*, const char*);
 tim_api const char* c_timemory_auto_timer_str       (const char*, const char*,
                                                      const char*, int);
+tim_api void        c_timemory_record_memory        (int);
 
 //============================================================================//
 //
@@ -124,6 +125,12 @@ tim_api const char* c_timemory_auto_timer_str       (const char*, const char*,
 
 #if !defined(__FUNCTION__) && defined(__func__)
 #   define __FUNCTION__ __func__
+#endif
+
+#if defined(TIMEMORY_PRETTY_FUNCTION)
+#   define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
+#else
+#   define __TIMEMORY_FUNCTION__ __FUNCTION__
 #endif
 
 // stringify some macro -- uses TIMEMORY_C_STRINGIFY2 which does the actual
@@ -156,7 +163,7 @@ tim_api const char* c_timemory_auto_timer_str       (const char*, const char*,
 */
 #if !defined(TIMEMORY_BASIC_C_AUTO_TIMER)
 #   define TIMEMORY_BASIC_C_AUTO_TIMER(c_str) \
-    c_timemory_create_auto_timer(c_timemory_string_combine(__FUNCTION__, c_str), __LINE__)
+    c_timemory_create_auto_timer(c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__)
 #endif
 
 //----------------------------------------------------------------------------//
@@ -174,7 +181,7 @@ tim_api const char* c_timemory_auto_timer_str       (const char*, const char*,
  */
 #if !defined(TIMEMORY_C_AUTO_TIMER)
 #   define TIMEMORY_C_AUTO_TIMER(c_str) \
-    c_timemory_create_auto_timer(c_timemory_auto_timer_str(__FUNCTION__, c_str, __FILE__, __LINE__), __LINE__)
+    c_timemory_create_auto_timer(c_timemory_auto_timer_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__), __LINE__)
 #endif
 
 //----------------------------------------------------------------------------//

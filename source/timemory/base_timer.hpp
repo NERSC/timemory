@@ -150,30 +150,64 @@ public:
     base_timer_delta()
     : m_lap(0),
       m_sum(data_type(0, 0, 0)),
+  #if defined(TIMEMORY_STAT_TIMERS)
       m_sqr(data_type(0, 0, 0)),
+  #endif
       m_rss(rss_type())
     { }
+
+public:
+    uint64_t        size() const    { return m_lap; }
+    rss_type&       rss()           { return m_rss; }
+    const rss_type& rss() const     { return m_rss; }
 
     void reset()
     {
         m_lap = 0;
         m_sum = data_type(0, 0, 0);
+    #if defined(TIMEMORY_STAT_TIMERS)
         m_sqr = data_type(0, 0, 0);
+    #endif
         m_rss = rss_type();
     }
 
+    template <int N> uint64_t get_sum() const { return std::get<N>(m_sum); }
+
+    #if defined(TIMEMORY_STAT_TIMERS)
+    template <int N> uint64_t get_sqr() const { return std::get<N>(m_sqr); }
+    #else
+    template <int N> uint64_t get_sqr() const { return 0; }
+    #endif
+
+    /*this_type& lap_average(const uint64_t& _laps)
+    {
+        m_lap = _laps;
+        divide_sum(_laps);
+        divide_sqr(_laps);
+        return *this;
+    }*/
+
+public:
+    //------------------------------------------------------------------------//
+    //      operator = this
+    //
     this_type& operator=(const this_type& rhs)
     {
         if(this != &rhs)
         {
             m_lap = rhs.m_lap;
             m_sum = rhs.m_sum;
+    #if defined(TIMEMORY_STAT_TIMERS)
             m_sqr = rhs.m_sqr;
+    #endif
             m_rss = rhs.m_rss;
         }
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator += data
+    //
     this_type& operator+=(const op_type& data)
     {
         auto _data = incr_type(compute<0>(data),
@@ -187,27 +221,53 @@ public:
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator += this
+    //
     this_type& operator+=(const this_type& rhs)
     {
         m_lap += rhs.m_lap;
         compute_sum(rhs.m_sum);
+    #if defined(TIMEMORY_STAT_TIMERS)
         compute_sqr(rhs.m_sqr);
+    #endif
         m_rss.max(rhs.m_rss);
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= this
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        subtract_sum(rhs.m_sum);
+    #if defined(TIMEMORY_STAT_TIMERS)
+        subtract_sqr(rhs.m_sqr);
+    #endif
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //      operator += RSS
+    //
     this_type& operator+=(const base_rss_type& rhs)
     {
         m_rss += rhs;
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= RSS
+    //
     this_type& operator-=(const base_rss_type& rhs)
     {
         m_rss -= rhs;
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator /= integer
+    //
     this_type& operator/=(const uint64_t& rhs)
     {
         if(rhs > 0)
@@ -217,13 +277,6 @@ public:
         }
         return *this;
     }
-
-    template <int N> uint64_t get_sum() const { return std::get<N>(m_sum); }
-    template <int N> uint64_t get_sqr() const { return std::get<N>(m_sqr); }
-    uint64_t size() const { return m_lap; }
-
-    inline rss_type& rss() { return m_rss; }
-    inline const rss_type& rss() const { return m_rss; }
 
 protected:
     template <int N> uint64_t compute(const op_type& data)
@@ -240,16 +293,42 @@ protected:
         std::get<2>(m_sum) += std::get<2>(rhs);
     }
 
-#if defined(TIMEMORY_STAT_TIMERS)
+    template <int N>
+    void subtract_unsigned(data_type& lhs, const data_type& rhs)
+    {
+        std::get<N>(lhs) = (std::get<N>(lhs) < std::get<N>(rhs))
+                           ? (uint_type)(0)
+                           : std::get<N>(lhs) - std::get<N>(rhs);
+    }
+
+    inline void subtract_sum(const incr_type& rhs)
+    {
+        subtract_unsigned<0>(m_sum, rhs);
+        subtract_unsigned<1>(m_sum, rhs);
+        subtract_unsigned<2>(m_sum, rhs);
+    }
+
+    #if defined(TIMEMORY_STAT_TIMERS)
     inline void compute_sqr(const incr_type& rhs)
     {
-        std::get<0>(m_sum) += std::pow(std::get<0>(rhs), 2);
-        std::get<1>(m_sum) += std::pow(std::get<1>(rhs), 2);
-        std::get<2>(m_sum) += std::pow(std::get<2>(rhs), 2);
+        std::get<0>(m_sqr) += std::pow(std::get<0>(rhs), 2);
+        std::get<1>(m_sqr) += std::pow(std::get<1>(rhs), 2);
+        std::get<2>(m_sqr) += std::pow(std::get<2>(rhs), 2);
     }
-#else
+    #else
     inline void compute_sqr(const incr_type&) { }
-#endif
+    #endif
+
+    #if defined(TIMEMORY_STAT_TIMERS)
+    inline void subtract_sqr(const incr_type& rhs)
+    {
+        std::get<0>(m_sqr) -= std::pow(std::get<0>(rhs), 2);
+        std::get<1>(m_sqr) -= std::pow(std::get<1>(rhs), 2);
+        std::get<2>(m_sqr) -= std::pow(std::get<2>(rhs), 2);
+    }
+    #else
+    inline void subtract_sqr(const incr_type&) { }
+    #endif
 
     inline void divide_sum(const uint64_t& rhs)
     {
@@ -258,21 +337,23 @@ protected:
         std::get<2>(m_sum) /= rhs;
     }
 
-#if defined(TIMEMORY_STAT_TIMERS)
+    #if defined(TIMEMORY_STAT_TIMERS)
     inline void divide_sqr(const uint64_t& rhs)
     {
-        std::get<0>(m_sum) /= rhs;
-        std::get<1>(m_sum) /= rhs;
-        std::get<2>(m_sum) /= rhs;
+        std::get<0>(m_sqr) /= rhs;
+        std::get<1>(m_sqr) /= rhs;
+        std::get<2>(m_sqr) /= rhs;
     }
-#else
-    inline void divide_sqr(const uint64_t&) {}
-#endif
+    #else
+    inline void divide_sqr(const uint64_t&) { }
+    #endif
 
 protected:
     uint_type   m_lap;
     data_type   m_sum;
+    #if defined(TIMEMORY_STAT_TIMERS)
     data_type   m_sqr;
+    #endif
     rss_type    m_rss;
 
 };
@@ -310,9 +391,11 @@ public:
     typedef tim::rss::usage_delta               rss_type;
     typedef format::timer                       format_type;
     typedef std::shared_ptr<format_type>        timer_format_t;
+    typedef std::function<void()>               record_func_t;
 
 public:
     base_timer(timer_format_t = timer_format_t(),
+               bool _record_memory = true,
                ostream_t* = &std::cout);
     virtual ~base_timer();
 
@@ -321,10 +404,12 @@ public:
 
 public:
     // public member functions
-    inline void start();
-    inline void stop();
+    inline void start() { m_start_func(); }
+    inline void stop()  { m_stop_func(); }
     inline bool is_valid() const;
+    inline bool is_running() const;
     double real_elapsed() const;
+    double wall_elapsed() const { return this->real_elapsed(); }
     double system_elapsed() const;
     double user_elapsed() const;
     double cpu_elapsed() const { return user_elapsed() + system_elapsed(); }
@@ -345,7 +430,11 @@ public:
     void report(ostream_t&, bool endline = true, bool no_min = false) const;
     void report(bool endline = true) const;
     bool above_min(bool no_min = false) const;
-    void sync(this_type& rhs);
+    void sync(const this_type& rhs);
+
+    inline void configure_record();
+    void record_memory(bool _val) { m_record_memory = _val; configure_record(); }
+    bool record_memory() const { return m_record_memory; }
 
 protected:
     // protected member functions
@@ -353,12 +442,21 @@ protected:
     data_accum_t& get_accum() { return m_accum; }
     const data_accum_t& get_accum() const { return m_accum; }
 
+    inline void start_stop_debug_message(const string_t&, const string_t&);
+    inline void start_with_memory();
+    inline void stop_with_memory();
+    inline void start_without_memory();
+    inline void stop_without_memory();
+
 protected:
     // protected member variables
+    bool                    m_record_memory;
     // pointers
     ostream_t*              m_os;
     // objects
     mutex_t                 m_mutex;
+    record_func_t           m_start_func;
+    record_func_t           m_stop_func;
     mutable data_t          m_data;
     mutable data_accum_t    m_accum;
     timer_format_t          m_format;
@@ -470,62 +568,104 @@ double base_timer::user_elapsed() const
     return m_accum.get_sum<0>() / static_cast<double>(ratio_t::den);
 }
 //----------------------------------------------------------------------------//
+inline void base_timer::start_stop_debug_message(const string_t& _func,
+                                                 const string_t& _already)
+{
+    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+    if(_verbose > 0)
+    {
+        std::stringstream _msg;
+        _msg << "Warning! base_timer::" << _func << " called but already "
+             << _already << "..." << std::endl;
+        if(_verbose > 1)
+            tim::StackBackTrace(_msg);
+        std::cerr << _msg.str();
+    }
+}
+//----------------------------------------------------------------------------//
 inline
-void base_timer::start()
+void base_timer::configure_record()
+{
+    if(m_record_memory)
+    {
+        auto _start = [=] () { this->start_with_memory(); };
+        auto _stop  = [=] () { this->stop_with_memory();  };
+        m_start_func = _start;
+        m_stop_func = _stop;
+    }
+    else
+    {
+        auto _start = [=] () { this->start_without_memory(); };
+        auto _stop  = [=] () { this->stop_without_memory();  };
+        m_start_func = _start;
+        m_stop_func = _stop;
+    }
+}
+//----------------------------------------------------------------------------//
+inline
+void base_timer::start_with_memory()
 {
     if(!m_timer().running())
     {
         m_timer().start() = base_clock_t::now();
         rss_init();
     }
-    else
-    {
 #if !defined(NDEBUG)
-        int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
-        if(_verbose > 0)
-        {
-            std::stringstream _msg;
-            _msg << "Warning! base_timer::start() called but already "
-                 << "running..." << std::endl;
-            if(_verbose > 1)
-                tim::StackBackTrace(_msg);
-            std::cerr << _msg.str();
-        }
+    else
+        start_stop_debug_message(__FUNCTION__, "running");
 #endif
-    }
 }
 //----------------------------------------------------------------------------//
 inline
-void base_timer::stop()
+void base_timer::start_without_memory()
+{
+    if(!m_timer().running())
+        m_timer().start() = base_clock_t::now();
+#if !defined(NDEBUG)
+    else
+        start_stop_debug_message(__FUNCTION__, "running");
+#endif
+}
+//----------------------------------------------------------------------------//
+inline
+void base_timer::stop_with_memory()
 {
     if(m_timer().running())
     {
         m_timer().stop() = base_clock_t::now();
         rss_record();
-        //auto_lock_t l(f_mutex_map[this]);
         m_accum += m_timer();
     }
-    else
-    {
 #if !defined(NDEBUG)
-        int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
-        if(_verbose > 0)
-        {
-            std::stringstream _msg;
-            _msg << "Warning! base_timer::stop() called but already "
-                 << "stopped..." << std::endl;
-            if(_verbose > 1)
-                tim::StackBackTrace(_msg);
-            std::cerr << _msg.str();
-        }
+    else
+        start_stop_debug_message(__FUNCTION__, "stopped");
 #endif
+}
+//----------------------------------------------------------------------------//
+inline
+void base_timer::stop_without_memory()
+{
+    if(m_timer().running())
+    {
+        m_timer().stop() = base_clock_t::now();
+        m_accum += m_timer();
     }
+#if !defined(NDEBUG)
+    else
+        start_stop_debug_message(__FUNCTION__, "stopped");
+#endif
 }
 //----------------------------------------------------------------------------//
 inline
 bool base_timer::is_valid() const
 {
     return (m_timer().running()) ? false : true;
+}
+//----------------------------------------------------------------------------//
+inline
+bool base_timer::is_running() const
+{
+    return m_timer().running();
 }
 //----------------------------------------------------------------------------//
 inline const char* base_timer::clock_time() const

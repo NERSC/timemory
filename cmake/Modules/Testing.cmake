@@ -199,7 +199,7 @@ if(TIMEMORY_BUILD_EXAMPLES)
     endif(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
 
     #----------------------------------------------#
-    #   C
+    #   C Timing
     #
     add_test(NAME c_test
         COMMAND $<TARGET_FILE:test_c_timing>
@@ -208,7 +208,7 @@ if(TIMEMORY_BUILD_EXAMPLES)
         LABELS "c;unit_test" TIMEOUT 7200)
 
     #----------------------------------------------#
-    #   CXX
+    #   CXX Timing
     #
     add_test(NAME cxx_test
         COMMAND $<TARGET_FILE:test_cxx_timing>
@@ -217,7 +217,16 @@ if(TIMEMORY_BUILD_EXAMPLES)
         LABELS "cxx;unit_test" TIMEOUT 7200)
 
     #----------------------------------------------#
-    #   CXX + MPI
+    #   CXX Overhead
+    #
+    add_test(NAME cxx_overhead_test
+        COMMAND $<TARGET_FILE:test_cxx_overhead>
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(cxx_overhead_test PROPERTIES
+        LABELS "cxx;unit_test" TIMEOUT 7200)
+
+    #----------------------------------------------#
+    #   CXX + MPI Timing
     #
     if(_TEST_MPI)
         add_test(NAME cxx_mpi_test

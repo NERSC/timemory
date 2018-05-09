@@ -81,40 +81,18 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     typedef timer_ptr_t                     fourth_type;
     typedef internal::base_timer_tuple_t    base_type;
 
-    timer_tuple(const base_type& _data) : base_type(_data) { }
+    //------------------------------------------------------------------------//
+    //      constructors
+    //
+    timer_tuple(const base_type& _data)
+        : base_type(_data) { }
+
     timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
-    : base_type(_b, _s, _t, _f) { }
+        : base_type(_b, _s, _t, _f) { }
 
-    timer_tuple& operator=(const base_type& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        base_type::operator =(rhs);
-        return *this;
-    }
-
-    bool operator==(const this_type& rhs) const
-    {
-        return (key() == rhs.key() && level() == rhs.level() &&
-                tag() == rhs.tag());
-    }
-
-    bool operator!=(const this_type& rhs) const
-    {
-        return !(*this == rhs);
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        timer() += rhs.timer();
-        return *this;
-    }
-
-    const this_type operator+(const this_type& rhs) const
-    {
-        return this_type(*this) += rhs;
-    }
-
+    //------------------------------------------------------------------------//
+    //
+    //
     first_type& key() { return std::get<0>(*this); }
     const first_type& key() const { return std::get<0>(*this); }
 
@@ -127,7 +105,54 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     tim_timer_t& timer() { return *(std::get<3>(*this).get()); }
     const tim_timer_t& timer() const { return *(std::get<3>(*this).get()); }
 
+    //------------------------------------------------------------------------//
+    //
+    //
+    timer_tuple& operator=(const base_type& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        base_type::operator =(rhs);
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    bool operator==(const this_type& rhs) const
+    {
+        return (key() == rhs.key() && level() == rhs.level() &&
+                tag() == rhs.tag());
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    bool operator!=(const this_type& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    this_type& operator+=(const this_type& rhs)
+    {
+        timer() += rhs.timer();
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    const this_type operator+(const this_type& rhs) const
+    {
+        return this_type(*this) += rhs;
+    }
+
+    //------------------------------------------------------------------------//
     // serialization function
+    //
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
@@ -137,6 +162,9 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
            serializer::make_nvp("timer.ref", timer()));
     }
 
+    //------------------------------------------------------------------------//
+    //
+    //
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
     {
         std::stringstream ss;
@@ -157,28 +185,30 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                         this_type;
-    typedef tim::timer                      tim_timer_t;
-    typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
-    typedef tim_timer_t::string_t           string_t;
-    typedef timer_tuple                     timer_tuple_t;
-    typedef std::deque<timer_tuple_t>       timer_list_t;
-    typedef timer_list_t::iterator          iterator;
-    typedef timer_list_t::const_iterator    const_iterator;
-    typedef timer_list_t::size_type         size_type;
-    typedef uomap<uint64_t, timer_ptr_t>    timer_map_t;
-    typedef tim_timer_t::ostream_t          ostream_t;
-    typedef tim_timer_t::ofstream_t         ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
-    typedef std::mutex                      mutex_t;
-    typedef uomap<uint64_t, mutex_t>        mutex_map_t;
-    typedef std::lock_guard<mutex_t>        auto_lock_t;
-    typedef this_type*                      pointer_type;
-    typedef std::set<this_type*>            daughter_list_t;
-    typedef tim_timer_t::rss_type           rss_type;
-    typedef rss_type::base_type             base_rss_type;
-    typedef std::function<intmax_t()>       get_num_threads_func_t;
-    typedef std::atomic<uint64_t>           counter_t;
+    typedef manager                             this_type;
+    typedef tim::timer                          tim_timer_t;
+    typedef std::shared_ptr<tim_timer_t>        timer_ptr_t;
+    typedef tim_timer_t::string_t               string_t;
+    typedef timer_tuple                         timer_tuple_t;
+    typedef std::deque<timer_tuple_t>           timer_list_t;
+    typedef timer_list_t::iterator              iterator;
+    typedef timer_list_t::const_iterator        const_iterator;
+    typedef timer_list_t::size_type             size_type;
+    typedef uomap<uint64_t, timer_ptr_t>        timer_map_t;
+    typedef tim_timer_t::ostream_t              ostream_t;
+    typedef tim_timer_t::ofstream_t             ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t>       comm_group_t;
+    typedef std::mutex                          mutex_t;
+    typedef uomap<uint64_t, mutex_t>            mutex_map_t;
+    typedef std::lock_guard<mutex_t>            auto_lock_t;
+    typedef this_type*                          pointer_type;
+    typedef std::set<this_type*>                daughter_list_t;
+    typedef tim_timer_t::rss_type               rss_type;
+    typedef rss_type::base_type                 base_rss_type;
+    typedef std::function<intmax_t()>           get_num_threads_func_t;
+    typedef std::atomic<uint64_t>               counter_t;
+    typedef std::map<int64_t, tim_timer_t>      overhead_map_t;
+    typedef std::pair<tim_timer_t, tim_timer_t> timer_pair_t;
 
 public:
     // Constructor and Destructors
@@ -242,15 +272,29 @@ public:
     const_iterator  end() const     { return m_timer_list.cend(); }
     const_iterator  cend() const    { return m_timer_list.cend(); }
 
-    void report(bool no_min = false) const;
-    void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
-    void set_output_stream(ostream_t&);
-    void set_output_stream(const path_t&);
-    void print(bool no_min = false) { this->report(no_min); }
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
+    void print(bool no_min = false) { this->report(no_min); }
+
+    void report(bool no_min = false) const;
+    void set_output_stream(const path_t&);
+    void write_report(path_t _fname, bool no_min = false);
     void write_serialization(const path_t& _fname) const { write_json(_fname); }
-	void write_serialization(std::ostream& os) const { write_json(os); }
+    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
+    //  then timer_pair_t will subtract out tim_timer_t
+    void write_overhead(const path_t& _fname,
+                        tim_timer_t* = nullptr,
+                        timer_pair_t* = nullptr);
+
+    void report(ostream_t& os, bool no_min = false) const { report(&os, no_min); }
+    void set_output_stream(ostream_t& = std::cout);
+    void write_report(ostream_t& os = std::cout, bool no_min = false) { report(os, no_min); }
+    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
+    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
+    //  then timer_pair_t will subtract out tim_timer_t
+    void write_overhead(ostream_t& = std::cout,
+                        tim_timer_t* = nullptr,
+                        timer_pair_t* = nullptr);
 
     void add(pointer_type ptr);
 
@@ -286,10 +330,15 @@ public:
         return (m_report != &std::cout) && (m_report != &std::cerr);
     }
 
+    timer_pair_t compute_overhead(tim_timer_t* timer_ref = nullptr);
+    uint64_t laps() const { return compute_total_laps(); }
+    uint64_t total_laps() const;
+
 public:
     // serialization function
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version);
+    tim_timer_t* overhead_timer() const { return m_overhead_timer; }
 
 protected:
 	// protected functions
@@ -300,6 +349,7 @@ protected:
     inline uint64_t string_hash(const string_t&) const;
     void const_merge(bool div = true) const { const_cast<this_type*>(this)->merge(div); }
     string_t get_prefix() const;
+    uint64_t compute_total_laps() const;
 
 protected:
 	// protected static variables
@@ -321,6 +371,8 @@ private:
     static std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
+    // total laps
+    counter_t               m_laps;
     // hash counting
     counter_t               m_hash;
     // auto timer counting
@@ -341,6 +393,8 @@ private:
     daughter_list_t         m_daughters;
     // baseline rss
     base_rss_type           m_rss_usage;
+    // overhead timer
+    tim_timer_t*            m_overhead_timer;
 };
 
 //----------------------------------------------------------------------------//
@@ -417,8 +471,28 @@ manager::string_hash(const string_t& str) const
     return std::hash<string_t>()(str);
 }
 //----------------------------------------------------------------------------//
+inline uint64_t
+manager::compute_total_laps() const
+{
+    uint64_t _laps = 0;
+    for(const auto& itr : *this)
+        _laps += itr.timer().laps();
+    return _laps;
+}
+//----------------------------------------------------------------------------//
+inline uint64_t
+manager::total_laps() const
+{
+    return m_laps + compute_total_laps();
+}
+//----------------------------------------------------------------------------//
 
 } // namespace tim
+
+// initialization and destruction on library load
+extern tim_api tim_thread_local tim::manager* _tim_manager_p;
+void _tim_manager_initialization();
+void _tim_manager_finalization();
 
 // for backwards-compatibility
 namespace tim { typedef manager timing_manager; }

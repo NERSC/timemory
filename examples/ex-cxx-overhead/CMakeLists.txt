@@ -9,9 +9,9 @@ endif(CMAKE_VERSION VERSION_LESS 3.1.3)
 cmake_policy(SET CMP0042 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-C-Example C)
+project(TiMemory-CXX-Overhead-Example C)
 
-set(EXE_NAME test_c_timing)
+set(EXE_NAME test_cxx_overhead)
 
 find_package(TiMemory REQUIRED)
 foreach(_DIR ${TiMemory_INCLUDE_DIRS})
@@ -23,7 +23,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
 #------------------------------------------------------------------------------#
 # Add the executable, and link it to the TiMemory libraries
 #
-add_executable(${EXE_NAME} ${EXE_NAME}.c)
+add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} ${TiMemory_C_LIBRARIES})
 
 if(DEFINED PROJECT_DEPENDS)

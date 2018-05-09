@@ -260,8 +260,11 @@ public:
     usage(const usage& rhs)
     : m_curr_rss(rhs.m_curr_rss),
       m_peak_rss(rhs.m_peak_rss),
-      m_format(usage_format_t(new format_type(*(rhs.m_format.get()))))
-    { }
+      m_format(usage_format_t())
+    {
+        if(rhs.format().get())
+            m_format = usage_format_t(new format_type(*(rhs.format().get())));
+    }
 
     usage& operator=(const usage& rhs)
     {
@@ -505,8 +508,11 @@ public:
       m_rss_tmp(rhs.m_rss_tmp),
       m_rss_tot_min(rhs.m_rss_tot_min),
       m_rss_self_min(rhs.m_rss_self_min),
-      m_format(usage_format_t(new format_type(*(rhs.m_format.get()))))
-    { }
+      m_format(usage_format_t())
+    {
+        if(rhs.format().get())
+            m_format = usage_format_t(new format_type(*(rhs.format().get())));
+    }
 
 public:
     void set_format(const format_type& _format);
@@ -578,7 +584,7 @@ public:
         if(this != &rhs)
         {
             if(!m_format.get())
-                m_format = usage_format_t(new format_type(format::timer::get_default_rss_format()));
+                m_format = usage_format_t(new format_type(format::timer::default_rss_format()));
             if(rhs.m_format.get())
                 *m_format = *(rhs.m_format.get());
             m_rss_tot = rhs.m_rss_tot;
@@ -596,7 +602,7 @@ public:
     {
         format_type _format = (m.format().get())
                                ? (*(m.format().get()))
-                               : format::timer::get_default_rss_format();
+                               : format::timer::default_rss_format();
         os << _format(&m);
         return os;
     }

@@ -22,6 +22,9 @@ int64_t fibonacci(int64_t n)
 
 int main(int argc, char** argv)
 {
+    // disable recording memory
+    //c_timemory_record_memory(0);
+
     printf("%s @ %i\n", __FUNCTION__, __LINE__);
 
     void* timer = TIMEMORY_C_AUTO_TIMER("");

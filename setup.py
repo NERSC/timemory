@@ -418,10 +418,11 @@ def get_long_description():
 
 # ---------------------------------------------------------------------------- #
 def get_short_description():
-    brief_A = 'Lightweight python profiling: timing (wall, system, user, cpu, %cpu)'
-    brief_B = 'RSS memory (current, peak) measurement manager'
-    brief_C = 'Written in high-perf C++ and made available to Python via PyBind11'
-    return '{} + {}. {}.'.format(brief_A, brief_B, brief_C)
+    return "{} {} {} {}".format(
+        "Lightweight cross-language pseudo-profiling for C, C++, and Python",
+        "reporting timing [wall, user, system, cpu, %cpu]",
+        "and resident set size (RSS) memory",
+        "[current page allocation and peak usage]")
 
 
 # ---------------------------------------------------------------------------- #

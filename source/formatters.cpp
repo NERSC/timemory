@@ -30,67 +30,22 @@
 namespace tim
 {
 
+namespace format
+{
+
 //============================================================================//
 //
-//                          Default values
+//                          CORE_FORMATTER
 //
 //============================================================================//
 
-//============================================================================//
-//      numerics
-//============================================================================//
-
-format::rss::size_type          format::rss::f_default_width        = 3;
-format::rss::size_type          format::rss::f_default_precision    = 1;
-format::rss::unit_type          format::rss::f_default_unit         = tim::units::megabyte;
-
-format::timer::size_type        format::timer::f_default_width      = 8;
-format::timer::size_type        format::timer::f_default_precision  = 3;
-format::timer::unit_type        format::timer::f_default_unit       = units::sec;
-
-//============================================================================//
-//      format strings
-//============================================================================//
-
-format::rss::string_t
-format::rss::f_default_format       = std::string(": RSS {curr,peak} : (%C|%M) [%A]");
-
-format::timer::string_t
-format::timer::f_default_format     = std::string(": %w wall, %u user + %s system = %t CPU [%T] (%p%)") +
-                                      std::string("%R (x%l laps)");
-format::timer::rss_format_t
-format::timer::f_default_rss_format = format::rss("",
-                                                  ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
-                                                  format::rss::get_default_unit(),
-                                                  false);
-
-//============================================================================//
-//      field lists
-//============================================================================//
-
-format::rss::field_list_t   format::rss::f_field_list =
-{
-    format::rss::field_pair_t("%C", format::rss::field::current     ),
-    format::rss::field_pair_t("%M", format::rss::field::peak        ),
-    format::rss::field_pair_t("%c", format::rss::field::self_curr   ),
-    format::rss::field_pair_t("%m", format::rss::field::self_peak   ),
-    format::rss::field_pair_t("%C", format::rss::field::total_curr  ),
-    format::rss::field_pair_t("%M", format::rss::field::total_peak  ),
-    format::rss::field_pair_t("%A", format::rss::field::memory_unit )
-};
-
-
-format::timer::field_list_t   format::timer::f_field_list =
-{
-    format::timer::field_pair_t("%w", format::timer::field::wall        ),
-    format::timer::field_pair_t("%u", format::timer::field::user        ),
-    format::timer::field_pair_t("%s", format::timer::field::system      ),
-    format::timer::field_pair_t("%t", format::timer::field::cpu         ),
-    format::timer::field_pair_t("%p", format::timer::field::percent     ),
-    format::timer::field_pair_t("%R", format::timer::field::rss         ),
-    format::timer::field_pair_t("%l", format::timer::field::laps        ),
-    format::timer::field_pair_t("%T", format::timer::field::timing_unit ),
-};
+core_formatter::core_formatter(size_type _prec,
+                               size_type _width,
+                               unit_type _unit,
+                               string_t _fmt,
+                               bool _fixed)
+: m_data(_prec, _width, _unit, _fmt, _fixed)
+{ }
 
 //============================================================================//
 //
@@ -98,7 +53,88 @@ format::timer::field_list_t   format::timer::f_field_list =
 //
 //============================================================================//
 
+base_formatter::base_formatter(string_t _prefix, string_t _suffix,
+                               string_t _format, unit_type _unit,
+                               bool _align_width,
+                               size_type _prec, size_type _width,
+                               bool _fixed)
+: core_type(_prec, _width, _unit, _format, _fixed),
+  m_align_width(_align_width),
+  m_prefix(_prefix),
+  m_suffix(_suffix)
+{ }
 
+//============================================================================//
+//      format strings
+//============================================================================//
+
+core_formatter rss::f_current =
+        core_formatter(1,                       // precision
+                       3,                       // min field width
+                       tim::units::megabyte,    // memory display units
+                                                // format string
+                       ": RSS {curr,peak} : (%C|%M) [%A]",
+                       true                     // std::fixed
+                       );
+
+//----------------------------------------------------------------------------//
+
+timer::format_pair_t timer::f_current =
+        timer::format_pair_t(
+            core_formatter(3,                   // precision
+                           8,                   // min field width
+                           units::sec,          // timing display units
+                                                // format string
+                           ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
+                           true                 // std::fixed
+                           ),
+            rss("",                             // prefix (ignored with timer)
+                                                // format string
+                ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
+                rss::default_unit(),            // memory display units
+                true,                           // align width
+                1,                              // precision
+                3,                              // min field width
+                true                            // std::fixed
+                )
+            );
+
+//============================================================================//
+//      field lists
+//============================================================================//
+
+rss::field_list_t   rss::f_field_list =
+{
+    rss::field_pair_t("%C", rss::field::current     ),
+    rss::field_pair_t("%M", rss::field::peak        ),
+    rss::field_pair_t("%c", rss::field::self_curr   ),
+    rss::field_pair_t("%m", rss::field::self_peak   ),
+    rss::field_pair_t("%C", rss::field::total_curr  ),
+    rss::field_pair_t("%M", rss::field::total_peak  ),
+    rss::field_pair_t("%A", rss::field::memory_unit )
+};
+
+//----------------------------------------------------------------------------//
+
+timer::field_list_t   timer::f_field_list =
+{
+    timer::field_pair_t("%w", timer::field::wall        ),
+    timer::field_pair_t("%u", timer::field::user        ),
+    timer::field_pair_t("%s", timer::field::system      ),
+    timer::field_pair_t("%t", timer::field::cpu         ),
+    timer::field_pair_t("%p", timer::field::percent     ),
+    timer::field_pair_t("%R", timer::field::rss         ),
+    timer::field_pair_t("%l", timer::field::laps        ),
+    timer::field_pair_t("%T", timer::field::timing_unit ),
+};
+
+//----------------------------------------------------------------------------//
+
+rss::storage_type   rss::f_history   = rss::storage_type({ rss::f_current });
+
+//----------------------------------------------------------------------------//
+
+timer::storage_type timer::f_history = timer::storage_type({ timer::f_current });
 
 //============================================================================//
 //
@@ -106,43 +142,66 @@ format::timer::field_list_t   format::timer::f_field_list =
 //
 //============================================================================//
 
-void format::timer::propose_default_width(size_type _w)
+void timer::push()
 {
-    f_default_width = std::max(f_default_width, _w);
+    // add current to stack
+    f_history.push(f_current);
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::timer::string_t
-format::timer::compose() const
+void timer::pop()
+{
+    // assign only if not empty
+    if(f_history.size() > 0)
+        f_current = f_history.top();
+
+    // don't completely empty
+    if(f_history.size() > 1)
+        f_history.pop();
+}
+
+//----------------------------------------------------------------------------//
+
+void timer::propose_default_width(size_type _w)
+{
+    _w += 4;    // a little padding
+    f_current.first.width() = std::max(f_current.first.width(), _w);
+}
+
+//----------------------------------------------------------------------------//
+
+timer::string_t
+timer::compose() const
 {
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_default_width + 1)
+        _ss << std::setw(f_current.first.width() + 2)
             << std::left << m_prefix << " "
-            << std::right << m_format
+            << std::right << this->format()
             << std::left << m_suffix;
     }
     else
     {
-        _ss << std::left << m_prefix << " "
-            << std::right << m_format
+        _ss << std::setw(width() + 2)
+            << std::left << m_prefix << " "
+            << std::right << this->format()
             << std::left << m_suffix;
     }
     return _ss.str();
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::timer::string_t
-format::timer::operator()(const internal::base_timer* t) const
+timer::string_t
+timer::operator()(const internal::base_timer* t) const
 {
     string_t _str = this->compose();
 
-    double _real = t->real_elapsed() * m_unit;
-    double _user = t->user_elapsed() * m_unit;
-    double _system = t->system_elapsed() * m_unit;
+    double _real = t->real_elapsed() * this->unit();
+    double _user = t->user_elapsed() * this->unit();
+    double _system = t->system_elapsed() * this->unit();
     double _cpu = _user + _system;
     double _perc = (_cpu / _real) * 100.0;
     auto _laps = t->laps();
@@ -161,44 +220,48 @@ format::timer::operator()(const internal::base_timer* t) const
     for(auto itr : f_field_list)
     {
         std::stringstream _ss;
-        _ss.precision(m_precision);
-        _ss << std::fixed;
+        _ss.precision(this->precision());
+        if(this->fixed())
+            _ss << std::fixed;
+        else
+            _ss << std::scientific;
         switch (itr.second)
         {
-            case format::timer::field::wall:
+            case timer::field::wall:
                 // the real elapsed time
-                _ss << std::setw(noff+m_precision)
+                _ss << std::setw(noff + this->precision())
                    << (_real);
                 break;
-            case format::timer::field::user:
+            case timer::field::user:
                 // CPU time of non-system calls
-                _ss << std::setw(noff+m_precision)
+                _ss << std::setw(noff + this->precision())
                    << (_user);
                 break;
-            case format::timer::field::system:
+            case timer::field::system:
                 // thread specific CPU time, e.g. thread creation overhead
-                _ss << std::setw(noff+m_precision)
+                _ss << std::setw(noff + this->precision())
                    << (_system);
                 break;
-            case format::timer::field::cpu:
+            case timer::field::cpu:
                 // total CPU time
-                _ss << std::setw(noff+m_precision)
+                _ss << std::setw(noff + this->precision())
                    << (_cpu);
                 break;
-            case format::timer::field::percent:
+            case timer::field::percent:
                 // percent CPU utilization
                 _ss.precision(1);
                 _ss << std::setw(5) << (_perc);
                 break;
-            case format::timer::field::rss:
-                _ss << m_rss_format.format();
+            case timer::field::rss:
+                if(t->record_memory())
+                    _ss << m_rss_format.format();
                 break;
-            case format::timer::field::laps:
+            case timer::field::laps:
                 _ss.precision(1);
                 _ss << _laps;
                 break;
-            case format::timer::field::timing_unit:
-                _ss << units::time_repr(m_unit);
+            case timer::field::timing_unit:
+                _ss << units::time_repr(this->unit());
                 break;
             default:
                 _ss << "unknown field: " << itr.first;
@@ -212,51 +275,51 @@ format::timer::operator()(const internal::base_timer* t) const
         // replace all instances
         auto _npos = std::string::npos;
         while((_npos = _str.find(itr.first)) != std::string::npos)
-        {
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
-        }
-
     }
 
     // add RSS
-    _str = m_rss_format(&t->accum().rss(), _str);
+    if(t->record_memory())
+        _str = m_rss_format(&t->accum().rss(), _str);
+    else
+        _str = m_rss_format(_str);
 
     return _str;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-void format::timer::set_default(const timer& rhs)
+void timer::set_default(const timer& rhs)
 {
-    format::timer::set_default_format(rhs.format());
-    format::timer::set_default_precision(rhs.precision());
-    format::timer::set_default_rss_format(rhs.rss_format());
-    format::timer::set_default_unit(rhs.unit());
-    format::timer::set_default_width(rhs.width());
+    timer::default_format(rhs.format());
+    timer::default_precision(rhs.precision());
+    timer::default_rss_format(rhs.rss_format());
+    timer::default_unit(rhs.unit());
+    timer::default_width(rhs.width());
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::timer format::timer::get_default()
+timer timer::get_default()
 {
-    format::timer obj;
-    obj.set_format(format::timer::get_default_format());
-    obj.set_precision(format::timer::get_default_precision());
-    obj.set_rss_format(format::timer::get_default_rss_format());
-    obj.set_unit(format::timer::get_default_unit());
-    obj.set_width(format::timer::get_default_width());
+    timer obj;
+    obj.format(timer::default_format());
+    obj.precision(timer::default_precision());
+    obj.rss_format(timer::default_rss_format());
+    obj.unit(timer::default_unit());
+    obj.width(timer::default_width());
     return obj;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::timer* format::timer::copy_from(const timer* rhs)
+timer* timer::copy_from(const timer* rhs)
 {
-    m_precision = rhs->precision();
-    m_width = rhs->width();
-    m_unit = rhs->unit();
-    m_format = rhs->format();
-    m_rss_format = rhs->rss_format();
+    this->precision() = rhs->precision();
+    this->width() = rhs->width();
+    this->unit() = rhs->unit();
+    this->format() = rhs->format();
+    this->rss_format() = rhs->rss_format();
     return this;
 }
 
@@ -266,36 +329,108 @@ format::timer* format::timer::copy_from(const timer* rhs)
 //
 //============================================================================//
 
+void rss::push()
+{
+    // add current to stack
+    f_history.push(f_current);
+}
 
-format::rss::string_t
-format::rss::compose() const
+//----------------------------------------------------------------------------//
+
+void rss::pop()
+{
+    // assign only if not empty
+    if(f_history.size() > 0)
+        f_current = f_history.top();
+
+    // don't completely empty
+    if(f_history.size() > 1)
+        f_history.pop();
+}
+
+//----------------------------------------------------------------------------//
+
+void rss::propose_default_width(size_type _w)
+{
+    _w += 2;    // a little padding
+    f_current.width() = std::max(f_current.width(), _w);
+}
+
+//----------------------------------------------------------------------------//
+
+rss::string_t
+rss::compose() const
 {
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_default_width + 1)
+        _ss << std::setw(f_current.width() + 1)
             << std::left << m_prefix << " "
-            << std::right << m_format
+            << std::right << this->format()
             << std::left << m_suffix;
     }
     else
     {
-        _ss << std::left << m_prefix << " "
-            << std::right << m_format
+        _ss << std::setw(width() + 2)
+            << std::left << m_prefix << " "
+            << std::right << this->format()
             << std::left << m_suffix;
     }
     return _ss.str();
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::rss::string_t
-format::rss::operator()(const tim::rss::usage* m) const
+rss::string_t
+rss::operator()(const string_t& _base) const
+{
+    string_t _str = (_base.length() == 0) ? this->compose() : _base;
+
+    for(auto itr : f_field_list)
+    {
+        std::stringstream _ss;
+        switch (itr.second)
+        {
+            case rss::field::current:
+            case rss::field::total_curr:
+            case rss::field::self_curr:
+            case rss::field::peak:
+            case rss::field::total_peak:
+            case rss::field::self_peak:
+            case rss::field::memory_unit:
+            default:
+                _ss << "";
+                break;
+        }
+
+        if(_ss.str().length() == 0)
+            continue;
+
+        // replace all instances
+        auto _npos = std::string::npos;
+        for(const auto& itr2 : { itr.first + string_t(" "), itr.first })
+            while((_npos = _str.find(itr2)) != std::string::npos)
+                _str = _str.replace(_npos, itr2.length(), _ss.str().c_str());
+    }
+
+    string_t _pR = "%R";
+    auto _npos = std::string::npos;
+    while((_npos = _str.find(_pR)) != std::string::npos)
+        _str = _str.replace(_npos, _pR.length(), "");
+
+    return _str;
+
+}
+
+//----------------------------------------------------------------------------//
+
+rss::string_t
+rss::operator()(const tim::rss::usage* m) const
 {
     string_t _str = this->compose();
 
-    double _peak = m->peak(m_unit);
-    double _curr = m->current(m_unit);
+    double _peak = m->peak(this->unit());
+    double _curr = m->current(this->unit());
 
     // rss spacing
     static const uint16_t _wmin = 2;
@@ -309,29 +444,32 @@ format::rss::operator()(const tim::rss::usage* m) const
     for(auto itr : f_field_list)
     {
         std::stringstream _ss;
-        _ss.precision(m_precision);
-        _ss << std::fixed;
+        _ss.precision(this->precision());
+        if(this->fixed())
+            _ss << std::fixed;
+        else
+            _ss << std::scientific;
         switch (itr.second)
         {
-            case format::rss::field::current:
-            case format::rss::field::total_curr:
-            case format::rss::field::self_curr:
+            case rss::field::current:
+            case rss::field::total_curr:
+            case rss::field::self_curr:
                 // RSS (current)
-                _ss.precision(m_precision);
+                _ss.precision(this->precision());
                 _ss << std::setw(wrss+1)
                    << _curr;
                 break;
-            case format::rss::field::peak:
-            case format::rss::field::total_peak:
-            case format::rss::field::self_peak:
+            case rss::field::peak:
+            case rss::field::total_peak:
+            case rss::field::self_peak:
                 // RSS (peak)
-                _ss.precision(m_precision);
+                _ss.precision(this->precision());
                 _ss << std::setw(wrss+1)
                    << _peak;
                 break;
-            case format::rss::field::memory_unit:
-                _ss.precision(m_precision);
-                _ss << tim::units::mem_repr(m_unit);
+            case rss::field::memory_unit:
+                _ss.precision(this->precision());
+                _ss << tim::units::mem_repr(this->unit());
                 break;
             default:
                 _ss << "unknown field: " << itr.first;
@@ -345,27 +483,26 @@ format::rss::operator()(const tim::rss::usage* m) const
         // replace all instances
         auto _npos = std::string::npos;
         while((_npos = _str.find(itr.first)) != std::string::npos)
-        {
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
-        }
-
     }
+
+    _str = (*this)(_str);
 
     return _str;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::rss::string_t
-format::rss::operator()(const tim::rss::usage_delta* m,
-                        const string_t& _base) const
+rss::string_t
+rss::operator()(const tim::rss::usage_delta* m,
+                const string_t& _base) const
 {
     string_t _str = (_base.length() == 0) ? this->compose() : _base;
 
-    double _tot_peak = m->total().peak(m_unit);
-    double _tot_curr = m->total().current(m_unit);
-    double _self_peak = m->self().peak(m_unit);
-    double _self_curr = m->self().current(m_unit);
+    double _tot_peak = m->total().peak(this->unit());
+    double _tot_curr = m->total().current(this->unit());
+    double _self_peak = m->self().peak(this->unit());
+    double _self_curr = m->self().current(this->unit());
 
     // rss spacing
     static const uint16_t _wmin = 2;
@@ -379,36 +516,39 @@ format::rss::operator()(const tim::rss::usage_delta* m,
     for(auto itr : f_field_list)
     {
         std::stringstream _ss;
-        _ss.precision(m_precision);
-        _ss << std::fixed;
+        _ss.precision(this->precision());
+        if(this->fixed())
+            _ss << std::fixed;
+        else
+            _ss << std::scientific;
         switch (itr.second)
         {
-            case format::rss::field::current:
-            case format::rss::field::peak:
+            case rss::field::current:
+            case rss::field::peak:
                 continue;
                 break;
-            case format::rss::field::total_curr:
+            case rss::field::total_curr:
                 // RSS (current)
                 _ss << std::setw(wrss+1)
                    << _tot_curr;
                 break;
-            case format::rss::field::self_curr:
+            case rss::field::self_curr:
                 // RSS (current)
                 _ss << std::setw(wrss+1)
                    << _self_curr;
                 break;
-            case format::rss::field::total_peak:
+            case rss::field::total_peak:
                 // RSS (peak)
                 _ss << std::setw(wrss+1)
                    << _tot_peak;
                 break;
-            case format::rss::field::self_peak:
+            case rss::field::self_peak:
                 // RSS (peak)
                 _ss << std::setw(wrss+1)
                    << _self_peak;
                 break;
-            case format::rss::field::memory_unit:
-                _ss << tim::units::mem_repr(m_unit);
+            case rss::field::memory_unit:
+                _ss << tim::units::mem_repr(this->unit());
                 break;
             default:
                 _ss << "unknown field: " << itr.first;
@@ -422,49 +562,50 @@ format::rss::operator()(const tim::rss::usage_delta* m,
         // replace all instances
         auto _npos = std::string::npos;
         while((_npos = _str.find(itr.first)) != std::string::npos)
-        {
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
-        }
 
     }
+
+    _str = (*this)(_str);
 
     return _str;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-void format::rss::set_default(const rss& rhs)
+void rss::set_default(const rss& rhs)
 {
-    format::rss::set_default_format(rhs.format());
-    format::rss::set_default_precision(rhs.precision());
-    format::rss::set_default_unit(rhs.unit());
-    format::rss::set_default_width(rhs.width());
+    rss::default_format(rhs.format());
+    rss::default_precision(rhs.precision());
+    rss::default_unit(rhs.unit());
+    rss::default_width(rhs.width());
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::rss format::rss::get_default()
+rss rss::get_default()
 {
-    format::rss obj;
-    obj.set_format(format::rss::get_default_format());
-    obj.set_precision(format::rss::get_default_precision());
-    obj.set_unit(format::rss::get_default_unit());
-    obj.set_width(format::rss::get_default_width());
+    rss obj;
+    obj.format(rss::default_format());
+    obj.precision(rss::default_precision());
+    obj.unit(rss::default_unit());
+    obj.width(rss::default_width());
     return obj;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
-format::rss* format::rss::copy_from(const rss* rhs)
+rss* rss::copy_from(const rss* rhs)
 {
-    m_precision = rhs->precision();
-    m_width = rhs->width();
-    m_unit = rhs->unit();
-    m_format = rhs->format();
+    this->precision() = rhs->precision();
+    this->width() = rhs->width();
+    this->unit() = rhs->unit();
+    this->format() = rhs->format();
     return this;
 }
 
-//============================================================================//
+//----------------------------------------------------------------------------//
 
+} // namespace format
 
-}
+} // namespace tim

@@ -25,6 +25,8 @@
 #include "timemory/macros.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/utility.hpp"
+#include "timemory/timer.hpp"
+#include "timemory/manager.hpp"
 
 namespace tim
 {
@@ -94,8 +96,8 @@ auto_timer::auto_timer(const string_t& timer_tag,
         if(m_report_at_exit)
         {
             m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
+            m_temp_timer->format()->prefix(get_tag(code_tag, timer_tag));
+            m_temp_timer->format()->align_width(false);
         }
         m_temp_timer->start();
     }
@@ -133,8 +135,8 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
         if(m_report_at_exit)
         {
             m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
+            m_temp_timer->format()->prefix(get_tag(code_tag, timer_tag));
+            m_temp_timer->format()->align_width(false);
         }
     }
     else
@@ -143,8 +145,8 @@ auto_timer::auto_timer(tim_timer_t& _atimer,
         m_temp_timer->sync(_atimer);
         if(m_report_at_exit)
         {
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
+            m_temp_timer->format()->prefix(get_tag(code_tag, timer_tag));
+            m_temp_timer->format()->align_width(false);
         }
     }
 }
@@ -168,7 +170,7 @@ auto_timer::~auto_timer()
         if(m_timer != m_temp_timer)
             *m_timer += *m_temp_timer;
         else // ensure manager reporting uses align width
-            m_temp_timer->format()->set_use_align_width(true);
+            m_temp_timer->format()->align_width(true);
     }
     else if(m_temp_timer)
     {
@@ -217,31 +219,6 @@ void* cxx_timemory_create_auto_timer(const char* timer_tag,
 //============================================================================//
 
 extern "C" tim_api
-void cxx_timemory_report(const char* fname)
-{
-    std::string _fname(fname);
-    for(auto itr : {".txt", ".out", ".json"})
-    {
-        if(_fname.find(itr) != std::string::npos)
-            _fname = _fname.substr(0, _fname.find(itr));
-    }
-    _fname = _fname.substr(0, _fname.find_last_of("."));
-
-    tim::path_t _fpath_report = _fname + std::string(".out");
-    tim::path_t _fpath_serial = _fname + std::string(".json");
-    tim::manager::master_instance()->set_output_stream(_fpath_report);
-    tim::makedir(tim::dirname(_fpath_report));
-    std::ofstream ofs_report(_fpath_report);
-    std::ofstream ofs_serial(_fpath_serial);
-    if(ofs_report)
-        tim::manager::master_instance()->report(ofs_report);
-    if(ofs_serial)
-        tim::manager::master_instance()->write_json(ofs_serial);
-}
-
-//============================================================================//
-
-extern "C" tim_api
 void* cxx_timemory_delete_auto_timer(void* ctimer)
 {
     auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
@@ -270,6 +247,39 @@ const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
     char* buff = (char*) malloc(sizeof(char) * 256);
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
+}
+
+//============================================================================//
+
+extern "C" tim_api
+void cxx_timemory_report(const char* fname)
+{
+    std::string _fname(fname);
+    for(auto itr : {".txt", ".out", ".json"})
+    {
+        if(_fname.find(itr) != std::string::npos)
+            _fname = _fname.substr(0, _fname.find(itr));
+    }
+    _fname = _fname.substr(0, _fname.find_last_of("."));
+
+    tim::path_t _fpath_report = _fname + std::string(".out");
+    tim::path_t _fpath_serial = _fname + std::string(".json");
+    tim::manager::master_instance()->set_output_stream(_fpath_report);
+    tim::makedir(tim::dirname(_fpath_report));
+    std::ofstream ofs_report(_fpath_report);
+    std::ofstream ofs_serial(_fpath_serial);
+    if(ofs_report)
+        tim::manager::master_instance()->report(ofs_report);
+    if(ofs_serial)
+        tim::manager::master_instance()->write_json(ofs_serial);
+}
+
+//============================================================================//
+
+extern "C" tim_api
+void cxx_timemory_record_memory(int _record_memory)
+{
+    tim::timer::default_record_memory((_record_memory > 0) ? true : false);
 }
 
 //============================================================================//

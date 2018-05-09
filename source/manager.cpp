@@ -31,6 +31,7 @@
 #include "timemory/manager.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/timer.hpp"
 
 #include <sstream>
 #include <algorithm>
@@ -49,7 +50,7 @@ namespace tim
 
 manager::pointer_type& local_instance()
 {
-    tim_static_thread_local manager::pointer_type _instance = nullptr;
+    tim_static_thread_local manager::pointer_type _instance = _tim_manager_p;
     return _instance;
 }
 
@@ -57,7 +58,7 @@ manager::pointer_type& local_instance()
 
 manager::pointer_type& global_instance()
 {
-    static manager::pointer_type _instance = nullptr;
+    static manager::pointer_type _instance = _tim_manager_p;
     return _instance;
 }
 
@@ -140,13 +141,15 @@ void manager::enable(bool val)
 
 manager::manager()
 : m_merge(false),
+  m_laps(0),
   m_hash(0),
   m_count(0),
   m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
   m_p_count((global_instance()) ? global_instance()->count().load() : 0),
-  m_report(&std::cout)
+  m_report(&std::cout),
+  m_overhead_timer(new tim_timer_t())
 {
-    ++f_manager_instance_count;
+    int _id = ++f_manager_instance_count;
     if(!global_instance())
         global_instance() = this;
     else if(global_instance() && local_instance())
@@ -155,12 +158,24 @@ manager::manager()
         ss << "manager singleton has already been created";
         throw std::runtime_error( ss.str().c_str() );
     }
+
+    if(tim::get_env<int>("TIMEMORY_DISABLE_TIMER_MEMORY", 0) > 0)
+    {
+        tim::timer::default_record_memory(false);
+        m_overhead_timer->record_memory(false);
+    }
+
+    std::stringstream ss;
+    ss << "TiMemory total unrecorded time (manager " << (_id-1) << ")";
+    m_overhead_timer->format()->prefix(ss.str());
+    m_overhead_timer->start();
 }
 
 //============================================================================//
 
 manager::~manager()
 {
+    m_overhead_timer->stop();
     --f_manager_instance_count;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
@@ -193,6 +208,10 @@ manager::~manager()
     m_daughters.clear();
     m_timer_list.clear();
     m_timer_map.clear();
+    delete m_overhead_timer;
+
+    if(this == _tim_manager_p)
+        _tim_manager_p = nullptr;
 }
 
 //============================================================================//
@@ -206,8 +225,9 @@ void manager::clear()
 #endif
 
     if(this == global_instance())
-        tim::format::timer::set_default_width(10);
+        tim::format::timer::default_width(10);
 
+    m_laps += compute_total_laps();
     m_timer_list.clear();
     m_timer_map.clear();
     for(auto& itr : m_daughters)
@@ -328,9 +348,9 @@ manager::timer(const string_t& key,
                 new tim_timer_t(
                     tim::format::timer(
                         ss.str(),
-                        tim::format::timer::get_default_format(),
-                        tim::format::timer::get_default_unit(),
-                        tim::format::timer::get_default_rss_format(),
+                        tim::format::timer::default_format(),
+                        tim::format::timer::default_unit(),
+                        tim::format::timer::default_rss_format(),
                         true)));
 
     std::stringstream tag_ss;
@@ -410,9 +430,9 @@ void manager::report(ostream_t* os, bool no_min) const
         *os << "> rank " << mpi_rank() << std::endl;
 
     // temporarily store output width
-    auto _width = tim::format::timer::get_default_width();
+    auto _width = tim::format::timer::default_width();
     // reset output width
-    tim::format::timer::set_default_width(10);
+    tim::format::timer::default_width(10);
 
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
@@ -420,8 +440,8 @@ void manager::report(ostream_t* os, bool no_min) const
             tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
-    if(_width > 10 && _width < tim::format::timer::get_default_width())
-        tim::format::timer::set_default_width(_width);
+    if(_width > 10 && _width < tim::format::timer::default_width())
+        tim::format::timer::default_width(_width);
 
     for(const auto& itr : *this)
         itr.timer().report(*os, true, no_min);
@@ -512,6 +532,10 @@ void manager::merge(bool div_clock)
 
     m_merge.store(false);
 
+    bool restart = m_overhead_timer->is_running();
+    if(restart)
+        m_overhead_timer->stop();
+
     auto_lock_t lock(m_mutex);
 
     uomap<uint64_t, uint64_t> clock_div_count;
@@ -519,6 +543,8 @@ void manager::merge(bool div_clock)
     {
         if(itr == global_instance())
             continue;
+
+        //itr->overhead_timer()->stop();
 
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
@@ -534,6 +560,9 @@ void manager::merge(bool div_clock)
                 clock_div_count[mitr.first] += 1;
         }
 
+        //*m_overhead_timer += *(itr->overhead_timer());
+        //itr->overhead_timer()->reset();
+
         for(const auto& litr : itr->list())
         {
             bool found = false;
@@ -548,16 +577,23 @@ void manager::merge(bool div_clock)
                 m_timer_list.push_back(litr);
         }
 
+        //itr->overhead_timer()->start();
     }
 
     if(div_clock)
+    {
         for(auto& itr : clock_div_count)
             *(m_timer_map[itr.first].get()) /= itr.second;
+        // divide the overhead timer
+        //*m_overhead_timer /= m_daughters.size();
+    }
 
     for(auto& itr : m_daughters)
         if(itr != this)
             itr->clear();
 
+    if(restart)
+        m_overhead_timer->start();
 }
 
 //============================================================================//
@@ -583,11 +619,131 @@ void manager::sync_hierarchy()
 }
 
 //============================================================================//
+
+manager::timer_pair_t
+manager::compute_overhead(tim_timer_t* timer_ref)
+{
+    typedef std::set<uint64_t> key_set_t;
+
+    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_overhead_timer;
+    bool restart = _ref->is_running();
+    if(restart)
+        _ref->stop();
+
+    this->merge();
+
+    if(_ref->is_running())
+        _ref->stop();
+
+    string_t _f_prefix = _ref->format()->prefix();
+    string_t _s_prefix = _f_prefix;
+    _s_prefix.replace(_s_prefix.find("total unrecorded time"),
+                      string_t("total unrecorded time").length(),
+                      "approximate overhead ");
+
+    timer_pair_t _overhead_timers(tim_timer_t(_f_prefix, _ref, true),
+                                  tim_timer_t(_s_prefix, _ref, true));
+
+    if(restart)
+        _ref->start();
+
+    key_set_t _depths;
+    for(const auto& itr : *this)
+        _depths.insert(itr.level());
+
+    if(_depths.size() == 0)
+        return timer_pair_t(tim_timer_t(_f_prefix),
+                            tim_timer_t(_s_prefix));
+
+    for(const auto& itr : *this)
+        if(itr.level() == *(_depths.begin()))
+            _overhead_timers.first -= itr.timer();
+
+    // remove unaccounted time
+    _overhead_timers.second.accum() -= _overhead_timers.first.accum();
+    _overhead_timers.second.accum() -= _overhead_timers.first.accum();
+
+    return _overhead_timers;
+}
+
+//============================================================================//
+
+void manager::write_overhead(const path_t& _fname, tim_timer_t* timer_ref,
+                             timer_pair_t* _overhead_p)
+{
+    std::ofstream _os(_fname.c_str());
+    if(_os)
+        write_overhead(_os, timer_ref, _overhead_p);
+    else
+    {
+        std::cerr << "Warning! Unable to open \"" << _fname << "\" ["
+                  << __FUNCTION__ << "@'" << __FILE__ << "'..." << std::endl;
+        write_overhead(std::cout);
+    }
+}
+
+//============================================================================//
+
+void manager::write_overhead(ostream_t& _os, tim_timer_t* timer_ref,
+                             timer_pair_t* _overhead_p)
+{
+    timer_pair_t _overhead;
+    if(!_overhead_p)
+        _overhead = compute_overhead(timer_ref);
+    else
+    {
+        _overhead = *_overhead_p;
+        if(timer_ref)
+        {
+            _overhead.first -= *timer_ref;
+            _overhead.second -= *timer_ref;
+        }
+    }
+
+    std::stringstream _ss;
+    string_t::size_type _w = format::timer::default_width();
+    string_t _p1 = "TiMemory auto-timer laps since last reset ";
+    string_t _p2 = "Total TiMemory auto-timer laps ";
+    _w = std::max(_w, std::max(_p1.length() + 4, _p2.length() + 4));
+
+    std::stringstream _sp1, _sp2;
+    _sp1 << std::setw(_w + 2) << std::left << _p1 << " : ";
+    _sp2 << std::setw(_w + 2) << std::left << _p2 << " : ";
+    _ss << _sp1.str() << laps() << std::endl;
+    _ss << _sp2.str() << total_laps() << std::endl;
+
+    _overhead.first.format()->width(_w);
+    _overhead.second.format()->width(_w);
+    _overhead.first.format()->align_width(false);
+    _overhead.second.format()->align_width(false);
+
+    _ss << _overhead.first.as_string() << std::endl;
+    if(_overhead.second.wall_elapsed() > 1.0e-9)
+        _ss << _overhead.second.as_string() << std::endl;
+    _os << "\n" << _ss.str();
+}
+
+//============================================================================//
 //
 //  Static functions for writing JSON output
 //
 //============================================================================//
 
+// static function
+void manager::write_report(path_t _fname, bool no_min)
+{
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
+    ofstream_t ofs(_fname.c_str());
+    if(ofs)
+        manager::master_instance()->report(ofs, no_min);
+    else
+        manager::master_instance()->report(no_min);
+    ofs.close();
+}
+
+//============================================================================//
 // static function
 void manager::write_json(path_t _fname)
 {
@@ -848,3 +1004,37 @@ manager::get_communicator_group()
 //============================================================================//
 
 } // namespace tim
+
+//============================================================================//
+
+tim_thread_local tim::manager* _tim_manager_p = nullptr;
+
+//============================================================================//
+
+void _tim_manager_initialization()
+{
+    _tim_manager_p = new tim::manager();
+}
+
+//============================================================================//
+
+void _tim_manager_finalization()
+{
+    delete _tim_manager_p;
+    _tim_manager_p = nullptr;
+}
+
+//============================================================================//
+// These two functions are guaranteed to be called at load and
+// unload of the library containing this code.
+namespace
+{
+#if !defined(_WINDOWS)
+    void setup_timemory_manager(void) __attribute__ ((constructor));
+    void cleanup_timemory_manager(void) __attribute__((destructor));
+#endif
+    void setup_timemory_manager(void) { _tim_manager_initialization(); }
+    void cleanup_timemory_manager(void) { _tim_manager_finalization(); }
+}
+
+//============================================================================//

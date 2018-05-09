@@ -1,7 +1,28 @@
+cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
 
+if(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE OFF)
+else(CMAKE_VERSION VERSION_LESS 3.1.3)
+    set(GOOD_CMAKE ON)
+    cmake_policy(SET CMP0048 NEW)
+endif(CMAKE_VERSION VERSION_LESS 3.1.3)
+cmake_policy(SET CMP0042 NEW)
+
+#------------------------------------------------------------------------------#
+#   TiMemory examples project
+#
 project(TiMemory-Examples C CXX)
 
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    set(STANDALONE ON)
+else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    set(STANDALONE OFF)
+endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
+#------------------------------------------------------------------------------#
+#   If we are building as a standalone project or as part of source/build tree
+#
+if(STANDALONE)
 
     option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
     if(TIMEMORY_USE_MPI)
@@ -10,16 +31,18 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     add_subdirectory(ex-c)
     add_subdirectory(ex-cxx)
+    add_subdirectory(ex-cxx-overhead)
     if(TIMEMORY_USE_MPI AND MPI_FOUND)
         add_subdirectory(ex-cxx-mpi)
     endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
-
-else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+else(STANDALONE)
 
     if(TIMEMORY_BUILD_EXAMPLES)
+
         add_subdirectory(ex-c)
         add_subdirectory(ex-cxx)
+        add_subdirectory(ex-cxx-overhead)
         if(TIMEMORY_USE_MPI AND MPI_FOUND)
             add_subdirectory(ex-cxx-mpi)
         endif(TIMEMORY_USE_MPI AND MPI_FOUND)
@@ -28,7 +51,7 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
             ${CMAKE_BINARY_DIR}/examples
             ERROR_QUIET)
 
-        set(example_dirs c cxx cxx-mpi)
+        set(example_dirs c cxx cxx-mpi cxx-overhead)
         foreach(example_dir ${example_dirs})
             execute_process(COMMAND ${CMAKE_COMMAND} -E copy_directory
                 ${CMAKE_CURRENT_LIST_DIR}/ex-${example_dir}
@@ -41,6 +64,6 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set_property(GLOBAL APPEND PROPERTY
         BUILDTREE_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR})
 
-endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+endif(STANDALONE)
 
 

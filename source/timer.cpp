@@ -43,27 +43,73 @@ CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
 namespace tim
 {
 
+bool timer::f_record_memory = true;
+
 //============================================================================//
 
 timer::timer(const string_t& _prefix,
-             const string_t& _format)
-: base_type(timer_format_t(new format_type(_prefix, _format)))
+             const string_t& _format,
+             bool _record_memory)
+: base_type(timer_format_t(new format_type(_prefix, _format)), _record_memory)
 { }
 
 //============================================================================//
-timer::timer(const format_type& _format)
-: base_type(timer_format_t(new format_type(_format)))
+
+timer::timer(const format_type& _format, bool _record_memory)
+: base_type(timer_format_t(new format_type(_format)), _record_memory)
 { }
 
 //============================================================================//
-timer::timer(timer_format_t _format)
-: base_type(_format)
+
+timer::timer(timer_format_t _format, bool _record_memory)
+: base_type(_format, _record_memory)
 { }
+
+//============================================================================//
+
+timer::timer(const string_t& _prefix, const this_type* rhs,
+             bool _align_width, bool _record_memory)
+: base_type(timer_format_t(
+                new format_type(_prefix,
+                                (rhs) ? rhs->format()->format()
+                                      : format::timer::default_format())),
+            _record_memory)
+{
+    if(rhs)
+        this->sync(*rhs);
+    this->format()->align_width(_align_width);
+}
 
 //============================================================================//
 
 timer::~timer()
 { }
+
+//============================================================================//
+
+timer::timer(const this_type& rhs)
+: base_type(timer_format_t(new format_type(rhs.format()->prefix(),
+                                           rhs.format()->format())),
+            rhs.m_record_memory)
+{
+    m_accum = rhs.get_accum();
+}
+
+//============================================================================//
+
+timer::this_type& timer::operator=(const this_type& rhs)
+{
+    if(this != &rhs)
+    {
+        base_type::operator=(rhs);
+        if(!m_format.get())
+            m_format = timer_format_t(new format_type());
+        if(rhs.format().get())
+            *m_format = *(rhs.format().get());
+        m_accum = rhs.get_accum();
+    }
+    return *this;
+}
 
 //============================================================================//
 
