@@ -40,6 +40,45 @@
 
 //============================================================================//
 
+tim::manager*& _tim_manager_p()
+{
+    tim_static_thread_local tim::manager* _instance = nullptr;
+    return _instance;
+}
+
+//============================================================================//
+
+void _tim_manager_initialization()
+{
+    if(!_tim_manager_p())
+        _tim_manager_p() = new tim::manager();
+    return;
+}
+
+//============================================================================//
+
+void _tim_manager_finalization()
+{
+    delete _tim_manager_p();
+    _tim_manager_p() = nullptr;
+    return;
+}
+
+//============================================================================//
+// These two functions are guaranteed to be called at load and
+// unload of the library containing this code.
+namespace
+{
+#if !defined(_WINDOWS)
+    void setup_timemory_manager(void) __attribute__ ((constructor));
+    void cleanup_timemory_manager(void) __attribute__((destructor));
+#endif
+    void setup_timemory_manager(void) { _tim_manager_initialization(); }
+    void cleanup_timemory_manager(void) { _tim_manager_finalization(); }
+}
+
+//============================================================================//
+
 CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
@@ -50,7 +89,7 @@ namespace tim
 
 manager::pointer_type& local_instance()
 {
-    tim_static_thread_local manager::pointer_type _instance = _tim_manager_p;
+    tim_static_thread_local manager::pointer_type _instance = _tim_manager_p();
     return _instance;
 }
 
@@ -58,7 +97,7 @@ manager::pointer_type& local_instance()
 
 manager::pointer_type& global_instance()
 {
-    static manager::pointer_type _instance = _tim_manager_p;
+    static manager::pointer_type _instance = _tim_manager_p();
     return _instance;
 }
 
@@ -141,6 +180,7 @@ void manager::enable(bool val)
 
 manager::manager()
 : m_merge(false),
+  m_instance_count(f_manager_instance_count++),
   m_laps(0),
   m_hash(0),
   m_count(0),
@@ -149,9 +189,9 @@ manager::manager()
   m_report(&std::cout),
   m_overhead_timer(new tim_timer_t())
 {
-    int _id = ++f_manager_instance_count;
     if(!global_instance())
         global_instance() = this;
+
     else if(global_instance() && local_instance())
     {
         std::ostringstream ss;
@@ -166,7 +206,8 @@ manager::manager()
     }
 
     std::stringstream ss;
-    ss << "TiMemory total unrecorded time (manager " << (_id-1) << ")";
+    ss << "TiMemory total unrecorded time (manager "
+       << (m_instance_count) << ")";
     m_overhead_timer->format()->prefix(ss.str());
     m_overhead_timer->start();
 }
@@ -210,8 +251,8 @@ manager::~manager()
     m_timer_map.clear();
     delete m_overhead_timer;
 
-    if(this == _tim_manager_p)
-        _tim_manager_p = nullptr;
+    if(this == _tim_manager_p())
+        _tim_manager_p() = nullptr;
 }
 
 //============================================================================//
@@ -1004,37 +1045,5 @@ manager::get_communicator_group()
 //============================================================================//
 
 } // namespace tim
-
-//============================================================================//
-
-tim_thread_local tim::manager* _tim_manager_p = nullptr;
-
-//============================================================================//
-
-void _tim_manager_initialization()
-{
-    _tim_manager_p = new tim::manager();
-}
-
-//============================================================================//
-
-void _tim_manager_finalization()
-{
-    delete _tim_manager_p;
-    _tim_manager_p = nullptr;
-}
-
-//============================================================================//
-// These two functions are guaranteed to be called at load and
-// unload of the library containing this code.
-namespace
-{
-#if !defined(_WINDOWS)
-    void setup_timemory_manager(void) __attribute__ ((constructor));
-    void cleanup_timemory_manager(void) __attribute__((destructor));
-#endif
-    void setup_timemory_manager(void) { _tim_manager_initialization(); }
-    void cleanup_timemory_manager(void) { _tim_manager_finalization(); }
-}
 
 //============================================================================//

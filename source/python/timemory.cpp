@@ -1497,61 +1497,62 @@ PYBIND11_MODULE(timemory, tim)
                  auto locals = py::dict("parser"_a = parser,
                                         "fname"_a = fname);
                  py::exec(R"(
-                 import sys
-                 import os
-                 from os.path import join
-                 import argparse
+                          import sys
+                          import os
+                          from os.path import join
+                          import argparse
+                          import timemory
 
-                 if parser is None:
-                    parser = argparse.ArgumentParser()
+                          if parser is None:
+                             parser = argparse.ArgumentParser()
 
-                 # Function to add default output arguments
-                 def get_file_tag(fname):
-                     import os
-                     _l = os.path.basename(fname).split('.')
-                     if len(_l) > 1:
-                         _l.pop()
-                     return ("{}".format('_'.join(_l)))
+                          # Function to add default output arguments
+                          def get_file_tag(fname):
+                              import os
+                              _l = os.path.basename(fname).split('.')
+                              if len(_l) > 1:
+                                  _l.pop()
+                              return ("{}".format('_'.join(_l)))
 
-                 def_fname = "timing_report"
-                 if fname != "":
-                     def_fname = '_'.join(["timing_report", get_file_tag(fname)])
+                          def_fname = "timing_report"
+                          if fname != "":
+                              def_fname = '_'.join(["timing_report", get_file_tag(fname)])
 
-                 parser.add_argument('--output-dir', required=False,
-                                     default='.', type=str, help="Output directory")
-                 parser.add_argument('--filename', required=False,
-                                     default=def_fname, type=str,
-                     help="Filename for timing report w/o directory and w/o suffix")
-                 parser.add_argument('--disable-timers', required=False,
-                                     action='store_false',
-                                     dest='use_timers',
-                                     help="Disable timers for script")
-                 parser.add_argument('--enable-timers', required=False,
-                                     action='store_true',
-                                     dest='use_timers', help="Enable timers for script")
-                 parser.add_argument('--disable-timer-serialization',
-                                     required=False, action='store_false',
-                                     dest='serial_file',
-                                     help="Disable serialization for timers")
-                 parser.add_argument('--enable-timer-serialization',
-                                     required=False, action='store_true',
-                                     dest='serial_file',
-                                     help="Enable serialization for timers")
-                 parser.add_argument('--max-timer-depth',
-                                     help="Maximum timer depth",
-                                     type=int,
-                                     default=options.default_max_depth())
-                 parser.add_argument('--enable-dart',
-                                     help="Print DartMeasurementFile tag for plots",
-                                     required=False, action='store_true')
-                 parser.add_argument('--write-ctest-notes',
-                        help="Write a CTestNotes.cmake file for TiMemory ASCII output",
-                                     required=False, action='store_true')
+                          parser.add_argument('--output-dir', required=False,
+                                              default='.', type=str, help="Output directory")
+                          parser.add_argument('--filename', required=False,
+                                              default=def_fname, type=str,
+                                              help="Filename for timing report w/o directory and w/o suffix")
+                          parser.add_argument('--disable-timers', required=False,
+                                              action='store_false',
+                                              dest='use_timers',
+                                              help="Disable timers for script")
+                          parser.add_argument('--enable-timers', required=False,
+                                              action='store_true',
+                                              dest='use_timers', help="Enable timers for script")
+                          parser.add_argument('--disable-timer-serialization',
+                                              required=False, action='store_false',
+                                              dest='serial_file',
+                                              help="Disable serialization for timers")
+                          parser.add_argument('--enable-timer-serialization',
+                                              required=False, action='store_true',
+                                              dest='serial_file',
+                                              help="Enable serialization for timers")
+                          parser.add_argument('--max-timer-depth',
+                                              help="Maximum timer depth",
+                                              type=int,
+                                              default=timemory.options.default_max_depth())
+                          parser.add_argument('--enable-dart',
+                                              help="Print DartMeasurementFile tag for plots",
+                                              required=False, action='store_true')
+                          parser.add_argument('--write-ctest-notes',
+                                              help="Write a CTestNotes.cmake file for TiMemory ASCII output",
+                                              required=False, action='store_true')
 
-                 parser.set_defaults(use_timers=True)
-                 parser.set_defaults(serial_file=True)
-                 parser.set_defaults(enable_dart=False)
-                 parser.set_defaults(write_ctest_notes=False)
+                          parser.set_defaults(use_timers=True)
+                          parser.set_defaults(serial_file=True)
+                          parser.set_defaults(enable_dart=False)
+                          parser.set_defaults(write_ctest_notes=False)
                           )",
                           py::globals(), locals);
                  return locals["parser"].cast<py::object>();
@@ -1564,24 +1565,24 @@ PYBIND11_MODULE(timemory, tim)
              {
                  auto locals = py::dict("args"_a = args);
                  py::exec(R"(
-                 import sys
-                 import os
+                          import sys
+                          import os
+                          import timemory
 
-                 # Function to add default output arguments
-                 options.serial_file = args.serial_file
-                 options.use_timers = args.use_timers
-                 options.max_timer_depth = args.max_timer_depth
-                 options.output_dir = args.output_dir
-                 options.echo_dart = args.enable_dart
-                 options.ctest_notes = args.write_ctest_notes
+                          # Function to add default output arguments
+                          timemory.options.serial_file = args.serial_file
+                          timemory.options.use_timers = args.use_timers
+                          timemory.options.max_timer_depth = args.max_timer_depth
+                          timemory.options.output_dir = args.output_dir
+                          timemory.options.echo_dart = args.enable_dart
+                          timemory.options.ctest_notes = args.write_ctest_notes
 
-                 if args.filename:
-                     options.set_report("{}.{}".format(args.filename, "out"))
-                     options.set_serial("{}.{}".format(args.filename, "json"))
+                          if args.filename:
+                              timemory.options.set_report("{}.{}".format(args.filename, "out"))
+                              timemory.options.set_serial("{}.{}".format(args.filename, "json"))
 
-                 import timemory
-                 timemory.toggle(options.use_timers)
-                 timemory.set_max_depth(options.max_timer_depth)
+                          timemory.toggle(timemory.options.use_timers)
+                          timemory.set_max_depth(timemory.options.max_timer_depth)
                           )",
                           py::globals(), locals);
              },
@@ -1593,12 +1594,12 @@ PYBIND11_MODULE(timemory, tim)
                  auto locals = py::dict("parser"_a = parser,
                                         "fname"_a = fname);
                  py::exec(R"(
-                 import timemory.options as options
+                          import timemory
 
-                 # Combination of timing.add_arguments and timing.parse_args but returns
-                 parser = options.add_arguments(parser, fname)
-                 args = parser.parse_args()
-                 options.parse_args(args)
+                          # Combination of timing.add_arguments and timing.parse_args but returns
+                          parser = timemory.options.add_arguments(parser, fname)
+                          args = parser.parse_args()
+                          timemory.options.parse_args(args)
                           )",
                           py::globals(), locals);
                  return locals["args"].cast<py::object>();
@@ -1612,15 +1613,15 @@ PYBIND11_MODULE(timemory, tim)
                  auto locals = py::dict("parser"_a = parser,
                                         "fname"_a = fname);
                  py::exec(R"(
-                 import timemory.options as options
+                          import timemory
 
-                 # Combination of timing.add_arguments and timing.parse_args but returns
-                 parser = options.add_arguments(parser, fname)
-                 args = parser.parse_args()
-                 args, left = parser.parse_known_args()
-                 options.parse_args(args)
-                 # replace sys.argv with unknown args only
-                 sys.argv = sys.argv[:1]+left
+                          # Combination of timing.add_arguments and timing.parse_args but returns
+                          parser = timemory.options.add_arguments(parser, fname)
+                          args = parser.parse_args()
+                          args, left = parser.parse_known_args()
+                          timemory.options.parse_args(args)
+                          # replace sys.argv with unknown args only
+                          sys.argv = sys.argv[:1]+left
                           )",
                           py::globals(), locals);
                  return locals["args"].cast<py::object>();

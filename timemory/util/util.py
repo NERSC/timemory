@@ -48,9 +48,9 @@ class base_decorator(object):
 
     # ------------------------------------------------------------------------ #
     def parse_wrapped(self, func, args, kwargs):
-        if (len(args) > 0 and args[0] is not None and
-            inspect.isclass(type(args[0]))):
-                self.is_class = True
+
+        if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
+            self.is_class = True
         else:
             self.is_class = False
 

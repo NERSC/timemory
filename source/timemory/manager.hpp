@@ -371,6 +371,8 @@ private:
     static std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
+    // instance id
+    int32_t                 m_instance_count;
     // total laps
     counter_t               m_laps;
     // hash counting
@@ -490,7 +492,7 @@ manager::total_laps() const
 } // namespace tim
 
 // initialization and destruction on library load
-extern tim_api tim_thread_local tim::manager* _tim_manager_p;
+extern tim_api tim::manager*& _tim_manager_p();
 void _tim_manager_initialization();
 void _tim_manager_finalization();
 
