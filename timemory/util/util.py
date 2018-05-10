@@ -156,10 +156,11 @@ class auto_timer(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 
         if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -233,11 +234,12 @@ class timer(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self._self_obj.stop()
         self._self_obj.report()
 
         if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -319,4 +321,5 @@ class rss_usage(base_decorator):
         print('{}'.format(self._self_obj))
 
         if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

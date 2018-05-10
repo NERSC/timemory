@@ -268,6 +268,7 @@ class timemory_test(unittest.TestCase):
         timemory.toggle(True)
         self.manager.clear()
 
+        #----------------------------------------------------------------------#
         # timer test
         with timemory.util.timer():
             time.sleep(1)
@@ -278,7 +279,7 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
-
+        #----------------------------------------------------------------------#
         # timer test with args
         with timemory.util.timer('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
             time.sleep(1)
@@ -290,6 +291,7 @@ class timemory_test(unittest.TestCase):
                 del n
 
 
+        #----------------------------------------------------------------------#
         # auto timer test
         with timemory.util.auto_timer(report_at_exit=True):
             time.sleep(1)
@@ -300,7 +302,33 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
+        #----------------------------------------------------------------------#
+        # failure test
+        def fail_func():
+            return [0, 1, 2, 3]
 
+        # timer exit test
+        try:
+            with timemory.util.timer():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        # auto timer exit test
+        try:
+            with timemory.util.auto_timer():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        # rss exit test
+        try:
+            with timemory.util.rss_usage():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        #----------------------------------------------------------------------#
         # auto timer test with args
         @timemory.util.auto_timer()
         def auto_timer_with_args(nc=2):
@@ -320,9 +348,9 @@ class timemory_test(unittest.TestCase):
 
         auto_timer_with_args()
 
-
         print('\n\n{}\n\n'.format(self.manager))
 
+        #----------------------------------------------------------------------#
         # rss test
         with timemory.util.rss_usage():
             time.sleep(1)
@@ -333,7 +361,7 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
-
+        #----------------------------------------------------------------------#
         # rss test with args
         with timemory.util.rss_usage('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
             time.sleep(1)
@@ -387,7 +415,7 @@ class timemory_test(unittest.TestCase):
         print('RSS ideal: {} kB'.format(rss_corr))
         print('RSS diff:  {} kB'.format(rss_diff))
         # allow some variability
-        self.assertTrue(abs(rss_diff) < 250)
+        self.assertTrue(abs(rss_diff) < 300)
 
 
     # ------------------------------------------------------------------------ #
