@@ -159,7 +159,7 @@ class auto_timer(base_decorator):
     def __exit__(self, exc_type, exc_value, traceback):
         del self._self_obj
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -237,7 +237,7 @@ class timer(base_decorator):
         self._self_obj.stop()
         self._self_obj.report()
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -311,12 +311,12 @@ class rss_usage(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Context manager exit
         """
         self._self_obj.record()
         print('{}'.format(self._self_obj))
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
