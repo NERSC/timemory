@@ -1442,6 +1442,20 @@ PYBIND11_MODULE(timemory, tim)
             [=]() { return std::numeric_limits<uint16_t>::max(); },
             "Return the default max depth");
     // ---------------------------------------------------------------------- //
+    opts.def("safe_mkdir",
+             [=] (std::string directory)
+             {
+                 auto locals = py::dict("directory"_a = directory);
+                 py::exec(R"(
+                          import os
+                          if not os.path.exists(directory) and directory != '':
+                              os.makedirs(directory)
+                          )",
+                          py::globals(), locals);
+
+             },
+             "if [ ! -d <directory> ]; then mkdir -p <directory> ; fi");
+    // ---------------------------------------------------------------------- //
     opts.def("ensure_directory_exists",
              [=] (std::string file_path)
              {

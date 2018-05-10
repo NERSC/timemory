@@ -864,6 +864,63 @@ def plot_memory(_plot_data,
 
 
 #==============================================================================#
+def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
+                  display=False, output_dir='.', echo_dart=None):
+    """
+    A function to plot JSON data
+
+    Args:
+        - data (list):
+            - list of "plot_data" objects
+            - should contain their own plot_parameters object
+        - files (list):
+            - list of JSON files
+            - "plot_params" argument object will be applied to these files
+        - combine (bool):
+            - if specified, the plot_data objects from "data" and "files"
+              will be combined into one "plot_data" object
+            - the plot_params object will be used for this
+    """
+    try:
+        # try here in case running as main on C++ output
+        import timemory.options as options
+        if echo_dart is None and options.echo_dart:
+            echo_dart = True
+        elif echo_dart is None:
+            echo_dart = False
+    except:
+        pass
+
+    _combined = None
+    for _data in data:
+        if _combined is None:
+            _combined = plot_data(filename = output_name,
+                                  output_name = output_name,
+                                  concurrency = _data.concurrency,
+                                  mpi_size = _data.mpi_size,
+                                  timemory_functions = {},
+                                  title = title,
+                                  plot_params = plot_params)
+
+        _key = list(_data.timemory_functions.keys())[0]
+        _obj = _data.timemory_functions[_key]
+        _obj_name = "{}".format(_data.filename)
+        _obj.func = _obj_name
+        _combined.timemory_functions[_obj_name] = _obj
+
+    try:
+        print ('Plotting {}...'.format(_combined.filename))
+        plot_timing(_combined, display, output_dir, echo_dart)
+        plot_memory(_combined, display, output_dir, echo_dart)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        print ('Error! Unable to plot "{}"...'.format(_combined.filename))
+
+
+#==============================================================================#
 def plot(data = [], files = [], plot_params=plot_parameters(),
          combine=False, display=False, output_dir='.', echo_dart=None):
     """
@@ -953,6 +1010,9 @@ if __name__ == "__main__":
             required=False, type=int)
         parser.add_argument('--img-type', help="Image type",
             required=False, type=str)
+        parser.add_argument('--plot-max',
+            help="Plot the maximums from a set of inputs to <filename>",
+            required=False, type=str, dest='plot_max')
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -966,8 +1026,11 @@ if __name__ == "__main__":
         parser.set_defaults(img_size=[ plot_parameters.img_size['w'],
                                        plot_parameters.img_size['h'] ])
         parser.set_defaults(img_type=plot_parameters.img_type)
+        parser.set_defaults(plot_max="")
 
         args = parser.parse_args()
+
+        do_plot_max = True if len(args.plot_max) > 0 else False
 
         print('Files: {}'.format(args.files))
         print('Titles: {}'.format(args.titles))
@@ -981,8 +1044,12 @@ if __name__ == "__main__":
                                                'h' : args.img_size[1] },
                                  _img_type = args.img_type)
 
-        if len(args.titles) != 1 and len(args.titles) != len(args.files):
-            raise Exception("Error must provide one title or a title for each file")
+        if do_plot_max:
+            if len(args.titles) != 1:
+                raise Exception("Error must provide one title")
+        else:
+            if len(args.titles) != 1 and len(args.titles) != len(args.files):
+                raise Exception("Error must provide one title or a title for each file")
 
         data = []
         for i in range(len(args.files)):
@@ -998,12 +1065,21 @@ if __name__ == "__main__":
                                                                 args.files[i]))
             data.append(_data)
 
-        plot(data=data,
-             plot_params=params,
-             display=args.display_plot,
-             combine=args.combine,
-             output_dir=args.output_dir,
-             echo_dart=args.echo_dart)
+        if do_plot_max:
+            plot_maximums(args.plot_max,
+                          args.titles[0],
+                          data,
+                          plot_params=params,
+                          display=args.display_plot,
+                          output_dir=args.output_dir,
+                          echo_dart=args.echo_dart)
+        else:
+            plot(data=data,
+                 plot_params=params,
+                 display=args.display_plot,
+                 combine=args.combine,
+                 output_dir=args.output_dir,
+                 echo_dart=args.echo_dart)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
