@@ -152,7 +152,7 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_toggle.out")
         fserial = timemory.options.set_serial("timing_toggle.json")
-        self.manager.report(no_min=True)
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 
@@ -237,7 +237,7 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_decorator.out")
         fserial = timemory.options.set_serial("timing_decorator.json")
-        self.manager.report(no_min=True)
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
         self.assertEqual(timemory.size(), 4)
@@ -374,7 +374,7 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_context_manager.out")
         fserial = timemory.options.set_serial("timing_context_manager.json")
-        self.manager.report(no_min=True)
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
 

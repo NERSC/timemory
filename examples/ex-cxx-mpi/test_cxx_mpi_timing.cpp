@@ -121,15 +121,17 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
 
     tim::EnableSignalDetection({
-                                        tim::sys_signal::sHangup,
-                                        tim::sys_signal::sInterrupt,
-                                        tim::sys_signal::sIllegal,
-                                        tim::sys_signal::sSegFault,
-                                        tim::sys_signal::sFPE
-                                    });
+                                   tim::sys_signal::sHangup,
+                                   tim::sys_signal::sInterrupt,
+                                   tim::sys_signal::sIllegal,
+                                   tim::sys_signal::sSegFault,
+                                   tim::sys_signal::sFPE
+                               });
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
+
+    tim::format::timer::push();
 
     int num_fail = 0;
     int num_test = 0;
@@ -442,10 +444,10 @@ void test_timing_depth()
             time_fibonacci(itr);
     }
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
+    tman->report(ign_cutoff = true);
     EXPECT_EQ(manager_t::instance()->size(), 7);
 
     tman->write_serialization("test_output/mpi_cxx_timing_depth.json");
@@ -538,12 +540,12 @@ void test_timing_thread()
     threads.clear();
 
     // divide the threaded clocks that are merge
-    tman->merge(true);
+    //tman->merge(false);
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
+    tman->report(ign_cutoff = true);
     ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");

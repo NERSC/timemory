@@ -424,10 +424,10 @@ void test_timing_depth()
             time_fibonacci(itr);
     }
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
+    tman->report(ign_cutoff = true);
     EXPECT_EQ(manager_t::instance()->size(), 7);
 
     tman->write_serialization("test_output/cxx_timing_depth.json");
@@ -444,11 +444,15 @@ typedef std::vector<std::thread*> thread_list_t;
 
 void thread_func(int32_t nfib, std::shared_future<void> fut)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    int32_t nsize = manager_t::instance()->size();
-    if(nsize > 0)
-        std::cerr << "thread-local manager size: " << nsize << std::endl;
+    //int32_t nsize = manager_t::instance()->size();
+    //if(nsize > 0)
+    //    std::cerr << "thread-local manager size: " << nsize << std::endl;
+
+    //std::stringstream ss;
+    //ss << "--> " << std::this_thread::get_id() << " -- waiting ... " << std::endl;
+    //std::cout << ss.str();
 
     fut.get();
     time_fibonacci(nfib);
@@ -478,6 +482,35 @@ void join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
 
 //============================================================================//
 
+void test_timing_thread(int num_threads)
+{
+    std::stringstream ss;
+    ss << "[" << num_threads << "_threads]";
+
+    TIMEMORY_AUTO_TIMER(ss.str());
+
+    thread_list_t threads(num_threads, nullptr);
+
+    std::promise<void> prom;
+    std::shared_future<void> fut = prom.get_future().share();
+
+    for(auto& itr : threads)
+        itr = create_thread(43, fut);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    prom.set_value();
+
+    join_thread(threads.begin(), threads);
+
+    for(auto& itr : threads)
+        delete itr;
+
+    threads.clear();
+}
+
+//============================================================================//
+
 void test_timing_thread()
 {
     print_info(__FUNCTION__);
@@ -489,43 +522,16 @@ void test_timing_thread()
     tman->enable(true);
     tman->set_output_stream(std::cout);
 
-    int num_threads = 12;
-    thread_list_t threads(num_threads, nullptr);
-
-    {
-        TIMEMORY_AUTO_TIMER();
-        {
-            std::stringstream ss;
-            ss << "[" << num_threads << "_threads]";
-            TIMEMORY_AUTO_TIMER(ss.str());
-
-            std::promise<void> prom;
-            std::shared_future<void> fut = prom.get_future().share();
-
-            for(auto& itr : threads)
-                itr = create_thread(43, fut);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-            prom.set_value();
-
-            join_thread(threads.begin(), threads);
-        }
-    }
-
-    for(auto& itr : threads)
-        delete itr;
-
-    threads.clear();
+    test_timing_thread(12);
 
     // divide the threaded clocks that are merge
-    tman->merge(true);
+    //tman->merge(true);
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 36);
+    tman->report(ign_cutoff = true);
+    ASSERT_TRUE(manager_t::instance()->size() >= 14);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
     tman->write_overhead();

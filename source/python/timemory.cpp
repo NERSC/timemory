@@ -105,7 +105,7 @@ public:
     : m_ptr(_ptr)
     {
         if(m_ptr)
-            m_ptr->global_timer()->format()->align_width(true);
+            m_ptr->local_timer().summation_timer()->format()->align_width(true);
     }
 
     ~auto_timer_decorator()
@@ -118,7 +118,7 @@ public:
         if(m_ptr)
             delete m_ptr;
         m_ptr = _ptr;
-        m_ptr->global_timer()->format()->align_width(true);
+        m_ptr->local_timer().summation_timer()->format()->align_width(true);
         return *this;
     }
 
@@ -264,6 +264,7 @@ PYBIND11_MODULE(timemory, tim)
         return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
     };
     //------------------------------------------------------------------------//
+    /*
     auto auto_timer_from_timer = [=] (py::object _pytimer,
                                       bool report_at_exit)
     {
@@ -271,6 +272,7 @@ PYBIND11_MODULE(timemory, tim)
         auto op_line = get_line();
         return new auto_timer_t(*_timer, op_line, "pyc", report_at_exit);
     };
+    */
     //------------------------------------------------------------------------//
     auto timer_decorator_init = [=] (const std::string& func,
                                      const std::string& file,
@@ -707,12 +709,14 @@ PYBIND11_MODULE(timemory, tim)
               py::return_value_policy::take_ownership,
               py::arg("prefix") = "", py::arg("format") = "");
     //------------------------------------------------------------------------//
+    /*
     timer.def("as_auto_timer",
               [=] (py::object timer, bool report_at_exit = false)
               { return auto_timer_from_timer(timer, report_at_exit); },
               "Create auto-timer from timer",
               py::arg("report_at_exit") = false,
               py::return_value_policy::take_ownership);
+    */
     //------------------------------------------------------------------------//
     timer.def("real_elapsed",
               [=] (py::object timer)
@@ -740,16 +744,16 @@ PYBIND11_MODULE(timemory, tim)
               "Stop timer");
     //------------------------------------------------------------------------//
     timer.def("report",
-              [=] (py::object timer, bool no_min = true)
-              { timer.cast<tim_timer_t*>()->print(no_min); },
+              [=] (py::object timer, bool ign_cutoff = true)
+              { timer.cast<tim_timer_t*>()->print(ign_cutoff); },
               "Report timer",
-              py::arg("no_min") = true);
+              py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
     timer.def("__str__",
-              [=] (py::object timer, bool no_min = true)
-              { return timer.cast<tim_timer_t*>()->as_string(no_min); },
+              [=] (py::object timer, bool ign_cutoff = true)
+              { return timer.cast<tim_timer_t*>()->as_string(ign_cutoff); },
               "Stringify timer",
-              py::arg("no_min") = true);
+              py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
     timer.def("__iadd__",
              [=] (py::object timer, py::object _rss)
@@ -808,7 +812,7 @@ PYBIND11_MODULE(timemory, tim)
              py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     man.def("report",
-             [=] (py::object man, bool no_min = false, bool serialize = false,
+             [=] (py::object man, bool ign_cutoff = false, bool serialize = false,
                   std::string serial_filename = "")
              {
                  auto locals = py::dict();
@@ -865,7 +869,7 @@ PYBIND11_MODULE(timemory, tim)
                  }
 
                  // report ASCII output
-                 _man->report(no_min);
+                 _man->report(ign_cutoff);
 
                  // handle the serialization
                  if(!do_ser && serialize)
@@ -886,7 +890,7 @@ PYBIND11_MODULE(timemory, tim)
                  }
              },
              "Report timing manager",
-             py::arg("no_min") = false,
+             py::arg("ign_cutoff") = false,
              py::arg("serialize") = false,
              py::arg("serial_filename") = "");
     //------------------------------------------------------------------------//
@@ -896,8 +900,8 @@ PYBIND11_MODULE(timemory, tim)
                  manager_t* _man
                          = man.cast<manager_wrapper*>()->get();
                  std::stringstream ss;
-                 bool no_min = true;
-                 _man->report(ss, no_min);
+                 bool ign_cutoff = true;
+                 _man->report(ss, ign_cutoff);
                  return ss.str();
              },
              "Stringify the timing manager report");
@@ -1093,7 +1097,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     auto_timer.def("global_timer",
                    [=] (py::object _auto_timer)
-                   { return _auto_timer.cast<auto_timer_t*>()->global_timer(); },
+                   { return _auto_timer.cast<auto_timer_t*>()->local_timer().summation_timer(); },
                    "Get the timer for all the auto-timer instances (from manager)");
     //------------------------------------------------------------------------//
     auto_timer.def("__str__",
@@ -1102,11 +1106,10 @@ PYBIND11_MODULE(timemory, tim)
                        std::stringstream _ss;
                        auto_timer_t* _auto_timer
                                = _pyauto_timer.cast<auto_timer_t*>();
-                       tim_timer_t _local = *_auto_timer->local_timer();
+                       tim_timer_t _local = _auto_timer->local_timer();
                        _local.stop();
-                       tim_timer_t _global = *_auto_timer->global_timer();
-                       if(_auto_timer->global_timer() != _auto_timer->local_timer())
-                           _global += _local;
+                       tim_timer_t _global = *_auto_timer->local_timer().summation_timer();
+                       _global += _local;
                        _global.format()->align_width(false);
                        _global.report(_ss, false, true);
                        return _ss.str();
@@ -1352,10 +1355,10 @@ PYBIND11_MODULE(timemory, tim)
     tim.attr("timing_manager") = man;
     //------------------------------------------------------------------------//
     tim.def("report",
-            [=] (bool no_min = true)
-            { manager_t::instance()->report(no_min); },
-            "Report the timing manager (default: no_min = True)",
-            py::arg("no_min") = true);
+            [=] (bool ign_cutoff = true)
+            { manager_t::instance()->report(ign_cutoff); },
+            "Report the timing manager (default: ign_cutoff = True)",
+            py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
     tim.def("clear",
             [=] ()

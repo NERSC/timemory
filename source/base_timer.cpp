@@ -124,9 +124,9 @@ void base_timer::sync(const this_type& rhs)
 
 //============================================================================//
 
-bool base_timer::above_min(bool no_min) const
+bool base_timer::above_cutoff(bool ign_cutoff) const
 {
-    if(no_min)
+    if(ign_cutoff)
         return true;
 
     double _cpu = user_elapsed() + system_elapsed();
@@ -150,14 +150,14 @@ void base_timer::report(bool endline) const
 
 //============================================================================//
 
-void base_timer::report(std::ostream& os, bool endline, bool no_min) const
+void base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 {
 
     // stop, if not already stopped
     if(m_timer().running())
         const_cast<base_timer*>(this)->stop();
 
-    if(!above_min(no_min))
+    if(!above_cutoff(ign_cutoff))
         return;
 
     std::stringstream ss;

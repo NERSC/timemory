@@ -256,7 +256,7 @@ def run_test():
     print('\nTiming report:\n{}'.format(manager))
     freport = options.set_report("timing_array_test.out")
     fserial = options.set_serial("timing_array_test.json")
-    manager.report(no_min = True)
+    manager.report(ign_cutoff = True)
     plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
     print("{}".format(timemory.get_overhead_report()))
 

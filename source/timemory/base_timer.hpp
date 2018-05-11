@@ -157,7 +157,9 @@ public:
     { }
 
 public:
-    uint64_t        size() const    { return m_lap; }
+    const uint64_t& size() const    { return m_lap; }
+    uint64_t&       size()          { return m_lap; }
+
     rss_type&       rss()           { return m_rss; }
     const rss_type& rss() const     { return m_rss; }
 
@@ -178,14 +180,6 @@ public:
     #else
     template <int N> uint64_t get_sqr() const { return 0; }
     #endif
-
-    /*this_type& lap_average(const uint64_t& _laps)
-    {
-        m_lap = _laps;
-        divide_sum(_laps);
-        divide_sqr(_laps);
-        return *this;
-    }*/
 
 public:
     //------------------------------------------------------------------------//
@@ -427,9 +421,9 @@ public:
 
 public:
     // public member functions
-    void report(ostream_t&, bool endline = true, bool no_min = false) const;
+    void report(ostream_t&, bool endline = true, bool ign_cutoff = false) const;
     void report(bool endline = true) const;
-    bool above_min(bool no_min = false) const;
+    bool above_cutoff(bool ign_cutoff = false) const;
     void sync(const this_type& rhs);
 
     inline void configure_record();

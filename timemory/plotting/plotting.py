@@ -36,7 +36,6 @@ import json
 import sys
 import traceback
 import collections
-import numpy as np
 import os
 import copy
 import warnings
@@ -647,8 +646,14 @@ def plot_generic(_plot_data, _types, _data_dict,
                  _type_str, _type_min, _type_unit):
 
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
+
+    import numpy as np
 
     filename = _plot_data.filename
     plot_params = _plot_data.plot_params
@@ -769,9 +774,14 @@ def plot_generic(_plot_data, _types, _data_dict,
 def plot_timing(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
+    #
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -818,9 +828,14 @@ def plot_timing(_plot_data,
 def plot_memory(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
+    #
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
 
     filename = _plot_data.filename
     title = _plot_data.get_title()

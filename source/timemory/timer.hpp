@@ -63,6 +63,8 @@ public:
     typedef rss_type::base_type             base_rss_type;
 
 public:
+    explicit timer(bool _auto_start, timer* _sum_timer);
+
     timer(const string_t& _prefix = "",
           const string_t& _format = format::timer::default_format(),
           bool _record_memory = timer::default_record_memory());
@@ -73,8 +75,8 @@ public:
     timer(timer_format_t _format,
           bool _record_memory = timer::default_record_memory());
 
-    timer(const string_t& _prefix,
-          const timer* rhs,         // can be nullptr
+    timer(const timer* rhs,         // can be nullptr,
+          const string_t& _prefix,
           bool _align_width = false,
           bool _record_memory = timer::default_record_memory());
 
@@ -84,6 +86,9 @@ public:
     // copy and assign
     timer(const this_type&);
     this_type& operator=(const this_type&);
+    // parent timer accumulating sum
+    timer* summation_timer() const { return m_sum_timer; }
+    void summation_timer(timer* _ref) { m_sum_timer = _ref; }
 
 public:
     // public static functions
@@ -98,16 +103,16 @@ public:
         return *this;
     }
 
-    std::string as_string(bool no_min = true) const
+    std::string as_string(bool ign_cutoff = true) const
     {
         std::stringstream ss;
-        this->report(ss, false, no_min);
+        this->report(ss, false, ign_cutoff);
         return ss.str();
     }
 
-    void print(bool no_min = true) const
+    void print(bool ign_cutoff = true) const
     {
-        std::cout << this->as_string(no_min) << std::endl;
+        std::cout << this->as_string(ign_cutoff) << std::endl;
     }
 
     void grab_metadata(const this_type& rhs);
@@ -185,6 +190,12 @@ public:
     {
         return this_type(lhs) += rhs;
     }
+
+public:
+    // public member functions
+
+protected:
+    timer* m_sum_timer;
 
 private:
     static bool f_record_memory;

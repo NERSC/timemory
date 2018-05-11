@@ -39,8 +39,27 @@
 #include <cstdint>
 
 //============================================================================//
+// Easier to type than colons
+typedef std::thread::id thread_id_t;
 
-tim::manager*& _tim_manager_p()
+//============================================================================//
+// Helper function
+thread_id_t get_thread_id()
+{
+    return std::this_thread::get_id();
+}
+
+//============================================================================//
+//  initialized on main thread
+thread_id_t& _tim_manager_tid()
+{
+    tim_static_thread_local thread_id_t _instance_tid = get_thread_id();
+    return _instance_tid;
+}
+
+//============================================================================//
+//  initialized on main thread
+tim::manager*& _tim_manager_ptr()
 {
     tim_static_thread_local tim::manager* _instance = nullptr;
     return _instance;
@@ -50,8 +69,11 @@ tim::manager*& _tim_manager_p()
 
 void _tim_manager_initialization()
 {
-    if(!_tim_manager_p())
-        _tim_manager_p() = new tim::manager();
+    if(!_tim_manager_ptr())
+    {
+        _tim_manager_tid() = get_thread_id();
+        _tim_manager_ptr() = new tim::manager();
+    }
     return;
 }
 
@@ -59,8 +81,11 @@ void _tim_manager_initialization()
 
 void _tim_manager_finalization()
 {
-    delete _tim_manager_p();
-    _tim_manager_p() = nullptr;
+    if(get_thread_id() == _tim_manager_tid())
+    {
+        delete _tim_manager_ptr();
+        _tim_manager_ptr() = nullptr;
+    }
     return;
 }
 
@@ -89,7 +114,7 @@ namespace tim
 
 manager::pointer_type& local_instance()
 {
-    tim_static_thread_local manager::pointer_type _instance = _tim_manager_p();
+    tim_static_thread_local manager::pointer_type _instance = _tim_manager_ptr();
     return _instance;
 }
 
@@ -97,7 +122,7 @@ manager::pointer_type& local_instance()
 
 manager::pointer_type& global_instance()
 {
-    static manager::pointer_type _instance = _tim_manager_p();
+    static manager::pointer_type _instance = _tim_manager_ptr();
     return _instance;
 }
 
@@ -189,6 +214,15 @@ manager::manager()
   m_report(&std::cout),
   m_overhead_timer(new tim_timer_t())
 {
+#if defined(DEBUG)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "tim::manager creation " << m_instance_count
+                  << "..." << std::endl;
+    }
+#endif
+
     if(!global_instance())
         global_instance() = this;
 
@@ -216,6 +250,15 @@ manager::manager()
 
 manager::~manager()
 {
+#if defined(DEBUG)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "tim::manager deletion " << m_instance_count
+                  << "..." << std::endl;
+    }
+#endif
+
     m_overhead_timer->stop();
     --f_manager_instance_count;
     auto close_ostream = [&] (ostream_t*& m_os)
@@ -251,8 +294,8 @@ manager::~manager()
     m_timer_map.clear();
     delete m_overhead_timer;
 
-    if(this == _tim_manager_p())
-        _tim_manager_p() = nullptr;
+    if(this == _tim_manager_ptr() && get_thread_id() == _tim_manager_tid())
+        _tim_manager_ptr() = nullptr;
 }
 
 //============================================================================//
@@ -409,7 +452,7 @@ manager::timer(const string_t& key,
 
 //============================================================================//
 
-void manager::report(bool no_min) const
+void manager::report(bool ign_cutoff) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -436,13 +479,13 @@ void manager::report(bool no_min) const
             if(i != mpi_rank() )
                 continue;
         }
-        report(m_report, no_min);
+        report(m_report, ign_cutoff);
     }
 }
 
 //============================================================================//
 
-void manager::report(ostream_t* os, bool no_min) const
+void manager::report(ostream_t* os, bool ign_cutoff) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -477,7 +520,7 @@ void manager::report(ostream_t* os, bool no_min) const
 
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
-        if(itr.timer().above_min(no_min))
+        if(itr.timer().above_cutoff(ign_cutoff))
             tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
@@ -485,7 +528,7 @@ void manager::report(ostream_t* os, bool no_min) const
         tim::format::timer::default_width(_width);
 
     for(const auto& itr : *this)
-        itr.timer().report(*os, true, no_min);
+        itr.timer().report(*os, true, ign_cutoff);
 
     os->flush();
 }
@@ -526,11 +569,14 @@ void manager::set_output_stream(const path_t& fname)
             m_os = _fos;
         else
         {
+#if defined(DEBUG)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
             {
                 tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
                           << "Redirecting to stdout..." << std::endl;
             }
+#endif
             _fos->close();
             delete _fos;
             m_os = &std::cout;
@@ -577,6 +623,16 @@ void manager::merge(bool div_clock)
     if(restart)
         m_overhead_timer->stop();
 
+#if defined(DEBUG)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "instance " << m_instance_count << " : " << __PRETTY_FUNCTION__
+                  << " (div_clock = " << std::boolalpha
+                  << div_clock << ") ..." << std::endl;
+    }
+#endif
+
     auto_lock_t lock(m_mutex);
 
     uomap<uint64_t, uint64_t> clock_div_count;
@@ -584,6 +640,15 @@ void manager::merge(bool div_clock)
     {
         if(itr == global_instance())
             continue;
+
+#if defined(DEBUG)
+    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+        {
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+            std::cout << "\tinstance " << m_instance_count << " merging "
+                      << itr->instance_count() << "..." << std::endl;
+        }
+#endif
 
         //itr->overhead_timer()->stop();
 
@@ -622,12 +687,8 @@ void manager::merge(bool div_clock)
     }
 
     if(div_clock)
-    {
         for(auto& itr : clock_div_count)
             *(m_timer_map[itr.first].get()) /= itr.second;
-        // divide the overhead timer
-        //*m_overhead_timer /= m_daughters.size();
-    }
 
     for(auto& itr : m_daughters)
         if(itr != this)
@@ -682,8 +743,8 @@ manager::compute_overhead(tim_timer_t* timer_ref)
                       string_t("total unrecorded time").length(),
                       "approximate overhead ");
 
-    timer_pair_t _overhead_timers(tim_timer_t(_f_prefix, _ref, true),
-                                  tim_timer_t(_s_prefix, _ref, true));
+    timer_pair_t _overhead_timers(tim_timer_t(_ref, _f_prefix, true),
+                                  tim_timer_t(_ref, _s_prefix, true));
 
     if(restart)
         _ref->start();
@@ -771,16 +832,16 @@ void manager::write_overhead(ostream_t& _os, tim_timer_t* timer_ref,
 //============================================================================//
 
 // static function
-void manager::write_report(path_t _fname, bool no_min)
+void manager::write_report(path_t _fname, bool ign_cutoff)
 {
     if(_fname.find(_fname.os()) != std::string::npos)
         tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
 
     ofstream_t ofs(_fname.c_str());
     if(ofs)
-        manager::master_instance()->report(ofs, no_min);
+        manager::master_instance()->report(ofs, ign_cutoff);
     else
-        manager::master_instance()->report(no_min);
+        manager::master_instance()->report(ign_cutoff);
     ofs.close();
 }
 

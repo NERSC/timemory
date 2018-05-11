@@ -81,12 +81,12 @@ int main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 15;
+    int cutoff = nfib - 25;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
     tim::format::timer::default_unit(tim::units::msec);
-    tim::format::timer::default_scientific(true);
+    tim::format::timer::default_scientific(false);
 
     tim::manager* manager = tim::manager::instance();
 
@@ -99,6 +99,12 @@ int main(int argc, char** argv)
     timer_list.push_back(timer_list.at(1) - timer_list.at(0));
     timer_list.back().format()->prefix("Timer difference");
     manager->overhead_timer()->stop();
+    timer_list.push_back(tim::timer(timer_list.back()));
+    timer_list.back().accum() /= manager->total_laps();
+    timer_list.back().format()->prefix("TiMemory avg. overhead");
+    timer_list.back().record_memory(false);
+    timer_list.back().format()->format(": %w %T (wall), %u %T (user), %s %T (sys), %t %T (cpu)");
+    timer_list.back().format()->unit(tim::units::usec);
 
     manager->write_report("test_output/cxx_timing_overhead.out");
     manager->write_json("test_output/cxx_timing_overhead.json");
@@ -116,10 +122,12 @@ int main(int argc, char** argv)
     auto total_laps = manager->total_laps();
     auto _overhead = manager->compute_overhead();
     manager->write_overhead(std::cout, nullptr, &_overhead);
-    tim::timer avg_overhead("Average overhead added by TiMemory",
-                            &(_overhead.second), true);
+    tim::timer avg_overhead(&(_overhead.second),
+                            "Average overhead added by TiMemory");
+    if(_overhead.first.format())
+        avg_overhead.format()->width(_overhead.first.format()->width());
     avg_overhead.accum() /= total_laps;
-    std::cout << avg_overhead.as_string() << std::endl;
+    avg_overhead.report(std::cout, true, true);
 
     return 0;
 }

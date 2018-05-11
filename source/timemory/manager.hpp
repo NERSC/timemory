@@ -274,11 +274,11 @@ public:
 
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
-    void print(bool no_min = false) { this->report(no_min); }
+    void print(bool ign_cutoff = false) { this->report(ign_cutoff); }
 
-    void report(bool no_min = false) const;
+    void report(bool ign_cutoff = false) const;
     void set_output_stream(const path_t&);
-    void write_report(path_t _fname, bool no_min = false);
+    void write_report(path_t _fname, bool ign_cutoff = false);
     void write_serialization(const path_t& _fname) const { write_json(_fname); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
@@ -286,9 +286,9 @@ public:
                         tim_timer_t* = nullptr,
                         timer_pair_t* = nullptr);
 
-    void report(ostream_t& os, bool no_min = false) const { report(&os, no_min); }
+    void report(ostream_t& os, bool ign_cutoff = false) const { report(&os, ign_cutoff); }
     void set_output_stream(ostream_t& = std::cout);
-    void write_report(ostream_t& os = std::cout, bool no_min = false) { report(os, no_min); }
+    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false) { report(os, ign_cutoff); }
     void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
@@ -339,6 +339,7 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version);
     tim_timer_t* overhead_timer() const { return m_overhead_timer; }
+    int32_t instance_count() const { return m_instance_count; }
 
 protected:
 	// protected functions
@@ -347,7 +348,7 @@ protected:
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
-    void const_merge(bool div = true) const { const_cast<this_type*>(this)->merge(div); }
+    void const_merge(bool div) const { const_cast<this_type*>(this)->merge(div); }
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
 
@@ -359,7 +360,7 @@ protected:
 private:
     // Private functions
     ofstream_t* get_ofstream(ostream_t* m_os) const;
-    void report(ostream_t*, bool no_min = false) const;
+    void report(ostream_t*, bool ign_cutoff = false) const;
 
 private:
     // Private variables
@@ -491,8 +492,11 @@ manager::total_laps() const
 
 } // namespace tim
 
-// initialization and destruction on library load
-extern tim_api tim::manager*& _tim_manager_p();
+// functions used to ensure initialization and destruction on library load
+extern tim_api tim::manager*&   _tim_manager_ptr();
+extern tim_api std::thread::id& _tim_manager_tid();
+
+// functions that do the initialization and destruction
 void _tim_manager_initialization();
 void _tim_manager_finalization();
 
