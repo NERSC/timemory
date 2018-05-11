@@ -275,9 +275,10 @@ public:
 
     void set_max_depth(int32_t d) { f_max_depth = d; }
     int32_t get_max_depth() { return f_max_depth; }
-    void print(bool ign_cutoff = false) { this->report(ign_cutoff); }
+    void print(bool ign_cutoff = false, bool endline = true)
+    { this->report(ign_cutoff, endline); }
 
-    void report(bool ign_cutoff = false) const;
+    void report(bool ign_cutoff = false, bool endline = true) const;
     void set_output_stream(const path_t&);
     void write_report(path_t _fname, bool ign_cutoff = false);
     void write_serialization(const path_t& _fname) const { write_json(_fname); }
@@ -287,9 +288,11 @@ public:
                         tim_timer_t* = nullptr,
                         timer_pair_t* = nullptr);
 
-    void report(ostream_t& os, bool ign_cutoff = false) const { report(&os, ign_cutoff); }
+    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const
+    { report(&os, ign_cutoff, endline); }
     void set_output_stream(ostream_t& = std::cout);
-    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false) { report(os, ign_cutoff); }
+    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
+                      bool endline = true) { report(os, ign_cutoff, endline); }
     void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
@@ -334,6 +337,15 @@ public:
     timer_pair_t compute_overhead(tim_timer_t* timer_ref = nullptr);
     uint64_t laps() const { return compute_total_laps(); }
     uint64_t total_laps() const;
+    void update_global_timer_format();
+
+    friend std::ostream& operator<<(std::ostream& os, const manager& man)
+    {
+        std::stringstream ss;
+        man.report(ss, true, false);
+        os << ss.str();
+        return os;
+    }
 
 public:
     // serialization function
@@ -353,7 +365,6 @@ protected:
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
     void insert_global_timer();
-    void compute_global_timer_format();
 
 protected:
 	// protected static variables
@@ -363,7 +374,7 @@ protected:
 private:
     // Private functions
     ofstream_t* get_ofstream(ostream_t* m_os) const;
-    void report(ostream_t*, bool ign_cutoff = false) const;
+    void report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
 
 private:
     // Private variables

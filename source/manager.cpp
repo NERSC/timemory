@@ -81,6 +81,7 @@ void _tim_manager_initialization()
 
 void _tim_manager_finalization()
 {
+    // this seems to fail on Travis but nowhere else...
     /*if(get_thread_id() == _tim_manager_tid())
     {
         delete _tim_manager_ptr();
@@ -217,7 +218,7 @@ manager::manager()
                     new tim_timer_t(
                         tim::format::timer(
                             this->get_prefix() +
-                            string_t("[lib] Total"),
+                            string_t("[exe] total"),
                             tim::format::timer::default_format(),
                             tim::format::timer::default_unit(),
                             tim::format::timer::default_rss_format(),
@@ -258,40 +259,6 @@ manager::manager()
     }
 }
 
-//============================================================================//
-
-void manager::compute_global_timer_format()
-{
-    if(this == global_instance())
-    {
-        m_total_timer->format()->prefix(this->get_prefix() +
-                                        string_t("[lib] Total"));
-        m_total_timer->format()->format(tim::format::timer::default_format());
-        m_total_timer->format()->unit(tim::format::timer::default_unit());
-        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
-        tim::format::timer::propose_default_width(
-                    m_total_timer->format()->prefix().length());
-    }
-}
-
-//============================================================================//
-
-void manager::insert_global_timer()
-{
-    if(this == global_instance() &&
-       m_timer_map.size() == 0 &&
-       m_timer_list.size() == 0)
-    {
-        compute_global_timer_format();
-        m_timer_map[0] = m_total_timer;
-        m_timer_list.push_back(
-                    timer_tuple_t(0, m_count, "lib_global_process_time",
-                                  m_total_timer));
-        m_total_timer->start();
-        if(m_count == 0)
-            m_count += 1;
-    }
-}
 //============================================================================//
 
 manager::~manager()
@@ -342,6 +309,41 @@ manager::~manager()
 
     if(this == _tim_manager_ptr() && get_thread_id() == _tim_manager_tid())
         _tim_manager_ptr() = nullptr;
+}
+
+//============================================================================//
+
+void manager::update_global_timer_format()
+{
+    if(this == global_instance())
+    {
+        m_total_timer->format()->prefix(this->get_prefix() +
+                                        string_t("[exe] total execution time"));
+        m_total_timer->format()->format(tim::format::timer::default_format());
+        m_total_timer->format()->unit(tim::format::timer::default_unit());
+        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
+        tim::format::timer::propose_default_width(
+                    m_total_timer->format()->prefix().length());
+    }
+}
+
+//============================================================================//
+
+void manager::insert_global_timer()
+{
+    if(this == global_instance() &&
+       m_timer_map.size() == 0 &&
+       m_timer_list.size() == 0)
+    {
+        update_global_timer_format();
+        m_timer_map[0] = m_total_timer;
+        m_timer_list.push_back(
+                    timer_tuple_t(0, m_count, "exe_global_time",
+                                  m_total_timer));
+        m_total_timer->start();
+        if(m_count == 0)
+            m_count += 1;
+    }
 }
 
 //============================================================================//
@@ -461,7 +463,7 @@ manager::timer(const string_t& key,
 
     // synchronize format with level 1 and make sure MPI prefix is up-to-date
     if(m_timer_list.size() < 2)
-        compute_global_timer_format();
+        update_global_timer_format();
 
     std::stringstream ss;
     // designated as [cxx], [pyc], etc.
@@ -504,7 +506,7 @@ manager::timer(const string_t& key,
 
 //============================================================================//
 
-void manager::report(bool ign_cutoff) const
+void manager::report(bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -531,13 +533,13 @@ void manager::report(bool ign_cutoff) const
             if(i != mpi_rank() )
                 continue;
         }
-        report(m_report, ign_cutoff);
+        report(m_report, ign_cutoff, endline);
     }
 }
 
 //============================================================================//
 
-void manager::report(ostream_t* os, bool ign_cutoff) const
+void manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -572,15 +574,16 @@ void manager::report(ostream_t* os, bool ign_cutoff) const
 
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
-        if(itr.timer().above_cutoff(ign_cutoff))
+        if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
             tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
     if(_width > 10 && _width < tim::format::timer::default_width())
         tim::format::timer::default_width(_width);
 
-    for(const auto& itr : *this)
-        itr.timer().report(*os, true, ign_cutoff);
+    for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
+        itr->timer().report(*os, (itr+1 == this->cend()) ? endline : true,
+                            ign_cutoff);
 
     os->flush();
 }
@@ -861,8 +864,8 @@ void manager::write_overhead(ostream_t& _os, tim_timer_t* timer_ref,
     _w = std::max(_w, std::max(_p1.length() + 4, _p2.length() + 4));
 
     std::stringstream _sp1, _sp2;
-    _sp1 << std::setw(_w + 2) << std::left << _p1 << " : ";
-    _sp2 << std::setw(_w + 2) << std::left << _p2 << " : ";
+    _sp1 << std::setw(_w + 1) << std::left << _p1 << " : ";
+    _sp2 << std::setw(_w + 1) << std::left << _p2 << " : ";
     _ss << _sp1.str() << laps() << std::endl;
     _ss << _sp2.str() << total_laps() << std::endl;
 

@@ -70,7 +70,7 @@ base_formatter::base_formatter(string_t _prefix, string_t _suffix,
 
 core_formatter rss::f_current =
         core_formatter(1,                       // precision
-                       3,                       // min field width
+                       3,                       // min prefix field width
                        tim::units::megabyte,    // memory display units
                                                 // format string
                        ": RSS {curr,peak} : (%C|%M) [%A]",
@@ -82,7 +82,7 @@ core_formatter rss::f_current =
 timer::format_pair_t timer::f_current =
         timer::format_pair_t(
             core_formatter(3,                   // precision
-                           8,                   // min field width
+                           5,                   // min prefix field width
                            units::sec,          // timing display units
                                                 // format string
                            ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
@@ -165,7 +165,7 @@ void timer::pop()
 
 void timer::propose_default_width(size_type _w)
 {
-    _w += 4;    // a little padding
+    //_w += 2;    // a little padding
     f_current.first.width() = std::max(f_current.first.width(), _w);
 }
 
@@ -177,14 +177,14 @@ timer::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current.first.width() + 2)
+        _ss << std::setw(f_current.first.width() + 1)
             << std::left << m_prefix << " "
             << std::right << this->format()
             << std::left << m_suffix;
     }
     else
     {
-        _ss << std::setw(width() + 2)
+        _ss << std::setw(width() + 1)
             << std::left << m_prefix << " "
             << std::right << this->format()
             << std::left << m_suffix;
@@ -352,7 +352,7 @@ void rss::pop()
 
 void rss::propose_default_width(size_type _w)
 {
-    _w += 2;    // a little padding
+    //_w += 2;    // a little padding
     f_current.width() = std::max(f_current.width(), _w);
 }
 
@@ -371,7 +371,7 @@ rss::compose() const
     }
     else
     {
-        _ss << std::setw(width() + 2)
+        _ss << std::setw(width() + 1)
             << std::left << m_prefix << " "
             << std::right << this->format()
             << std::left << m_suffix;
