@@ -216,6 +216,14 @@ void cxx_timemory_report(const char* fname)
 //============================================================================//
 
 extern "C" tim_api
+void cxx_timemory_print(void)
+{
+    tim::manager::master_instance()->report(std::cout, true);
+}
+
+//============================================================================//
+
+extern "C" tim_api
 void cxx_timemory_record_memory(int _record_memory)
 {
     tim::timer::default_record_memory((_record_memory > 0) ? true : false);

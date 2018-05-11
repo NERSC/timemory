@@ -32,19 +32,17 @@ set_target_properties(${LIBNAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
-file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
-string(REPLACE "// " "# " LICENSE "${LICENSE}")
 foreach(_FILE plotting mpi_support util)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
     set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
 
     # copy over the python file
     configure_file(${SOURCE_DIR}/${_FILE}.py
-        ${BINARY_DIR}/${_FILE}.py COPYONLY)
+        ${BINARY_DIR}/${_FILE}.py @ONLY)
 
     # copy over the init file
     configure_file(${SOURCE_DIR}/__init__.py
-        ${BINARY_DIR}/__init__.py COPYONLY)
+        ${BINARY_DIR}/__init__.py @ONLY)
 
     # install the folder
     install(DIRECTORY ${BINARY_DIR}/
@@ -111,7 +109,7 @@ endif(BUILD_SHARED_LIBS)
 # Install the python stuff
 #
 configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
-    ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
+    ${PROJECT_BINARY_DIR}/timemory/timemory.py @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
     ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
 
@@ -145,12 +143,12 @@ foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
     if("${_FILE}" MATCHES "_test.py")
         configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-            ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+            ${PROJECT_BINARY_DIR}/${_FILE} @ONLY)
     endif("${_FILE}" MATCHES "_test.py")
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} COPYONLY)
+        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} @ONLY)
 
     # install them though
     install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
@@ -158,3 +156,8 @@ foreach(_FILE ${TEST_FILES})
         COMPONENT python)
 
 endforeach(_FILE ${TEST_FILES})
+
+#----------------------------------------------------------------------------
+# Python tools
+#
+add_subdirectory(tools)

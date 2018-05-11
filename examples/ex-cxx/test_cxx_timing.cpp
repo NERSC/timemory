@@ -114,7 +114,7 @@ void test_format();
 
 int main(int /*argc*/, char** argv)
 {
-    tim::EnableSignalDetection({
+    tim::enable_signal_detection({
                                    tim::sys_signal::sHangup,
                                    tim::sys_signal::sInterrupt,
                                    tim::sys_signal::sIllegal,

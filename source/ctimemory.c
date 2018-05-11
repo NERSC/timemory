@@ -30,6 +30,7 @@
 
 extern int          cxx_timemory_enabled            (void);
 extern void         cxx_timemory_report             (const char*);
+extern void         cxx_timemory_print              (void);
 extern void*        cxx_timemory_create_auto_timer  (const char*, int,
                                                      const char*, int);
 extern void*        cxx_timemory_delete_auto_timer  (void*);
@@ -60,6 +61,13 @@ void c_timemory_delete_auto_timer(void* ctimer)
 void c_timemory_report(const char* fname)
 {
     cxx_timemory_report(fname);
+}
+
+//============================================================================//
+
+void c_timemory_print(void)
+{
+    cxx_timemory_print();
 }
 
 //============================================================================//

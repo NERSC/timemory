@@ -572,7 +572,7 @@ inline void base_timer::start_stop_debug_message(const string_t& _func,
         _msg << "Warning! base_timer::" << _func << " called but already "
              << _already << "..." << std::endl;
         if(_verbose > 1)
-            tim::StackBackTrace(_msg);
+            tim::stack_backtrace(_msg);
         std::cerr << _msg.str();
     }
 }

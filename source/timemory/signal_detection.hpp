@@ -244,16 +244,16 @@ namespace tim
 
 //----------------------------------------------------------------------------//
 
-static struct sigaction signal_termaction, signal_oldaction;
+static struct sigaction tim_signal_termaction, tim_signal_oldaction;
 
 // declarations
-inline bool EnableSignalDetection(signal_settings::signal_set_t ops
-                                  = signal_settings::signal_set_t());
-inline void DisableSignalDetection();
+inline bool enable_signal_detection(signal_settings::signal_set_t ops
+                                    = signal_settings::signal_set_t());
+inline void disable_signal_detection();
 
 //----------------------------------------------------------------------------//
 
-inline void StackBackTrace(std::ostream& ss)
+inline void stack_backtrace(std::ostream& ss)
 {
     typedef std::string::size_type          size_type;
 
@@ -356,8 +356,8 @@ inline void StackBackTrace(std::ostream& ss)
 
 //----------------------------------------------------------------------------//
 
-inline void TerminationSignalMessage(int sig, siginfo_t* sinfo,
-                                     std::ostream& message)
+inline void termination_signal_message(int sig, siginfo_t* sinfo,
+                                       std::ostream& message)
 {
     sys_signal _sig = (sys_signal) (sig);
 
@@ -431,13 +431,13 @@ inline void TerminationSignalMessage(int sig, siginfo_t* sinfo,
         std::cerr << e.what() << std::endl;
     }
 
-    StackBackTrace(message);
+    stack_backtrace(message);
 }
 
 //----------------------------------------------------------------------------//
 
-inline void TerminationSignalHandler(int sig, siginfo_t* sinfo,
-                                     void* /* context */)
+inline void termination_signal_handler(int sig, siginfo_t* sinfo,
+                                       void* /* context */)
 {
     sys_signal _sig = (sys_signal) (sig);
 
@@ -446,15 +446,15 @@ inline void TerminationSignalHandler(int sig, siginfo_t* sinfo,
         return;
 
     std::stringstream message;
-    TerminationSignalMessage(sig, sinfo, message);
+    termination_signal_message(sig, sinfo, message);
 
     if(signal_settings::enabled().find(sys_signal::sAbort) !=
        signal_settings::enabled().end())
     {
         signal_settings::disable(sys_signal::sAbort);
         signal_settings::disable(_sig);
-        DisableSignalDetection();
-        EnableSignalDetection(signal_settings::enabled());
+        disable_signal_detection();
+        enable_signal_detection(signal_settings::enabled());
         std::cerr << message.str() << std::endl;
     }
 
@@ -470,7 +470,7 @@ inline void TerminationSignalHandler(int sig, siginfo_t* sinfo,
 
 //----------------------------------------------------------------------------//
 
-inline bool EnableSignalDetection(signal_settings::signal_set_t operations)
+inline bool enable_signal_detection(signal_settings::signal_set_t operations)
 {
     // don't re-enable
     if(signal_settings::is_active())
@@ -491,13 +491,13 @@ inline bool EnableSignalDetection(signal_settings::signal_set_t operations)
     for(auto itr = operations.cbegin(); itr != operations.cend(); ++itr)
         _signals.insert(static_cast<int>(*itr));
 
-    sigfillset(&signal_termaction.sa_mask);
+    sigfillset(&tim_signal_termaction.sa_mask);
     for(auto& itr : _signals)
-        sigdelset(&signal_termaction.sa_mask, itr);
-    signal_termaction.sa_sigaction = TerminationSignalHandler;
-    signal_termaction.sa_flags = SA_SIGINFO;
+        sigdelset(&tim_signal_termaction.sa_mask, itr);
+    tim_signal_termaction.sa_sigaction = termination_signal_handler;
+    tim_signal_termaction.sa_flags = SA_SIGINFO;
     for(auto& itr : _signals)
-        sigaction(itr, &signal_termaction, &signal_oldaction);
+        sigaction(itr, &tim_signal_termaction, &tim_signal_oldaction);
 
     signal_settings::set_active(true);
 
@@ -509,21 +509,21 @@ inline bool EnableSignalDetection(signal_settings::signal_set_t operations)
 
 //----------------------------------------------------------------------------//
 
-inline void DisableSignalDetection()
+inline void disable_signal_detection()
 {
     // don't re-disable
     if(!signal_settings::is_active())
         return;
 
-    sigemptyset(&signal_termaction.sa_mask);
-    signal_termaction.sa_handler = SIG_DFL;
+    sigemptyset(&tim_signal_termaction.sa_mask);
+    tim_signal_termaction.sa_handler = SIG_DFL;
 
     auto _disable = [] (const signal_settings::signal_set_t& _set)
     {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);
-            sigaction(_itr, &signal_termaction, 0);
+            sigaction(_itr, &tim_signal_termaction, 0);
         }
     };
 
@@ -545,13 +545,13 @@ inline void DisableSignalDetection()
 
 namespace tim
 {
-inline bool EnableSignalDetection(signal_settings::signal_set_t
-                                  = signal_settings::signal_set_t())
+inline bool enable_signal_detection(signal_settings::signal_set_t
+                                    = signal_settings::signal_set_t())
 { return false; }
-inline void DisableSignalDetection() { }
-inline void StackBackTrace(std::ostream& os)
+inline void disable_signal_detection() { }
+inline void stack_backtrace(std::ostream& os)
 {
-    os << "StackBackTrace() not available." << std::endl;
+    os << "stack_backtrace() not available." << std::endl;
 }
 
 } // namespace tim

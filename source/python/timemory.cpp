@@ -348,12 +348,12 @@ PYBIND11_MODULE(timemory, tim)
         auto _sig_set = (signal_list.size() == 0)
                         ? get_default_signal_set()
                         : signal_list_to_set(signal_list);
-        tim::EnableSignalDetection(_sig_set);
+        tim::enable_signal_detection(_sig_set);
     };
     //------------------------------------------------------------------------//
     auto disable_signal_detection = [=] ()
     {
-        tim::DisableSignalDetection();
+        tim::disable_signal_detection();
     };
     //------------------------------------------------------------------------//
     auto timing_fmt_init = [=] (const std::string& prefix = "",
@@ -901,7 +901,8 @@ PYBIND11_MODULE(timemory, tim)
                          = man.cast<manager_wrapper*>()->get();
                  std::stringstream ss;
                  bool ign_cutoff = true;
-                 _man->report(ss, ign_cutoff);
+                 bool endline = false;
+                 _man->report(ss, ign_cutoff, endline);
                  return ss.str();
              },
              "Stringify the timing manager report");
@@ -1355,10 +1356,10 @@ PYBIND11_MODULE(timemory, tim)
     tim.attr("timing_manager") = man;
     //------------------------------------------------------------------------//
     tim.def("report",
-            [=] (bool ign_cutoff = true)
-            { manager_t::instance()->report(ign_cutoff); },
-            "Report the timing manager (default: ign_cutoff = True)",
-            py::arg("ign_cutoff") = true);
+            [=] (bool ign_cutoff = true, bool endline = true)
+            { manager_t::instance()->report(ign_cutoff, endline); },
+            "Report the timing manager (default: ign_cutoff = True, endline = True)",
+            py::arg("ign_cutoff") = true, py::arg("endline") = true);
     //------------------------------------------------------------------------//
     tim.def("clear",
             [=] ()
@@ -1634,7 +1635,6 @@ PYBIND11_MODULE(timemory, tim)
 
                           # Combination of timing.add_arguments and timing.parse_args but returns
                           parser = timemory.options.add_arguments(parser, fname)
-                          args = parser.parse_args()
                           args, left = parser.parse_known_args()
                           timemory.options.parse_args(args)
                           # replace sys.argv with unknown args only

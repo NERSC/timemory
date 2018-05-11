@@ -111,6 +111,8 @@ uint64_t run_total_test(int _sleep, uint64_t nfib)
 
 int main(int argc, char** argv)
 {
+    tim::enable_signal_detection();
+
     int sleep_seconds = 2;
     int nfib = 40;
     if(argc > 1)
@@ -146,6 +148,7 @@ int main(int argc, char** argv)
         std::cout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
                   << std::endl;
 
+    tim::disable_signal_detection();
     exit(num_fail);
 }
 
