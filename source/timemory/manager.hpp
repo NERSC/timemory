@@ -237,8 +237,9 @@ protected:
 public:
     // Public member functions
     void merge(bool div_clock = true);
-    size_type size() const { return m_timer_list.size(); }
     void clear();
+
+    size_type size() const { return m_timer_list.size(); }
 
     tim_timer_t& timer(const string_t& key,
                        const string_t& tag = "cxx",
@@ -351,6 +352,8 @@ protected:
     void const_merge(bool div) const { const_cast<this_type*>(this)->merge(div); }
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
+    void insert_global_timer();
+    void compute_global_timer_format();
 
 protected:
 	// protected static variables
@@ -398,6 +401,8 @@ private:
     base_rss_type           m_rss_usage;
     // overhead timer
     tim_timer_t*            m_overhead_timer;
+    // global timer
+    timer_ptr_t             m_total_timer;
 };
 
 //----------------------------------------------------------------------------//

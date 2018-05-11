@@ -388,29 +388,30 @@ rss::operator()(const string_t& _base) const
 
     for(auto itr : f_field_list)
     {
-        std::stringstream _ss;
-        switch (itr.second)
+        auto _replace = [&] (const string_t& _itr, const string_t& _rep)
         {
-            case rss::field::current:
-            case rss::field::total_curr:
-            case rss::field::self_curr:
-            case rss::field::peak:
-            case rss::field::total_peak:
-            case rss::field::self_peak:
-            case rss::field::memory_unit:
-            default:
-                _ss << "";
-                break;
+            auto _npos = std::string::npos;
+            while((_npos = _str.find(_itr)) != std::string::npos)
+                _str.replace(_npos, _itr.length(), _rep.c_str());
+        };
+
+        if(itr.second == rss::field::memory_unit)
+        {
+            std::stringstream _ss;
+            _ss.precision(this->precision());
+            _ss << tim::units::mem_repr(this->unit());
+            _replace(itr.first, _ss.str());
         }
-
-        if(_ss.str().length() == 0)
-            continue;
-
-        // replace all instances
-        auto _npos = std::string::npos;
-        for(const auto& itr2 : { itr.first + string_t(" "), itr.first })
-            while((_npos = _str.find(itr2)) != std::string::npos)
-                _str = _str.replace(_npos, itr2.length(), _ss.str().c_str());
+        else
+        {
+            // replace all instances
+            _replace(", " + itr.first,      ""  );  // CSV
+            _replace("," + itr.first,       ""  );  // CSV
+            _replace(" " + itr.first + " ", " " );  // surrounding space
+            _replace(" " + itr.first,       ""  );  // leading space
+            _replace(itr.first + " ",       ""  );  // trailing space
+            _replace(itr.first,             ""  );  // every remaining instance
+        }
     }
 
     string_t _pR = "%R";

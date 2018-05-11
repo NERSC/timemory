@@ -654,6 +654,8 @@ def plot_generic(_plot_data, _types, _data_dict,
             return
 
     import numpy as np
+    import matplotlib
+    import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     plot_params = _plot_data.plot_params
@@ -783,6 +785,9 @@ def plot_timing(_plot_data,
             warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
             return
 
+    import matplotlib
+    import matplotlib.pyplot as plt
+
     filename = _plot_data.filename
     title = _plot_data.get_title()
     _params = _plot_data.plot_params
@@ -836,6 +841,9 @@ def plot_memory(_plot_data,
         except:
             warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
             return
+
+    import matplotlib
+    import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     title = _plot_data.get_title()

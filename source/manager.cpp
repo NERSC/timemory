@@ -81,11 +81,11 @@ void _tim_manager_initialization()
 
 void _tim_manager_finalization()
 {
-    if(get_thread_id() == _tim_manager_tid())
+    /*if(get_thread_id() == _tim_manager_tid())
     {
         delete _tim_manager_ptr();
         _tim_manager_ptr() = nullptr;
-    }
+    }*/
     return;
 }
 
@@ -212,7 +212,16 @@ manager::manager()
   m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
   m_p_count((global_instance()) ? global_instance()->count().load() : 0),
   m_report(&std::cout),
-  m_overhead_timer(new tim_timer_t())
+  m_overhead_timer(new tim_timer_t()),
+  m_total_timer(timer_ptr_t(
+                    new tim_timer_t(
+                        tim::format::timer(
+                            this->get_prefix() +
+                            string_t("[lib] Total"),
+                            tim::format::timer::default_format(),
+                            tim::format::timer::default_unit(),
+                            tim::format::timer::default_rss_format(),
+                            true))))
 {
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
@@ -223,20 +232,11 @@ manager::manager()
     }
 #endif
 
-    if(!global_instance())
-        global_instance() = this;
-
-    else if(global_instance() && local_instance())
-    {
-        std::ostringstream ss;
-        ss << "manager singleton has already been created";
-        throw std::runtime_error( ss.str().c_str() );
-    }
-
     if(tim::get_env<int>("TIMEMORY_DISABLE_TIMER_MEMORY", 0) > 0)
     {
         tim::timer::default_record_memory(false);
         m_overhead_timer->record_memory(false);
+        m_total_timer->record_memory(false);
     }
 
     std::stringstream ss;
@@ -244,8 +244,54 @@ manager::manager()
        << (m_instance_count) << ")";
     m_overhead_timer->format()->prefix(ss.str());
     m_overhead_timer->start();
+
+    if(!global_instance())
+    {
+        global_instance() = this;
+        insert_global_timer();
+    }
+    else if(global_instance() && local_instance())
+    {
+        std::ostringstream ss;
+        ss << "manager singleton has already been created";
+        throw std::runtime_error( ss.str().c_str() );
+    }
 }
 
+//============================================================================//
+
+void manager::compute_global_timer_format()
+{
+    if(this == global_instance())
+    {
+        m_total_timer->format()->prefix(this->get_prefix() +
+                                        string_t("[lib] Total"));
+        m_total_timer->format()->format(tim::format::timer::default_format());
+        m_total_timer->format()->unit(tim::format::timer::default_unit());
+        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
+        tim::format::timer::propose_default_width(
+                    m_total_timer->format()->prefix().length());
+    }
+}
+
+//============================================================================//
+
+void manager::insert_global_timer()
+{
+    if(this == global_instance() &&
+       m_timer_map.size() == 0 &&
+       m_timer_list.size() == 0)
+    {
+        compute_global_timer_format();
+        m_timer_map[0] = m_total_timer;
+        m_timer_list.push_back(
+                    timer_tuple_t(0, m_count, "lib_global_process_time",
+                                  m_total_timer));
+        m_total_timer->start();
+        if(m_count == 0)
+            m_count += 1;
+    }
+}
 //============================================================================//
 
 manager::~manager()
@@ -347,6 +393,8 @@ void manager::clear()
     }
 
     m_report = &std::cout;
+
+    insert_global_timer();
 }
 
 //============================================================================//
@@ -410,6 +458,10 @@ manager::timer(const string_t& key,
 #endif
         return *(m_timer_map[ref].get());
     }
+
+    // synchronize format with level 1 and make sure MPI prefix is up-to-date
+    if(m_timer_list.size() < 2)
+        compute_global_timer_format();
 
     std::stringstream ss;
     // designated as [cxx], [pyc], etc.

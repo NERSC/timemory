@@ -105,7 +105,7 @@ class timemory_test(unittest.TestCase):
         self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.manager.size(), 12)
+        self.assertEqual(self.manager.size(), 13)
 
         for i in range(0, self.manager.size()):
             _t = self.manager.at(i)
@@ -131,14 +131,14 @@ class timemory_test(unittest.TestCase):
             autotimer = timemory.auto_timer("on")
             fibonacci(27)
             del autotimer
-        self.assertEqual(self.manager.size(), 1)
+        self.assertEqual(self.manager.size(), 2)
 
         timemory.toggle(False)
         if True:
             autotimer = timemory.auto_timer("off")
             fibonacci(27)
             del autotimer
-        self.assertEqual(self.manager.size(), 1)
+        self.assertEqual(self.manager.size(), 2)
 
         timemory.toggle(True)
         if True:
@@ -148,7 +148,7 @@ class timemory_test(unittest.TestCase):
             fibonacci(27)
             del autotimer_off
             del autotimer_on
-        self.assertEqual(self.manager.size(), 2)
+        self.assertEqual(self.manager.size(), 3)
 
         freport = timemory.options.set_report("timing_toggle.out")
         fserial = timemory.options.set_serial("timing_toggle.json")
@@ -240,7 +240,7 @@ class timemory_test(unittest.TestCase):
         self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(timemory.size(), 4)
+        self.assertEqual(timemory.size(), 5)
 
         @timer()
         def test_func_timer():
@@ -513,7 +513,7 @@ class timemory_test(unittest.TestCase):
         self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.manager.size(), 8)
+        self.assertEqual(self.manager.size(), 9)
 
         for i in range(0, self.manager.size()):
             _t = self.manager.at(i)

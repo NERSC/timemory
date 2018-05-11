@@ -121,17 +121,15 @@ int main(int argc, char** argv)
     MPI_Init(&argc, &argv);
 
     tim::EnableSignalDetection({
-                                   tim::sys_signal::sHangup,
-                                   tim::sys_signal::sInterrupt,
-                                   tim::sys_signal::sIllegal,
-                                   tim::sys_signal::sSegFault,
-                                   tim::sys_signal::sFPE
-                               });
+                                        tim::sys_signal::sHangup,
+                                        tim::sys_signal::sInterrupt,
+                                        tim::sys_signal::sIllegal,
+                                        tim::sys_signal::sSegFault,
+                                        tim::sys_signal::sFPE
+                                    });
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
-
-    tim::format::timer::push();
 
     int num_fail = 0;
     int num_test = 0;
@@ -310,12 +308,12 @@ void test_timing_pointer()
 {
     print_info(__FUNCTION__);
 
-    uint16_t set_depth = 4;
-    uint16_t get_depth = 0;
+    uint16_t set_depth = 5;
+    uint16_t get_depth = 1;
 
     print_depth(__FUNCTION__, __LINE__, false);
     {
-        manager_t::instance()->set_max_depth(4);
+        manager_t::instance()->set_max_depth(set_depth);
     }
 
     print_depth(__FUNCTION__, __LINE__, false);
@@ -357,7 +355,7 @@ void test_manager()
         tman->write_overhead();
 
 
-    EXPECT_EQ(manager_t::instance()->size(), 32);
+    EXPECT_EQ(manager_t::instance()->size(), 33);
 
     for(const auto& itr : *tman)
     {
@@ -388,7 +386,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 11);
 
     tman->clear();
     tman->enable(false);
@@ -400,7 +398,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 0);
+    EXPECT_EQ(manager_t::instance()->size(), 1);
 
     tman->clear();
     tman->enable(true);
@@ -413,7 +411,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 11);
 
     tman->write_serialization("test_output/mpi_cxx_timing_toggle.json");
     if(tim::mpi_rank() == 0)
@@ -436,7 +434,7 @@ void test_timing_depth()
 
     print_depth(__FUNCTION__, __LINE__, false);
     int32_t _max_depth = tman->get_max_depth();
-    tman->set_max_depth(3);
+    tman->set_max_depth(4);
     print_depth(__FUNCTION__, __LINE__, false);
     {
         TIMEMORY_AUTO_TIMER();
@@ -448,7 +446,7 @@ void test_timing_depth()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    EXPECT_EQ(manager_t::instance()->size(), 7);
+    EXPECT_EQ(manager_t::instance()->size(), 8);
 
     tman->write_serialization("test_output/mpi_cxx_timing_depth.json");
     if(tim::mpi_rank() == 0)
@@ -591,7 +589,7 @@ void test_format()
     if(tim::mpi_rank() == 0)
         tman->write_overhead();
 
-    EXPECT_EQ(manager_t::instance()->size(), 18);
+    EXPECT_EQ(manager_t::instance()->size(), 19);
 
     for(const auto& itr : *tman)
     {
