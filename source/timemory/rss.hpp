@@ -84,15 +84,19 @@ static inline
 int64_t get_peak_rss()
 {
 #if defined(_UNIX)
-    struct rusage rusage;
-    getrusage( RUSAGE_SELF, &rusage );
-#   if defined(__APPLE__) && defined(__MACH__)
-    // Darwin reports in bytes
-    return (int64_t) (rusage.ru_maxrss);
-#   else
-    // Linux reports in kilobytes
-    return (int64_t) (rusage.ru_maxrss * units::kilobyte);
-#   endif
+    struct rusage _self_rusage, _child_rusage;
+    getrusage( RUSAGE_SELF, &_self_rusage  );
+    getrusage( RUSAGE_CHILDREN, &_child_rusage );
+
+    // Darwin reports in bytes, Linux reports in kilobytes
+    #if defined(_MACOS)
+    int64_t _units = 1;
+    #else
+    int64_t _units = units::kilobyte;
+    #endif
+
+    return (int64_t) (_units * (_self_rusage.ru_maxrss + _child_rusage.ru_maxrss));
+
 #elif defined(_WINDOWS)
     DWORD processID = GetCurrentProcessId();
     HANDLE hProcess;
@@ -103,7 +107,7 @@ int64_t get_peak_rss()
     // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
                            PROCESS_VM_READ,
-                           FALSE, processID);
+                           TRUE, processID);
     if (NULL == hProcess)
         return (int64_t) 0;
 
@@ -290,6 +294,12 @@ public:
     void record();
     void record(const usage& rhs);
 
+    void reset()
+    {
+        m_curr_rss = 0;
+        m_peak_rss = 0;
+    }
+
     static usage max(const usage& lhs, const usage& rhs)
     {
         usage ret;
@@ -306,14 +316,16 @@ public:
         return ret;
     }
 
-    double current(int64_t _unit = units::megabyte) const
+    template <typename _Tp = double>
+    _Tp current(int64_t _unit = units::megabyte) const
     {
-        return static_cast<double>(m_curr_rss) / _unit;
+        return static_cast<_Tp>(m_curr_rss) / _unit;
     }
 
-    double peak(int64_t _unit = units::megabyte) const
+    template <typename _Tp = double>
+    _Tp peak(int64_t _unit = units::megabyte) const
     {
-        return static_cast<double>(m_peak_rss) / _unit;
+        return static_cast<_Tp>(m_peak_rss) / _unit;
     }
 
     template <typename Archive> void
@@ -455,14 +467,14 @@ usage::usage_format_t usage::format() const
 //----------------------------------------------------------------------------//
 inline void usage::record()
 {
-    // everything is kB
+    // everything is bytes
     m_curr_rss = std::max(m_curr_rss, get_current_rss());
     m_peak_rss = std::max(m_peak_rss, get_peak_rss());
 }
 //----------------------------------------------------------------------------//
 inline void usage::record(const usage& rhs)
 {
-    // everything is kB
+    // everything is bytes
     m_curr_rss = std::max(m_curr_rss - rhs.m_curr_rss,
                           get_current_rss() - rhs.m_curr_rss);
     m_peak_rss = std::max(m_peak_rss - rhs.m_peak_rss,
@@ -528,6 +540,15 @@ public:
     {
         m_rss_self.record(m_rss_tmp);
         m_rss_tot.record();
+    }
+
+    void reset()
+    {
+        m_rss_self.reset();
+        m_rss_tmp.reset();
+        m_rss_tot.reset();
+        m_rss_self_min.reset();
+        m_rss_tot_min.reset();
     }
 
     base_type& total() { return m_rss_tot; }

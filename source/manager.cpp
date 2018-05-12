@@ -213,17 +213,18 @@ manager::manager()
   m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
   m_p_count((global_instance()) ? global_instance()->count().load() : 0),
   m_report(&std::cout),
-  m_overhead_timer(new tim_timer_t()),
-  m_total_timer(timer_ptr_t(
-                    new tim_timer_t(
-                        tim::format::timer(
-                            this->get_prefix() +
-                            string_t("[exe] total"),
-                            tim::format::timer::default_format(),
-                            tim::format::timer::default_unit(),
-                            tim::format::timer::default_rss_format(),
-                            true))))
+  m_overhead_timer(nullptr),
+  m_total_timer(nullptr)
 {
+    m_overhead_timer = new tim_timer_t();
+    m_total_timer = timer_ptr_t(
+                        new tim_timer_t(
+                            tim::format::timer(
+                                string_t("> [exe] total"),
+                                tim::format::timer::default_format(),
+                                tim::format::timer::default_unit(),
+                                tim::format::timer::default_rss_format(),
+                                true)));
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
     {
@@ -263,6 +264,10 @@ manager::manager()
 
 manager::~manager()
 {
+    if(this == global_instance() &&
+       tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) > 0)
+        std::cout << *(m_total_timer.get()) << std::endl;
+
 #if defined(DEBUG)
     if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
     {
@@ -309,11 +314,12 @@ manager::~manager()
 
     if(this == _tim_manager_ptr() && get_thread_id() == _tim_manager_tid())
         _tim_manager_ptr() = nullptr;
+
 }
 
 //============================================================================//
 
-void manager::update_global_timer_format()
+void manager::update_total_timer_format()
 {
     if(this == global_instance())
     {
@@ -335,7 +341,7 @@ void manager::insert_global_timer()
        m_timer_map.size() == 0 &&
        m_timer_list.size() == 0)
     {
-        update_global_timer_format();
+        update_total_timer_format();
         m_timer_map[0] = m_total_timer;
         m_timer_list.push_back(
                     timer_tuple_t(0, m_count, "exe_global_time",
@@ -463,7 +469,7 @@ manager::timer(const string_t& key,
 
     // synchronize format with level 1 and make sure MPI prefix is up-to-date
     if(m_timer_list.size() < 2)
-        update_global_timer_format();
+        update_total_timer_format();
 
     std::stringstream ss;
     // designated as [cxx], [pyc], etc.

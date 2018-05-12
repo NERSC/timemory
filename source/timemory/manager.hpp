@@ -337,7 +337,7 @@ public:
     timer_pair_t compute_overhead(tim_timer_t* timer_ref = nullptr);
     uint64_t laps() const { return compute_total_laps(); }
     uint64_t total_laps() const;
-    void update_global_timer_format();
+    void update_total_timer_format();
 
     friend std::ostream& operator<<(std::ostream& os, const manager& man)
     {
@@ -346,6 +346,11 @@ public:
         os << ss.str();
         return os;
     }
+
+    // reset the total timer
+    void start_total_timer();
+    void stop_total_timer();
+    void reset_total_timer();
 
 public:
     // serialization function
@@ -421,14 +426,28 @@ inline void
 manager::operator+=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
-        *(std::get<3>(itr).get()) += rhs;
+    {
+        bool _restart = itr.timer().is_running();
+        if(_restart)
+            itr.timer().stop();
+        itr.timer() += rhs;
+        if(_restart)
+            itr.timer().start();
+    }
 }
 //----------------------------------------------------------------------------//
 inline void
 manager::operator-=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
-        *(std::get<3>(itr).get()) -= rhs;
+    {
+        bool _restart = itr.timer().is_running();
+        if(_restart)
+            itr.timer().stop();
+        itr.timer() -= rhs;
+        if(_restart)
+            itr.timer().start();
+    }
 }
 //----------------------------------------------------------------------------//
 template <typename _Ret, typename _Func>
@@ -503,6 +522,29 @@ inline uint64_t
 manager::total_laps() const
 {
     return m_laps + compute_total_laps();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::start_total_timer()
+{
+    m_total_timer->stop();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::stop_total_timer()
+{
+    m_total_timer->stop();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::reset_total_timer()
+{
+    bool _restart = m_total_timer->is_running();
+    if(_restart)
+        m_total_timer->stop();
+    m_total_timer->reset();
+    if(_restart)
+        m_total_timer->start();
 }
 //----------------------------------------------------------------------------//
 

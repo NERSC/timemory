@@ -218,6 +218,12 @@ export(TARGETS ${INSTALL_LIBRARIES}
 
 
 #------------------------------------------------------------------------------#
+# timem wrapper tool
+#
+add_subdirectory(tools)
+
+
+#------------------------------------------------------------------------------#
 # Python bindings
 #
 if(TIMEMORY_USE_PYTHON_BINDING)

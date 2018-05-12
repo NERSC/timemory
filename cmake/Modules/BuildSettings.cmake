@@ -97,6 +97,9 @@ set(LIBNAME timemory)
 # set the compiler flags if not on Windows
 if(NOT SUBPROJECT AND NOT WIN32)
 
+    ############
+    #    CXX   #
+    ############
     add(CMAKE_CXX_FLAGS "-W -Wall -Wextra ${CXXFLAGS} $ENV{CXXFLAGS}")
     add(CMAKE_CXX_FLAGS "-Wno-unused-parameter -Wno-unknown-pragmas")
     add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
@@ -109,8 +112,14 @@ if(NOT SUBPROJECT AND NOT WIN32)
         add(CMAKE_CXX_FLAGS "-Wno-exceptions")
         add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
         add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+    else(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+        # Intel compiler 18.0 sets -fno-protect-parens by default
+        add(CMAKE_CXX_FLAGS "-fprotect-parens")
     endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
 
+    ############
+    #     C    #
+    ############
     add(CMAKE_C_FLAGS "-W -Wall -Wextra ${CFLAGS} $ENV{CFLAGS}")
     add(CMAKE_C_FLAGS "-Wno-unused-parameter")
     add(CMAKE_C_FLAGS "-Wunused-but-set-parameter")
@@ -118,8 +127,14 @@ if(NOT SUBPROJECT AND NOT WIN32)
 
     if(NOT CMAKE_C_COMPILER_IS_INTEL)
         add(CMAKE_C_FLAGS "-Wno-implicit-fallthrough")
+    else(NOT CMAKE_C_COMPILER_IS_INTEL)
+        # Intel compiler 18.0 sets -fno-protect-parens by default
+        add(CMAKE_C_FLAGS "-fprotect-parens")
     endif(NOT CMAKE_C_COMPILER_IS_INTEL)
 
+    ############
+    #   other
+    ############
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         add_definitions(-DDEBUG)
     else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -148,8 +163,8 @@ if(NOT SUBPROJECT AND NOT WIN32)
 
 elseif(NOT WIN32)
 
-    #add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    #add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    #add_c_flags(CMAKE_C_FLAGS "${CFLAGS} $ENV{CFLAGS}")
+    #add_cxx_flags(CMAKE_CXX_FLAGS "${CXXFLAGS} $ENV{CXXFLAGS}")
 
 endif(NOT SUBPROJECT AND NOT WIN32)
 

@@ -38,6 +38,7 @@
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
+#include <timemory/rss.hpp>
 
 typedef tim::timer          tim_timer_t;
 typedef tim::manager manager_t;
@@ -240,11 +241,16 @@ void test_rss_usage()
 {
     print_info(__FUNCTION__);
 
-    typedef std::vector<double> vector_t;
-    tim::rss::usage _rss_init;
-    tim::rss::usage _rss_end;
+    typedef std::vector<uint64_t> vector_t;
+
     tim::format::rss _format("", ": RSS [current = %c %A] [peak = %m %A]",
                              tim::units::kilobyte, false);
+
+    tim::rss::usage _rss_init(_format);
+    tim::rss::usage _rss_calc(_format);
+    _rss_init.format()->prefix("initial");
+    _rss_calc.format()->prefix("allocated");
+
     tim::format::rss _rformat("", "%C %A, %M %A, %c %A, %m %A",
                               tim::units::kilobyte, false);
     tim::format::timer _tformat(__FUNCTION__,
@@ -256,28 +262,34 @@ void test_rss_usage()
     rt.start();
     ct.start();
 
-    size_t n = 1000;
+    uint64_t nsize = 1048576;
+    vector_t* v = new vector_t();
+
     _rss_init.record();
-    print_string("init   " + _rss_init.str());
-    {
-        tim::rss::usage _rss_diff;
-        vector_t* v = new vector_t(n*n, 1.0);
+    v->reserve(nsize);
+    for(uint64_t i = 0; i < nsize; ++i)
+        v->push_back(i);
+    _rss_calc.record();
 
-        _rss_diff.record();
-        print_string("alloc  " + _rss_diff.str());
+    v->clear();
+    delete v;
 
-        _rss_diff -= _rss_init;
-        v->clear();
-        delete v;
+    // real usage
+    int64_t _r_usage = _rss_calc.current<int64_t>(tim::units::kilobyte) -
+                       _rss_init.current<int64_t>(tim::units::kilobyte);
 
-        _rss_diff.set_format(_format);
-        print_string("diff   " + _rss_diff.str());
-    }
-    _rss_end.record();
+    // expected usage
+    int64_t _e_usage = 8192;
+    // actual difference
+    int64_t _a_diff = std::abs(_r_usage - _e_usage);
 
-    print_string("final_a" + _rss_end.str());
-    _rss_end.set_format(_format);
-    print_string("final_b" + _rss_end.str());
+    std::cout << _rss_init << std::endl;
+    std::cout << _rss_calc << std::endl;
+    std::cout << "    real usage diff : " << _r_usage << std::endl;
+    std::cout << "expected usage diff : " << _e_usage << std::endl;
+    std::cout << "  actual difference : " << _a_diff << std::endl;
+
+    ASSERT_TRUE(_a_diff < 100);
 
     fibonacci(36);
 

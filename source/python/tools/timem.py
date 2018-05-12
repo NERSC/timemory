@@ -35,9 +35,13 @@ def handle_arguments():
     parser.add_argument('--timem-quiet',
         required=False, action='store_true', dest='quiet',
         help="Suppress reporting to stdout")
+    parser.add_argument('--debug',
+        required=False, action='store_true', dest='debug',
+        help="Enable debug output")
 
     parser.set_defaults(enable_handler=False)
     parser.set_defaults(quiet=False)
+    parser.set_defaults(debug=False)
 
     args, left = parser.parse_known_args()
     # replace sys.argv with unknown args only
@@ -51,25 +55,56 @@ def handle_arguments():
 #
 if __name__ == "__main__":
 
+    ret = 0
     try:
+        #----------------------------------------------------------------------#
+        #   parse arguments
+        #
         args = handle_arguments()
 
+        #----------------------------------------------------------------------#
+        #   import and setup
+        #
         import timemory
         import subprocess as sp
 
-        if len(sys.argv) > 1:
-            # Python 2.x doesn't have "run"
-            if sys.version_info[0] > 2:
-                sp.run(sys.argv[1:])
-            else:
-                sp.call(sys.argv[1:])
-
+        # grab a manager handle
         timemory_manager = timemory.manager()
+
+        # record python overhead memory
+        rss_init = timemory.rss_usage(record=True)
+
+        # reset total timer to zero
+        timemory_manager.reset_total_timer()
+
+        # run the command
+        if len(sys.argv) > 1:
+            p = sp.Popen(sys.argv[1:])
+            ret = p.wait()
+
+        # stop the total timer to ensure no extra timer gets added
+        timemory_manager.stop_total_timer()
+
+        # subtract out python overhead memory
+        timemory_manager -= rss_init
 
         #----------------------------------------------------------------------#
         #   reporting to stdout
         #
         if not args.quiet:
+
+            fmt = ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]"
+            # fix the format
+            if sys.version_info[0] > 2:
+                timemory.format.timer.set_default_format(fmt)
+            else:
+                timer_format = timemory.format.timer()
+                timer_format.set_default_format(fmt)
+
+            # update the format
+            timemory_manager.update_total_timer_format()
+
+            # generate report
             report = "{}".format(timemory_manager)
             if len(sys.argv) > 1:
                 report = report.replace("[exe]", "[{}]".format(sys.argv[1]))
@@ -91,3 +126,5 @@ if __name__ == "__main__":
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+    sys.exit(ret)

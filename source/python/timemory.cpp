@@ -313,8 +313,9 @@ PYBIND11_MODULE(timemory, tim)
         rss_format_t _fmt(prefix);
         if(format.length() > 0)
             _fmt.format(format);
-        rss_usage_t* _rss = (record)
-                            ? new rss_usage_t(0, _fmt) : new rss_usage_t(_fmt);
+        rss_usage_t* _rss = new rss_usage_t(_fmt);
+        if(record)
+            _rss->record();
         return _rss;
     };
     //------------------------------------------------------------------------//
@@ -797,6 +798,13 @@ PYBIND11_MODULE(timemory, tim)
               },
               "Set the format of the timer");
     //------------------------------------------------------------------------//
+    timer.def("reset",
+              [=] (py::object self)
+              {
+                  self.cast<tim_timer_t*>()->reset();
+              },
+              "Reset the timer");
+    //------------------------------------------------------------------------//
 
 
     //========================================================================//
@@ -1016,7 +1024,7 @@ PYBIND11_MODULE(timemory, tim)
                          *(_rss.cast<rss_usage_t*>());
                  return man;
              },
-             "Subtract RSS measurement");
+             "Subtract an rss usage from the entire list of timer");
     //------------------------------------------------------------------------//
     man.def("write_ctest_notes",
              [=] (py::object man, std::string directory, bool append)
@@ -1075,6 +1083,34 @@ PYBIND11_MODULE(timemory, tim)
              "Write a CTestNotes.cmake file",
              py::arg("directory") = ".",
              py::arg("append") = false);
+    //------------------------------------------------------------------------//
+    man.def("start_total_timer",
+            [=] (py::object self)
+            {
+                 self.cast<manager_wrapper*>()->get()->start_total_timer();
+            },
+            "Start the global timer (only use if explicitly stopped)");
+    //------------------------------------------------------------------------//
+    man.def("stop_total_timer",
+            [=] (py::object self)
+            {
+                 self.cast<manager_wrapper*>()->get()->stop_total_timer();
+            },
+            "Stop the global timer (for explicit measurement)");
+    //------------------------------------------------------------------------//
+    man.def("reset_total_timer",
+            [=] (py::object self)
+            {
+                 self.cast<manager_wrapper*>()->get()->reset_total_timer();
+            },
+            "Reset the global timer (for explicit measurement)");
+    //------------------------------------------------------------------------//
+    man.def("update_total_timer_format",
+            [=] (py::object self)
+            {
+                self.cast<manager_wrapper*>()->get()->update_total_timer_format();
+            },
+            "Update the format of the total timer to the default format");
     //------------------------------------------------------------------------//
 
 
@@ -1192,18 +1228,20 @@ PYBIND11_MODULE(timemory, tim)
                   py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_usage.def("current",
-                  [=] (py::object self)
+                  [=] (py::object self, int64_t _units = tim::units::megabyte)
                   {
-                      return self.cast<rss_usage_t*>()->current();
+                      return self.cast<rss_usage_t*>()->current(_units);
                   },
-                  "Return the current rss usage");
+                  "Return the current rss usage",
+                  py::arg("units") = units.attr("megabyte"));
     //------------------------------------------------------------------------//
     rss_usage.def("peak",
-                  [=] (py::object self)
+                  [=] (py::object self, int64_t _units = tim::units::megabyte)
                   {
-                      return self.cast<rss_usage_t*>()->peak();
+                      return self.cast<rss_usage_t*>()->peak(_units);
                   },
-                  "Return the current rss usage");
+                  "Return the current rss usage",
+                  py::arg("units") = units.attr("megabyte"));
     //------------------------------------------------------------------------//
     rss_usage.def("get_format",
               [=] (py::object self)
