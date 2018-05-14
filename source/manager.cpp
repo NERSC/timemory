@@ -34,6 +34,7 @@
 #include "timemory/timer.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/singleton.hpp"
 
 #include <sstream>
 #include <algorithm>
@@ -57,24 +58,6 @@ namespace tim
 
 //============================================================================//
 
-manager::pointer_type& local_instance()
-{
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    tim_static_thread_local manager::pointer_type& _instance = _tim_manager_ptr();
-    return _instance;
-}
-
-//============================================================================//
-
-manager::pointer_type& global_instance()
-{
-    //std::cout << __PRETTY_FUNCTION__ << std::endl;
-    static manager::pointer_type& _instance = _tim_manager_ptr();
-    return _instance;
-}
-
-//============================================================================//
-
 int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
@@ -85,32 +68,14 @@ std::atomic<int> manager::f_manager_instance_count;
 // static function
 manager::pointer_type manager::instance()
 {
-    if(!local_instance())
-    {
-        _tim_manager_initialization();
-        global_instance()->add(local_instance());
-    }
-
-    if(local_instance() != global_instance())
-        global_instance()->set_merge(true);
-
-    return local_instance();
+    return singleton<manager>::instance();
 }
 
 //============================================================================//
 // static function
 manager::pointer_type manager::master_instance()
 {
-    if(!local_instance())
-    {
-        _tim_manager_initialization();
-        global_instance()->add(local_instance());
-    }
-
-    if(local_instance() != global_instance())
-        global_instance()->set_merge(true);
-
-    return global_instance();
+    return singleton<manager>::master_instance();
 }
 
 //============================================================================//
@@ -141,14 +106,24 @@ manager::manager()
   m_laps(0),
   m_hash(0),
   m_count(0),
-  m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
-  m_p_count((global_instance()) ? global_instance()->count().load() : 0),
+  m_p_hash ((singleton<manager>::unsafe_master_instance())
+            ? singleton<manager>::unsafe_master_instance()->hash().load()  : 0),
+  m_p_count((singleton<manager>::unsafe_master_instance())
+            ? singleton<manager>::unsafe_master_instance()->count().load() : 0),
   m_report(&std::cout),
   m_overhead_timer(nullptr),
   m_total_timer(nullptr)
 {
-    if(!global_instance())
+    if(!singleton<manager>::unsafe_master_instance())
+    {
+        m_merge = true;
         tim::env::parse();
+    }
+    else
+    {
+        singleton<manager>::unsafe_master_instance()->set_merge(true);
+        singleton<manager>::unsafe_master_instance()->add(this);
+    }
 
     m_overhead_timer = new tim_timer_t();
     m_total_timer = timer_ptr_t(
@@ -181,12 +156,10 @@ manager::manager()
     m_overhead_timer->format()->prefix(ss.str());
     m_overhead_timer->start();
 
-    if(!global_instance())
-    {
-        global_instance() = this;
+    if(!singleton<manager>::unsafe_master_instance())
         insert_global_timer();
-    }
-    else if(global_instance() && local_instance())
+    else if(singleton<manager>::unsafe_master_instance() &&
+            singleton<manager>::unsafe_instance())
     {
         std::ostringstream ss;
         ss << "manager singleton has already been created";
@@ -198,7 +171,8 @@ manager::manager()
 
 manager::~manager()
 {
-    if(this == global_instance() && tim::env::output_total)
+    if(this == singleton<manager>::unsafe_master_instance() &&
+       tim::env::output_total)
         std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
 
 #if defined(DEBUG)
@@ -211,7 +185,6 @@ manager::~manager()
 #endif
 
     m_overhead_timer->stop();
-    --f_manager_instance_count;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
         ofstream_t* m_fos = get_ofstream(m_os);
@@ -226,15 +199,14 @@ manager::~manager()
     if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t" << global_instance()
-                  << "\nlocal instance:  \t" << local_instance()
+                  << "\nglobal instance: \t"
+                  << singleton<manager>::unsafe_master_instance()
+                  << "\nlocal instance:  \t"
+                  << singleton<manager>::unsafe_instance()
                   << std::endl;
 #endif
 
     close_ostream(m_report);
-
-    if(global_instance() == local_instance())
-        global_instance() = nullptr;
 
     for(auto& itr : m_daughters)
         if(itr != this)
@@ -245,20 +217,24 @@ manager::~manager()
     m_timer_map.clear();
     delete m_overhead_timer;
 
-    if(this == _tim_manager_ptr() && get_thread_id() == _tim_manager_tid())
-        _tim_manager_ptr() = nullptr;
+    if(this == singleton<manager>::unsafe_master_instance())
+        singleton<manager>::null_master_instance();
+
+    singleton<manager>::null_instance();
 }
 
 //============================================================================//
 
 void manager::update_total_timer_format()
 {
-    if(this == global_instance())
+    if((this == singleton<manager>::unsafe_master_instance() ||
+        m_instance_count == 0))
     {
         m_total_timer->format()->prefix(this->get_prefix() +
                                         string_t("[exe] total execution time"));
         m_total_timer->format()->format(tim::format::timer::default_format());
         m_total_timer->format()->unit(tim::format::timer::default_unit());
+        m_total_timer->format()->precision(tim::format::timer::default_precision());
         m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
         tim::format::timer::propose_default_width(
                     m_total_timer->format()->prefix().length());
@@ -269,7 +245,8 @@ void manager::update_total_timer_format()
 
 void manager::insert_global_timer()
 {
-    if(this == global_instance() &&
+    if((this == singleton<manager>::unsafe_master_instance() ||
+        m_instance_count == 0) &&
        m_timer_map.size() == 0 &&
        m_timer_list.size() == 0)
     {
@@ -278,7 +255,8 @@ void manager::insert_global_timer()
         m_timer_list.push_back(
                     timer_tuple_t(0, m_count, "exe_global_time",
                                   m_total_timer));
-        m_total_timer->start();
+        if(!m_total_timer->is_running())
+            m_total_timer->start();
         if(m_count == 0)
             m_count += 1;
     }
@@ -291,11 +269,11 @@ void manager::clear()
 #if defined(DEBUG)
     if(tim::env::verbose > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
-                  << local_instance() << "..." << std::endl;
+                  << instance() << "..." << std::endl;
 #endif
 
-    if(this == global_instance())
-        tim::format::timer::default_width(10);
+    if(this == singleton<manager>::unsafe_master_instance())
+        tim::format::timer::default_width(8);
 
     m_laps += compute_total_laps();
     m_timer_list.clear();
@@ -506,7 +484,7 @@ void manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
         *os << "> rank " << mpi_rank() << std::endl;
 
     // temporarily store output width
-    auto _width = tim::format::timer::default_width();
+    //auto _width = tim::format::timer::default_width();
     // reset output width
     tim::format::timer::default_width(10);
 
@@ -516,8 +494,8 @@ void manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
             tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
-    if(_width > 10 && _width < tim::format::timer::default_width())
-        tim::format::timer::default_width(_width);
+    //if(_width > 10 && _width < tim::format::timer::default_width())
+    //    tim::format::timer::default_width(_width);
 
     for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
         itr->timer().report(*os, (itr+1 == this->cend()) ? endline : true,
@@ -600,6 +578,7 @@ void manager::add(pointer_type ptr)
         std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
                   << ptr << " to " << this << "..." << std::endl;
 #endif
+    m_merge = true;
     m_daughters.insert(ptr);
 }
 
@@ -609,6 +588,16 @@ void manager::merge(bool div_clock)
 {
     if(!m_merge.load())
         return;
+
+    if(m_daughters.size() == 0)
+    {
+        if(m_overhead_timer->is_running())
+        {
+            m_overhead_timer->stop();
+            m_overhead_timer->start();
+        }
+        return;
+    }
 
     m_merge.store(false);
 
@@ -632,7 +621,7 @@ void manager::merge(bool div_clock)
     uomap<uint64_t, uint64_t> clock_div_count;
     for(auto& itr : m_daughters)
     {
-        if(itr == global_instance())
+        if(itr == singleton<manager>::unsafe_master_instance())
             continue;
 
 #if defined(DEBUG)

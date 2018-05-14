@@ -23,64 +23,40 @@
 //  SOFTWARE.
 
 #include "timemory/macros.hpp"
+#include "timemory/timemory.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/singleton.hpp"
+#include "timemory/base_timer.hpp"
+#include "timemory/serializer.hpp"
 
 //============================================================================//
-// Easier to type than colons
-typedef std::thread::id thread_id_t;
+
+timemory_manager_singleton_t* _timemory_manager_singleton = nullptr;
 
 //============================================================================//
-// Helper function
-thread_id_t get_thread_id()
+
+void _timemory_initialization()
 {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    return std::this_thread::get_id();
-}
-
-//============================================================================//
-//  initialized on main thread
-thread_id_t& _tim_manager_tid()
-{
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    tim_static_thread_local thread_id_t _instance_tid = get_thread_id();
-    return _instance_tid;
-}
-
-//============================================================================//
-//  initialized on main thread
-tim::manager*& _tim_manager_ptr()
-{
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    tim_static_thread_local tim::manager* _instance = nullptr;
-    return _instance;
-}
-
-//============================================================================//
-
-void _tim_manager_initialization()
-{
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    if(!_tim_manager_ptr())
+    if(!_timemory_manager_singleton)
     {
-        _tim_manager_tid() = get_thread_id();
-        _tim_manager_ptr() = new tim::manager();
+        _timemory_manager_singleton = new tim::singleton<tim::manager>();
+        _timemory_manager_singleton->initialize();
     }
     return;
 }
 
 //============================================================================//
 
-void _tim_manager_finalization()
+void _timemory_finalization()
 {
-    std::cout << __PRETTY_FUNCTION__ << std::endl;
-    // this seems to fail on Travis but nowhere else...
-    if(get_thread_id() == _tim_manager_tid())
+    if(_timemory_manager_singleton)
     {
-        delete _tim_manager_ptr();
-        _tim_manager_ptr() = nullptr;
+        _timemory_manager_singleton->destroy();
+        delete _timemory_manager_singleton;
+        _timemory_manager_singleton = nullptr;
     }
     return;
 }
@@ -94,14 +70,9 @@ namespace
     void setup_timemory_manager(void) __attribute__ ((constructor));
     void cleanup_timemory_manager(void) __attribute__((destructor));
 #endif
-    void setup_timemory_manager(void) { _tim_manager_initialization(); }
-    void cleanup_timemory_manager(void) { _tim_manager_finalization(); }
+    void setup_timemory_manager(void) { _timemory_initialization(); }
+    void cleanup_timemory_manager(void) { _timemory_finalization(); }
 }
-
-//============================================================================//
-
-CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//
 //
@@ -205,5 +176,22 @@ void cxx_timemory_record_memory(int _record_memory)
 {
     tim::timer::default_record_memory((_record_memory > 0) ? true : false);
 }
+
+//============================================================================//
+//
+//                      Serialization
+//
+//============================================================================//
+
+CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(tim::internal::base_timer, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(internal::base_clock_t, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(internal::base_clock_data_t, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(internal::base_duration_t, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(internal::base_time_point_t, TIMEMORY_TIMER_VERSION)
+CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
 
 //============================================================================//

@@ -537,13 +537,13 @@ void test_timing_thread()
     test_timing_thread(12);
 
     // divide the threaded clocks that are merge
-    //tman->merge(true);
+    tman->merge(true);
 
     bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 14);
+    ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
     tman->write_overhead();

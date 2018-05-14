@@ -538,7 +538,7 @@ void test_timing_thread()
     threads.clear();
 
     // divide the threaded clocks that are merge
-    //tman->merge(false);
+    tman->merge(true);
 
     bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);

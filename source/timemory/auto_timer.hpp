@@ -118,7 +118,7 @@ typedef     tim::auto_timer     auto_timer_t;
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 
-#if defined(TIMEMORY_PRETTY_FUNCTION)
+#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
 #   define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
 #else
 #   define __TIMEMORY_FUNCTION__ __FUNCTION__

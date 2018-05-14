@@ -128,7 +128,7 @@ tim_api void        c_timemory_record_memory        (int);
 #   define __FUNCTION__ __func__
 #endif
 
-#if defined(TIMEMORY_PRETTY_FUNCTION)
+#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
 #   define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
 #else
 #   define __TIMEMORY_FUNCTION__ __FUNCTION__

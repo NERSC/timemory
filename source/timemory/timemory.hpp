@@ -43,14 +43,15 @@
 #include "timemory/timer.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
+#include "timemory/singleton.hpp"
 
 // functions used to ensure initialization and destruction on library load
-extern tim_api tim::manager*&   _tim_manager_ptr();
-extern tim_api std::thread::id& _tim_manager_tid();
+typedef tim::singleton<tim::manager>            timemory_manager_singleton_t;
+extern tim_api timemory_manager_singleton_t*    _timemory_manager_singleton;
 
 // functions that do the initialization and destruction
-void _tim_manager_initialization();
-void _tim_manager_finalization();
+void _timemory_initialization();
+void _timemory_finalization();
 
 // for backwards-compatibility
 namespace tim { typedef manager timing_manager; }
