@@ -36,6 +36,7 @@ typedef std::thread::id thread_id_t;
 // Helper function
 thread_id_t get_thread_id()
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     return std::this_thread::get_id();
 }
 
@@ -43,6 +44,7 @@ thread_id_t get_thread_id()
 //  initialized on main thread
 thread_id_t& _tim_manager_tid()
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     tim_static_thread_local thread_id_t _instance_tid = get_thread_id();
     return _instance_tid;
 }
@@ -51,6 +53,7 @@ thread_id_t& _tim_manager_tid()
 //  initialized on main thread
 tim::manager*& _tim_manager_ptr()
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     tim_static_thread_local tim::manager* _instance = nullptr;
     return _instance;
 }
@@ -59,6 +62,7 @@ tim::manager*& _tim_manager_ptr()
 
 void _tim_manager_initialization()
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     if(!_tim_manager_ptr())
     {
         _tim_manager_tid() = get_thread_id();
@@ -71,6 +75,7 @@ void _tim_manager_initialization()
 
 void _tim_manager_finalization()
 {
+    std::cout << __PRETTY_FUNCTION__ << std::endl;
     // this seems to fail on Travis but nowhere else...
     if(get_thread_id() == _tim_manager_tid())
     {

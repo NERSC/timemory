@@ -59,6 +59,7 @@ namespace tim
 
 manager::pointer_type& local_instance()
 {
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     tim_static_thread_local manager::pointer_type& _instance = _tim_manager_ptr();
     return _instance;
 }
@@ -67,6 +68,7 @@ manager::pointer_type& local_instance()
 
 manager::pointer_type& global_instance()
 {
+    //std::cout << __PRETTY_FUNCTION__ << std::endl;
     static manager::pointer_type& _instance = _tim_manager_ptr();
     return _instance;
 }
@@ -85,7 +87,7 @@ manager::pointer_type manager::instance()
 {
     if(!local_instance())
     {
-        local_instance() = new manager();
+        _tim_manager_initialization();
         global_instance()->add(local_instance());
     }
 
@@ -101,7 +103,7 @@ manager::pointer_type manager::master_instance()
 {
     if(!local_instance())
     {
-        local_instance() = new manager();
+        _tim_manager_initialization();
         global_instance()->add(local_instance());
     }
 
