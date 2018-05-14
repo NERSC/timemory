@@ -33,6 +33,7 @@
 #include "timemory/serializer.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/environment.hpp"
+#include "timemory/timemory.hpp"
 
 #include <sstream>
 #include <algorithm>
@@ -49,69 +50,7 @@ typedef std::thread::id thread_id_t;
 
 //============================================================================//
 // Helper function
-thread_id_t get_thread_id()
-{
-    return std::this_thread::get_id();
-}
-
-//============================================================================//
-//  initialized on main thread
-thread_id_t& _tim_manager_tid()
-{
-    tim_static_thread_local thread_id_t _instance_tid = get_thread_id();
-    return _instance_tid;
-}
-
-//============================================================================//
-//  initialized on main thread
-tim::manager*& _tim_manager_ptr()
-{
-    tim_static_thread_local tim::manager* _instance = nullptr;
-    return _instance;
-}
-
-//============================================================================//
-
-void _tim_manager_initialization()
-{
-    if(!_tim_manager_ptr())
-    {
-        _tim_manager_tid() = get_thread_id();
-        _tim_manager_ptr() = new tim::manager();
-    }
-    return;
-}
-
-//============================================================================//
-
-void _tim_manager_finalization()
-{
-    // this seems to fail on Travis but nowhere else...
-    /*if(get_thread_id() == _tim_manager_tid())
-    {
-        delete _tim_manager_ptr();
-        _tim_manager_ptr() = nullptr;
-    }*/
-    return;
-}
-
-//============================================================================//
-// These two functions are guaranteed to be called at load and
-// unload of the library containing this code.
-namespace
-{
-#if !defined(_WINDOWS)
-    void setup_timemory_manager(void) __attribute__ ((constructor));
-    void cleanup_timemory_manager(void) __attribute__((destructor));
-#endif
-    void setup_timemory_manager(void) { _tim_manager_initialization(); }
-    void cleanup_timemory_manager(void) { _tim_manager_finalization(); }
-}
-
-//============================================================================//
-
-CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
+extern thread_id_t get_thread_id();
 
 namespace tim
 {
@@ -120,7 +59,7 @@ namespace tim
 
 manager::pointer_type& local_instance()
 {
-    tim_static_thread_local manager::pointer_type _instance = _tim_manager_ptr();
+    tim_static_thread_local manager::pointer_type& _instance = _tim_manager_ptr();
     return _instance;
 }
 
@@ -128,7 +67,7 @@ manager::pointer_type& local_instance()
 
 manager::pointer_type& global_instance()
 {
-    static manager::pointer_type _instance = _tim_manager_ptr();
+    static manager::pointer_type& _instance = _tim_manager_ptr();
     return _instance;
 }
 
@@ -257,8 +196,8 @@ manager::manager()
 
 manager::~manager()
 {
-    if(this == global_instance() && tim::env::output_total > 0)
-        std::cout << *(m_total_timer.get()) << std::endl;
+    if(this == global_instance() && tim::env::output_total)
+        std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
 
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
@@ -306,7 +245,6 @@ manager::~manager()
 
     if(this == _tim_manager_ptr() && get_thread_id() == _tim_manager_tid())
         _tim_manager_ptr() = nullptr;
-
 }
 
 //============================================================================//

@@ -103,30 +103,36 @@ timer::format_pair_t timer::f_current =
 //      field lists
 //============================================================================//
 
-rss::field_list_t   rss::f_field_list =
+rss::field_list_t   rss::get_field_list()
 {
-    rss::field_pair_t("%C", rss::field::current     ),
-    rss::field_pair_t("%M", rss::field::peak        ),
-    rss::field_pair_t("%c", rss::field::self_curr   ),
-    rss::field_pair_t("%m", rss::field::self_peak   ),
-    rss::field_pair_t("%C", rss::field::total_curr  ),
-    rss::field_pair_t("%M", rss::field::total_peak  ),
-    rss::field_pair_t("%A", rss::field::memory_unit )
-};
+    return
+    {
+        rss::field_pair_t("%C", rss::field::current     ),
+        rss::field_pair_t("%M", rss::field::peak        ),
+        rss::field_pair_t("%c", rss::field::self_curr   ),
+        rss::field_pair_t("%m", rss::field::self_peak   ),
+        rss::field_pair_t("%C", rss::field::total_curr  ),
+        rss::field_pair_t("%M", rss::field::total_peak  ),
+        rss::field_pair_t("%A", rss::field::memory_unit )
+    };
+}
 
 //----------------------------------------------------------------------------//
 
-timer::field_list_t   timer::f_field_list =
+timer::field_list_t   timer::get_field_list()
 {
-    timer::field_pair_t("%w", timer::field::wall        ),
-    timer::field_pair_t("%u", timer::field::user        ),
-    timer::field_pair_t("%s", timer::field::system      ),
-    timer::field_pair_t("%t", timer::field::cpu         ),
-    timer::field_pair_t("%p", timer::field::percent     ),
-    timer::field_pair_t("%R", timer::field::rss         ),
-    timer::field_pair_t("%l", timer::field::laps        ),
-    timer::field_pair_t("%T", timer::field::timing_unit ),
-};
+    return
+    {
+        timer::field_pair_t("%w", timer::field::wall        ),
+        timer::field_pair_t("%u", timer::field::user        ),
+        timer::field_pair_t("%s", timer::field::system      ),
+        timer::field_pair_t("%t", timer::field::cpu         ),
+        timer::field_pair_t("%p", timer::field::percent     ),
+        timer::field_pair_t("%R", timer::field::rss         ),
+        timer::field_pair_t("%l", timer::field::laps        ),
+        timer::field_pair_t("%T", timer::field::timing_unit ),
+    };
+}
 
 //----------------------------------------------------------------------------//
 
@@ -217,7 +223,7 @@ timer::operator()(const internal::base_timer* t) const
             noff = std::max(noff, (uint16_t) (log10(_time) + 2));
     _noff = std::max(noff, _noff);
 
-    for(auto itr : f_field_list)
+    for(auto itr : get_field_list())
     {
         std::stringstream _ss;
         _ss.precision(this->precision());
@@ -390,7 +396,7 @@ rss::operator()(const string_t& _base) const
 {
     string_t _str = (_base.length() == 0) ? this->compose() : _base;
 
-    for(auto itr : f_field_list)
+    for(auto itr : get_field_list())
     {
         auto _replace = [&] (const string_t& _itr, const string_t& _rep)
         {
@@ -446,7 +452,7 @@ rss::operator()(const tim::rss::usage* m) const
             wrss = std::max(wrss, (uint16_t) (log10(_mem) + 2));
     _wrss = std::max(wrss, _wrss);
 
-    for(auto itr : f_field_list)
+    for(auto itr : get_field_list())
     {
         std::stringstream _ss;
         _ss.precision(this->precision());
@@ -518,7 +524,7 @@ rss::operator()(const tim::rss::usage_delta* m,
             wrss = std::max(wrss, (uint16_t) (log10(_mem) + 2));
     _wrss = std::max(wrss, _wrss);
 
-    for(auto itr : f_field_list)
+    for(auto itr : get_field_list())
     {
         std::stringstream _ss;
         _ss.precision(this->precision());

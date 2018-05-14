@@ -551,17 +551,6 @@ manager::reset_total_timer()
 
 } // namespace tim
 
-// functions used to ensure initialization and destruction on library load
-extern tim_api tim::manager*&   _tim_manager_ptr();
-extern tim_api std::thread::id& _tim_manager_tid();
-
-// functions that do the initialization and destruction
-void _tim_manager_initialization();
-void _tim_manager_finalization();
-
-// for backwards-compatibility
-namespace tim { typedef manager timing_manager; }
-
 #pragma GCC diagnostic pop
 
 #endif // manager_hpp_

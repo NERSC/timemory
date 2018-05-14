@@ -86,10 +86,10 @@ class timemory_test(unittest.TestCase):
 
         # should be 8 MB
         nsize = 1048576
-        arr1 = np.zeros(shape=[nsize], dtype=np.uint64)
+        arr1 = np.ones(shape=[nsize], dtype=np.uint64, order='C')
 
-        for i in range(nsize):
-            arr1[i] = i
+        #for i in range(nsize):
+        #    arr1[i] = i
 
         rss_post.record()
 

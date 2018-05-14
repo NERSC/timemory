@@ -254,7 +254,7 @@ protected:
 
 private:
     // private static members
-    static field_list_t     f_field_list;
+    static field_list_t     get_field_list();
     static core_formatter   f_current;
     static storage_type     f_history;
 
@@ -363,7 +363,7 @@ protected:
 
 private:
     // private static members
-    static field_list_t     f_field_list;
+    static field_list_t     get_field_list();
     static format_pair_t    f_current;
     static storage_type     f_history;
 };

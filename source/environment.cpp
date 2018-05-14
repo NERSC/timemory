@@ -133,16 +133,17 @@ void parse()
         if(_unit.length() == 0)
             return (int64_t) 0;
 
-        using pair_vector_t = std::vector<std::tuple<string_t, string_t, int64_t>>;
+        using inner = std::tuple<string_t, string_t, int64_t>;
+        using pair_vector_t = std::vector<inner>;
         pair_vector_t matching =
         {
-            { "psec",   "picosecond",   tim::units::psec    },
-            { "nsec",   "nanosecond",   tim::units::nsec    },
-            { "usec",   "microsecond",  tim::units::usec    },
-            { "msec",   "millisecond",  tim::units::msec    },
-            { "csec",   "centisecond",  tim::units::csec    },
-            { "dsec",   "decisecond",   tim::units::dsec    },
-            { "sec",    "second",       tim::units::sec     }
+            inner( "psec",   "picosecond",   tim::units::psec    ),
+            inner( "nsec",   "nanosecond",   tim::units::nsec    ),
+            inner( "usec",   "microsecond",  tim::units::usec    ),
+            inner( "msec",   "millisecond",  tim::units::msec    ),
+            inner( "csec",   "centisecond",  tim::units::csec    ),
+            inner( "dsec",   "decisecond",   tim::units::dsec    ),
+            inner( "sec",    "second",       tim::units::sec     )
         };
 
         _unit = tolower(_unit);
@@ -160,15 +161,16 @@ void parse()
         if(_unit.length() == 0)
             return (int64_t) 0;
 
-        using pair_vector_t = std::vector<std::tuple<string_t, string_t, string_t, int64_t>>;
+        using inner = std::tuple<string_t, string_t, string_t, int64_t>;
+        using pair_vector_t = std::vector<inner>;
         pair_vector_t matching =
         {
-            { "byte",       "B",    "Bi",   tim::units::byte        },
-            { "kilobyte",   "KB",   "KiB",  tim::units::kilobyte    },
-            { "megabyte",   "MB",   "MiB",  tim::units::megabyte    },
-            { "gigabyte",   "GB",   "GiB",  tim::units::gigabyte    },
-            { "terabyte",   "TB",   "TiB",  tim::units::terabyte    },
-            { "petabyte",   "PB",   "PiB",  tim::units::petabyte    }
+            inner( "byte",       "B",    "Bi",   tim::units::byte        ),
+            inner( "kilobyte",   "KB",   "KiB",  tim::units::kilobyte    ),
+            inner( "megabyte",   "MB",   "MiB",  tim::units::megabyte    ),
+            inner( "gigabyte",   "GB",   "GiB",  tim::units::gigabyte    ),
+            inner( "terabyte",   "TB",   "TiB",  tim::units::terabyte    ),
+            inner( "petabyte",   "PB",   "PiB",  tim::units::petabyte    )
         };
 
         _unit = tolower(_unit);
