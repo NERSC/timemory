@@ -118,9 +118,6 @@ def main(nfib):
 #------------------------------------------------------------------------------#
 def run_test():
 
-    manager = timemory.manager()
-    manager.clear()
-
     timemory.enable_signal_detection([ signals.sys_signal.Hangup,
                                        signals.sys_signal.Interrupt,
                                        signals.sys_signal.FPE,
@@ -168,7 +165,7 @@ def run_test():
 
     t.stop()
     print("RSS usage at initialization: {}".format(rss))
-    t -= rss
+    #t -= rss
     t.report()
     print("{}\n".format(timemory.rss_usage(record=True, prefix="RSS usage at finalization")))
     print("{}".format(timemory.get_overhead_report()))

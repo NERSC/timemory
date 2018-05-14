@@ -667,7 +667,7 @@ def plot_generic(_plot_data, _types, _data_dict,
     if ntics == 0:
         print ('{} had no {} data less than the minimum time ({} {})'.format(
                filename, _type_str, _type_min, _type_unit))
-        return()
+        return False
 
     avgs = nested_dict()
     stds = nested_dict()
@@ -769,7 +769,7 @@ def plot_generic(_plot_data, _types, _data_dict,
     #    ax.axhline(y=ymin, ls='--')
     #plt.gca().grid(b=True, which='major', axis='y', markevery=nitem)
     #plt.gca().set_markevery()
-
+    return True
 
 
 #==============================================================================#
@@ -796,12 +796,14 @@ def plot_timing(_plot_data,
     _plot_min = (_params.timing_max_value *
                  (0.01 * _params.timing_min_percent))
 
-    plot_generic(_plot_data,
-                 _params.timing_fields,
-                 _plot_data.get_timing(),
-                 _ext,
-                 _plot_min,
-                 's')
+    _do_plot = plot_generic(_plot_data,
+                            _params.timing_fields,
+                            _plot_data.get_timing(),
+                            _ext,
+                            _plot_min,
+                            's')
+    if not _do_plot:
+        return
 
     plt.xlabel('Time [seconds]')
     plt.title('Timing report for {}'.format(title))
@@ -853,12 +855,15 @@ def plot_memory(_plot_data,
     _plot_min = (_params.timing_max_value *
                  (0.01 * _params.timing_min_percent))
 
-    plot_generic(_plot_data,
-                 _params.memory_fields,
-                 _plot_data.get_memory(),
-                 _ext,
-                 _plot_min,
-                 'MB')
+    _do_plot = plot_generic(_plot_data,
+                            _params.memory_fields,
+                            _plot_data.get_memory(),
+                            _ext,
+                            _plot_min,
+                            'MB')
+
+    if not _do_plot:
+        return
 
     plt.xlabel('Memory [MB]')
     plt.title('Memory report for {}'.format(title))

@@ -96,9 +96,6 @@ def main(nfib):
 # ---------------------------------------------------------------------------- #
 def run_test():
 
-    manager = timemory.manager()
-    manager.clear()
-
     default_nfib = 29
     timemory.enable_signal_detection()
 
