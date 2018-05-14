@@ -295,6 +295,7 @@ void timer::set_default(const timer& rhs)
     timer::default_precision(rhs.precision());
     timer::default_rss_format(rhs.rss_format());
     timer::default_unit(rhs.unit());
+    timer::default_fixed(rhs.fixed());
     timer::default_width(rhs.width());
 }
 
@@ -307,6 +308,7 @@ timer timer::get_default()
     obj.precision(timer::default_precision());
     obj.rss_format(timer::default_rss_format());
     obj.unit(timer::default_unit());
+    obj.fixed(timer::default_fixed());
     obj.width(timer::default_width());
     return obj;
 }
@@ -319,7 +321,9 @@ timer* timer::copy_from(const timer* rhs)
     this->width() = rhs->width();
     this->unit() = rhs->unit();
     this->format() = rhs->format();
+    this->fixed() = rhs->fixed();
     this->rss_format() = rhs->rss_format();
+    this->align_width() = rhs->align_width();
     return this;
 }
 
@@ -580,6 +584,7 @@ void rss::set_default(const rss& rhs)
     rss::default_precision(rhs.precision());
     rss::default_unit(rhs.unit());
     rss::default_width(rhs.width());
+    rss::default_fixed(rhs.fixed());
 }
 
 //----------------------------------------------------------------------------//
@@ -591,6 +596,7 @@ rss rss::get_default()
     obj.precision(rss::default_precision());
     obj.unit(rss::default_unit());
     obj.width(rss::default_width());
+    obj.fixed(rss::default_fixed());
     return obj;
 }
 
@@ -602,6 +608,8 @@ rss* rss::copy_from(const rss* rhs)
     this->width() = rhs->width();
     this->unit() = rhs->unit();
     this->format() = rhs->format();
+    this->fixed() = rhs->fixed();
+    this->align_width() = rhs->align_width();
     return this;
 }
 

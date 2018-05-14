@@ -1,16 +1,20 @@
 // C program to illustrate  use of fork() &
 // exec() system call for process creation
 
+#include "timemory/macros.hpp"
+
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include <errno.h>
-#include <sys/wait.h>
 #include <string.h>
+#include <sys/wait.h>
+#include <sys/types.h>
+
+#if defined(_UNIX)
+#   include <unistd.h>
+#endif
 
 #include "timemory/manager.hpp"
-#include "timemory/macros.hpp"
 #include "timemory/rss.hpp"
 #include "timemory/timer.hpp"
 
@@ -24,13 +28,10 @@ typedef std::vector<uint64_t> vector_t;
 
 //----------------------------------------------------------------------------//
 
-void consume_memory()
-{
-    uint64_t n = 10000000;
-    vector_t v;
-    for(uint64_t i = 0; i < n; ++i)
-        v.push_back(i);
-}
+tim::rss::usage rss_init;
+std::string tim_format =
+        ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]";
+std::string command = "";
 
 //----------------------------------------------------------------------------//
 
@@ -42,16 +43,30 @@ void failed_fork()
 
 //----------------------------------------------------------------------------//
 
+void report()
+{
+    tim::manager::instance()->stop_total_timer();
+    (*tim::manager::instance()) -= rss_init;
+
+    std::stringstream _ss_report;
+    _ss_report << (*tim::manager::instance());
+    std::string _report = _ss_report.str();
+    if(command.length() > 0)
+        _report.replace(_report.find("[exe]")+1, 3, command.c_str());
+
+    std::cout << "\n" << _report << std::endl;
+
+    exit(0);
+}
+
+//----------------------------------------------------------------------------//
+
 void parent_process(pid_t pid)
 {
     int status;
 
-    // a positive number is returned for the pid of
-    // parent process
-    // getppid() returns process id of parent of
-    // calling process
-
-    //printf("parent process, pid = %u, ppid = %u\n", getpid(), getppid());
+    // a positive number is returned for the pid of parent process
+    // getppid() returns process id of parent of calling process
 
     // the parent process calls waitpid() on the child
     // waitpid() system call suspends execution of
@@ -65,21 +80,26 @@ void parent_process(pid_t pid)
         if (WIFEXITED(status) && !WEXITSTATUS(status))
         {
             if(getpid() != getppid() + 1)
-            {
-                std::cout << (*tim::manager::instance()) << std::endl;
-                tim::manager::instance()->write_json("timem.json");
-            }
+                report();
         }
         else if (WIFEXITED(status) && WEXITSTATUS(status))
         {
+            #if defined(DEBUG)
             if (WEXITSTATUS(status) == 127)
                 printf("execv failed\n");
             else
                 printf("program terminated normally,"
                        " but returned a non-zero status\n");
+            #endif
+            exit(WEXITSTATUS(status));
         }
         else
+        {
+            #if defined(DEBUG)
             printf("program didn't terminate normally\n");
+            #endif
+            exit(-1);
+        }
     }
     else
         printf("waitpid() failed\n");
@@ -91,19 +111,21 @@ void parent_process(pid_t pid)
 
 void child_process(int argc, char** argv)
 {
-    // the argv list first argument should point to
-    // filename associated with file being executed
-    // the array pointer must be terminated by NULL
-    // pointer
-    char** argv_list = new char*[argc];
-    memcpy(argv_list, &(argv[1]), argc*sizeof(char*));
+    if(argc < 2)
+        exit(0);
+
+    // the argv list first argument should point to filename associated
+    // with file being executed the array pointer must be terminated by
+    // NULL pointer
+
+    char** argv_list = (char**) malloc(sizeof(char*) * argc);
+    for(int i = 0; i < argc - 1; i++)
+        argv_list[i] = argv[i+1];
     argv_list[argc-1] = NULL;
 
-    // the execv() only return if error occured.
-    // The return value is -1
-    execvp(argv[0], argv_list);
+    // launch the child
+    execvp(argv_list[0], argv_list);
 
-    delete [] argv_list;
     exit(0);
 }
 
@@ -111,9 +133,20 @@ void child_process(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-    pid_t pid = fork();
+    rss_init.record();
+    tim::format::timer::set_default_format(tim_format);
+    tim::manager::instance()->update_total_timer_format();
 
-    //printf("main, pid = %u\n", pid);
+    if(argc > 1)
+        command = std::string(const_cast<const char*>(argv[1]));
+    else
+    {
+        tim::manager::instance()->reset_total_timer();
+        report();
+    }
+
+    pid_t pid = fork();
+    tim::manager::instance()->reset_total_timer();
 
     if(pid == -1) // pid == -1 means error occured
         failed_fork();

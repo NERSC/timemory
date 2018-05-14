@@ -162,6 +162,23 @@ _Tp get_env(const std::string& env_id, _Tp _default = _Tp())
 }
 
 //----------------------------------------------------------------------------//
+// specialization for string since the above will have issues if string
+// includes spaces
+template <> inline
+std::string get_env(const std::string& env_id, std::string _default)
+{
+    char* env_var = std::getenv(env_id.c_str());
+    if(env_var)
+    {
+        std::stringstream ss;
+        ss << env_var;
+        return ss.str();
+    }
+    // return default if not specified in environment
+    return _default;
+}
+
+//----------------------------------------------------------------------------//
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
 inline str_list_t
 delimit(const std::string& _str, const std::string& _delims,

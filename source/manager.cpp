@@ -32,11 +32,16 @@
 #include "timemory/auto_timer.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/environment.hpp"
 
 #include <sstream>
 #include <algorithm>
 #include <thread>
 #include <cstdint>
+
+#if !defined(TIMEMORY_DEFAULT_ENABLED)
+#   define TIMEMORY_DEFAULT_ENABLED true
+#endif
 
 //============================================================================//
 // Easier to type than colons
@@ -129,14 +134,6 @@ manager::pointer_type& global_instance()
 
 //============================================================================//
 
-int32_t& manager::max_depth() { return f_max_depth; }
-
-//============================================================================//
-
-bool manager::is_enabled() { return f_enabled; }
-
-//============================================================================//
-
 int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
@@ -177,7 +174,7 @@ manager::pointer_type manager::master_instance()
 
 //============================================================================//
 
-bool manager::f_enabled = true;
+bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
 
 //============================================================================//
 
@@ -196,13 +193,6 @@ void manager::set_get_num_threads_func(get_num_threads_func_t f)
 }
 
 //============================================================================//
-// static function
-void manager::enable(bool val)
-{
-    f_enabled = val;
-}
-
-//============================================================================//
 
 manager::manager()
 : m_merge(false),
@@ -216,6 +206,9 @@ manager::manager()
   m_overhead_timer(nullptr),
   m_total_timer(nullptr)
 {
+    if(!global_instance())
+        tim::env::parse();
+
     m_overhead_timer = new tim_timer_t();
     m_total_timer = timer_ptr_t(
                         new tim_timer_t(
@@ -226,7 +219,7 @@ manager::manager()
                                 tim::format::timer::default_rss_format(),
                                 true)));
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
     {
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cout << "tim::manager creation " << m_instance_count
@@ -234,7 +227,7 @@ manager::manager()
     }
 #endif
 
-    if(tim::get_env<int>("TIMEMORY_DISABLE_TIMER_MEMORY", 0) > 0)
+    if(tim::env::disable_timer_memory > 0)
     {
         tim::timer::default_record_memory(false);
         m_overhead_timer->record_memory(false);
@@ -264,12 +257,11 @@ manager::manager()
 
 manager::~manager()
 {
-    if(this == global_instance() &&
-       tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) > 0)
+    if(this == global_instance() && tim::env::output_total > 0)
         std::cout << *(m_total_timer.get()) << std::endl;
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
     {
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cout << "tim::manager deletion " << m_instance_count
@@ -290,7 +282,7 @@ manager::~manager()
     };
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t" << global_instance()
@@ -357,7 +349,7 @@ void manager::insert_global_timer()
 void manager::clear()
 {
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::env::verbose > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
                   << local_instance() << "..." << std::endl;
 #endif
@@ -631,7 +623,7 @@ void manager::set_output_stream(const path_t& fname)
         else
         {
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
             {
                 tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
@@ -664,7 +656,7 @@ void manager::add(pointer_type ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
                   << ptr << " to " << this << "..." << std::endl;
 #endif
@@ -685,10 +677,11 @@ void manager::merge(bool div_clock)
         m_overhead_timer->stop();
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
     {
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "instance " << m_instance_count << " : " << __PRETTY_FUNCTION__
+        std::cout << "instance " << m_instance_count << " : "
+                  << __FUNCTION__
                   << " (div_clock = " << std::boolalpha
                   << div_clock << ") ..." << std::endl;
     }
@@ -703,7 +696,7 @@ void manager::merge(bool div_clock)
             continue;
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
         {
             tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
             std::cout << "\tinstance " << m_instance_count << " merging "
@@ -714,7 +707,7 @@ void manager::merge(bool div_clock)
         //itr->overhead_timer()->stop();
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::env::verbose > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
                   << "..." << std::endl;
 #endif
@@ -1129,7 +1122,9 @@ manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    const int32_t nthreads = tim::get_env<int32_t>("OMP_NUM_THREADS", 1);
+    int32_t nthreads = tim::env::num_threads;
+    if(nthreads == 0)
+        nthreads = 1;
     int32_t max_processes = max_concurrency / nthreads;
     int32_t mpi_node_default = mpi_size() / max_processes;
     if(mpi_node_default < 1)
@@ -1144,7 +1139,7 @@ manager::get_communicator_group()
     MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::env::verbose > 1)
     {
         int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
         int32_t local_mpi_size = mpi_size(local_mpi_comm);

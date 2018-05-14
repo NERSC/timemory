@@ -42,8 +42,8 @@ file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 # this is only needed for windows
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 # set the languages
-set_source_files_properties(${c_headers}   ${c_sources}   PROPERTIES LANGUAGE C)
-set_source_files_properties(${cxx_headers} ${cxx_sources} PROPERTIES LANGUAGE CXX)
+set_source_files_properties(${c_sources} PROPERTIES LANGUAGE C)
+set_source_files_properties(${cxx_sources} PROPERTIES LANGUAGE CXX)
 
 # libraries to install
 set(INSTALL_LIBRARIES )
@@ -67,11 +67,6 @@ macro(BUILD_LIBRARY)
 
     cmake_parse_arguments(
         LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
-
-    #message(STATUS "")
-    #foreach(_VAR ${_options} ${_onevalue} ${_multival})
-    #    message(STATUS "${_VAR} \t\t ${LIBRARY_${_VAR}}")
-    #endforeach(_VAR ${_options} ${_onevalue} ${multival})
 
     add_library(
         ${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
@@ -135,10 +130,8 @@ add_subdirectory(timemory)
 set(_COMPILE_DEFS )
 set(_OUTPUT_DIR )
 # directly compile sources
-set(C_LIBRARY_SOURCES   ${c_sources} #${c_headers}
-    )
-set(CXX_LIBRARY_SOURCES ${cxx_sources} #${cxx_headers} ${cereal_headers}
-    )
+set(C_LIBRARY_SOURCES   ${c_sources}   ${c_headers})
+set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cereal_headers})
 
 # if Windows, set _COMPILE_DEFS and possibly _ARCHIVE_SUFFIX
 if(WIN32)

@@ -73,8 +73,6 @@ tim::timer run(int64_t n, bool with_timing, int64_t cutoff)
 //===========================================================================//
 int main(int argc, char** argv)
 {
-    //tim::manager::enable(false);
-
     // default calc: fibonacci(40)
     int nfib = 40;
     if(argc > 1)

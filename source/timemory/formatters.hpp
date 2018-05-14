@@ -146,7 +146,11 @@ public:
     void prefix(const string_t& _val)       { m_prefix = _val; }
     void suffix(const string_t& _val)       { m_suffix = _val; }
 
-    const bool& align_width() const         { return m_align_width; }
+    bool&           align_width()           { return m_align_width; }
+    string_t&       prefix()                { return m_prefix; }
+    string_t&       suffix()                { return m_suffix; }
+
+    const bool&     align_width() const         { return m_align_width; }
     const string_t& prefix() const          { return m_prefix; }
     const string_t& suffix() const          { return m_suffix; }
 

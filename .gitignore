@@ -40,3 +40,5 @@ timing_report*
 # documentation
 /html
 /docs
+
+/source/alloc

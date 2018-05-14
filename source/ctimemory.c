@@ -43,9 +43,10 @@ extern void         cxx_timemory_record_memory      (int);
 
 void* c_timemory_create_auto_timer(const char* tag, int lineno)
 {
-    return (cxx_timemory_enabled())
-            ? cxx_timemory_create_auto_timer(tag, lineno, "_c_", false)
-            : NULL;
+    return cxx_timemory_create_auto_timer(tag, lineno, "_c_", false);
+    //return (cxx_timemory_enabled())
+    //        ? cxx_timemory_create_auto_timer(tag, lineno, "_c_", false)
+    //        : NULL;
 }
 
 //============================================================================//
@@ -74,9 +75,6 @@ void c_timemory_print(void)
 
 const char* c_timemory_string_combine(const char* _a, const char* _b)
 {
-    //char* buff = (char*) malloc(sizeof(char) * 256);
-    //sprintf(buff, "%s%s", _a, _b);
-    //return (const char*) buff;
     return cxx_timemory_string_combine(_a, _b);
 }
 
@@ -85,9 +83,6 @@ const char* c_timemory_string_combine(const char* _a, const char* _b)
 const char* c_timemory_auto_timer_str(const char* _a, const char* _b,
                                       const char* _c, int _d)
 {
-    //char* buff = (char*) malloc(sizeof(char) * 256);
-    //sprintf(buff, "%s%s@'%s':%i", _a, _b, _c, _d);
-    //return (const char*) buff;
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }
 

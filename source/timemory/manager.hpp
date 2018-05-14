@@ -219,10 +219,13 @@ public:
     // Public static functions
     static pointer_type instance();
     static pointer_type master_instance();
-    static void enable(bool val = true);
+    static void enable(bool val = true) { f_enabled = val; }
     static void set_get_num_threads_func(get_num_threads_func_t f);
-    static int32_t& max_depth();
-    static bool is_enabled();
+    static const int32_t& max_depth() { return f_max_depth; }
+    static void max_depth(const int32_t& val) { f_max_depth = val; }
+    static void set_max_depth(const int32_t& val) { f_max_depth = val; }
+    static int32_t get_max_depth() { return f_max_depth; }
+    static bool is_enabled() { return f_enabled; }
     // JSON writing
     static void write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
@@ -273,8 +276,6 @@ public:
     const_iterator  end() const     { return m_timer_list.cend(); }
     const_iterator  cend() const    { return m_timer_list.cend(); }
 
-    void set_max_depth(int32_t d) { f_max_depth = d; }
-    int32_t get_max_depth() { return f_max_depth; }
     void print(bool ign_cutoff = false, bool endline = true)
     { this->report(ign_cutoff, endline); }
 

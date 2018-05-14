@@ -5,7 +5,12 @@
 #
 ################################################################################
 
-set(TIMEM_NAME ctimem)
+if(WIN32)
+    # no support for Windows yet
+    return()
+endif(WIN32)
+
+set(TIMEM_NAME timem)
 
 add_executable(${TIMEM_NAME} timem.cpp)
 
