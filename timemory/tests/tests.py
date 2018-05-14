@@ -46,6 +46,8 @@ def run(pattern="", exit_at_failure=True):
             an empty string implies run all tests
     """
     import timemory
+    manager = timemory.manager()
+    manager.clear()
     test_names = [ 'timemory', 'array', 'nested', 'simple' ]
     names = []
     try:
@@ -80,8 +82,6 @@ def run(pattern="", exit_at_failure=True):
         except:
             _fail += 1
             print('\n>>>>>>> Test [ {} ] failed! <<<<<<<\n'.format(_f))
-        manager = timemory.manager()
-        manager.clear()
         t.stop()
         print('\n\n>>>>>>> {} <<<<<<<\n\n'.format(t))
     print('\n\n============== PASSING TESTS: {}/{} =============='.format(_call-_fail, _call))
