@@ -239,6 +239,8 @@ def measure(name, _time = 1, _rss = None):
 def run_test():
     timemory.enable_signal_detection()
     timemory.options.output_dir = "test_output"
+    manager = timemory.manager()
+    manager.clear()
 
     rss = timemory.rss_usage()
     rss.record()
@@ -251,7 +253,6 @@ def run_test():
     main()
     dummy()
 
-    manager = timemory.manager()
     manager -= rss
     print('\nTiming report:\n{}'.format(manager))
     freport = options.set_report("timing_array_test.out")

@@ -64,10 +64,11 @@ class timemory_test(unittest.TestCase):
     # ------------------------------------------------------------------------ #
     def setUp(self):
         self.output_dir = "test_output"
+        self.manager = timemory.manager()
+        self.manager.clear()
         timemory.options.output_dir = self.output_dir
         timemory.options.use_timers = True
         timemory.options.serial_report = True
-        self.manager = timemory.manager()
 
 
     # ------------------------------------------------------------------------ #

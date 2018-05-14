@@ -118,6 +118,9 @@ def main(nfib):
 #------------------------------------------------------------------------------#
 def run_test():
 
+    manager = timemory.manager()
+    manager.clear()
+
     timemory.enable_signal_detection([ signals.sys_signal.Hangup,
                                        signals.sys_signal.Interrupt,
                                        signals.sys_signal.FPE,
