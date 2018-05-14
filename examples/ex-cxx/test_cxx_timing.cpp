@@ -168,8 +168,6 @@ int main(int /*argc*/, char** argv)
 
     manager_t::instance()->write_overhead();
 
-    delete manager_t::instance();
-
     exit(num_fail);
 }
 

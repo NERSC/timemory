@@ -64,21 +64,27 @@ public:
     static pointer master_instance();
 
     // for checking but not allocating
-    static pointer unsafe_instance()        { return f_local_instance;  }
-    static pointer unsafe_local_instance()  { return f_local_instance;  }
+    static pointer unsafe_instance()        { return _local_instance();  }
+    static pointer unsafe_local_instance()  { return _local_instance();  }
     static pointer unsafe_master_instance() { return f_master_instance; }
 
     // for when destructor is explicitly called
-    static void null_instance()             { f_local_instance = nullptr; }
-    static void null_local_instance()       { f_local_instance = nullptr; }
-    static void null_master_instance()      { f_local_instance = nullptr; }
+    static void null_instance()             { _local_instance() = nullptr; }
+    static void null_local_instance()       { _local_instance() = nullptr; }
+    static void null_master_instance()      { f_master_instance = nullptr; }
+
+private:
+    // Private functions
+    static pointer_reference _local_instance()
+    {
+        tim_static_thread_local pointer _instance = nullptr;
+        return _instance;
+    }
 
 private:
     // Private variables
-    static                  thread_id_t f_master_thread;
-    static                  pointer     f_master_instance;
-    tim_static_thread_local pointer     f_local_instance;
-
+    static  thread_id_t f_master_thread;
+    static  pointer     f_master_instance;
 };
 
 //============================================================================//
@@ -96,19 +102,13 @@ singleton<_Tp>::f_master_instance = nullptr;
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-tim_thread_local typename singleton<_Tp>::pointer
-singleton<_Tp>::f_local_instance = nullptr;
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp>
 void singleton<_Tp>::initialize()
 {
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        f_master_instance = new _Tp();
-        f_local_instance = f_master_instance;
+        _local_instance() = new _Tp();
+        f_master_instance = _local_instance();
     }
 }
 
@@ -117,15 +117,27 @@ void singleton<_Tp>::initialize()
 template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
-    if(f_local_instance != f_master_instance)
+#if defined(DEBUG)
+    std::cout << std::this_thread::get_id() << " destroying singleton..."
+              << std::endl;
+#endif
+    if(_local_instance() != f_master_instance)
     {
-        delete f_local_instance;
-        f_local_instance = nullptr;
+#if defined(DEBUG)
+        std::cout << std::this_thread::get_id() << " destroying local singleton..."
+                  << std::endl;
+#endif
+        delete _local_instance();
+        _local_instance() = nullptr;
     }
     else
     {
-        delete f_local_instance;
-        f_local_instance = nullptr;
+#if defined(DEBUG)
+        std::cout << std::this_thread::get_id() << " destroying master singleton..."
+                  << std::endl;
+#endif
+        delete _local_instance();
+        _local_instance() = nullptr;
         f_master_instance = nullptr;
     }
 }
@@ -136,14 +148,14 @@ template <typename _Tp>
 typename singleton<_Tp>::pointer
 singleton<_Tp>::instance()
 {
-    if(!f_local_instance)
+    if(!_local_instance())
     {
-        f_local_instance = new _Tp();
+        _local_instance() = new _Tp();
         if(!f_master_instance)
-            f_master_instance = f_local_instance;
+            f_master_instance = _local_instance();
     }
 
-    return f_local_instance;
+    return _local_instance();
 }
 
 //----------------------------------------------------------------------------//
@@ -161,11 +173,11 @@ template <typename _Tp>
 typename singleton<_Tp>::pointer
 singleton<_Tp>::master_instance()
 {
-    if(!f_local_instance)
+    if(!f_master_instance)
     {
-        f_local_instance = new _Tp();
-        if(!f_master_instance)
-            f_master_instance = f_local_instance;
+        if(!_local_instance())
+            _local_instance() = new _Tp();
+        f_master_instance = _local_instance();
     }
 
     return f_master_instance;
