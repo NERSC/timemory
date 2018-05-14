@@ -143,7 +143,7 @@ manager::manager()
     }
 #endif
 
-    if(tim::env::disable_timer_memory > 0)
+    if(tim::env::disable_timer_memory)
     {
         tim::timer::default_record_memory(false);
         m_overhead_timer->record_memory(false);

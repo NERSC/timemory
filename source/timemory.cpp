@@ -67,17 +67,33 @@ void _timemory_finalization()
 namespace
 {
 #if !defined(_WINDOWS)
-    void setup_timemory_manager(void) __attribute__ ((constructor));
-    void cleanup_timemory_manager(void) __attribute__((destructor));
+    void cxx_setup_timemory_manager(void) __attribute__ ((constructor));
+    void cxx_cleanup_timemory_manager(void) __attribute__((destructor));
 #endif
-    void setup_timemory_manager(void) { _timemory_initialization(); }
-    void cleanup_timemory_manager(void) { _timemory_finalization(); }
+    void cxx_setup_timemory_manager(void) { _timemory_initialization(); }
+    void cxx_cleanup_timemory_manager(void) { _timemory_finalization(); }
 }
 
 //============================================================================//
 //
 //                      C++ interface
 //
+//============================================================================//
+
+extern "C" tim_api
+void cxx_timemory_initialization(void)
+{
+    _timemory_initialization();
+}
+
+//============================================================================//
+
+extern "C" tim_api
+void cxx_timemory_finalization(void)
+{
+    _timemory_finalization();
+}
+
 //============================================================================//
 
 extern "C" tim_api

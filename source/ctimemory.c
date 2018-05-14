@@ -28,6 +28,8 @@
 //============================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
+extern void         cxx_timemory_initialization     (void);
+extern void         cxx_timemory_finalization       (void);
 extern int          cxx_timemory_enabled            (void);
 extern void         cxx_timemory_report             (const char*);
 extern void         cxx_timemory_print              (void);
@@ -41,12 +43,20 @@ extern void         cxx_timemory_record_memory      (int);
 
 //============================================================================//
 
+#if !defined(_WINDOWS)
+void c_setup_timemory_manager(void) __attribute__ ((constructor));
+void c_cleanup_timemory_manager(void) __attribute__((destructor));
+#endif
+void c_setup_timemory_manager(void) { cxx_timemory_initialization(); }
+void c_cleanup_timemory_manager(void) { cxx_timemory_finalization(); }
+
+//============================================================================//
+
 void* c_timemory_create_auto_timer(const char* tag, int lineno)
 {
-    return cxx_timemory_create_auto_timer(tag, lineno, "_c_", false);
-    //return (cxx_timemory_enabled())
-    //        ? cxx_timemory_create_auto_timer(tag, lineno, "_c_", false)
-    //        : NULL;
+    return (cxx_timemory_enabled())
+            ? cxx_timemory_create_auto_timer(tag, lineno, "_c_", false)
+            : NULL;
 }
 
 //============================================================================//

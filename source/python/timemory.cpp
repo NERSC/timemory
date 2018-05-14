@@ -891,8 +891,6 @@ PYBIND11_MODULE(timemory, tim)
     //                      MAIN timemory MODULE (part 2)
     //
     //========================================================================//
-    // keep manager from being garbage collected
-    tim.attr("_static_manager") = new manager_wrapper();
     tim.attr("timing_manager") = man;
     //------------------------------------------------------------------------//
     tim.def("report",
