@@ -45,10 +45,6 @@
 #include "timemory/utility.hpp"
 #include "timemory/singleton.hpp"
 
-// functions used to ensure initialization and destruction on library load
-typedef tim::singleton<tim::manager>            timemory_manager_singleton_t;
-extern tim_api timemory_manager_singleton_t*    _timemory_manager_singleton;
-
 // functions that do the initialization and destruction
 void _timemory_initialization();
 void _timemory_finalization();

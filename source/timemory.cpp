@@ -34,16 +34,24 @@
 
 //============================================================================//
 
-timemory_manager_singleton_t* _timemory_manager_singleton = nullptr;
+typedef tim::singleton<tim::manager> timemory_manager_singleton_t;
+
+//============================================================================//
+
+timemory_manager_singleton_t*& _timemory_manager_singleton()
+{
+    static timemory_manager_singleton_t* _instance = nullptr;
+    return _instance;
+}
 
 //============================================================================//
 
 void _timemory_initialization()
 {
-    if(!_timemory_manager_singleton)
+    if(!_timemory_manager_singleton())
     {
-        _timemory_manager_singleton = new tim::singleton<tim::manager>();
-        _timemory_manager_singleton->initialize();
+        _timemory_manager_singleton() = new tim::singleton<tim::manager>();
+        _timemory_manager_singleton()->initialize();
     }
     return;
 }
@@ -52,11 +60,11 @@ void _timemory_initialization()
 
 void _timemory_finalization()
 {
-    if(_timemory_manager_singleton)
+    if(_timemory_manager_singleton())
     {
-        _timemory_manager_singleton->destroy();
-        delete _timemory_manager_singleton;
-        _timemory_manager_singleton = nullptr;
+        _timemory_manager_singleton()->destroy();
+        delete _timemory_manager_singleton();
+        _timemory_manager_singleton() = nullptr;
     }
     return;
 }
