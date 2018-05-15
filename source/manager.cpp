@@ -50,12 +50,6 @@
 #endif
 
 //============================================================================//
-// Easier to type than colons
-typedef std::thread::id thread_id_t;
-
-//============================================================================//
-// Helper function
-extern thread_id_t get_thread_id();
 
 namespace tim
 {
@@ -66,34 +60,19 @@ int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
 
-std::atomic<int> manager::f_manager_instance_count;
-
-//============================================================================//
-// static function
-manager::pointer manager::instance()
+manager::pointer
+manager::instance()
 {
     return singleton_t::instance().get();
 }
 
 //============================================================================//
-// static function
-manager::pointer manager::master_instance()
+
+manager::pointer
+manager::master_instance()
 {
     return singleton_t::master_instance().get();
 }
-
-//============================================================================//
-
-bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
-
-//============================================================================//
-
-manager::mutex_t manager::f_mutex;
-
-//============================================================================//
-
-manager::get_num_threads_func_t
-        manager::f_get_num_threads = std::bind(&get_max_threads);
 
 //============================================================================//
 

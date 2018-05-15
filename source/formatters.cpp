@@ -27,11 +27,21 @@
 #include "timemory/timer.hpp"
 #include "timemory/base_timer.hpp"
 
+#if !defined(pfunc)
+#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#endif
+
+init_construct(199)
+void test_timemory_const(void) { pfunc; std::cout << "here" << std::endl; }
+
 namespace tim
 {
 
 namespace format
 {
+
+init_construct(201)
+void test_timemory_namesp(void) { pfunc; std::cout << "here" << std::endl; }
 
 //============================================================================//
 //
@@ -63,41 +73,6 @@ base_formatter::base_formatter(string_t _prefix, string_t _suffix,
   m_prefix(_prefix),
   m_suffix(_suffix)
 { }
-
-//============================================================================//
-//      format strings
-//============================================================================//
-
-core_formatter rss::f_current =
-        core_formatter(1,                       // precision
-                       3,                       // min prefix field width
-                       tim::units::megabyte,    // memory display units
-                                                // format string
-                       ": RSS {curr,peak} : (%C|%M) [%A]",
-                       true                     // std::fixed
-                       );
-
-//----------------------------------------------------------------------------//
-
-timer::format_pair_t timer::f_current =
-        timer::format_pair_t(
-            core_formatter(3,                   // precision
-                           5,                   // min prefix field width
-                           units::sec,          // timing display units
-                                                // format string
-                           ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
-                           true                 // std::fixed
-                           ),
-            rss("",                             // prefix (ignored with timer)
-                                                // format string
-                ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
-                rss::default_unit(),            // memory display units
-                true,                           // align width
-                1,                              // precision
-                3,                              // min field width
-                true                            // std::fixed
-                )
-            );
 
 //============================================================================//
 //      field lists
@@ -133,14 +108,6 @@ timer::field_list_t   timer::get_field_list()
         timer::field_pair_t("%T", timer::field::timing_unit ),
     };
 }
-
-//----------------------------------------------------------------------------//
-
-rss::storage_type   rss::f_history   = rss::storage_type({ rss::f_current });
-
-//----------------------------------------------------------------------------//
-
-timer::storage_type timer::f_history = timer::storage_type({ timer::f_current });
 
 //============================================================================//
 //

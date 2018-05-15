@@ -75,11 +75,85 @@ void _timemory_finalization()
 }
 
 //============================================================================//
-// These two functions are guaranteed to be called at load and
-// unload of the library containing this code.
-#if !defined(_WINDOWS)
-__attribute__((constructor))
-#endif
+//      format strings
+//============================================================================//
+
+init_priority(101)
+tim::format::core_formatter
+tim::format::rss::f_current =
+        tim::format::core_formatter(1,                       // precision
+                                    3,                       // min prefix field width
+                                    tim::units::megabyte,    // memory display units
+                                                             // format string
+                                    ": RSS {curr,peak} : (%C|%M) [%A]",
+                                    true                     // std::fixed
+                                    );
+
+//----------------------------------------------------------------------------//
+
+init_priority(102)
+tim::format::timer::format_pair_t
+tim::format::timer::f_current =
+        tim::format::timer::format_pair_t(
+            tim::format::core_formatter(3,                   // precision
+                                        5,                   // min prefix field width
+                                        units::sec,          // timing display units
+                                                             // format string
+                                        ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
+                                        true                 // std::fixed
+                                        ),
+            tim::format::rss("",                             // prefix (ignored with timer)
+                                                             // format string
+                             ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
+                             rss::default_unit(),            // memory display units
+                             true,                           // align width
+                             1,                              // precision
+                             3,                              // min field width
+                             true                            // std::fixed
+                             )
+            );
+
+//----------------------------------------------------------------------------//
+
+init_priority(103)
+tim::format::rss::storage_type
+tim::format::rss::f_history =
+        tim::format::rss::storage_type({ tim::format::rss::f_current });
+
+//----------------------------------------------------------------------------//
+
+init_priority(104)
+tim::format::timer::storage_type
+tim::format::timer::f_history =
+        tim::format::timer::storage_type({ tim::format::timer::f_current });
+
+//----------------------------------------------------------------------------//
+
+
+//----------------------------------------------------------------------------//
+
+init_priority(106)
+std::atomic<int> tim::manager::f_manager_instance_count;
+
+
+//----------------------------------------------------------------------------//
+
+bool tim::manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
+
+//----------------------------------------------------------------------------//
+
+init_priority(104)
+tim::manager::mutex_t tim::manager::f_mutex;
+
+//----------------------------------------------------------------------------//
+
+init_priority(105)
+tim::manager::get_num_threads_func_t
+tim::manager::f_get_num_threads = std::bind(&get_max_threads);
+
+//============================================================================//
+// guaranteed to be called at load of the library containing this code.
+init_construct(200)
 void setup_timemory(void) { pfunc; _timemory_initialization(); }
 
 //============================================================================//
