@@ -50,8 +50,13 @@ public:
     typedef const _Tp&                      const_reference;
     typedef const _Tp*&                     const_pointer_reference;
     typedef std::thread::id                 thread_id_t;
+#if defined(_WINDOWS)
+    typedef pointer                         shared_pointer;
+    typedef pointer_reference               shared_pointer_reference;
+#else
     typedef std::shared_ptr<value_type>     shared_pointer;
     typedef std::shared_ptr<value_type>&    shared_pointer_reference;
+#endif
 
 public:
     // Constructor and Destructors
@@ -67,19 +72,31 @@ public:
 
     // Public functions
     static shared_pointer instance();
-    static shared_pointer local_instance();
     static shared_pointer master_instance();
 
     // for checking but not allocating
+#if defined(_WINDOWS)
+    static pointer unsafe_instance()        { return _local_instance(); }
+    static pointer unsafe_master_instance() { return f_master_instance; }
+#else
     static pointer unsafe_instance()        { return _local_instance().get(); }
-    static pointer unsafe_local_instance()  { return _local_instance().get(); }
     static pointer unsafe_master_instance() { return f_master_instance.get(); }
+#endif
+
+#if defined(_WINDOWS)
+    static void null_instance()         { _local_instance() = nullptr; }
+    static void null_master_instance()  { f_master_instance = nullptr; }
+#endif
 
 private:
     // Private functions
     static shared_pointer_reference _local_instance()
     {
+#if defined(_WINDOWS)
+        tim_static_thread_local shared_pointer _instance = nullptr;
+#else
         tim_static_thread_local shared_pointer _instance = shared_pointer();
+#endif
         return _instance;
     }
 
@@ -109,7 +126,11 @@ void singleton<_Tp>::initialize()
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
+#if defined(_WINDOWS)
+        _local_instance() = new _Tp();
+#else
         _local_instance().reset(new _Tp());
+#endif
         f_master_instance = _local_instance();
     }
 }
@@ -119,9 +140,15 @@ void singleton<_Tp>::initialize()
 template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
+#if defined(_WINDOWS)
+    delete _local_instance();
+    if(_local_instance() == f_master_instance)
+        f_master_instance = nullptr;
+#else
     _local_instance().reset();
     if(_local_instance().get() == f_master_instance.get())
         f_master_instance.reset();
+#endif
 }
 
 //----------------------------------------------------------------------------//
@@ -132,7 +159,11 @@ singleton<_Tp>::instance()
 {
     if(!_local_instance())
     {
+#if defined(_WINDOWS)
+        _local_instance() = new _Tp();
+#else
         _local_instance().reset(new _Tp());
+#endif
         if(!f_master_instance)
             f_master_instance = _local_instance();
     }
@@ -144,21 +175,16 @@ singleton<_Tp>::instance()
 
 template <typename _Tp>
 typename singleton<_Tp>::shared_pointer
-singleton<_Tp>::local_instance()
-{
-    return instance();
-}
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp>
-typename singleton<_Tp>::shared_pointer
 singleton<_Tp>::master_instance()
 {
     if(!f_master_instance)
     {
         if(!_local_instance())
+#if defined(_WINDOWS)
+            _local_instance() = new _Tp();
+#else
             _local_instance().reset(new _Tp());
+#endif
         f_master_instance = _local_instance();
     }
 

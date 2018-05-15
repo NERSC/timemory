@@ -148,7 +148,6 @@ int main(int argc, char** argv)
         std::cout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
                   << std::endl;
 
-    tim::disable_signal_detection();
     exit(num_fail);
 }
 

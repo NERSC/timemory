@@ -4,6 +4,14 @@
 #include <stdint.h>
 #include <timemory/ctimemory.h>
 
+#if defined(_WINDOWS)
+#define __attribute_constructor__
+#else
+#define __attribute_constructor__ __attribute__((constructor))
+#endif
+
+extern void setup_timemory(void) __attribute_constructor__;
+
 //============================================================================//
 
 int64_t fibonacci(int64_t n)

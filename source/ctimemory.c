@@ -47,15 +47,6 @@ extern void         cxx_timemory_record_memory      (int);
 
 //============================================================================//
 
-#if !defined(_WINDOWS)
-void c_setup_timemory_manager(void) __attribute__ ((constructor));
-//void c_cleanup_timemory_manager(void) __attribute__((destructor));
-#endif
-void c_setup_timemory_manager(void) { pfunc; cxx_timemory_initialization(); }
-//void c_cleanup_timemory_manager(void) { pfunc; cxx_timemory_finalization(); }
-
-//============================================================================//
-
 void* c_timemory_create_auto_timer(const char* tag, int lineno)
 {
     return (cxx_timemory_enabled())

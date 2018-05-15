@@ -53,14 +53,10 @@ timemory_manager_singleton_t*& _timemory_manager_singleton()
 
 void _timemory_initialization()
 {
-    pfunc;
     if(!_timemory_manager_singleton())
     {
-        pfunc;
         _timemory_manager_singleton() = new tim::singleton<tim::manager>();
-        pfunc;
         _timemory_manager_singleton()->initialize();
-        pfunc;
     }
     return;
 }
@@ -69,23 +65,12 @@ void _timemory_initialization()
 
 void _timemory_finalization()
 {
-    pfunc;
-    tim::disable_signal_detection();
-    pfunc;
-#if defined(SIGNAL_AVAILABLE)
-    sigblock(SIGSEGV);
-    pfunc;
-#endif
-
     if(_timemory_manager_singleton())
     {
-        pfunc;
+        _timemory_manager_singleton()->destroy();
         delete _timemory_manager_singleton();
-        pfunc;
         _timemory_manager_singleton() = nullptr;
-        pfunc;
     }
-    pfunc;
     return;
 }
 
@@ -95,11 +80,12 @@ void _timemory_finalization()
 namespace
 {
 #if !defined(_WINDOWS)
-    void cxx_setup_timemory_manager(void) __attribute__ ((constructor));
-    //void cxx_cleanup_timemory_manager(void) __attribute__((destructor));
+    void setup_timemory(void) __attribute__ ((constructor));
 #endif
-    void cxx_setup_timemory_manager(void) { pfunc; _timemory_initialization(); }
-    //void cxx_cleanup_timemory_manager(void) { pfunc; _timemory_finalization(); }
+    void setup_timemory(void) { pfunc; _timemory_initialization(); }
+#if defined(_WINDOWS)
+    void cleanup_timemory(void) { pfunc; _timemory_finalization(); }
+#endif
 }
 
 //============================================================================//
