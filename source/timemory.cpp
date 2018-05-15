@@ -40,6 +40,7 @@
 //============================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
+/*
 __c_ctor__
 void setup_timemory(void)
 {
@@ -57,7 +58,7 @@ void cleanup_timemory(void)
     _timemory_finalization();
     pfunc;
 }
-
+*/
 //============================================================================//
 //
 //                      C++ interface

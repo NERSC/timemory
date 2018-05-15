@@ -4,14 +4,6 @@
 #include <stdint.h>
 #include <timemory/ctimemory.h>
 
-#if defined(_WINDOWS)
-#define __attribute_constructor__
-#else
-#define __attribute_constructor__ __attribute__((constructor))
-#endif
-
-extern void setup_timemory(void) __attribute_constructor__;
-
 //============================================================================//
 
 int64_t fibonacci(int64_t n)
@@ -34,17 +26,19 @@ int64_t fibonacci(int64_t n)
 
 int main(int argc, char** argv)
 {
-    printf("%s @ %i\n", __FUNCTION__, __LINE__);
+    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
 
     // modify recording memory
     if(argc > 1)
         TIMEMORY_RECORD_MEMORY(atoi(argv[1]));
 
+    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     int64_t n = fibonacci(44);
-    printf("\nANSWER = %lli\n", (long long int) n);
-
+    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     TIMEMORY_PRINT();
+    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     TIMEMORY_REPORT("test_output/c_timing_report");
+    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
 
     return 0;
 }
