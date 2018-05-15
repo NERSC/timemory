@@ -68,42 +68,54 @@ base_formatter::base_formatter(string_t _prefix, string_t _suffix,
 //      format strings
 //============================================================================//
 
-core_formatter rss::f_current =
-        core_formatter(1,                       // precision
-                       3,                       // min prefix field width
-                       tim::units::megabyte,    // memory display units
-                                                // format string
-                       ": RSS {curr,peak} : (%C|%M) [%A]",
-                       true                     // std::fixed
-                       );
+core_formatter&
+rss::f_current()
+{
+    static core_formatter _instance =
+            core_formatter(1,                       // precision
+                           3,                       // min prefix field width
+                           tim::units::megabyte,    // memory display units
+                                                    // format string
+                           ": RSS {curr,peak} : (%C|%M) [%A]",
+                           true                     // std::fixed
+                           );
+    return _instance;
+}
 
 //----------------------------------------------------------------------------//
 
-timer::format_pair_t timer::f_current =
-        timer::format_pair_t(
-            core_formatter(3,                   // precision
-                           5,                   // min prefix field width
-                           units::sec,          // timing display units
-                                                // format string
-                           ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
-                           true                 // std::fixed
-                           ),
-            rss("",                             // prefix (ignored with timer)
-                                                // format string
-                ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
-                rss::default_unit(),            // memory display units
-                true,                           // align width
-                1,                              // precision
-                3,                              // min field width
-                true                            // std::fixed
-                )
-            );
+timer::format_pair_t&
+timer::f_current()
+{
+    static timer::format_pair_t _instance =
+            timer::format_pair_t(
+                core_formatter(3,                   // precision
+                               5,                   // min prefix field width
+                               units::sec,          // timing display units
+                                                    // format string
+                               ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
+                               true                 // std::fixed
+                               ),
+                rss("",                             // prefix (ignored with timer)
+                                                    // format string
+                    ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
+                    rss::default_unit(),            // memory display units
+                    true,                           // align width
+                    1,                              // precision
+                    3,                              // min field width
+                    true                            // std::fixed
+                    )
+                );
+
+    return _instance;
+}
 
 //============================================================================//
 //      field lists
 //============================================================================//
 
-rss::field_list_t   rss::get_field_list()
+rss::field_list_t
+rss::get_field_list()
 {
     return
     {
@@ -119,7 +131,8 @@ rss::field_list_t   rss::get_field_list()
 
 //----------------------------------------------------------------------------//
 
-timer::field_list_t   timer::get_field_list()
+timer::field_list_t
+timer::get_field_list()
 {
     return
     {
@@ -136,11 +149,23 @@ timer::field_list_t   timer::get_field_list()
 
 //----------------------------------------------------------------------------//
 
-rss::storage_type   rss::f_history   = rss::storage_type({ rss::f_current });
+rss::storage_type&
+rss::f_history()
+{
+    static rss::storage_type _instance =
+            rss::storage_type({ rss::f_current() });
+    return _instance;
+}
 
 //----------------------------------------------------------------------------//
 
-timer::storage_type timer::f_history = timer::storage_type({ timer::f_current });
+timer::storage_type&
+timer::f_history()
+{
+    static timer::storage_type _instance =
+            timer::storage_type({ timer::f_current() });
+    return _instance;
+}
 
 //============================================================================//
 //
@@ -151,7 +176,7 @@ timer::storage_type timer::f_history = timer::storage_type({ timer::f_current })
 void timer::push()
 {
     // add current to stack
-    f_history.push(f_current);
+    f_history().push(f_current());
 }
 
 //----------------------------------------------------------------------------//
@@ -159,12 +184,12 @@ void timer::push()
 void timer::pop()
 {
     // assign only if not empty
-    if(f_history.size() > 0)
-        f_current = f_history.top();
+    if(f_history().size() > 0)
+        f_current() = f_history().top();
 
     // don't completely empty
-    if(f_history.size() > 1)
-        f_history.pop();
+    if(f_history().size() > 1)
+        f_history().pop();
 }
 
 //----------------------------------------------------------------------------//
@@ -172,7 +197,7 @@ void timer::pop()
 void timer::propose_default_width(size_type _w)
 {
     //_w += 2;    // a little padding
-    f_current.first.width() = std::max(f_current.first.width(), _w);
+    f_current().first.width() = std::max(f_current().first.width(), _w);
 }
 
 //----------------------------------------------------------------------------//
@@ -183,7 +208,7 @@ timer::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current.first.width() + 1)
+        _ss << std::setw(f_current().first.width() + 1)
             << std::left << m_prefix << " "
             << std::right << this->format()
             << std::left << m_suffix;
@@ -342,7 +367,7 @@ timer* timer::copy_from(const timer* rhs)
 void rss::push()
 {
     // add current to stack
-    f_history.push(f_current);
+    f_history().push(f_current());
 }
 
 //----------------------------------------------------------------------------//
@@ -350,12 +375,12 @@ void rss::push()
 void rss::pop()
 {
     // assign only if not empty
-    if(f_history.size() > 0)
-        f_current = f_history.top();
+    if(f_history().size() > 0)
+        f_current() = f_history().top();
 
     // don't completely empty
-    if(f_history.size() > 1)
-        f_history.pop();
+    if(f_history().size() > 1)
+        f_history().pop();
 }
 
 //----------------------------------------------------------------------------//
@@ -363,7 +388,7 @@ void rss::pop()
 void rss::propose_default_width(size_type _w)
 {
     //_w += 2;    // a little padding
-    f_current.width() = std::max(f_current.width(), _w);
+    f_current().width() = std::max(f_current().width(), _w);
 }
 
 //----------------------------------------------------------------------------//
@@ -374,7 +399,7 @@ rss::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current.width() + 1)
+        _ss << std::setw(f_current().width() + 1)
             << std::left << m_prefix << " "
             << std::right << this->format()
             << std::left << m_suffix;

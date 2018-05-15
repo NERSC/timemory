@@ -96,7 +96,7 @@ int main(int argc, char** argv)
     std::cout << std::endl;
     timer_list.push_back(timer_list.at(1) - timer_list.at(0));
     timer_list.back().format()->prefix("Timer difference");
-    manager->overhead_timer()->stop();
+    manager->missing_timer()->stop();
     timer_list.push_back(tim::timer(timer_list.back()));
     timer_list.back().accum() /= manager->total_laps();
     timer_list.back().format()->prefix("TiMemory avg. overhead");
@@ -117,15 +117,7 @@ int main(int argc, char** argv)
     }
 
     std::cout << std::endl;
-    auto total_laps = manager->total_laps();
-    auto _overhead = manager->compute_overhead();
-    manager->write_overhead(std::cout, nullptr, &_overhead);
-    tim::timer avg_overhead(&(_overhead.second),
-                            "Average overhead added by TiMemory");
-    if(_overhead.first.format())
-        avg_overhead.format()->width(_overhead.first.format()->width());
-    avg_overhead.accum() /= total_laps;
-    avg_overhead.report(std::cout, true, true);
+    manager->write_missing(std::cout);
 
     return 0;
 }

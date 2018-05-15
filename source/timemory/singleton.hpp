@@ -54,6 +54,7 @@ public:
 public:
     // Constructor and Destructors
     singleton() { }
+    singleton(pointer);
     // Virtual destructors are required by abstract classes 
     // so add it by default, just in case
     virtual ~singleton() { }
@@ -61,6 +62,7 @@ public:
 public:
     // public member function
     void initialize();
+    void initialize(pointer);
     void destroy();
 
     // Public functions
@@ -100,12 +102,39 @@ singleton<_Tp>::f_master_instance = singleton<_Tp>::shared_pointer();
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
+singleton<_Tp>::singleton(pointer ptr)
+{
+    initialize(ptr);
+    if(!f_master_instance)
+    {
+        f_master_thread = std::this_thread::get_id();
+        _local_instance().reset(new _Tp());
+        f_master_instance = _local_instance();
+    }
+}
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp>
 void singleton<_Tp>::initialize()
 {
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
         _local_instance().reset(new _Tp());
+        f_master_instance = _local_instance();
+    }
+}
+
+//----------------------------------------------------------------------------//
+
+template <typename _Tp>
+void singleton<_Tp>::initialize(pointer ptr)
+{
+    if(!f_master_instance)
+    {
+        f_master_thread = std::this_thread::get_id();
+        _local_instance().reset(ptr);
         f_master_instance = _local_instance();
     }
 }

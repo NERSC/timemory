@@ -92,8 +92,8 @@ public:
 
 public:
     // public static functions
-    static void default_record_memory(bool _val)    { f_record_memory = _val; }
-    static bool default_record_memory()             { return f_record_memory; }
+    static void default_record_memory(bool _val)    { f_record_memory() = _val; }
+    static bool default_record_memory()             { return f_record_memory(); }
 
 public:
     // public member functions
@@ -198,7 +198,7 @@ protected:
     timer* m_sum_timer;
 
 private:
-    static bool f_record_memory;
+    static bool& f_record_memory();
 
 };
 

@@ -39,7 +39,11 @@
 namespace tim
 {
 
-bool timer::f_record_memory = true;
+bool& timer::f_record_memory()
+{
+    static bool _record_memory = true;
+    return _record_memory;
+}
 
 //============================================================================//
 

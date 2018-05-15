@@ -54,13 +54,33 @@
 
 //============================================================================//
 
-typedef tim::singleton<tim::manager> timemory_manager_singleton_t;
+bool& _timemory_total_reported()
+{
+    static bool _reported = false;
+    return _reported;
+}
 
 //============================================================================//
 
-timemory_manager_singleton_t*& _timemory_manager_singleton()
+tim::manager::singleton_t*& _timemory_manager_singleton()
 {
-    static timemory_manager_singleton_t* _instance = nullptr;
+    static tim::manager::singleton_t* _instance
+            = new tim::manager::singleton_t(new tim::manager());
+    return _instance;
+}
+
+//============================================================================//
+
+tim::manager::timer_singleton_t*& _timemory_timer_singleton()
+{
+    static tim::manager::timer_singleton_t* _instance
+            = new tim::manager::timer_singleton_t(
+                  new tim::timer(
+                      tim::format::timer(std::string("> [exe] total"),
+                                         tim::format::timer::default_format(),
+                                         tim::format::timer::default_unit(),
+                                         tim::format::timer::default_rss_format(),
+                                         true)));
     return _instance;
 }
 
@@ -68,25 +88,43 @@ timemory_manager_singleton_t*& _timemory_manager_singleton()
 
 void _timemory_initialization()
 {
-    if(!_timemory_manager_singleton())
-    {
-        _timemory_manager_singleton() = new tim::singleton<tim::manager>();
-        _timemory_manager_singleton()->initialize();
-    }
-    return;
+    typedef tim::singleton<tim::timer>::pointer         timer_pointer;
+    typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
+    timer_shared_pointer _shared_total_timer =
+            _timemory_timer_singleton()->master_instance();
+    timer_pointer _total_timer = _shared_total_timer.get();
+
+    if(!_total_timer->is_running())
+        _total_timer->start();
 }
 
 //============================================================================//
 
 void _timemory_finalization()
 {
-    if(_timemory_manager_singleton())
-    {
-        _timemory_manager_singleton()->destroy();
-        delete _timemory_manager_singleton();
-        _timemory_manager_singleton() = nullptr;
-    }
-    return;
+    typedef tim::singleton<tim::timer>::pointer         timer_pointer;
+    typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
+
+    // don't care at this point anymore -- no reporting
+    if(tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) == 0)
+        return;
+
+    // don't care at this point anymore -- timer already reported
+    if(_timemory_total_reported())
+        return;
+
+    timer_shared_pointer _shared_total_timer =
+            _timemory_timer_singleton()->master_instance();
+    timer_pointer _total_timer = _shared_total_timer.get();
+
+    if(!_total_timer)
+        return;
+
+    if(_total_timer->is_running())
+        _total_timer->stop();
+
+    std::cout << "\n" << _total_timer->as_string() << std::endl;
+    _timemory_total_reported() = true;
 }
 
 //============================================================================//
@@ -106,14 +144,14 @@ std::atomic<int> manager::f_manager_instance_count;
 // static function
 manager::pointer manager::instance()
 {
-    return singleton_t::instance().get();
+    return _timemory_manager_singleton()->instance().get();
 }
 
 //============================================================================//
 // static function
 manager::pointer manager::master_instance()
 {
-    return singleton_t::master_instance().get();
+    return _timemory_manager_singleton()->master_instance().get();
 }
 
 //============================================================================//
@@ -149,7 +187,7 @@ manager::manager()
   m_p_count((singleton_t::unsafe_master_instance())
             ? singleton_t::unsafe_master_instance()->count().load() : 0),
   m_report(&std::cout),
-  m_overhead_timer(nullptr),
+  m_missing_timer(nullptr),
   m_total_timer(nullptr)
 {
     if(!singleton_t::unsafe_master_instance())
@@ -163,15 +201,9 @@ manager::manager()
         singleton_t::unsafe_master_instance()->add(this);
     }
 
-    m_overhead_timer = new tim_timer_t();
-    m_total_timer = timer_ptr_t(
-                        new tim_timer_t(
-                            tim::format::timer(
-                                string_t("> [exe] total"),
-                                tim::format::timer::default_format(),
-                                tim::format::timer::default_unit(),
-                                tim::format::timer::default_rss_format(),
-                                true)));
+    m_missing_timer = new tim_timer_t();
+    m_total_timer = _timemory_timer_singleton()->instance();
+
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
     {
@@ -184,15 +216,15 @@ manager::manager()
     if(tim::env::disable_timer_memory)
     {
         tim::timer::default_record_memory(false);
-        m_overhead_timer->record_memory(false);
+        m_missing_timer->record_memory(false);
         m_total_timer->record_memory(false);
     }
 
     std::stringstream ss;
     ss << "TiMemory total unrecorded time (manager "
        << (m_instance_count) << ")";
-    m_overhead_timer->format()->prefix(ss.str());
-    m_overhead_timer->start();
+    m_missing_timer->format()->prefix(ss.str());
+    m_missing_timer->start();
 
     if(!singleton_t::unsafe_master_instance())
         insert_global_timer();
@@ -221,24 +253,23 @@ manager::~manager()
 #endif
 
     pfunc;
-    m_overhead_timer->stop();
+    m_missing_timer->stop();
 
     this_type* _master = singleton_t::unsafe_master_instance();
     pfunc;
-    if(this == _master && tim::env::output_total)
+    if(!_timemory_total_reported() && this == _master && tim::env::output_total)
+    {
         std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
+        _timemory_total_reported() = true;
+    }
 
-    pfunc;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
-        pfunc;
         ofstream_t* m_fos = get_ofstream(m_os);
         if(!m_fos)
             return;
-        pfunc;
         if(!m_fos->good() || !m_fos->is_open())
             return;
-        pfunc;
         m_fos->close();
     };
 
@@ -256,7 +287,7 @@ manager::~manager()
     pfunc;
     m_timer_map.clear();
     pfunc;
-    delete m_overhead_timer;
+    delete m_missing_timer;
     pfunc;
 }
 
@@ -683,7 +714,7 @@ void manager::merge(pointer itr)
             m_timer_list.push_back(litr);
     }
 
-    //itr->overhead_timer()->start();
+    //itr->missing_timer()->start();
 }
 
 //============================================================================//
@@ -708,10 +739,10 @@ void manager::merge(bool div_clock)
 
     if(m_daughters.size() == 0)
     {
-        if(m_overhead_timer->is_running())
+        if(m_missing_timer->is_running())
         {
-            m_overhead_timer->stop();
-            m_overhead_timer->start();
+            m_missing_timer->stop();
+            m_missing_timer->start();
         }
         if(div_clock)
             divide_clock();
@@ -720,9 +751,9 @@ void manager::merge(bool div_clock)
 
     m_merge.store(false);
 
-    bool restart = m_overhead_timer->is_running();
+    bool restart = m_missing_timer->is_running();
     if(restart)
-        m_overhead_timer->stop();
+        m_missing_timer->stop();
 
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
@@ -748,7 +779,7 @@ void manager::merge(bool div_clock)
             itr->clear();
 
     if(restart)
-        m_overhead_timer->start();
+        m_missing_timer->start();
 }
 
 //============================================================================//
@@ -775,12 +806,12 @@ void manager::sync_hierarchy()
 
 //============================================================================//
 
-manager::timer_pair_t
-manager::compute_overhead(tim_timer_t* timer_ref)
+manager::tim_timer_t
+manager::compute_missing(tim_timer_t* timer_ref)
 {
     typedef std::set<uint64_t> key_set_t;
 
-    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_overhead_timer;
+    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_missing_timer;
     bool restart = _ref->is_running();
     if(restart)
         _ref->stop();
@@ -791,13 +822,8 @@ manager::compute_overhead(tim_timer_t* timer_ref)
         _ref->stop();
 
     string_t _f_prefix = _ref->format()->prefix();
-    string_t _s_prefix = _f_prefix;
-    _s_prefix.replace(_s_prefix.find("total unrecorded time"),
-                      string_t("total unrecorded time").length(),
-                      "approximate overhead ");
 
-    timer_pair_t _overhead_timers(tim_timer_t(_ref, _f_prefix, true),
-                                  tim_timer_t(_ref, _s_prefix, true));
+    tim_timer_t _missing_timer(_ref, _f_prefix, true);
 
     if(restart)
         _ref->start();
@@ -807,52 +833,44 @@ manager::compute_overhead(tim_timer_t* timer_ref)
         _depths.insert(itr.level());
 
     if(_depths.size() == 0)
-        return timer_pair_t(tim_timer_t(_f_prefix),
-                            tim_timer_t(_s_prefix));
+        return tim_timer_t(_f_prefix);
 
     for(const auto& itr : *this)
-        if(itr.level() == *(_depths.begin()))
-            _overhead_timers.first -= itr.timer();
+        if(itr.level() == *(_depths.begin()) + 1) // skip missing timer
+            _missing_timer -= itr.timer();
 
-    // remove unaccounted time
-    _overhead_timers.second.accum() -= _overhead_timers.first.accum();
-    _overhead_timers.second.accum() -= _overhead_timers.first.accum();
-
-    return _overhead_timers;
+    return _missing_timer;
 }
 
 //============================================================================//
 
-void manager::write_overhead(const path_t& _fname, tim_timer_t* timer_ref,
-                             timer_pair_t* _overhead_p)
+void manager::write_missing(const path_t& _fname, tim_timer_t* timer_ref,
+                             tim_timer_t* _missing_p)
 {
     std::ofstream _os(_fname.c_str());
     if(_os)
-        write_overhead(_os, timer_ref, _overhead_p);
+        write_missing(_os, timer_ref, _missing_p);
     else
     {
         std::cerr << "Warning! Unable to open \"" << _fname << "\" ["
                   << __FUNCTION__ << "@'" << __FILE__ << "'..." << std::endl;
-        write_overhead(std::cout);
+        write_missing(std::cout);
     }
 }
 
 //============================================================================//
 
-void manager::write_overhead(ostream_t& _os, tim_timer_t* timer_ref,
-                             timer_pair_t* _overhead_p)
+void manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
+                            tim_timer_t* _missing_p)
 {
-    timer_pair_t _overhead;
-    if(!_overhead_p)
-        _overhead = compute_overhead(timer_ref);
+    tim_timer_t _missing;
+    if(!_missing_p)
+        _missing = compute_missing(timer_ref);
     else
     {
-        _overhead = *_overhead_p;
+        _missing = *_missing_p;
         if(timer_ref)
-        {
-            _overhead.first -= *timer_ref;
-            _overhead.second -= *timer_ref;
-        }
+            _missing -= *timer_ref;
     }
 
     std::stringstream _ss;
@@ -867,14 +885,10 @@ void manager::write_overhead(ostream_t& _os, tim_timer_t* timer_ref,
     _ss << _sp1.str() << laps() << std::endl;
     _ss << _sp2.str() << total_laps() << std::endl;
 
-    _overhead.first.format()->width(_w);
-    _overhead.second.format()->width(_w);
-    _overhead.first.format()->align_width(false);
-    _overhead.second.format()->align_width(false);
+    _missing.format()->width(_w);
+    _missing.format()->align_width(false);
 
-    _ss << _overhead.first.as_string() << std::endl;
-    if(_overhead.second.wall_elapsed() > 1.0e-9)
-        _ss << _overhead.second.as_string() << std::endl;
+    _ss << _missing.as_string() << std::endl;
     _os << "\n" << _ss.str();
 }
 

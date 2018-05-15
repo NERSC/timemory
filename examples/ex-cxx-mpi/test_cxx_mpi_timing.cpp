@@ -350,7 +350,7 @@ void test_manager()
     tman->report();
     tman->write_json("test_output/mpi_cxx_timing_report.json");
     if(tim::mpi_rank() == 0)
-        tman->write_overhead();
+        tman->write_missing();
 
 
     EXPECT_EQ(manager_t::instance()->size(), 33);
@@ -413,7 +413,7 @@ void test_timing_toggle()
 
     tman->write_serialization("test_output/mpi_cxx_timing_toggle.json");
     if(tim::mpi_rank() == 0)
-        tman->write_overhead();
+        tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -448,7 +448,7 @@ void test_timing_depth()
 
     tman->write_serialization("test_output/mpi_cxx_timing_depth.json");
     if(tim::mpi_rank() == 0)
-        tman->write_overhead();
+        tman->write_missing();
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
@@ -546,7 +546,7 @@ void test_timing_thread()
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
     if(tim::mpi_rank() == 0)
-        tman->write_overhead();
+        tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -585,7 +585,7 @@ void test_format()
     tman->report();
     tman->write_json("test_output/mpi_cxx_timing_format.json");
     if(tim::mpi_rank() == 0)
-        tman->write_overhead();
+        tman->write_missing();
 
     EXPECT_EQ(manager_t::instance()->size(), 19);
 

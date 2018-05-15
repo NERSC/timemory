@@ -101,14 +101,14 @@ PYBIND11_MODULE(timemory, tim)
             { return tim::has_mpi_support(); },
             "Return if the TiMemory library has MPI support");
     //------------------------------------------------------------------------//
-    tim.def("get_overhead_report",
+    tim.def("get_missing_report",
             [=] ()
             {
                 std::stringstream _ss;
-                manager_t::instance()->write_overhead(_ss);
+                manager_t::instance()->write_missing(_ss);
                 return _ss.str();
             },
-            "Get TiMemory overhead as string");
+            "Get TiMemory missing as string");
     //------------------------------------------------------------------------//
 
 
@@ -510,7 +510,7 @@ PYBIND11_MODULE(timemory, tim)
              { man.cast<manager_wrapper*>()->get()->clear(); },
              "Clear the timing manager");
     //------------------------------------------------------------------------//
-    man.def("write_overhead",
+    man.def("write_missing",
             [=] (py::object man, std::string fname)
             {
                 auto locals = py::dict("fname"_a = fname);
@@ -519,9 +519,9 @@ PYBIND11_MODULE(timemory, tim)
                          options.ensure_directory_exists(fname)
                          )",
                          py::globals(), locals);
-                man.cast<manager_wrapper*>()->get()->write_overhead(fname);
+                man.cast<manager_wrapper*>()->get()->write_missing(fname);
             },
-            "Write TiMemory overhead to file");
+            "Write TiMemory missing to file");
     //------------------------------------------------------------------------//
     man.def("serialize",
              &pytim::manager::serialize,

@@ -46,6 +46,7 @@
 #include <utility>
 #include <tuple>
 #include <stack>
+#include <initializer_list>
 
 #if defined(_UNIX)
 #   include <unistd.h>
@@ -214,12 +215,12 @@ public:
     // public static functions
     static void propose_default_width(size_type);
 
-    static void default_precision(const size_type& _v)  { f_current.precision() = _v;   }
-    static void default_width(const size_type& _v)      { f_current.width() = _v;       }
-    static void default_unit(const unit_type& _v)       { f_current.unit() = _v;        }
-    static void default_format(const string_t& _v)      { f_current.format() = _v;      }
-    static void default_fixed(const bool& _v)           { f_current.fixed() = _v;       }
-    static void default_scientific(const bool& _v)      { f_current.fixed() = !(_v);    }
+    static void default_precision(const size_type& _v)  { f_current().precision() = _v;   }
+    static void default_width(const size_type& _v)      { f_current().width() = _v;       }
+    static void default_unit(const unit_type& _v)       { f_current().unit() = _v;        }
+    static void default_format(const string_t& _v)      { f_current().format() = _v;      }
+    static void default_fixed(const bool& _v)           { f_current().fixed() = _v;       }
+    static void default_scientific(const bool& _v)      { f_current().fixed() = !(_v);    }
 
     // defines set_<function>
     BACKWARD_COMPAT_SET(size_type,  default_precision   )
@@ -228,12 +229,12 @@ public:
     BACKWARD_COMPAT_SET(string_t,   default_format      )
     BACKWARD_COMPAT_SET(bool,       default_fixed       )
 
-    static const size_type& default_precision()     { return f_current.precision(); }
-    static const size_type& default_width()         { return f_current.width();     }
-    static const unit_type& default_unit()          { return f_current.unit();      }
-    static const string_t&  default_format()        { return f_current.format();    }
-    static const bool&      default_fixed()         { return f_current.fixed();     }
-    static bool             default_scientific()    { return !(f_current.fixed());  }
+    static const size_type& default_precision()     { return f_current().precision(); }
+    static const size_type& default_width()         { return f_current().width();     }
+    static const unit_type& default_unit()          { return f_current().unit();      }
+    static const string_t&  default_format()        { return f_current().format();    }
+    static const bool&      default_fixed()         { return f_current().fixed();     }
+    static bool             default_scientific()    { return !(f_current().fixed());  }
 
     // defines get_<function>
     BACKWARD_COMPAT_GET(size_type,  default_precision   )
@@ -255,8 +256,8 @@ protected:
 private:
     // private static members
     static field_list_t     get_field_list();
-    static core_formatter   f_current;
-    static storage_type     f_history;
+    static core_formatter&  f_current();
+    static storage_type&    f_history();
 
 };
 
@@ -315,13 +316,13 @@ public:
     // public static functions
     static void propose_default_width(size_type);
 
-    static void default_precision(const size_type& _v)  { f_current.first.precision() = _v; }
-    static void default_width(const size_type& _v)      { f_current.first.width() = _v;     }
-    static void default_unit(const unit_type& _v)       { f_current.first.unit() = _v;      }
-    static void default_format(const string_t& _v)      { f_current.first.format() = _v;    }
-    static void default_fixed(const bool& _v)           { f_current.first.fixed() = _v;     }
-    static void default_scientific(const bool& _v)      { f_current.first.fixed() = !(_v);  }
-    static void default_rss_format(const rss& _v)       { f_current.second = _v;            }
+    static void default_precision(const size_type& _v)  { f_current().first.precision() = _v; }
+    static void default_width(const size_type& _v)      { f_current().first.width() = _v;     }
+    static void default_unit(const unit_type& _v)       { f_current().first.unit() = _v;      }
+    static void default_format(const string_t& _v)      { f_current().first.format() = _v;    }
+    static void default_fixed(const bool& _v)           { f_current().first.fixed() = _v;     }
+    static void default_scientific(const bool& _v)      { f_current().first.fixed() = !(_v);  }
+    static void default_rss_format(const rss& _v)       { f_current().second = _v;            }
 
     // defines set_<function>
     BACKWARD_COMPAT_SET(size_type,  default_precision   )
@@ -331,13 +332,13 @@ public:
     BACKWARD_COMPAT_SET(bool,       default_fixed       )
     BACKWARD_COMPAT_SET(rss,        default_rss_format  )
 
-    static const size_type& default_precision()     { return f_current.first.precision();   }
-    static const size_type& default_width()         { return f_current.first.width();       }
-    static const unit_type& default_unit()          { return f_current.first.unit();        }
-    static const string_t&  default_format()        { return f_current.first.format();      }
-    static const bool&      default_fixed()         { return f_current.first.fixed();       }
-    static bool             default_scientific()    { return !(f_current.first.fixed());    }
-    static const rss&       default_rss_format()    { return f_current.second;              }
+    static const size_type& default_precision()     { return f_current().first.precision();   }
+    static const size_type& default_width()         { return f_current().first.width();       }
+    static const unit_type& default_unit()          { return f_current().first.unit();        }
+    static const string_t&  default_format()        { return f_current().first.format();      }
+    static const bool&      default_fixed()         { return f_current().first.fixed();       }
+    static bool             default_scientific()    { return !(f_current().first.fixed());    }
+    static const rss&       default_rss_format()    { return f_current().second;              }
 
     // defines get_<function>
     BACKWARD_COMPAT_GET(size_type,  default_precision   )
@@ -364,8 +365,8 @@ protected:
 private:
     // private static members
     static field_list_t     get_field_list();
-    static format_pair_t    f_current;
-    static storage_type     f_history;
+    static format_pair_t&   f_current();
+    static storage_type&    f_history();
 };
 
 //============================================================================//

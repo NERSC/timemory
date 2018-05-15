@@ -166,7 +166,7 @@ int main(int /*argc*/, char** argv)
     std::cout << std::endl;
     tim::format::timer::pop();
 
-    manager_t::instance()->write_overhead();
+    manager_t::instance()->write_missing();
 
     exit(num_fail);
 }
@@ -347,7 +347,7 @@ void test_manager()
     tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/cxx_timing_report.json");
-    tman->write_overhead();
+    tman->write_missing();
     EXPECT_EQ(manager_t::instance()->size(), 33);
 
     for(const auto& itr : *tman)
@@ -407,7 +407,7 @@ void test_timing_toggle()
     EXPECT_EQ(manager_t::instance()->size(), 11);
 
     tman->write_serialization("test_output/cxx_timing_toggle.json");
-    tman->write_overhead();
+    tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -441,7 +441,7 @@ void test_timing_depth()
     EXPECT_EQ(manager_t::instance()->size(), 8);
 
     tman->write_serialization("test_output/cxx_timing_depth.json");
-    tman->write_overhead();
+    tman->write_missing();
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
@@ -544,7 +544,7 @@ void test_timing_thread()
     ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
-    tman->write_overhead();
+    tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -582,7 +582,7 @@ void test_format()
     // reports to file
     tman->report();
     tman->write_json("test_output/cxx_timing_format.json");
-    tman->write_overhead();
+    tman->write_missing();
 
     EXPECT_EQ(manager_t::instance()->size(), 19);
 

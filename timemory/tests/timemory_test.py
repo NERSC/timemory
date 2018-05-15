@@ -590,7 +590,7 @@ if __name__ == '__main__':
         raise
     finally:
         manager = timemory.manager()
-        print("{}".format(timemory.get_overhead_report()))
+        print("{}".format(timemory.get_missing_report()))
         if options.ctest_notes:
             f = manager.write_ctest_notes(directory="test_output/timemory_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))

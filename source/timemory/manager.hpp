@@ -186,9 +186,10 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef singleton<manager>                  singleton_t;
     typedef manager                             this_type;
     typedef tim::timer                          tim_timer_t;
+    typedef singleton<manager>                  singleton_t;
+    typedef singleton<tim_timer_t>              timer_singleton_t;
     typedef std::shared_ptr<tim_timer_t>        timer_ptr_t;
     typedef tim_timer_t::string_t               string_t;
     typedef timer_tuple                         timer_tuple_t;
@@ -210,8 +211,6 @@ public:
     typedef rss_type::base_type                 base_rss_type;
     typedef std::function<intmax_t()>           get_num_threads_func_t;
     typedef std::atomic<uint64_t>               counter_t;
-    typedef std::map<int64_t, tim_timer_t>      overhead_map_t;
-    typedef std::pair<tim_timer_t, tim_timer_t> timer_pair_t;
     typedef uomap<uint64_t, uint64_t>           clock_div_t;
 
 public:
@@ -290,9 +289,9 @@ public:
     void write_serialization(const path_t& _fname) const { write_json(_fname); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
-    void write_overhead(const path_t& _fname,
-                        tim_timer_t* = nullptr,
-                        timer_pair_t* = nullptr);
+    void write_missing(const path_t& _fname,
+                       tim_timer_t* = nullptr,
+                       tim_timer_t* = nullptr);
 
     void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const
     { report(&os, ign_cutoff, endline); }
@@ -302,9 +301,9 @@ public:
     void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
-    void write_overhead(ostream_t& = std::cout,
-                        tim_timer_t* = nullptr,
-                        timer_pair_t* = nullptr);
+    void write_missing(ostream_t& = std::cout,
+                       tim_timer_t* = nullptr,
+                       tim_timer_t* = nullptr);
 
     void add(pointer ptr);
     void remove(pointer ptr);
@@ -341,7 +340,7 @@ public:
         return (m_report != &std::cout) && (m_report != &std::cerr);
     }
 
-    timer_pair_t compute_overhead(tim_timer_t* timer_ref = nullptr);
+    tim_timer_t compute_missing(tim_timer_t* timer_ref = nullptr);
     uint64_t laps() const { return compute_total_laps(); }
     uint64_t total_laps() const;
     void update_total_timer_format();
@@ -363,7 +362,7 @@ public:
     // serialization function
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version);
-    tim_timer_t* overhead_timer() const { return m_overhead_timer; }
+    tim_timer_t* missing_timer() const { return m_missing_timer; }
     int32_t instance_count() const { return m_instance_count; }
 
 protected:
@@ -423,8 +422,8 @@ private:
     daughter_list_t         m_daughters;
     // baseline rss
     base_rss_type           m_rss_usage;
-    // overhead timer
-    tim_timer_t*            m_overhead_timer;
+    // missing timer
+    tim_timer_t*            m_missing_timer;
     // global timer
     timer_ptr_t             m_total_timer;
     // clock division
