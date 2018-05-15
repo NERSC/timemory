@@ -45,6 +45,10 @@
 #   define TIMEMORY_DEFAULT_ENABLED true
 #endif
 
+#if !defined(pfunc)
+#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#endif
+
 //============================================================================//
 // Easier to type than colons
 typedef std::thread::id thread_id_t;
@@ -171,6 +175,7 @@ manager::manager()
 
 manager::~manager()
 {
+    pfunc;
     if(this == singleton<manager>::unsafe_master_instance() &&
        tim::env::output_total)
         std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
@@ -184,14 +189,19 @@ manager::~manager()
     }
 #endif
 
+    pfunc;
     m_overhead_timer->stop();
+    pfunc;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
+        pfunc;
         ofstream_t* m_fos = get_ofstream(m_os);
         if(!m_fos)
             return;
+        pfunc;
         if(!m_fos->good() || !m_fos->is_open())
             return;
+        pfunc;
         m_fos->close();
     };
 
@@ -206,21 +216,38 @@ manager::~manager()
                   << std::endl;
 #endif
 
+    pfunc;
     close_ostream(m_report);
 
     for(auto& itr : m_daughters)
+    {
+        pfunc;
         if(itr != this)
+        {
+            pfunc;
             delete itr;
+            pfunc;
+        }
+    }
 
+    pfunc;
     m_daughters.clear();
+    pfunc;
     m_timer_list.clear();
+    pfunc;
     m_timer_map.clear();
+    pfunc;
     delete m_overhead_timer;
 
+    pfunc;
     if(this == singleton<manager>::unsafe_master_instance())
+    {
+        pfunc;
         singleton<manager>::null_master_instance();
-
+    }
+    pfunc;
     singleton<manager>::null_instance();
+    pfunc;
 }
 
 //============================================================================//

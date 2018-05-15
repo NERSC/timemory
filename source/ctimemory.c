@@ -25,6 +25,10 @@
 #include "timemory/ctimemory.h"
 #include "assert.h"
 
+#if !defined(pfunc)
+#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#endif
+
 //============================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
@@ -47,8 +51,8 @@ extern void         cxx_timemory_record_memory      (int);
 void c_setup_timemory_manager(void) __attribute__ ((constructor));
 void c_cleanup_timemory_manager(void) __attribute__((destructor));
 #endif
-void c_setup_timemory_manager(void) { cxx_timemory_initialization(); }
-void c_cleanup_timemory_manager(void) { cxx_timemory_finalization(); }
+void c_setup_timemory_manager(void) { pfunc; cxx_timemory_initialization(); }
+void c_cleanup_timemory_manager(void) { pfunc; cxx_timemory_finalization(); }
 
 //============================================================================//
 

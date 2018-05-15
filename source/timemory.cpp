@@ -31,6 +31,11 @@
 #include "timemory/singleton.hpp"
 #include "timemory/base_timer.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/signal_detection.hpp"
+
+#if !defined(pfunc)
+#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#endif
 
 //============================================================================//
 
@@ -48,10 +53,14 @@ timemory_manager_singleton_t*& _timemory_manager_singleton()
 
 void _timemory_initialization()
 {
+    pfunc;
     if(!_timemory_manager_singleton())
     {
+        pfunc;
         _timemory_manager_singleton() = new tim::singleton<tim::manager>();
+        pfunc;
         _timemory_manager_singleton()->initialize();
+        pfunc;
     }
     return;
 }
@@ -60,12 +69,25 @@ void _timemory_initialization()
 
 void _timemory_finalization()
 {
+    pfunc;
+    tim::disable_signal_detection();
+    pfunc;
+#if defined(SIGNAL_AVAILABLE)
+    sigblock(SIGSEGV);
+    pfunc;
+#endif
+
     if(_timemory_manager_singleton())
     {
+        pfunc;
         _timemory_manager_singleton()->destroy();
+        pfunc;
         delete _timemory_manager_singleton();
+        pfunc;
         _timemory_manager_singleton() = nullptr;
+        pfunc;
     }
+    pfunc;
     return;
 }
 
@@ -78,8 +100,8 @@ namespace
     void cxx_setup_timemory_manager(void) __attribute__ ((constructor));
     void cxx_cleanup_timemory_manager(void) __attribute__((destructor));
 #endif
-    void cxx_setup_timemory_manager(void) { _timemory_initialization(); }
-    void cxx_cleanup_timemory_manager(void) { _timemory_finalization(); }
+    void cxx_setup_timemory_manager(void) { pfunc; _timemory_initialization(); }
+    void cxx_cleanup_timemory_manager(void) { pfunc; _timemory_finalization(); }
 }
 
 //============================================================================//
@@ -91,7 +113,9 @@ namespace
 extern "C" tim_api
 void cxx_timemory_initialization(void)
 {
+    pfunc;
     _timemory_initialization();
+    pfunc;
 }
 
 //============================================================================//
@@ -99,7 +123,9 @@ void cxx_timemory_initialization(void)
 extern "C" tim_api
 void cxx_timemory_finalization(void)
 {
+    pfunc;
     _timemory_finalization();
+    pfunc;
 }
 
 //============================================================================//

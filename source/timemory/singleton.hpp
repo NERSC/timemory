@@ -117,25 +117,25 @@ void singleton<_Tp>::initialize()
 template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
-#if defined(DEBUG)
+//#if defined(DEBUG)
     std::cout << std::this_thread::get_id() << " destroying singleton..."
               << std::endl;
-#endif
+//#endif
     if(_local_instance() != f_master_instance)
     {
-#if defined(DEBUG)
+//#if defined(DEBUG)
         std::cout << std::this_thread::get_id() << " destroying local singleton..."
                   << std::endl;
-#endif
+//#endif
         delete _local_instance();
         _local_instance() = nullptr;
     }
     else
     {
-#if defined(DEBUG)
+//#if defined(DEBUG)
         std::cout << std::this_thread::get_id() << " destroying master singleton..."
                   << std::endl;
-#endif
+//#endif
         delete _local_instance();
         _local_instance() = nullptr;
         f_master_instance = nullptr;
