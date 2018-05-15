@@ -54,14 +54,6 @@
 
 //============================================================================//
 
-bool& _timemory_total_reported()
-{
-    static bool _reported = false;
-    return _reported;
-}
-
-//============================================================================//
-
 tim::manager::singleton_t*& _timemory_manager_singleton()
 {
     static tim::manager::singleton_t* _instance
@@ -88,12 +80,17 @@ tim::manager::timer_singleton_t*& _timemory_timer_singleton()
 
 void _timemory_initialization()
 {
+    pfunc;
     typedef tim::singleton<tim::timer>::pointer         timer_pointer;
     typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
+
+    pfunc;
     timer_shared_pointer _shared_total_timer =
             _timemory_timer_singleton()->master_instance();
+    pfunc;
     timer_pointer _total_timer = _shared_total_timer.get();
 
+    pfunc;
     if(!_total_timer->is_running())
         _total_timer->start();
 }
@@ -102,6 +99,7 @@ void _timemory_initialization()
 
 void _timemory_finalization()
 {
+    pfunc;
     typedef tim::singleton<tim::timer>::pointer         timer_pointer;
     typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
 
@@ -109,22 +107,21 @@ void _timemory_finalization()
     if(tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) == 0)
         return;
 
-    // don't care at this point anymore -- timer already reported
-    if(_timemory_total_reported())
-        return;
-
+    pfunc;
     timer_shared_pointer _shared_total_timer =
             _timemory_timer_singleton()->master_instance();
+    pfunc;
     timer_pointer _total_timer = _shared_total_timer.get();
 
     if(!_total_timer)
         return;
 
+    pfunc;
     if(_total_timer->is_running())
         _total_timer->stop();
 
+    pfunc;
     std::cout << "\n" << _total_timer->as_string() << std::endl;
-    _timemory_total_reported() = true;
 }
 
 //============================================================================//
@@ -252,13 +249,8 @@ manager::~manager()
                   << std::endl;
 #endif
 
-    this_type* _master = singleton_t::unsafe_master_instance();
     pfunc;
-    if(!_timemory_total_reported() && this == _master && tim::env::output_total)
-    {
-        std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
-        _timemory_total_reported() = true;
-    }
+    this_type* _master = singleton_t::unsafe_master_instance();
 
     auto close_ostream = [&] (ostream_t*& m_os)
     {
