@@ -279,9 +279,13 @@
 #if !defined(_WINDOWS)
 #   define init_priority(N) __attribute__((init_priority(N)))
 #   define init_construct(N) __attribute__((constructor(N)))
+#   define __c_ctor__ __attribute__((constructor))
+#   define __c_dtor__  __attribute__((destructor))
 #else
 #   define init_priority(N)
 #   define init_construct(N)
+#   define __c_ctor__
+#   define __c_dtor__
 #endif
 
 //============================================================================//

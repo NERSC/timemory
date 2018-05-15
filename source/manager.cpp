@@ -28,6 +28,7 @@
  *
  */
 
+#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/serializer.hpp"
@@ -35,6 +36,8 @@
 #include "timemory/environment.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/utility.hpp"
+#include "timemory/signal_detection.hpp"
 
 #include <sstream>
 #include <algorithm>
@@ -51,6 +54,43 @@
 
 //============================================================================//
 
+typedef tim::singleton<tim::manager> timemory_manager_singleton_t;
+
+//============================================================================//
+
+timemory_manager_singleton_t*& _timemory_manager_singleton()
+{
+    static timemory_manager_singleton_t* _instance = nullptr;
+    return _instance;
+}
+
+//============================================================================//
+
+void _timemory_initialization()
+{
+    if(!_timemory_manager_singleton())
+    {
+        _timemory_manager_singleton() = new tim::singleton<tim::manager>();
+        _timemory_manager_singleton()->initialize();
+    }
+    return;
+}
+
+//============================================================================//
+
+void _timemory_finalization()
+{
+    if(_timemory_manager_singleton())
+    {
+        _timemory_manager_singleton()->destroy();
+        delete _timemory_manager_singleton();
+        _timemory_manager_singleton() = nullptr;
+    }
+    return;
+}
+
+//============================================================================//
+
 namespace tim
 {
 
@@ -60,19 +100,34 @@ int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
 //============================================================================//
 
-manager::pointer
-manager::instance()
+std::atomic<int> manager::f_manager_instance_count;
+
+//============================================================================//
+// static function
+manager::pointer manager::instance()
 {
     return singleton_t::instance().get();
 }
 
 //============================================================================//
-
-manager::pointer
-manager::master_instance()
+// static function
+manager::pointer manager::master_instance()
 {
     return singleton_t::master_instance().get();
 }
+
+//============================================================================//
+
+bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
+
+//============================================================================//
+
+manager::mutex_t manager::f_mutex;
+
+//============================================================================//
+
+manager::get_num_threads_func_t
+        manager::f_get_num_threads = std::bind(&get_max_threads);
 
 //============================================================================//
 
