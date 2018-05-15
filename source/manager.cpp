@@ -201,7 +201,7 @@ manager::manager()
         singleton_t::unsafe_master_instance()->add(this);
     }
 
-    m_missing_timer = new tim_timer_t();
+    m_missing_timer = timer_ptr_t(new tim_timer_t());
     m_total_timer = _timemory_timer_singleton()->instance();
 
 #if defined(DEBUG)
@@ -252,9 +252,6 @@ manager::~manager()
                   << std::endl;
 #endif
 
-    pfunc;
-    m_missing_timer->stop();
-
     this_type* _master = singleton_t::unsafe_master_instance();
     pfunc;
     if(!_timemory_total_reported() && this == _master && tim::env::output_total)
@@ -286,8 +283,6 @@ manager::~manager()
     m_timer_list.clear();
     pfunc;
     m_timer_map.clear();
-    pfunc;
-    delete m_missing_timer;
     pfunc;
 }
 
@@ -739,21 +734,12 @@ void manager::merge(bool div_clock)
 
     if(m_daughters.size() == 0)
     {
-        if(m_missing_timer->is_running())
-        {
-            m_missing_timer->stop();
-            m_missing_timer->start();
-        }
         if(div_clock)
             divide_clock();
         return;
     }
 
     m_merge.store(false);
-
-    bool restart = m_missing_timer->is_running();
-    if(restart)
-        m_missing_timer->stop();
 
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
@@ -777,9 +763,6 @@ void manager::merge(bool div_clock)
     for(auto& itr : m_daughters)
         if(itr != this)
             itr->clear();
-
-    if(restart)
-        m_missing_timer->start();
 }
 
 //============================================================================//
@@ -811,7 +794,7 @@ manager::compute_missing(tim_timer_t* timer_ref)
 {
     typedef std::set<uint64_t> key_set_t;
 
-    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_missing_timer;
+    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_missing_timer.get();
     bool restart = _ref->is_running();
     if(restart)
         _ref->stop();

@@ -362,7 +362,7 @@ public:
     // serialization function
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version);
-    tim_timer_t* missing_timer() const { return m_missing_timer; }
+    tim_timer_t* missing_timer() const { return m_missing_timer.get(); }
     int32_t instance_count() const { return m_instance_count; }
 
 protected:
@@ -423,7 +423,7 @@ private:
     // baseline rss
     base_rss_type           m_rss_usage;
     // missing timer
-    tim_timer_t*            m_missing_timer;
+    timer_ptr_t             m_missing_timer;
     // global timer
     timer_ptr_t             m_total_timer;
     // clock division
