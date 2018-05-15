@@ -175,24 +175,25 @@ manager::manager()
 
 manager::~manager()
 {
-    pfunc;
-    std::cout << "this = " << this << ", master = "
-              << singleton_t::unsafe_master_instance() << std::endl;
-    if(this == singleton_t::unsafe_master_instance() &&
-       tim::env::output_total)
-        std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
-
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
-    {
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "tim::manager deletion " << m_instance_count
-                  << "..." << std::endl;
-    }
+        std::cout << "tim::manager::" << __FUNCTION__
+                  << " deleting thread-local instance of manager..."
+                  << "\nglobal instance: \t"
+                  << singleton_t::unsafe_master_instance()
+                  << "\nlocal instance:  \t"
+                  << singleton_t::unsafe_instance()
+                  << std::endl;
 #endif
 
     pfunc;
     m_overhead_timer->stop();
+
+    this_type* _master = singleton_t::unsafe_master_instance();
+    pfunc;
+    if(this == _master && tim::env::output_total)
+        std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
+
     pfunc;
     auto close_ostream = [&] (ostream_t*& m_os)
     {
@@ -207,19 +208,13 @@ manager::~manager()
         m_fos->close();
     };
 
-#if defined(DEBUG)
-    if(tim::env::verbose > 2)
-        std::cout << "tim::manager::" << __FUNCTION__
-                  << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t"
-                  << singleton_t::unsafe_master_instance()
-                  << "\nlocal instance:  \t"
-                  << singleton_t::unsafe_instance()
-                  << std::endl;
-#endif
-
     pfunc;
     close_ostream(m_report);
+
+    pfunc;
+    if(_master && this != _master)
+        remove(this);
+
     pfunc;
     m_daughters.clear();
     pfunc;
@@ -228,6 +223,8 @@ manager::~manager()
     m_timer_map.clear();
     pfunc;
     delete m_overhead_timer;
+    pfunc;
+
 }
 
 //============================================================================//
@@ -591,10 +588,90 @@ void manager::add(pointer ptr)
 
 //============================================================================//
 
+void manager::remove(pointer ptr)
+{
+    auto_lock_t lock(m_mutex);
+#if defined(DEBUG)
+    if(tim::env::verbose > 2)
+        std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
+                  << ptr << " to " << this << "..." << std::endl;
+#endif
+    this_type* _master = singleton_t::unsafe_master_instance();
+    if(_master && _master == this)
+    {
+        merge(ptr);
+        if(m_daughters.find(ptr) != m_daughters.end())
+            m_daughters.erase(m_daughters.find(ptr));
+    }
+    else if(_master)
+        _master->remove(ptr);
+}
+
+//============================================================================//
+
+void manager::merge(pointer itr)
+{
+    if(itr == singleton_t::unsafe_master_instance())
+        return;
+
+    #if defined(DEBUG)
+    if(tim::env::verbose > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "\tinstance " << m_instance_count << " merging "
+                  << itr->instance_count() << "..." << std::endl;
+    }
+
+    if(tim::env::verbose > 1)
+        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
+                  << "..." << std::endl;
+    #endif
+
+    for(const auto& mitr : itr->map())
+    {
+        if(m_timer_map.find(mitr.first) == m_timer_map.end())
+            m_timer_map[mitr.first] = mitr.second;
+        else
+            m_clock_div_count[mitr.first] += 1;
+    }
+
+    for(const auto& litr : itr->list())
+    {
+        bool found = false;
+        for(auto& mlitr : m_timer_list)
+            if(mlitr == litr)
+            {
+                mlitr += litr;
+                found = true;
+                break;
+            }
+
+        if(!found)
+            m_timer_list.push_back(litr);
+    }
+
+    //itr->overhead_timer()->start();
+}
+
+//============================================================================//
+
+void manager::divide_clock()
+{
+    for(auto& itr : m_clock_div_count)
+        *(m_timer_map[itr.first].get()) /= itr.second;
+    m_clock_div_count.clear();
+}
+
+//============================================================================//
+
 void manager::merge(bool div_clock)
 {
     if(!m_merge.load())
+    {
+        if(div_clock)
+            divide_clock();
         return;
+    }
 
     if(m_daughters.size() == 0)
     {
@@ -603,6 +680,8 @@ void manager::merge(bool div_clock)
             m_overhead_timer->stop();
             m_overhead_timer->start();
         }
+        if(div_clock)
+            divide_clock();
         return;
     }
 
@@ -625,60 +704,11 @@ void manager::merge(bool div_clock)
 
     auto_lock_t lock(m_mutex);
 
-    uomap<uint64_t, uint64_t> clock_div_count;
     for(auto& itr : m_daughters)
-    {
-        if(itr == singleton_t::unsafe_master_instance())
-            continue;
-
-#if defined(DEBUG)
-    if(tim::env::verbose > 2)
-        {
-            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-            std::cout << "\tinstance " << m_instance_count << " merging "
-                      << itr->instance_count() << "..." << std::endl;
-        }
-#endif
-
-        //itr->overhead_timer()->stop();
-
-#if defined(DEBUG)
-    if(tim::env::verbose > 1)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
-                  << "..." << std::endl;
-#endif
-
-        for(const auto& mitr : itr->map())
-        {
-            if(m_timer_map.find(mitr.first) == m_timer_map.end())
-                m_timer_map[mitr.first] = mitr.second;
-            else
-                clock_div_count[mitr.first] += 1;
-        }
-
-        //*m_overhead_timer += *(itr->overhead_timer());
-        //itr->overhead_timer()->reset();
-
-        for(const auto& litr : itr->list())
-        {
-            bool found = false;
-            for(auto& mlitr : m_timer_list)
-                if(mlitr == litr)
-                {
-                    mlitr += litr;
-                    found = true;
-                    break;
-                }
-            if(!found)
-                m_timer_list.push_back(litr);
-        }
-
-        //itr->overhead_timer()->start();
-    }
+        merge(itr);
 
     if(div_clock)
-        for(auto& itr : clock_div_count)
-            *(m_timer_map[itr.first].get()) /= itr.second;
+        divide_clock();
 
     for(auto& itr : m_daughters)
         if(itr != this)

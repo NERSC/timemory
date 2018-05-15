@@ -179,8 +179,6 @@ int main(int argc, char** argv)
         std::cout << rank_sout.str();
     }
 
-    delete manager_t::instance();
-
     MPI_Finalize();
 
     exit(num_fail);

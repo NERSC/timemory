@@ -80,8 +80,6 @@ void _timemory_finalization()
     if(_timemory_manager_singleton())
     {
         pfunc;
-        _timemory_manager_singleton()->destroy();
-        pfunc;
         delete _timemory_manager_singleton();
         pfunc;
         _timemory_manager_singleton() = nullptr;
@@ -98,10 +96,10 @@ namespace
 {
 #if !defined(_WINDOWS)
     void cxx_setup_timemory_manager(void) __attribute__ ((constructor));
-    void cxx_cleanup_timemory_manager(void) __attribute__((destructor));
+    //void cxx_cleanup_timemory_manager(void) __attribute__((destructor));
 #endif
     void cxx_setup_timemory_manager(void) { pfunc; _timemory_initialization(); }
-    void cxx_cleanup_timemory_manager(void) { pfunc; _timemory_finalization(); }
+    //void cxx_cleanup_timemory_manager(void) { pfunc; _timemory_finalization(); }
 }
 
 //============================================================================//

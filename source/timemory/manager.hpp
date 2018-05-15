@@ -212,6 +212,7 @@ public:
     typedef std::atomic<uint64_t>               counter_t;
     typedef std::map<int64_t, tim_timer_t>      overhead_map_t;
     typedef std::pair<tim_timer_t, tim_timer_t> timer_pair_t;
+    typedef uomap<uint64_t, uint64_t>           clock_div_t;
 
 public:
     // Constructor and Destructors
@@ -243,6 +244,7 @@ protected:
 public:
     // Public member functions
     void merge(bool div_clock = true);
+    void merge(pointer);
     void clear();
 
     size_type size() const { return m_timer_list.size(); }
@@ -305,6 +307,7 @@ public:
                         timer_pair_t* = nullptr);
 
     void add(pointer ptr);
+    void remove(pointer ptr);
 
     timer_map_t& map() { return m_timer_map; }
     timer_list_t& list() { return m_timer_list; }
@@ -374,6 +377,7 @@ protected:
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
     void insert_global_timer();
+    void divide_clock();
 
 protected:
 	// protected static variables
@@ -423,6 +427,8 @@ private:
     tim_timer_t*            m_overhead_timer;
     // global timer
     timer_ptr_t             m_total_timer;
+    // clock division
+    clock_div_t             m_clock_div_count;
 };
 
 //----------------------------------------------------------------------------//

@@ -124,6 +124,9 @@ build_script:
     -DTIMEMORY_USE_MPI=ON
     -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DTIMEMORY_BUILD_EXAMPLES=ON
+    -DMPIEXEC="C:/Program Files/Microsoft MPI/Bin/mpiexec.exe"
+    -DMPI_CXX_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include"
+    -DMS_MPI_ARCH_DIR="%CMAKE_ARCH%"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 #
 #- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
