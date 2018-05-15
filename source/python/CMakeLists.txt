@@ -24,7 +24,7 @@ endif(NOT BUILD_SHARED_LIBS AND WIN32)
 pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
     py${LIBNAME}.hpp ${pybind_headers})
 # link cxx library and external libraries
-target_link_libraries(${LIBNAME} ${LIBNAME}-cxx-library ${EXTERNAL_LIBRARIES})
+target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-cxx-library ${EXTERNAL_LIBRARIES})
 add_dependencies(${LIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 
 set_target_properties(${LIBNAME} PROPERTIES
