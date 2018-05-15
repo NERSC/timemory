@@ -72,22 +72,14 @@ std::atomic<int> manager::f_manager_instance_count;
 // static function
 manager::pointer manager::instance()
 {
-#if defined(_WINDOWS)
-    return singleton_t::instance();
-#else
     return singleton_t::instance().get();
-#endif
 }
 
 //============================================================================//
 // static function
 manager::pointer manager::master_instance()
 {
-#if defined(_WINDOWS)
-    return singleton_t::master_instance();
-#else
     return singleton_t::master_instance().get();
-#endif
 }
 
 //============================================================================//
@@ -219,15 +211,9 @@ manager::~manager()
     pfunc;
     close_ostream(m_report);
 
-#if defined(_WINDOWS)
-    for(auto& itr : m_daughters)
-        if(itr != this)
-            delete itr;
-#else
     pfunc;
     if(_master && this != _master)
         remove(this);
-#endif
 
     pfunc;
     m_daughters.clear();
@@ -238,13 +224,6 @@ manager::~manager()
     pfunc;
     delete m_overhead_timer;
     pfunc;
-
-#if defined(_WINDOWS)
-    if(this == _master)
-        singleton_t::null_master_instance();
-    singleton_t::null_instance();
-#endif
-
 }
 
 //============================================================================//

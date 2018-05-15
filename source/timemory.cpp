@@ -77,16 +77,10 @@ void _timemory_finalization()
 //============================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
-namespace
-{
 #if !defined(_WINDOWS)
-    void setup_timemory(void) __attribute__ ((constructor));
+__attribute__((constructor))
 #endif
-    void setup_timemory(void) { pfunc; _timemory_initialization(); }
-#if defined(_WINDOWS)
-    void cleanup_timemory(void) { pfunc; _timemory_finalization(); }
-#endif
-}
+void setup_timemory(void) { pfunc; _timemory_initialization(); }
 
 //============================================================================//
 //
