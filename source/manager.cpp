@@ -187,55 +187,21 @@ manager::manager()
 
 manager::~manager()
 {
-    pfunc;
+    this_type* _master = singleton_t::unsafe_master_instance();
+    /*
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t"
-                  << singleton_t::unsafe_master_instance()
+                  << _master
                   << "\nlocal instance:  \t"
                   << singleton_t::unsafe_instance()
                   << std::endl;
 #endif
-
-    pfunc;
-    this_type* _master = singleton_t::unsafe_master_instance();
-
-    /*if(this == _master && tim::env::output_total)
-    {
-        assert(m_total_timer.get());
-        if(m_total_timer->is_running())
-            m_total_timer->stop();
-        std::cout << "\n" << m_total_timer->as_string() << std::endl;
-    }*/
-
-    pfunc;
-
-    auto close_ostream = [&] (ostream_t*& m_os)
-    {
-        ofstream_t* m_fos = get_ofstream(m_os);
-        if(!m_fos)
-            return;
-        if(!m_fos->good() || !m_fos->is_open())
-            return;
-        m_fos->close();
-    };
-
-    pfunc;
-    close_ostream(m_report);
-
-    pfunc;
+    */
     if(_master && this != _master)
         remove(this);
-
-    pfunc;
-    m_daughters.clear();
-    pfunc;
-    m_timer_list.clear();
-    pfunc;
-    m_timer_map.clear();
-    pfunc;
 }
 
 //============================================================================//
