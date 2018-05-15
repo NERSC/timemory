@@ -187,6 +187,7 @@ manager::manager()
 
 manager::~manager()
 {
+    pfunc;
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
@@ -201,8 +202,9 @@ manager::~manager()
     pfunc;
     this_type* _master = singleton_t::unsafe_master_instance();
 
-    if(this == _master && tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) == 0)
+    if(this == _master && tim::env::output_total)
     {
+        assert(m_total_timer.get());
         if(m_total_timer->is_running())
             m_total_timer->stop();
         std::cout << "\n" << m_total_timer->as_string() << std::endl;
