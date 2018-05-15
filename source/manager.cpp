@@ -70,16 +70,16 @@ std::atomic<int> manager::f_manager_instance_count;
 
 //============================================================================//
 // static function
-manager::pointer_type manager::instance()
+manager::pointer manager::instance()
 {
-    return singleton<manager>::instance();
+    return singleton_t::instance().get();
 }
 
 //============================================================================//
 // static function
-manager::pointer_type manager::master_instance()
+manager::pointer manager::master_instance()
 {
-    return singleton<manager>::master_instance();
+    return singleton_t::master_instance().get();
 }
 
 //============================================================================//
@@ -110,23 +110,23 @@ manager::manager()
   m_laps(0),
   m_hash(0),
   m_count(0),
-  m_p_hash ((singleton<manager>::unsafe_master_instance())
-            ? singleton<manager>::unsafe_master_instance()->hash().load()  : 0),
-  m_p_count((singleton<manager>::unsafe_master_instance())
-            ? singleton<manager>::unsafe_master_instance()->count().load() : 0),
+  m_p_hash ((singleton_t::unsafe_master_instance())
+            ? singleton_t::unsafe_master_instance()->hash().load()  : 0),
+  m_p_count((singleton_t::unsafe_master_instance())
+            ? singleton_t::unsafe_master_instance()->count().load() : 0),
   m_report(&std::cout),
   m_overhead_timer(nullptr),
   m_total_timer(nullptr)
 {
-    if(!singleton<manager>::unsafe_master_instance())
+    if(!singleton_t::unsafe_master_instance())
     {
         m_merge = true;
         tim::env::parse();
     }
     else
     {
-        singleton<manager>::unsafe_master_instance()->set_merge(true);
-        singleton<manager>::unsafe_master_instance()->add(this);
+        singleton_t::unsafe_master_instance()->set_merge(true);
+        singleton_t::unsafe_master_instance()->add(this);
     }
 
     m_overhead_timer = new tim_timer_t();
@@ -160,10 +160,10 @@ manager::manager()
     m_overhead_timer->format()->prefix(ss.str());
     m_overhead_timer->start();
 
-    if(!singleton<manager>::unsafe_master_instance())
+    if(!singleton_t::unsafe_master_instance())
         insert_global_timer();
-    else if(singleton<manager>::unsafe_master_instance() &&
-            singleton<manager>::unsafe_instance())
+    else if(singleton_t::unsafe_master_instance() &&
+            singleton_t::unsafe_instance())
     {
         std::ostringstream ss;
         ss << "manager singleton has already been created";
@@ -176,7 +176,9 @@ manager::manager()
 manager::~manager()
 {
     pfunc;
-    if(this == singleton<manager>::unsafe_master_instance() &&
+    std::cout << "this = " << this << ", master = "
+              << singleton_t::unsafe_master_instance() << std::endl;
+    if(this == singleton_t::unsafe_master_instance() &&
        tim::env::output_total)
         std::cout << "\n" << m_total_timer.get()->as_string() << std::endl;
 
@@ -210,26 +212,14 @@ manager::~manager()
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t"
-                  << singleton<manager>::unsafe_master_instance()
+                  << singleton_t::unsafe_master_instance()
                   << "\nlocal instance:  \t"
-                  << singleton<manager>::unsafe_instance()
+                  << singleton_t::unsafe_instance()
                   << std::endl;
 #endif
 
     pfunc;
     close_ostream(m_report);
-
-    for(auto& itr : m_daughters)
-    {
-        pfunc;
-        if(itr != this)
-        {
-            pfunc;
-            delete itr;
-            pfunc;
-        }
-    }
-
     pfunc;
     m_daughters.clear();
     pfunc;
@@ -238,23 +228,13 @@ manager::~manager()
     m_timer_map.clear();
     pfunc;
     delete m_overhead_timer;
-
-    pfunc;
-    if(this == singleton<manager>::unsafe_master_instance())
-    {
-        pfunc;
-        singleton<manager>::null_master_instance();
-    }
-    pfunc;
-    singleton<manager>::null_instance();
-    pfunc;
 }
 
 //============================================================================//
 
 void manager::update_total_timer_format()
 {
-    if((this == singleton<manager>::unsafe_master_instance() ||
+    if((this == singleton_t::unsafe_master_instance() ||
         m_instance_count == 0))
     {
         m_total_timer->format()->prefix(this->get_prefix() +
@@ -272,7 +252,7 @@ void manager::update_total_timer_format()
 
 void manager::insert_global_timer()
 {
-    if((this == singleton<manager>::unsafe_master_instance() ||
+    if((this == singleton_t::unsafe_master_instance() ||
         m_instance_count == 0) &&
        m_timer_map.size() == 0 &&
        m_timer_list.size() == 0)
@@ -299,7 +279,7 @@ void manager::clear()
                   << instance() << "..." << std::endl;
 #endif
 
-    if(this == singleton<manager>::unsafe_master_instance())
+    if(this == singleton_t::unsafe_master_instance())
         tim::format::timer::default_width(8);
 
     m_laps += compute_total_laps();
@@ -597,7 +577,7 @@ manager::get_ofstream(ostream_t* m_os) const
 
 //============================================================================//
 
-void manager::add(pointer_type ptr)
+void manager::add(pointer ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
@@ -648,7 +628,7 @@ void manager::merge(bool div_clock)
     uomap<uint64_t, uint64_t> clock_div_count;
     for(auto& itr : m_daughters)
     {
-        if(itr == singleton<manager>::unsafe_master_instance())
+        if(itr == singleton_t::unsafe_master_instance())
             continue;
 
 #if defined(DEBUG)

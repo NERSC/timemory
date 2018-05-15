@@ -24,7 +24,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
 # Add the executable, and link it to the TiMemory libraries
 #
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
-target_link_libraries(${EXE_NAME} ${TiMemory_C_LIBRARIES})
+target_link_libraries(${EXE_NAME} ${TiMemory_C_LIBRARIES} ${TiMemory_LIBRARIES})
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})

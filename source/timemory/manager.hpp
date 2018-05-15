@@ -33,6 +33,7 @@
 #define manager_hpp_
 
 #include "timemory/macros.hpp"
+#include "timemory/singleton.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -185,6 +186,7 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
+    typedef singleton<manager>                  singleton_t;
     typedef manager                             this_type;
     typedef tim::timer                          tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>        timer_ptr_t;
@@ -201,7 +203,8 @@ public:
     typedef std::mutex                          mutex_t;
     typedef uomap<uint64_t, mutex_t>            mutex_map_t;
     typedef std::lock_guard<mutex_t>            auto_lock_t;
-    typedef this_type*                          pointer_type;
+    typedef singleton_t::pointer                pointer;
+    typedef singleton_t::shared_pointer         shared_pointer;
     typedef std::set<this_type*>                daughter_list_t;
     typedef tim_timer_t::rss_type               rss_type;
     typedef rss_type::base_type                 base_rss_type;
@@ -217,8 +220,8 @@ public:
 
 public:
     // Public static functions
-    static pointer_type instance();
-    static pointer_type master_instance();
+    static pointer instance();
+    static pointer master_instance();
     static void enable(bool val = true) { f_enabled = val; }
     static void set_get_num_threads_func(get_num_threads_func_t f);
     static const int32_t& max_depth() { return f_max_depth; }
@@ -301,7 +304,7 @@ public:
                         tim_timer_t* = nullptr,
                         timer_pair_t* = nullptr);
 
-    void add(pointer_type ptr);
+    void add(pointer ptr);
 
     timer_map_t& map() { return m_timer_map; }
     timer_list_t& list() { return m_timer_list; }

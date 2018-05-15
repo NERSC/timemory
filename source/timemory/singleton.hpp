@@ -27,6 +27,11 @@
 
 #include "timemory/macros.hpp"
 #include <thread>
+#include <memory>
+
+#if !defined(pfunc)
+#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#endif
 
 namespace tim
 {
@@ -37,14 +42,16 @@ template <typename _Tp>
 class tim_api singleton
 {
 public:
-    typedef _Tp                 value_type;
-    typedef _Tp*                pointer;
-    typedef _Tp&                reference;
-    typedef _Tp*&               pointer_reference;
-    typedef const _Tp*          const_pointer;
-    typedef const _Tp&          const_reference;
-    typedef const _Tp*&         const_pointer_reference;
-    typedef std::thread::id     thread_id_t;
+    typedef _Tp                             value_type;
+    typedef _Tp*                            pointer;
+    typedef _Tp&                            reference;
+    typedef _Tp*&                           pointer_reference;
+    typedef const _Tp*                      const_pointer;
+    typedef const _Tp&                      const_reference;
+    typedef const _Tp*&                     const_pointer_reference;
+    typedef std::thread::id                 thread_id_t;
+    typedef std::shared_ptr<value_type>     shared_pointer;
+    typedef std::shared_ptr<value_type>&    shared_pointer_reference;
 
 public:
     // Constructor and Destructors
@@ -59,32 +66,27 @@ public:
     void destroy();
 
     // Public functions
-    static pointer instance();
-    static pointer local_instance();
-    static pointer master_instance();
+    static shared_pointer instance();
+    static shared_pointer local_instance();
+    static shared_pointer master_instance();
 
     // for checking but not allocating
-    static pointer unsafe_instance()        { return _local_instance();  }
-    static pointer unsafe_local_instance()  { return _local_instance();  }
-    static pointer unsafe_master_instance() { return f_master_instance; }
-
-    // for when destructor is explicitly called
-    static void null_instance()             { _local_instance() = nullptr; }
-    static void null_local_instance()       { _local_instance() = nullptr; }
-    static void null_master_instance()      { f_master_instance = nullptr; }
+    static pointer unsafe_instance()        { return _local_instance().get(); }
+    static pointer unsafe_local_instance()  { return _local_instance().get(); }
+    static pointer unsafe_master_instance() { return f_master_instance.get(); }
 
 private:
     // Private functions
-    static pointer_reference _local_instance()
+    static shared_pointer_reference _local_instance()
     {
-        tim_static_thread_local pointer _instance = nullptr;
+        tim_static_thread_local shared_pointer _instance = shared_pointer();
         return _instance;
     }
 
 private:
     // Private variables
-    static  thread_id_t f_master_thread;
-    static  pointer     f_master_instance;
+    static  thread_id_t         f_master_thread;
+    static  shared_pointer      f_master_instance;
 };
 
 //============================================================================//
@@ -96,8 +98,8 @@ singleton<_Tp>::f_master_thread = std::this_thread::get_id();
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::pointer
-singleton<_Tp>::f_master_instance = nullptr;
+typename singleton<_Tp>::shared_pointer
+singleton<_Tp>::f_master_instance = singleton<_Tp>::shared_pointer();
 
 //----------------------------------------------------------------------------//
 
@@ -107,7 +109,7 @@ void singleton<_Tp>::initialize()
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        _local_instance() = new _Tp();
+        _local_instance().reset(new _Tp());
         f_master_instance = _local_instance();
     }
 }
@@ -118,39 +120,25 @@ template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
 //#if defined(DEBUG)
-    std::cout << std::this_thread::get_id() << " destroying singleton..."
-              << std::endl;
+//    std::cout << std::this_thread::get_id() << " destroying singleton..."
+//              << std::endl;
 //#endif
-    if(_local_instance() != f_master_instance)
-    {
-//#if defined(DEBUG)
-        std::cout << std::this_thread::get_id() << " destroying local singleton..."
-                  << std::endl;
-//#endif
-        delete _local_instance();
-        _local_instance() = nullptr;
-    }
-    else
-    {
-//#if defined(DEBUG)
-        std::cout << std::this_thread::get_id() << " destroying master singleton..."
-                  << std::endl;
-//#endif
-        delete _local_instance();
-        _local_instance() = nullptr;
-        f_master_instance = nullptr;
-    }
+    pfunc;
+    _local_instance().reset();
+    pfunc;
+    f_master_instance.reset();
+    pfunc;
 }
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::pointer
+typename singleton<_Tp>::shared_pointer
 singleton<_Tp>::instance()
 {
     if(!_local_instance())
     {
-        _local_instance() = new _Tp();
+        _local_instance().reset(new _Tp());
         if(!f_master_instance)
             f_master_instance = _local_instance();
     }
@@ -161,7 +149,7 @@ singleton<_Tp>::instance()
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::pointer
+typename singleton<_Tp>::shared_pointer
 singleton<_Tp>::local_instance()
 {
     return instance();
@@ -170,13 +158,13 @@ singleton<_Tp>::local_instance()
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::pointer
+typename singleton<_Tp>::shared_pointer
 singleton<_Tp>::master_instance()
 {
     if(!f_master_instance)
     {
         if(!_local_instance())
-            _local_instance() = new _Tp();
+            _local_instance().reset(new _Tp());
         f_master_instance = _local_instance();
     }
 

@@ -499,6 +499,7 @@ install:
     - echo "--> ${PWD}"
     - export SOURCE_DIR=${PWD}
     - export TIMEMORY_VERBOSE=4
+    - export TIMEMORY_OUTPUT_TOTAL=1
     - pip install matplotlib numpy pillow
     - mkdir -p build-timemory
     - cd build-timemory
