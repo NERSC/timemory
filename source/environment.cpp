@@ -48,7 +48,7 @@ namespace env
 
 int         verbose                     = 0;
 bool        disable_timer_memory        = false;
-bool        output_total                = false;
+//bool        output_total                = false;
 string_t    env_num_threads             = "TIMEMORY_NUM_THREADS";
 int         num_threads                 = 0;
 int         max_depth                   = std::numeric_limits<uint16_t>::max();
@@ -99,7 +99,7 @@ void parse()
 
     verbose                 = tim::get_env<int>     ("TIMEMORY_VERBOSE",                    verbose);
     disable_timer_memory    = get_env_bool          ("TIMEMORY_DISABLE_TIMER_MEMORY",       disable_timer_memory);
-    output_total            = get_env_bool          ("TIMEMORY_OUTPUT_TOTAL",               output_total);
+    //output_total            = get_env_bool          ("TIMEMORY_OUTPUT_TOTAL",               output_total);
     env_num_threads         = tim::get_env<string_t>("TIMEMORY_NUM_THREADS_ENV",            env_num_threads);
     num_threads             = tim::get_env<int>     (env_num_threads,                       num_threads);
     max_depth               = tim::get_env<int>     ("TIMEMORY_MAX_DEPTH",                  max_depth);

@@ -60,7 +60,7 @@ typedef std::string string_t;
 
 extern  int         verbose;
 extern  bool        disable_timer_memory;
-extern  bool        output_total;
+//extern  bool        output_total;
 extern  string_t    env_num_threads;
 extern  int         num_threads;
 extern  int         max_depth;

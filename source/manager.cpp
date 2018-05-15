@@ -202,13 +202,13 @@ manager::~manager()
     pfunc;
     this_type* _master = singleton_t::unsafe_master_instance();
 
-    if(this == _master && tim::env::output_total)
+    /*if(this == _master && tim::env::output_total)
     {
         assert(m_total_timer.get());
         if(m_total_timer->is_running())
             m_total_timer->stop();
         std::cout << "\n" << m_total_timer->as_string() << std::endl;
-    }
+    }*/
 
     pfunc;
 
