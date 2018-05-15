@@ -63,66 +63,13 @@ tim::manager::singleton_t*& _timemory_manager_singleton()
 
 //============================================================================//
 
-tim::manager::timer_singleton_t*& _timemory_timer_singleton()
-{
-    static tim::manager::timer_singleton_t* _instance
-            = new tim::manager::timer_singleton_t(
-                  new tim::timer(
-                      tim::format::timer(std::string("> [exe] total"),
-                                         tim::format::timer::default_format(),
-                                         tim::format::timer::default_unit(),
-                                         tim::format::timer::default_rss_format(),
-                                         true)));
-    return _instance;
-}
-
-//============================================================================//
-
 void _timemory_initialization()
-{
-    pfunc;
-    typedef tim::singleton<tim::timer>::pointer         timer_pointer;
-    typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
-
-    pfunc;
-    timer_shared_pointer _shared_total_timer =
-            _timemory_timer_singleton()->master_instance();
-    pfunc;
-    timer_pointer _total_timer = _shared_total_timer.get();
-
-    pfunc;
-    if(!_total_timer->is_running())
-        _total_timer->start();
-}
+{ }
 
 //============================================================================//
 
 void _timemory_finalization()
-{
-    pfunc;
-    typedef tim::singleton<tim::timer>::pointer         timer_pointer;
-    typedef tim::singleton<tim::timer>::shared_pointer  timer_shared_pointer;
-
-    // don't care at this point anymore -- no reporting
-    if(tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) == 0)
-        return;
-
-    pfunc;
-    timer_shared_pointer _shared_total_timer =
-            _timemory_timer_singleton()->master_instance();
-    pfunc;
-    timer_pointer _total_timer = _shared_total_timer.get();
-
-    if(!_total_timer)
-        return;
-
-    pfunc;
-    if(_total_timer->is_running())
-        _total_timer->stop();
-
-    pfunc;
-    std::cout << "\n" << _total_timer->as_string() << std::endl;
-}
+{ }
 
 //============================================================================//
 
@@ -184,8 +131,13 @@ manager::manager()
   m_p_count((singleton_t::unsafe_master_instance())
             ? singleton_t::unsafe_master_instance()->count().load() : 0),
   m_report(&std::cout),
-  m_missing_timer(nullptr),
-  m_total_timer(nullptr)
+  m_missing_timer(timer_ptr_t(new tim_timer_t())),
+  m_total_timer(timer_ptr_t(new tim::timer(
+                                tim::format::timer(std::string("> [exe] total"),
+                                                   tim::format::timer::default_format(),
+                                                   tim::format::timer::default_unit(),
+                                                   tim::format::timer::default_rss_format(),
+                                                   true))))
 {
     if(!singleton_t::unsafe_master_instance())
     {
@@ -197,9 +149,6 @@ manager::manager()
         singleton_t::unsafe_master_instance()->set_merge(true);
         singleton_t::unsafe_master_instance()->add(this);
     }
-
-    m_missing_timer = timer_ptr_t(new tim_timer_t());
-    m_total_timer = _timemory_timer_singleton()->instance();
 
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
@@ -251,6 +200,15 @@ manager::~manager()
 
     pfunc;
     this_type* _master = singleton_t::unsafe_master_instance();
+
+    if(this == _master && tim::get_env<int>("TIMEMORY_OUTPUT_TOTAL", 0) == 0)
+    {
+        if(m_total_timer->is_running())
+            m_total_timer->stop();
+        std::cout << "\n" << m_total_timer->as_string() << std::endl;
+    }
+
+    pfunc;
 
     auto close_ostream = [&] (ostream_t*& m_os)
     {
