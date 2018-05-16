@@ -586,6 +586,7 @@ if __name__ == '__main__':
         else:
             loader = unittest.defaultTestLoader.sortTestMethodsUsing = None
             unittest.main(verbosity=5, buffer=False)
+        print('"{}" testing finished'.format(__file__))
     except:
         raise
     finally:

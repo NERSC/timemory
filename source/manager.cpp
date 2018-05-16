@@ -77,12 +77,11 @@ void _timemory_manager_deleter(tim::manager* ptr)
 
 //============================================================================//
 
-tim::manager::singleton_t*& _timemory_manager_singleton()
+tim::manager::singleton_t& _timemory_manager_singleton()
 {
-    static tim::manager::singleton_t* _instance
-            = new tim::manager::singleton_t(
-                  new tim::manager(),
-                  std::bind(&_timemory_manager_deleter, _1));
+    static tim::manager::singleton_t _instance(
+                new tim::manager(),
+                std::bind(&_timemory_manager_deleter, _1));
     return _instance;
 }
 
@@ -113,14 +112,14 @@ std::atomic<int> manager::f_manager_instance_count;
 // static function
 manager::pointer manager::instance()
 {
-    return _timemory_manager_singleton()->instance().get();
+    return _timemory_manager_singleton().instance().get();
 }
 
 //============================================================================//
 // static function
 manager::pointer manager::master_instance()
 {
-    return _timemory_manager_singleton()->master_instance().get();
+    return _timemory_manager_singleton().master_instance().get();
 }
 
 //============================================================================//

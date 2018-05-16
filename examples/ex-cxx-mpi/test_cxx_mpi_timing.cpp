@@ -179,6 +179,8 @@ int main(int argc, char** argv)
         std::cout << rank_sout.str();
     }
 
+    tim::disable_signal_detection();
+
     MPI_Finalize();
 
     exit(num_fail);

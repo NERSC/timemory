@@ -171,6 +171,7 @@ def run_test():
     print("{}".format(timemory.get_missing_report()))
 
     timemory.disable_signal_detection()
+    print('"{}" testing finished'.format(__file__))
 
 
 # ---------------------------------------------------------------------------- #

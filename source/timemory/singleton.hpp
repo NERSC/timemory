@@ -168,7 +168,7 @@ void singleton<_Tp>::initialize()
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        _local_instance().reset(new _Tp(), f_deleter);
+        _local_instance().reset(new _Tp());
         f_master_instance = _local_instance();
     }
 }
@@ -181,7 +181,7 @@ void singleton<_Tp>::initialize(pointer ptr)
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        _local_instance().reset(ptr, f_deleter);
+        _local_instance().reset(ptr);
         f_master_instance = _local_instance();
     }
 }
@@ -238,7 +238,7 @@ singleton<_Tp>::master_instance()
     if(!f_master_instance)
     {
         if(!_local_instance())
-            _local_instance().reset(new _Tp(), f_deleter);
+            _local_instance().reset(new _Tp());
         f_master_instance = _local_instance();
     }
     return f_master_instance;

@@ -258,11 +258,12 @@ def run_test():
     fserial = options.set_serial("timing_array_test.json")
     manager.report(ign_cutoff = True)
     plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
-    print("{}".format(timemory.get_missing_report()))
 
     measure('end', _rss = rss)
+    print("{}".format(timemory.get_missing_report()))
 
     timemory.disable_signal_detection()
+    print('"{}" testing finished'.format(__file__))
 
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':

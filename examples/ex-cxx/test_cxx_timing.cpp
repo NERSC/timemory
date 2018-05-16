@@ -167,6 +167,7 @@ int main(int /*argc*/, char** argv)
     tim::format::timer::pop();
 
     manager_t::instance()->write_missing();
+    tim::disable_signal_detection();
 
     exit(num_fail);
 }
