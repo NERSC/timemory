@@ -43,6 +43,7 @@
 #include <algorithm>
 #include <thread>
 #include <cstdint>
+#include <functional>
 
 #if !defined(TIMEMORY_DEFAULT_ENABLED)
 #   define TIMEMORY_DEFAULT_ENABLED true
@@ -52,12 +53,29 @@
 #   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
 #endif
 
+using std::placeholders::_1;
+
+//============================================================================//
+
+void _timemory_manager_deleter(tim::manager* ptr)
+{
+    tim::manager* master = tim::manager::singleton_t::master_instance().get();
+    if(master && ptr != master)
+    {
+        pfunc;
+        master->remove(ptr);
+    }
+    delete ptr;
+}
+
 //============================================================================//
 
 tim::manager::singleton_t*& _timemory_manager_singleton()
 {
     static tim::manager::singleton_t* _instance
-            = new tim::manager::singleton_t(new tim::manager());
+            = new tim::manager::singleton_t(
+                  new tim::manager(),
+                  std::bind(&_timemory_manager_deleter, _1));
     return _instance;
 }
 
@@ -126,10 +144,10 @@ manager::manager()
   m_laps(0),
   m_hash(0),
   m_count(0),
-  m_p_hash ((singleton_t::unsafe_master_instance())
-            ? singleton_t::unsafe_master_instance()->hash().load()  : 0),
-  m_p_count((singleton_t::unsafe_master_instance())
-            ? singleton_t::unsafe_master_instance()->count().load() : 0),
+  m_p_hash ((singleton_t::master_instance_ptr())
+            ? singleton_t::master_instance_ptr()->hash().load()  : 0),
+  m_p_count((singleton_t::master_instance_ptr())
+            ? singleton_t::master_instance_ptr()->count().load() : 0),
   m_report(&std::cout),
   m_missing_timer(timer_ptr_t(new tim_timer_t())),
   m_total_timer(timer_ptr_t(new tim::timer(
@@ -139,15 +157,15 @@ manager::manager()
                                                    tim::format::timer::default_rss_format(),
                                                    true))))
 {
-    if(!singleton_t::unsafe_master_instance())
+    if(!singleton_t::master_instance_ptr())
     {
         m_merge = true;
         tim::env::parse();
     }
     else
     {
-        singleton_t::unsafe_master_instance()->set_merge(true);
-        singleton_t::unsafe_master_instance()->add(this);
+        singleton_t::master_instance_ptr()->set_merge(true);
+        singleton_t::master_instance_ptr()->add(this);
     }
 
 #if defined(DEBUG)
@@ -172,10 +190,10 @@ manager::manager()
     m_missing_timer->format()->prefix(ss.str());
     m_missing_timer->start();
 
-    if(!singleton_t::unsafe_master_instance())
+    if(!singleton_t::master_instance_ptr())
         insert_global_timer();
-    else if(singleton_t::unsafe_master_instance() &&
-            singleton_t::unsafe_instance())
+    else if(singleton_t::master_instance_ptr() &&
+            singleton_t::instance_ptr())
     {
         std::ostringstream ss;
         ss << "manager singleton has already been created";
@@ -187,28 +205,25 @@ manager::manager()
 
 manager::~manager()
 {
-    this_type* _master = singleton_t::unsafe_master_instance();
-    /*
+
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t"
-                  << _master
+                  << singleton_t::master_instance_ptr()
                   << "\nlocal instance:  \t"
-                  << singleton_t::unsafe_instance()
+                  << singleton_t::instance_ptr()
                   << std::endl;
 #endif
-    */
-    if(_master && this != _master)
-        remove(this);
+
 }
 
 //============================================================================//
 
 void manager::update_total_timer_format()
 {
-    if((this == singleton_t::unsafe_master_instance() ||
+    if((this == singleton_t::master_instance_ptr() ||
         m_instance_count == 0))
     {
         m_total_timer->format()->prefix(this->get_prefix() +
@@ -226,7 +241,7 @@ void manager::update_total_timer_format()
 
 void manager::insert_global_timer()
 {
-    if((this == singleton_t::unsafe_master_instance() ||
+    if((this == singleton_t::master_instance_ptr() ||
         m_instance_count == 0) &&
        m_timer_map.size() == 0 &&
        m_timer_list.size() == 0)
@@ -253,7 +268,7 @@ void manager::clear()
                   << instance() << "..." << std::endl;
 #endif
 
-    if(this == singleton_t::unsafe_master_instance())
+    if(this == singleton_t::master_instance_ptr())
         tim::format::timer::default_width(8);
 
     m_laps += compute_total_laps();
@@ -567,28 +582,28 @@ void manager::add(pointer ptr)
 
 void manager::remove(pointer ptr)
 {
+    if(ptr == this)
+        return;
+
     auto_lock_t lock(m_mutex);
+
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
-                  << ptr << " to " << this << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " - Removing "
+                  << ptr << " from " << this << "..." << std::endl;
 #endif
-    this_type* _master = singleton_t::unsafe_master_instance();
-    if(_master && _master == this)
-    {
-        merge(ptr);
-        if(m_daughters.find(ptr) != m_daughters.end())
-            m_daughters.erase(m_daughters.find(ptr));
-    }
-    else if(_master)
-        _master->remove(ptr);
+
+    merge(ptr);
+    if(m_daughters.find(ptr) != m_daughters.end())
+        m_daughters.erase(m_daughters.find(ptr));
+
 }
 
 //============================================================================//
 
 void manager::merge(pointer itr)
 {
-    if(itr == singleton_t::unsafe_master_instance())
+    if(itr == this)
         return;
 
     #if defined(DEBUG)
