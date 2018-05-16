@@ -81,13 +81,19 @@ public:
     void initialize(pointer, deleter);
     void destroy();
 
-    // instance functions
+    // instance functions that initialize if nullptr
     static shared_pointer instance();
     static shared_pointer master_instance();
+
+    // instance functions that do not initialize
+    static shared_pointer raw_instance()        { return _local_instance(); }
+    static shared_pointer raw_master_instance() { return f_master_instance; }
 
     // for checking but not allocating
     static pointer instance_ptr()        { return _local_instance().get(); }
     static pointer master_instance_ptr() { return f_master_instance.get(); }
+
+    static thread_id_t master_thread_id() { return f_master_thread; }
 
 private:
     // Private functions
@@ -235,7 +241,6 @@ singleton<_Tp>::master_instance()
             _local_instance().reset(new _Tp(), f_deleter);
         f_master_instance = _local_instance();
     }
-
     return f_master_instance;
 }
 

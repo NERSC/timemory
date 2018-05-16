@@ -59,13 +59,20 @@ using std::placeholders::_1;
 
 void _timemory_manager_deleter(tim::manager* ptr)
 {
-    tim::manager* master = tim::manager::singleton_t::master_instance().get();
-    if(master && ptr != master)
+    tim::manager*   master     = tim::manager::singleton_t::master_instance_ptr();
+    std::thread::id master_tid = tim::manager::singleton_t::master_thread_id();
+
+    if(std::this_thread::get_id() == master_tid)
+        delete ptr;
+    else
     {
-        pfunc;
-        master->remove(ptr);
+        if(master && ptr != master)
+        {
+            pfunc;
+            master->remove(ptr);
+        }
+        delete ptr;
     }
-    delete ptr;
 }
 
 //============================================================================//
