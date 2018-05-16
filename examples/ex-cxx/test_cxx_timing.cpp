@@ -288,7 +288,7 @@ void test_rss_usage()
     std::cout << "expected usage diff : " << _e_usage << std::endl;
     std::cout << "  actual difference : " << _a_diff << std::endl;
 
-    ASSERT_TRUE(_a_diff < 100);
+    ASSERT_TRUE(_a_diff < 250);
 
     fibonacci(36);
 

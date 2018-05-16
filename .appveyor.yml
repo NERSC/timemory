@@ -91,11 +91,11 @@ install:
       }
       conda update -y -q -n base conda
       conda install -y -q pip
-      %PYTHON_EXE% -m pip install -U pip
+      python -m pip install -U pip
     }
     # pip installation
-    %PYTHON_EXE% -m pip install -U setuptools disttools
-    %PYTHON_EXE% -m pip install -U matplotlib numpy pillow
+    python -m pip install -U setuptools disttools
+    python -m pip install -U matplotlib numpy pillow
     $env:TIMEMORY_DEBUG = 4
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
