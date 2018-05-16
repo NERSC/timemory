@@ -69,9 +69,7 @@ public:
     singleton(pointer);
     singleton(deleter);
     singleton(pointer, deleter);
-    // Virtual destructors are required by abstract classes 
-    // so add it by default, just in case
-    virtual ~singleton() { }
+    ~singleton() { f_master_instance.reset(); }
 
 public:
     // public member function
