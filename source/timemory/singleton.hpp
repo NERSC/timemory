@@ -69,7 +69,11 @@ public:
     singleton(pointer);
     singleton(deleter);
     singleton(pointer, deleter);
-    ~singleton() { f_master_instance.reset(); }
+    ~singleton()
+    {
+        // should be called at __cxa_finalize so don't bother deleting
+        f_master_instance = nullptr;
+    }
 
 public:
     // public member function
@@ -80,16 +84,15 @@ public:
     void destroy();
 
     // instance functions that initialize if nullptr
-    static shared_pointer instance();
-    static shared_pointer master_instance();
+    static pointer instance();
+    static pointer master_instance();
 
     // instance functions that do not initialize
-    static shared_pointer raw_instance()        { return _local_instance(); }
-    static shared_pointer raw_master_instance() { return f_master_instance; }
+    static shared_pointer raw_instance()  { return _local_instance(); }
 
     // for checking but not allocating
-    static pointer instance_ptr()        { return _local_instance().get(); }
-    static pointer master_instance_ptr() { return f_master_instance.get(); }
+    static pointer instance_ptr()         { return _local_instance().get(); }
+    static pointer master_instance_ptr()  { return f_master_instance; }
 
     static thread_id_t master_thread_id() { return f_master_thread; }
 
@@ -104,7 +107,7 @@ private:
 private:
     // Private variables
     static  thread_id_t         f_master_thread;
-    static  shared_pointer      f_master_instance;
+    static  pointer             f_master_instance;
     static  deleter             f_deleter;
 };
 
@@ -117,8 +120,8 @@ singleton<_Tp>::f_master_thread = std::this_thread::get_id();
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::shared_pointer
-singleton<_Tp>::f_master_instance = singleton<_Tp>::shared_pointer();
+typename singleton<_Tp>::pointer
+singleton<_Tp>::f_master_instance = nullptr;
 
 //----------------------------------------------------------------------------//
 
@@ -166,8 +169,7 @@ void singleton<_Tp>::initialize()
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        _local_instance().reset(new _Tp());
-        f_master_instance = _local_instance();
+        f_master_instance = new _Tp();
     }
 }
 
@@ -179,8 +181,7 @@ void singleton<_Tp>::initialize(pointer ptr)
     if(!f_master_instance)
     {
         f_master_thread = std::this_thread::get_id();
-        _local_instance().reset(ptr);
-        f_master_instance = _local_instance();
+        f_master_instance = ptr;
     }
 }
 
@@ -207,37 +208,31 @@ template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
     _local_instance().reset();
-    if(_local_instance().get() == f_master_instance.get())
-        f_master_instance.reset();
 }
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::shared_pointer
+typename singleton<_Tp>::pointer
 singleton<_Tp>::instance()
 {
-    if(!_local_instance())
-    {
+    if(std::this_thread::get_id() == f_master_thread)
+        return master_instance();
+    else if(!_local_instance())
         _local_instance().reset(new _Tp(), f_deleter);
-        if(!f_master_instance)
-            f_master_instance = _local_instance();
-    }
-
-    return _local_instance();
+    return _local_instance().get();
 }
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-typename singleton<_Tp>::shared_pointer
+typename singleton<_Tp>::pointer
 singleton<_Tp>::master_instance()
 {
     if(!f_master_instance)
     {
-        if(!_local_instance())
-            _local_instance().reset(new _Tp());
-        f_master_instance = _local_instance();
+        f_master_thread = std::this_thread::get_id();
+        f_master_instance = new _Tp();
     }
     return f_master_instance;
 }

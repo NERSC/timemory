@@ -112,14 +112,14 @@ std::atomic<int> manager::f_manager_instance_count;
 // static function
 manager::pointer manager::instance()
 {
-    return _timemory_manager_singleton().instance().get();
+    return _timemory_manager_singleton().instance();
 }
 
 //============================================================================//
 // static function
 manager::pointer manager::master_instance()
 {
-    return _timemory_manager_singleton().master_instance().get();
+    return _timemory_manager_singleton().master_instance();
 }
 
 //============================================================================//
