@@ -13,6 +13,7 @@ Author: Jonathan R. Madsen Date: Wed May 16 11:38:28 2018 -0700
    -  void\* atimer = TIMEMORY\_AUTO\_TIMER("")
    -  FREE\_TIMEMORY\_AUTO\_TIMER(atimer)
 
+-  command-line tools: timem (UNIX-only) and pytimem
 -  Environment control
 
    -  TIMEMORY\_VERBOSE

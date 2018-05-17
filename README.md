@@ -2,6 +2,7 @@
 ### C / C++ / Python Timing + Memory Utilities including auto-timers and temporary memory calculation
 
 [![Build Status](https://travis-ci.org/jrmadsen/TiMemory.svg?branch=master)](https://travis-ci.org/jrmadsen/TiMemory)
+[![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory)
 
 [TiMemory on GitHub (Source code)](https://github.com/jrmadsen/TiMemory)
 
