@@ -11,6 +11,7 @@ Author: Jonathan R. Madsen Date: Wed May 16 11:38:28 2018 -0700
     - requires variable assignment and freeing
       - void* atimer = TIMEMORY\_AUTO\_TIMER("")
       - FREE\_TIMEMORY\_AUTO\_TIMER(atimer)
+- command-line tools: timem (UNIX-only) and pytimem
 - Environment control
     - TIMEMORY\_VERBOSE
     - TIMEMORY\_DISABLE\_TIMER\_MEMORY
