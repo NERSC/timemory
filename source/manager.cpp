@@ -50,7 +50,11 @@
 #endif
 
 #if !defined(pfunc)
-#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#   if defined(DEBUG)
+#       define pfunc printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#   else
+#       define pfunc
+#   endif
 #endif
 
 using std::placeholders::_1;

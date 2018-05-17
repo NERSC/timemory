@@ -34,14 +34,17 @@
 #include "timemory/signal_detection.hpp"
 
 #if !defined(pfunc)
-#   define pfunc printf("calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#   if defined(DEBUG)
+#       define pfunc printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#   else
+#       define pfunc
+#   endif
 #endif
 
 //============================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
-/*
-__c_ctor__
+//__c_ctor__
 void setup_timemory(void)
 {
     pfunc;
@@ -51,14 +54,14 @@ void setup_timemory(void)
 
 //============================================================================//
 
-__c_dtor__
+//__c_dtor__
 void cleanup_timemory(void)
 {
     pfunc;
     _timemory_finalization();
     pfunc;
 }
-*/
+
 //============================================================================//
 //
 //                      C++ interface

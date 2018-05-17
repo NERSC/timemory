@@ -69,11 +69,7 @@ public:
     singleton(pointer);
     singleton(deleter);
     singleton(pointer, deleter);
-    ~singleton()
-    {
-        // should be called at __cxa_finalize so don't bother deleting
-        f_master_instance = nullptr;
-    }
+    ~singleton();
 
 public:
     // public member function
@@ -106,9 +102,9 @@ private:
 
 private:
     // Private variables
-    static  thread_id_t         f_master_thread;
-    static  pointer             f_master_instance;
-    static  deleter             f_deleter;
+    static  thread_id_t     f_master_thread;
+    static  pointer         f_master_instance;
+    static  deleter         f_deleter;
 };
 
 //============================================================================//
@@ -159,6 +155,13 @@ template <typename _Tp>
 singleton<_Tp>::singleton(pointer ptr, deleter del)
 {
     initialize(ptr, del);
+}
+
+template <typename _Tp>
+singleton<_Tp>::~singleton()
+{
+    // should be called at __cxa_finalize so don't bother deleting
+    f_master_instance = nullptr;
 }
 
 //----------------------------------------------------------------------------//

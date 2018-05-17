@@ -74,6 +74,21 @@ PYBIND11_MODULE(timemory, tim)
             "Enable/disable auto-timers",
             py::arg("timers_on") = true);
     //------------------------------------------------------------------------//
+    tim.def("enable",
+            [=] ()
+            { manager_t::instance()->enable(true); },
+            "Enable auto-timers");
+    //------------------------------------------------------------------------//
+    tim.def("disable",
+            [=] ()
+            { manager_t::instance()->enable(false); },
+            "Disable auto-timers");
+    //------------------------------------------------------------------------//
+    tim.def("is_enabled",
+            [=] ()
+            { return manager_t::instance()->is_enabled(); },
+            "Return if the auto-timers are enabled or disabled");
+    //------------------------------------------------------------------------//
     tim.def("enabled",
             [=] ()
             { return manager_t::instance()->is_enabled(); },

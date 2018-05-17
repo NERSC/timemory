@@ -7,3 +7,4 @@ if [ ${PWD} = ${BASH_SOURCE[0]} ]; then
 fi
 
 pandoc -p --tab-stop=2 --from=markdown --to=rst --output=README.rst README.md
+pandoc -p --tab-stop=4 --from=markdown --to=rst --output=CHANGES.rst CHANGES.md
