@@ -162,6 +162,9 @@ macro(add_flags _LANG _VAR _FLAGS)
             if(COMPILE_SUCCESS)
                 # add individual flag
                 add(_VAR_GOOD "${_FLAG}")
+            else(COMPILE_SUCCESS)
+                message(STATUS
+                    "${CMAKE_${_LANG}_COMPILER} does not support flag: \"${_FLAG}\"...")
             endif(COMPILE_SUCCESS)
         endforeach(_FLAG ${_LANGFLAGS})
     endif(COMPILE_SUCCESS)
@@ -179,12 +182,14 @@ endmacro(add_flags _LANG _VAR _FLAGS)
 ################################################################################
 macro(add_c_flags _VAR _FLAGS)        
     # cache the flags to test
-    set(CACHED_C_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE INTERNAL
+    set(CACHED_C_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE STRING
         "Possible C flags for ${_VAR}")
     mark_as_advanced(CACHED_C_${_VAR}_TEST_FLAGS)
     # if flags were changed or not previously processed
     if(NOT "${CACHED_C_${_VAR}_TEST_FLAGS}" STREQUAL "${_FLAGS}" OR
             NOT DEFINED CACHED_C_${_VAR}_GOOD_FLAGS)
+        # unset the cached test flags
+        unset(CACHED_C_${_VAR}_TEST_FLAGS CACHE)
         # test flags
         add_flags(C "${_VAR}" "${_FLAGS}")
         # cache the valid flags
@@ -205,12 +210,14 @@ endmacro(add_c_flags _VAR _FLAGS)
 ################################################################################
 macro(add_cxx_flags _VAR _FLAGS)
     # cache the flags to test
-    set(CACHED_CXX_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE INTERNAL
+    set(CACHED_CXX_${_VAR}_TEST_FLAGS "${_FLAGS}" CACHE STRING
         "Possible C++ flags for ${_VAR}")
     mark_as_advanced(CACHED_CXX_${_VAR}_TEST_FLAGS)
     # if flags were changed or not previously processed
     if(NOT "${CACHED_CXX_${_VAR}_TEST_FLAGS}" STREQUAL "${_FLAGS}" OR
             NOT DEFINED CACHED_CXX_${_VAR}_GOOD_FLAGS)
+        # unset the cached test flags
+        unset(CACHED_CXX_${_VAR}_TEST_FLAGS CACHE)
         # test flags
         add_flags(CXX "${_VAR}" "${_FLAGS}")
         # cache the valid flags

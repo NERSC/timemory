@@ -30,5 +30,7 @@ int main(int, char**)
     double x = 1.0;
     double y = 5.0;
     double val = x * y;
+    if(val > 0)
+      val -= 2*val;
     return 0;
 }

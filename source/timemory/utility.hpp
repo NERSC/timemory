@@ -74,6 +74,10 @@
 #   define DEFAULT_UMASK 0777
 #endif
 
+#if defined(_OPENMP)
+#   include <omp.h>
+#endif
+
 //----------------------------------------------------------------------------//
 
 // stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
