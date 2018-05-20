@@ -38,6 +38,7 @@
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
+#include <timemory/rss.hpp>
 
 typedef tim::timer          tim_timer_t;
 typedef tim::manager manager_t;
@@ -112,24 +113,20 @@ void test_format();
 
 //============================================================================//
 
-#define rank_cout std::cout << "[" << tim::mpi_rank() << "] "
-
-//============================================================================//
-
-int main(int argc, char** argv)
+int main(int /*argc*/, char** argv)
 {
-    MPI_Init(&argc, &argv);
-
-    tim::EnableSignalDetection({
-                                        tim::sys_signal::sHangup,
-                                        tim::sys_signal::sInterrupt,
-                                        tim::sys_signal::sIllegal,
-                                        tim::sys_signal::sSegFault,
-                                        tim::sys_signal::sFPE
-                                    });
+    tim::enable_signal_detection({
+                                   tim::sys_signal::sHangup,
+                                   tim::sys_signal::sInterrupt,
+                                   tim::sys_signal::sIllegal,
+                                   tim::sys_signal::sSegFault,
+                                   tim::sys_signal::sFPE
+                               });
 
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
+
+    tim::format::timer::push();
 
     int num_fail = 0;
     int num_test = 0;
@@ -153,35 +150,24 @@ int main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
-    std::stringstream rank_sout;
+    std::cout << "\nDone.\n" << std::endl;
 
-    rank_sout << "\nDone.\n" << std::endl;
-
-    rank_sout << "[" << argv[0] << "] ";
+    std::cout << "[" << argv[0] << "] ";
 
     if(num_fail > 0)
-        rank_sout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
+        std::cout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
     else
-        rank_sout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
+        std::cout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
                   << std::endl;
 
     t.stop();
+    std::cout << std::endl;
+    t.report();
+    std::cout << std::endl;
+    tim::format::timer::pop();
 
-    if(tim::mpi_rank() > 0)
-        std::cout << rank_sout.str();
-
-    if(tim::mpi_rank() == 0)
-    {
-        rank_sout << std::endl;
-        t.report();
-        rank_sout << std::endl;
-        manager_t::instance()->report(rank_sout);
-        std::cout << rank_sout.str();
-    }
-
-    delete manager_t::instance();
-
-    MPI_Finalize();
+    manager_t::instance()->write_missing();
+    tim::disable_signal_detection();
 
     exit(num_fail);
 }
@@ -254,11 +240,16 @@ void test_rss_usage()
 {
     print_info(__FUNCTION__);
 
-    typedef std::vector<double> vector_t;
-    tim::rss::usage _rss_init;
-    tim::rss::usage _rss_end;
+    typedef std::vector<uint64_t> vector_t;
+
     tim::format::rss _format("", ": RSS [current = %c %A] [peak = %m %A]",
                              tim::units::kilobyte, false);
+
+    tim::rss::usage _rss_init(_format);
+    tim::rss::usage _rss_calc(_format);
+    _rss_init.format()->prefix("initial");
+    _rss_calc.format()->prefix("allocated");
+
     tim::format::rss _rformat("", "%C %A, %M %A, %c %A, %m %A",
                               tim::units::kilobyte, false);
     tim::format::timer _tformat(__FUNCTION__,
@@ -270,28 +261,34 @@ void test_rss_usage()
     rt.start();
     ct.start();
 
-    size_t n = 1000;
+    uint64_t nsize = 1048576;
+    vector_t* v = new vector_t();
+
     _rss_init.record();
-    print_string("init   " + _rss_init.str());
-    {
-        tim::rss::usage _rss_diff;
-        vector_t* v = new vector_t(n*n, 1.0);
+    v->reserve(nsize);
+    for(uint64_t i = 0; i < nsize; ++i)
+        v->push_back(i);
+    _rss_calc.record();
 
-        _rss_diff.record();
-        print_string("alloc  " + _rss_diff.str());
+    v->clear();
+    delete v;
 
-        _rss_diff -= _rss_init;
-        v->clear();
-        delete v;
+    // real usage
+    int64_t _r_usage = _rss_calc.current<int64_t>(tim::units::kilobyte) -
+                       _rss_init.current<int64_t>(tim::units::kilobyte);
 
-        _rss_diff.set_format(_format);
-        print_string("diff   " + _rss_diff.str());
-    }
-    _rss_end.record();
+    // expected usage
+    int64_t _e_usage = 8192;
+    // actual difference
+    int64_t _a_diff = std::abs(_r_usage - _e_usage);
 
-    print_string("final_a" + _rss_end.str());
-    _rss_end.set_format(_format);
-    print_string("final_b" + _rss_end.str());
+    std::cout << _rss_init << std::endl;
+    std::cout << _rss_calc << std::endl;
+    std::cout << "    real usage diff : " << _r_usage << std::endl;
+    std::cout << "expected usage diff : " << _e_usage << std::endl;
+    std::cout << "  actual difference : " << _a_diff << std::endl;
+
+    ASSERT_TRUE(_a_diff < 250);
 
     fibonacci(36);
 
@@ -308,12 +305,12 @@ void test_timing_pointer()
 {
     print_info(__FUNCTION__);
 
-    uint16_t set_depth = 4;
-    uint16_t get_depth = 0;
+    uint16_t set_depth = 5;
+    uint16_t get_depth = 1;
 
     print_depth(__FUNCTION__, __LINE__, false);
     {
-        manager_t::instance()->set_max_depth(4);
+        manager_t::instance()->set_max_depth(set_depth);
     }
 
     print_depth(__FUNCTION__, __LINE__, false);
@@ -348,11 +345,11 @@ void test_manager()
 
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    tman->set_output_stream("test_output/mpi_cxx_timing_report.out");
+    tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
-    tman->write_json("test_output/mpi_cxx_timing_report.json");
-
-    EXPECT_EQ(manager_t::instance()->size(), 32);
+    tman->write_json("test_output/cxx_timing_report.json");
+    tman->write_missing();
+    EXPECT_EQ(manager_t::instance()->size(), 33);
 
     for(const auto& itr : *tman)
     {
@@ -383,7 +380,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 11);
 
     tman->clear();
     tman->enable(false);
@@ -395,7 +392,7 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 0);
+    EXPECT_EQ(manager_t::instance()->size(), 1);
 
     tman->clear();
     tman->enable(true);
@@ -408,9 +405,10 @@ void test_timing_toggle()
     }
     print_size(__FUNCTION__, __LINE__);
     tman->report();
-    EXPECT_EQ(manager_t::instance()->size(), 10);
+    EXPECT_EQ(manager_t::instance()->size(), 11);
 
-    tman->write_serialization("test_output/mpi_cxx_timing_toggle.json");
+    tman->write_serialization("test_output/cxx_timing_toggle.json");
+    tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -429,7 +427,7 @@ void test_timing_depth()
 
     print_depth(__FUNCTION__, __LINE__, false);
     int32_t _max_depth = tman->get_max_depth();
-    tman->set_max_depth(3);
+    tman->set_max_depth(4);
     print_depth(__FUNCTION__, __LINE__, false);
     {
         TIMEMORY_AUTO_TIMER();
@@ -437,13 +435,14 @@ void test_timing_depth()
             time_fibonacci(itr);
     }
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
-    EXPECT_EQ(manager_t::instance()->size(), 7);
+    tman->report(ign_cutoff = true);
+    EXPECT_EQ(manager_t::instance()->size(), 8);
 
-    tman->write_serialization("test_output/mpi_cxx_timing_depth.json");
+    tman->write_serialization("test_output/cxx_timing_depth.json");
+    tman->write_missing();
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
 }
@@ -456,11 +455,15 @@ typedef std::vector<std::thread*> thread_list_t;
 
 void thread_func(int32_t nfib, std::shared_future<void> fut)
 {
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    //std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
-    int32_t nsize = manager_t::instance()->size();
-    if(nsize > 0)
-        std::cerr << "thread-local manager size: " << nsize << std::endl;
+    //int32_t nsize = manager_t::instance()->size();
+    //if(nsize > 0)
+    //    std::cerr << "thread-local manager size: " << nsize << std::endl;
+
+    //std::stringstream ss;
+    //ss << "--> " << std::this_thread::get_id() << " -- waiting ... " << std::endl;
+    //std::cout << ss.str();
 
     fut.get();
     time_fibonacci(nfib);
@@ -490,6 +493,35 @@ void join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
 
 //============================================================================//
 
+void test_timing_thread(int num_threads)
+{
+    std::stringstream ss;
+    ss << "[" << num_threads << "_threads]";
+
+    TIMEMORY_AUTO_TIMER(ss.str());
+
+    thread_list_t threads(num_threads, nullptr);
+
+    std::promise<void> prom;
+    std::shared_future<void> fut = prom.get_future().share();
+
+    for(auto& itr : threads)
+        itr = create_thread(43, fut);
+
+    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+
+    prom.set_value();
+
+    join_thread(threads.begin(), threads);
+
+    for(auto& itr : threads)
+        delete itr;
+
+    threads.clear();
+}
+
+//============================================================================//
+
 void test_timing_thread()
 {
     print_info(__FUNCTION__);
@@ -501,45 +533,19 @@ void test_timing_thread()
     tman->enable(true);
     tman->set_output_stream(std::cout);
 
-    int num_threads = 12;
-    thread_list_t threads(num_threads, nullptr);
-
-    {
-        TIMEMORY_AUTO_TIMER();
-        {
-            std::stringstream ss;
-            ss << "[" << num_threads << "_threads]";
-            TIMEMORY_AUTO_TIMER(ss.str());
-
-            std::promise<void> prom;
-            std::shared_future<void> fut = prom.get_future().share();
-
-            for(auto& itr : threads)
-                itr = create_thread(43, fut);
-
-            std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
-            prom.set_value();
-
-            join_thread(threads.begin(), threads);
-        }
-    }
-
-    for(auto& itr : threads)
-        delete itr;
-
-    threads.clear();
+    test_timing_thread(12);
 
     // divide the threaded clocks that are merge
     tman->merge(true);
 
-    bool no_min;
+    bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
-    tman->report(no_min = true);
+    tman->report(ign_cutoff = true);
     ASSERT_TRUE(manager_t::instance()->size() >= 36);
 
-    tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
+    tman->write_serialization("test_output/cxx_timing_thread.json");
+    tman->write_missing();
     tman->enable(_is_enabled);
 }
 
@@ -549,12 +555,12 @@ void test_format()
 {
     print_info(__FUNCTION__);
 
-    tim::format::timer::set_default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m");
-    tim::format::timer::set_default_unit(tim::units::msec);
-    tim::format::timer::set_default_precision(1);
-    tim::format::rss::set_default_format("[ c, p %A ] : %C, %M");
-    tim::format::rss::set_default_unit(tim::units::kilobyte);
-    tim::format::rss::set_default_precision(0);
+    tim::format::timer::default_format("[%T - %A] : %w, %u, %s, %t, %p%, x%l, %C, %M, %c, %m");
+    tim::format::timer::default_unit(tim::units::msec);
+    tim::format::timer::default_precision(1);
+    tim::format::rss::default_format("[ c, p %A ] : %C, %M");
+    tim::format::rss::default_unit(tim::units::kilobyte);
+    tim::format::rss::default_precision(0);
 
     auto tman = manager_t::instance();
     tman->clear();
@@ -573,12 +579,13 @@ void test_format()
     print_size(__FUNCTION__, __LINE__);
     // reports to stdout
     tman->report();
-    tman->set_output_stream("test_output/mpi_cxx_timing_format.out");
+    tman->set_output_stream("test_output/cxx_timing_format.out");
     // reports to file
     tman->report();
-    tman->write_json("test_output/mpi_cxx_timing_format.json");
+    tman->write_json("test_output/cxx_timing_format.json");
+    tman->write_missing();
 
-    EXPECT_EQ(manager_t::instance()->size(), 18);
+    EXPECT_EQ(manager_t::instance()->size(), 19);
 
     for(const auto& itr : *tman)
     {

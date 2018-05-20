@@ -37,16 +37,6 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::internal::base_timer, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(internal::base_clock_t, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(internal::base_clock_data_t, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(internal::base_duration_t, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(internal::base_time_point_t, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
-
-//============================================================================//
-
 namespace tim
 {
 
@@ -59,20 +49,26 @@ base_timer::mutex_map_t base_timer::f_mutex_map;
 
 //============================================================================//
 
-base_timer::base_timer(timer_format_t _format, std::ostream* os)
-: m_os(os),
+base_timer::base_timer(timer_format_t _format, bool _record, std::ostream* os)
+: m_record_memory(_record),
+  m_os(os),
   m_data(data_t()),
   m_format(_format)
-{ }
+{
+    configure_record();
+}
 
 //============================================================================//
 
 base_timer::base_timer(const base_timer& rhs)
-: m_os(rhs.m_os),
+: m_record_memory(rhs.m_record_memory),
+  m_os(rhs.m_os),
   m_data(rhs.m_data),
   m_accum(rhs.m_accum),
   m_format(rhs.m_format)
-{ }
+{
+    configure_record();
+}
 
 //============================================================================//
 
@@ -92,31 +88,35 @@ base_timer& base_timer::operator=(const base_timer& rhs)
 {
     if(this != &rhs)
     {
+        m_record_memory = rhs.m_record_memory;
         m_os = rhs.m_os;
         m_data = rhs.m_data;
         m_accum = rhs.m_accum;
         m_format = rhs.m_format;
+        configure_record();
     }
     return *this;
 }
 
 //============================================================================//
 
-void base_timer::sync(this_type& rhs)
+void base_timer::sync(const this_type& rhs)
 {
     if(this != &rhs)
     {
+        m_record_memory = rhs.m_record_memory;
         m_os = rhs.m_os;
         m_data = rhs.m_data;
         m_accum = rhs.m_accum;
+        configure_record();
     }
 }
 
 //============================================================================//
 
-bool base_timer::above_min(bool no_min) const
+bool base_timer::above_cutoff(bool ign_cutoff) const
 {
-    if(no_min)
+    if(ign_cutoff)
         return true;
 
     double _cpu = user_elapsed() + system_elapsed();
@@ -140,14 +140,14 @@ void base_timer::report(bool endline) const
 
 //============================================================================//
 
-void base_timer::report(std::ostream& os, bool endline, bool no_min) const
+void base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 {
 
     // stop, if not already stopped
     if(m_timer().running())
         const_cast<base_timer*>(this)->stop();
 
-    if(!above_min(no_min))
+    if(!above_cutoff(ign_cutoff))
         return;
 
     std::stringstream ss;

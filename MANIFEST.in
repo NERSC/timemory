@@ -2,7 +2,8 @@
 include CMakeLists.txt
 include .version.txt
 include LICENSE
-include .LICENSE
+include .license.c
+include .license.py
 include README.md
 include CHANGES.rst
 include timemory/timemory.py

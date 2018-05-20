@@ -31,10 +31,10 @@ matrix:
             - g++-4.9
             - build-essential
             - cmake
-            - libopenmpi-dev
-            - openmpi-bin
+            #- libopenmpi-dev
+            #- openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # GCC 5
     - os: linux
       dist: trusty
@@ -52,7 +52,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
     # GCC 6
     - os: linux
       dist: trusty
@@ -70,7 +70,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=OFF"
     # GCC 7
     - os: linux
       dist: trusty
@@ -88,7 +88,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release && BUILD_SHARED=ON"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -107,7 +107,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -126,7 +126,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.4
@@ -149,7 +149,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=OFF"
     # GCC 5
     - os: linux
       dist: trusty
@@ -164,10 +164,10 @@ matrix:
             - g++-5
             - build-essential
             - cmake3
-            - libmpich-dev
-            - mpich
+            #- libmpich-dev
+            #- mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=ON"
     # GCC 6
     - os: linux
       dist: trusty
@@ -185,7 +185,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # GCC 7
     - os: linux
       dist: trusty
@@ -203,7 +203,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -222,7 +222,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=OFF"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -241,7 +241,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=ON"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.5
@@ -264,7 +264,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # GCC 5
     - os: linux
       dist: trusty
@@ -282,7 +282,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
     # GCC 6
     - os: linux
       dist: trusty
@@ -297,10 +297,10 @@ matrix:
             - g++-6
             - build-essential
             - cmake3
-            - libopenmpi-dev
-            - openmpi-bin
+            #- libopenmpi-dev
+            #- openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # GCC 7
     - os: linux
       dist: trusty
@@ -318,7 +318,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -337,7 +337,7 @@ matrix:
             - libopenmpi-dev
             - openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -353,10 +353,10 @@ matrix:
             - clang++-5.0
             - build-essential
             - cmake3
-            - libopenmpi-dev
-            - openmpi-bin
+            #- libopenmpi-dev
+            #- openmpi-bin
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6
@@ -379,7 +379,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # GCC 5
     - os: linux
       dist: trusty
@@ -397,7 +397,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # GCC 6
     - os: linux
       dist: trusty
@@ -415,7 +415,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # GCC 7
     - os: linux
       dist: trusty
@@ -433,7 +433,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
     # Clang 4.0
     - os: linux
       dist: trusty
@@ -449,10 +449,10 @@ matrix:
             - clang++-4.0
             - build-essential
             - cmake
-            - libmpich-dev
-            - mpich
+            #- libmpich-dev
+            #- mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && DYNAMIC_LINK=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # Clang 5.0
     - os: linux
       dist: trusty
@@ -471,7 +471,7 @@ matrix:
             - libmpich-dev
             - mpich
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && DYNAMIC_LINK=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # ------------------------------------------------------------------------ #
 
 
@@ -491,12 +491,15 @@ before_install:
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
     - export INSTALL_DIR=${HOME}/timemory/current
+    - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
 
 
 install:
     - env
     - echo "--> ${PWD}"
     - export SOURCE_DIR=${PWD}
+    - export TIMEMORY_VERBOSE=4
+    - export TIMEMORY_OUTPUT_TOTAL=1
     - pip install matplotlib numpy pillow
     - mkdir -p build-timemory
     - cd build-timemory
@@ -506,16 +509,16 @@ install:
     - echo "--> ${PWD}"
     - cmake
         -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
         -DCMAKE_C_COMPILER=${CC}
         -DCMAKE_CXX_COMPILER=${CXX}
-        -DCTEST_SITE=travis
+        -DCTEST_SITE=Travis
         -DCTEST_MODEL=Continuous
         -DCTEST_LOCAL_CHECKOUT=ON
         -DPYTHON_EXECUTABLE=$(which python)
-        -DTIMEMORY_USE_MPI=ON
+        -DTIMEMORY_USE_MPI=${USE_MPI}
         -DTIMEMORY_BUILD_TESTING=ON
-        -DTIMEMORY_DYNAMIC_LINK=${DYNAMIC_LINK}
+        -DBUILD_SHARED_LIBS=${BUILD_SHARED}
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
     - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure

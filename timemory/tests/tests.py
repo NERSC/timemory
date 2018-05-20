@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -46,6 +46,7 @@ def run(pattern="", exit_at_failure=True):
             an empty string implies run all tests
     """
     import timemory
+    manager = timemory.manager()
     test_names = [ 'timemory', 'array', 'nested', 'simple' ]
     names = []
     try:
@@ -69,6 +70,7 @@ def run(pattern="", exit_at_failure=True):
     _tot = timemory.timer('Total test time')
     _tot.start()
     for i in names:
+        manager.clear()
         _f = '{}_test'.format(i)
         _file = os.path.join(__this_path, '{}.py'.format(_f))
         t = timemory.timer('{}'.format(_f.upper()))

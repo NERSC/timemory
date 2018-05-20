@@ -35,8 +35,10 @@ timing_report*
 /timemory/mpi_support/*.txt
 
 # unused examples
-/examples/ex3
+/examples/ex4
 
 # documentation
 /html
 /docs
+
+/source/alloc

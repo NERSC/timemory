@@ -44,15 +44,25 @@
 #include <cstdio>
 #include <vector>
 #include <utility>
+#include <tuple>
+#include <stack>
+#include <initializer_list>
 
 #if defined(_UNIX)
 #   include <unistd.h>
 #endif
 
+#define BACKWARD_COMPAT_SET(type, func) \
+    static void set_##func (const type & _v) { func (_v); }
+
+#define BACKWARD_COMPAT_GET(type, func) \
+    static const type & get_##func () { return func (); }
+
 namespace tim
 {
 
 //============================================================================//
+
 namespace internal
 {
     class base_timer; // declaration for format::timer
@@ -62,60 +72,88 @@ namespace rss
     class usage; // declaration for format::rss
     class usage_delta; // declaration for format::rss_usage
 }
-//============================================================================//
 
-//----------------------------------------------------------------------------//
+//============================================================================//
 
 namespace format
 {
 
 //============================================================================//
 
-class tim_api base_formatter
+typedef std::tuple<int16_t, int16_t, int64_t, std::string, bool> core_tuple_t;
+
+//============================================================================//
+
+class tim_api core_formatter
+{
+public:
+    typedef core_tuple_t    base_type;
+    typedef std::string     string_t;
+    typedef int16_t         size_type;
+    typedef int64_t         unit_type;
+
+public:
+    core_formatter(size_type, size_type, unit_type, string_t, bool);
+
+public:
+    // public member functions
+    void precision(const size_type& _val)   { std::get<0>(m_data) = _val;    }
+    void width(const size_type& _val)       { std::get<1>(m_data) = _val;    }
+    void unit(const unit_type& _val)        { std::get<2>(m_data) = _val;    }
+    void format(const string_t& _val)       { std::get<3>(m_data) = _val;    }
+    void fixed(const bool& _val)            { std::get<4>(m_data) = _val;    }
+    void scientific(const bool& _val)       { std::get<4>(m_data) = !(_val); }
+
+    size_type& precision()                  { return std::get<0>(m_data);    }
+    size_type& width()                      { return std::get<1>(m_data);    }
+    unit_type& unit()                       { return std::get<2>(m_data);    }
+    string_t&  format()                     { return std::get<3>(m_data);    }
+    bool&      fixed()                      { return std::get<4>(m_data);    }
+
+    const size_type& precision() const      { return std::get<0>(m_data);    }
+    const size_type& width() const          { return std::get<1>(m_data);    }
+    const unit_type& unit() const           { return std::get<2>(m_data);    }
+    const string_t&  format() const         { return std::get<3>(m_data);    }
+    const bool& fixed() const               { return std::get<4>(m_data);    }
+    bool scientific() const                 { return !(std::get<4>(m_data)); }
+
+protected:
+    core_tuple_t    m_data;
+};
+
+//============================================================================//
+
+class tim_api base_formatter : public core_formatter
 {
 public:
     typedef std::stringstream           stringstream_t;
-    typedef std::string                 string_t;
-    typedef int16_t                     size_type;
-    typedef int64_t                     unit_type;
+    typedef core_formatter              base_type;
+    typedef core_formatter              core_type;
 
 public:
     // public constructors
-    base_formatter(string_t _prefix,
-                   string_t _suffix,
-                   string_t _format,
-                   unit_type _unit,
+    // public constructors
+    base_formatter(string_t _prefix, string_t _suffix,
+                   string_t _format, unit_type _unit,
                    bool _align_width,
-                   size_type _prec,
-                   size_type _width)
-    : m_align_width(_align_width),
-      m_precision(_prec),
-      m_width(_width),
-      m_unit(_unit),
-      m_prefix(_prefix),
-      m_suffix(_suffix),
-      m_format(_format)
-    {}
+                   size_type _prec, size_type _width,
+                   bool _fixed = true);
 
     virtual ~base_formatter() { }
 
 public:
     // public member functions
-    void set_prefix(const string_t& _val) { m_prefix = _val; }
-    void set_suffix(const string_t& _val) { m_suffix = _val; }
-    void set_format(const string_t& _val) { m_format = _val; }
-    void set_unit(const unit_type& _val) { m_unit = _val; }
-    void set_precision(const size_type& _val) { m_precision = _val; }
-    void set_width(const size_type& _val) { m_width = _val; }
+    void align_width(const bool& _val)      { m_align_width = _val; }
+    void prefix(const string_t& _val)       { m_prefix = _val; }
+    void suffix(const string_t& _val)       { m_suffix = _val; }
 
-    const string_t& prefix() const { return m_prefix; }
-    const string_t& suffix() const { return m_suffix; }
-    const string_t& format() const { return m_format; }
-    const unit_type& unit() const { return m_unit; }
-    const size_type& precision() const { return m_precision; }
-    const size_type& width() const { return m_width; }
+    bool&           align_width()           { return m_align_width; }
+    string_t&       prefix()                { return m_prefix; }
+    string_t&       suffix()                { return m_suffix; }
 
-    void set_use_align_width(bool _val) { m_align_width = _val; }
+    const bool&     align_width() const         { return m_align_width; }
+    const string_t& prefix() const          { return m_prefix; }
+    const string_t& suffix() const          { return m_suffix; }
 
 protected:
     // protected member functions
@@ -124,12 +162,9 @@ protected:
 protected:
     // protected member variables
     bool        m_align_width;
-    size_type   m_precision;
-    size_type   m_width;
-    unit_type   m_unit;
+    bool        m_fixed;
     string_t    m_prefix;
     string_t    m_suffix;
-    string_t    m_format;
 };
 
 //============================================================================//
@@ -150,16 +185,21 @@ public:
 
     typedef std::pair<string_t, field>  field_pair_t;
     typedef std::vector<field_pair_t>   field_list_t;
+    typedef std::stack<core_formatter>  storage_type;
 
 public:
     rss(string_t _prefix = "",
-        string_t _format = get_default_format(),
-        unit_type _unit = get_default_unit(),
-        bool _align_width = false)
-    : base_formatter(_prefix, "", _format, _unit, _align_width,
-                     get_default_precision(),
-                     get_default_width())
-    { }
+        string_t _format = default_format(),
+        unit_type _unit = default_unit(),
+        bool _align_width = false,
+        size_type _prec = default_precision(),
+        size_type _width = default_width(),
+        bool _fixed = default_fixed())
+    : base_formatter(_prefix, "", _format, _unit, _align_width, _prec, _width, _fixed)
+    {
+        if(_align_width)
+            propose_default_width(_prefix.length());
+    }
 
     virtual ~rss() { }
 
@@ -167,25 +207,47 @@ public:
     // public member functions
     string_t operator()(const tim::rss::usage* m) const;
     string_t operator()(const tim::rss::usage_delta* m,
-                        const string_t& base_string = "") const;
+                        const string_t& = "") const;
+    string_t operator()(const string_t& = "") const;
     rss* copy_from(const rss* rhs);
 
 public:
     // public static functions
     static void propose_default_width(size_type);
 
-    static void set_default_format(const string_t& _val) { f_default_format = _val; }
-    static void set_default_unit(const unit_type& _val) { f_default_unit = _val; }
-    static void set_default_precision(const size_type& _val) { f_default_precision = _val; }
-    static void set_default_width(const size_type& _val) { f_default_width = _val; }
+    static void default_precision(const size_type& _v)  { f_current().precision() = _v;   }
+    static void default_width(const size_type& _v)      { f_current().width() = _v;       }
+    static void default_unit(const unit_type& _v)       { f_current().unit() = _v;        }
+    static void default_format(const string_t& _v)      { f_current().format() = _v;      }
+    static void default_fixed(const bool& _v)           { f_current().fixed() = _v;       }
+    static void default_scientific(const bool& _v)      { f_current().fixed() = !(_v);    }
 
-    static const string_t& get_default_format() { return f_default_format; }
-    static const unit_type& get_default_unit() { return f_default_unit; }
-    static const size_type& get_default_precision() { return f_default_precision; }
-    static const size_type& get_default_width() { return f_default_width; }
+    // defines set_<function>
+    BACKWARD_COMPAT_SET(size_type,  default_precision   )
+    BACKWARD_COMPAT_SET(size_type,  default_width       )
+    BACKWARD_COMPAT_SET(unit_type,  default_unit        )
+    BACKWARD_COMPAT_SET(string_t,   default_format      )
+    BACKWARD_COMPAT_SET(bool,       default_fixed       )
+
+    static const size_type& default_precision()     { return f_current().precision(); }
+    static const size_type& default_width()         { return f_current().width();     }
+    static const unit_type& default_unit()          { return f_current().unit();      }
+    static const string_t&  default_format()        { return f_current().format();    }
+    static const bool&      default_fixed()         { return f_current().fixed();     }
+    static bool             default_scientific()    { return !(f_current().fixed());  }
+
+    // defines get_<function>
+    BACKWARD_COMPAT_GET(size_type,  default_precision   )
+    BACKWARD_COMPAT_GET(size_type,  default_width       )
+    BACKWARD_COMPAT_GET(unit_type,  default_unit        )
+    BACKWARD_COMPAT_GET(string_t,   default_format      )
+    BACKWARD_COMPAT_GET(bool,       default_fixed       )
 
     static void set_default(const rss& rhs);
     static rss  get_default();
+
+    static void push();
+    static void pop();
 
 protected:
     // protected member functions
@@ -193,11 +255,10 @@ protected:
 
 private:
     // private static members
-    static string_t     f_default_format;
-    static size_type    f_default_precision;
-    static size_type    f_default_width;
-    static unit_type    f_default_unit;
-    static field_list_t f_field_list;
+    static field_list_t     get_field_list();
+    static core_formatter&  f_current();
+    static storage_type&    f_history();
+
 };
 
 //============================================================================//
@@ -217,50 +278,81 @@ public:
         timing_unit,
     };
 
-    typedef std::pair<string_t, field>  field_pair_t;
-    typedef std::vector<field_pair_t>   field_list_t;
-    typedef rss                         rss_format_t;
+    typedef std::pair<string_t, field>      field_pair_t;
+    typedef std::vector<field_pair_t>       field_list_t;
+    typedef rss                             rss_format_t;
+    typedef std::pair<core_formatter, rss>  format_pair_t;
+    typedef std::stack<format_pair_t>       storage_type;
 
 public:
     // public constructors
     timer(string_t _prefix = "",
-          string_t _format = get_default_format(),
-          unit_type _unit = get_default_unit(),
-          rss_format_t _rss_format = get_default_rss_format(),
-          bool _align_width = false)
-    : base_formatter(_prefix, "", _format, _unit, _align_width,
-                     get_default_precision(),
-                     get_default_width()),
+          string_t _format = default_format(),
+          unit_type _unit = default_unit(),
+          rss_format_t _rss_format = default_rss_format(),
+          bool _align_width = false,
+          size_type _prec = default_precision(),
+          size_type _width = default_width(),
+          bool _fixed = default_fixed())
+    : base_formatter(_prefix, "", _format, _unit, _align_width, _prec, _width, _fixed),
       m_rss_format(_rss_format)
-    { }
+    {
+        if(_align_width)
+            propose_default_width(_prefix.length());
+    }
 
     virtual ~timer() { }
 
 public:
     // public member functions
     string_t operator()(const internal::base_timer* m) const;
-    void set_rss_format(const rss_format_t& _val) { m_rss_format = _val; }
-    const rss_format_t& rss_format() const { return m_rss_format; }
-    timer* copy_from(const timer* rhs);
+    timer*              copy_from(const timer* rhs);
+
+    void                rss_format(const rss_format_t& _val)    { m_rss_format = _val; }
+    rss_format_t&       rss_format()                            { return m_rss_format; }
+    const rss_format_t& rss_format() const                      { return m_rss_format; }
 
 public:
     // public static functions
     static void propose_default_width(size_type);
 
-    static void set_default_format(const string_t& _val) { f_default_format = _val; }
-    static void set_default_unit(const unit_type& _val) { f_default_unit = _val; }
-    static void set_default_precision(const size_type& _val) { f_default_precision = _val; }
-    static void set_default_width(const size_type& _val) { f_default_width = _val; }
-    static void set_default_rss_format(const rss_format_t& _val) { f_default_rss_format = _val; }
+    static void default_precision(const size_type& _v)  { f_current().first.precision() = _v; }
+    static void default_width(const size_type& _v)      { f_current().first.width() = _v;     }
+    static void default_unit(const unit_type& _v)       { f_current().first.unit() = _v;      }
+    static void default_format(const string_t& _v)      { f_current().first.format() = _v;    }
+    static void default_fixed(const bool& _v)           { f_current().first.fixed() = _v;     }
+    static void default_scientific(const bool& _v)      { f_current().first.fixed() = !(_v);  }
+    static void default_rss_format(const rss& _v)       { f_current().second = _v;            }
 
-    static const string_t&  get_default_format() { return f_default_format; }
-    static const unit_type& get_default_unit() { return f_default_unit; }
-    static const size_type& get_default_precision() { return f_default_precision; }
-    static const size_type& get_default_width() { return f_default_width; }
-    static const rss_format_t& get_default_rss_format() { return f_default_rss_format; }
+    // defines set_<function>
+    BACKWARD_COMPAT_SET(size_type,  default_precision   )
+    BACKWARD_COMPAT_SET(size_type,  default_width       )
+    BACKWARD_COMPAT_SET(unit_type,  default_unit        )
+    BACKWARD_COMPAT_SET(string_t,   default_format      )
+    BACKWARD_COMPAT_SET(bool,       default_fixed       )
+    BACKWARD_COMPAT_SET(rss,        default_rss_format  )
+
+    static const size_type& default_precision()     { return f_current().first.precision();   }
+    static const size_type& default_width()         { return f_current().first.width();       }
+    static const unit_type& default_unit()          { return f_current().first.unit();        }
+    static const string_t&  default_format()        { return f_current().first.format();      }
+    static const bool&      default_fixed()         { return f_current().first.fixed();       }
+    static bool             default_scientific()    { return !(f_current().first.fixed());    }
+    static const rss&       default_rss_format()    { return f_current().second;              }
+
+    // defines get_<function>
+    BACKWARD_COMPAT_GET(size_type,  default_precision   )
+    BACKWARD_COMPAT_GET(size_type,  default_width       )
+    BACKWARD_COMPAT_GET(unit_type,  default_unit        )
+    BACKWARD_COMPAT_GET(string_t,   default_format      )
+    BACKWARD_COMPAT_GET(bool,       default_fixed       )
+    BACKWARD_COMPAT_GET(rss,        default_rss_format  )
 
     static void  set_default(const timer& rhs);
     static timer get_default();
+
+    static void push();
+    static void pop();
 
 protected:
     // protected member functions
@@ -272,13 +364,9 @@ protected:
 
 private:
     // private static members
-    static string_t     f_default_format;
-    static size_type    f_default_precision;
-    static size_type    f_default_width;
-    static unit_type    f_default_unit;
-    static rss_format_t f_default_rss_format;
-    static field_list_t f_field_list;
-
+    static field_list_t     get_field_list();
+    static format_pair_t&   f_current();
+    static storage_type&    f_history();
 };
 
 //============================================================================//
@@ -290,6 +378,9 @@ private:
 } // namespace tim
 
 //----------------------------------------------------------------------------//
+
+#undef BACKWARD_COMPAT_SET
+#undef BACKWARD_COMPAT_GET
 
 #endif
 

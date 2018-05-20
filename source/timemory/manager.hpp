@@ -33,6 +33,7 @@
 #define manager_hpp_
 
 #include "timemory/macros.hpp"
+#include "timemory/singleton.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -81,40 +82,18 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     typedef timer_ptr_t                     fourth_type;
     typedef internal::base_timer_tuple_t    base_type;
 
-    timer_tuple(const base_type& _data) : base_type(_data) { }
+    //------------------------------------------------------------------------//
+    //      constructors
+    //
+    timer_tuple(const base_type& _data)
+        : base_type(_data) { }
+
     timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
-    : base_type(_b, _s, _t, _f) { }
+        : base_type(_b, _s, _t, _f) { }
 
-    timer_tuple& operator=(const base_type& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        base_type::operator =(rhs);
-        return *this;
-    }
-
-    bool operator==(const this_type& rhs) const
-    {
-        return (key() == rhs.key() && level() == rhs.level() &&
-                tag() == rhs.tag());
-    }
-
-    bool operator!=(const this_type& rhs) const
-    {
-        return !(*this == rhs);
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        timer() += rhs.timer();
-        return *this;
-    }
-
-    const this_type operator+(const this_type& rhs) const
-    {
-        return this_type(*this) += rhs;
-    }
-
+    //------------------------------------------------------------------------//
+    //
+    //
     first_type& key() { return std::get<0>(*this); }
     const first_type& key() const { return std::get<0>(*this); }
 
@@ -127,7 +106,54 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     tim_timer_t& timer() { return *(std::get<3>(*this).get()); }
     const tim_timer_t& timer() const { return *(std::get<3>(*this).get()); }
 
+    //------------------------------------------------------------------------//
+    //
+    //
+    timer_tuple& operator=(const base_type& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        base_type::operator =(rhs);
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    bool operator==(const this_type& rhs) const
+    {
+        return (key() == rhs.key() && level() == rhs.level() &&
+                tag() == rhs.tag());
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    bool operator!=(const this_type& rhs) const
+    {
+        return !(*this == rhs);
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    this_type& operator+=(const this_type& rhs)
+    {
+        timer() += rhs.timer();
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //
+    //
+    const this_type operator+(const this_type& rhs) const
+    {
+        return this_type(*this) += rhs;
+    }
+
+    //------------------------------------------------------------------------//
     // serialization function
+    //
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
@@ -137,6 +163,9 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
            serializer::make_nvp("timer.ref", timer()));
     }
 
+    //------------------------------------------------------------------------//
+    //
+    //
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
     {
         std::stringstream ss;
@@ -157,28 +186,32 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                         this_type;
-    typedef tim::timer                      tim_timer_t;
-    typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
-    typedef tim_timer_t::string_t           string_t;
-    typedef timer_tuple                     timer_tuple_t;
-    typedef std::deque<timer_tuple_t>       timer_list_t;
-    typedef timer_list_t::iterator          iterator;
-    typedef timer_list_t::const_iterator    const_iterator;
-    typedef timer_list_t::size_type         size_type;
-    typedef uomap<uint64_t, timer_ptr_t>    timer_map_t;
-    typedef tim_timer_t::ostream_t          ostream_t;
-    typedef tim_timer_t::ofstream_t         ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t>   comm_group_t;
-    typedef std::mutex                      mutex_t;
-    typedef uomap<uint64_t, mutex_t>        mutex_map_t;
-    typedef std::lock_guard<mutex_t>        auto_lock_t;
-    typedef this_type*                      pointer_type;
-    typedef std::set<this_type*>            daughter_list_t;
-    typedef tim_timer_t::rss_type           rss_type;
-    typedef rss_type::base_type             base_rss_type;
-    typedef std::function<intmax_t()>       get_num_threads_func_t;
-    typedef std::atomic<uint64_t>           counter_t;
+    typedef manager                             this_type;
+    typedef tim::timer                          tim_timer_t;
+    typedef singleton<manager>                  singleton_t;
+    typedef singleton<tim_timer_t>              timer_singleton_t;
+    typedef std::shared_ptr<tim_timer_t>        timer_ptr_t;
+    typedef tim_timer_t::string_t               string_t;
+    typedef timer_tuple                         timer_tuple_t;
+    typedef std::deque<timer_tuple_t>           timer_list_t;
+    typedef timer_list_t::iterator              iterator;
+    typedef timer_list_t::const_iterator        const_iterator;
+    typedef timer_list_t::size_type             size_type;
+    typedef uomap<uint64_t, timer_ptr_t>        timer_map_t;
+    typedef tim_timer_t::ostream_t              ostream_t;
+    typedef tim_timer_t::ofstream_t             ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t>       comm_group_t;
+    typedef std::mutex                          mutex_t;
+    typedef uomap<uint64_t, mutex_t>            mutex_map_t;
+    typedef std::lock_guard<mutex_t>            auto_lock_t;
+    typedef singleton_t::pointer                pointer;
+    typedef singleton_t::shared_pointer         shared_pointer;
+    typedef std::set<this_type*>                daughter_list_t;
+    typedef tim_timer_t::rss_type               rss_type;
+    typedef rss_type::base_type                 base_rss_type;
+    typedef std::function<intmax_t()>           get_num_threads_func_t;
+    typedef std::atomic<uint64_t>               counter_t;
+    typedef uomap<uint64_t, uint64_t>           clock_div_t;
 
 public:
     // Constructor and Destructors
@@ -187,12 +220,15 @@ public:
 
 public:
     // Public static functions
-    static pointer_type instance();
-    static pointer_type master_instance();
-    static void enable(bool val = true);
+    static pointer instance();
+    static pointer master_instance();
+    static void enable(bool val = true) { f_enabled = val; }
     static void set_get_num_threads_func(get_num_threads_func_t f);
-    static int32_t& max_depth();
-    static bool is_enabled();
+    static const int32_t& max_depth() { return f_max_depth; }
+    static void max_depth(const int32_t& val) { f_max_depth = val; }
+    static void set_max_depth(const int32_t& val) { f_max_depth = val; }
+    static int32_t get_max_depth() { return f_max_depth; }
+    static bool is_enabled() { return f_enabled; }
     // JSON writing
     static void write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
@@ -207,8 +243,10 @@ protected:
 public:
     // Public member functions
     void merge(bool div_clock = true);
-    size_type size() const { return m_timer_list.size(); }
+    void merge(pointer);
     void clear();
+
+    size_type size() const { return m_timer_list.size(); }
 
     tim_timer_t& timer(const string_t& key,
                        const string_t& tag = "cxx",
@@ -242,17 +280,33 @@ public:
     const_iterator  end() const     { return m_timer_list.cend(); }
     const_iterator  cend() const    { return m_timer_list.cend(); }
 
-    void report(bool no_min = false) const;
-    void report(std::ostream& os, bool no_min = false) const { report(&os, no_min); }
-    void set_output_stream(ostream_t&);
-    void set_output_stream(const path_t&);
-    void print(bool no_min = false) { this->report(no_min); }
-    void set_max_depth(int32_t d) { f_max_depth = d; }
-    int32_t get_max_depth() { return f_max_depth; }
-    void write_serialization(const path_t& _fname) const { write_json(_fname); }
-	void write_serialization(std::ostream& os) const { write_json(os); }
+    void print(bool ign_cutoff = false, bool endline = true)
+    { this->report(ign_cutoff, endline); }
 
-    void add(pointer_type ptr);
+    void report(bool ign_cutoff = false, bool endline = true) const;
+    void set_output_stream(const path_t&);
+    void write_report(path_t _fname, bool ign_cutoff = false);
+    void write_serialization(const path_t& _fname) const { write_json(_fname); }
+    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
+    //  then timer_pair_t will subtract out tim_timer_t
+    void write_missing(const path_t& _fname,
+                       tim_timer_t* = nullptr,
+                       tim_timer_t* = nullptr);
+
+    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const
+    { report(&os, ign_cutoff, endline); }
+    void set_output_stream(ostream_t& = std::cout);
+    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
+                      bool endline = true) { report(os, ign_cutoff, endline); }
+    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
+    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
+    //  then timer_pair_t will subtract out tim_timer_t
+    void write_missing(ostream_t& = std::cout,
+                       tim_timer_t* = nullptr,
+                       tim_timer_t* = nullptr);
+
+    void add(pointer ptr);
+    void remove(pointer ptr);
 
     timer_map_t& map() { return m_timer_map; }
     timer_list_t& list() { return m_timer_list; }
@@ -286,10 +340,30 @@ public:
         return (m_report != &std::cout) && (m_report != &std::cerr);
     }
 
+    tim_timer_t compute_missing(tim_timer_t* timer_ref = nullptr);
+    uint64_t laps() const { return compute_total_laps(); }
+    uint64_t total_laps() const;
+    void update_total_timer_format();
+
+    friend std::ostream& operator<<(std::ostream& os, const manager& man)
+    {
+        std::stringstream ss;
+        man.report(ss, true, false);
+        os << ss.str();
+        return os;
+    }
+
+    // reset the total timer
+    void start_total_timer();
+    void stop_total_timer();
+    void reset_total_timer();
+
 public:
     // serialization function
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int version);
+    tim_timer_t* missing_timer() const { return m_missing_timer.get(); }
+    int32_t instance_count() const { return m_instance_count; }
 
 protected:
 	// protected functions
@@ -298,8 +372,11 @@ protected:
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
-    void const_merge(bool div = true) const { const_cast<this_type*>(this)->merge(div); }
+    void const_merge(bool div) const { const_cast<this_type*>(this)->merge(div); }
     string_t get_prefix() const;
+    uint64_t compute_total_laps() const;
+    void insert_global_timer();
+    void divide_clock();
 
 protected:
 	// protected static variables
@@ -309,7 +386,7 @@ protected:
 private:
     // Private functions
     ofstream_t* get_ofstream(ostream_t* m_os) const;
-    void report(ostream_t*, bool no_min = false) const;
+    void report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
 
 private:
     // Private variables
@@ -321,6 +398,10 @@ private:
     static std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
+    // instance id
+    int32_t                 m_instance_count;
+    // total laps
+    counter_t               m_laps;
     // hash counting
     counter_t               m_hash;
     // auto timer counting
@@ -341,6 +422,12 @@ private:
     daughter_list_t         m_daughters;
     // baseline rss
     base_rss_type           m_rss_usage;
+    // missing timer
+    timer_ptr_t             m_missing_timer;
+    // global timer
+    timer_ptr_t             m_total_timer;
+    // clock division
+    clock_div_t             m_clock_div_count;
 };
 
 //----------------------------------------------------------------------------//
@@ -348,14 +435,28 @@ inline void
 manager::operator+=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
-        *(std::get<3>(itr).get()) += rhs;
+    {
+        bool _restart = itr.timer().is_running();
+        if(_restart)
+            itr.timer().stop();
+        itr.timer() += rhs;
+        if(_restart)
+            itr.timer().start();
+    }
 }
 //----------------------------------------------------------------------------//
 inline void
 manager::operator-=(const base_rss_type& rhs)
 {
     for(auto& itr : m_timer_list)
-        *(std::get<3>(itr).get()) -= rhs;
+    {
+        bool _restart = itr.timer().is_running();
+        if(_restart)
+            itr.timer().stop();
+        itr.timer() -= rhs;
+        if(_restart)
+            itr.timer().start();
+    }
 }
 //----------------------------------------------------------------------------//
 template <typename _Ret, typename _Func>
@@ -417,11 +518,46 @@ manager::string_hash(const string_t& str) const
     return std::hash<string_t>()(str);
 }
 //----------------------------------------------------------------------------//
+inline uint64_t
+manager::compute_total_laps() const
+{
+    uint64_t _laps = 0;
+    for(const auto& itr : *this)
+        _laps += itr.timer().laps();
+    return _laps;
+}
+//----------------------------------------------------------------------------//
+inline uint64_t
+manager::total_laps() const
+{
+    return m_laps + compute_total_laps();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::start_total_timer()
+{
+    m_total_timer->stop();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::stop_total_timer()
+{
+    m_total_timer->stop();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::reset_total_timer()
+{
+    bool _restart = m_total_timer->is_running();
+    if(_restart)
+        m_total_timer->stop();
+    m_total_timer->reset();
+    if(_restart)
+        m_total_timer->start();
+}
+//----------------------------------------------------------------------------//
 
 } // namespace tim
-
-// for backwards-compatibility
-namespace tim { typedef manager timing_manager; }
 
 #pragma GCC diagnostic pop
 

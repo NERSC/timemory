@@ -257,8 +257,8 @@ public:
         { return (_tms.tms_stime + _tms.tms_cstime) * clock_tick<period>(); };
 
         // record as close as possible, user and sys before wall
-        ::times(&_tms);
         auto wall_time = get_wall_time();
+        ::times(&_tms);
 
         return time_point(duration(rep
         { std::make_tuple(get_user_time(), get_sys_time(), wall_time) } ));

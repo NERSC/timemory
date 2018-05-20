@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -36,7 +36,6 @@ import json
 import sys
 import traceback
 import collections
-import numpy as np
 import os
 import copy
 import warnings
@@ -44,69 +43,54 @@ import warnings
 _matplotlib_backend = None
 
 #------------------------------------------------------------------------------#
-# determine the matplotlib backend
+# check with timemory.options
+#
+try:
+    import timemory.options
+    if timemory.options.matplotlib_backend != "default":
+        _matplotlib_backend = timemory.options.matplotlib_backend
+except:
+    pass
+
+
 #------------------------------------------------------------------------------#
-with warnings.catch_warnings():
+# if not display variable we probably want to use agg
+#
+if (os.environ.get("DISPLAY") is None and
+    os.environ.get("MPLBACKEND") is None and
+    _matplotlib_backend is None):
+    os.environ.setdefault("MPLBACKEND", "agg")
 
-    if sys.version_info[0] < 3:
-        if sys.platform == "darwin":
-            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-        else:
-            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-    else:
-        if sys.platform == "darwin":
-            _matplotlib_backend_opts = ( 'macosx', 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTKAgg', 'GTKCairo' )
-        else:
-            _matplotlib_backend_opts = ( 'Qt5Agg', 'Qt4Agg', 'TkAgg',
-                                         'WXAgg', 'WX', 'GTK3Agg', 'GTK3Cairo' )
 
+#------------------------------------------------------------------------------#
+# tornado helps set the matplotlib backend but is not necessary
+#
+try:
+    import tornado
+except:
+    pass
+
+
+#------------------------------------------------------------------------------#
+# import matplotlib and pyplot but don't fail
+#
+try:
+    import matplotlib
+    import matplotlib.pyplot as plt
+    _matplotlib_backend = matplotlib.get_backend()
+except:
     try:
-        import timemory.options
-        if timemory.options.matplotlib_backend != "default":
-            _matplotlib_backend = timemory.options.matplotlib_backend
+        import matplotlib
+        matplotlib.use("agg", warn=False)
+        import matplotlib.pyplot as plt
+        _matplotlib_backend = matplotlib.get_backend()
     except:
         pass
 
-    # import the necessary module for matplotlib
-    if _matplotlib_backend is not None:
-        try:
-            import matplotlib
-            matplotlib.use(_matplotlib_backend)
-            import matplotlib.pyplot as plt
-        except:
-            for _backend in _matplotlib_backend_opts:
-                try:
-                    import matplotlib
-                    matplotlib.use(_backend)
-                    import matplotlib.pyplot as plt
-                    _matplotlib_backend = _backend
-                    break # successfull backend set
-                except:
-                    pass
-    else:
-        # try using tornado
-        try:
-            import tornado
-            import matplotlib
-            import matplotlib.pyplot as plt
-            _matplotlib_backend = 'default'
-        except:
-            for _backend in _matplotlib_backend_opts:
-                try:
-                    import matplotlib
-                    matplotlib.use(_backend)
-                    import matplotlib.pyplot as plt
-                    _matplotlib_backend = _backend
-                    break # successfull backend set
-                except:
-                    pass
 
 #------------------------------------------------------------------------------#
-
-
+#
+#
 """ Default timing data to extract from JSON """
 _default_timing_types = ['wall', 'sys', 'user', 'cpu', 'perc']
 
@@ -662,8 +646,16 @@ def plot_generic(_plot_data, _types, _data_dict,
                  _type_str, _type_min, _type_unit):
 
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
+
+    import numpy as np
+    import matplotlib
+    import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     plot_params = _plot_data.plot_params
@@ -675,7 +667,7 @@ def plot_generic(_plot_data, _types, _data_dict,
     if ntics == 0:
         print ('{} had no {} data less than the minimum time ({} {})'.format(
                filename, _type_str, _type_min, _type_unit))
-        return()
+        return False
 
     avgs = nested_dict()
     stds = nested_dict()
@@ -777,16 +769,24 @@ def plot_generic(_plot_data, _types, _data_dict,
     #    ax.axhline(y=ymin, ls='--')
     #plt.gca().grid(b=True, which='major', axis='y', markevery=nitem)
     #plt.gca().set_markevery()
-
+    return True
 
 
 #==============================================================================#
 def plot_timing(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
+    #
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
+
+    import matplotlib
+    import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -796,12 +796,14 @@ def plot_timing(_plot_data,
     _plot_min = (_params.timing_max_value *
                  (0.01 * _params.timing_min_percent))
 
-    plot_generic(_plot_data,
-                 _params.timing_fields,
-                 _plot_data.get_timing(),
-                 _ext,
-                 _plot_min,
-                 's')
+    _do_plot = plot_generic(_plot_data,
+                            _params.timing_fields,
+                            _plot_data.get_timing(),
+                            _ext,
+                            _plot_min,
+                            's')
+    if not _do_plot:
+        return
 
     plt.xlabel('Time [seconds]')
     plt.title('Timing report for {}'.format(title))
@@ -833,9 +835,17 @@ def plot_timing(_plot_data,
 def plot_memory(_plot_data,
                 disp=False, output_dir=".", echo_dart=False):
 
+    #
     if _matplotlib_backend is None:
-        warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting")
-        return
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except:
+            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            return
+
+    import matplotlib
+    import matplotlib.pyplot as plt
 
     filename = _plot_data.filename
     title = _plot_data.get_title()
@@ -845,12 +855,15 @@ def plot_memory(_plot_data,
     _plot_min = (_params.timing_max_value *
                  (0.01 * _params.timing_min_percent))
 
-    plot_generic(_plot_data,
-                 _params.memory_fields,
-                 _plot_data.get_memory(),
-                 _ext,
-                 _plot_min,
-                 'MB')
+    _do_plot = plot_generic(_plot_data,
+                            _params.memory_fields,
+                            _plot_data.get_memory(),
+                            _ext,
+                            _plot_min,
+                            'MB')
+
+    if not _do_plot:
+        return
 
     plt.xlabel('Memory [MB]')
     plt.title('Memory report for {}'.format(title))
@@ -876,6 +889,63 @@ def plot_memory(_plot_data,
         print('Saving plot: "{}"...'.format(imgfname))
         plt.savefig(imgfname, dpi=_params.img_dpi)
         plt.close()
+
+
+#==============================================================================#
+def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
+                  display=False, output_dir='.', echo_dart=None):
+    """
+    A function to plot JSON data
+
+    Args:
+        - data (list):
+            - list of "plot_data" objects
+            - should contain their own plot_parameters object
+        - files (list):
+            - list of JSON files
+            - "plot_params" argument object will be applied to these files
+        - combine (bool):
+            - if specified, the plot_data objects from "data" and "files"
+              will be combined into one "plot_data" object
+            - the plot_params object will be used for this
+    """
+    try:
+        # try here in case running as main on C++ output
+        import timemory.options as options
+        if echo_dart is None and options.echo_dart:
+            echo_dart = True
+        elif echo_dart is None:
+            echo_dart = False
+    except:
+        pass
+
+    _combined = None
+    for _data in data:
+        if _combined is None:
+            _combined = plot_data(filename = output_name,
+                                  output_name = output_name,
+                                  concurrency = _data.concurrency,
+                                  mpi_size = _data.mpi_size,
+                                  timemory_functions = {},
+                                  title = title,
+                                  plot_params = plot_params)
+
+        _key = list(_data.timemory_functions.keys())[0]
+        _obj = _data.timemory_functions[_key]
+        _obj_name = "{}".format(_data.filename)
+        _obj.func = _obj_name
+        _combined.timemory_functions[_obj_name] = _obj
+
+    try:
+        print ('Plotting {}...'.format(_combined.filename))
+        plot_timing(_combined, display, output_dir, echo_dart)
+        plot_memory(_combined, display, output_dir, echo_dart)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        print ('Error! Unable to plot "{}"...'.format(_combined.filename))
 
 
 #==============================================================================#
@@ -968,6 +1038,9 @@ if __name__ == "__main__":
             required=False, type=int)
         parser.add_argument('--img-type', help="Image type",
             required=False, type=str)
+        parser.add_argument('--plot-max',
+            help="Plot the maximums from a set of inputs to <filename>",
+            required=False, type=str, dest='plot_max')
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -981,8 +1054,11 @@ if __name__ == "__main__":
         parser.set_defaults(img_size=[ plot_parameters.img_size['w'],
                                        plot_parameters.img_size['h'] ])
         parser.set_defaults(img_type=plot_parameters.img_type)
+        parser.set_defaults(plot_max="")
 
         args = parser.parse_args()
+
+        do_plot_max = True if len(args.plot_max) > 0 else False
 
         print('Files: {}'.format(args.files))
         print('Titles: {}'.format(args.titles))
@@ -996,8 +1072,12 @@ if __name__ == "__main__":
                                                'h' : args.img_size[1] },
                                  _img_type = args.img_type)
 
-        if len(args.titles) != 1 and len(args.titles) != len(args.files):
-            raise Exception("Error must provide one title or a title for each file")
+        if do_plot_max:
+            if len(args.titles) != 1:
+                raise Exception("Error must provide one title")
+        else:
+            if len(args.titles) != 1 and len(args.titles) != len(args.files):
+                raise Exception("Error must provide one title or a title for each file")
 
         data = []
         for i in range(len(args.files)):
@@ -1013,12 +1093,21 @@ if __name__ == "__main__":
                                                                 args.files[i]))
             data.append(_data)
 
-        plot(data=data,
-             plot_params=params,
-             display=args.display_plot,
-             combine=args.combine,
-             output_dir=args.output_dir,
-             echo_dart=args.echo_dart)
+        if do_plot_max:
+            plot_maximums(args.plot_max,
+                          args.titles[0],
+                          data,
+                          plot_params=params,
+                          display=args.display_plot,
+                          output_dir=args.output_dir,
+                          echo_dart=args.echo_dart)
+        else:
+            plot(data=data,
+                 plot_params=params,
+                 display=args.display_plot,
+                 combine=args.combine,
+                 output_dir=args.output_dir,
+                 echo_dart=args.echo_dart)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

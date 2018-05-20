@@ -1,3 +1,4 @@
+#!@PYTHON_EXECUTABLE@
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -30,6 +31,7 @@ import sys
 import imp
 import ctypes
 import platform
+import warnings
 from ctypes.util import find_library
 
 # get the path to this directory
@@ -47,11 +49,8 @@ if platform.system() == "Windows":
 _tim_buildpath = os.path.join(_tim_buildpath, "timemory")
 
 # verbosity
-_verbose = 0
-try:
-    _verbose = int(os.environ['TIMEMORY_DEBUG'])
-except Exception as e:
-    _verbose = 0
+_verbose = 0 if os.environ.get('TIMEMORY_DEBUG') is None \
+    else int(os.environ.get('TIMEMORY_DEBUG'))
 
 # construct info dictionary (used for build)
 timemory_info_file = os.path.join(this_path, os.path.join("lib", "timemory_pathinfo.txt"))
@@ -75,7 +74,7 @@ if os.path.exists(timemory_info_file):
         print ('')
 
 # if compiled with shared library linking
-if "@TIMEMORY_DYNAMIC_LINK@" == "ON":
+if "@BUILD_SHARED_LIBS@" == "ON":
 
     # search for library using {DYLD,LD}_LIBRARY_PATH, LD_RUN_PATH, etc.
     tim_lib_path = find_library("timemory")
@@ -190,22 +189,38 @@ timemory.__setattr__("build_info",
                        "compiler_id" : "@CMAKE_CXX_COMPILER_ID@",
                        "compiler_version" : "@CMAKE_CXX_COMPILER_VERSION@" } )
 
-# load the submodule
-__init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))
-# add the submodule attributes
-timemory.__setattr__("util", __init_utl.__self)
+try:
+    with warnings.catch_warnings():
+        # load the submodule
+        __init_utl = __load_module('util', os.path.join(this_path, 'util/__init__.py'))
+        # add the submodule attributes
+        timemory.__setattr__("util", __init_utl.__self)
+except:
+    warnings.warn("TiMemory was unable to import '{}' submodule. {}".format("util", e))
+
+try:
+    with warnings.catch_warnings():
+        # load the submodule
+        __init_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/__init__.py'))
+        # add the submodule attributes
+        timemory.__setattr__("mpi_support", __init_mpi.__self)
+except:
+    warnings.warn("TiMemory was unable to import '{}' submodule. {}".format("mpi_support", e))
 
 # load the submodule
-__init_mpi = __load_module('mpi_support', os.path.join(this_path, 'mpi_support/__init__.py'))
-# add the submodule attributes
-timemory.__setattr__("mpi_support", __init_mpi.__self)
+try:
+    with warnings.catch_warnings():
+        __init_plt = __load_module('plotting', os.path.join(this_path, 'plotting/__init__.py'))
+        # add the submodule attributes
+        timemory.__setattr__("plotting", __init_plt.__self)
+except:
+    warnings.warn("TiMemory was unable to import '{}' submodule. {}".format("plotting", e))
 
-# load the submodule
-__init_plt = __load_module('plotting', os.path.join(this_path, 'plotting/__init__.py'))
-# add the submodule attributes
-timemory.__setattr__("plotting", __init_plt.__self)
-
-# load the submodule
-__init_tst = __load_module('tests', os.path.join(this_path, 'tests/__init__.py'))
-# add the submodule attributes
-timemory.__setattr__("tests", __init_tst.__self)
+try:
+    with warnings.catch_warnings():
+        # load the submodule
+        __init_tst = __load_module('tests', os.path.join(this_path, 'tests/__init__.py'))
+        # add the submodule attributes
+        timemory.__setattr__("tests", __init_tst.__self)
+except Exception as e:
+    warnings.warn("TiMemory was unable to import '{}' submodule. {}".format("tests", e))

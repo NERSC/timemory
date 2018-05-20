@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -48,9 +48,9 @@ class base_decorator(object):
 
     # ------------------------------------------------------------------------ #
     def parse_wrapped(self, func, args, kwargs):
-        if (len(args) > 0 and args[0] is not None and
-            inspect.isclass(type(args[0]))):
-                self.is_class = True
+
+        if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
+            self.is_class = True
         else:
             self.is_class = False
 
@@ -156,10 +156,11 @@ class auto_timer(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         del self._self_obj
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -233,11 +234,12 @@ class timer(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         self._self_obj.stop()
         self._self_obj.report()
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
@@ -311,12 +313,13 @@ class rss_usage(base_decorator):
 
 
     # ------------------------------------------------------------------------ #
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, exc_traceback):
         """
         Context manager exit
         """
         self._self_obj.record()
         print('{}'.format(self._self_obj))
 
-        if exc_type is not None and exc_value is not None and traceback is not None:
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)

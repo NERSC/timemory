@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -71,6 +71,52 @@ class timemory_test(unittest.TestCase):
 
 
     # ------------------------------------------------------------------------ #
+    # Test RSS usage validity
+    def test_1_rss_validity(self):
+
+        import numpy as np
+
+        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
+
+        rss_init = timemory.rss_usage(record=True)
+        rss_post = timemory.rss_usage(record=False)
+
+        print('\t(A) RSS post: {}'.format(rss_post))
+        print('\t(A) RSS init: {}'.format(rss_init))
+
+        # should be 8 MB
+        nsize = 1048576
+        arr1 = np.ones(shape=[nsize], dtype=np.uint64, order='C')
+
+        #for i in range(nsize):
+        #    arr1[i] = i
+
+        rss_post.record()
+
+        print('\t(B) RSS post: {}'.format(rss_post))
+        print('\t(B) RSS init: {}'.format(rss_init))
+
+        rss_post -= rss_init
+
+        print('\t(C) RSS post: {}'.format(rss_post))
+        print('\t(C) RSS init: {}'.format(rss_init))
+
+        # in kB
+        rss_corr = 8192
+        # real memory in kilobytes
+        rss_real = rss_post.current(timemory.units.kilobyte)
+
+        # compute diff
+        rss_diff = rss_real - rss_corr
+        print('\tRSS real:  {} kB'.format(rss_real))
+        print('\tRSS ideal: {} kB'.format(rss_corr))
+        print('\tRSS diff:  {} kB'.format(rss_diff))
+
+        # allow some variability
+        self.assertTrue(abs(rss_diff) < 300)
+
+
+    # ------------------------------------------------------------------------ #
     # Test if the timers are working if not disabled at compilation
     def test_2_timing(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
@@ -105,7 +151,7 @@ class timemory_test(unittest.TestCase):
         self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.manager.size(), 12)
+        self.assertEqual(self.manager.size(), 13)
 
         for i in range(0, self.manager.size()):
             _t = self.manager.at(i)
@@ -118,42 +164,55 @@ class timemory_test(unittest.TestCase):
 
 
     # ------------------------------------------------------------------------ #
-    # Test the timing on/off toggle functionalities
-    def test_6_toggle(self):
+    # Test decorator
+    def test_3_decorator(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
-        timemory.set_max_depth(timemory.options.default_max_depth())
         self.manager.clear()
 
-        timemory.toggle(True)
-        if True:
-            autotimer = timemory.auto_timer("on")
-            fibonacci(27)
-            del autotimer
-        self.assertEqual(self.manager.size(), 1)
+        @auto_timer()
+        def test_func_glob():
+            time.sleep(1)
 
-        timemory.toggle(False)
-        if True:
-            autotimer = timemory.auto_timer("off")
-            fibonacci(27)
-            del autotimer
-        self.assertEqual(self.manager.size(), 1)
+            @auto_timer()
+            def test_func_1():
+                ret = np.ones(shape=[2500, 2500], dtype=np.float64)
+                time.sleep(1)
 
-        timemory.toggle(True)
-        if True:
-            autotimer_on = timemory.auto_timer("on")
-            timemory.toggle(False)
-            autotimer_off = timemory.auto_timer("off")
-            fibonacci(27)
-            del autotimer_off
-            del autotimer_on
-        self.assertEqual(self.manager.size(), 2)
+            @auto_timer()
+            def test_func_2(n):
+                test_func_1()
+                time.sleep(n)
 
-        freport = timemory.options.set_report("timing_toggle.out")
-        fserial = timemory.options.set_serial("timing_toggle.json")
-        self.manager.report(no_min=True)
+            test_func_1()
+            test_func_2(2)
+
+        test_func_glob()
+
+        freport = timemory.options.set_report("timing_decorator.out")
+        fserial = timemory.options.set_serial("timing_decorator.json")
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
+
+        self.assertEqual(timemory.size(), 5)
+
+        @timer()
+        def test_func_timer():
+            time.sleep(1)
+
+            @rss_usage()
+            def test_func_rss():
+                ret = np.ones(shape=[5000, 5000], dtype=np.float64)
+                return None
+
+            print('')
+            ret = test_func_rss()
+            print('')
+            time.sleep(1)
+            return None
+
+        test_func_timer()
 
 
     # ------------------------------------------------------------------------ #
@@ -209,55 +268,42 @@ class timemory_test(unittest.TestCase):
 
 
     # ------------------------------------------------------------------------ #
-    # Test decorator
-    def test_3_decorator(self):
+    # Test the timing on/off toggle functionalities
+    def test_6_toggle(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
         timemory.toggle(True)
+        timemory.set_max_depth(timemory.options.default_max_depth())
         self.manager.clear()
 
-        @auto_timer()
-        def test_func_glob():
-            time.sleep(1)
+        timemory.toggle(True)
+        if True:
+            autotimer = timemory.auto_timer("on")
+            fibonacci(27)
+            del autotimer
+        self.assertEqual(self.manager.size(), 2)
 
-            @auto_timer()
-            def test_func_1():
-                ret = np.ones(shape=[2500, 2500], dtype=np.float64)
-                time.sleep(1)
+        timemory.toggle(False)
+        if True:
+            autotimer = timemory.auto_timer("off")
+            fibonacci(27)
+            del autotimer
+        self.assertEqual(self.manager.size(), 2)
 
-            @auto_timer()
-            def test_func_2(n):
-                test_func_1()
-                time.sleep(n)
+        timemory.toggle(True)
+        if True:
+            autotimer_on = timemory.auto_timer("on")
+            timemory.toggle(False)
+            autotimer_off = timemory.auto_timer("off")
+            fibonacci(27)
+            del autotimer_off
+            del autotimer_on
+        self.assertEqual(self.manager.size(), 3)
 
-            test_func_1()
-            test_func_2(2)
-
-        test_func_glob()
-
-        freport = timemory.options.set_report("timing_decorator.out")
-        fserial = timemory.options.set_serial("timing_decorator.json")
-        self.manager.report(no_min=True)
+        freport = timemory.options.set_report("timing_toggle.out")
+        fserial = timemory.options.set_serial("timing_toggle.json")
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
-
-        self.assertEqual(timemory.size(), 4)
-
-        @timer()
-        def test_func_timer():
-            time.sleep(1)
-
-            @rss_usage()
-            def test_func_rss():
-                ret = np.ones(shape=[5000, 5000], dtype=np.float64)
-                return None
-
-            print('')
-            ret = test_func_rss()
-            print('')
-            time.sleep(1)
-            return None
-
-        test_func_timer()
 
 
     # ------------------------------------------------------------------------ #
@@ -268,6 +314,7 @@ class timemory_test(unittest.TestCase):
         timemory.toggle(True)
         self.manager.clear()
 
+        #----------------------------------------------------------------------#
         # timer test
         with timemory.util.timer():
             time.sleep(1)
@@ -278,7 +325,7 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
-
+        #----------------------------------------------------------------------#
         # timer test with args
         with timemory.util.timer('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
             time.sleep(1)
@@ -290,6 +337,7 @@ class timemory_test(unittest.TestCase):
                 del n
 
 
+        #----------------------------------------------------------------------#
         # auto timer test
         with timemory.util.auto_timer(report_at_exit=True):
             time.sleep(1)
@@ -300,7 +348,33 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
+        #----------------------------------------------------------------------#
+        # failure test
+        def fail_func():
+            return [0, 1, 2, 3]
 
+        # timer exit test
+        try:
+            with timemory.util.timer():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        # auto timer exit test
+        try:
+            with timemory.util.auto_timer():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        # rss exit test
+        try:
+            with timemory.util.rss_usage():
+                a, b, c = fail_func()
+        except Exception as e:
+            pass
+
+        #----------------------------------------------------------------------#
         # auto timer test with args
         @timemory.util.auto_timer()
         def auto_timer_with_args(nc=2):
@@ -320,9 +394,9 @@ class timemory_test(unittest.TestCase):
 
         auto_timer_with_args()
 
-
         print('\n\n{}\n\n'.format(self.manager))
 
+        #----------------------------------------------------------------------#
         # rss test
         with timemory.util.rss_usage():
             time.sleep(1)
@@ -333,7 +407,7 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
-
+        #----------------------------------------------------------------------#
         # rss test with args
         with timemory.util.rss_usage('{}({})'.format(timemory.FUNC(), ['test', 'context'])):
             time.sleep(1)
@@ -346,48 +420,8 @@ class timemory_test(unittest.TestCase):
 
         freport = timemory.options.set_report("timing_context_manager.out")
         fserial = timemory.options.set_serial("timing_context_manager.json")
-        self.manager.report(no_min=True)
+        self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
-
-
-    # ------------------------------------------------------------------------ #
-    # Test RSS usage validity
-    def test_1_rss_validity(self):
-        print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
-
-        rss_init = timemory.rss_usage()
-        rss_post = timemory.rss_usage()
-
-        rss_init.record()
-        print('(A) RSS post: {}'.format(rss_post))
-        print('(A) RSS init: {}'.format(rss_init))
-
-        import numpy as np
-        # should be ~8 MB
-        nsize = 1000*1000
-        arr1 = np.ones(shape=[nsize], dtype=np.int64)
-
-        rss_post.record()
-
-        print('(B) RSS post: {}'.format(rss_post))
-        print('(B) RSS init: {}'.format(rss_init))
-
-        rss_post -= rss_init
-
-        print('(C) RSS post: {}'.format(rss_post))
-        print('(C) RSS init: {}'.format(rss_init))
-
-        # in kB
-        rss_corr = (8000) / 1.024
-        # convert from MB to kB
-        rss_real = rss_post.current() * 1024
-        # compute diff
-        rss_diff = rss_real - rss_corr
-        print('RSS real:  {} kB'.format(rss_real))
-        print('RSS ideal: {} kB'.format(rss_corr))
-        print('RSS diff:  {} kB'.format(rss_diff))
-        # allow some variability
-        self.assertTrue(abs(rss_diff) < 250)
 
 
     # ------------------------------------------------------------------------ #
@@ -485,7 +519,7 @@ class timemory_test(unittest.TestCase):
         self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 
-        self.assertEqual(self.manager.size(), 8)
+        self.assertEqual(self.manager.size(), 9)
 
         for i in range(0, self.manager.size()):
             _t = self.manager.at(i)
@@ -552,10 +586,12 @@ if __name__ == '__main__':
         else:
             loader = unittest.defaultTestLoader.sortTestMethodsUsing = None
             unittest.main(verbosity=5, buffer=False)
+        print('"{}" testing finished'.format(__file__))
     except:
         raise
     finally:
         manager = timemory.manager()
+        print("{}".format(timemory.get_missing_report()))
         if options.ctest_notes:
             f = manager.write_ctest_notes(directory="test_output/timemory_test")
             print('"{}" wrote CTest notes file : {}'.format(__file__, f))

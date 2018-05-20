@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -86,7 +86,7 @@ def main(nfib):
     ret = fib.calculate()
 
     timemory.report()
-    tman.report(no_min=True)
+    tman.report(ign_cutoff=True)
     _jsonf = os.path.join(options.output_dir, 'simple_output.json')
     tman.serialize(_jsonf)
     print ('')
@@ -109,6 +109,7 @@ def run_test():
     main(args.nfib)
 
     timemory.disable_signal_detection()
+    print('"{}" testing finished'.format(__file__))
 
 
 # ---------------------------------------------------------------------------- #

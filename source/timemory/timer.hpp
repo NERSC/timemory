@@ -63,31 +63,70 @@ public:
     typedef rss_type::base_type             base_rss_type;
 
 public:
+    explicit timer(bool _auto_start, timer* _sum_timer);
+
     timer(const string_t& _prefix = "",
-          const string_t& _format = format::timer::get_default_format());
-    timer(const format_type& _format);
-    timer(timer_format_t _format);
+          const string_t& _format = format::timer::default_format(),
+          bool _record_memory = timer::default_record_memory());
+
+    timer(const format_type& _format,
+          bool _record_memory = timer::default_record_memory());
+
+    timer(timer_format_t _format,
+          bool _record_memory = timer::default_record_memory());
+
+    timer(const timer* rhs,         // can be nullptr,
+          const string_t& _prefix,
+          bool _align_width = false,
+          bool _record_memory = timer::default_record_memory());
+
     virtual ~timer();
 
 public:
+    // copy and assign
+    timer(const this_type&);
+    this_type& operator=(const this_type&);
+    // parent timer accumulating sum
+    timer* summation_timer() const { return m_sum_timer; }
+    void summation_timer(timer* _ref) { m_sum_timer = _ref; }
+
+public:
+    // public static functions
+    static void default_record_memory(bool _val)    { f_record_memory() = _val; }
+    static bool default_record_memory()             { return f_record_memory(); }
+
+public:
+    // public member functions
     timer& stop_and_return()
     {
         this->stop();
         return *this;
     }
 
-    std::string as_string(bool no_min = true) const
+    std::string as_string(bool ign_cutoff = true) const
     {
         std::stringstream ss;
-        this->report(ss, false, no_min);
+        this->report(ss, false, ign_cutoff);
         return ss.str();
     }
 
-    void print(bool no_min = true) const
+    void print(bool ign_cutoff = true) const
     {
-        std::cout << this->as_string(no_min) << std::endl;
+        std::cout << this->as_string(ign_cutoff) << std::endl;
     }
 
+    void grab_metadata(const this_type& rhs);
+
+    template <typename Archive> void
+    serialize(Archive& ar, const unsigned int version)
+    {
+        internal::base_timer::serialize(ar, version);
+    }
+
+public:
+    //------------------------------------------------------------------------//
+    //      operator += timer
+    //
     this_type& operator+=(const this_type& rhs)
     {
         //auto_lock_t l(m_mutex);
@@ -95,6 +134,19 @@ public:
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= timer
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        //auto_lock_t l(m_mutex);
+        m_accum -= rhs.get_accum();
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
+    //      operator /= integer
+    //
     this_type& operator/=(const uint64_t& rhs)
     {
         auto_lock_t l(m_mutex);
@@ -102,26 +154,51 @@ public:
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator += RSS
+    //
     this_type& operator+=(const base_rss_type& rhs)
     {
         m_accum += rhs;
         return *this;
     }
 
+    //------------------------------------------------------------------------//
+    //      operator -= RSS
+    //
     this_type& operator-=(const base_rss_type& rhs)
     {
         m_accum -= rhs;
         return *this;
     }
 
-    void grab_metadata(const this_type& rhs);
+public:
+    //------------------------------------------------------------------------//
+    //                          FRIEND operators
+    //------------------------------------------------------------------------//
+    //      operator - timer
+    //
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) -= rhs;
+    }
+
+    //------------------------------------------------------------------------//
+    //      operator + timer
+    //
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) += rhs;
+    }
 
 public:
-    template <typename Archive> void
-    serialize(Archive& ar, const unsigned int version)
-    {
-        internal::base_timer::serialize(ar, version);
-    }
+    // public member functions
+
+protected:
+    timer* m_sum_timer;
+
+private:
+    static bool& f_record_memory();
 
 };
 

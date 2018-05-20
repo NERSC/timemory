@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -256,12 +256,14 @@ def run_test():
     print('\nTiming report:\n{}'.format(manager))
     freport = options.set_report("timing_array_test.out")
     fserial = options.set_serial("timing_array_test.json")
-    manager.report(no_min = True)
+    manager.report(ign_cutoff = True)
     plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 
     measure('end', _rss = rss)
+    print("{}".format(timemory.get_missing_report()))
 
     timemory.disable_signal_detection()
+    print('"{}" testing finished'.format(__file__))
 
 # ---------------------------------------------------------------------------- #
 if __name__ == '__main__':

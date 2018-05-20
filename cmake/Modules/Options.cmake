@@ -20,8 +20,7 @@ add_option(TIMEMORY_SETUP_PY "Python build from setup.py" OFF NO_FEATURE)
 add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF)
 add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF NO_FEATURE)
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)
-add_dependent_option(TIMEMORY_DYNAMIC_LINK
-    "Link the TiMemory PyBind11 module to the shared library" OFF "WIN32" ON)
+add_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 add_dependent_option(TIMEMORY_BUILD_EXAMPLES "Build the C++ examples"
     ON "TIMEMORY_BUILD_TESTING" OFF)
 if(TIMEMORY_USE_MPI)
@@ -39,6 +38,7 @@ add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
 add_feature(TIMEMORY_INSTALL_PREFIX "TiMemory installation")
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
+add_feature(CMAKE_C_FLAGS "C compiler flags")
 add_feature(CMAKE_CXX_FLAGS "C++ compiler flags")
 add_feature(CMAKE_CXX_STANDARD "C++11 STL standard")
 

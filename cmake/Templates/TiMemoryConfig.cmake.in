@@ -11,7 +11,7 @@ set(@PROJECT_NAME@_CXX_FLAGS "@CMAKE_CXX_FLAGS@ -std=c++${CMAKE_CXX_STANDARD}")
 set(TIMEMORY_USE_MPI @MPI_FOUND@)
 set(TIMEMORY_EXCEPTIONS @TIMEMORY_EXCEPTIONS@)
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_USE_PYTHON_BINDING@)
-set(TIMEMORY_DYNAMIC_LINK @TIMEMORY_DYNAMIC_LINK@)
+set(TIMEMORY_DYNAMIC_LINK @BUILD_SHARED_LIBS@)
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -42,63 +42,65 @@ if(_TIMEMORY_INSTALL_TREE)
     #--------------------------------------------------------------------------#
     #   try to get imported location
     #--------------------------------------------------------------------------#
-    foreach(_LIBTYPE SHARED STATIC)
 
-        string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
-        if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-            set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-        else("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-            set(IMPORTED_LOCATION_BUILD )
-        endif("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
+    if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+        set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
+    else("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+        set(IMPORTED_LOCATION_BUILD )
+    endif("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+
+    foreach(_LANG C CXX)
+        string(TOLOWER "${_LANG}" _LANG_LOWER)
 
         foreach(_LOC
-                IMPORTED_LOCATION
-                ${IMPORTED_LOCATION_BUILD}
-                IMPORTED_LOCATION_RELEASE
-                IMPORTED_LOCATION_RELWITHDEBINFO
-                IMPORTED_LOCATION_DEBUG
-                IMPORTED_LOCATION_MINSIZEREL)
-            if(NOT _${_LIBTYPE}_LOCATION)
-                get_target_property(_SHARED_LOCATION @LIBNAME@-shared ${_LOC})
-            endif(NOT _${_LIBTYPE}_LOCATION)
+            IMPORTED_LOCATION
+            ${IMPORTED_LOCATION_BUILD}
+            IMPORTED_LOCATION_RELEASE
+            IMPORTED_LOCATION_RELWITHDEBINFO
+            IMPORTED_LOCATION_DEBUG
+            IMPORTED_LOCATION_MINSIZEREL)
+            if(NOT _${_LANG}_LOCATION)
+                get_target_property(_${_LANG}_LOCATION @LIBNAME@-${_LANG_LOWER}-library ${_LOC})
+            endif(NOT _${_LANG}_LOCATION)
         endforeach(_LOC
-                IMPORTED_LOCATION
-                ${IMPORTED_LOCATION_BUILD}
-                IMPORTED_LOCATION_RELEASE
-                IMPORTED_LOCATION_RELWITHDEBINFO
-                IMPORTED_LOCATION_DEBUG
-                IMPORTED_LOCATION_MINSIZEREL)
+            IMPORTED_LOCATION
+            ${IMPORTED_LOCATION_BUILD}
+            IMPORTED_LOCATION_RELEASE
+            IMPORTED_LOCATION_RELWITHDEBINFO
+            IMPORTED_LOCATION_DEBUG
+            IMPORTED_LOCATION_MINSIZEREL)
 
-        STRING(TOLOWER "${_LIBTYPE}" _LIBTAG)
-        if(_${_LIBTYPE}_LOCATION)
-            set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY ${_${_LIBTYPE}_LOCATION}
-                CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
-        else(_${_LIBTYPE}_LOCATION)
-            set(@PROJECT_NAME@_${_LIBTYPE}_LIBRARY @LIBNAME@-${_LIBTAG}
-                CACHE INTERNAL "@PROJECT_NAME@ ${_LIBTAG} library")
-        endif(_${_LIBTYPE}_LOCATION)
+        if(_${_LANG}_LOCATION)
+            set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
+                CACHE INTERNAL "@PROJECT_NAME@ ${_LANG} library")
+        endif(_${_LANG}_LOCATION)
 
-        unset(_${_LIBTYPE}_LOCATION)
-
-    endforeach(_LIBTYPE SHARED STATIC)
+        unset(_${_LANG}_LOCATION)
+    endforeach(_LANG C CXX)
 
 else(_TIMEMORY_INSTALL_TREE)
 
     set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
         "@PROJECT_SOURCE_DIR@/source/cereal/include")
+
+    if(TIMEMORY_PYTHON_BINDINGS)
+        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source/python/pybind11")
+    endif(TIMEMORY_PYTHON_BINDINGS)
+
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
+
     if(TIMEMORY_PYTHON_BINDINGS)
         set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif(TIMEMORY_PYTHON_BINDINGS)
-    if(TIMEMORY_DYNAMIC_LINK)
-        set_property(TARGET @LIBNAME@-shared
-            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        set(PROJECT_DEPENDS @LIBNAME@-shared)
-    else()
-        set_property(TARGET @LIBNAME@-static PROPERTY
-            IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        set(PROJECT_DEPENDS @LIBNAME@-static)
-    endif()
+
+    set_property(TARGET @LIBNAME@-c-library
+        PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+
+    set_property(TARGET @LIBNAME@-cxx-library
+        PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+
+    set(PROJECT_DEPENDS @LIBNAME@-c-library @LIBNAME@-cxx-library)
 
 endif(_TIMEMORY_INSTALL_TREE)
 
@@ -126,19 +128,16 @@ endif(DEFINED CMAKE_CXX_STANDARD)
 #------------------------------------------------------------------------------#
 #   Linking type
 #------------------------------------------------------------------------------#
-if(TIMEMORY_DYNAMIC_LINK)
-    set(TIMEMORY_LINK_TYPE shared)
-else(TIMEMORY_DYNAMIC_LINK)
-    set(TIMEMORY_LINK_TYPE static)
+if(NOT TIMEMORY_DYNAMIC_LINK AND WIN32)
     add_definitions(-D_TIMEMORY_ARCHIVE)
-endif(TIMEMORY_DYNAMIC_LINK)
+endif(NOT TIMEMORY_DYNAMIC_LINK AND WIN32)
 
 #------------------------------------------------------------------------------#
 #   TiMemory link target
 #------------------------------------------------------------------------------#
-#add_library(@LIBNAME@-library ALIAS @LIBNAME@-${TIMEMORY_LINK_TYPE})
-#message(STATUS "TiMemory library is alias to @LIBNAME@-${TIMEMORY_LINK_TYPE}")
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-${TIMEMORY_LINK_TYPE})
+set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-library)
+set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-library)
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-library)
 
 #------------------------------------------------------------------------------#
 #   Definitions
@@ -160,10 +159,14 @@ include(FindPackageHandleStandardArgs)
 if(TIMEMORY_PYTHON_BINDINGS)
     find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
         @PROJECT_NAME@_LIBRARIES
+        @PROJECT_NAME@_C_LIBRARIES
+        @PROJECT_NAME@_CXX_LIBRARIES
         @PROJECT_NAME@_INCLUDE_DIR
         @PROJECT_NAME@_PYTHON_DIR)
 else(TIMEMORY_PYTHON_BINDINGS)
     find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
         @PROJECT_NAME@_LIBRARIES
+        @PROJECT_NAME@_C_LIBRARIES
+        @PROJECT_NAME@_CXX_LIBRARIES
         @PROJECT_NAME@_INCLUDE_DIR)
 endif(TIMEMORY_PYTHON_BINDINGS)

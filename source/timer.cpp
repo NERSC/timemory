@@ -36,34 +36,96 @@
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
+namespace tim
+{
+
+bool& timer::f_record_memory()
+{
+    static bool _record_memory = true;
+    return _record_memory;
+}
 
 //============================================================================//
 
-namespace tim
+timer::timer(bool _auto_start, timer* _sum_timer)
+: base_type(nullptr, timer::default_record_memory()),
+  m_sum_timer(_sum_timer)
 {
+    if(_auto_start)
+        this->start();
+}
 
 //============================================================================//
 
 timer::timer(const string_t& _prefix,
-             const string_t& _format)
-: base_type(timer_format_t(new format_type(_prefix, _format)))
+             const string_t& _format,
+             bool _record_memory)
+: base_type(timer_format_t(new format_type(_prefix, _format)), _record_memory),
+  m_sum_timer(nullptr)
 { }
 
 //============================================================================//
-timer::timer(const format_type& _format)
-: base_type(timer_format_t(new format_type(_format)))
+
+timer::timer(const format_type& _format, bool _record_memory)
+: base_type(timer_format_t(new format_type(_format)), _record_memory),
+  m_sum_timer(nullptr)
 { }
 
 //============================================================================//
-timer::timer(timer_format_t _format)
-: base_type(_format)
+
+timer::timer(timer_format_t _format, bool _record_memory)
+: base_type(_format, _record_memory),
+  m_sum_timer(nullptr)
 { }
+
+//============================================================================//
+
+timer::timer(const this_type* rhs, const string_t& _prefix,
+             bool _align_width, bool _record_memory)
+: base_type(timer_format_t(
+                new format_type(_prefix,
+                                (rhs) ? rhs->format()->format()
+                                      : format::timer::default_format())),
+            _record_memory),
+  m_sum_timer(nullptr)
+{
+    if(rhs)
+        this->sync(*rhs);
+    this->format()->align_width(_align_width);
+}
 
 //============================================================================//
 
 timer::~timer()
 { }
+
+//============================================================================//
+
+timer::timer(const this_type& rhs)
+: base_type(timer_format_t(new format_type(rhs.format()->prefix(),
+                                           rhs.format()->format())),
+            rhs.m_record_memory),
+  m_sum_timer(rhs.m_sum_timer)
+{
+    m_accum = rhs.get_accum();
+}
+
+//============================================================================//
+
+timer::this_type& timer::operator=(const this_type& rhs)
+{
+    if(this != &rhs)
+    {
+        base_type::operator=(rhs);
+        if(!m_format.get())
+            m_format = timer_format_t(new format_type());
+        if(rhs.format().get())
+            *m_format = *(rhs.format().get());
+        m_accum = rhs.get_accum();
+        m_sum_timer = rhs.m_sum_timer;
+    }
+    return *this;
+}
 
 //============================================================================//
 

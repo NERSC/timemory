@@ -34,6 +34,7 @@
 
 // C library
 #include <stdint.h>
+#include <stdlib.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -71,6 +72,10 @@
 
 #if !defined(DEFAULT_UMASK)
 #   define DEFAULT_UMASK 0777
+#endif
+
+#if defined(_OPENMP)
+#   include <omp.h>
 #endif
 
 //----------------------------------------------------------------------------//
@@ -155,6 +160,23 @@ _Tp get_env(const std::string& env_id, _Tp _default = _Tp())
         _Tp var = _Tp();
         iss >> var;
         return var;
+    }
+    // return default if not specified in environment
+    return _default;
+}
+
+//----------------------------------------------------------------------------//
+// specialization for string since the above will have issues if string
+// includes spaces
+template <> inline
+std::string get_env(const std::string& env_id, std::string _default)
+{
+    char* env_var = std::getenv(env_id.c_str());
+    if(env_var)
+    {
+        std::stringstream ss;
+        ss << env_var;
+        return ss.str();
     }
     // return default if not specified in environment
     return _default;
@@ -266,9 +288,41 @@ void consume_parameters(_Tp, _Args...)
 
 //----------------------------------------------------------------------------//
 
-inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
+inline std::string dirname(std::string _fname)
 {
 #if defined(_UNIX)
+    char* _cfname = realpath(_fname.c_str(), NULL);
+    _fname = std::string(_cfname);
+    free(_cfname);
+
+    while(_fname.find("\\\\") != std::string::npos)
+        _fname.replace(_fname.find("\\\\"), 2, "/");
+    while(_fname.find("\\") != std::string::npos)
+        _fname.replace(_fname.find("\\"), 1, "/");
+
+    return _fname.substr(0, _fname.find_last_of("/"));
+#elif defined(_WINDOWS)
+    while(_fname.find("/") != std::string::npos)
+        _fname.replace(_fname.find("/"), 1, "\\\\");
+
+    _fname = _fname.substr(0, _fname.find_last_of("\\"));
+    return (_fname.at(_fname.length()-1) == '\\')
+            ? _fname.substr(0, _fname.length()-1)
+            : _fname;
+#endif
+}
+
+//----------------------------------------------------------------------------//
+
+inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
+{
+
+#if defined(_UNIX)
+    while(_dir.find("\\\\") != std::string::npos)
+        _dir.replace(_dir.find("\\\\"), 2, "/");
+    while(_dir.find("\\") != std::string::npos)
+        _dir.replace(_dir.find("\\"), 1, "/");
+
     if(mkdir(_dir.c_str(), umask) != 0)
     {
         std::stringstream _sdir;

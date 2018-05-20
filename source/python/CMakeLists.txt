@@ -13,23 +13,19 @@ add_definitions(-D_PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
 
 file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 
-if(TIMEMORY_DYNAMIC_LINK)
-    set(LINK_TYPE shared)
-else(TIMEMORY_DYNAMIC_LINK)
-    set(LINK_TYPE static)
-    if(WIN32)
-        set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
-            PROPERTIES COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
-    endif(WIN32)
-endif(TIMEMORY_DYNAMIC_LINK)
+if(NOT BUILD_SHARED_LIBS AND WIN32)
+    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
+        PROPERTIES COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
+endif(NOT BUILD_SHARED_LIBS AND WIN32)
 
 #----------------------------------------------------------------------------
 # PyBind11
 #
-pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp ${pybind_headers})
-# link to static library so no need for RPATH resolution
-target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-${LINK_TYPE} ${EXTERNAL_LIBRARIES})
-add_dependencies(${LIBNAME} ${LIBNAME}-${LINK_TYPE})
+pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
+    py${LIBNAME}.hpp ${pybind_headers})
+# link cxx library and external libraries
+target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-cxx-library ${EXTERNAL_LIBRARIES})
+add_dependencies(${LIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 
 set_target_properties(${LIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
@@ -37,19 +33,17 @@ set_target_properties(${LIBNAME} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
-file(READ ${PROJECT_SOURCE_DIR}/.LICENSE LICENSE)
-string(REPLACE "// " "# " LICENSE "${LICENSE}")
 foreach(_FILE plotting mpi_support util)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
     set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
 
     # copy over the python file
     configure_file(${SOURCE_DIR}/${_FILE}.py
-        ${BINARY_DIR}/${_FILE}.py COPYONLY)
+        ${BINARY_DIR}/${_FILE}.py @ONLY)
 
     # copy over the init file
     configure_file(${SOURCE_DIR}/__init__.py
-        ${BINARY_DIR}/__init__.py COPYONLY)
+        ${BINARY_DIR}/__init__.py @ONLY)
 
     # install the folder
     install(DIRECTORY ${BINARY_DIR}/
@@ -96,27 +90,27 @@ endforeach(_TYPE exe c cxx)
 
 #----------------------------------------------------------------------------
 # Installation info for Python
-if(TIMEMORY_DYNAMIC_LINK)
+if(BUILD_SHARED_LIBS)
     set(TIMEMORY_INFO_FILE ${CMAKE_BINARY_DIR}/timemory/lib/timemory_pathinfo.txt)
-    add_custom_target(${PROJECT_NAME}-shared-library-path ALL
+    add_custom_target(${PROJECT_NAME}-dynamic-path ALL
         COMMAND ${CMAKE_COMMAND}
             -DOUTPUT=${TIMEMORY_INFO_FILE}
             -DLENGTH=2
             -DNAMES="timemory_shared_library\;timemory_dynamic_library"
-            -DVALUES="$<TARGET_FILE:${LIBNAME}-shared>\;$<TARGET_FILE:${LIBNAME}>"
+            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-library>\;$<TARGET_FILE:${LIBNAME}>"
             -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
         COMMENT "Generating timemory_pathinfo.txt..."
     VERBATIM)
 
     install(FILES ${TIMEMORY_INFO_FILE}
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib)
-endif(TIMEMORY_DYNAMIC_LINK)
+endif(BUILD_SHARED_LIBS)
 
 #----------------------------------------------------------------------------
 # Install the python stuff
 #
 configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
-    ${PROJECT_BINARY_DIR}/timemory/timemory.py COPYONLY)
+    ${PROJECT_BINARY_DIR}/timemory/timemory.py @ONLY)
 configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
     ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
 
@@ -150,12 +144,12 @@ foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
     if("${_FILE}" MATCHES "_test.py")
         configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-            ${PROJECT_BINARY_DIR}/${_FILE} COPYONLY)
+            ${PROJECT_BINARY_DIR}/${_FILE} @ONLY)
     endif("${_FILE}" MATCHES "_test.py")
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} COPYONLY)
+        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} @ONLY)
 
     # install them though
     install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
@@ -163,3 +157,8 @@ foreach(_FILE ${TEST_FILES})
         COMPONENT python)
 
 endforeach(_FILE ${TEST_FILES})
+
+#----------------------------------------------------------------------------
+# Python tools
+#
+add_subdirectory(tools)

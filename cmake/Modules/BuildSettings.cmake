@@ -97,6 +97,9 @@ set(LIBNAME timemory)
 # set the compiler flags if not on Windows
 if(NOT SUBPROJECT AND NOT WIN32)
 
+    ############
+    #    CXX   #
+    ############
     add(CMAKE_CXX_FLAGS "-W -Wall -Wextra ${CXXFLAGS} $ENV{CXXFLAGS}")
     add(CMAKE_CXX_FLAGS "-Wno-unused-parameter -Wno-unknown-pragmas")
     add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
@@ -109,28 +112,29 @@ if(NOT SUBPROJECT AND NOT WIN32)
         add(CMAKE_CXX_FLAGS "-Wno-exceptions")
         add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
         add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
+    else(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+        # Intel compiler 18.0 sets -fno-protect-parens by default
+        add(CMAKE_CXX_FLAGS "-fprotect-parens")
     endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
 
-    foreach(_LANG C CXX)
-        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-            add(CMAKE_${_LANG}_FLAGS "${INTEL_${_LANG}_COMPILER_FLAGS}")
-        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-    endforeach(_LANG C CXX)
-
+    ############
+    #     C    #
+    ############
     add(CMAKE_C_FLAGS "-W -Wall -Wextra ${CFLAGS} $ENV{CFLAGS}")
     add(CMAKE_C_FLAGS "-Wno-unused-parameter")
-    add(CMAKE_C_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
+    add(CMAKE_C_FLAGS "-Wunused-but-set-parameter")
+    add(CMAKE_C_FLAGS "-Wno-unused-variable")
 
     if(NOT CMAKE_C_COMPILER_IS_INTEL)
-        add(CMAKE_CXX_FLAGS "-faligned-new")
-        add(CMAKE_C_FLAGS "-Wno-unknown-warning-option")
         add(CMAKE_C_FLAGS "-Wno-implicit-fallthrough")
-        add(CMAKE_C_FLAGS "-Wno-shadow-field-in-constructor-modified")
-        add(CMAKE_C_FLAGS "-Wno-exceptions")
-        add(CMAKE_C_FLAGS "-Wno-unknown-warning-option")
-        add(CMAKE_C_FLAGS "-Wno-unused-private-field")
+    else(NOT CMAKE_C_COMPILER_IS_INTEL)
+        # Intel compiler 18.0 sets -fno-protect-parens by default
+        add(CMAKE_C_FLAGS "-fprotect-parens")
     endif(NOT CMAKE_C_COMPILER_IS_INTEL)
 
+    ############
+    #   other
+    ############
     if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
         add_definitions(-DDEBUG)
     else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -138,24 +142,33 @@ if(NOT SUBPROJECT AND NOT WIN32)
     endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
 
     if(UNIX)
+        add(CMAKE_C_FLAGS   "-pthread")
         add(CMAKE_CXX_FLAGS "-pthread")
-        add(CMAKE_C_FLAGS "-pthread")
     endif(UNIX)
 
     if(TIMEMORY_USE_SANITIZE)
-        add_subfeature(ENABLE_SANITIZE SANITIZE_TYPE "Sanitizer type")
+        add_subfeature(TIMEMORY_USE_SANITIZE SANITIZE_TYPE "Sanitizer type")
+        add(CMAKE_C_FLAGS   "-fsanitize=${SANITIZE_TYPE}")
         add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
     endif(TIMEMORY_USE_SANITIZE)
 
-    add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    foreach(_LANG C CXX)
+        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+            add(CMAKE_${_LANG}_FLAGS "${INTEL_${_LANG}_COMPILER_FLAGS}")
+        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
+    endforeach(_LANG C CXX)
+
+    add_c_flags(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS}")
+    add_cxx_flags(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS}")
 
 elseif(NOT WIN32)
 
-    #add_c_flags(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
-    #add_cxx_flags(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+    #add_c_flags(CMAKE_C_FLAGS "${CFLAGS} $ENV{CFLAGS}")
+    #add_cxx_flags(CMAKE_CXX_FLAGS "${CXXFLAGS} $ENV{CXXFLAGS}")
 
 endif(NOT SUBPROJECT AND NOT WIN32)
+
+set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
 
 if(TIMEMORY_EXCEPTIONS)
     add_definitions(-DTIMEMORY_EXCEPTIONS)

@@ -56,41 +56,73 @@ public:
 
 public:
     // standard constructor
-    auto_timer(const string_t&, const int32_t& lineno,
-               const string_t& = "cxx", bool report_at_exit = false);
-    // construct from existing timer
-    auto_timer(tim_timer_t&, const int32_t& lineno,
-               const string_t& = "cxx", bool report_at_exit = false);
+    auto_timer(const string_t&,
+               const int32_t& lineno,
+               const string_t& = "cxx",
+               bool report_at_exit = false);
     // destructor
     virtual ~auto_timer();
 
-    tim_timer_t* local_timer() const { return m_temp_timer; }
-    tim_timer_t* global_timer() const { return m_timer; }
+public:
+    // public member functions
+    tim_timer_t&        local_timer()       { return m_temp_timer; }
+    const tim_timer_t&  local_timer() const { return m_temp_timer; }
 
 public:
-    // static public functions
-    static counter_t& ncount();
-    static counter_t& nhash();
-    static counter_t& pcount();
-    static counter_t& phash();
-    static bool alloc_next();
+    // public static functions
+    static counter_t&   ncount();
+    static counter_t&   nhash();
+    static counter_t&   pcount();
+    static counter_t&   phash();
+    static bool         alloc_next();
+
+protected:
+    inline string_t get_tag(const string_t& timer_tag,
+                            const string_t& lang_tag);
 
 private:
+    bool            m_enabled;
     bool            m_report_at_exit;
     uint64_t        m_hash;
-    tim_timer_t*    m_timer;
-    tim_timer_t*    m_temp_timer;
+    tim_timer_t     m_temp_timer;
 };
+
+//----------------------------------------------------------------------------//
+
+auto_timer::string_t
+auto_timer::get_tag(const string_t& timer_tag,
+                    const string_t& lang_tag)
+{
+#if defined(TIMEMORY_USE_MPI)
+    std::stringstream ss;
+    if(tim::mpi_is_initialized())
+        ss << tim::mpi_rank();
+    ss << "> [" << lang_tag << "] " << timer_tag;
+    return ss.str();
+#else
+    return string_t("> [" + lang_tag + "] " + timer_tag);
+#endif
+}
 
 //----------------------------------------------------------------------------//
 
 } // namespace tim
 
-//----------------------------------------------------------------------------//
-
 typedef     tim::auto_timer     auto_timer_t;
 
+//============================================================================//
+//
+//                      CXX macros
+//
+//============================================================================//
+
 #if !defined(TIMEMORY_AUTO_TIMER)
+
+#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#   define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
+#else
+#   define __TIMEMORY_FUNCTION__ __FUNCTION__
+#endif
 
 //----------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
@@ -115,7 +147,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *      }
  */
 #   define TIMEMORY_BASIC_AUTO_SIGN(str) \
-        std::string(std::string(__FUNCTION__) + std::string(str))
+        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str))
 
 //----------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_SIGN(str)
@@ -131,7 +163,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *      }
  */
 #   define TIMEMORY_AUTO_SIGN(str) \
-        std::string(std::string(__FUNCTION__) + std::string(str) + \
+        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
                     AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ))
 
 //----------------------------------------------------------------------------//
@@ -156,7 +188,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *      > [pyc] some_func(15) :  0.363 wall, ... etc.
  */
 #define TIMEMORY_BASIC_AUTO_TIMER(str) \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + \
             std::string(str), __LINE__)
 
 
@@ -183,7 +215,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
  */
 #define TIMEMORY_AUTO_TIMER(str) \
-    auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__FUNCTION__) + \
+    auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + \
             std::string(str) + \
             AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
 
@@ -202,7 +234,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *      }
 */
 #define TIMEMORY_BASIC_AUTO_TIMER_OBJ(str) \
-    auto_timer_t(std::string(__FUNCTION__) + std::string(str), __LINE__)
+    auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
 
 
 //----------------------------------------------------------------------------//
@@ -220,7 +252,7 @@ typedef     tim::auto_timer     auto_timer_t;
  *
  */
 #define TIMEMORY_AUTO_TIMER_OBJ(str) \
-    auto_timer_t(std::string(__FUNCTION__) + std::string(str) + \
+    auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
                  AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
 
 
@@ -234,6 +266,24 @@ typedef     tim::auto_timer     auto_timer_t;
 
 #endif
 
+//============================================================================//
+//
+//                      PRODUCTION AND DEBUG
+//
+//============================================================================//
+
+#if defined(TIMEMORY_DEBUG)
+#   define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str) \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + \
+            std::string(str), __LINE__)
+#   define TIMEMORY_DEBUG_AUTO_TIMER(str) \
+    auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + \
+            std::string(str) + \
+            AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING ), __LINE__)
+#else
+#   define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str) {;}
+#   define TIMEMORY_DEBUG_AUTO_TIMER(str) {;}
+#endif
 //----------------------------------------------------------------------------//
 
 #endif

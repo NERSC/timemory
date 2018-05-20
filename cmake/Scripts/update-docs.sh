@@ -2,11 +2,12 @@
 
 set -o errexit
 
-if [ ! -z "${3}" ]; then
-    echo -e "\n\tPlease provide:"
-    echo -e "\t\t(1) build directory"
-    echo -e "\t\t(2) source directory"
-    echo -e "\t\t(3) html directory"
+if [ -z "${3}" ]; then
+    echo -e "\nPlease provide:"
+    echo -e "  (1) build directory"
+    echo -e "  (2) source directory"
+    echo -e "  (3) html directory\n"
+    exit 0
 fi
 
 _BINARY=$(realpath ${1})

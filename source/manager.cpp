@@ -28,46 +28,81 @@
  *
  */
 
+#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/timer.hpp"
+#include "timemory/environment.hpp"
+#include "timemory/timemory.hpp"
+#include "timemory/singleton.hpp"
+#include "timemory/utility.hpp"
+#include "timemory/signal_detection.hpp"
 
 #include <sstream>
 #include <algorithm>
 #include <thread>
 #include <cstdint>
+#include <functional>
+
+#if !defined(TIMEMORY_DEFAULT_ENABLED)
+#   define TIMEMORY_DEFAULT_ENABLED true
+#endif
+
+#if !defined(pfunc)
+#   if defined(DEBUG)
+#       define pfunc printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__)
+#   else
+#       define pfunc
+#   endif
+#endif
+
+using std::placeholders::_1;
 
 //============================================================================//
 
-CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
+void _timemory_manager_deleter(tim::manager* ptr)
+{
+    tim::manager*   master     = tim::manager::singleton_t::master_instance_ptr();
+    std::thread::id master_tid = tim::manager::singleton_t::master_thread_id();
+
+    if(std::this_thread::get_id() == master_tid)
+        delete ptr;
+    else
+    {
+        if(master && ptr != master)
+        {
+            pfunc;
+            master->remove(ptr);
+        }
+        delete ptr;
+    }
+}
+
+//============================================================================//
+
+tim::manager::singleton_t& _timemory_manager_singleton()
+{
+    static tim::manager::singleton_t _instance(
+                new tim::manager(),
+                std::bind(&_timemory_manager_deleter, _1));
+    return _instance;
+}
+
+//============================================================================//
+
+void _timemory_initialization()
+{ }
+
+//============================================================================//
+
+void _timemory_finalization()
+{ }
+
+//============================================================================//
 
 namespace tim
 {
-
-//============================================================================//
-
-manager::pointer_type& local_instance()
-{
-    tim_static_thread_local manager::pointer_type _instance = nullptr;
-    return _instance;
-}
-
-//============================================================================//
-
-manager::pointer_type& global_instance()
-{
-    static manager::pointer_type _instance = nullptr;
-    return _instance;
-}
-
-//============================================================================//
-
-int32_t& manager::max_depth() { return f_max_depth; }
-
-//============================================================================//
-
-bool manager::is_enabled() { return f_enabled; }
 
 //============================================================================//
 
@@ -79,39 +114,21 @@ std::atomic<int> manager::f_manager_instance_count;
 
 //============================================================================//
 // static function
-manager::pointer_type manager::instance()
+manager::pointer manager::instance()
 {
-    if(!local_instance())
-    {
-        local_instance() = new manager();
-        global_instance()->add(local_instance());
-    }
-
-    if(local_instance() != global_instance())
-        global_instance()->set_merge(true);
-
-    return local_instance();
+    return _timemory_manager_singleton().instance();
 }
 
 //============================================================================//
 // static function
-manager::pointer_type manager::master_instance()
+manager::pointer manager::master_instance()
 {
-    if(!local_instance())
-    {
-        local_instance() = new manager();
-        global_instance()->add(local_instance());
-    }
-
-    if(local_instance() != global_instance())
-        global_instance()->set_merge(true);
-
-    return global_instance();
+    return _timemory_manager_singleton().master_instance();
 }
 
 //============================================================================//
 
-bool manager::f_enabled = true;
+bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
 
 //============================================================================//
 
@@ -130,26 +147,63 @@ void manager::set_get_num_threads_func(get_num_threads_func_t f)
 }
 
 //============================================================================//
-// static function
-void manager::enable(bool val)
-{
-    f_enabled = val;
-}
-
-//============================================================================//
 
 manager::manager()
 : m_merge(false),
+  m_instance_count(f_manager_instance_count++),
+  m_laps(0),
   m_hash(0),
   m_count(0),
-  m_p_hash((global_instance()) ? global_instance()->hash().load() : 0),
-  m_p_count((global_instance()) ? global_instance()->count().load() : 0),
-  m_report(&std::cout)
+  m_p_hash ((singleton_t::master_instance_ptr())
+            ? singleton_t::master_instance_ptr()->hash().load()  : 0),
+  m_p_count((singleton_t::master_instance_ptr())
+            ? singleton_t::master_instance_ptr()->count().load() : 0),
+  m_report(&std::cout),
+  m_missing_timer(timer_ptr_t(new tim_timer_t())),
+  m_total_timer(timer_ptr_t(new tim::timer(
+                                tim::format::timer(std::string("> [exe] total"),
+                                                   tim::format::timer::default_format(),
+                                                   tim::format::timer::default_unit(),
+                                                   tim::format::timer::default_rss_format(),
+                                                   true))))
 {
-    ++f_manager_instance_count;
-    if(!global_instance())
-        global_instance() = this;
-    else if(global_instance() && local_instance())
+    if(!singleton_t::master_instance_ptr())
+    {
+        m_merge = true;
+        tim::env::parse();
+    }
+    else
+    {
+        singleton_t::master_instance_ptr()->set_merge(true);
+        singleton_t::master_instance_ptr()->add(this);
+    }
+
+#if defined(DEBUG)
+    if(tim::env::verbose > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "tim::manager creation " << m_instance_count
+                  << "..." << std::endl;
+    }
+#endif
+
+    if(tim::env::disable_timer_memory)
+    {
+        tim::timer::default_record_memory(false);
+        m_missing_timer->record_memory(false);
+        m_total_timer->record_memory(false);
+    }
+
+    std::stringstream ss;
+    ss << "TiMemory total unrecorded time (manager "
+       << (m_instance_count) << ")";
+    m_missing_timer->format()->prefix(ss.str());
+    m_missing_timer->start();
+
+    if(!singleton_t::master_instance_ptr())
+        insert_global_timer();
+    else if(singleton_t::master_instance_ptr() &&
+            singleton_t::instance_ptr())
     {
         std::ostringstream ss;
         ss << "manager singleton has already been created";
@@ -161,38 +215,57 @@ manager::manager()
 
 manager::~manager()
 {
-    --f_manager_instance_count;
-    auto close_ostream = [&] (ostream_t*& m_os)
-    {
-        ofstream_t* m_fos = get_ofstream(m_os);
-        if(!m_fos)
-            return;
-        if(!m_fos->good() || !m_fos->is_open())
-            return;
-        m_fos->close();
-    };
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t" << global_instance()
-                  << "\nlocal instance:  \t" << local_instance()
+                  << "\nglobal instance: \t"
+                  << singleton_t::master_instance_ptr()
+                  << "\nlocal instance:  \t"
+                  << singleton_t::instance_ptr()
                   << std::endl;
 #endif
 
-    close_ostream(m_report);
+}
 
-    if(global_instance() == local_instance())
-        global_instance() = nullptr;
+//============================================================================//
 
-    for(auto& itr : m_daughters)
-        if(itr != this)
-            delete itr;
+void manager::update_total_timer_format()
+{
+    if((this == singleton_t::master_instance_ptr() ||
+        m_instance_count == 0))
+    {
+        m_total_timer->format()->prefix(this->get_prefix() +
+                                        string_t("[exe] total execution time"));
+        m_total_timer->format()->format(tim::format::timer::default_format());
+        m_total_timer->format()->unit(tim::format::timer::default_unit());
+        m_total_timer->format()->precision(tim::format::timer::default_precision());
+        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
+        tim::format::timer::propose_default_width(
+                    m_total_timer->format()->prefix().length());
+    }
+}
 
-    m_daughters.clear();
-    m_timer_list.clear();
-    m_timer_map.clear();
+//============================================================================//
+
+void manager::insert_global_timer()
+{
+    if((this == singleton_t::master_instance_ptr() ||
+        m_instance_count == 0) &&
+       m_timer_map.size() == 0 &&
+       m_timer_list.size() == 0)
+    {
+        update_total_timer_format();
+        m_timer_map[0] = m_total_timer;
+        m_timer_list.push_back(
+                    timer_tuple_t(0, m_count, "exe_global_time",
+                                  m_total_timer));
+        if(!m_total_timer->is_running())
+            m_total_timer->start();
+        if(m_count == 0)
+            m_count += 1;
+    }
 }
 
 //============================================================================//
@@ -200,14 +273,15 @@ manager::~manager()
 void manager::clear()
 {
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::env::verbose > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
-                  << local_instance() << "..." << std::endl;
+                  << instance() << "..." << std::endl;
 #endif
 
-    if(this == global_instance())
-        tim::format::timer::set_default_width(10);
+    if(this == singleton_t::master_instance_ptr())
+        tim::format::timer::default_width(8);
 
+    m_laps += compute_total_laps();
     m_timer_list.clear();
     m_timer_map.clear();
     for(auto& itr : m_daughters)
@@ -243,6 +317,8 @@ void manager::clear()
     }
 
     m_report = &std::cout;
+
+    insert_global_timer();
 }
 
 //============================================================================//
@@ -307,6 +383,10 @@ manager::timer(const string_t& key,
         return *(m_timer_map[ref].get());
     }
 
+    // synchronize format with level 1 and make sure MPI prefix is up-to-date
+    if(m_timer_list.size() < 2)
+        update_total_timer_format();
+
     std::stringstream ss;
     // designated as [cxx], [pyc], etc.
     ss << get_prefix() << "[" << tag << "] ";
@@ -328,9 +408,9 @@ manager::timer(const string_t& key,
                 new tim_timer_t(
                     tim::format::timer(
                         ss.str(),
-                        tim::format::timer::get_default_format(),
-                        tim::format::timer::get_default_unit(),
-                        tim::format::timer::get_default_rss_format(),
+                        tim::format::timer::default_format(),
+                        tim::format::timer::default_unit(),
+                        tim::format::timer::default_rss_format(),
                         true)));
 
     std::stringstream tag_ss;
@@ -348,7 +428,7 @@ manager::timer(const string_t& key,
 
 //============================================================================//
 
-void manager::report(bool no_min) const
+void manager::report(bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -375,13 +455,13 @@ void manager::report(bool no_min) const
             if(i != mpi_rank() )
                 continue;
         }
-        report(m_report, no_min);
+        report(m_report, ign_cutoff, endline);
     }
 }
 
 //============================================================================//
 
-void manager::report(ostream_t* os, bool no_min) const
+void manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -410,21 +490,22 @@ void manager::report(ostream_t* os, bool no_min) const
         *os << "> rank " << mpi_rank() << std::endl;
 
     // temporarily store output width
-    auto _width = tim::format::timer::get_default_width();
+    //auto _width = tim::format::timer::default_width();
     // reset output width
-    tim::format::timer::set_default_width(10);
+    tim::format::timer::default_width(10);
 
     // redo output width calc, removing no displayed funcs
     for(const auto& itr : *this)
-        if(itr.timer().above_min(no_min))
+        if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
             tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
 
     // don't make it longer
-    if(_width > 10 && _width < tim::format::timer::get_default_width())
-        tim::format::timer::set_default_width(_width);
+    //if(_width > 10 && _width < tim::format::timer::default_width())
+    //    tim::format::timer::default_width(_width);
 
-    for(const auto& itr : *this)
-        itr.timer().report(*os, true, no_min);
+    for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
+        itr->timer().report(*os, (itr+1 == this->cend()) ? endline : true,
+                            ign_cutoff);
 
     os->flush();
 }
@@ -465,11 +546,14 @@ void manager::set_output_stream(const path_t& fname)
             m_os = _fos;
         else
         {
+#if defined(DEBUG)
+    if(tim::env::verbose > 2)
             {
                 tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
                           << "Redirecting to stdout..." << std::endl;
             }
+#endif
             _fos->close();
             delete _fos;
             m_os = &std::cout;
@@ -492,15 +576,92 @@ manager::get_ofstream(ostream_t* m_os) const
 
 //============================================================================//
 
-void manager::add(pointer_type ptr)
+void manager::add(pointer ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 2)
+    if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__ << " Adding "
                   << ptr << " to " << this << "..." << std::endl;
 #endif
+    m_merge = true;
     m_daughters.insert(ptr);
+}
+
+//============================================================================//
+
+void manager::remove(pointer ptr)
+{
+    if(ptr == this)
+        return;
+
+    auto_lock_t lock(m_mutex);
+
+#if defined(DEBUG)
+    if(tim::env::verbose > 2)
+        std::cout << "tim::manager::" << __FUNCTION__ << " - Removing "
+                  << ptr << " from " << this << "..." << std::endl;
+#endif
+
+    merge(ptr);
+    if(m_daughters.find(ptr) != m_daughters.end())
+        m_daughters.erase(m_daughters.find(ptr));
+
+}
+
+//============================================================================//
+
+void manager::merge(pointer itr)
+{
+    if(itr == this)
+        return;
+
+    #if defined(DEBUG)
+    if(tim::env::verbose > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "\tinstance " << m_instance_count << " merging "
+                  << itr->instance_count() << "..." << std::endl;
+    }
+
+    if(tim::env::verbose > 1)
+        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
+                  << "..." << std::endl;
+    #endif
+
+    for(const auto& mitr : itr->map())
+    {
+        if(m_timer_map.find(mitr.first) == m_timer_map.end())
+            m_timer_map[mitr.first] = mitr.second;
+        else
+            m_clock_div_count[mitr.first] += 1;
+    }
+
+    for(const auto& litr : itr->list())
+    {
+        bool found = false;
+        for(auto& mlitr : m_timer_list)
+            if(mlitr == litr)
+            {
+                mlitr += litr;
+                found = true;
+                break;
+            }
+
+        if(!found)
+            m_timer_list.push_back(litr);
+    }
+
+    //itr->missing_timer()->start();
+}
+
+//============================================================================//
+
+void manager::divide_clock()
+{
+    for(auto& itr : m_clock_div_count)
+        *(m_timer_map[itr.first].get()) /= itr.second;
+    m_clock_div_count.clear();
 }
 
 //============================================================================//
@@ -508,56 +669,43 @@ void manager::add(pointer_type ptr)
 void manager::merge(bool div_clock)
 {
     if(!m_merge.load())
+    {
+        if(div_clock)
+            divide_clock();
         return;
+    }
+
+    if(m_daughters.size() == 0)
+    {
+        if(div_clock)
+            divide_clock();
+        return;
+    }
 
     m_merge.store(false);
 
-    auto_lock_t lock(m_mutex);
-
-    uomap<uint64_t, uint64_t> clock_div_count;
-    for(auto& itr : m_daughters)
-    {
-        if(itr == global_instance())
-            continue;
-
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
-                  << "..." << std::endl;
+    if(tim::env::verbose > 2)
+    {
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << "instance " << m_instance_count << " : "
+                  << __FUNCTION__
+                  << " (div_clock = " << std::boolalpha
+                  << div_clock << ") ..." << std::endl;
+    }
 #endif
 
-        for(const auto& mitr : itr->map())
-        {
-            if(m_timer_map.find(mitr.first) == m_timer_map.end())
-                m_timer_map[mitr.first] = mitr.second;
-            else
-                clock_div_count[mitr.first] += 1;
-        }
+    auto_lock_t lock(m_mutex);
 
-        for(const auto& litr : itr->list())
-        {
-            bool found = false;
-            for(auto& mlitr : m_timer_list)
-                if(mlitr == litr)
-                {
-                    mlitr += litr;
-                    found = true;
-                    break;
-                }
-            if(!found)
-                m_timer_list.push_back(litr);
-        }
-
-    }
+    for(auto& itr : m_daughters)
+        merge(itr);
 
     if(div_clock)
-        for(auto& itr : clock_div_count)
-            *(m_timer_map[itr.first].get()) /= itr.second;
+        divide_clock();
 
     for(auto& itr : m_daughters)
         if(itr != this)
             itr->clear();
-
 }
 
 //============================================================================//
@@ -583,11 +731,114 @@ void manager::sync_hierarchy()
 }
 
 //============================================================================//
+
+manager::tim_timer_t
+manager::compute_missing(tim_timer_t* timer_ref)
+{
+    typedef std::set<uint64_t> key_set_t;
+
+    tim_timer_t* _ref = (timer_ref) ? timer_ref : m_missing_timer.get();
+    bool restart = _ref->is_running();
+    if(restart)
+        _ref->stop();
+
+    this->merge();
+
+    if(_ref->is_running())
+        _ref->stop();
+
+    string_t _f_prefix = _ref->format()->prefix();
+
+    tim_timer_t _missing_timer(_ref, _f_prefix, true);
+
+    if(restart)
+        _ref->start();
+
+    key_set_t _depths;
+    for(const auto& itr : *this)
+        _depths.insert(itr.level());
+
+    if(_depths.size() == 0)
+        return tim_timer_t(_f_prefix);
+
+    for(const auto& itr : *this)
+        if(itr.level() == *(_depths.begin()) + 1) // skip missing timer
+            _missing_timer -= itr.timer();
+
+    return _missing_timer;
+}
+
+//============================================================================//
+
+void manager::write_missing(const path_t& _fname, tim_timer_t* timer_ref,
+                             tim_timer_t* _missing_p)
+{
+    std::ofstream _os(_fname.c_str());
+    if(_os)
+        write_missing(_os, timer_ref, _missing_p);
+    else
+    {
+        std::cerr << "Warning! Unable to open \"" << _fname << "\" ["
+                  << __FUNCTION__ << "@'" << __FILE__ << "'..." << std::endl;
+        write_missing(std::cout);
+    }
+}
+
+//============================================================================//
+
+void manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
+                            tim_timer_t* _missing_p)
+{
+    tim_timer_t _missing;
+    if(!_missing_p)
+        _missing = compute_missing(timer_ref);
+    else
+    {
+        _missing = *_missing_p;
+        if(timer_ref)
+            _missing -= *timer_ref;
+    }
+
+    std::stringstream _ss;
+    string_t::size_type _w = format::timer::default_width();
+    string_t _p1 = "TiMemory auto-timer laps since last reset ";
+    string_t _p2 = "Total TiMemory auto-timer laps ";
+    _w = std::max(_w, std::max(_p1.length() + 4, _p2.length() + 4));
+
+    std::stringstream _sp1, _sp2;
+    _sp1 << std::setw(_w + 1) << std::left << _p1 << " : ";
+    _sp2 << std::setw(_w + 1) << std::left << _p2 << " : ";
+    _ss << _sp1.str() << laps() << std::endl;
+    _ss << _sp2.str() << total_laps() << std::endl;
+
+    _missing.format()->width(_w);
+    _missing.format()->align_width(false);
+
+    _ss << _missing.as_string() << std::endl;
+    _os << "\n" << _ss.str();
+}
+
+//============================================================================//
 //
 //  Static functions for writing JSON output
 //
 //============================================================================//
 
+// static function
+void manager::write_report(path_t _fname, bool ign_cutoff)
+{
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
+    ofstream_t ofs(_fname.c_str());
+    if(ofs)
+        manager::master_instance()->report(ofs, ign_cutoff);
+    else
+        manager::master_instance()->report(ign_cutoff);
+    ofs.close();
+}
+
+//============================================================================//
 // static function
 void manager::write_json(path_t _fname)
 {
@@ -810,7 +1061,9 @@ manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    const int32_t nthreads = tim::get_env<int32_t>("OMP_NUM_THREADS", 1);
+    int32_t nthreads = tim::env::num_threads;
+    if(nthreads == 0)
+        nthreads = 1;
     int32_t max_processes = max_concurrency / nthreads;
     int32_t mpi_node_default = mpi_size() / max_processes;
     if(mpi_node_default < 1)
@@ -825,7 +1078,7 @@ manager::get_communicator_group()
     MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    if(tim::get_env("TIMEMORY_VERBOSE", 0) > 1)
+    if(tim::env::verbose > 1)
     {
         int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
         int32_t local_mpi_size = mpi_size(local_mpi_comm);
@@ -848,3 +1101,5 @@ manager::get_communicator_group()
 //============================================================================//
 
 } // namespace tim
+
+//============================================================================//

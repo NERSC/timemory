@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!@PYTHON_EXECUTABLE@
 #
 # MIT License
 #
@@ -165,11 +165,13 @@ def run_test():
 
     t.stop()
     print("RSS usage at initialization: {}".format(rss))
-    t -= rss
+    #t -= rss
     t.report()
     print("{}\n".format(timemory.rss_usage(record=True, prefix="RSS usage at finalization")))
+    print("{}".format(timemory.get_missing_report()))
 
     timemory.disable_signal_detection()
+    print('"{}" testing finished'.format(__file__))
 
 
 # ---------------------------------------------------------------------------- #

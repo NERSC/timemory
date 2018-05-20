@@ -22,9 +22,11 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#include "timemory/macros.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/utility.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/timer.hpp"
+#include "timemory/manager.hpp"
 
 namespace tim
 {
@@ -69,116 +71,54 @@ bool auto_timer::alloc_next()
 
 auto_timer::auto_timer(const string_t& timer_tag,
                        const int32_t& lineno,
-                       const string_t& code_tag,
+                       const string_t& lang_tag,
                        bool report_at_exit)
-: m_report_at_exit(report_at_exit),
-  m_hash(10*lineno),
-  m_timer(nullptr),
-  m_temp_timer(nullptr)
-{
-    m_hash += std::hash<string_t>()(timer_tag);
-    // for consistency, always increment hash keys
-    ++auto_timer::ncount();
-    auto_timer::nhash() += m_hash;
-
-    if(manager::is_enabled() &&
-       (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
-    {
-        m_timer = &manager::instance()->timer(timer_tag, code_tag,
-                                              auto_timer::pcount() +
-                                              auto_timer::ncount() - 1,
-                                              auto_timer::phash() +
-                                              auto_timer::nhash());
-
-        m_temp_timer = new tim_timer_t();
-        if(m_report_at_exit)
-        {
-            m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
-        }
-        m_temp_timer->start();
-    }
-}
-
-//============================================================================//
-
-auto_timer::auto_timer(tim_timer_t& _atimer,
-                       const int32_t& lineno,
-                       const string_t& code_tag,
-                       bool report_at_exit)
-: m_report_at_exit(report_at_exit),
-  m_hash(10*lineno),
-  m_timer(nullptr),
-  m_temp_timer(nullptr)
-{
-    string_t timer_tag = _atimer.format()->prefix();
-    m_hash += std::hash<string_t>()(timer_tag);
-    // for consistency, always increment hash keys
-    ++auto_timer::ncount();
-    auto_timer::nhash() += m_hash;
-
-    if(manager::is_enabled() &&
-       (uint64_t) manager::max_depth() > auto_timer::ncount() - 1)
-    {
-        m_timer = &manager::instance()->timer(timer_tag, code_tag,
-                                              auto_timer::pcount() +
-                                              auto_timer::ncount() - 1,
-                                              auto_timer::phash() +
-                                              auto_timer::nhash());
-        m_temp_timer = (m_report_at_exit)
-                       ? new tim_timer_t()
-                       : m_timer;
-        m_timer->sync(_atimer);
-        if(m_report_at_exit)
-        {
-            m_temp_timer->grab_metadata(*m_timer);
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
-        }
-    }
-    else
-    {
-        m_temp_timer = new tim_timer_t();
-        m_temp_timer->sync(_atimer);
-        if(m_report_at_exit)
-        {
-            m_temp_timer->format()->set_prefix("> [" + code_tag + "] " + timer_tag);
-            m_temp_timer->format()->set_use_align_width(false);
-        }
-    }
-}
+: m_enabled(auto_timer::alloc_next()),
+  m_report_at_exit(report_at_exit),
+  m_hash((m_enabled) ? (lineno + std::hash<string_t>()(timer_tag)) : 0),
+  m_temp_timer(
+      tim_timer_t(
+          m_enabled,
+          (m_enabled) ? &manager::instance()->timer(
+                            timer_tag, lang_tag,
+                            (m_enabled) ? (auto_timer::pcount() +
+                                           (uint64_t) (auto_timer::ncount()++))
+                                        : ((uint64_t) (0)),
+                            (m_enabled) ? (auto_timer::phash() +
+                                           (uint64_t) (auto_timer::nhash() += m_hash))
+                                        : ((uint64_t) (0)))
+                      : nullptr))
+{ }
 
 //============================================================================//
 
 auto_timer::~auto_timer()
 {
-    // for consistency, always decrement hash keys
-    --auto_timer::ncount();
-    auto_timer::nhash() -= m_hash;
-
-    if(m_timer)
+    if(m_enabled)
     {
-        m_temp_timer->stop();
+        // will add itself to global when destroying m_temp_timer
+        m_temp_timer.stop();
+
+        assert(m_temp_timer.summation_timer() != nullptr);
+        *m_temp_timer.summation_timer() += m_temp_timer;
+
         // report timer at exit
         if(m_report_at_exit)
-            m_temp_timer->report(std::cout, true, true);
+        {
+            m_temp_timer.grab_metadata(*(m_temp_timer.summation_timer()));
 
-        // if same timer, don't add to itself
-        if(m_timer != m_temp_timer)
-            *m_timer += *m_temp_timer;
-        else // ensure manager reporting uses align width
-            m_temp_timer->format()->set_use_align_width(true);
-    }
-    else if(m_temp_timer)
-    {
-        m_temp_timer->stop();
-        if(m_report_at_exit)
-            m_temp_timer->report(std::cout, true, true);
-    }
+            // show number of laps in temporary timer
+            auto _laps = m_temp_timer.summation_timer()->accum().size();
+            m_temp_timer.accum().size() += _laps;
 
-    if(m_temp_timer && m_temp_timer != m_timer)
-        delete m_temp_timer;
+            // threadsafe output w.r.t. other timers
+            m_temp_timer.report(std::cout, true, true);
+        }
+
+        // decrement hash keys
+        --auto_timer::ncount();
+        auto_timer::nhash() -= m_hash;
+    }
 }
 
 //============================================================================//
