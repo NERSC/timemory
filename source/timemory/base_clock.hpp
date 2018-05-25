@@ -265,6 +265,7 @@ public:
         { std::make_tuple(get_user_time(), get_sys_time(), wall_time) } ));
     }
 
+    /*
     static time_point thread_now() noexcept
     {
 #if defined(_WINDOWS)
@@ -299,6 +300,7 @@ public:
         { std::make_tuple(get_user_time(), get_sys_time(), get_wall_time()) } ));
 #endif
     }
+    */
 
 };
 
