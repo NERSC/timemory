@@ -239,7 +239,7 @@ endif(TIMEMORY_USE_PYTHON_BINDING)
 # to generate plots
 #
 configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/plotting.py
-    ${PROJECT_BINARY_DIR}/timemory-plotter COPYONLY)
+    ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 
 install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
     DESTINATION ${TIMEMORY_INSTALL_BINDIR}

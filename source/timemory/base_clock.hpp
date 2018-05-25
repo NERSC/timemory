@@ -55,6 +55,7 @@
 
 #   include <unistd.h>
 #   include <sys/times.h>
+#   include <pthread.h>
 
 // avoid no symbols warning
 struct base_clock_dummy { static int32_t asymbol; };
@@ -220,17 +221,17 @@ public:
 
 //----------------------------------------------------------------------------//
 
-template <typename _precision>
+template <typename _Precision>
 class tim_api base_clock
 {
 #if defined(__GNUC__) && !defined(__clang__)
-    static_assert(std::chrono::__is_ratio<_precision>::value,
-                  "typename _precision must be a std::ratio");
+    static_assert(std::chrono::__is_ratio<_Precision>::value,
+                  "typename _Precision must be a std::ratio");
 #endif
 
 public:
-    typedef base_clock_data<_precision>                     rep;
-    typedef _precision                                      period;
+    typedef base_clock_data<_Precision>                     rep;
+    typedef _Precision                                      period;
     typedef std::chrono::duration<rep, period>              duration;
     typedef std::chrono::time_point<base_clock, duration>   time_point;
 
@@ -257,12 +258,48 @@ public:
         { return (_tms.tms_stime + _tms.tms_cstime) * clock_tick<period>(); };
 
         // record as close as possible, user and sys before wall
-        auto wall_time = get_wall_time();
         ::times(&_tms);
+        auto wall_time = get_wall_time();
 
         return time_point(duration(rep
         { std::make_tuple(get_user_time(), get_sys_time(), wall_time) } ));
     }
+
+    static time_point thread_now() noexcept
+    {
+#if defined(_WINDOWS)
+        return now();
+#else
+        typedef std::chrono::high_resolution_clock              clock_type;
+        typedef std::chrono::duration<clock_type::rep, period>  duration_type;
+
+        constexpr float factor = (float) _Precision::den / std::nano::den;
+
+        // wall clock
+        auto get_wall_time = [&] ()
+        { return std::chrono::duration_cast<duration_type>(
+                        clock_type::now().time_since_epoch()).count(); };
+
+        // user time
+        auto get_user_time = [&] ()
+        {
+            return (intmax_t) (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) *
+                               factor);
+        };
+
+        // system time
+        auto get_sys_time = [&] ()
+        {
+            return (intmax_t)
+                    (clock_gettime_nsec_np(CLOCK_MONOTONIC) -
+                     clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) * factor;
+        };
+
+        return time_point(duration(rep
+        { std::make_tuple(get_user_time(), get_sys_time(), get_wall_time()) } ));
+#endif
+    }
+
 };
 
 //----------------------------------------------------------------------------//

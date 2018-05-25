@@ -563,10 +563,9 @@ PYBIND11_MODULE(timemory, tim)
              py::return_value_policy::reference);
     //------------------------------------------------------------------------//
     man.def("merge",
-             [=] (py::object man, bool div_clocks)
-             { man.cast<manager_wrapper*>()->get()->merge(div_clocks); },
-             "Merge the thread-local timers",
-             py::arg("div_clocks") = true);
+             [=] (py::object man)
+             { man.cast<manager_wrapper*>()->get()->merge(); },
+             "Merge the thread-local timers");
     //------------------------------------------------------------------------//
     man.def("json",
              [=] (py::object man)

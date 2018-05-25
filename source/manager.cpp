@@ -259,7 +259,7 @@ void manager::insert_global_timer()
         update_total_timer_format();
         m_timer_map[0] = m_total_timer;
         m_timer_list.push_back(
-                    timer_tuple_t(0, m_count, "exe_global_time",
+                    timer_tuple_t(0, m_count, 0, "exe_global_time",
                                   m_total_timer));
         if(!m_total_timer->is_running())
             m_total_timer->start();
@@ -413,9 +413,14 @@ manager::timer(const string_t& key,
                         tim::format::timer::default_rss_format(),
                         true)));
 
+    if(m_instance_count > 0)
+        m_timer_map[ref]->thread_timing(true);
+
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;
-    timer_tuple_t _tuple(ref, ncount, tag_ss.str(), m_timer_map[ref]);
+    timer_tuple_t _tuple(ref, ncount,
+                         master_instance()->list().size(),
+                         tag_ss.str(), m_timer_map[ref]);
     m_timer_list.push_back(_tuple);
 
 #if defined(HASH_DEBUG)
@@ -633,23 +638,31 @@ void manager::merge(pointer itr)
     {
         if(m_timer_map.find(mitr.first) == m_timer_map.end())
             m_timer_map[mitr.first] = mitr.second;
-        else
-            m_clock_div_count[mitr.first] += 1;
     }
 
-    for(const auto& litr : itr->list())
+    auto _list = itr->list();
+    for(auto litr = _list.rbegin(); litr != _list.rend(); ++litr)
     {
         bool found = false;
         for(auto& mlitr : m_timer_list)
-            if(mlitr == litr)
+            if(mlitr == *litr)
             {
-                mlitr += litr;
                 found = true;
                 break;
             }
 
         if(!found)
-            m_timer_list.push_back(litr);
+        {
+            uint64_t insert = litr->offset();
+            //std::cout << "inserting " << litr->timer()
+            //          << " at " << insert << std::endl;
+            auto mitr = m_timer_list.begin();
+            if(insert+1 > m_timer_list.size())
+                mitr = m_timer_list.end();
+            else
+                std::advance(mitr, insert);
+            m_timer_list.insert(mitr, *litr);
+        }
     }
 
     //itr->missing_timer()->start();
@@ -657,51 +670,20 @@ void manager::merge(pointer itr)
 
 //============================================================================//
 
-void manager::divide_clock()
-{
-    for(auto& itr : m_clock_div_count)
-        *(m_timer_map[itr.first].get()) /= itr.second;
-    m_clock_div_count.clear();
-}
-
-//============================================================================//
-
-void manager::merge(bool div_clock)
+void manager::merge()
 {
     if(!m_merge.load())
-    {
-        if(div_clock)
-            divide_clock();
         return;
-    }
 
     if(m_daughters.size() == 0)
-    {
-        if(div_clock)
-            divide_clock();
         return;
-    }
 
     m_merge.store(false);
-
-#if defined(DEBUG)
-    if(tim::env::verbose > 2)
-    {
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "instance " << m_instance_count << " : "
-                  << __FUNCTION__
-                  << " (div_clock = " << std::boolalpha
-                  << div_clock << ") ..." << std::endl;
-    }
-#endif
 
     auto_lock_t lock(m_mutex);
 
     for(auto& itr : m_daughters)
         merge(itr);
-
-    if(div_clock)
-        divide_clock();
 
     for(auto& itr : m_daughters)
         if(itr != this)

@@ -64,8 +64,10 @@ namespace tim
 
 namespace internal
 {
-typedef std::tuple<uint64_t, uint64_t, std::string,
-                   std::shared_ptr<tim::timer>> base_timer_tuple_t;
+typedef std::tuple<uint64_t, uint64_t, uint64_t,
+                   std::string,
+                   std::shared_ptr<tim::timer>>
+    base_timer_tuple_t;
 }
 
 //----------------------------------------------------------------------------//
@@ -76,10 +78,6 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     typedef std::string                     string_t;
     typedef tim::timer                      tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
-    typedef uint64_t                        first_type;
-    typedef uint64_t                        second_type;
-    typedef string_t                        third_type;
-    typedef timer_ptr_t                     fourth_type;
     typedef internal::base_timer_tuple_t    base_type;
 
     //------------------------------------------------------------------------//
@@ -88,23 +86,26 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     timer_tuple(const base_type& _data)
         : base_type(_data) { }
 
-    timer_tuple(first_type _b, second_type _s, third_type _t, fourth_type _f)
-        : base_type(_b, _s, _t, _f) { }
+    timer_tuple(uint64_t _a, uint64_t _b, uint64_t _c, string_t _d, timer_ptr_t _e)
+        : base_type(_a, _b, _c, _d, _e) { }
 
     //------------------------------------------------------------------------//
     //
     //
-    first_type& key() { return std::get<0>(*this); }
-    const first_type& key() const { return std::get<0>(*this); }
+    uint64_t& key() { return std::get<0>(*this); }
+    const uint64_t& key() const { return std::get<0>(*this); }
 
-    second_type& level() { return std::get<1>(*this); }
-    const second_type& level() const { return std::get<1>(*this); }
+    uint64_t& level() { return std::get<1>(*this); }
+    const uint64_t& level() const { return std::get<1>(*this); }
 
-    third_type tag() { return std::get<2>(*this); }
-    const third_type tag() const { return std::get<2>(*this); }
+    uint64_t& offset() { return std::get<2>(*this); }
+    const uint64_t& offset() const { return std::get<2>(*this); }
 
-    tim_timer_t& timer() { return *(std::get<3>(*this).get()); }
-    const tim_timer_t& timer() const { return *(std::get<3>(*this).get()); }
+    string_t tag() { return std::get<3>(*this); }
+    const string_t& tag() const { return std::get<3>(*this); }
+
+    tim_timer_t& timer() { return *(std::get<4>(*this).get()); }
+    const tim_timer_t& timer() const { return *(std::get<4>(*this).get()); }
 
     //------------------------------------------------------------------------//
     //
@@ -123,7 +124,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     bool operator==(const this_type& rhs) const
     {
         return (key() == rhs.key() && level() == rhs.level() &&
-                tag() == rhs.tag());
+                tag() == rhs.tag() /*&& offset() == rhs.offset()*/);
     }
 
     //------------------------------------------------------------------------//
@@ -171,7 +172,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
         std::stringstream ss;
         ss << "Key = " << std::get<0>(t) << ", "
            << "Count = " << std::get<1>(t) << ", "
-           << "Tag = " << std::get<2>(t);
+           << "Tag = " << std::get<3>(t);
         os << ss.str();
         return os;
     }
@@ -211,7 +212,6 @@ public:
     typedef rss_type::base_type                 base_rss_type;
     typedef std::function<intmax_t()>           get_num_threads_func_t;
     typedef std::atomic<uint64_t>               counter_t;
-    typedef uomap<uint64_t, uint64_t>           clock_div_t;
 
 public:
     // Constructor and Destructors
@@ -242,7 +242,7 @@ protected:
 
 public:
     // Public member functions
-    void merge(bool div_clock = true);
+    void merge();
     void merge(pointer);
     void clear();
 
@@ -372,11 +372,9 @@ protected:
 protected:
     // protected functions
     inline uint64_t string_hash(const string_t&) const;
-    void const_merge(bool div) const { const_cast<this_type*>(this)->merge(div); }
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
     void insert_global_timer();
-    void divide_clock();
 
 protected:
 	// protected static variables
@@ -426,8 +424,6 @@ private:
     timer_ptr_t             m_missing_timer;
     // global timer
     timer_ptr_t             m_total_timer;
-    // clock division
-    clock_div_t             m_clock_div_count;
 };
 
 //----------------------------------------------------------------------------//

@@ -429,6 +429,8 @@ public:
     inline void configure_record();
     void record_memory(bool _val) { m_record_memory = _val; configure_record(); }
     bool record_memory() const { return m_record_memory; }
+    void thread_timing(bool _val) { m_thread_timing = _val; }
+    bool thread_timing() const { return m_thread_timing; }
 
 protected:
     // protected member functions
@@ -445,6 +447,7 @@ protected:
 protected:
     // protected member variables
     bool                    m_record_memory;
+    bool                    m_thread_timing;
     // pointers
     ostream_t*              m_os;
     // objects
