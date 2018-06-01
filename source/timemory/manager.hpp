@@ -222,6 +222,8 @@ public:
     // Public static functions
     static pointer instance();
     static pointer master_instance();
+    static pointer noninit_instance();
+    static pointer noninit_master_instance();
     static void enable(bool val = true) { f_enabled = val; }
     static void set_get_num_threads_func(get_num_threads_func_t f);
     static const int32_t& max_depth() { return f_max_depth; }

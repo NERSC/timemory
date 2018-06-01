@@ -127,6 +127,20 @@ manager::pointer manager::master_instance()
 }
 
 //============================================================================//
+// static function
+manager::pointer manager::noninit_instance()
+{
+    return _timemory_manager_singleton().instance_ptr();
+}
+
+//============================================================================//
+// static function
+manager::pointer manager::noninit_master_instance()
+{
+    return _timemory_manager_singleton().master_instance_ptr();
+}
+
+//============================================================================//
 
 bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
 
@@ -227,6 +241,7 @@ manager::~manager()
                   << std::endl;
 #endif
 
+    _timemory_manager_singleton().destroy();
 }
 
 //============================================================================//

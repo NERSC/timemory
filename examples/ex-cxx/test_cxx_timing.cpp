@@ -39,40 +39,10 @@
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
 #include <timemory/rss.hpp>
+#include <timemory/testing.hpp>
 
 typedef tim::timer          tim_timer_t;
 typedef tim::manager manager_t;
-
-// ASSERT_NEAR
-// EXPECT_EQ
-// EXPECT_FLOAT_EQ
-// EXPECT_DOUBLE_EQ
-
-#define EXPECT_EQ(lhs, rhs) if(lhs != rhs) { \
-    std::stringstream ss; \
-    ss << #lhs << " != " << #rhs << " @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define ASSERT_FALSE(expr) if( expr ) { \
-    std::stringstream ss; \
-    ss << "Expression: ( " << #expr << " ) "\
-       << "failed @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define ASSERT_TRUE(expr) if(!( expr )) { \
-    std::stringstream ss; \
-    ss << "Expression: !( " << #expr << " ) "\
-       << "failed @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define PRINT_HERE std::cout << "HERE: " << " [ " << __FUNCTION__ \
-    << ":" << __LINE__ << " ] " << std::endl;
 
 //----------------------------------------------------------------------------//
 // fibonacci calculation
@@ -131,41 +101,32 @@ int main(int /*argc*/, char** argv)
     int num_fail = 0;
     int num_test = 0;
 
-#define RUN_TEST(func) { try { num_test += 1; func (); } catch(std::exception& e) \
-    { std::cerr << e.what() << std::endl; num_fail += 1; } }
-
     try
     {
-        RUN_TEST(test_serialize);
-        RUN_TEST(test_rss_usage);
-        RUN_TEST(test_timing_pointer);
-        RUN_TEST(test_manager);
-        RUN_TEST(test_timing_toggle);
-        RUN_TEST(test_timing_depth);
-        RUN_TEST(test_timing_thread);
-        RUN_TEST(test_format);
+        RUN_TEST(test_serialize, num_test, num_fail);
+        RUN_TEST(test_rss_usage, num_test, num_fail);
+        RUN_TEST(test_timing_pointer, num_test, num_fail);
+        RUN_TEST(test_manager, num_test, num_fail);
+        RUN_TEST(test_timing_toggle, num_test, num_fail);
+        RUN_TEST(test_timing_depth, num_test, num_fail);
+        RUN_TEST(test_timing_thread, num_test, num_fail);
+        RUN_TEST(test_format, num_test, num_fail);
     }
     catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
 
-    std::cout << "\nDone.\n" << std::endl;
-
-    std::cout << "[" << argv[0] << "] ";
-
-    if(num_fail > 0)
-        std::cout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
-    else
-        std::cout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
-                  << std::endl;
+    TEST_SUMMARY(argv[0], num_test, num_fail);
 
     t.stop();
     std::cout << std::endl;
     t.report();
     std::cout << std::endl;
-    tim::format::timer::pop();
+    manager_t::instance()->report(std::cout);
+    std::cout << std::endl;
 
+    tim::format::timer::pop();
     manager_t::instance()->write_missing();
     tim::disable_signal_detection();
 
