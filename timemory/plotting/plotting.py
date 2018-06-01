@@ -701,7 +701,7 @@ def plot_generic(_plot_data, _types, _data_dict,
             _n += 1
             _c += 1
 
-    ytics[len(ytics)-1] = ''
+    #ytics[len(ytics)-1] = ''
     ytics.append('')
 
     # the x locations for the groups
@@ -725,8 +725,12 @@ def plot_generic(_plot_data, _types, _data_dict,
     # construct the plots
     plots = []
     for key in _types:
+        _colors=None
+        if len(_types) == 1:
+            _colors = ['darkgreen', 'darkred']
         p = plt.barh(ind, avgs[key], thickness, xerr=stds[key],
-                     align='edge', alpha=1.0, antialiased=False)
+                     align='edge', alpha=1.0, antialiased=False,
+                     color=_colors)
         plots.append(p)
 
     if len(plots) == 0:

@@ -145,6 +145,16 @@ public:
     }
 
     //------------------------------------------------------------------------//
+    //      operator *= integer
+    //
+    this_type& operator*=(const uint64_t& rhs)
+    {
+        auto_lock_t l(m_mutex);
+        m_accum *= rhs;
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
     //      operator /= integer
     //
     this_type& operator/=(const uint64_t& rhs)

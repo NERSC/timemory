@@ -638,6 +638,13 @@ void manager::merge(pointer itr)
     {
         if(m_timer_map.find(mitr.first) == m_timer_map.end())
             m_timer_map[mitr.first] = mitr.second;
+        else
+        {
+            // add in timer
+            *m_timer_map[mitr.first] += *mitr.second;
+            // running average
+            *m_timer_map[mitr.first] /= 2;
+        }
     }
 
     auto _list = itr->list();
