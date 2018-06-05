@@ -30,6 +30,7 @@
 #include <thread>
 #include <memory>
 #include <functional>
+#include <cstddef>
 
 //============================================================================//
 
@@ -90,7 +91,25 @@ public:
     static pointer instance_ptr()         { return _local_instance().get(); }
     static pointer master_instance_ptr()  { return f_master_instance; }
 
+    // the thread the master instance was created on
     static thread_id_t master_thread_id() { return f_master_thread; }
+
+    // since we are overloading delete we overload new
+    void* operator new(size_t)
+    {
+        void* ptr = ::new this_type();
+        return ptr;
+    }
+
+    // overload delete so that f_master_instance is guaranteed to be
+    // a nullptr after deletion
+    void operator delete(void* ptr)
+    {
+        this_type* _instance = (this_type*)(ptr);
+        ::delete _instance;
+        if(std::this_thread::get_id() == f_master_thread)
+            f_master_instance = nullptr;
+    }
 
 private:
     // Private functions
@@ -99,6 +118,9 @@ private:
         tim_static_thread_local shared_pointer _instance = shared_pointer();
         return _instance;
     }
+
+    void* operator new[]    (std::size_t)   noexcept { return nullptr; }
+    void  operator delete[] (void*)         noexcept { }
 
 private:
     // Private variables
@@ -161,6 +183,7 @@ template <typename _Tp>
 singleton<_Tp>::~singleton()
 {
     // should be called at __cxa_finalize so don't bother deleting
+    delete f_master_instance;
     f_master_instance = nullptr;
 }
 
@@ -210,7 +233,9 @@ void singleton<_Tp>::initialize(pointer ptr, deleter del)
 template <typename _Tp>
 void singleton<_Tp>::destroy()
 {
-    _local_instance().reset();
+    //_local_instance().reset();
+    if(std::this_thread::get_id() == f_master_thread)
+        f_master_instance = nullptr;
 }
 
 //----------------------------------------------------------------------------//

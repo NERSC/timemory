@@ -418,6 +418,18 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
+        timemory.options.set_report("")
+        timemory.options.set_serial("")
+        print("\nNormal report\n")
+        self.manager.report(ign_cutoff=True)
+        self.assertFalse(self.manager.get_self_cost())
+        self.manager.set_self_cost(True)
+        self.assertTrue(self.manager.get_self_cost())
+        print("\nSelf report\n")
+        self.manager.report(ign_cutoff=True)
+        self.assertTrue(self.manager.get_self_cost())
+        self.manager.set_self_cost(False)
+        self.assertFalse(self.manager.get_self_cost())
         freport = timemory.options.set_report("timing_context_manager.out")
         fserial = timemory.options.set_serial("timing_context_manager.json")
         self.manager.report(ign_cutoff=True)

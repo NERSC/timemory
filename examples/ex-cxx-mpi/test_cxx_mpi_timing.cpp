@@ -38,40 +38,10 @@
 #include <timemory/auto_timer.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/mpi.hpp>
+#include <timemory/testing.hpp>
 
 typedef tim::timer          tim_timer_t;
 typedef tim::manager manager_t;
-
-// ASSERT_NEAR
-// EXPECT_EQ
-// EXPECT_FLOAT_EQ
-// EXPECT_DOUBLE_EQ
-
-#define EXPECT_EQ(lhs, rhs) if(lhs != rhs) { \
-    std::stringstream ss; \
-    ss << #lhs << " != " << #rhs << " @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define ASSERT_FALSE(expr) if( expr ) { \
-    std::stringstream ss; \
-    ss << "Expression: ( " << #expr << " ) "\
-       << "failed @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define ASSERT_TRUE(expr) if(!( expr )) { \
-    std::stringstream ss; \
-    ss << "Expression: !( " << #expr << " ) "\
-       << "failed @ line " \
-       << __LINE__ << " of " << __FILE__; \
-    std::cerr << ss.str() << std::endl; \
-    throw std::runtime_error(ss.str()); }
-
-#define PRINT_HERE std::cout << "HERE: " << " [ " << __FUNCTION__ \
-    << ":" << __LINE__ << " ] " << std::endl;
 
 //----------------------------------------------------------------------------//
 // fibonacci calculation
@@ -112,10 +82,6 @@ void test_format();
 
 //============================================================================//
 
-#define rank_cout std::cout << "[" << tim::mpi_rank() << "] "
-
-//============================================================================//
-
 int main(int argc, char** argv)
 {
     MPI_Init(&argc, &argv);
@@ -131,54 +97,42 @@ int main(int argc, char** argv)
     tim_timer_t t = tim_timer_t("Total time");
     t.start();
 
+    tim::format::timer::push();
+
     int num_fail = 0;
     int num_test = 0;
 
-#define RUN_TEST(func) { try { num_test += 1; func (); } catch(std::exception& e) \
-    { std::cerr << e.what() << std::endl; num_fail += 1; } }
-
     try
     {
-        RUN_TEST(test_serialize);
-        RUN_TEST(test_rss_usage);
-        RUN_TEST(test_timing_pointer);
-        RUN_TEST(test_manager);
-        RUN_TEST(test_timing_toggle);
-        RUN_TEST(test_timing_depth);
-        RUN_TEST(test_timing_thread);
-        RUN_TEST(test_format);
+        RUN_TEST(test_serialize, num_test, num_fail);
+        RUN_TEST(test_rss_usage, num_test, num_fail);
+        RUN_TEST(test_timing_pointer, num_test, num_fail);
+        RUN_TEST(test_manager, num_test, num_fail);
+        RUN_TEST(test_timing_toggle, num_test, num_fail);
+        RUN_TEST(test_timing_depth, num_test, num_fail);
+        RUN_TEST(test_timing_thread, num_test, num_fail);
+        RUN_TEST(test_format, num_test, num_fail);
     }
     catch(std::exception& e)
     {
         std::cerr << e.what() << std::endl;
     }
 
-    std::stringstream rank_sout;
-
-    rank_sout << "\nDone.\n" << std::endl;
-
-    rank_sout << "[" << argv[0] << "] ";
-
-    if(num_fail > 0)
-        rank_sout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
-    else
-        rank_sout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
-                  << std::endl;
+    TEST_SUMMARY(argv[0], num_test, num_fail);
 
     t.stop();
 
-    if(tim::mpi_rank() > 0)
-        std::cout << rank_sout.str();
-
     if(tim::mpi_rank() == 0)
     {
-        rank_sout << std::endl;
+        std::cout << std::endl;
         t.report();
-        rank_sout << std::endl;
-        manager_t::instance()->report(rank_sout);
-        std::cout << rank_sout.str();
+        std::cout << std::endl;
+        manager_t::instance()->report(std::cout);
+        std::cout << std::endl;
     }
 
+    tim::format::timer::pop();
+    manager_t::instance()->write_missing();
     tim::disable_signal_detection();
 
     MPI_Finalize();
@@ -358,7 +312,10 @@ void test_manager()
     t.stop();
 
     print_size(__FUNCTION__, __LINE__);
-    tman->report();
+    tman->report(true);
+    tman->self_cost(true);
+    tman->report(true);
+    tman->self_cost(false);
     tman->set_output_stream("test_output/mpi_cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/mpi_cxx_timing_report.json");
@@ -519,7 +476,9 @@ void test_timing_thread()
     tman->enable(true);
     tman->set_output_stream(std::cout);
 
-    int num_threads = 12;
+    int num_ranks = tim::mpi_size();
+    assert(num_ranks > 0);
+    int num_threads = 12 / num_ranks;
     thread_list_t threads(num_threads, nullptr);
 
     {
@@ -549,13 +508,13 @@ void test_timing_thread()
     threads.clear();
 
     // divide the threaded clocks that are merge
-    tman->merge(true);
+    tman->merge();
 
     bool ign_cutoff;
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 36);
+    ASSERT_TRUE(manager_t::instance()->size() >= 31);
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
     if(tim::mpi_rank() == 0)

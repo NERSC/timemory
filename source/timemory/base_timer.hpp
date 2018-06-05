@@ -260,6 +260,19 @@ public:
     }
 
     //------------------------------------------------------------------------//
+    //      operator *= integer
+    //
+    this_type& operator*=(const uint64_t& rhs)
+    {
+        if(rhs > 0)
+        {
+            multiply_sum(rhs);
+            multiply_sqr(rhs);
+        }
+        return *this;
+    }
+
+    //------------------------------------------------------------------------//
     //      operator /= integer
     //
     this_type& operator/=(const uint64_t& rhs)
@@ -322,6 +335,24 @@ protected:
     }
     #else
     inline void subtract_sqr(const incr_type&) { }
+    #endif
+
+    inline void multiply_sum(const uint64_t& rhs)
+    {
+        std::get<0>(m_sum) *= rhs;
+        std::get<1>(m_sum) *= rhs;
+        std::get<2>(m_sum) *= rhs;
+    }
+
+    #if defined(TIMEMORY_STAT_TIMERS)
+    inline void multiply_sqr(const uint64_t& rhs)
+    {
+        std::get<0>(m_sqr) *= rhs;
+        std::get<1>(m_sqr) *= rhs;
+        std::get<2>(m_sqr) *= rhs;
+    }
+    #else
+    inline void multiply_sqr(const uint64_t&) { }
     #endif
 
     inline void divide_sum(const uint64_t& rhs)
@@ -429,6 +460,8 @@ public:
     inline void configure_record();
     void record_memory(bool _val) { m_record_memory = _val; configure_record(); }
     bool record_memory() const { return m_record_memory; }
+    void thread_timing(bool _val) { m_thread_timing = _val; }
+    bool thread_timing() const { return m_thread_timing; }
 
 protected:
     // protected member functions
@@ -445,6 +478,7 @@ protected:
 protected:
     // protected member variables
     bool                    m_record_memory;
+    bool                    m_thread_timing;
     // pointers
     ostream_t*              m_os;
     // objects

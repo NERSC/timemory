@@ -563,10 +563,9 @@ PYBIND11_MODULE(timemory, tim)
              py::return_value_policy::reference);
     //------------------------------------------------------------------------//
     man.def("merge",
-             [=] (py::object man, bool div_clocks)
-             { man.cast<manager_wrapper*>()->get()->merge(div_clocks); },
-             "Merge the thread-local timers",
-             py::arg("div_clocks") = true);
+             [=] (py::object man)
+             { man.cast<manager_wrapper*>()->get()->merge(); },
+             "Merge the thread-local timers");
     //------------------------------------------------------------------------//
     man.def("json",
              [=] (py::object man)
@@ -628,6 +627,20 @@ PYBIND11_MODULE(timemory, tim)
                 self.cast<manager_wrapper*>()->get()->update_total_timer_format();
             },
             "Update the format of the total timer to the default format");
+    //------------------------------------------------------------------------//
+    man.def("set_self_cost",
+            [=] (py::object self, bool val)
+            {
+                self.cast<manager_wrapper*>()->get()->self_cost(val);
+            },
+            "Set whether the manager displays self-cost format");
+    //------------------------------------------------------------------------//
+    man.def("get_self_cost",
+            [=] (py::object self)
+            {
+                 return self.cast<manager_wrapper*>()->get()->self_cost();
+            },
+            "Get whether the manager displays self-cost format");
     //------------------------------------------------------------------------//
 
 

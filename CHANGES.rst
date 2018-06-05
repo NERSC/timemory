@@ -1,6 +1,16 @@
 TiMemory
 ========
 
+Release: TiMemory 2.2.0
+-----------------------
+
+Author: Jonathan R. Madsen Date: Tue Jun 5 00:28:10 2018 -0700
+
+- self-cost available in manager + plotting safeguards
+- Improved singleton deletion
+- alternative colors for when len(_types) == 1 in plotting
+- plotting label fix
+
 Release: TiMemory 2.1.0
 -----------------------
 

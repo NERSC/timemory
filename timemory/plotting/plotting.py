@@ -41,6 +41,8 @@ import copy
 import warnings
 
 _matplotlib_backend = None
+# a previous bug inserted wrong value for levels, this gets around it
+_excess_levels = 64
 
 #------------------------------------------------------------------------------#
 # check with timemory.options
@@ -602,7 +604,12 @@ def read(json_obj, plot_params=plot_parameters()):
         concurrency_sum += int(data1[manager_tag][concurrency_tag])
         for j in range(0, len(data1[manager_tag]['timers'])):
             data2 = data1[manager_tag]['timers'][j]
-            max_level = max(max_level, int(data2['timer.level']))
+            levels = int(data2['timer.level'])
+            if levels < _excess_levels:
+                max_level = max(max_level, int(data2['timer.level']))
+            else:
+                msg = "too many level ({}). Skipping...".format(levels)
+                warnings.warn(msg)
 
     # ------------------------------------------------------------------------ #
     # loop over ranks
@@ -615,7 +622,12 @@ def read(json_obj, plot_params=plot_parameters()):
             data2 = data1[manager_tag]['timers'][j]
             indent = ""
             # for display
-            for n in range(0, int(data2['timer.level'])):
+            levels = int(data2['timer.level'])
+            if levels > _excess_levels:
+                msg = "too many levels ({}). Setting to max level + 1 ({})...".format(levels, max_level+1)
+                warnings.warn(msg)
+                levels = max_level + 1
+            for n in range(0, levels):
                 indent = '|{}'.format(indent)
 
             # construct the tag
@@ -701,7 +713,7 @@ def plot_generic(_plot_data, _types, _data_dict,
             _n += 1
             _c += 1
 
-    ytics[len(ytics)-1] = ''
+    #ytics[len(ytics)-1] = ''
     ytics.append('')
 
     # the x locations for the groups
@@ -725,8 +737,12 @@ def plot_generic(_plot_data, _types, _data_dict,
     # construct the plots
     plots = []
     for key in _types:
+        _colors=None
+        if len(_types) == 1:
+            _colors = ['darkgreen', 'darkred']
         p = plt.barh(ind, avgs[key], thickness, xerr=stds[key],
-                     align='edge', alpha=1.0, antialiased=False)
+                     align='edge', alpha=1.0, antialiased=False,
+                     color=_colors)
         plots.append(p)
 
     if len(plots) == 0:
