@@ -628,6 +628,20 @@ PYBIND11_MODULE(timemory, tim)
             },
             "Update the format of the total timer to the default format");
     //------------------------------------------------------------------------//
+    man.def("set_self_cost",
+            [=] (py::object self, bool val)
+            {
+                self.cast<manager_wrapper*>()->get()->self_cost(val);
+            },
+            "Set whether the manager displays self-cost format");
+    //------------------------------------------------------------------------//
+    man.def("get_self_cost",
+            [=] (py::object self)
+            {
+                 return self.cast<manager_wrapper*>()->get()->self_cost();
+            },
+            "Get whether the manager displays self-cost format");
+    //------------------------------------------------------------------------//
 
 
     //========================================================================//
