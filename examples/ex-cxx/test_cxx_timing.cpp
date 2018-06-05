@@ -305,7 +305,10 @@ void test_manager()
     t.stop();
 
     print_size(__FUNCTION__, __LINE__);
-    tman->report();
+    tman->report(true);
+    tman->self_cost(true);
+    tman->report(true);
+    tman->self_cost(false);
     tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/cxx_timing_report.json");
@@ -416,16 +419,6 @@ typedef std::vector<std::thread*> thread_list_t;
 
 void thread_func(int32_t nfib, std::shared_future<void> fut)
 {
-    //std::this_thread::sleep_for(std::chrono::milliseconds(500));
-
-    //int32_t nsize = manager_t::instance()->size();
-    //if(nsize > 0)
-    //    std::cerr << "thread-local manager size: " << nsize << std::endl;
-
-    //std::stringstream ss;
-    //ss << "--> " << std::this_thread::get_id() << " -- waiting ... " << std::endl;
-    //std::cout << ss.str();
-
     fut.get();
     time_fibonacci(nfib);
 }

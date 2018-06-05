@@ -160,6 +160,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     {
         ar(serializer::make_nvp("timer.key", key()),
            serializer::make_nvp("timer.level", level()),
+           serializer::make_nvp("timer.offset", offset()),
            serializer::make_nvp("timer.tag", tag()),
            serializer::make_nvp("timer.ref", timer()));
     }
@@ -170,9 +171,10 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
     {
         std::stringstream ss;
-        ss << "Key = " << std::get<0>(t) << ", "
-           << "Count = " << std::get<1>(t) << ", "
-           << "Tag = " << std::get<3>(t);
+        ss << "Key = " << t.key() << ", "
+           << "Count = " << t.level() << ", "
+           << "Offset = " << t.offset() << ", "
+           << "Tag = " << t.tag();
         os << ss.str();
         return os;
     }
@@ -248,14 +250,14 @@ public:
     void merge(pointer);
     void clear();
 
-    size_type size() const { return m_timer_list.size(); }
+    size_type size() const { return m_timer_list_norm.size(); }
 
     tim_timer_t& timer(const string_t& key,
                        const string_t& tag = "cxx",
                        int32_t ncount = 0,
                        int32_t nhash = 0);
 
-    tim_timer_t& at(size_t i) { return m_timer_list.at(i).timer(); }
+    tim_timer_t& at(size_t i) { return m_timer_list->at(i).timer(); }
 
     // time a function with a return type and no arguments
     template <typename _Ret, typename _Func>
@@ -274,13 +276,13 @@ public:
     void time(const string_t& key, _Func, _Args...);
 
     // iteration of timers
-    iterator        begin()         { return m_timer_list.begin(); }
-    const_iterator  begin() const   { return m_timer_list.cbegin(); }
-    const_iterator  cbegin() const  { return m_timer_list.cbegin(); }
+    iterator        begin()         { return m_timer_list->begin(); }
+    const_iterator  begin() const   { return m_timer_list->cbegin(); }
+    const_iterator  cbegin() const  { return m_timer_list->cbegin(); }
 
-    iterator        end()           { return m_timer_list.end(); }
-    const_iterator  end() const     { return m_timer_list.cend(); }
-    const_iterator  cend() const    { return m_timer_list.cend(); }
+    iterator        end()           { return m_timer_list->end(); }
+    const_iterator  end() const     { return m_timer_list->cend(); }
+    const_iterator  cend() const    { return m_timer_list->cend(); }
 
     void print(bool ign_cutoff = false, bool endline = true)
     { this->report(ign_cutoff, endline); }
@@ -311,10 +313,10 @@ public:
     void remove(pointer ptr);
 
     timer_map_t& map() { return m_timer_map; }
-    timer_list_t& list() { return m_timer_list; }
+    timer_list_t& list() { return m_timer_list_norm; }
 
     const timer_map_t& map() const { return m_timer_map; }
-    const timer_list_t& list() const { return m_timer_list; }
+    const timer_list_t& list() const { return m_timer_list_norm; }
 
     counter_t& hash() { return m_hash; }
     counter_t& count() { return m_count; }
@@ -366,6 +368,8 @@ public:
     serialize(Archive& ar, const unsigned int version);
     tim_timer_t* missing_timer() const { return m_missing_timer.get(); }
     int32_t instance_count() const { return m_instance_count; }
+    void self_cost(bool val) { m_timer_list = (val) ? &m_timer_list_self : &m_timer_list_norm; }
+    bool self_cost() const { return (m_timer_list == &m_timer_list_self); }
 
 protected:
 	// protected functions
@@ -377,6 +381,7 @@ protected:
     string_t get_prefix() const;
     uint64_t compute_total_laps() const;
     void insert_global_timer();
+    void compute_self();
 
 protected:
 	// protected static variables
@@ -398,6 +403,8 @@ private:
     static std::atomic<int> f_manager_instance_count;
     // merge checking
     std::atomic<bool>       m_merge;
+    // self format
+    bool                    m_self_format;
     // instance id
     int32_t                 m_instance_count;
     // total laps
@@ -413,9 +420,9 @@ private:
     // hashed string map for fast lookup
     timer_map_t             m_timer_map;
     // ordered list for output (outputs in order of timer instantiation)
-    timer_list_t            m_timer_list;
-    // output stream for total timing report
-    ostream_t*              m_report;
+    timer_list_t            m_timer_list_norm;
+    // ordered list for output (self-cost format)
+    timer_list_t            m_timer_list_self;
     // mutex
     mutex_t                 m_mutex;
     // daughter list
@@ -426,13 +433,17 @@ private:
     timer_ptr_t             m_missing_timer;
     // global timer
     timer_ptr_t             m_total_timer;
+    // current timer list (either standard or self)
+    timer_list_t*           m_timer_list;
+    // output stream for total timing report
+    ostream_t*              m_report;
 };
 
 //----------------------------------------------------------------------------//
 inline void
 manager::operator+=(const base_rss_type& rhs)
 {
-    for(auto& itr : m_timer_list)
+    for(auto& itr : m_timer_list_norm)
     {
         bool _restart = itr.timer().is_running();
         if(_restart)
@@ -446,7 +457,7 @@ manager::operator+=(const base_rss_type& rhs)
 inline void
 manager::operator-=(const base_rss_type& rhs)
 {
-    for(auto& itr : m_timer_list)
+    for(auto& itr : m_timer_list_norm)
     {
         bool _restart = itr.timer().is_running();
         if(_restart)
@@ -506,8 +517,10 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     uint32_t _nthreads = f_get_num_threads();
     if(_nthreads == 1)
         _nthreads = f_manager_instance_count;
+    bool _self_cost = this->self_cost();
     ar(serializer::make_nvp("concurrency", _nthreads));
-    ar(serializer::make_nvp("timers", m_timer_list));
+    ar(serializer::make_nvp("self_cost", _self_cost));
+    ar(serializer::make_nvp("timers", *m_timer_list));
 }
 //----------------------------------------------------------------------------//
 inline uint64_t

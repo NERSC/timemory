@@ -312,7 +312,10 @@ void test_manager()
     t.stop();
 
     print_size(__FUNCTION__, __LINE__);
-    tman->report();
+    tman->report(true);
+    tman->self_cost(true);
+    tman->report(true);
+    tman->self_cost(false);
     tman->set_output_stream("test_output/mpi_cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/mpi_cxx_timing_report.json");
