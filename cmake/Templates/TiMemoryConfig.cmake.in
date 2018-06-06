@@ -12,6 +12,9 @@ set(TIMEMORY_USE_MPI @MPI_FOUND@)
 set(TIMEMORY_EXCEPTIONS @TIMEMORY_EXCEPTIONS@)
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_USE_PYTHON_BINDING@)
 set(TIMEMORY_DYNAMIC_LINK @BUILD_SHARED_LIBS@)
+if(NOT DEFINED @PROJECT_NAME@_DIR)
+    set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
+endif(NOT DEFINED @PROJECT_NAME@_DIR)
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -28,8 +31,19 @@ if(_TIMEMORY_INSTALL_TREE)
 
     set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
     set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
+
     if(TIMEMORY_PYTHON_BINDINGS)
-        set_and_check(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
+        set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
+        if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
+            find_package(PythonInterp QUIET)
+            if(PYTHONINTERP_FOUND)
+                execute_process(COMMAND
+                    ${PYTHON_EXECUTABLE} -c "import site; print(site.getsitepackages()[0])"
+                    OUTPUT_VARIABLE @PROJECT_NAME@_PYTHON_DIR
+                    OUTPUT_STRIP_TRAILING_WHITESPACE
+                    WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
+            endif(PYTHONINTERP_FOUND)
+        endif(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
     endif(TIMEMORY_PYTHON_BINDINGS)
 
     foreach(_TYPE LIB INCLUDE PYTHON)
@@ -156,17 +170,8 @@ endif(TIMEMORY_USE_MPI)
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set UnitTest++_FOUND to TRUE
 # if all listed variables are TRUE
-if(TIMEMORY_PYTHON_BINDINGS)
-    find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
-        @PROJECT_NAME@_LIBRARIES
-        @PROJECT_NAME@_C_LIBRARIES
-        @PROJECT_NAME@_CXX_LIBRARIES
-        @PROJECT_NAME@_INCLUDE_DIR
-        @PROJECT_NAME@_PYTHON_DIR)
-else(TIMEMORY_PYTHON_BINDINGS)
-    find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
-        @PROJECT_NAME@_LIBRARIES
-        @PROJECT_NAME@_C_LIBRARIES
-        @PROJECT_NAME@_CXX_LIBRARIES
-        @PROJECT_NAME@_INCLUDE_DIR)
-endif(TIMEMORY_PYTHON_BINDINGS)
+find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
+    @PROJECT_NAME@_LIBRARIES
+    @PROJECT_NAME@_C_LIBRARIES
+    @PROJECT_NAME@_CXX_LIBRARIES
+    @PROJECT_NAME@_INCLUDE_DIR)

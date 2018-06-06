@@ -3,3 +3,19 @@ set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_ERRORS           "200" )
 set(CTEST_CUSTOM_MAXIMUM_NUMBER_OF_WARNINGS         "500" )
 set(CTEST_CUSTOM_MAXIMUM_PASSED_TEST_OUTPUT_SIZE    "104857600") # 100 MB
 set(CTEST_CUSTOM_COVERAGE_EXCLUDE                   "pybind11/*;source/cereal/*")
+
+macro(set_custom VAR CUSTOM_VAL)
+    if(NOT "${CUSTOM_VAL}" STREQUAL "")
+        set(${VAR} "${CUSTOM_VAL}")
+    endif(NOT "${CUSTOM_VAL}" STREQUAL "")
+endmacro(set_custom VAR CUSTOM_VAL)
+
+set(_DROP_METHOD    "@DROP_METHOD@")
+set(_DROP_SITE      "@DROP_SITE@")
+set(_DROP_LOCATION  "@DROP_LOCATION@")
+set(_TOKEN_FILE     "@TOKEN_FILE@")
+
+set_custom(CTEST_DROP_METHOD    "${_DROP_METHOD}")
+set_custom(CTEST_DROP_SITE      "${_DROP_SITE}")
+set_custom(CTEST_DROP_LOCATION  "${_DROP_LOCATION}")
+set_custom(CTEST_TOKEN_FILE     "${_TOKEN_FILE}")

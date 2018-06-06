@@ -22,10 +22,10 @@ set(CTEST_GENERATOR          "'@CMAKE_GENERATOR@'")
 set(CTEST_LOCAL_CHECKOUT     "@CTEST_LOCAL_CHECKOUT@")
 set(CTEST_GENERATOR_PLATFORM "@CMAKE_GENERATOR_PLATFORM@")
 set(MPI_FOUND                "@MPI_FOUND@")
+set(CTEST_TOKEN_FILE         "@TOKEN_FILE@")
 if(NOT DEFINED CTEST_MODEL)
     set(CTEST_MODEL          "@CTEST_MODEL@")
 endif(NOT DEFINED CTEST_MODEL)
-
 
 # ---------------------------------------------------------------------------- #
 # -- Programs
@@ -199,10 +199,12 @@ set(ENV{PROJECT_PYC_PATH}   "${CTEST_INSTALL_DIRECTORY}/@TIMEMORY_INSTALL_PYTHON
 # -- Configure file
 # ---------------------------------------------------------------------------- #
 macro(CONFIGURE_CTEST_FILES)
+
     ## -- CTest Config
     configure_file(CTestConfig.cmake ${CTEST_BINARY_DIRECTORY}/CTestConfig.cmake COPYONLY)
     ## -- CTest Custom
     configure_file(CTestCustom.cmake ${CTEST_BINARY_DIRECTORY}/CTestCustom.cmake COPYONLY)
+
 endmacro(CONFIGURE_CTEST_FILES)
 
 
@@ -210,27 +212,86 @@ endmacro(CONFIGURE_CTEST_FILES)
 # -- Read CTestNotes.cmake file
 # ---------------------------------------------------------------------------- #
 macro(READ_NOTES)
+
     ## check
     file(GLOB_RECURSE NOTE_FILES "${CTEST_BINARY_DIRECTORY}/*CTestNotes.cmake")
     foreach(_FILE ${NOTE_FILES})
         include("${_FILE}")
     endforeach(_FILE ${NOTE_FILES})
+
 endmacro(READ_NOTES)
+
+
+# ---------------------------------------------------------------------------- #
+# -- Check to see if there is a ctest token (for CDash submission)
+# ---------------------------------------------------------------------------- #
+macro(CHECK_FOR_CTEST_TOKEN)
+
+    # set using token to off
+    set(CTEST_USE_TOKEN OFF)
+    # set token to empty
+    set(CTEST_TOKEN     "")
+
+    if(NOT "${CTEST_TOKEN_FILE}" STREQUAL "")
+        string(REGEX REPLACE "^~" "$ENV{HOME}" CTEST_TOKEN_FILE "${CTEST_TOKEN_FILE}")
+    endif(NOT "${CTEST_TOKEN_FILE}" STREQUAL "")
+
+    # check for a file containing token
+    if(NOT "${CTEST_TOKEN_FILE}" STREQUAL "" AND EXISTS "${CTEST_TOKEN_FILE}")
+        message(STATUS "Reading CTest token file: ${CTEST_TOKEN_FILE}")
+        file(READ "${CTEST_TOKEN_FILE}" CTEST_TOKEN)
+        string(REPLACE "\n" "" CTEST_TOKEN "${CTEST_TOKEN}")
+    endif(NOT "${CTEST_TOKEN_FILE}" STREQUAL "" AND EXISTS "${CTEST_TOKEN_FILE}")
+
+    # if no file, check the environment
+    if("${CTEST_TOKEN}" STREQUAL "" AND NOT "$ENV{CTEST_TOKEN}" STREQUAL "")
+        set(CTEST_TOKEN "$ENV{CTEST_TOKEN}")
+    endif("${CTEST_TOKEN}" STREQUAL "" AND NOT "$ENV{CTEST_TOKEN}" STREQUAL "")
+
+    # if non-empty token, set CTEST_USE_TOKEN to ON
+    if(NOT "${CTEST_TOKEN}" STREQUAL "")
+        set(CTEST_USE_TOKEN ON)
+    endif(NOT "${CTEST_TOKEN}" STREQUAL "")
+
+endmacro(CHECK_FOR_CTEST_TOKEN)
+
+
+# ---------------------------------------------------------------------------- #
+# -- Submit command
+# ---------------------------------------------------------------------------- #
+macro(SUBMIT_COMMAND)
+
+    # check for token
+    check_for_ctest_token()
+
+    if(NOT CTEST_USE_TOKEN)
+        # standard submit
+        ctest_submit(RETURN_VALUE ret ${ARGN})
+    else(NOT CTEST_USE_TOKEN)
+        # submit with token
+        ctest_submit(RETURN_VALUE ret
+                     HTTPHEADER "Authorization: Bearer ${CTEST_TOKEN}"
+                     ${ARGN})
+    endif(NOT CTEST_USE_TOKEN)
+
+endmacro(SUBMIT_COMMAND)
 
 
 # ---------------------------------------------------------------------------- #
 # -- Determine if submit time
 # ---------------------------------------------------------------------------- #
 macro(SUBMIT KEY)
+
     if("${TRIGGER}" STREQUAL "Any" OR "${TRIGGER}" STREQUAL "Submit")
         read_notes()
+        submit_command(${ARGN})
         ctest_submit(RETURN_VALUE ret ${ARGN})
     else("${TRIGGER}" STREQUAL "Any" OR "${TRIGGER}" STREQUAL "Submit")
         if("${TRIGGER}" STREQUAL "${KEY}")
-            read_notes()
-            ctest_submit(RETURN_VALUE ret ${ARGN})
+            submit_command(${ARGN})
         endif("${TRIGGER}" STREQUAL "${KEY}")
     endif("${TRIGGER}" STREQUAL "Any" OR "${TRIGGER}" STREQUAL "Submit")
+
 endmacro(SUBMIT KEY)
 
 

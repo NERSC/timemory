@@ -1,6 +1,13 @@
 TiMemory
 ========
 
+Release: TiMemory 2.2.1
+-----------------------
+
+Author: Jonathan R. Madsen Date: Tue Jun 6 01:32:45 2018 -0700
+
+- fix to TiMemoryConfig.cmake when installed via sudo
+
 Release: TiMemory 2.2.0
 -----------------------
 
