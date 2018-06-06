@@ -14,7 +14,7 @@ get_pip()
     echo ""
 }
 
-for i in 3.{7..0} 2.{7..9}
+for i in 3.{7..4} 2.7
 do
     
     PIP_CMD=$(get_pip pip-${i} pip${i})
