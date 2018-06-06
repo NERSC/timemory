@@ -497,8 +497,12 @@ public:
     template <typename Archive> void
     serialize(Archive& ar, const unsigned int /*version*/)
     {
-        auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>())
-                         / m_accum.get_sum<2>();
+        auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>());
+        if(m_accum.get_sum<2>() > 0)
+            _cpu_util /= m_accum.get_sum<2>();
+        else
+            _cpu_util = 0.0;
+
         if(!tim::isfinite(_cpu_util))
             _cpu_util = 0.0;
 

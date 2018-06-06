@@ -96,9 +96,8 @@ auto_timer::~auto_timer()
 {
     if(m_enabled)
     {
-        // will add itself to global when destroying m_temp_timer
+        // stop the timer
         m_temp_timer.stop();
-
         assert(m_temp_timer.summation_timer() != nullptr);
         *m_temp_timer.summation_timer() += m_temp_timer;
 
