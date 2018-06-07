@@ -161,7 +161,7 @@ class CMakeBuild(build_ext, Command):
                 if install.user_options[0][1] is None:
                     self.devel_install = sys.prefix
                 else:
-                    self.devel_install = unstall.user_options[0][1]
+                    self.devel_install = install.user_options[0][1]
             devel_install_path = self.devel_install
             if not os.path.isabs(devel_install_path):
                 devel_install_path = os.path.realpath(devel_install_path)

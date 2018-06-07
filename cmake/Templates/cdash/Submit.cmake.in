@@ -9,7 +9,11 @@ set(TRIGGER "Submit" CACHE STRING "Delay submit until TRIGGER == '(Any|Build|Tes
 
 include("${CMAKE_CURRENT_LIST_DIR}/Init.cmake")
 
-setup(Submit)
+unset(CTEST_CHECKOUT_COMMAND)
+configure_ctest_files()
+ctest_start(${MODEL}   TRACK ${MODEL} APPEND)
+configure_ctest_files()
+ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
 submit(Submit RETRY_COUNT 5 RETRY_DELAY 30)
 
 message(" -- Finished ${MODEL} Submission - ${CTEST_BUILD_NAME} --")
