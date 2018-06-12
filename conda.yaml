@@ -1,0 +1,38 @@
+package:
+  name: timemory
+  version: '2.2.2'
+
+build:
+  number: 0
+
+source:
+  git_rev: v2.2.2
+  git_url: https://github.com/jrmadsen/TiMemory.git
+
+requirements:
+  host:
+  - python
+  - setuptools
+  - cmake
+
+  run:
+  - python
+  - pillow
+  - matplotlib
+  - numpy
+
+test:
+  imports:
+  - timemory
+  - timemory.format
+  - timemory.mpi_support
+  - timemory.options
+  - timemory.plotting
+  - timemory.signals
+  - timemory.units
+  - timemory.util
+
+about:
+  home: https://jrmadsen.github.io/TiMemory/
+  license: MIT
+  summary: "Cross-language (C, C++ and/or Python) Timing + Memory Measurements including auto-timers and temporary memory calculation"

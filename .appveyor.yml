@@ -94,7 +94,7 @@ install:
       python -m pip install -U pip
     }
     # pip installation
-    python -m pip install -U setuptools disttools
+    python -m pip install -U setuptools
     python -m pip install -U matplotlib numpy pillow
     $env:TIMEMORY_DEBUG = 4
     mkdir "C:\Users\appveyor\CTestTemp"
