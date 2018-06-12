@@ -10,7 +10,8 @@ settings.json
 *~
 
 # build directories
-/build*
+/build-*
+/build
 
 # setup.py files
 /dist*
