@@ -16,7 +16,7 @@ Pages) <https://jrmadsen.github.io/TiMemory>`__
 (Doxygen) <https://jrmadsen.github.io/TiMemory/doxy/index.html>`__
 
 `TiMemory Testing Dashboard
-(CDash) <http://jonathan-madsen.info/cdash/public/index.php?project=TiMemory>`__
+(CDash) <https://cdash.nersc.gov/index.php?project=TiMemory>`__
 
 `TiMemory Release
 Notes <https://jrmadsen.github.io/TiMemory/ReleaseNotes.html>`__

@@ -10,7 +10,7 @@
 
 [TiMemory Source Code Documentation (Doxygen)](https://jrmadsen.github.io/TiMemory/doxy/index.html)
 
-[TiMemory Testing Dashboard (CDash)](http://jonathan-madsen.info/cdash/public/index.php?project=TiMemory)
+[TiMemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
 
 [TiMemory Release Notes](https://jrmadsen.github.io/TiMemory/ReleaseNotes.html)
 
