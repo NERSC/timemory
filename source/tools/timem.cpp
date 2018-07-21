@@ -30,6 +30,11 @@
 typedef std::vector<uint64_t> vector_t;
 typedef tim::rss::usage rss_usage_t;
 
+#if defined(__GNUC__) || defined(__clang__)
+#   define declare_attribute(attr) __attribute__(( attr ))
+#elif defined(_WIN32)
+#   define declare_attribute(attr) __declspec( attr )
+#endif
 //----------------------------------------------------------------------------//
 
 rss_usage_t& rss_init()
@@ -61,6 +66,7 @@ std::string& command()
 
 //----------------------------------------------------------------------------//
 
+declare_attribute(noreturn)
 void failed_fork()
 {
     printf("failure forking, error occured\n");
@@ -69,6 +75,7 @@ void failed_fork()
 
 //----------------------------------------------------------------------------//
 
+declare_attribute(noreturn)
 void report()
 {
     tim::manager::instance()->stop_total_timer();
@@ -87,6 +94,7 @@ void report()
 
 //----------------------------------------------------------------------------//
 
+declare_attribute(noreturn)
 void parent_process(pid_t pid)
 {
     // a positive number is returned for the pid of parent process
@@ -151,7 +159,8 @@ char* getcharptr(const std::string& str)
 
 //----------------------------------------------------------------------------//
 
-void child_process(int argc, char** argv)
+declare_attribute(noreturn)
+void child_process(uint64_t argc, char** argv)
 {
     if(argc < 2)
         exit(0);
@@ -160,25 +169,25 @@ void child_process(int argc, char** argv)
     // with file being executed the array pointer must be terminated by
     // NULL pointer
 
-    char** argv_list = (char**) malloc(sizeof(char*) * argc);
-    for(int i = 0; i < argc - 1; i++)
+    char** argv_list = static_cast<char**>(malloc(sizeof(char*) * argc));
+    for(uint64_t i = 0; i < argc - 1; i++)
         argv_list[i] = argv[i+1];
-    argv_list[argc-1] = NULL;
+    argv_list[argc-1] = nullptr;
 
     // launch the child
     int ret = execvp(argv_list[0], argv_list);
     if(ret < 0)
     {
-        int argc_shell = argc + 2;
-        char** argv_shell_list = (char**) malloc(sizeof(char*) * argc_shell);
+        uint64_t argc_shell = argc + 2;
+        char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
         char* _shell = getusershell();
         if(_shell)
         {
             argv_shell_list[0] = _shell;
             argv_shell_list[1] = getcharptr("-lc");
-            for(int i = 0; i < argc-1; ++i)
+            for(uint64_t i = 0; i < argc-1; ++i)
                 argv_shell_list[i+2] = argv_list[i];
-            argv_shell_list[argc_shell-1] = NULL;
+            argv_shell_list[argc_shell-1] = nullptr;
             ret = execvp(argv_shell_list[0], argv_shell_list);
         }
     }
@@ -205,12 +214,12 @@ int main(int argc, char** argv)
     pid_t pid = fork();
     tim::manager::instance()->reset_total_timer();
 
+    uint64_t nargs = static_cast<uint64_t>(argc);
     if(pid == -1) // pid == -1 means error occured
         failed_fork();
     else if(pid == 0) // pid == 0 means child process created
-        child_process(argc, argv);
+        child_process(nargs, argv);
     else
         parent_process(pid); // means parent process
 
-    return 0;
 }
