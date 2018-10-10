@@ -527,7 +527,6 @@ install:
     #
     - cd ${SOURCE_DIR}
     - pip install .
-    - pip uninstall -y .
 
 
 script:
