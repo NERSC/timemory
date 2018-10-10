@@ -304,8 +304,8 @@ timer::operator()(const internal::base_timer* t) const
             continue;
 
         // replace all instances
-        auto _npos = std::string::npos;
-        while((_npos = _str.find(itr.first)) != std::string::npos)
+        auto _npos = tim::string::npos;
+        while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
 
@@ -425,8 +425,8 @@ rss::operator()(const string_t& _base) const
     {
         auto _replace = [&] (const string_t& _itr, const string_t& _rep)
         {
-            auto _npos = std::string::npos;
-            while((_npos = _str.find(_itr)) != std::string::npos)
+            auto _npos = tim::string::npos;
+            while((_npos = _str.find(_itr)) != tim::string::npos)
                 _str.replace(_npos, _itr.length(), _rep.c_str());
         };
 
@@ -450,8 +450,8 @@ rss::operator()(const string_t& _base) const
     }
 
     string_t _pR = "%R";
-    auto _npos = std::string::npos;
-    while((_npos = _str.find(_pR)) != std::string::npos)
+    auto _npos = tim::string::npos;
+    while((_npos = _str.find(_pR)) != tim::string::npos)
         _str = _str.replace(_npos, _pR.length(), "");
 
     return _str;
@@ -517,8 +517,8 @@ rss::operator()(const tim::rss::usage* m) const
             continue;
 
         // replace all instances
-        auto _npos = std::string::npos;
-        while((_npos = _str.find(itr.first)) != std::string::npos)
+        auto _npos = tim::string::npos;
+        while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
 
@@ -596,8 +596,8 @@ rss::operator()(const tim::rss::usage_delta* m,
             continue;
 
         // replace all instances
-        auto _npos = std::string::npos;
-        while((_npos = _str.find(itr.first)) != std::string::npos)
+        auto _npos = tim::string::npos;
+        while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
 
     }

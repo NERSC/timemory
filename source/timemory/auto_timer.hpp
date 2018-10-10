@@ -42,6 +42,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/string.hpp"
 
 namespace tim
 {
@@ -51,7 +52,7 @@ class tim_api auto_timer
 public:
     typedef tim::manager::tim_timer_t   tim_timer_t;
     typedef auto_timer                  this_type;
-    typedef std::string                 string_t;
+    typedef tim::string                 string_t;
     typedef tim::manager::counter_t     counter_t;
 
 public:
@@ -100,7 +101,9 @@ auto_timer::get_tag(const string_t& timer_tag,
     ss << "> [" << lang_tag << "] " << timer_tag;
     return ss.str();
 #else
-    return string_t("> [" + lang_tag + "] " + timer_tag);
+    std::stringstream ss;
+    ss << "> [" << lang_tag << "] " << timer_tag;
+    return ss.str();
 #endif
 }
 

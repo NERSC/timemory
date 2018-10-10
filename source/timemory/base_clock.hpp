@@ -50,6 +50,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/string.hpp"
 
 #if defined(_UNIX)
 

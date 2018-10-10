@@ -26,6 +26,7 @@
 #define singleton_hpp_
 
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #include <thread>
 #include <memory>

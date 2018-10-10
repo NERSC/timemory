@@ -34,6 +34,7 @@
 //----------------------------------------------------------------------------//
 
 #include <timemory/macros.hpp>
+#include "timemory/string.hpp"
 
 #include <cstdint>
 #include <string>
@@ -54,7 +55,7 @@ namespace env
 
 //----------------------------------------------------------------------------//
 
-typedef std::string string_t;
+typedef tim::string string_t;
 
 //----------------------------------------------------------------------------//
 

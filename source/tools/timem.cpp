@@ -49,18 +49,18 @@ rss_usage_t& rss_init()
 
 //----------------------------------------------------------------------------//
 
-std::string& tim_format()
+tim::string& tim_format()
 {
-    static std::string _instance
+    static tim::string _instance
             = ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]";
     return _instance;
 }
 
 //----------------------------------------------------------------------------//
 
-std::string& command()
+tim::string& command()
 {
-    static std::string _instance = "";
+    static tim::string _instance = "";
     return _instance;
 }
 
@@ -83,7 +83,7 @@ void report()
 
     (*tim::manager::instance()) -= rss_init();
     _ss_report << (*tim::manager::instance());
-    std::string _report = _ss_report.str();
+    tim::string _report = _ss_report.str();
     if(command().length() > 0)
         _report.replace(_report.find("[exe]")+1, 3, command().c_str());
 
@@ -152,7 +152,7 @@ void print_command(int argc, char** argv)
 
 //----------------------------------------------------------------------------//
 
-char* getcharptr(const std::string& str)
+char* getcharptr(const tim::string& str)
 {
     return const_cast<char*>(str.c_str());
 }
@@ -204,7 +204,7 @@ int main(int argc, char** argv)
     rss_init().record();
 
     if(argc > 1)
-        command() = std::string(const_cast<const char*>(argv[1]));
+        command() = tim::string(const_cast<const char*>(argv[1]));
     else
     {
         tim::manager::instance()->reset_total_timer();

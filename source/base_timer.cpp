@@ -140,29 +140,6 @@ void base_timer::report(bool endline) const
 
 //============================================================================//
 
-void base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
-{
-
-    // stop, if not already stopped
-    if(m_timer().running())
-        const_cast<base_timer*>(this)->stop();
-
-    if(!above_cutoff(ign_cutoff))
-        return;
-
-    std::stringstream ss;
-    ss << (*m_format)(this);
-
-    if(endline)
-        ss << std::endl;
-
-    // ensure thread-safety
-    tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-    recursive_lock_t rlock(f_mutex_map[&os]);
-    // output to ostream
-    os << ss.str();
-}
-
 } // namespace internal
 
 } // namespace tim

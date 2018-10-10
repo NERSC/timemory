@@ -14,7 +14,7 @@ else("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 endif("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
 add_option(TIMEMORY_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
+add_option(TIMEMORY_USE_MPI "Enable MPI usage" OFF)
 add_option(TIMEMORY_USE_PYTHON_BINDING "Build Python binds for TiMemory" ON)
 add_option(TIMEMORY_SETUP_PY "Python build from setup.py" OFF NO_FEATURE)
 add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF)

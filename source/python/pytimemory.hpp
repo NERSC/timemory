@@ -516,7 +516,7 @@ report(py::object man,
     {
         std::cout << "Outputting manager to '" << repfnm
                   << "'..." << std::endl;
-        _man->set_output_stream(repfnm);
+        _man->set_output_stream(repfnm.c_str());
 
         man.attr("reported_files").cast<py::list>().append(repabs);
     }
@@ -538,7 +538,7 @@ report(py::object man,
     {
         std::cout << "Serializing manager to '" << serfnm
                   << "'..." << std::endl;
-        _man->write_serialization(serfnm);
+        _man->write_serialization(serfnm.c_str());
         man.attr("serialized_files").cast<py::list>().append(serabs);
     }
 }
@@ -563,7 +563,7 @@ serialize(py::object man, std::string fname = "")
                  py::globals(), locals);
         fname = locals["result"].cast<std::string>();
     }
-    man.cast<manager_wrapper*>()->get()->write_serialization(fname);
+    man.cast<manager_wrapper*>()->get()->write_serialization(fname.c_str());
     return fname;
 }
 

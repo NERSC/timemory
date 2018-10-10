@@ -34,6 +34,7 @@
 
 #include "timemory/macros.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/string.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-variable"
@@ -65,7 +66,7 @@ namespace tim
 namespace internal
 {
 typedef std::tuple<uint64_t, uint64_t, uint64_t,
-                   std::string,
+                   tim::string,
                    std::shared_ptr<tim::timer>>
     base_timer_tuple_t;
 }
@@ -75,7 +76,7 @@ typedef std::tuple<uint64_t, uint64_t, uint64_t,
 struct tim_api timer_tuple : public internal::base_timer_tuple_t
 {
     typedef timer_tuple                     this_type;
-    typedef std::string                     string_t;
+    typedef tim::string                     string_t;
     typedef tim::timer                      tim_timer_t;
     typedef std::shared_ptr<tim_timer_t>    timer_ptr_t;
     typedef internal::base_timer_tuple_t    base_type;
@@ -161,7 +162,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
         ar(serializer::make_nvp("timer.key", key()),
            serializer::make_nvp("timer.level", level()),
            serializer::make_nvp("timer.offset", offset()),
-           serializer::make_nvp("timer.tag", tag()),
+           serializer::make_nvp("timer.tag", std::string(tag().c_str())),
            serializer::make_nvp("timer.ref", timer()));
     }
 
@@ -565,6 +566,64 @@ manager::reset_total_timer()
     m_total_timer->reset();
     if(_restart)
         m_total_timer->start();
+}
+//----------------------------------------------------------------------------//
+inline void
+manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
+{
+    const_cast<this_type*>(this)->merge();
+
+    auto check_stream = [&] (ostream_t*& _os, const string_t& id)
+    {
+        if(_os == &std::cout || _os == &std::cerr)
+            return;
+        ofstream_t* fos = get_ofstream(_os);
+        if(fos && !(fos->is_open() && fos->good()))
+        {
+            _os = &std::cout;
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+            std::cerr << "Output stream for " << id << " is not open/valid. "
+                      << "Redirecting to stdout..." << std::endl;
+        }
+    };
+
+    if(os == m_report)
+        check_stream(os, "total timing report");
+
+    for(const auto& itr : *this)
+        if(!itr.timer().is_valid())
+            const_cast<tim_timer_t&>(itr.timer()).stop();
+
+    if(mpi_is_initialized())
+        *os << "> rank " << mpi_rank() << std::endl;
+
+    // temporarily store output width
+    //auto _width = tim::format::timer::default_width();
+    // reset output width
+    tim::format::timer::default_width(10);
+
+    // redo output width calc, removing no displayed funcs
+    for(const auto& itr : *this)
+        if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
+            tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
+
+    // don't make it longer
+    //if(_width > 10 && _width < tim::format::timer::default_width())
+    //    tim::format::timer::default_width(_width);
+
+    for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
+        itr->timer().report(*os, (itr+1 == this->cend()) ? endline : true,
+                            ign_cutoff);
+
+    os->flush();
+}
+//----------------------------------------------------------------------------//
+inline manager::ofstream_t*
+manager::get_ofstream(ostream_t* m_os) const
+{
+    return (m_os != &std::cout && m_os != &std::cerr)
+        ? static_cast<ofstream_t*>(m_os)
+        : nullptr;
 }
 //----------------------------------------------------------------------------//
 

@@ -1,12 +1,12 @@
 package:
   name: timemory
-  version: '2.2.2'
+  version: '2.3.0'
 
 build:
   number: 0
 
 source:
-  git_rev: 13a55581b0fd708b0eeffa10891dabde87f62276
+  git_rev: c0e4c564a6055d36a2761e92d9abed797bc9e92e
   git_url: https://github.com/jrmadsen/TiMemory.git
 
 requirements:

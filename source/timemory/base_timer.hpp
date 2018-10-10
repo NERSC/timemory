@@ -45,6 +45,7 @@
 #include "timemory/signal_detection.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/string.hpp"
 
 //----------------------------------------------------------------------------//
 
@@ -396,7 +397,7 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef std::string                         string_t;
+    typedef tim::string                         string_t;
     typedef string_t::size_type                 size_type;
     typedef std::mutex                          mutex_t;
     typedef std::recursive_mutex                rmutex_t;
@@ -708,6 +709,30 @@ inline const char* base_timer::clock_time() const
     std::time ( &rawtime );
     timeinfo = localtime ( &rawtime );
     return asctime (timeinfo);
+}
+//----------------------------------------------------------------------------//
+inline void
+base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
+{
+
+    // stop, if not already stopped
+    if(m_timer().running())
+        const_cast<base_timer*>(this)->stop();
+
+    if(!above_cutoff(ign_cutoff))
+        return;
+
+    std::stringstream ss;
+    ss << (*m_format)(this);
+
+    if(endline)
+        ss << std::endl;
+
+    // ensure thread-safety
+    tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+    recursive_lock_t rlock(f_mutex_map[&os]);
+    // output to ostream
+    os << ss.str();
 }
 //----------------------------------------------------------------------------//
 

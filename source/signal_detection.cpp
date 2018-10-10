@@ -115,7 +115,7 @@ void signal_settings::disable(const sys_signal& _type)
 
 void signal_settings::check_environment()
 {
-    typedef std::pair<std::string, sys_signal> match_t;
+    typedef std::pair<tim::string, sys_signal> match_t;
 
     auto _list =
     {
@@ -167,9 +167,9 @@ void signal_settings::check_environment()
 
 //============================================================================//
 
-std::string signal_settings::str(const sys_signal& _type)
+tim::string signal_settings::str(const sys_signal& _type)
 {
-    typedef std::tuple<std::string, int, std::string> descript_tuple_t;
+    typedef std::tuple<tim::string, int, tim::string> descript_tuple_t;
 
     std::stringstream ss;
     auto descript = [&] (const descript_tuple_t& _data)
@@ -229,7 +229,7 @@ std::string signal_settings::str(const sys_signal& _type)
 
 //============================================================================//
 
-std::string signal_settings::str()
+tim::string signal_settings::str()
 {
     std::stringstream ss;
     auto spacer = [&] () { return "    "; };

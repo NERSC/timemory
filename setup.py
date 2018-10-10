@@ -18,6 +18,7 @@ from setuptools.command.install_egg_info import install_egg_info
 
 # ---------------------------------------------------------------------------- #
 #   work around to avoid using disttools.LooseVersion
+#
 def get_integer_version(version_string):
     version_array = version_string.split('.')
     # if more than 3 version numbers
@@ -30,15 +31,24 @@ def get_integer_version(version_string):
     factors = [ 100000, 1000, 1 ]
     for i in range(0, len(factors)):
         integer_version += factors[i] * int(version_array[i])
-    #print('Integer version of "{}" is "{}"'.format(version_string,
-    #                                               integer_version))
     return integer_version
 
 
 # ---------------------------------------------------------------------------- #
+#   work around to avoid using disttools.LooseVersion
+#
+def get_string_version(version_integer):
+    major_ver = "{}".format(int(version_integer / 100000))
+    minor_ver = "{}".format(int((version_integer % 100000) / 1000))
+    patch_ver = "{}".format(int(version_integer % 1000))
+    return "{}.{}.{}".format(major_ver, minor_ver, patch_ver)
+
+
+# ---------------------------------------------------------------------------- #
+#
 def get_project_version():
-    # open ".version.txt"
-    with open(os.path.join(os.getcwd(), '.version.txt'), 'r') as f:
+    # open "VERSION"
+    with open(os.path.join(os.getcwd(), 'VERSION'), 'r') as f:
         data = f.read().replace('\n', '')
     # make sure is string
     if isinstance(data, list) or isinstance(data, tuple):
@@ -48,6 +58,7 @@ def get_project_version():
 
 
 # ---------------------------------------------------------------------------- #
+#
 class CMakeExtension(Extension):
 
     def __init__(self, name, sourcedir=''):
@@ -56,12 +67,13 @@ class CMakeExtension(Extension):
 
 
 # ---------------------------------------------------------------------------- #
+#
 class CMakeBuild(build_ext, Command):
 
     cmake_version = get_integer_version('2.7.12')
     cmake_min_version = get_integer_version('2.8.12')
     build_type = 'Release'
-    use_mpi = 'ON'
+    use_mpi = 'OFF'
     timemory_exceptions = 'OFF'
     build_examples = 'OFF'
     cxx_standard = 11
@@ -92,7 +104,7 @@ class CMakeBuild(build_ext, Command):
         """
         ma = 'Error finding/putting cmake in path. Either no CMake found or no cmake module.'
         mb = 'This error can commonly be resolved with "{}"'.format("pip install -U pip cmake")
-        mc = 'CMake version found: {}'.format(CMakeBuild.cmake_version)
+        mc = 'CMake version found: {}'.format(get_string_version(CMakeBuild.cmake_version))
         md = "CMake must be installed to build the following extensions: " + \
         ", ".join(e.name for e in self.extensions)
         mt = '\n\n\t{}\n\t{}\n\t{}\n\t{}\n\n'.format(ma, mb, mc, md)
@@ -129,11 +141,13 @@ class CMakeBuild(build_ext, Command):
     def run(self):
         self.init_cmake()
 
-        print ('Using CMake version {}...'.format(CMakeBuild.cmake_version))
+        print ('Using CMake version {}...'.format(
+            get_string_version(CMakeBuild.cmake_version)))
 
         if CMakeBuild.cmake_version < CMakeBuild.cmake_min_version:
             raise RuntimeError("CMake >= {} is required. Found CMake version {}".format(
-                               CMakeBuild.cmake_min_version, CMakeBuild.cmake_version))
+                               get_string_version(CMakeBuild.cmake_min_version),
+                               get_string_version(CMakeBuild.cmake_version)))
 
         for ext in self.extensions:
             self.build_extension(ext)
@@ -267,7 +281,10 @@ class CMakeBuild(build_ext, Command):
             nproc = '-j4'
             try:
                 import multiprocessing as mp
-                nproc = '-j{}'.format(mp.cpu_count())
+                ncpu = mp.cpu_count()
+                if ncpu > 8:
+                    ncpu = 8
+                nproc = '-j{}'.format(ncpu+1)
             except:
                 pass
             build_args += [ '--', nproc ]
@@ -330,7 +347,7 @@ class CMakeTest(TestCommand):
         """
         ma = 'Error finding/putting ctest in path. Either no CMake found or no cmake module.'
         mb = 'This error can commonly be resolved with "{}"'.format("pip install -U pip cmake")
-        mc = 'CMake version found: {}'.format(CMakeTest.ctest_version)
+        mc = 'CMake version found: {}'.format(get_string_version(CMakeTest.ctest_version))
         md = "CMake must be installed to build the following extensions: " + \
         ", ".join(e.name for e in self.extensions)
         mt = '\n\n\t{}\n\t{}\n\t{}\n\t{}\n\n'.format(ma, mb, mc, md)
@@ -381,6 +398,7 @@ class CMakeTest(TestCommand):
 
 
 # ---------------------------------------------------------------------------- #
+#
 class CMakeInstallEggInfo(install_egg_info):
 
     dirs = {}
@@ -412,29 +430,20 @@ class CMakeInstallEggInfo(install_egg_info):
                     print ('Adding "{}"...'.format(f))
                     self.outputs.append(f)
         
-        # old files not tracked
-        for i in ['plotting/__init__.py',
-                  'mpi_support/mpi_cxx_info.txt',
-                  'mpi_support/mpi_c_info.txt',
-                  'mpi_support/mpi_exe_info.txt',
-                  'mpi_support/__init__.py',
-                  'util/__init__.py',]:
-            fname = os.path.join(self.install_dir, i)
-            if os.path.exists(fname):
-                self.outputs.append(fname)
-
 
 # ---------------------------------------------------------------------------- #
+#
 def get_long_description():
     long_descript = ''
     try:
-        long_descript = open('README.rst').read()
+        long_descript = open('README.md').read()
     except:
         long_descript = ''
     return long_descript
 
 
 # ---------------------------------------------------------------------------- #
+#
 def get_short_description():
     return "{} {} {} {}".format(
         "Lightweight cross-language pseudo-profiling for C, C++, and Python",
@@ -514,6 +523,7 @@ setup(name='TiMemory',
     contact_email=get_email(),
     description=get_short_description(),
     long_description=get_long_description(),
+    long_description_content_type='text/markdown',
     url='https://github.com/jrmadsen/TiMemory.git',
     license='MIT',
     # add extension module

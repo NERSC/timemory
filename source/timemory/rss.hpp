@@ -45,6 +45,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/string.hpp"
 
 //============================================================================//
 
@@ -335,7 +336,7 @@ public:
            serializer::make_nvp("peak",    peak()));
     }
 
-    std::string str() const
+    tim::string str() const
     {
         std::stringstream ss;
         ss << (*this);
@@ -571,7 +572,7 @@ public:
         m_rss_self_min = tim::rss::usage::min(m_rss_self, rhs.self());
     }
 
-    std::string str() const
+    tim::string str() const
     {
         std::stringstream ss;
         ss << (*this);
@@ -664,6 +665,5 @@ usage_delta::usage_format_t usage_delta::format() const
 } // namespace tim
 
 //----------------------------------------------------------------------------//
-
 
 #endif // rss_hpp_

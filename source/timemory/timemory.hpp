@@ -44,6 +44,7 @@
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/string.hpp"
 
 // functions that do the initialization and destruction
 void _timemory_initialization();

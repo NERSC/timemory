@@ -29,13 +29,16 @@
 #include <cstdio>
 #include <cstdint>
 #include <cassert>
+
 // C++ headers
 #include <iostream>
 #include <iomanip>
 #include <sstream>
 #include <stdexcept>
+
 // TiMemory headers
 #include <timemory/mpi.hpp>
+#include "timemory/string.hpp"
 
 //----------------------------------------------------------------------------//
 
@@ -69,7 +72,7 @@
 
 #define PRINT_HERE printf(" [%s@'%s':%i]\n", __FUNCTION__, __FILE__, __LINE__)
 
-inline std::string rank_prefix()
+inline tim::string rank_prefix()
 {
     std::stringstream ss;
     if(tim::mpi_is_initialized())

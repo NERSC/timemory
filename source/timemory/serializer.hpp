@@ -32,6 +32,7 @@
 #define serializer_hpp_
 
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #include <type_traits>
 #include <ostream>

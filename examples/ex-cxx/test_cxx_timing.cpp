@@ -394,7 +394,7 @@ void test_timing_depth()
     tman->set_max_depth(4);
     print_depth(__FUNCTION__, __LINE__, false);
     {
-        TIMEMORY_AUTO_TIMER();
+        TIMEMORY_AUTO_TIMER("");
         for(auto itr : { 38, 39, 40 })
             time_fibonacci(itr);
     }
@@ -427,7 +427,7 @@ void thread_func(int32_t nfib, std::shared_future<void> fut)
 
 std::thread* create_thread(int32_t nfib, std::shared_future<void> fut)
 {
-    TIMEMORY_AUTO_TIMER();
+    TIMEMORY_AUTO_TIMER("");
     static int32_t n = 0;
     return new std::thread(thread_func, nfib + (n++)%2, fut);
 }
@@ -439,7 +439,7 @@ void join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
     if(titr == tlist.end())
         return;
 
-    TIMEMORY_AUTO_TIMER();
+    TIMEMORY_AUTO_TIMER("");
 
     (*titr)->join();
     join_thread(++titr, tlist);
@@ -452,7 +452,7 @@ void test_timing_thread(int num_threads)
     std::stringstream ss;
     ss << "[" << num_threads << "_threads]";
 
-    TIMEMORY_AUTO_TIMER(ss.str());
+    TIMEMORY_AUTO_TIMER(ss.str().c_str());
 
     thread_list_t threads(num_threads, nullptr);
 

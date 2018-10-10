@@ -30,7 +30,7 @@
 
 //============================================================================//
 
-bool get_env_bool(const std::string& _env_var, const bool& _default)
+bool get_env_bool(const tim::string& _env_var, const bool& _default)
 {
     return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0)
             ? true : false;
@@ -99,7 +99,7 @@ void parse()
 
     verbose                 = tim::get_env<int>     ("TIMEMORY_VERBOSE",                    verbose);
     disable_timer_memory    = get_env_bool          ("TIMEMORY_DISABLE_TIMER_MEMORY",       disable_timer_memory);
-    //output_total            = get_env_bool          ("TIMEMORY_OUTPUT_TOTAL",               output_total);
+    //output_total            = get_env_bool        ("TIMEMORY_OUTPUT_TOTAL",               output_total);
     env_num_threads         = tim::get_env<string_t>("TIMEMORY_NUM_THREADS_ENV",            env_num_threads);
     num_threads             = tim::get_env<int>     (env_num_threads,                       num_threads);
     max_depth               = tim::get_env<int>     ("TIMEMORY_MAX_DEPTH",                  max_depth);

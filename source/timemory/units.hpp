@@ -32,6 +32,7 @@
 #define units_hpp_
 
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #include <ratio>
 #include <string>
@@ -78,9 +79,9 @@ const int64_t page_size = sysconf(_SC_PAGESIZE);
 //----------------------------------------------------------------------------//
 
 inline
-std::string time_repr(const int64_t& _unit)
+tim::string time_repr(const int64_t& _unit)
 {
-    std::string _sunit;
+    tim::string _sunit;
     switch (_unit)
     {
         case psec:
@@ -112,9 +113,9 @@ std::string time_repr(const int64_t& _unit)
 }
 
 inline
-std::string mem_repr(const int64_t& _unit)
+tim::string mem_repr(const int64_t& _unit)
 {
-    std::string _sunit;
+    tim::string _sunit;
     switch (_unit)
     {
         case byte:
