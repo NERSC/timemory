@@ -1,6 +1,15 @@
 TiMemory
 ========
 
+Release: TiMemory 2.3.0
+-----------------------
+
+Author: Jonathan R. Madsen Date: Wed Oct 10 03:11:33 2018 -0700
+
+- Fixed issue with cxx11_abi between compilers
+- TIMEMORY_USE_MPI=OFF by default
+- timem updates
+
 Release: TiMemory 2.2.2
 -----------------------
 

@@ -5,7 +5,7 @@ include LICENSE
 include .license.c
 include .license.py
 include README.md
-include CHANGES.rst
+include CHANGES.md
 include timemory/timemory.py
 include cmake/Scripts/generator2file.cmake
 # recursive includes

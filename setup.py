@@ -73,7 +73,7 @@ class CMakeBuild(build_ext, Command):
     cmake_version = get_integer_version('2.7.12')
     cmake_min_version = get_integer_version('2.8.12')
     build_type = 'Release'
-    use_mpi = 'ON'
+    use_mpi = 'OFF'
     timemory_exceptions = 'OFF'
     build_examples = 'OFF'
     cxx_standard = 11
