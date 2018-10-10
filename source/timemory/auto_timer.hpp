@@ -36,12 +36,19 @@
 #ifndef auto_timer_hpp_
 #define auto_timer_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 #include <string>
 #include <cstdint>
 
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/string.hpp"
 
 namespace tim
 {
@@ -51,7 +58,7 @@ class tim_api auto_timer
 public:
     typedef tim::manager::tim_timer_t   tim_timer_t;
     typedef auto_timer                  this_type;
-    typedef std::string                 string_t;
+    typedef tim::string                 string_t;
     typedef tim::manager::counter_t     counter_t;
 
 public:
@@ -100,7 +107,9 @@ auto_timer::get_tag(const string_t& timer_tag,
     ss << "> [" << lang_tag << "] " << timer_tag;
     return ss.str();
 #else
-    return string_t("> [" + lang_tag + "] " + timer_tag);
+    std::stringstream ss;
+    ss << "> [" << lang_tag << "] " << timer_tag;
+    return ss.str();
 #endif
 }
 
@@ -285,6 +294,11 @@ typedef     tim::auto_timer     auto_timer_t;
 #   define TIMEMORY_DEBUG_AUTO_TIMER(str) {;}
 #endif
 //----------------------------------------------------------------------------//
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif
 

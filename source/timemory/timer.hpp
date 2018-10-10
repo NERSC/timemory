@@ -32,6 +32,12 @@
 #ifndef timer_hpp_
 #define timer_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 //----------------------------------------------------------------------------//
 
 #include <cstdint>
@@ -41,6 +47,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/base_timer.hpp"
+#include "timemory/string.hpp"
 
 namespace tim
 {
@@ -54,7 +61,7 @@ class tim_api timer : public internal::base_timer
 public:
     typedef base_timer                      base_type;
     typedef timer                           this_type;
-    typedef std::string                     string_t;
+    typedef tim::string                     string_t;
     typedef std::unique_ptr<this_type>      unique_ptr_type;
     typedef std::shared_ptr<this_type>      shared_ptr_type;
     typedef format::timer                   format_type;
@@ -103,7 +110,7 @@ public:
         return *this;
     }
 
-    std::string as_string(bool ign_cutoff = true) const
+    tim::string as_string(bool ign_cutoff = true) const
     {
         std::stringstream ss;
         this->report(ss, false, ign_cutoff);
@@ -217,5 +224,10 @@ private:
 } // namespace tim
 
 //----------------------------------------------------------------------------//
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif // timer_hpp_

@@ -38,7 +38,14 @@
 #ifndef signal_detection_hpp_
 #define signal_detection_hpp_ 1
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wunused-function"
@@ -203,8 +210,8 @@ public:
     static void set_active(bool val);
     static void enable(const sys_signal&);
     static void disable(const sys_signal&);
-    static std::string str(const sys_signal&);
-    static std::string str();
+    static tim::string str(const sys_signal&);
+    static tim::string str();
     static void check_environment();
     static void set_exit_action(signal_function_t _f);
     static void exit_action(int errcode);
@@ -255,7 +262,7 @@ inline void disable_signal_detection();
 
 inline void stack_backtrace(std::ostream& ss)
 {
-    typedef std::string::size_type          size_type;
+    typedef tim::string::size_type          size_type;
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
 #   define BSIZE 50
@@ -268,24 +275,24 @@ inline void stack_backtrace(std::ostream& ss)
         return;
     }
 
-    std::deque<std::deque<std::string>>     dmang_buf;
+    std::deque<std::deque<tim::string>>     dmang_buf;
     std::deque<size_type>                   dmang_len;
 
     // lambda for demangling a string when delimiting
-    auto _transform = [] (std::string _str)
+    auto _transform = [] (tim::string _str)
     {
         int _ret = 0;
         char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
         if(_demang && _ret == 0)
-            return std::string(const_cast<const char*>(_demang));
+            return tim::string(const_cast<const char*>(_demang));
         else
             return _str;
     };
 
     for(size_type j = 0; j < nptrs; ++j)
     {
-        std::string str = strings[j];
-        if(str.find("+") != std::string::npos)
+        tim::string str = strings[j];
+        if(str.find("+") != tim::string::npos)
             str.replace(str.find_last_of("+"), 1, " +");
 
         auto _delim = delimit(str, " \t\n\r()");
@@ -344,7 +351,7 @@ inline void stack_backtrace(std::ostream& ss)
             _ss << std::setw(mwidth) << std::left
                 << ((i < dmang_buf.at(j).size())
                     ? dmang_buf.at(j).at(i)
-                    : std::string(" "));
+                    : tim::string(" "));
             ss << _ss.str() << "  ";
         }
         ss << std::endl;
@@ -561,5 +568,10 @@ inline void stack_backtrace(std::ostream& os)
 #endif
 
 #pragma GCC diagnostic pop
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif /* signal_detection_hpp_ */

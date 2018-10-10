@@ -32,6 +32,12 @@
 #ifndef rss_hpp_
 #define rss_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 #include <ios>
 #include <iostream>
 #include <fstream>
@@ -45,6 +51,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/string.hpp"
 
 //============================================================================//
 
@@ -335,7 +342,7 @@ public:
            serializer::make_nvp("peak",    peak()));
     }
 
-    std::string str() const
+    tim::string str() const
     {
         std::stringstream ss;
         ss << (*this);
@@ -571,7 +578,7 @@ public:
         m_rss_self_min = tim::rss::usage::min(m_rss_self, rhs.self());
     }
 
-    std::string str() const
+    tim::string str() const
     {
         std::stringstream ss;
         ss << (*this);
@@ -665,5 +672,9 @@ usage_delta::usage_format_t usage_delta::format() const
 
 //----------------------------------------------------------------------------//
 
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif // rss_hpp_

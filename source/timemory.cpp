@@ -149,7 +149,7 @@ const char* cxx_timemory_auto_timer_str(const char* _a, const char* _b,
 extern "C" tim_api
 void cxx_timemory_report(const char* fname)
 {
-    std::string _fname(fname);
+    tim::string _fname(fname);
     for(auto itr : {".txt", ".out", ".json"})
     {
         if(_fname.find(itr) != std::string::npos)
@@ -157,8 +157,8 @@ void cxx_timemory_report(const char* fname)
     }
     _fname = _fname.substr(0, _fname.find_last_of("."));
 
-    tim::path_t _fpath_report = _fname + std::string(".out");
-    tim::path_t _fpath_serial = _fname + std::string(".json");
+    tim::path_t _fpath_report = _fname + tim::string(".out");
+    tim::path_t _fpath_serial = _fname + tim::string(".json");
     tim::manager::master_instance()->set_output_stream(_fpath_report);
     tim::makedir(tim::dirname(_fpath_report));
     std::ofstream ofs_report(_fpath_report);

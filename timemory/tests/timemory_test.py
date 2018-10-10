@@ -128,6 +128,7 @@ class timemory_test(unittest.TestCase):
         def time_fibonacci(n):
             atimer = timemory.auto_timer('({})@{}'.format(n, timemory.FILE(use_dirname=True)))
             key = ('fibonacci(%i)' % n)
+            print('key = {}'.format(key))
             timer = timemory.timer(key)
             timer.start()
             fibonacci(n)
@@ -138,18 +139,18 @@ class timemory_test(unittest.TestCase):
         t = timemory.timer("tmanager_test")
         t.start()
 
-        for i in [39, 35, 43, 39]:
+        for i in [20, 25, 30]:
             # python is too slow with these values that run in a couple
             # seconds in C/C++
-            n = i - 12
-            time_fibonacci(n - 2)
-            time_fibonacci(n - 1)
-            time_fibonacci(n)
-            time_fibonacci(n + 1)
+            time_fibonacci(i - 3)
+            time_fibonacci(i - 2)
+            time_fibonacci(i - 1)
+            time_fibonacci(i + 0)
 
         self.manager.merge()
         self.manager.report()
         plotting.plot(files=[fserial], output_dir=self.output_dir)
+        print("{}".format(self.manager))
 
         self.assertEqual(self.manager.size(), 13)
 

@@ -32,7 +32,7 @@
 PYBIND11_MODULE(timemory, tim)
 {
     //------------------------------------------------------------------------//
-    py::add_ostream_redirect(tim, "ostream_redirect");
+    //py::add_ostream_redirect(tim, "ostream_redirect");
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -166,7 +166,7 @@ PYBIND11_MODULE(timemory, tim)
                    "Initialize timing formatter",
                    py::return_value_policy::take_ownership,
                    py::arg("prefix") = "",
-                   py::arg("format") = timer_format_t::default_format(),
+                   py::arg("format") = timer_format_t::default_format().c_str(),
                    py::arg("unit") = timer_format_t::default_unit(),
                    py::arg("rss_format") = py::none(),
                    py::arg("align_width") = false);
@@ -279,7 +279,7 @@ PYBIND11_MODULE(timemory, tim)
                    "Initialize memory formatter",
                    py::return_value_policy::take_ownership,
                    py::arg("prefix") = "",
-                   py::arg("format") = rss_format_t::default_format(),
+                   py::arg("format") = rss_format_t::default_format().c_str(),
                    py::arg("unit") = rss_format_t::default_unit(),
                    py::arg("align_width") = false);
 
@@ -415,7 +415,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     timer.def("__str__",
               [=] (py::object timer, bool ign_cutoff = true)
-              { return timer.cast<tim_timer_t*>()->as_string(ign_cutoff); },
+              { return timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str(); },
               "Stringify timer",
               py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
@@ -511,7 +511,7 @@ PYBIND11_MODULE(timemory, tim)
                           import timemory as tim
                           tim.options.set_report(fname)
                           )", py::globals(), locals);
-                 _man->set_output_stream(fname);
+                 _man->set_output_stream(fname.c_str());
              },
              "Set the output stream file");
     //------------------------------------------------------------------------//
@@ -534,7 +534,7 @@ PYBIND11_MODULE(timemory, tim)
                          options.ensure_directory_exists(fname)
                          )",
                          py::globals(), locals);
-                man.cast<manager_wrapper*>()->get()->write_missing(fname);
+                man.cast<manager_wrapper*>()->get()->write_missing(fname.c_str());
             },
             "Write TiMemory missing to file");
     //------------------------------------------------------------------------//

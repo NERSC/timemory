@@ -31,8 +31,15 @@
 #ifndef formatters_hpp_
 #define formatters_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 #include "timemory/macros.hpp"
 #include "timemory/units.hpp"
+#include "timemory/string.hpp"
 
 #include <string>
 #include <sstream>
@@ -80,7 +87,7 @@ namespace format
 
 //============================================================================//
 
-typedef std::tuple<int16_t, int16_t, int64_t, std::string, bool> core_tuple_t;
+typedef std::tuple<int16_t, int16_t, int64_t, tim::string, bool> core_tuple_t;
 
 //============================================================================//
 
@@ -88,7 +95,7 @@ class tim_api core_formatter
 {
 public:
     typedef core_tuple_t    base_type;
-    typedef std::string     string_t;
+    typedef tim::string     string_t;
     typedef int16_t         size_type;
     typedef int64_t         unit_type;
 
@@ -381,6 +388,11 @@ private:
 
 #undef BACKWARD_COMPAT_SET
 #undef BACKWARD_COMPAT_GET
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif
 

@@ -31,7 +31,14 @@
 #ifndef serializer_hpp_
 #define serializer_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #include <type_traits>
 #include <ostream>
@@ -85,6 +92,11 @@ using cereal::make_nvp;
 } // namespace serializer
 
 //============================================================================//
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif
 

@@ -31,9 +31,16 @@
 #ifndef environment_hpp_
 #define environment_hpp_
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 //----------------------------------------------------------------------------//
 
 #include <timemory/macros.hpp>
+#include "timemory/string.hpp"
 
 #include <cstdint>
 #include <string>
@@ -54,7 +61,7 @@ namespace env
 
 //----------------------------------------------------------------------------//
 
-typedef std::string string_t;
+typedef tim::string string_t;
 
 //----------------------------------------------------------------------------//
 
@@ -97,6 +104,11 @@ void parse();
 } // namespace tim
 
 //----------------------------------------------------------------------------//
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif
 

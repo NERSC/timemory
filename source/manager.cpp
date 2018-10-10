@@ -174,7 +174,7 @@ manager::manager()
             ? singleton_t::master_instance_ptr()->count().load() : 0),
   m_missing_timer(timer_ptr_t(new tim_timer_t())),
   m_total_timer(timer_ptr_t(new tim::timer(
-                                tim::format::timer(std::string("> [exe] total"),
+                                tim::format::timer(tim::string("> [exe] total"),
                                                    tim::format::timer::default_format(),
                                                    tim::format::timer::default_unit(),
                                                    tim::format::timer::default_rss_format(),
@@ -483,57 +483,6 @@ void manager::report(bool ign_cutoff, bool endline) const
 
 //============================================================================//
 
-void manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
-{
-    const_cast<this_type*>(this)->merge();
-
-    auto check_stream = [&] (ostream_t*& _os, const string_t& id)
-    {
-        if(_os == &std::cout || _os == &std::cerr)
-            return;
-        ofstream_t* fos = get_ofstream(_os);
-        if(fos && !(fos->is_open() && fos->good()))
-        {
-            _os = &std::cout;
-            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-            std::cerr << "Output stream for " << id << " is not open/valid. "
-                      << "Redirecting to stdout..." << std::endl;
-        }
-    };
-
-    if(os == m_report)
-        check_stream(os, "total timing report");
-
-    for(const auto& itr : *this)
-        if(!itr.timer().is_valid())
-            const_cast<tim_timer_t&>(itr.timer()).stop();
-
-    if(mpi_is_initialized())
-        *os << "> rank " << mpi_rank() << std::endl;
-
-    // temporarily store output width
-    //auto _width = tim::format::timer::default_width();
-    // reset output width
-    tim::format::timer::default_width(10);
-
-    // redo output width calc, removing no displayed funcs
-    for(const auto& itr : *this)
-        if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
-            tim::format::timer::propose_default_width(itr.timer().format()->prefix().length());
-
-    // don't make it longer
-    //if(_width > 10 && _width < tim::format::timer::default_width())
-    //    tim::format::timer::default_width(_width);
-
-    for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
-        itr->timer().report(*os, (itr+1 == this->cend()) ? endline : true,
-                            ign_cutoff);
-
-    os->flush();
-}
-
-//============================================================================//
-
 void manager::set_output_stream(ostream_t& _os)
 {
     m_report = &_os;
@@ -543,7 +492,7 @@ void manager::set_output_stream(ostream_t& _os)
 
 void manager::set_output_stream(const path_t& fname)
 {
-    if(fname.find(fname.os()) != std::string::npos)
+    if(fname.find(fname.os()) != tim::string::npos)
         tim::makedir(fname.substr(0, fname.find_last_of(fname.os())));
 
     auto ostreamop = [&] (ostream_t*& m_os, const string_t& _fname)
@@ -584,16 +533,6 @@ void manager::set_output_stream(const path_t& fname)
 
     ostreamop(m_report, fname);
 
-}
-
-//============================================================================//
-
-manager::ofstream_t*
-manager::get_ofstream(ostream_t* m_os) const
-{
-    return (m_os != &std::cout && m_os != &std::cerr) 
-        ? static_cast<ofstream_t*>(m_os)
-        : nullptr;
 }
 
 //============================================================================//
@@ -891,7 +830,7 @@ void manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
 // static function
 void manager::write_report(path_t _fname, bool ign_cutoff)
 {
-    if(_fname.find(_fname.os()) != std::string::npos)
+    if(_fname.find(_fname.os()) != tim::string::npos)
         tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
 
     ofstream_t ofs(_fname.c_str());
@@ -906,7 +845,7 @@ void manager::write_report(path_t _fname, bool ign_cutoff)
 // static function
 void manager::write_json(path_t _fname)
 {
-    if(_fname.find(_fname.os()) != std::string::npos)
+    if(_fname.find(_fname.os()) != tim::string::npos)
         tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
 
     (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);

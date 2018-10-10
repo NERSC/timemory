@@ -32,6 +32,12 @@
 #ifndef TIMEMORY_UTIL_INTERNAL_HPP
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
+// C++11 ABI backwards compatibility
+#if !defined(_GLIBCXX_USE_CXX11_ABI)
+#   define _GLIBCXX_USE_CXX11_ABI 0
+#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#endif
+
 // C library
 #include <stdint.h>
 #include <stdlib.h>
@@ -59,6 +65,7 @@
 #include <thread>
 
 #include "timemory/macros.hpp"
+#include "timemory/string.hpp"
 
 #if defined(_UNIX)
 #   include <stdio.h>
@@ -118,7 +125,7 @@ inline bool isfinite(const _Tp& arg)
 
 //----------------------------------------------------------------------------//
 
-typedef std::string                 string_t;
+typedef tim::string                 string_t;
 typedef std::deque<string_t>        str_list_t;
 typedef std::mutex                  mutex_t;
 typedef std::unique_lock<mutex_t>   auto_lock_t;
@@ -144,18 +151,18 @@ mutex_t& type_mutex(const uintmax_t& _n = 0)
 
 namespace internal
 {
-inline std::string dummy_str_return(std::string str) { return str; }
+inline tim::string dummy_str_return(tim::string str) { return str; }
 }
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-_Tp get_env(const std::string& env_id, _Tp _default = _Tp())
+_Tp get_env(const tim::string& env_id, _Tp _default = _Tp())
 {
     char* env_var = std::getenv(env_id.c_str());
     if(env_var)
     {
-        std::string str_var = std::string(env_var);
+        tim::string str_var = tim::string(env_var);
         std::istringstream iss(str_var);
         _Tp var = _Tp();
         iss >> var;
@@ -169,7 +176,7 @@ _Tp get_env(const std::string& env_id, _Tp _default = _Tp())
 // specialization for string since the above will have issues if string
 // includes spaces
 template <> inline
-std::string get_env(const std::string& env_id, std::string _default)
+tim::string get_env(const tim::string& env_id, tim::string _default)
 {
     char* env_var = std::getenv(env_id.c_str());
     if(env_var)
@@ -185,8 +192,8 @@ std::string get_env(const std::string& env_id, std::string _default)
 //----------------------------------------------------------------------------//
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
 inline str_list_t
-delimit(const std::string& _str, const std::string& _delims,
-        std::string (*strop)(std::string) = internal::dummy_str_return)
+delimit(const tim::string& _str, const tim::string& _delims,
+        tim::string (*strop)(tim::string) = internal::dummy_str_return)
 {
     str_list_t _list;
     size_t _beg = 0;
@@ -194,7 +201,7 @@ delimit(const std::string& _str, const std::string& _delims,
     while(true)
     {
         _beg = _str.find_first_not_of(_delims, _end);
-        if(_beg == std::string::npos)
+        if(_beg == tim::string::npos)
             break;
         _end = _str.find_first_of(_delims, _beg);
         if(_beg < _end)
@@ -205,14 +212,16 @@ delimit(const std::string& _str, const std::string& _delims,
 
 //----------------------------------------------------------------------------//
 
-class path_t : public std::string
+class path_t : public tim::string
 {
 public:
-    typedef std::string         string_t;
-    typedef string_t::size_type size_type;
+    typedef tim::string             string_t;
+    typedef string_t::size_type     size_type;
+    typedef std::basic_string<char> stl_string;
 
 public:
-    path_t(const std::string& _path)    : string_t(osrepr(_path)) { }
+    path_t(const stl_string& _path)     : string_t(osrepr(string_t(_path))) { }
+    path_t(const tim::string& _path)    : string_t(osrepr(_path)) { }
     path_t(char* _path)                 : string_t(osrepr(string_t(_path))) { }
     path_t(const path_t& rhs)           : string_t(osrepr(rhs)) { }
     path_t(const char* _path)
@@ -224,6 +233,12 @@ public:
         return *this;
     }
 
+    path_t& operator=(const stl_string& rhs)
+    {
+        string_t::operator=(osrepr(string_t(rhs)));
+        return *this;
+    }
+
     path_t& operator=(const path_t& rhs)
     {
         if(this != &rhs)
@@ -231,7 +246,7 @@ public:
         return *this;
     }
 
-    path_t& insert(size_type __pos, const string_t& __s)
+    path_t& insert(size_type __pos, const stl_string& __s)
     {
         string_t::operator=(osrepr(string_t::insert(__pos, __s)));
         return *this;
@@ -266,12 +281,12 @@ public:
 	{
 		//auto _orig = _path;
 #if defined(_WINDOWS)
-		while (_path.find("/") != std::string::npos)
+        while (_path.find("/") != tim::string::npos)
 			_path.replace(_path.find("/"), 1, "\\\\");
 #elif defined(_UNIX)
-		while (_path.find("\\\\") != std::string::npos)
+        while (_path.find("\\\\") != tim::string::npos)
 			_path.replace(_path.find("\\\\"), 2, "/");
-		while (_path.find("\\") != std::string::npos)
+        while (_path.find("\\") != tim::string::npos)
 			_path.replace(_path.find("\\"), 1, "/");
 #endif
 		//std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
@@ -288,21 +303,21 @@ void consume_parameters(_Tp, _Args...)
 
 //----------------------------------------------------------------------------//
 
-inline std::string dirname(std::string _fname)
+inline tim::string dirname(tim::string _fname)
 {
 #if defined(_UNIX)
     char* _cfname = realpath(_fname.c_str(), NULL);
-    _fname = std::string(_cfname);
+    _fname = tim::string(_cfname);
     free(_cfname);
 
-    while(_fname.find("\\\\") != std::string::npos)
+    while(_fname.find("\\\\") != tim::string::npos)
         _fname.replace(_fname.find("\\\\"), 2, "/");
-    while(_fname.find("\\") != std::string::npos)
+    while(_fname.find("\\") != tim::string::npos)
         _fname.replace(_fname.find("\\"), 1, "/");
 
     return _fname.substr(0, _fname.find_last_of("/"));
 #elif defined(_WINDOWS)
-    while(_fname.find("/") != std::string::npos)
+    while(_fname.find("/") != tim::string::npos)
         _fname.replace(_fname.find("/"), 1, "\\\\");
 
     _fname = _fname.substr(0, _fname.find_last_of("\\"));
@@ -314,13 +329,13 @@ inline std::string dirname(std::string _fname)
 
 //----------------------------------------------------------------------------//
 
-inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
+inline int makedir(tim::string _dir, int umask = DEFAULT_UMASK)
 {
 
 #if defined(_UNIX)
-    while(_dir.find("\\\\") != std::string::npos)
+    while(_dir.find("\\\\") != tim::string::npos)
         _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find("\\") != std::string::npos)
+    while(_dir.find("\\") != tim::string::npos)
         _dir.replace(_dir.find("\\"), 1, "/");
 
     if(mkdir(_dir.c_str(), umask) != 0)
@@ -331,7 +346,7 @@ inline int makedir(std::string _dir, int umask = DEFAULT_UMASK)
     }
 #elif defined(_WINDOWS)
     consume_parameters<int>(umask);
-    while(_dir.find("/") != std::string::npos)
+    while(_dir.find("/") != tim::string::npos)
         _dir.replace(_dir.find("/"), 1, "\\\\");
 
     if(_mkdir(_dir.c_str()) != 0)
@@ -367,5 +382,10 @@ inline int32_t get_max_threads()
 } // namespace tim
 
 //----------------------------------------------------------------------------//
+
+#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
+#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
+#   undef _GLIBCXX_USE_CXX11_ABI
+#endif
 
 #endif
