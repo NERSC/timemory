@@ -1,6 +1,6 @@
 # direct includes
 include CMakeLists.txt
-include .version.txt
+include VERSION
 include LICENSE
 include .license.c
 include .license.py

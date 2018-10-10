@@ -37,8 +37,8 @@ def get_integer_version(version_string):
 
 # ---------------------------------------------------------------------------- #
 def get_project_version():
-    # open ".version.txt"
-    with open(os.path.join(os.getcwd(), '.version.txt'), 'r') as f:
+    # open "VERSION"
+    with open(os.path.join(os.getcwd(), 'VERSION'), 'r') as f:
         data = f.read().replace('\n', '')
     # make sure is string
     if isinstance(data, list) or isinstance(data, tuple):

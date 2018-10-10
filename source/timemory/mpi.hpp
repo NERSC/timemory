@@ -32,12 +32,6 @@
 #ifndef mpi_hpp_
 #define mpi_hpp_
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 #include "timemory/string.hpp"
@@ -151,10 +145,5 @@ inline bool has_mpi_support()
 #endif
 
 //----------------------------------------------------------------------------//
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif

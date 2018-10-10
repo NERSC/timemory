@@ -166,7 +166,7 @@ PYBIND11_MODULE(timemory, tim)
                    "Initialize timing formatter",
                    py::return_value_policy::take_ownership,
                    py::arg("prefix") = "",
-                   py::arg("format") = timer_format_t::default_format().c_str(),
+                   py::arg("format") = std::string(timer_format_t::default_format().c_str()),
                    py::arg("unit") = timer_format_t::default_unit(),
                    py::arg("rss_format") = py::none(),
                    py::arg("align_width") = false);
@@ -279,7 +279,7 @@ PYBIND11_MODULE(timemory, tim)
                    "Initialize memory formatter",
                    py::return_value_policy::take_ownership,
                    py::arg("prefix") = "",
-                   py::arg("format") = rss_format_t::default_format().c_str(),
+                   py::arg("format") = std::string(rss_format_t::default_format().c_str()),
                    py::arg("unit") = rss_format_t::default_unit(),
                    py::arg("align_width") = false);
 
@@ -415,7 +415,7 @@ PYBIND11_MODULE(timemory, tim)
     //------------------------------------------------------------------------//
     timer.def("__str__",
               [=] (py::object timer, bool ign_cutoff = true)
-              { return timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str(); },
+              { return std::string(timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str()); },
               "Stringify timer",
               py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
@@ -1018,7 +1018,7 @@ PYBIND11_MODULE(timemory, tim)
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;
-        opts.attr("report_filename") = ss.str().c_str();
+        opts.attr("report_filename") = ss.str();
         opts.attr("report_file") = true;
         return ss.str();
     };
@@ -1032,7 +1032,7 @@ PYBIND11_MODULE(timemory, tim)
         if(ss.str().length() > 0 && ss.str()[ss.str().length()-1] != '/')
             ss << "/";
         ss << fname;
-        opts.attr("serial_filename") = ss.str().c_str();
+        opts.attr("serial_filename") = ss.str();
         opts.attr("serial_file") = true;
         return ss.str();
     };

@@ -31,12 +31,6 @@
 #ifndef formatters_hpp_
 #define formatters_hpp_
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 #include "timemory/macros.hpp"
 #include "timemory/units.hpp"
 #include "timemory/string.hpp"
@@ -388,11 +382,6 @@ private:
 
 #undef BACKWARD_COMPAT_SET
 #undef BACKWARD_COMPAT_GET
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif
 

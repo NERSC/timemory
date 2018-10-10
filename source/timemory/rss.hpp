@@ -32,12 +32,6 @@
 #ifndef rss_hpp_
 #define rss_hpp_
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 #include <ios>
 #include <iostream>
 #include <fstream>
@@ -671,10 +665,5 @@ usage_delta::usage_format_t usage_delta::format() const
 } // namespace tim
 
 //----------------------------------------------------------------------------//
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif // rss_hpp_

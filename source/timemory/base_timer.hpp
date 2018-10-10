@@ -32,12 +32,6 @@
 #ifndef base_timer_hpp_
 #define base_timer_hpp_
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 //----------------------------------------------------------------------------//
 
 #include <fstream>
@@ -759,10 +753,5 @@ typedef std::tuple<base_time_point_t, base_time_point_t> base_time_pair_t;
 }
 
 //----------------------------------------------------------------------------//
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif // base_timer_hpp_

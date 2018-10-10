@@ -25,12 +25,6 @@
 #ifndef test_interface_hpp_
 #define test_interface_hpp_
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 // C headers
 #include <cstdio>
 #include <cstdint>
@@ -122,11 +116,6 @@ inline tim::string rank_prefix()
     } }
 
 //----------------------------------------------------------------------------//
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif
 

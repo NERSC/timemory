@@ -32,12 +32,6 @@
 #ifndef TIMEMORY_UTIL_INTERNAL_HPP
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 // C library
 #include <stdint.h>
 #include <stdlib.h>
@@ -331,7 +325,6 @@ inline tim::string dirname(tim::string _fname)
 
 inline int makedir(tim::string _dir, int umask = DEFAULT_UMASK)
 {
-
 #if defined(_UNIX)
     while(_dir.find("\\\\") != tim::string::npos)
         _dir.replace(_dir.find("\\\\"), 2, "/");
@@ -382,10 +375,5 @@ inline int32_t get_max_threads()
 } // namespace tim
 
 //----------------------------------------------------------------------------//
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
-#endif
 
 #endif

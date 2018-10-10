@@ -38,17 +38,8 @@
 #ifndef signal_detection_hpp_
 #define signal_detection_hpp_ 1
 
-// C++11 ABI backwards compatibility
-#if !defined(_GLIBCXX_USE_CXX11_ABI)
-#   define _GLIBCXX_USE_CXX11_ABI 0
-#   define UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#endif
-
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-function"
 
 #include <iostream>
 #include <cstdlib>
@@ -565,13 +556,6 @@ inline void stack_backtrace(std::ostream& os)
 
 //============================================================================//
 
-#endif
-
-#pragma GCC diagnostic pop
-
-#if defined(UNDEFINE_GLIBCXX_USE_CXX11_ABI)
-#   undef UNDEFINE_GLIBCXX_USE_CXX11_ABI
-#   undef _GLIBCXX_USE_CXX11_ABI
 #endif
 
 #endif /* signal_detection_hpp_ */

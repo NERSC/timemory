@@ -806,7 +806,13 @@ void manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
     string_t::size_type _w = format::timer::default_width();
     string_t _p1 = "TiMemory auto-timer laps since last reset ";
     string_t _p2 = "Total TiMemory auto-timer laps ";
-    _w = std::max(_w, std::max(_p1.length() + 4, _p2.length() + 4));
+    // find max of strings
+    // use ternary because of std::max issues on Windows
+    string_t::size_type _smax = 4 + ((_p1.length() > _p2.length())
+                                     ? _p1.length() : _p2.length());
+    // find max width
+    // use ternary because of std::max issues on Windows
+    _w = (_w > _smax) ? _w : _smax;
 
     std::stringstream _sp1, _sp2;
     _sp1 << std::setw(_w + 1) << std::left << _p1 << " : ";
