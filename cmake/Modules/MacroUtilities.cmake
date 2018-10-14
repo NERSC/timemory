@@ -849,8 +849,7 @@ macro(CHECKOUT_CMAKE_SUBMODULE)
         # perform the checkout
         execute_process(
             COMMAND
-                ${GIT_EXECUTABLE} submodule update --init ${_RECURSE}
-                    ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}
+                ${GIT_EXECUTABLE} submodule update --init ${_RECURSE} ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}
             WORKING_DIRECTORY
                 ${CHECKOUT_WORKING_DIRECTORY}
             RESULT_VARIABLE RET)
@@ -858,8 +857,7 @@ macro(CHECKOUT_CMAKE_SUBMODULE)
         # check the return code
         if(RET GREATER 0)
 
-            set(_CMD "${GIT_EXECUTABLE} submodule update --init ${_RECURSE}
-                ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}")
+            set(_CMD "${GIT_EXECUTABLE} submodule update --init ${_RECURSE} ${CHECKOUT_ADDITIONAL_CMDS} ${CHECKOUT_RELATIVE_PATH}")
             message(STATUS "macro(CHECKOUT_SUBMODULE) failed.")
             message(FATAL_ERROR "Command: \"${_CMD}\"")
 
