@@ -106,8 +106,8 @@ if(TIMEMORY_USE_PYTHON_BINDING)
 
     # checkout PyBind11 if not checked out
     checkout_cmake_submodule(RECURSIVE
-        RELATIVE_PATH pybind11
-        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/source/python)
+        RELATIVE_PATH source/python/pybind11
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # make sure pybind11 gets installed in same place as TiMemory
     if(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
