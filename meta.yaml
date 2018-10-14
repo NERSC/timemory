@@ -6,7 +6,7 @@ build:
   number: 0
 
 source:
-  git_rev: c0e4c564a6055d36a2761e92d9abed797bc9e92e
+  git_rev: 6836f35ecdfe3a694fdc03246f1040bae4726e92
   git_url: https://github.com/jrmadsen/TiMemory.git
 
 requirements:
