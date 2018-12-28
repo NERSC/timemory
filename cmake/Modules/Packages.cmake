@@ -105,7 +105,7 @@ endif(THREADS_FOUND)
 if(TIMEMORY_USE_PYTHON_BINDING)
 
     # checkout PyBind11 if not checked out
-    checkout_cmake_submodule(RECURSIVE
+    checkout_git_submodule(RECURSIVE
         RELATIVE_PATH source/python/pybind11
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
@@ -189,7 +189,7 @@ endif(TIMEMORY_USE_PYTHON_BINDING)
 #
 ################################################################################
 
-checkout_cmake_submodule(RECURSIVE
+checkout_git_submodule(RECURSIVE
     RELATIVE_PATH source/cereal
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 

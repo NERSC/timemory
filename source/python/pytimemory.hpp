@@ -1,83 +1,81 @@
 //  MIT License
-//  
-//  Copyright (c) 2018, The Regents of the University of California, 
+//
+//  Copyright (c) 2018, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
-//  
+//
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and
+//  of this software and associated documentation files (the "Software"), to
+//  deal in the Software without restriction, including without limitation the
+//  rights to use, copy, modify, merge, publish, distribute, sublicense, and
 //  copies of the Software, and to permit persons to whom the Software is
 //  furnished to do so, subject to the following conditions:
-//  
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
-//  
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
 //  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 //  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 //  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 //  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+//  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
+//  IN THE SOFTWARE.
 
 #ifndef pytimemory_hpp_
 #define pytimemory_hpp_
 
 //============================================================================//
 
-#include <future>
-#include <chrono>
-#include <functional>
-#include <mutex>
-#include <thread>
 #include <atomic>
-#include <iostream>
+#include <chrono>
 #include <cstdint>
-#include <sstream>
+#include <functional>
+#include <future>
+#include <iostream>
 #include <map>
-#include <string>
-#include <vector>
 #include <memory>
+#include <mutex>
+#include <sstream>
+#include <string>
+#include <thread>
+#include <vector>
 
-#include <pybind11/pybind11.h>
-#include <pybind11/stl.h>
-#include <pybind11/functional.h>
-#include <pybind11/chrono.h>
-#include <pybind11/numpy.h>
-#include <pybind11/iostream.h>
-#include <pybind11/eval.h>
-#include <pybind11/embed.h>
 #include <pybind11/cast.h>
-#include <pybind11/pytypes.h>
+#include <pybind11/chrono.h>
+#include <pybind11/embed.h>
+#include <pybind11/eval.h>
+#include <pybind11/functional.h>
+#include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
+#include "timemory/auto_timer.hpp"
+#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/timer.hpp"
-#include "timemory/rss.hpp"
-#include "timemory/auto_timer.hpp"
-#include "timemory/signal_detection.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/mpi.hpp"
-#include "timemory/formatters.hpp"
+#include "timemory/rss.hpp"
+#include "timemory/signal_detection.hpp"
+#include "timemory/timer.hpp"
 
-typedef tim::manager                            manager_t;
-typedef tim::timer                              tim_timer_t;
-typedef tim::auto_timer                         auto_timer_t;
-typedef tim::rss::usage                         rss_usage_t;
-typedef tim::rss::usage_delta                   rss_delta_t;
-typedef tim::sys_signal                         sys_signal_t;
-typedef tim::signal_settings                    signal_settings_t;
-typedef signal_settings_t::signal_set_t         signal_set_t;
-typedef tim::format::timer                      timer_format_t;
-typedef tim::format::rss                        rss_format_t;
-typedef tim::format::base_formatter::unit_type  unit_type;
+typedef tim::manager                           manager_t;
+typedef tim::timer                             tim_timer_t;
+typedef tim::auto_timer                        auto_timer_t;
+typedef tim::rss::usage                        rss_usage_t;
+typedef tim::rss::usage_delta                  rss_delta_t;
+typedef tim::sys_signal                        sys_signal_t;
+typedef tim::signal_settings                   signal_settings_t;
+typedef signal_settings_t::signal_set_t        signal_set_t;
+typedef tim::format::timer                     timer_format_t;
+typedef tim::format::rss                       rss_format_t;
+typedef tim::format::base_formatter::unit_type unit_type;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
@@ -88,10 +86,10 @@ class manager_wrapper
 public:
     manager_wrapper()
     : m_manager(manager_t::instance())
-    { }
+    {
+    }
 
-    ~manager_wrapper()
-    { }
+    ~manager_wrapper() {}
 
     // ensures thread-local version is called
     manager_t* get() { return manager_t::instance(); }
@@ -112,10 +110,7 @@ public:
             m_ptr->local_timer().summation_timer()->format()->align_width(true);
     }
 
-    ~auto_timer_decorator()
-    {
-        delete m_ptr;
-    }
+    ~auto_timer_decorator() { delete m_ptr; }
 
     auto_timer_decorator& operator=(auto_timer_t* _ptr)
     {
@@ -133,18 +128,17 @@ private:
 //============================================================================//
 
 #if _PYTHON_MAJOR_VERSION > 2
-#   define PYOBJECT_SELF
-#   define PYOBJECT_SELF_PARAM
+#    define PYOBJECT_SELF
+#    define PYOBJECT_SELF_PARAM
 #else
-#   define PYOBJECT_SELF py::object,
-#   define PYOBJECT_SELF_PARAM py::object
+#    define PYOBJECT_SELF py::object,
+#    define PYOBJECT_SELF_PARAM py::object
 #endif
 
 //============================================================================//
 
 namespace pytim
 {
-
 //============================================================================//
 
 typedef std::string string_t;
@@ -155,13 +149,15 @@ typedef std::string string_t;
 //
 //============================================================================//
 
-int get_line(int nback = 1)
+int
+get_line(int nback = 1)
 {
     auto locals = py::dict("back"_a = nback);
     py::exec(R"(
              import sys
              result = int(sys._getframe(back).f_lineno)
-             )", py::globals(), locals);
+             )",
+             py::globals(), locals);
     auto ret = locals["result"].cast<int>();
     return ret;
 }
@@ -175,7 +171,8 @@ get_func(int nback = 1)
     py::exec(R"(
              import sys
              result = ("{}".format(sys._getframe(back).f_code.co_name))
-             )", py::globals(), locals);
+             )",
+             py::globals(), locals);
     auto ret = locals["result"].cast<std::string>();
     return ret;
 }
@@ -183,13 +180,12 @@ get_func(int nback = 1)
 //----------------------------------------------------------------------------//
 
 string_t
-get_file(int nback = 2, bool only_basename = true,
-         bool use_dirname = false, bool noquotes = false)
+get_file(int nback = 2, bool only_basename = true, bool use_dirname = false,
+         bool noquotes = false)
 {
-    auto locals = py::dict("back"_a = nback,
-                           "only_basename"_a = only_basename,
-                           "use_dirname"_a = use_dirname,
-                           "noquotes"_a = noquotes);
+    auto locals =
+        py::dict("back"_a = nback, "only_basename"_a = only_basename,
+                 "use_dirname"_a = use_dirname, "noquotes"_a = noquotes);
     py::exec(R"(
              import sys
              import os
@@ -219,8 +215,8 @@ get_file(int nback = 2, bool only_basename = true,
                  result = ("'{}'".format(result))
              )",
              py::globals(), locals);
-      auto ret = locals["result"].cast<std::string>();
-      return ret;
+    auto ret = locals["result"].cast<std::string>();
+    return ret;
 }
 
 //----------------------------------------------------------------------------//
@@ -247,21 +243,20 @@ get_default_signal_set()
 void
 enable_signal_detection(py::list signal_list = py::list())
 {
-    auto _sig_set = (signal_list.size() == 0)
-                    ? get_default_signal_set()
-                    : signal_list_to_set(signal_list);
+    auto _sig_set = (signal_list.size() == 0) ? get_default_signal_set()
+                                              : signal_list_to_set(signal_list);
     tim::enable_signal_detection(_sig_set);
 }
 
 //----------------------------------------------------------------------------//
 
-void disable_signal_detection()
+void
+disable_signal_detection()
 {
     tim::disable_signal_detection();
 }
 
 //----------------------------------------------------------------------------//
-
 
 //============================================================================//
 //
@@ -271,10 +266,10 @@ void disable_signal_detection()
 
 namespace init
 {
-
 //----------------------------------------------------------------------------//
 
-manager_wrapper* manager()
+manager_wrapper*
+manager()
 {
     return new manager_wrapper();
 }
@@ -300,10 +295,8 @@ timer(std::string prefix = "", std::string format = "")
 //----------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(const std::string& key = "",
-           bool report_at_exit = false,
-           int nback = 1,
-           bool added_args = false)
+auto_timer(const std::string& key = "", bool report_at_exit = false,
+           int nback = 1, bool added_args = false)
 {
     std::stringstream keyss;
     keyss << get_func(nback);
@@ -318,7 +311,7 @@ auto_timer(const std::string& key = "",
     else
     {
         keyss << "@";
-        keyss << get_file(nback+1);
+        keyss << get_file(nback + 1);
         keyss << ":";
         keyss << get_line(nback);
     }
@@ -329,12 +322,8 @@ auto_timer(const std::string& key = "",
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
-timer_decorator(const std::string& func,
-                const std::string& file,
-                int line,
-                const std::string& key,
-                bool added_args,
-                bool report_at_exit)
+timer_decorator(const std::string& func, const std::string& file, int line,
+                const std::string& key, bool added_args, bool report_at_exit)
 {
     auto_timer_decorator* _ptr = new auto_timer_decorator();
     if(!auto_timer_t::alloc_next())
@@ -358,14 +347,14 @@ timer_decorator(const std::string& func,
         keyss << ":";
         keyss << line;
     }
-    return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
+    return &(*_ptr =
+                 new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
 
 rss_usage_t*
-rss_usage(std::string prefix = "", bool record = false,
-          std::string format = "")
+rss_usage(std::string prefix = "", bool record = false, std::string format = "")
 {
     rss_format_t _fmt(prefix);
     if(format.length() > 0)
@@ -395,9 +384,8 @@ rss_delta(std::string prefix = "", std::string format = "")
 timer_format_t*
 timing_format(const std::string& prefix = "",
               const std::string& format = timer_format_t::default_format(),
-              unit_type unit = timer_format_t::default_unit(),
-              py::object rss_format = py::none(),
-              bool align_width = false)
+              unit_type          unit   = timer_format_t::default_unit(),
+              py::object rss_format = py::none(), bool align_width = false)
 {
     rss_format_t _rss_format = tim::format::timer::default_rss_format();
     if(!rss_format.is_none())
@@ -409,17 +397,17 @@ timing_format(const std::string& prefix = "",
 //----------------------------------------------------------------------------//
 
 rss_format_t*
-memory_format(const std::string& prefix = "",
-              const std::string& format = rss_format_t::default_format(),
-              unit_type unit = rss_format_t::default_unit(),
-              bool align_width = false)
+memory_format(const std::string& prefix      = "",
+              const std::string& format      = rss_format_t::default_format(),
+              unit_type          unit        = rss_format_t::default_unit(),
+              bool               align_width = false)
 {
     return new rss_format_t(prefix, format, unit, align_width);
 }
 
 //----------------------------------------------------------------------------//
 
-} // namespace init
+}  // namespace init
 
 //============================================================================//
 //
@@ -429,7 +417,6 @@ memory_format(const std::string& prefix = "",
 
 namespace format
 {
-
 //----------------------------------------------------------------------------//
 
 void
@@ -450,7 +437,7 @@ get_timer_default()
 
 //----------------------------------------------------------------------------//
 
-} // namespace format
+}  // namespace format
 
 //============================================================================//
 //
@@ -460,11 +447,8 @@ get_timer_default()
 
 namespace manager
 {
-
 void
-report(py::object man,
-       bool ign_cutoff = false,
-       bool serialize = false,
+report(py::object man, bool ign_cutoff = false, bool serialize = false,
        std::string serial_filename = "")
 {
     auto locals = py::dict();
@@ -508,14 +492,12 @@ report(py::object man,
     if(serfnm.find(outdir) != 0)
         serfnm = outdir + "/" + serfnm;
 
-    manager_t* _man
-            = man.cast<manager_wrapper*>()->get();
+    manager_t* _man = man.cast<manager_wrapper*>()->get();
 
     // set the output stream
     if(do_rep)
     {
-        std::cout << "Outputting manager to '" << repfnm
-                  << "'..." << std::endl;
+        std::cout << "Outputting manager to '" << repfnm << "'..." << std::endl;
         _man->set_output_stream(repfnm.c_str());
 
         man.attr("reported_files").cast<py::list>().append(repabs);
@@ -536,8 +518,8 @@ report(py::object man,
 
     if(do_ser && manager_t::instance()->size() > 0)
     {
-        std::cout << "Serializing manager to '" << serfnm
-                  << "'..." << std::endl;
+        std::cout << "Serializing manager to '" << serfnm << "'..."
+                  << std::endl;
         _man->write_serialization(serfnm.c_str());
         man.attr("serialized_files").cast<py::list>().append(serabs);
     }
@@ -585,10 +567,10 @@ write_ctest_notes(py::object man, std::string directory, bool append)
     for(const auto& itr : filenames)
     {
         std::string fname = itr.cast<std::string>();
-    #if defined(_WIN32)
+#if defined(_WIN32)
         while(fname.find("\\") != std::string::npos)
             fname = fname.replace(fname.find("\\"), 1, "/");
-    #endif
+#endif
         ss << "LIST(APPEND CTEST_NOTES_FILES \"" << fname << "\")" << std::endl;
     }
 
@@ -610,7 +592,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
              )",
              py::globals(), locals);
 
-    std::string file_path = locals["file_path"].cast<std::string>();
+    std::string   file_path = locals["file_path"].cast<std::string>();
     std::ofstream outf;
     if(append)
         outf.open(file_path.c_str(), std::ios::app);
@@ -626,7 +608,7 @@ write_ctest_notes(py::object man, std::string directory, bool append)
 
 //----------------------------------------------------------------------------//
 
-} // namespace manager
+}  // namespace manager
 
 //============================================================================//
 //
@@ -636,10 +618,10 @@ write_ctest_notes(py::object man, std::string directory, bool append)
 
 namespace opt
 {
-
 //----------------------------------------------------------------------------//
 
-void safe_mkdir(string_t directory)
+void
+safe_mkdir(string_t directory)
 {
     auto locals = py::dict("directory"_a = directory);
     py::exec(R"(
@@ -652,7 +634,8 @@ void safe_mkdir(string_t directory)
 
 //----------------------------------------------------------------------------//
 
-void ensure_directory_exists(string_t file_path)
+void
+ensure_directory_exists(string_t file_path)
 {
     auto locals = py::dict("file_path"_a = file_path);
     py::exec(R"(
@@ -667,11 +650,10 @@ void ensure_directory_exists(string_t file_path)
 
 //----------------------------------------------------------------------------//
 
-py::object add_arguments(py::object parser = py::none(),
-                         std::string fname = "")
+py::object
+add_arguments(py::object parser = py::none(), std::string fname = "")
 {
-    auto locals = py::dict("parser"_a = parser,
-                           "fname"_a = fname);
+    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
     py::exec(R"(
              import sys
              import os
@@ -766,11 +748,9 @@ parse_args(py::object args)
 //----------------------------------------------------------------------------//
 
 py::object
-add_arguments_and_parse(py::object parser = py::none(),
-                        std::string fname = "")
+add_arguments_and_parse(py::object parser = py::none(), std::string fname = "")
 {
-    auto locals = py::dict("parser"_a = parser,
-                           "fname"_a = fname);
+    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
     py::exec(R"(
              import timemory
 
@@ -786,11 +766,9 @@ add_arguments_and_parse(py::object parser = py::none(),
 //----------------------------------------------------------------------------//
 
 py::object
-add_args_and_parse_known(py::object parser = py::none(),
-                         std::string fname = "")
+add_args_and_parse_known(py::object parser = py::none(), std::string fname = "")
 {
-    auto locals = py::dict("parser"_a = parser,
-                           "fname"_a = fname);
+    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
     py::exec(R"(
              import timemory
 
@@ -803,19 +781,16 @@ add_args_and_parse_known(py::object parser = py::none(),
              )",
              py::globals(), locals);
     return locals["args"].cast<py::object>();
-
 }
 
 //----------------------------------------------------------------------------//
 
-} // namespace opt
-
+}  // namespace opt
 
 //============================================================================//
 
-} // pytim
+}  // namespace pytim
 
 //============================================================================//
 
 #endif
-

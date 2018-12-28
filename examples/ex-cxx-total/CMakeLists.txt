@@ -1,12 +1,6 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
-
-if(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE OFF)
-else(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE ON)
-    cmake_policy(SET CMP0048 NEW)
-endif(CMAKE_VERSION VERSION_LESS 3.1.3)
+cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
 project(TiMemory-CXX-Total-Example C CXX)

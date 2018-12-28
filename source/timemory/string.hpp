@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //
-// 
+//
 //----------------------------------------------------------------------------//
 //  class header file
 //
@@ -37,22 +37,21 @@
 #ifndef string_hpp_
 #define string_hpp_
 
+#include <cstdint>
+#include <cstring>
+#include <functional>
+#include <iostream>
 #include <stdio.h>
 #include <string>
-#include <cstring>
-#include <cstdint>
-#include <iostream>
-#include <functional>
 
 #ifdef WIN32
-#   define strcasecmp _stricmp
+#    define strcasecmp _stricmp
 #endif
 
 //----------------------------------------------------------------------------//
 
 namespace tim
 {
-
 //----------------------------------------------------------------------------//
 
 class string : public std::basic_string<char>
@@ -61,9 +60,18 @@ public:
     typedef std::basic_string<char> stl_string;
     typedef uintmax_t               size_type;
 
-public: 
-    enum caseCompare { exact, ignoreCase };
-    enum stripType { leading, trailing, both };
+public:
+    enum caseCompare
+    {
+        exact,
+        ignoreCase
+    };
+    enum stripType
+    {
+        leading,
+        trailing,
+        both
+    };
 
     inline string();
     inline string(char);
@@ -71,27 +79,33 @@ public:
     inline string(const char*, size_type);
     inline string(const string&);
     inline string(const std::string&);
-    ~string () {}
+    ~string() {}
 
     inline string& operator=(const string&);
     inline string& operator=(const std::string&);
     inline string& operator=(const char*);
 
-    inline char operator()(size_type) const;
+    inline char  operator()(size_type) const;
     inline char& operator()(size_type);
 
-    inline string& operator+=(const char*);
-    inline string& operator+=(const std::string&);
-    inline string& operator+=(const char&);
-    inline string& operator+=(const tim::string&);
+    inline string&    operator+=(const char*);
+    inline string&    operator+=(const std::string&);
+    inline string&    operator+=(const char&);
+    inline string&    operator+=(const tim::string&);
     friend stl_string operator+(const tim::string& lhs, const tim::string& rhs)
-    { return tim::string(lhs) += rhs; }
+    {
+        return tim::string(lhs) += rhs;
+    }
     friend stl_string operator+(const char* lhs, const tim::string& rhs)
-    { return tim::string(lhs) += rhs; }
-    //friend tim::string operator+(const char* lhs, const stl_string& rhs)
+    {
+        return tim::string(lhs) += rhs;
+    }
+    // friend tim::string operator+(const char* lhs, const stl_string& rhs)
     //{ return tim::string(lhs) += tim::string(rhs); }
     friend stl_string operator+(const tim::string& lhs, const char* rhs)
-    { return tim::string(lhs) += rhs; }
+    {
+        return tim::string(lhs) += rhs;
+    }
 
     inline bool operator==(const string&) const;
     inline bool operator==(const char*) const;
@@ -100,20 +114,21 @@ public:
     inline bool operator!=(const char*) const;
     inline bool operator!=(const stl_string&) const;
 
-    //inline operator const char*() const;
-    //inline operator stl_string() const { return static_cast<stl_string>(*this); }
+    // inline operator const char*() const;
+    // inline operator stl_string() const { return
+    // static_cast<stl_string>(*this);
+    // }
     inline string operator()(size_type, size_type);
 
-    inline intmax_t compareTo(const char*, caseCompare mode=exact) const;
-    inline intmax_t compareTo(const string&, caseCompare mode=exact) const;
+    inline intmax_t compareTo(const char*, caseCompare mode = exact) const;
+    inline intmax_t compareTo(const string&, caseCompare mode = exact) const;
 
-    inline string& prepend (const char*);
-    inline string& append (const string&);
+    inline string& prepend(const char*);
+    inline string& append(const string&);
 
-    inline std::istream& readLine (std::istream&, bool skipWhite=true);
+    inline std::istream& readLine(std::istream&, bool skipWhite = true);
 
-    inline string& replace (uintmax_t, uintmax_t,
-                            const char*, uintmax_t);
+    inline string& replace(uintmax_t, uintmax_t, const char*, uintmax_t);
     inline string& replace(size_type, size_type, const char*);
 
     inline string& remove(size_type);
@@ -129,16 +144,17 @@ public:
     // stripType = 1 end
     // stripType = 2 both
     //
-    inline string strip (intmax_t strip_Type = trailing, char c=' ');
+    inline string strip(intmax_t strip_Type = trailing, char c = ' ');
 
     inline void toLower();
     inline void toUpper();
 
     inline bool isNull() const;
 
-    inline size_type index (const char*, intmax_t pos=0) const;
-    inline size_type index (char, intmax_t pos=0) const;
-    inline size_type index (const string&, size_type, size_type, caseCompare) const;
+    inline size_type index(const char*, intmax_t pos = 0) const;
+    inline size_type index(char, intmax_t pos = 0) const;
+    inline size_type index(const string&, size_type, size_type,
+                           caseCompare) const;
 
     inline const char* data() const;
 
@@ -148,32 +164,33 @@ public:
     inline uintmax_t stlhash() const;
 };
 
-}   // namespace tim
+}  // namespace tim
 
 //----------------------------------------------------------------------------//
 
-inline tim::string::string()
-{ }
+inline tim::string::string() {}
 
 //----------------------------------------------------------------------------//
 
 inline tim::string::string(const char* astring)
 : stl_string(astring)
-{ }
+{
+}
 
 //----------------------------------------------------------------------------//
 
 inline tim::string::string(const char* astring, uintmax_t len)
 : stl_string(astring, len)
-{ }
+{
+}
 
 //----------------------------------------------------------------------------//
 
 inline tim::string::string(char ch)
 {
     char str[2];
-    str[0]=ch;
-    str[1]='\0';
+    str[0]              = ch;
+    str[1]              = '\0';
     stl_string::operator=(str);
 }
 
@@ -181,13 +198,15 @@ inline tim::string::string(char ch)
 
 inline tim::string::string(const tim::string& str)
 : stl_string(str)
-{ }
+{
+}
 
 //----------------------------------------------------------------------------//
 
 inline tim::string::string(const std::string& str)
 : stl_string(str)
-{ }
+{
+}
 
 //----------------------------------------------------------------------------//
 
@@ -239,7 +258,7 @@ tim::string::operator()(uintmax_t i)
 inline tim::string
 tim::string::operator()(uintmax_t start, uintmax_t extent)
 {
-    return tim::string(substr(start,extent));
+    return tim::string(substr(start, extent));
 }
 
 //----------------------------------------------------------------------------//
@@ -283,8 +302,9 @@ tim::string::operator+=(const tim::string& str)
 inline bool
 tim::string::operator==(const tim::string& str) const
 {
-    if(length() != str.length()) return false;
-    return(stl_string::compare(str) == 0);
+    if(length() != str.length())
+        return false;
+    return (stl_string::compare(str) == 0);
 }
 //----------------------------------------------------------------------------//
 
@@ -293,7 +313,7 @@ tim::string::operator==(const stl_string& str) const
 {
     if(length() != str.length())
         return false;
-    return(stl_string::compare(str) == 0);
+    return (stl_string::compare(str) == 0);
 }
 
 //----------------------------------------------------------------------------//
@@ -301,7 +321,7 @@ tim::string::operator==(const stl_string& str) const
 inline bool
 tim::string::operator==(const char* str) const
 {
-    return(stl_string::compare(str) == 0);
+    return (stl_string::compare(str) == 0);
 }
 
 //----------------------------------------------------------------------------//
@@ -340,8 +360,8 @@ inline tim::string::operator const char*() const
 inline intmax_t
 tim::string::strcasecompare(const char* s1, const char* s2) const
 {
-    char* buf1 = new char[strlen(s1)+1];
-    char* buf2 = new char[strlen(s2)+1];
+    char* buf1 = new char[strlen(s1) + 1];
+    char* buf2 = new char[strlen(s2) + 1];
 
     for(uintmax_t i = 0; i <= strlen(s1); ++i)
         buf1[i] = tolower(char(s1[i]));
@@ -349,8 +369,8 @@ tim::string::strcasecompare(const char* s1, const char* s2) const
         buf2[j] = tolower(char(s2[j]));
 
     intmax_t res = strcmp(buf1, buf2);
-    delete [] buf1;
-    delete [] buf2;
+    delete[] buf1;
+    delete[] buf2;
     return res;
 }
 
@@ -359,8 +379,8 @@ tim::string::strcasecompare(const char* s1, const char* s2) const
 inline intmax_t
 tim::string::compareTo(const char* str, caseCompare mode) const
 {
-    return(mode==exact) ? strcmp(c_str(),str)
-                        : strcasecompare(c_str(),str);
+    return (mode == exact) ? strcmp(c_str(), str)
+                           : strcasecompare(c_str(), str);
 }
 
 //----------------------------------------------------------------------------//
@@ -376,7 +396,7 @@ tim::string::compareTo(const tim::string& str, caseCompare mode) const
 inline tim::string&
 tim::string::prepend(const char* str)
 {
-    insert(0,str);
+    insert(0, str);
     return *this;
 }
 
@@ -398,13 +418,13 @@ tim::string::readLine(std::istream& strm, bool skipWhite)
     if(skipWhite)
     {
         strm >> std::ws;
-        strm.getline(tmp,1024);
-        *this=tmp;
+        strm.getline(tmp, 1024);
+        *this = tmp;
     }
     else
     {
-        strm.getline(tmp,1024);
-        *this=tmp;
+        strm.getline(tmp, 1024);
+        *this = tmp;
     }
     return strm;
 }
@@ -412,8 +432,8 @@ tim::string::readLine(std::istream& strm, bool skipWhite)
 //----------------------------------------------------------------------------//
 
 inline tim::string&
-tim::string::replace(uintmax_t start, uintmax_t nbytes,
-                     const char* buff, uintmax_t n2)
+tim::string::replace(uintmax_t start, uintmax_t nbytes, const char* buff,
+                     uintmax_t n2)
 {
     stl_string::replace(start, nbytes, buff, n2);
     return *this;
@@ -424,7 +444,7 @@ tim::string::replace(uintmax_t start, uintmax_t nbytes,
 inline tim::string&
 tim::string::replace(uintmax_t pos, uintmax_t n, const char* str)
 {
-    stl_string::replace(pos,n,str);
+    stl_string::replace(pos, n, str);
     return *this;
 }
 
@@ -433,7 +453,10 @@ tim::string::replace(uintmax_t pos, uintmax_t n, const char* str)
 inline tim::string&
 tim::string::remove(uintmax_t n)
 {
-    if(n<size()) { erase(n,size()-n); }
+    if(n < size())
+    {
+        erase(n, size() - n);
+    }
     return *this;
 }
 
@@ -442,7 +465,7 @@ tim::string::remove(uintmax_t n)
 inline tim::string&
 tim::string::remove(uintmax_t pos, uintmax_t N)
 {
-    erase(pos,N+pos);
+    erase(pos, N + pos);
     return *this;
 }
 
@@ -467,7 +490,7 @@ tim::string::last(char ch) const
 inline bool
 tim::string::contains(const std::string& str) const
 {
-    return(stl_string::find(str) != stl_string::npos);
+    return (stl_string::find(str) != stl_string::npos);
 }
 
 //----------------------------------------------------------------------------//
@@ -475,7 +498,7 @@ tim::string::contains(const std::string& str) const
 inline bool
 tim::string::contains(char ch) const
 {
-    return(stl_string::find(ch) != stl_string::npos);
+    return (stl_string::find(ch) != stl_string::npos);
 }
 
 //----------------------------------------------------------------------------//
@@ -492,36 +515,35 @@ tim::string::strip(intmax_t strip_Type, char ch)
     {
         case leading:
         {
-            for(i = 0;i<length();i++)
+            for(i = 0; i < length(); i++)
                 if(stl_string::operator[](i) != ch)
                     break;
-            retVal = substr(i,length()-i);
+            retVal = substr(i, length() - i);
         }
-            break;
+        break;
         case trailing:
         {
             intmax_t j = 0;
             for(j = length() - 1; j >= 0; --j)
                 if(stl_string::operator[](j) != ch)
                     break;
-            retVal = substr(0,j+1);
+            retVal = substr(0, j + 1);
         }
-            break;
+        break;
         case both:
         {
             for(i = 0; i < length(); ++i)
                 if(stl_string::operator[](i) != ch)
                     break;
-            string tmp(substr(i,length()-i));
+            string   tmp(substr(i, length() - i));
             intmax_t k = 0;
             for(k = tmp.length() - 1; k >= 0; --k)
                 if(tmp.stl_string::operator[](k) != ch)
                     break;
-            retVal = tmp.substr(0,k+1);
+            retVal = tmp.substr(0, k + 1);
         }
-            break;
-        default:
-            break;
+        break;
+        default: break;
     }
     return retVal;
 }
@@ -531,7 +553,7 @@ tim::string::strip(intmax_t strip_Type, char ch)
 inline void
 tim::string::toLower()
 {
-    for(uintmax_t i = 0; i<size();i++)
+    for(uintmax_t i = 0; i < size(); i++)
     {
         stl_string::operator[](i) = tolower(char(stl_string::operator[](i)));
     }
@@ -559,8 +581,8 @@ tim::string::isNull() const
 //----------------------------------------------------------------------------//
 //
 inline uintmax_t
-tim::string::index(const string& str, uintmax_t ln,
-                   uintmax_t st, tim::string::caseCompare) const
+tim::string::index(const string& str, uintmax_t ln, uintmax_t st,
+                   tim::string::caseCompare) const
 {
     return stl_string::find(str.c_str(), st, ln);
 }
@@ -591,13 +613,12 @@ tim::string::data() const
 
 //----------------------------------------------------------------------------//
 
-inline uintmax_t
-tim::string::hash(caseCompare) const
+inline uintmax_t tim::string::hash(caseCompare) const
 {
-    const char* str=c_str();
-    uintmax_t h = 0;
+    const char* str = c_str();
+    uintmax_t   h   = 0;
     for(; *str; ++str)
-        h = 5*h + *str;
+        h = 5 * h + *str;
 
     return uintmax_t(h);
 }
@@ -607,10 +628,10 @@ tim::string::hash(caseCompare) const
 inline uintmax_t
 tim::string::stlhash() const
 {
-    const char* str = c_str();
-    unsigned long h = 0;
+    const char*   str = c_str();
+    unsigned long h   = 0;
     for(; *str; ++str)
-        h = 5*h + *str;
+        h = 5 * h + *str;
 
     return uintmax_t(h);
 }
@@ -619,15 +640,19 @@ tim::string::stlhash() const
 
 namespace std
 {
-
 //----------------------------------------------------------------------------//
 
-template <>
-struct hash<tim::string>
+template <> struct hash<tim::string>
 {
 public:
-    hash() : m_hash(0) { }
-    hash(const tim::string& obj) : m_hash((*this)(obj)) { }
+    hash()
+    : m_hash(0)
+    {
+    }
+    hash(const tim::string& obj)
+    : m_hash((*this)(obj))
+    {
+    }
 
     std::size_t operator()(const tim::string& obj)
     {
@@ -640,9 +665,8 @@ private:
 
 //----------------------------------------------------------------------------//
 
-} // namespace std
+}  // namespace std
 
 //----------------------------------------------------------------------------//
 
 #endif  // string_hpp_
-

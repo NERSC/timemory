@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2018, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -33,22 +33,22 @@
 #define TIMEMORY_UTIL_INTERNAL_HPP
 
 // C library
-#include <stdint.h>
-#include <stdlib.h>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <cmath>
+#include <stdint.h>
+#include <stdlib.h>
 // I/O
-#include <string>
-#include <sstream>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
+#include <sstream>
+#include <string>
 // general
 #include <exception>
-#include <stdexcept>
 #include <functional>
 #include <limits>
+#include <stdexcept>
 // container
 #include <deque>
 #include <set>
@@ -62,21 +62,17 @@
 #include "timemory/string.hpp"
 
 #if defined(_UNIX)
-#   include <stdio.h>
-#   include <string.h>
-#   include <errno.h>
-#   include <sys/stat.h>
-#   include <sys/types.h>
+#    include <errno.h>
+#    include <stdio.h>
+#    include <string.h>
+#    include <sys/stat.h>
+#    include <sys/types.h>
 #elif defined(_WINDOWS)
-#   include <direct.h>
+#    include <direct.h>
 #endif
 
 #if !defined(DEFAULT_UMASK)
-#   define DEFAULT_UMASK 0777
-#endif
-
-#if defined(_OPENMP)
-#   include <omp.h>
+#    define DEFAULT_UMASK 0777
 #endif
 
 //----------------------------------------------------------------------------//
@@ -84,50 +80,52 @@
 // stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
 #if !defined(TIMEMORY_STRINGIZE)
-#   define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
 #endif
 
 // actual stringifying
 #if !defined(TIMEMORY_STRINGIZE2)
-#   define TIMEMORY_STRINGIZE2(X) #X
+#    define TIMEMORY_STRINGIZE2(X) #    X
 #endif
 
 // stringify the __LINE__ macro
 #if !defined(TIMEMORY_LINE_STRING)
-#   define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#    define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
 #endif
 
 //----------------------------------------------------------------------------//
 
 namespace tim
 {
-
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-inline bool isfinite(const _Tp& arg)
+inline bool
+isfinite(const _Tp& arg)
 {
-    #if defined(_WINDOWS)
+#if defined(_WINDOWS)
     // Windows seems to be missing std::isfinite
-    return (arg == arg &&
-            arg !=  std::numeric_limits<_Tp>::infinity() &&
-            arg != -std::numeric_limits<_Tp>::infinity()) ? true : false;
-    #else
+    return (arg == arg && arg != std::numeric_limits<_Tp>::infinity() &&
+            arg != -std::numeric_limits<_Tp>::infinity())
+               ? true
+               : false;
+#else
     return std::isfinite(arg);
-    #endif
+#endif
 }
 
 //----------------------------------------------------------------------------//
 
-typedef tim::string                 string_t;
-typedef std::deque<string_t>        str_list_t;
-typedef std::mutex                  mutex_t;
-typedef std::unique_lock<mutex_t>   auto_lock_t;
+typedef tim::string               string_t;
+typedef std::deque<string_t>      str_list_t;
+typedef std::mutex                mutex_t;
+typedef std::unique_lock<mutex_t> auto_lock_t;
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-mutex_t& type_mutex(const uintmax_t& _n = 0)
+mutex_t&
+type_mutex(const uintmax_t& _n = 0)
 {
     static mutex_t* _mutex = new mutex_t();
     if(_n == 0)
@@ -138,27 +136,32 @@ mutex_t& type_mutex(const uintmax_t& _n = 0)
         _mutexes.resize(_n, nullptr);
     if(!_mutexes[_n])
         _mutexes[_n] = new mutex_t();
-    return *(_mutexes[_n-1]);
+    return *(_mutexes[_n - 1]);
 }
 
 //----------------------------------------------------------------------------//
 
 namespace internal
 {
-inline tim::string dummy_str_return(tim::string str) { return str; }
+inline tim::string
+dummy_str_return(tim::string str)
+{
+    return str;
 }
+}  // namespace internal
 
 //----------------------------------------------------------------------------//
 
 template <typename _Tp>
-_Tp get_env(const tim::string& env_id, _Tp _default = _Tp())
+_Tp
+get_env(const tim::string& env_id, _Tp _default = _Tp())
 {
     char* env_var = std::getenv(env_id.c_str());
     if(env_var)
     {
-        tim::string str_var = tim::string(env_var);
+        tim::string        str_var = tim::string(env_var);
         std::istringstream iss(str_var);
-        _Tp var = _Tp();
+        _Tp                var = _Tp();
         iss >> var;
         return var;
     }
@@ -169,8 +172,9 @@ _Tp get_env(const tim::string& env_id, _Tp _default = _Tp())
 //----------------------------------------------------------------------------//
 // specialization for string since the above will have issues if string
 // includes spaces
-template <> inline
-tim::string get_env(const tim::string& env_id, tim::string _default)
+template <>
+inline tim::string
+get_env(const tim::string& env_id, tim::string _default)
 {
     char* env_var = std::getenv(env_id.c_str());
     if(env_var)
@@ -190,8 +194,8 @@ delimit(const tim::string& _str, const tim::string& _delims,
         tim::string (*strop)(tim::string) = internal::dummy_str_return)
 {
     str_list_t _list;
-    size_t _beg = 0;
-    size_t _end = 0;
+    size_t     _beg = 0;
+    size_t     _end = 0;
     while(true)
     {
         _beg = _str.find_first_not_of(_delims, _end);
@@ -214,12 +218,26 @@ public:
     typedef std::basic_string<char> stl_string;
 
 public:
-    path_t(const stl_string& _path)     : string_t(osrepr(string_t(_path))) { }
-    path_t(const tim::string& _path)    : string_t(osrepr(_path)) { }
-    path_t(char* _path)                 : string_t(osrepr(string_t(_path))) { }
-    path_t(const path_t& rhs)           : string_t(osrepr(rhs)) { }
+    path_t(const stl_string& _path)
+    : string_t(osrepr(string_t(_path)))
+    {
+    }
+    path_t(const tim::string& _path)
+    : string_t(osrepr(_path))
+    {
+    }
+    path_t(char* _path)
+    : string_t(osrepr(string_t(_path)))
+    {
+    }
+    path_t(const path_t& rhs)
+    : string_t(osrepr(rhs))
+    {
+    }
     path_t(const char* _path)
-    : string_t(osrepr(string_t(const_cast<char*>(_path)))) { }
+    : string_t(osrepr(string_t(const_cast<char*>(_path))))
+    {
+    }
 
     path_t& operator=(const string_t& rhs)
     {
@@ -254,54 +272,57 @@ public:
 
     string_t os() const
     {
-    #if defined(_WINDOWS)
+#if defined(_WINDOWS)
         return "\\\\";
-    #elif defined(_UNIX)
+#elif defined(_UNIX)
         return "/";
-    #endif
+#endif
     }
 
     string_t inverse() const
     {
-    #if defined(_WINDOWS)
+#if defined(_WINDOWS)
         return "/";
-    #elif defined(_UNIX)
+#elif defined(_UNIX)
         return "\\\\";
-    #endif
+#endif
     }
 
-	// OS-dependent representation
-	string_t osrepr(string_t _path)
-	{
-		//auto _orig = _path;
+    // OS-dependent representation
+    string_t osrepr(string_t _path)
+    {
+        // auto _orig = _path;
 #if defined(_WINDOWS)
-        while (_path.find("/") != tim::string::npos)
-			_path.replace(_path.find("/"), 1, "\\\\");
+        while(_path.find("/") != tim::string::npos)
+            _path.replace(_path.find("/"), 1, "\\\\");
 #elif defined(_UNIX)
-        while (_path.find("\\\\") != tim::string::npos)
-			_path.replace(_path.find("\\\\"), 2, "/");
-        while (_path.find("\\") != tim::string::npos)
-			_path.replace(_path.find("\\"), 1, "/");
+        while(_path.find("\\\\") != tim::string::npos)
+            _path.replace(_path.find("\\\\"), 2, "/");
+        while(_path.find("\\") != tim::string::npos)
+            _path.replace(_path.find("\\"), 1, "/");
 #endif
-		//std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
-		//          << _path << "\"..." << std::endl;
-		return _path;
-	}
+        // std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
+        //          << _path << "\"..." << std::endl;
+        return _path;
+    }
 };
 
 //----------------------------------------------------------------------------//
 // use this function to get rid of "unused parameter" warnings
 template <typename _Tp, typename... _Args>
-void consume_parameters(_Tp, _Args...)
-{ }
+void
+consume_parameters(_Tp, _Args...)
+{
+}
 
 //----------------------------------------------------------------------------//
 
-inline tim::string dirname(tim::string _fname)
+inline tim::string
+dirname(tim::string _fname)
 {
 #if defined(_UNIX)
     char* _cfname = realpath(_fname.c_str(), NULL);
-    _fname = tim::string(_cfname);
+    _fname        = tim::string(_cfname);
     free(_cfname);
 
     while(_fname.find("\\\\") != tim::string::npos)
@@ -315,15 +336,16 @@ inline tim::string dirname(tim::string _fname)
         _fname.replace(_fname.find("/"), 1, "\\\\");
 
     _fname = _fname.substr(0, _fname.find_last_of("\\"));
-    return (_fname.at(_fname.length()-1) == '\\')
-            ? _fname.substr(0, _fname.length()-1)
-            : _fname;
+    return (_fname.at(_fname.length() - 1) == '\\')
+               ? _fname.substr(0, _fname.length() - 1)
+               : _fname;
 #endif
 }
 
 //----------------------------------------------------------------------------//
 
-inline int makedir(tim::string _dir, int umask = DEFAULT_UMASK)
+inline int
+makedir(tim::string _dir, int umask = DEFAULT_UMASK)
 {
 #if defined(_UNIX)
     while(_dir.find("\\\\") != tim::string::npos)
@@ -354,17 +376,14 @@ inline int makedir(tim::string _dir, int umask = DEFAULT_UMASK)
 
 //----------------------------------------------------------------------------//
 
-inline int32_t get_max_threads()
+inline int32_t
+get_max_threads()
 {
-#if defined(_OPENMP)
-    int32_t _fallback = omp_get_max_threads();
-#else
-    int32_t _fallback = 1;
-#endif
+    int32_t _fallback = std::thread::hardware_concurrency();
 
 #ifdef ENV_NUM_THREADS_PARAM
-    return get_env<int32_t>( TIMEMORY_STRINGIZE( ENV_NUM_THREADS_PARAM ),
-                             _fallback );
+    return get_env<int32_t>(TIMEMORY_STRINGIZE(ENV_NUM_THREADS_PARAM),
+                            _fallback);
 #else
     return _fallback;
 #endif
@@ -372,7 +391,7 @@ inline int32_t get_max_threads()
 
 //----------------------------------------------------------------------------//
 
-} // namespace tim
+}  // namespace tim
 
 //----------------------------------------------------------------------------//
 

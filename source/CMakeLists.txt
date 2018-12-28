@@ -79,6 +79,7 @@ macro(BUILD_LIBRARY)
         set_target_properties(
             ${LIBRARY_TARGET_NAME}          PROPERTIES
             OUTPUT_NAME                     lib${LIBRARY_OUTPUT_NAME}
+            COMPILE_FLAGS                   ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
             COMPILE_DEFINITIONS             ${LIBRARY_COMPILE_DEFINITIONS}
             LANGUAGE                        ${LIBRARY_LANGUAGE}
             LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
@@ -93,6 +94,7 @@ macro(BUILD_LIBRARY)
                 ${LIBRARY_TARGET_NAME}      PROPERTIES
                 OUTPUT_NAME                 ${LIBRARY_OUTPUT_NAME}
                 LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
+                COMPILE_FLAGS               ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
                 LANGUAGE                    ${LIBRARY_LANGUAGE}
                 LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
                 POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC})
@@ -102,6 +104,7 @@ macro(BUILD_LIBRARY)
             set_target_properties(
                 ${LIBRARY_TARGET_NAME}      PROPERTIES
                 OUTPUT_NAME                 ${LIBRARY_OUTPUT_NAME}
+                COMPILE_FLAGS               ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
                 VERSION                     ${PROJECT_VERSION}
                 SOVERSION                   ${PROJECT_VERSION_MAJOR}
                 LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}

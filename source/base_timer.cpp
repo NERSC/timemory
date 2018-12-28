@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2018, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -28,21 +28,19 @@
  * Not directly used
  */
 
-#include <cassert>
 #include <algorithm>
+#include <cassert>
 
 #include "timemory/base_timer.hpp"
-#include "timemory/utility.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/utility.hpp"
 
 //============================================================================//
 
 namespace tim
 {
-
 namespace internal
 {
-
 //============================================================================//
 
 base_timer::mutex_map_t base_timer::f_mutex_map;
@@ -50,10 +48,10 @@ base_timer::mutex_map_t base_timer::f_mutex_map;
 //============================================================================//
 
 base_timer::base_timer(timer_format_t _format, bool _record, std::ostream* os)
-: m_record_memory(_record),
-  m_os(os),
-  m_data(data_t()),
-  m_format(_format)
+: m_record_memory(_record)
+, m_os(os)
+, m_data(data_t())
+, m_format(_format)
 {
     configure_record();
 }
@@ -61,11 +59,11 @@ base_timer::base_timer(timer_format_t _format, bool _record, std::ostream* os)
 //============================================================================//
 
 base_timer::base_timer(const base_timer& rhs)
-: m_record_memory(rhs.m_record_memory),
-  m_os(rhs.m_os),
-  m_data(rhs.m_data),
-  m_accum(rhs.m_accum),
-  m_format(rhs.m_format)
+: m_record_memory(rhs.m_record_memory)
+, m_os(rhs.m_os)
+, m_data(rhs.m_data)
+, m_accum(rhs.m_accum)
+, m_format(rhs.m_format)
 {
     configure_record();
 }
@@ -84,15 +82,16 @@ base_timer::~base_timer()
 
 //============================================================================//
 
-base_timer& base_timer::operator=(const base_timer& rhs)
+base_timer&
+base_timer::operator=(const base_timer& rhs)
 {
     if(this != &rhs)
     {
         m_record_memory = rhs.m_record_memory;
-        m_os = rhs.m_os;
-        m_data = rhs.m_data;
-        m_accum = rhs.m_accum;
-        m_format = rhs.m_format;
+        m_os            = rhs.m_os;
+        m_data          = rhs.m_data;
+        m_accum         = rhs.m_accum;
+        m_format        = rhs.m_format;
         configure_record();
     }
     return *this;
@@ -100,28 +99,30 @@ base_timer& base_timer::operator=(const base_timer& rhs)
 
 //============================================================================//
 
-void base_timer::sync(const this_type& rhs)
+void
+base_timer::sync(const this_type& rhs)
 {
     if(this != &rhs)
     {
         m_record_memory = rhs.m_record_memory;
-        m_os = rhs.m_os;
-        m_data = rhs.m_data;
-        m_accum = rhs.m_accum;
+        m_os            = rhs.m_os;
+        m_data          = rhs.m_data;
+        m_accum         = rhs.m_accum;
         configure_record();
     }
 }
 
 //============================================================================//
 
-bool base_timer::above_cutoff(bool ign_cutoff) const
+bool
+base_timer::above_cutoff(bool ign_cutoff) const
 {
     if(ign_cutoff)
         return true;
 
     double _cpu = user_elapsed() + system_elapsed();
 
-    double tmin = 1.0 / (pow( (uint32_t) 10, (uint32_t) m_format->precision()));
+    double tmin = 1.0 / (pow((uint32_t) 10, (uint32_t) m_format->precision()));
     // skip if it will be reported as all zeros
     // e.g. tmin = ( 1. / 10^3 ) = 0.001;
     if((real_elapsed() < tmin && _cpu < tmin) ||
@@ -133,15 +134,16 @@ bool base_timer::above_cutoff(bool ign_cutoff) const
 
 //============================================================================//
 
-void base_timer::report(bool endline) const
+void
+base_timer::report(bool endline) const
 {
-	this->report(*m_os, endline);
+    this->report(*m_os, endline);
 }
 
 //============================================================================//
 
-} // namespace internal
+}  // namespace internal
 
-} // namespace tim
+}  // namespace tim
 
 //============================================================================//

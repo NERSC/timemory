@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2018, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -35,17 +35,16 @@
 //----------------------------------------------------------------------------//
 
 #include <cstdint>
-#include <string>
 #include <memory>
+#include <string>
 
-#include "timemory/macros.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/base_timer.hpp"
+#include "timemory/formatters.hpp"
+#include "timemory/macros.hpp"
 #include "timemory/string.hpp"
 
 namespace tim
 {
-
 //============================================================================//
 // Main timer class
 //============================================================================//
@@ -53,32 +52,31 @@ namespace tim
 class tim_api timer : public internal::base_timer
 {
 public:
-    typedef base_timer                      base_type;
-    typedef timer                           this_type;
-    typedef tim::string                     string_t;
-    typedef std::unique_ptr<this_type>      unique_ptr_type;
-    typedef std::shared_ptr<this_type>      shared_ptr_type;
-    typedef format::timer                   format_type;
-    typedef std::shared_ptr<format_type>    timer_format_t;
-    typedef base_type::rss_type             rss_type;
-    typedef rss_type::base_type             base_rss_type;
+    typedef base_timer                   base_type;
+    typedef timer                        this_type;
+    typedef tim::string                  string_t;
+    typedef std::unique_ptr<this_type>   unique_ptr_type;
+    typedef std::shared_ptr<this_type>   shared_ptr_type;
+    typedef format::timer                format_type;
+    typedef std::shared_ptr<format_type> timer_format_t;
+    typedef base_type::rss_type          rss_type;
+    typedef rss_type::base_type          base_rss_type;
 
 public:
     explicit timer(bool _auto_start, timer* _sum_timer);
 
-    timer(const string_t& _prefix = "",
-          const string_t& _format = format::timer::default_format(),
-          bool _record_memory = timer::default_record_memory());
+    timer(const string_t& _prefix        = "",
+          const string_t& _format        = format::timer::default_format(),
+          bool            _record_memory = timer::default_record_memory());
 
     timer(const format_type& _format,
-          bool _record_memory = timer::default_record_memory());
+          bool               _record_memory = timer::default_record_memory());
 
     timer(timer_format_t _format,
-          bool _record_memory = timer::default_record_memory());
+          bool           _record_memory = timer::default_record_memory());
 
-    timer(const timer* rhs,         // can be nullptr,
-          const string_t& _prefix,
-          bool _align_width = false,
+    timer(const timer*    rhs,  // can be nullptr,
+          const string_t& _prefix, bool _align_width = false,
           bool _record_memory = timer::default_record_memory());
 
     virtual ~timer();
@@ -89,12 +87,12 @@ public:
     this_type& operator=(const this_type&);
     // parent timer accumulating sum
     timer* summation_timer() const { return m_sum_timer; }
-    void summation_timer(timer* _ref) { m_sum_timer = _ref; }
+    void   summation_timer(timer* _ref) { m_sum_timer = _ref; }
 
 public:
     // public static functions
-    static void default_record_memory(bool _val)    { f_record_memory() = _val; }
-    static bool default_record_memory()             { return f_record_memory(); }
+    static void default_record_memory(bool _val) { f_record_memory() = _val; }
+    static bool default_record_memory() { return f_record_memory(); }
 
 public:
     // public member functions
@@ -118,8 +116,8 @@ public:
 
     void grab_metadata(const this_type& rhs);
 
-    template <typename Archive> void
-    serialize(Archive& ar, const unsigned int version)
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int version)
     {
         internal::base_timer::serialize(ar, version);
     }
@@ -130,7 +128,7 @@ public:
     //
     this_type& operator+=(const this_type& rhs)
     {
-        //auto_lock_t l(m_mutex);
+        // auto_lock_t l(m_mutex);
         m_accum += rhs.get_accum();
         return *this;
     }
@@ -140,7 +138,7 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        //auto_lock_t l(m_mutex);
+        // auto_lock_t l(m_mutex);
         m_accum -= rhs.get_accum();
         return *this;
     }
@@ -210,13 +208,12 @@ protected:
 
 private:
     static bool& f_record_memory();
-
 };
 
 //----------------------------------------------------------------------------//
 
-} // namespace tim
+}  // namespace tim
 
 //----------------------------------------------------------------------------//
 
-#endif // timer_hpp_
+#endif  // timer_hpp_

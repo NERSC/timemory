@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2018, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -29,46 +29,42 @@
  */
 
 #include "timemory/signal_detection.hpp"
+#include <cstdlib>
 #include <sstream>
 #include <string>
-#include <cstdlib>
 
 namespace tim
 {
-
 //============================================================================//
 
-namespace internal { void dummy_func(int) { return; } }
+namespace internal
+{
+void
+dummy_func(int)
+{
+    return;
+}
+}  // namespace internal
 
 //============================================================================//
 
 signal_settings::signals_data_t::signals_data_t()
-: signals_active(false),
-  signals_default({
-                  sys_signal::sHangup,
-                  sys_signal::sInterrupt,
-                  sys_signal::sQuit,
-                  sys_signal::sIllegal,
-                  sys_signal::sTrap,
-                  sys_signal::sAbort,
-                  sys_signal::sEmulate,
-                  sys_signal::sKill,
-                  sys_signal::sBus,
-                  sys_signal::sSegFault,
-                  sys_signal::sSystem,
-                  sys_signal::sPipe,
-                  sys_signal::sAlarm,
-                  sys_signal::sTerminate,
-                  sys_signal::sUrgent,
-                  sys_signal::sStop,
-                  sys_signal::sCPUtime,
-                  sys_signal::sFileSize,
-                  sys_signal::sVirtualAlarm,
-                  sys_signal::sProfileAlarm,
-              }),
-  signals_enabled(signals_default),
-  signals_disabled(),
-  signals_exit_func(internal::dummy_func)
+: signals_active(false)
+, signals_default({
+      sys_signal::sHangup,       sys_signal::sInterrupt,
+      sys_signal::sQuit,         sys_signal::sIllegal,
+      sys_signal::sTrap,         sys_signal::sAbort,
+      sys_signal::sEmulate,      sys_signal::sKill,
+      sys_signal::sBus,          sys_signal::sSegFault,
+      sys_signal::sSystem,       sys_signal::sPipe,
+      sys_signal::sAlarm,        sys_signal::sTerminate,
+      sys_signal::sUrgent,       sys_signal::sStop,
+      sys_signal::sCPUtime,      sys_signal::sFileSize,
+      sys_signal::sVirtualAlarm, sys_signal::sProfileAlarm,
+  })
+, signals_enabled(signals_default)
+, signals_disabled()
+, signals_exit_func(internal::dummy_func)
 {
 #if defined(DEBUG)
     signals_default.insert(sys_signal::sFPE);
@@ -81,14 +77,14 @@ signal_settings::signals_data_t::signals_data_t()
 //============================================================================//
 
 signal_settings::signals_data_t signal_settings::f_signals =
-        signal_settings::signals_data_t();
+    signal_settings::signals_data_t();
 
 //============================================================================//
 
 void
-insert_and_remove(const sys_signal& _type,             // signal type
-                  signal_settings::signal_set_t* _ins, // set to insert into
-                  signal_settings::signal_set_t* _rem) // set to remove from
+insert_and_remove(const sys_signal&              _type,  // signal type
+                  signal_settings::signal_set_t* _ins,   // set to insert into
+                  signal_settings::signal_set_t* _rem)   // set to remove from
 
 {
     _ins->insert(_type);
@@ -99,52 +95,56 @@ insert_and_remove(const sys_signal& _type,             // signal type
 
 //============================================================================//
 
-void signal_settings::enable(const sys_signal& _type)
+void
+signal_settings::enable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_enabled, &f_signals.signals_disabled);
+    insert_and_remove(_type, &f_signals.signals_enabled,
+                      &f_signals.signals_disabled);
 }
 
 //============================================================================//
 
-void signal_settings::disable(const sys_signal& _type)
+void
+signal_settings::disable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_disabled, &f_signals.signals_enabled);
+    insert_and_remove(_type, &f_signals.signals_disabled,
+                      &f_signals.signals_enabled);
 }
 
 //============================================================================//
 
-void signal_settings::check_environment()
+void
+signal_settings::check_environment()
 {
     typedef std::pair<tim::string, sys_signal> match_t;
 
-    auto _list =
-    {
-        match_t("HANGUP",       sys_signal::sHangup),
-        match_t("INTERRUPT", 	sys_signal::sInterrupt),
-        match_t("QUIT",         sys_signal::sQuit),
-        match_t("ILLEGAL",      sys_signal::sIllegal),
-        match_t("TRAP",         sys_signal::sTrap),
-        match_t("ABORT",        sys_signal::sAbort),
-        match_t("EMULATE",      sys_signal::sEmulate),
-        match_t("FPE",          sys_signal::sFPE),
-        match_t("KILL",         sys_signal::sKill),
-        match_t("BUS",          sys_signal::sBus),
-        match_t("SEGFAULT", 	sys_signal::sSegFault),
-        match_t("SYSTEM",       sys_signal::sSystem),
-        match_t("PIPE",         sys_signal::sPipe),
-        match_t("ALARM",        sys_signal::sAlarm),
-        match_t("TERMINATE", 	sys_signal::sTerminate),
-        match_t("URGENT",       sys_signal::sUrgent),
-        match_t("STOP",         sys_signal::sStop),
-        match_t("CPUTIME",      sys_signal::sCPUtime),
-        match_t("FILESIZE", 	sys_signal::sFileSize),
+    auto _list = {
+        match_t("HANGUP", sys_signal::sHangup),
+        match_t("INTERRUPT", sys_signal::sInterrupt),
+        match_t("QUIT", sys_signal::sQuit),
+        match_t("ILLEGAL", sys_signal::sIllegal),
+        match_t("TRAP", sys_signal::sTrap),
+        match_t("ABORT", sys_signal::sAbort),
+        match_t("EMULATE", sys_signal::sEmulate),
+        match_t("FPE", sys_signal::sFPE),
+        match_t("KILL", sys_signal::sKill),
+        match_t("BUS", sys_signal::sBus),
+        match_t("SEGFAULT", sys_signal::sSegFault),
+        match_t("SYSTEM", sys_signal::sSystem),
+        match_t("PIPE", sys_signal::sPipe),
+        match_t("ALARM", sys_signal::sAlarm),
+        match_t("TERMINATE", sys_signal::sTerminate),
+        match_t("URGENT", sys_signal::sUrgent),
+        match_t("STOP", sys_signal::sStop),
+        match_t("CPUTIME", sys_signal::sCPUtime),
+        match_t("FILESIZE", sys_signal::sFileSize),
         match_t("VIRTUALALARM", sys_signal::sVirtualAlarm),
         match_t("PROFILEALARM", sys_signal::sProfileAlarm),
     };
 
     for(auto itr : _list)
     {
-        int _enable = get_env<int>("SIGNAL_ENABLE_" + itr.first, 0);
+        int _enable  = get_env<int>("SIGNAL_ENABLE_" + itr.first, 0);
         int _disable = get_env<int>("SIGNAL_DISABLE_" + itr.first, 0);
 
         if(_enable > 0)
@@ -162,18 +162,17 @@ void signal_settings::check_environment()
     if(_disable_all > 0)
         for(const auto& itr : f_signals.signals_enabled)
             signal_settings::disable(itr);
-
 }
 
 //============================================================================//
 
-tim::string signal_settings::str(const sys_signal& _type)
+tim::string
+signal_settings::str(const sys_signal& _type)
 {
     typedef std::tuple<tim::string, int, tim::string> descript_tuple_t;
 
     std::stringstream ss;
-    auto descript = [&] (const descript_tuple_t& _data)
-    {
+    auto              descript = [&](const descript_tuple_t& _data) {
         ss << " Signal: " << std::get<0>(_data)
            << " (error code: " << std::get<1>(_data) << ") "
            << std::get<2>(_data);
@@ -181,8 +180,7 @@ tim::string signal_settings::str(const sys_signal& _type)
 
     // some of these signals are not handled but added in case they are
     // enabled in the future
-    static std::vector<descript_tuple_t> descript_data =
-    {
+    static std::vector<descript_tuple_t> descript_data = {
         descript_tuple_t("SIGHUP", SIGHUP, "terminal line hangup"),
         descript_tuple_t("SIGINT", SIGINT, "interrupt program"),
         descript_tuple_t("SIGQUIT", SIGQUIT, "quit program"),
@@ -198,13 +196,18 @@ tim::string signal_settings::str(const sys_signal& _type)
         descript_tuple_t("SIGPIPE", SIGPIPE, "write on a pipe with no reader"),
         descript_tuple_t("SIGALRM", SIGALRM, "real-time timer expired"),
         descript_tuple_t("SIGTERM", SIGTERM, "software termination signal"),
-        descript_tuple_t("SIGURG", SIGURG, "urgent condition present on socket"),
-        descript_tuple_t("SIGSTOP", SIGSTOP, "stop (cannot be caught or ignored)"),
-        descript_tuple_t("SIGTSTP", SIGTSTP, "stop signal generated from keyboard"),
+        descript_tuple_t("SIGURG", SIGURG,
+                         "urgent condition present on socket"),
+        descript_tuple_t("SIGSTOP", SIGSTOP,
+                         "stop (cannot be caught or ignored)"),
+        descript_tuple_t("SIGTSTP", SIGTSTP,
+                         "stop signal generated from keyboard"),
         descript_tuple_t("SIGCONT", SIGCONT, "continue after stop"),
         descript_tuple_t("SIGCHLD", SIGCHLD, "child status has changed"),
-        descript_tuple_t("SIGTTIN", SIGTTIN, "background read attempted from control terminal"),
-        descript_tuple_t("SIGTTOU", SIGTTOU, "background write attempted to control terminal"),
+        descript_tuple_t("SIGTTIN", SIGTTIN,
+                         "background read attempted from control terminal"),
+        descript_tuple_t("SIGTTOU", SIGTTOU,
+                         "background write attempted to control terminal"),
         descript_tuple_t("SIGIO ", SIGIO, "I/O is possible on a descriptor"),
         descript_tuple_t("SIGXCPU", SIGXCPU, "cpu time limit exceeded"),
         descript_tuple_t("SIGXFSZ", SIGXFSZ, "file size limit exceeded"),
@@ -229,10 +232,11 @@ tim::string signal_settings::str(const sys_signal& _type)
 
 //============================================================================//
 
-tim::string signal_settings::str()
+tim::string
+signal_settings::str()
 {
     std::stringstream ss;
-    auto spacer = [&] () { return "    "; };
+    auto              spacer = [&]() { return "    "; };
 
 #if defined(SIGNAL_AVAILABLE)
 
@@ -251,8 +255,7 @@ tim::string signal_settings::str()
 #else
 
     ss << std::endl
-       << spacer()
-       << "Signal detection not available" << std::endl;
+       << spacer() << "Signal detection not available" << std::endl;
 
 #endif
 
@@ -261,35 +264,40 @@ tim::string signal_settings::str()
 
 //============================================================================//
 
-bool signal_settings::is_active()
+bool
+signal_settings::is_active()
 {
     return f_signals.signals_active;
 }
 
 //============================================================================//
 
-void signal_settings::set_active(bool val)
+void
+signal_settings::set_active(bool val)
 {
     f_signals.signals_active = val;
 }
 
 //============================================================================//
 
-void signal_settings::set_exit_action(signal_function_t _f)
+void
+signal_settings::set_exit_action(signal_function_t _f)
 {
     f_signals.signals_exit_func = _f;
 }
 
 //============================================================================//
 
-void signal_settings::exit_action(int errcode)
+void
+signal_settings::exit_action(int errcode)
 {
     f_signals.signals_exit_func(errcode);
 }
 
 //============================================================================//
 
-const signal_settings::signal_set_t& signal_settings::enabled()
+const signal_settings::signal_set_t&
+signal_settings::enabled()
 {
     check_environment();
     return f_signals.signals_enabled;
@@ -297,7 +305,8 @@ const signal_settings::signal_set_t& signal_settings::enabled()
 
 //============================================================================//
 
-const signal_settings::signal_set_t& signal_settings::disabled()
+const signal_settings::signal_set_t&
+signal_settings::disabled()
 {
     check_environment();
     return f_signals.signals_disabled;
@@ -305,27 +314,30 @@ const signal_settings::signal_set_t& signal_settings::disabled()
 
 //============================================================================//
 
-const signal_settings::signal_set_t& signal_settings::get_enabled()
+const signal_settings::signal_set_t&
+signal_settings::get_enabled()
 {
     return f_signals.signals_enabled;
 }
 
 //============================================================================//
 
-const signal_settings::signal_set_t& signal_settings::get_disabled()
+const signal_settings::signal_set_t&
+signal_settings::get_disabled()
 {
     return f_signals.signals_disabled;
 }
 
 //============================================================================//
 
-const signal_settings::signal_set_t& signal_settings::get_default()
+const signal_settings::signal_set_t&
+signal_settings::get_default()
 {
     return f_signals.signals_default;
 }
 
 //============================================================================//
 
-} // namespace tim
+}  // namespace tim
 
 //============================================================================//

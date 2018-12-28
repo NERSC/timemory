@@ -28,6 +28,7 @@ target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-cxx-library ${EXTERNAL_LIBRAR
 add_dependencies(${LIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 
 set_target_properties(${LIBNAME} PROPERTIES
+    COMPILE_FLAGS ${${PROJECT_NAME}_CXX_FLAGS}
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
