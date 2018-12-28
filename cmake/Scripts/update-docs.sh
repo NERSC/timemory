@@ -29,8 +29,35 @@ directory-exists "${1}" "${2}" "${3}" "${_BINARY}/doc/html" "${_DOCDIR}/doxy"
 
 DIR=${PWD}
 
-rm -rf ${_BINARY}/doc/html/*
-rm -rf ${_DOCDIR}/doxy/*
-cd ${_BINARY} && cmake ${_SOURCE} && cmake --build . --target doc
-cp -r ${_BINARY}/doc/html/* ${_DOCDIR}/doxy/
-cd ${_DOCDIR} && bundle exec jekyll build
+#------------------------------------------------------------------------------#
+# remove old docs in build directory
+for i in ${_BINARY}/doc/html/*
+do
+    rm -rf ${i}
+done
+
+#------------------------------------------------------------------------------#
+# remove old docs in documentation directory
+for i in ${_DOCDIR}/doxy/*
+do
+    rm -rf ${i}
+done
+
+#------------------------------------------------------------------------------#
+# switch to build directory
+cd ${_BINARY}
+# ensure configuration
+cmake -DTIMEMORY_DOXYGEN_DOCS=ON -DENABLE_DOXYGEN_HTML_DOCS=ON ${_SOURCE}
+# build the docs
+cmake --build . --target doc
+# copy new docs over
+for i in ${_BINARY}/doc/html/*
+do
+    cp -r ${i} ${_DOCDIR}/doxy/
+done
+
+#------------------------------------------------------------------------------#
+# go to documentation directory
+cd ${_DOCDIR}
+# build the documentation
+bundle exec jekyll build

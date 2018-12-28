@@ -1,6 +1,6 @@
 
 # QtCreator config file
-/CMakeLists.txt.user
+/CMakeLists.txt.user*
 
 # Ninja-IDE project files
 /*.nja
@@ -27,7 +27,7 @@ timing_report*
 # macOS Finder files
 .DS_Store
 
-# setup.py 
+# setup.py
 /TiMemory-*
 /dist
 /.eggs

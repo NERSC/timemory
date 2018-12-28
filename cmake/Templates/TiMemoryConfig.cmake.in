@@ -31,6 +31,7 @@ if(_TIMEMORY_INSTALL_TREE)
 
     set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
     set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
+    get_filename_component(@PROJECT_NAME@_ROOT_DIR ${@PROJECT_NAME@_INCLUDE_DIR} PATH)
 
     if(TIMEMORY_PYTHON_BINDINGS)
         set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
@@ -95,6 +96,7 @@ if(_TIMEMORY_INSTALL_TREE)
 
 else(_TIMEMORY_INSTALL_TREE)
 
+    set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
     set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
         "@PROJECT_SOURCE_DIR@/source/cereal/include")
 
@@ -168,10 +170,11 @@ endif(TIMEMORY_USE_MPI)
 #   find_package variables
 #------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set UnitTest++_FOUND to TRUE
+# handle the QUIETLY and REQUIRED arguments and set TiMemory_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
+    @PROJECT_NAME@_ROOT_DIR
+    @PROJECT_NAME@_INCLUDE_DIRS
     @PROJECT_NAME@_LIBRARIES
     @PROJECT_NAME@_C_LIBRARIES
-    @PROJECT_NAME@_CXX_LIBRARIES
-    @PROJECT_NAME@_INCLUDE_DIR)
+    @PROJECT_NAME@_CXX_LIBRARIES)

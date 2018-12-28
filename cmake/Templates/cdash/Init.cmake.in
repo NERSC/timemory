@@ -36,7 +36,7 @@ find_program(CTEST_GIT_COMMAND      NAMES git)
 find_program(CTEST_VALGRIND_COMMAND NAMES valgrind)
 find_program(CTEST_GNU_COV_COMMAND  NAMES gcov)
 find_program(CTEST_LLVM_COV_COMMAND NAMES llvm-cov)
-    
+
 # ---------------------------------------------------------------------------- #
 # Use uname
 # ---------------------------------------------------------------------------- #
@@ -309,17 +309,19 @@ macro(SETUP KEY)
         configure_ctest_files()
         ## -- read CTestCustom.cmake file
         ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
-        ctest_configure (BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE ret)
-        ctest_build     (BUILD "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE ret)
+        ctest_update    (SOURCE "${CTEST_SOURCE_DIRECTORY}" RETURN_VALUE up_ret)
+        ctest_configure (BUILD  "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE config_ret)
+        ctest_build     (BUILD  "${CTEST_BINARY_DIRECTORY}" RETURN_VALUE build_ret)
 
     else("${TRIGGER}" STREQUAL "Any" OR "${KEY}" STREQUAL "Build")
 
         unset(CTEST_CHECKOUT_COMMAND)
-        configure_ctest_files()    
+        configure_ctest_files()
         ctest_start(${MODEL}   TRACK ${MODEL} APPEND)
-        configure_ctest_files()    
+        configure_ctest_files()
         ## -- read CTestCustom.cmake file
         ctest_read_custom_files("${CTEST_BINARY_DIRECTORY}")
+        ctest_update(SOURCE "${CTEST_SOURCE_DIRECTORY}" APPEND RETURN_VALUE up_ret)
 
     endif("${TRIGGER}" STREQUAL "Any" OR "${KEY}" STREQUAL "Build")
 
