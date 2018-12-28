@@ -241,7 +241,7 @@ endif(TIMEMORY_USE_PYTHON_BINDING)
 # named 'timemory-plotter' as C++ JSON outputs can use this
 # to generate plots
 #
-configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/plotting.py
+configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
     ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 
 install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter

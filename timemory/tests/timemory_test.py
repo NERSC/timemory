@@ -2,8 +2,8 @@
 #
 # MIT License
 #
-# Copyright (c) 2018, The Regents of the University of California, 
-# through Lawrence Berkeley National Laboratory (subject to receipt of any 
+# Copyright (c) 2018, The Regents of the University of California,
+# through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -419,20 +419,20 @@ class timemory_test(unittest.TestCase):
                 ret += n
                 del n
 
-        timemory.options.set_report("")
-        timemory.options.set_serial("")
         print("\nNormal report\n")
-        self.manager.report(ign_cutoff=True)
+        freport = timemory.options.set_report("timing_context_manager_normal.out")
+        fserial = timemory.options.set_serial("timing_context_manager_normal.json")
+
         self.assertFalse(self.manager.get_self_cost())
+        self.manager.report(ign_cutoff=True)
+        plotting.plot(files=[fserial], output_dir=self.output_dir)
+
+        print("\nSelf report\n")
+        freport = timemory.options.set_report("timing_context_manager_self.out")
+        fserial = timemory.options.set_serial("timing_context_manager_self.json")
+
         self.manager.set_self_cost(True)
         self.assertTrue(self.manager.get_self_cost())
-        print("\nSelf report\n")
-        self.manager.report(ign_cutoff=True)
-        self.assertTrue(self.manager.get_self_cost())
-        self.manager.set_self_cost(False)
-        self.assertFalse(self.manager.get_self_cost())
-        freport = timemory.options.set_report("timing_context_manager.out")
-        fserial = timemory.options.set_serial("timing_context_manager.json")
         self.manager.report(ign_cutoff=True)
         plotting.plot(files=[fserial], output_dir=self.output_dir)
 

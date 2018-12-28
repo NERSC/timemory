@@ -1,5 +1,4 @@
 #!@PYTHON_EXECUTABLE@
-#
 # MIT License
 #
 # Copyright (c) 2018, The Regents of the University of California,
@@ -23,12 +22,13 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
+
+"""
+Imports timemory.libtimemory.units as timemory.units
+"""
 
 from __future__ import absolute_import
-import os
-import imp
-import sys
-import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2018, The Regents of the University of California"
@@ -39,7 +39,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jonrobm.programming@gmail.com"
 __status__ = "Development"
 
-from . import tests
-from .tests import *
-
-__all__ = ['tests', 'run']
+from .libtimemory.units import *

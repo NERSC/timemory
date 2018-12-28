@@ -49,6 +49,7 @@
 #include <thread>
 #include <unordered_map>
 
+#include "timemory/graph.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/timer.hpp"

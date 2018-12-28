@@ -32,6 +32,10 @@
 from __future__ import absolute_import
 import os
 
+__all__ = ['mpi_exe_info',
+           'mpi_c_info',
+           'mpi_cxx_info',
+           'is_supported']
 
 #------------------------------------------------------------------------------#
 def _path_to_file(pfile):

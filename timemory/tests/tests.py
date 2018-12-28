@@ -25,12 +25,21 @@
 # SOFTWARE.
 
 from __future__ import absolute_import
-
-import sys
 import os
 import imp
+import sys
+import importlib
 import subprocess as sp
 
+__author__ = "Jonathan Madsen"
+__copyright__ = "Copyright 2018, The Regents of the University of California"
+__credits__ = ["Jonathan Madsen"]
+__license__ = "MIT"
+__version__ = "@PROJECT_VERSION@"
+__maintainer__ = "Jonathan Madsen"
+__email__ = "jonrobm.programming@gmail.com"
+__status__ = "Development"
+__all__ = ['run']
 
 # get the path to this directory
 __this_path = os.path.abspath(os.path.dirname(__file__))

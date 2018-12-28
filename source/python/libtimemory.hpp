@@ -22,8 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#ifndef pytimemory_hpp_
-#define pytimemory_hpp_
+#pragma once
 
 //============================================================================//
 
@@ -41,16 +40,17 @@
 #include <thread>
 #include <vector>
 
+#include <pybind11/numpy.h>
+#include <pybind11/pybind11.h>
+#include <pybind11/pytypes.h>
+#include <pybind11/stl.h>
+
 #include <pybind11/cast.h>
 #include <pybind11/chrono.h>
 #include <pybind11/embed.h>
 #include <pybind11/eval.h>
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
 
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
@@ -792,5 +792,3 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fname = "")
 }  // namespace pytim
 
 //============================================================================//
-
-#endif

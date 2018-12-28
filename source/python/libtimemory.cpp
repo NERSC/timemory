@@ -23,13 +23,14 @@
 // SOFTWARE.
 //
 
-#include "pytimemory.hpp"
+#include "libtimemory.hpp"
+#include <pybind11/pybind11.h>
 
 //============================================================================//
 //  Python wrappers
 //============================================================================//
 
-PYBIND11_MODULE(timemory, tim)
+PYBIND11_MODULE(libtimemory, tim)
 {
     //------------------------------------------------------------------------//
     // py::add_ostream_redirect(tim, "ostream_redirect");
@@ -37,7 +38,7 @@ PYBIND11_MODULE(timemory, tim)
 
     //========================================================================//
     //
-    //                  MAIN timemory MODULE (part 1)
+    //                  MAIN libtimemory MODULE (part 1)
     //
     //========================================================================//
     tim.def("LINE", &pytim::get_line, "Function that emulates __LINE__ macro",
@@ -836,7 +837,7 @@ PYBIND11_MODULE(timemory, tim)
 
     //========================================================================//
     //
-    //                      MAIN timemory MODULE (part 2)
+    //                      MAIN libtimemory MODULE (part 2)
     //
     //========================================================================//
     tim.attr("timing_manager") = man;

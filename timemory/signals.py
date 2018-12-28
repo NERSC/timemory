@@ -24,17 +24,19 @@
 # SOFTWARE.
 #
 
+"""
+Imports timemory.libtimemory.signals as timemory.signals
+"""
+
 from __future__ import absolute_import
 
-import os
-import sys
-import imp
+__author__ = "Jonathan Madsen"
+__copyright__ = "Copyright 2018, The Regents of the University of California"
+__credits__ = ["Jonathan Madsen"]
+__license__ = "MIT"
+__version__ = "@PROJECT_VERSION@"
+__maintainer__ = "Jonathan Madsen"
+__email__ = "jonrobm.programming@gmail.com"
+__status__ = "Development"
 
-__all__ = [ 'mpi_support', 'plotting', 'util' ] # import for side effects
-
-def __bootstrap__(libname):
-    global __bootstrap__, __loader__, __file__
-    import sys, pkg_resources, imp
-    __file__ = pkg_resources.resource_filename(__name__, libname)
-    __loader__ = None; del __bootstrap__, __loader__
-    return imp.load_dynamic(__name__,__file__)
+from .libtimemory.signals import *

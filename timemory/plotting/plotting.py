@@ -23,22 +23,54 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
-#
 
-## @file plotting.py
-## Plotting routines for TiMemory module
-##
+''' @file plotting.py
+Plotting routines for TiMemory module
+'''
 
 from __future__ import absolute_import
 from __future__ import division
 
-import json
+__author__ = "Jonathan Madsen"
+__copyright__ = "Copyright 2018, The Regents of the University of California"
+__credits__ = ["Jonathan Madsen"]
+__license__ = "MIT"
+__version__ = "@PROJECT_VERSION@"
+__maintainer__ = "Jonathan Madsen"
+__email__ = "jonrobm.programming@gmail.com"
+__status__ = "Development"
+__all__ = ['plot',
+           'plot_maximums',
+           'plot_timing',
+           'plot_memory',
+           'plot_generic',
+           'read',
+           'plot_data',
+           'timemory_data',
+           'echo_dart_tag',
+           'add_plotted_files',
+           'make_output_directory',
+           'nested_dict',
+           'plot_parameters',
+           'plotted_files',
+           'timemory_types']
+
 import sys
+import os
+import imp
+import copy
+import json
+import ctypes
+import platform
+import warnings
+import importlib
 import traceback
 import collections
-import os
-import copy
-import warnings
+
+__dir__ = os.path.realpath(os.path.dirname(__file__))
+
+if os.environ.get("DISPLAY") is None and os.environ.get("MPLBACKEND") is None:
+    os.environ.setdefault("MPLBACKEND", "agg")
 
 _matplotlib_backend = None
 # a previous bug inserted wrong value for levels, this gets around it
@@ -93,89 +125,95 @@ except:
 #------------------------------------------------------------------------------#
 #
 #
-""" Default timing data to extract from JSON """
 _default_timing_types = ['wall', 'sys', 'user', 'cpu', 'perc']
+""" Default timing data to extract from JSON """
 
-""" Default memory data to extract from JSON """
 _default_memory_types = ['total_peak_rss', 'total_current_rss',
                          'self_peak_rss', 'self_current_rss']
+""" Default memory data to extract from JSON """
 
 
-""" Default fields for reducing # of timing plot functions displayed """
 _default_timing_fields = ['wall', 'sys', 'user']
+""" Default fields for reducing # of timing plot functions displayed """
 
-""" Default fields for reducing # of memory plot functions displayed """
 _default_memory_fields = ['total_peak_rss', 'total_current_rss',
                           'self_peak_rss', 'self_current_rss']
+""" Default fields for reducing # of memory plot functions displayed """
 
-""" Default minimum percent of max when reducing # of timing functions plotted """
 _default_timing_min_percent = 0.05 # 5% of max
+""" Default minimum percent of max when reducing # of timing functions plotted """
 
-""" Default minimum percent of max when reducing # of memory functions plotted """
 _default_memory_min_percent = 0.05 # 5% of max
+""" Default minimum percent of max when reducing # of memory functions plotted """
 
-""" Default image dots-per-square inch """
 _default_img_dpi = 75
+""" Default image dots-per-square inch """
 
-""" Default image size """
 _default_img_size = {'w': 1600, 'h': 800}
+""" Default image size """
 
-""" Default image type """
 _default_img_type = 'jpeg'
+""" Default image type """
 
-""" A list of all files that have been plotted """
 plotted_files = []
+""" A list of all files that have been plotted """
 
-""" Data fields stored in timemory_data """
 timemory_types = _default_timing_types + _default_memory_types
+""" Data fields stored in timemory_data """
 
 #==============================================================================#
-"""
-A class for reducing the amount of data in plot by specifying a minimum
-percentage of the max value and the fields to check against
-"""
 class plot_parameters():
+    """
+    A class for reducing the amount of data in plot by specifying a minimum
+    percentage of the max value and the fields to check against
+    """
 
-    """ Global timing plotting params (these should be modified instead of _default_*) """
     timing_types = copy.copy(_default_timing_types)
+    """ Global timing plotting params (these should be modified instead of _default_*) """
     timing_fields = copy.copy(_default_timing_fields)
+    """ Global timing plotting params (these should be modified instead of _default_*) """
     timing_min_percent = copy.copy(_default_timing_min_percent)
+    """ Global timing plotting params (these should be modified instead of _default_*) """
 
-    """ Global memory plotting params (these should be modified instead of _default_*) """
     memory_types = copy.copy(_default_memory_types)
+    """ Global memory plotting params (these should be modified instead of _default_*) """
     memory_fields = copy.copy(_default_memory_fields)
+    """ Global memory plotting params (these should be modified instead of _default_*) """
     memory_min_percent = copy.copy(_default_memory_min_percent)
+    """ Global memory plotting params (these should be modified instead of _default_*) """
 
-    """ Global image plotting params (these should be modified instead of _default_*) """
     img_dpi = copy.copy(_default_img_dpi)
+    """ Global image plotting params (these should be modified instead of _default_*) """
     img_size = copy.copy(_default_img_size)
+    """ Global image plotting params (these should be modified instead of _default_*) """
     img_type = copy.copy(_default_img_type)
+    """ Global image plotting params (these should be modified instead of _default_*) """
 
     def __init__(self,
                  # timing
-                 _timing_types = timing_types,
-                 _timing_min_percent = timing_min_percent,
-                 _timing_fields = timing_fields,
+                 timing_types = timing_types,
+                 timing_min_percent = timing_min_percent,
+                 timing_fields = timing_fields,
                  # memory
-                 _memory_types = memory_types,
-                 _memory_min_percent = memory_min_percent,
-                 _memory_fields = memory_fields,
+                 memory_types = memory_types,
+                 memory_min_percent = memory_min_percent,
+                 memory_fields = memory_fields,
                  # image
-                 _img_dpi = img_dpi,
-                 _img_size = img_size,
-                 _img_type = img_type):
+                 img_dpi = img_dpi,
+                 img_size = img_size,
+                 img_type = img_type):
         # timing
-        self.timing_types = _timing_types
-        self.timing_min_percent = _timing_min_percent
-        self.timing_fields = _timing_fields
+        self.timing_types = timing_types
+        self.timing_min_percent = timing_min_percent
+        self.timing_fields = timing_fields
         # memory
-        self.memory_types = _memory_types
-        self.memory_min_percent = _memory_min_percent
-        self.memory_fields = _memory_fields
+        self.memory_types = memory_types
+        self.memory_min_percent = memory_min_percent
+        self.memory_fields = memory_fields
         # image
-        self.img_dpi = _img_dpi
-        self.img_size = _img_size
-        self.img_type = _img_type
+        self.img_dpi = img_dpi
+        self.img_size = img_size
+        self.img_type = img_type
         # max values
         self.timing_max_value = 0.0
         self.memory_max_value = 0.0
@@ -1023,112 +1061,3 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
             print ('Exception - {}'.format(e))
             print ('Error! Unable to plot "{}"...'.format(_data.filename))
-
-
-#==============================================================================#
-if __name__ == "__main__":
-    import argparse
-    try:
-        parser = argparse.ArgumentParser()
-        parser.add_argument("-f", "--files", nargs='*', help="File input", type=str)
-        parser.add_argument("-d", "--display", required=False, action='store_true',
-                            help="Display plot", dest='display_plot')
-        parser.add_argument("-t", "--titles", nargs='*', help="Plot titles", type=str)
-        parser.add_argument('-c', "--combine", required=False, action='store_true',
-                            help="Combined data into a single plot")
-        parser.add_argument('-o', '--output-dir', help="Output directory", type=str,
-                            required=False)
-        parser.add_argument('-e', '--echo-dart', help="echo Dart measurement for CDash",
-                            required=False, action='store_true')
-        parser.add_argument('--timing-percent', required=False, type=float,
-            help="Exclude plotting times below this percentage of maximum")
-        parser.add_argument('--memory-percent', required=False, type=float,
-            help="Exclude plotting RSS values below this percentage of maximum")
-        parser.add_argument('--timing-fields', required=False, nargs='*',
-            help='Timing types to plot {}'.format(plot_parameters.timing_fields))
-        parser.add_argument('--memory-fields', required=False, nargs='*',
-            help='Memory types to plot {}'.format(plot_parameters.memory_fields))
-        parser.add_argument('--img-dpi', help="Image dots per sq inch",
-            required=False, type=int)
-        parser.add_argument('--img-size', help="Image dimensions", nargs=2,
-            required=False, type=int)
-        parser.add_argument('--img-type', help="Image type",
-            required=False, type=str)
-        parser.add_argument('--plot-max',
-            help="Plot the maximums from a set of inputs to <filename>",
-            required=False, type=str, dest='plot_max')
-
-        parser.set_defaults(display_plot=False)
-        parser.set_defaults(combine=False)
-        parser.set_defaults(output_dir=".")
-        parser.set_defaults(echo_dart=False)
-        parser.set_defaults(timing_percent=plot_parameters.timing_min_percent)
-        parser.set_defaults(memory_percent=plot_parameters.memory_min_percent)
-        parser.set_defaults(timing_fields=plot_parameters.timing_fields)
-        parser.set_defaults(memory_fields=plot_parameters.memory_fields)
-        parser.set_defaults(img_dpi=plot_parameters.img_dpi)
-        parser.set_defaults(img_size=[ plot_parameters.img_size['w'],
-                                       plot_parameters.img_size['h'] ])
-        parser.set_defaults(img_type=plot_parameters.img_type)
-        parser.set_defaults(plot_max="")
-
-        args = parser.parse_args()
-
-        do_plot_max = True if len(args.plot_max) > 0 else False
-
-        print('Files: {}'.format(args.files))
-        print('Titles: {}'.format(args.titles))
-
-        params = plot_parameters(_timing_min_percent = args.timing_percent,
-                                 _timing_fields = args.timing_fields,
-                                 _memory_min_percent = args.memory_percent,
-                                 _memory_fields = args.memory_fields,
-                                 _img_dpi = args.img_dpi,
-                                 _img_size = { 'w' : args.img_size[0],
-                                               'h' : args.img_size[1] },
-                                 _img_type = args.img_type)
-
-        if do_plot_max:
-            if len(args.titles) != 1:
-                raise Exception("Error must provide one title")
-        else:
-            if len(args.titles) != 1 and len(args.titles) != len(args.files):
-                raise Exception("Error must provide one title or a title for each file")
-
-        data = []
-        for i in range(len(args.files)):
-            f = open(args.files[i], "r")
-            _data = read(json.load(f))
-            _data.filename = args.files[i].replace('.json', '')
-            if len(args.titles) == 1:
-                _data.title = args.titles[0]
-            else:
-                _data.title = args.titles[i]
-            _data.plot_params = params
-            print('### --> Processing "{}" from "{}"...'.format(_data.title,
-                                                                args.files[i]))
-            data.append(_data)
-
-        if do_plot_max:
-            plot_maximums(args.plot_max,
-                          args.titles[0],
-                          data,
-                          plot_params=params,
-                          display=args.display_plot,
-                          output_dir=args.output_dir,
-                          echo_dart=args.echo_dart)
-        else:
-            plot(data=data,
-                 plot_params=params,
-                 display=args.display_plot,
-                 combine=args.combine,
-                 output_dir=args.output_dir,
-                 echo_dart=args.echo_dart)
-
-    except Exception as e:
-        exc_type, exc_value, exc_traceback = sys.exc_info()
-        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-        print ('Exception - {}'.format(e))
-
-    print ('Done - {}'.format(sys.argv[0]))
-    sys.exit(0)

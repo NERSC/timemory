@@ -23,23 +23,38 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
 
-from __future__ import absolute_import
+''' @file __main__.py
+Run tests
+'''
+
 import os
-import imp
 import sys
-import importlib
+import argparse
+import traceback
+import timemory
 
-__author__ = "Jonathan Madsen"
-__copyright__ = "Copyright 2018, The Regents of the University of California"
-__credits__ = ["Jonathan Madsen"]
-__license__ = "MIT"
-__version__ = "@PROJECT_VERSION@"
-__maintainer__ = "Jonathan Madsen"
-__email__ = "jonrobm.programming@gmail.com"
-__status__ = "Development"
+print("\n\nRunning tests from '{}'\n\n".format(__file__))
 
-from . import tests
-from .tests import *
+if __name__ == "__main__":
+    try:
 
-__all__ = ['tests', 'run']
+        parser = argparse.ArgumentParser()
+        parser.add_argument("-p", "--pattern", type=str, help="Regex string",
+                            default="")
+        parser.add_argument("-e", "--exit-at-failure", action='store_true',
+                            help="Exit after first failure")
+
+        args = parser.parse_args()
+
+        timemory.tests.run(args.pattern, args.exit_at_failure)
+
+    except Exception as e:
+        exc_type, exc_value, exc_traceback = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+        print ('Exception - {}'.format(e))
+        sys.exit(1)
+
+    print ('Done - {}'.format(sys.argv[0]))
+    sys.exit(0)
