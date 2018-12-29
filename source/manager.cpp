@@ -184,6 +184,7 @@ manager::manager()
 , m_p_count((singleton_t::master_instance_ptr())
                 ? singleton_t::master_instance_ptr()->count().load()
                 : 0)
+, m_graph_itr(nullptr)
 , m_missing_timer(timer_ptr_t(new tim_timer_t()))
 , m_total_timer(timer_ptr_t(new tim::timer(tim::format::timer(
       tim::string("> [exe] total"), tim::format::timer::default_format(),
@@ -275,9 +276,13 @@ manager::insert_global_timer()
        m_timer_map.size() == 0 && m_timer_list_norm.size() == 0)
     {
         update_total_timer_format();
-        m_timer_map[0] = m_total_timer;
+        m_timer_map[0]              = m_total_timer;
         m_timer_list_norm.push_back(
             timer_tuple_t(0, m_count, 0, "exe_global_time", m_total_timer));
+
+        //timer_tuple_t _global_tuple = { 0, m_count, 0, "exe_global_time", m_total_timer };
+        //m_graph_itr = m_timer_graph.set_head(_global_tuple);
+
         if(!m_total_timer->is_running())
             m_total_timer->start();
         if(m_count == 0)
@@ -302,6 +307,8 @@ manager::clear()
     m_laps += compute_total_laps();
     m_timer_list_norm.clear();
     m_timer_list_self.clear();
+    //m_timer_graph.clear();
+    //m_graph_itr = nullptr;
     m_timer_map.clear();
     for(auto& itr : m_daughters)
         if(itr != this && itr)
@@ -396,6 +403,28 @@ manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t
                           << std::endl;
         }
 #endif
+        /*auto _orig = m_graph_itr;
+        for(typename timer_graph_t::sibling_iterator itr = m_graph_itr.begin();
+            itr != m_graph_itr.end(); ++itr)
+            if(std::get<0>(*itr) == ref)
+            {
+                m_graph_itr = itr;
+                break;
+            }
+        if(_orig == m_graph_itr)
+        {
+            std::stringstream ss;
+            ss << _orig->tag() << " did not find key = " << ref << " in :\n";
+            for(typename timer_graph_t::sibling_iterator itr = m_graph_itr.begin();
+                itr != m_graph_itr.end(); ++itr)
+            {
+                ss << itr->key();
+                if(std::distance(itr, m_graph_itr.end()) < 1)
+                    ss << ", ";
+            }
+            ss << std::endl;
+            std::cerr << ss.str();
+        }*/
         return *(m_timer_map[ref].get());
     }
 
@@ -432,6 +461,7 @@ manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t
     timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(), tag_ss.str(),
                          m_timer_map[ref]);
     m_timer_list_norm.push_back(_tuple);
+    //m_graph_itr = m_timer_graph.append_child(m_graph_itr, _tuple);
 
 #if defined(HASH_DEBUG)
     std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple << std::endl;

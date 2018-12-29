@@ -33,6 +33,15 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include <cstdint>
+#include <deque>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <unordered_map>
+
+//--------------------------------------------------------------------------------------//
+
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
@@ -41,15 +50,6 @@
 #include "timemory/string.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/utility.hpp"
-
-//--------------------------------------------------------------------------------------//
-
-#include <cstdint>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_map>
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,15 +76,38 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     //------------------------------------------------------------------------//
     //      constructors
     //
+    /*timer_tuple()
+    : base_type({ 0, 0, 0, string_t(""), timer_ptr_t(nullptr) })
+    {
+    }*/
+
     timer_tuple(const base_type& _data)
     : base_type(_data)
     {
     }
 
+    //timer_tuple(const timer_tuple&) = default;
+
     timer_tuple(uint64_t _a, uint64_t _b, uint64_t _c, string_t _d, timer_ptr_t _e)
     : base_type(_a, _b, _c, _d, _e)
     {
     }
+
+    /*timer_tuple& operator=(const timer_tuple& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        internal::base_timer_tuple_t::operator=(rhs);
+        return *this;
+    }
+
+    timer_tuple& operator=(timer_tuple&& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        internal::base_timer_tuple_t::operator=(std::move(rhs));
+        return *this;
+    }*/
 
     //------------------------------------------------------------------------//
     //
@@ -175,38 +198,40 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
 };
 
 //--------------------------------------------------------------------------------------//
-
-class tim_api manager
+tim_api class manager
 {
 public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                       this_type;
-    typedef tim::timer                    tim_timer_t;
-    typedef singleton<manager>            singleton_t;
-    typedef singleton<tim_timer_t>        timer_singleton_t;
-    typedef std::shared_ptr<tim_timer_t>  timer_ptr_t;
-    typedef tim_timer_t::string_t         string_t;
-    typedef timer_tuple                   timer_tuple_t;
-    typedef std::deque<timer_tuple_t>     timer_list_t;
-    typedef timer_list_t::iterator        iterator;
-    typedef timer_list_t::const_iterator  const_iterator;
-    typedef timer_list_t::size_type       size_type;
-    typedef uomap<uint64_t, timer_ptr_t>  timer_map_t;
-    typedef tim_timer_t::ostream_t        ostream_t;
-    typedef tim_timer_t::ofstream_t       ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
-    typedef std::mutex                    mutex_t;
-    typedef uomap<uint64_t, mutex_t>      mutex_map_t;
-    typedef std::lock_guard<mutex_t>      auto_lock_t;
-    typedef singleton_t::pointer          pointer;
-    typedef singleton_t::shared_pointer   shared_pointer;
-    typedef std::set<this_type*>          daughter_list_t;
-    typedef tim_timer_t::rss_type         rss_type;
-    typedef rss_type::base_type           base_rss_type;
-    typedef std::function<intmax_t()>     get_num_threads_func_t;
-    typedef std::atomic<uint64_t>         counter_t;
+    typedef manager                          this_type;
+    typedef tim::timer                       tim_timer_t;
+    typedef singleton<manager>               singleton_t;
+    typedef singleton<tim_timer_t>           timer_singleton_t;
+    typedef std::shared_ptr<tim_timer_t>     timer_ptr_t;
+    typedef tim_timer_t::string_t            string_t;
+    typedef timer_tuple                      timer_tuple_t;
+    typedef std::deque<timer_tuple_t>        timer_list_t;
+    typedef timer_list_t::iterator           iterator;
+    typedef timer_list_t::const_iterator     const_iterator;
+    typedef timer_list_t::size_type          size_type;
+    typedef std::pair<uint64_t, timer_ptr_t> timer_pair_t;
+    typedef uomap<uint64_t, timer_ptr_t>     timer_map_t;
+    typedef tim::graph<timer_tuple_t>        timer_graph_t;
+    typedef typename timer_graph_t::iterator timer_graph_itr;
+    typedef tim_timer_t::ostream_t           ostream_t;
+    typedef tim_timer_t::ofstream_t          ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t>    comm_group_t;
+    typedef std::mutex                       mutex_t;
+    typedef uomap<uint64_t, mutex_t>         mutex_map_t;
+    typedef std::lock_guard<mutex_t>         auto_lock_t;
+    typedef singleton_t::pointer             pointer;
+    typedef singleton_t::shared_pointer      shared_pointer;
+    typedef std::set<this_type*>             daughter_list_t;
+    typedef tim_timer_t::rss_type            rss_type;
+    typedef rss_type::base_type              base_rss_type;
+    typedef std::function<intmax_t()>        get_num_threads_func_t;
+    typedef std::atomic<uint64_t>            counter_t;
 
 public:
     // Constructor and Destructors
@@ -324,6 +349,8 @@ public:
     const counter_t& parent_hash() const { return m_p_hash; }
     const counter_t& parent_count() const { return m_p_count; }
 
+    //void pop_graph() { m_graph_itr = m_timer_graph.parent(m_graph_itr); }
+
     void sync_hierarchy();
 
     daughter_list_t&       daughters() { return m_daughters; }
@@ -418,6 +445,10 @@ private:
     counter_t m_p_count;
     // hashed string map for fast lookup
     timer_map_t m_timer_map;
+    // graph for storage
+    //timer_graph_t m_timer_graph;
+    // current graph iterator
+    timer_graph_itr m_graph_itr;
     // ordered list for output (outputs in order of timer instantiation)
     timer_list_t m_timer_list_norm;
     // ordered list for output (self-cost format)
@@ -614,18 +645,13 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 
     os->flush();
 }
-
 //--------------------------------------------------------------------------------------//
-
 inline manager::ofstream_t*
 manager::get_ofstream(ostream_t* m_os) const
 {
     return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
                                                       : nullptr;
 }
-
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
-
-//--------------------------------------------------------------------------------------//
