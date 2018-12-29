@@ -18,7 +18,7 @@ if(TIMEMORY_SETUP_PY)
         OUTPUT_VARIABLE _INSTALL_PREFIX
         OUTPUT_STRIP_TRAILING_WHITESPACE
         WORKING_DIRECTORY ${CMAKE_BINARY_DIR})
-endif(TIMEMORY_SETUP_PY)
+endif()
 
 configure_package_config_file(
     ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
@@ -40,9 +40,10 @@ if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
         DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
         COMPONENT development)
-endif(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
+endif()
 
-if(NOT SUBPROJECT)
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
     # documentation
     set_property(GLOBAL APPEND PROPERTY TIMEMORY_DOCUMENTATION_INCLUDE_DIRS
         ${PROJECT_SOURCE_DIR}/source
@@ -51,14 +52,15 @@ if(NOT SUBPROJECT)
 
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal
         ${PROJECT_SOURCE_DIR}/source/python/pybind11)
+
     include(Documentation)
 
     if(TIMEMORY_DOXYGEN_DOCS)
         SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif(TIMEMORY_DOXYGEN_DOCS)
+    endif()
 
     print_features()
 
-endif(NOT SUBPROJECT)
+endif()

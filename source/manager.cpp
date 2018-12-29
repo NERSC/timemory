@@ -51,9 +51,9 @@
 
 #if !defined(pfunc)
 #    if defined(DEBUG)
-#        define pfunc                                                          \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__,      \
-                   __FILE__, __LINE__)
+#        define pfunc                                                                    \
+            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
+                   __LINE__)
 #    else
 #        define pfunc
 #    endif
@@ -61,12 +61,12 @@
 
 using std::placeholders::_1;
 
-//============================================================================//
+//======================================================================================//
 
 void
 _timemory_manager_deleter(tim::manager* ptr)
 {
-    tim::manager*   master = tim::manager::singleton_t::master_instance_ptr();
+    tim::manager*   master     = tim::manager::singleton_t::master_instance_ptr();
     std::thread::id master_tid = tim::manager::singleton_t::master_thread_id();
 
     if(std::this_thread::get_id() == master_tid)
@@ -82,43 +82,43 @@ _timemory_manager_deleter(tim::manager* ptr)
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 tim::manager::singleton_t&
 _timemory_manager_singleton()
 {
-    static tim::manager::singleton_t _instance(
-        new tim::manager(), std::bind(&_timemory_manager_deleter, _1));
+    static tim::manager::singleton_t _instance(new tim::manager(),
+                                               std::bind(&_timemory_manager_deleter, _1));
     return _instance;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 _timemory_initialization()
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 _timemory_finalization()
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
-//============================================================================//
+//======================================================================================//
 
 int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 
-//============================================================================//
+//======================================================================================//
 
 std::atomic<int> manager::f_manager_instance_count;
 
-//============================================================================//
+//======================================================================================//
 // static function
 manager::pointer
 manager::instance()
@@ -126,7 +126,7 @@ manager::instance()
     return _timemory_manager_singleton().instance();
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 manager::pointer
 manager::master_instance()
@@ -134,7 +134,7 @@ manager::master_instance()
     return _timemory_manager_singleton().master_instance();
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 manager::pointer
 manager::noninit_instance()
@@ -142,7 +142,7 @@ manager::noninit_instance()
     return _timemory_manager_singleton().instance_ptr();
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 manager::pointer
 manager::noninit_master_instance()
@@ -150,20 +150,19 @@ manager::noninit_master_instance()
     return _timemory_manager_singleton().master_instance_ptr();
 }
 
-//============================================================================//
+//======================================================================================//
 
 bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
 
-//============================================================================//
+//======================================================================================//
 
 manager::mutex_t manager::f_mutex;
 
-//============================================================================//
+//======================================================================================//
 
-manager::get_num_threads_func_t manager::f_get_num_threads =
-    std::bind(&get_max_threads);
+manager::get_num_threads_func_t manager::f_get_num_threads = std::bind(&get_max_threads);
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::set_get_num_threads_func(get_num_threads_func_t f)
@@ -171,7 +170,7 @@ manager::set_get_num_threads_func(get_num_threads_func_t f)
     f_get_num_threads = std::bind(f);
 }
 
-//============================================================================//
+//======================================================================================//
 
 manager::manager()
 : m_merge(false)
@@ -188,8 +187,8 @@ manager::manager()
 , m_missing_timer(timer_ptr_t(new tim_timer_t()))
 , m_total_timer(timer_ptr_t(new tim::timer(tim::format::timer(
       tim::string("> [exe] total"), tim::format::timer::default_format(),
-      tim::format::timer::default_unit(),
-      tim::format::timer::default_rss_format(), true))))
+      tim::format::timer::default_unit(), tim::format::timer::default_rss_format(),
+      true))))
 , m_timer_list(&m_timer_list_norm)
 , m_report(&std::cout)
 {
@@ -208,8 +207,7 @@ manager::manager()
     if(tim::env::verbose > 2)
     {
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "tim::manager creation " << m_instance_count << "..."
-                  << std::endl;
+        std::cout << "tim::manager creation " << m_instance_count << "..." << std::endl;
     }
 #endif
 
@@ -221,8 +219,7 @@ manager::manager()
     }
 
     std::stringstream ss;
-    ss << "TiMemory total unrecorded time (manager " << (m_instance_count)
-       << ")";
+    ss << "TiMemory total unrecorded time (manager " << (m_instance_count) << ")";
     m_missing_timer->format()->prefix(ss.str());
     m_missing_timer->start();
 
@@ -236,7 +233,7 @@ manager::manager()
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 manager::~manager()
 {
@@ -244,16 +241,14 @@ manager::~manager()
     if(tim::env::verbose > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t"
-                  << singleton_t::master_instance_ptr()
-                  << "\nlocal instance:  \t" << singleton_t::instance_ptr()
-                  << std::endl;
+                  << "\nglobal instance: \t" << singleton_t::master_instance_ptr()
+                  << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
 #endif
 
     _timemory_manager_singleton().destroy();
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::update_total_timer_format()
@@ -264,16 +259,14 @@ manager::update_total_timer_format()
                                         string_t("[exe] total execution time"));
         m_total_timer->format()->format(tim::format::timer::default_format());
         m_total_timer->format()->unit(tim::format::timer::default_unit());
-        m_total_timer->format()->precision(
-            tim::format::timer::default_precision());
-        m_total_timer->format()->rss_format(
-            tim::format::timer::default_rss_format());
+        m_total_timer->format()->precision(tim::format::timer::default_precision());
+        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
         tim::format::timer::propose_default_width(
             m_total_timer->format()->prefix().length());
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::insert_global_timer()
@@ -292,15 +285,15 @@ manager::insert_global_timer()
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::clear()
 {
 #if defined(DEBUG)
     if(tim::env::verbose > 1)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Clearing "
-                  << instance() << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " Clearing " << instance()
+                  << "..." << std::endl;
 #endif
 
     if(this == singleton_t::master_instance_ptr())
@@ -347,7 +340,7 @@ manager::clear()
     insert_global_timer();
 }
 
-//============================================================================//
+//======================================================================================//
 
 manager::string_t
 manager::get_prefix() const
@@ -370,25 +363,23 @@ manager::get_prefix() const
     return *_prefix;
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer&
-manager::timer(const string_t& key, const string_t& tag, int32_t ncount,
-               int32_t nhash)
+manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
 {
 #if defined(DEBUG)
     if(key.find(" ") != string_t::npos)
     {
         std::stringstream ss;
-        ss << "tim::manager::" << __FUNCTION__
-           << " Warning! Space found in tag: \"" << key << "\"";
+        ss << "tim::manager::" << __FUNCTION__ << " Warning! Space found in tag: \""
+           << key << "\"";
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cerr << ss.str() << std::endl;
     }
 #endif
 
-    uint64_t ref =
-        (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
 
     // thread-safe
     // auto_lock_t lock(f_mutex);
@@ -401,8 +392,8 @@ manager::timer(const string_t& key, const string_t& tag, int32_t ncount,
         {
             tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
             if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
-                std::cout << "tim::manager::" << __FUNCTION__
-                          << " Found : " << itr << std::endl;
+                std::cout << "tim::manager::" << __FUNCTION__ << " Found : " << itr
+                          << std::endl;
         }
 #endif
         return *(m_timer_map[ref].get());
@@ -438,19 +429,18 @@ manager::timer(const string_t& key, const string_t& tag, int32_t ncount,
 
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;
-    timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(),
-                         tag_ss.str(), m_timer_map[ref]);
+    timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(), tag_ss.str(),
+                         m_timer_map[ref]);
     m_timer_list_norm.push_back(_tuple);
 
 #if defined(HASH_DEBUG)
-    std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple
-              << std::endl;
+    std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple << std::endl;
 #endif
 
     return *(m_timer_map[ref].get());
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::report(bool ign_cutoff, bool endline) const
@@ -484,7 +474,7 @@ manager::report(bool ign_cutoff, bool endline) const
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::set_output_stream(ostream_t& _os)
@@ -492,7 +482,7 @@ manager::set_output_stream(ostream_t& _os)
     m_report = &_os;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::set_output_stream(const path_t& fname)
@@ -538,7 +528,7 @@ manager::set_output_stream(const path_t& fname)
     ostreamop(m_report, fname);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::add(pointer ptr)
@@ -546,14 +536,14 @@ manager::add(pointer ptr)
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Adding " << ptr
-                  << " to " << this << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " Adding " << ptr << " to "
+                  << this << "..." << std::endl;
 #endif
     m_merge = true;
     m_daughters.insert(ptr);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::remove(pointer ptr)
@@ -565,8 +555,8 @@ manager::remove(pointer ptr)
 
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
-        std::cout << "tim::manager::" << __FUNCTION__ << " - Removing " << ptr
-                  << " from " << this << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " - Removing " << ptr << " from "
+                  << this << "..." << std::endl;
 #endif
 
     merge(ptr);
@@ -574,7 +564,7 @@ manager::remove(pointer ptr)
         m_daughters.erase(m_daughters.find(ptr));
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::merge(pointer itr)
@@ -591,8 +581,8 @@ manager::merge(pointer itr)
     }
 
     if(tim::env::verbose > 1)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr
-                  << "..." << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr << "..."
+                  << std::endl;
 #endif
 
     for(const auto& mitr : itr->map())
@@ -636,7 +626,7 @@ manager::merge(pointer itr)
     compute_self();
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::merge()
@@ -661,7 +651,7 @@ manager::merge()
             itr->clear();
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::sync_hierarchy()
@@ -684,7 +674,7 @@ manager::sync_hierarchy()
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::compute_self()
@@ -737,7 +727,7 @@ manager::compute_self()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
 manager::tim_timer_t
 manager::compute_missing(tim_timer_t* timer_ref)
@@ -775,7 +765,7 @@ manager::compute_missing(tim_timer_t* timer_ref)
     return _missing_timer;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 manager::write_missing(const path_t& _fname, tim_timer_t* timer_ref,
@@ -786,17 +776,16 @@ manager::write_missing(const path_t& _fname, tim_timer_t* timer_ref,
         write_missing(_os, timer_ref, _missing_p);
     else
     {
-        std::cerr << "Warning! Unable to open \"" << _fname << "\" ["
-                  << __FUNCTION__ << "@'" << __FILE__ << "'..." << std::endl;
+        std::cerr << "Warning! Unable to open \"" << _fname << "\" [" << __FUNCTION__
+                  << "@'" << __FILE__ << "'..." << std::endl;
         write_missing(std::cout);
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
-manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
-                       tim_timer_t* _missing_p)
+manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _missing_p)
 {
     tim_timer_t _missing;
     if(!_missing_p)
@@ -833,11 +822,11 @@ manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref,
     _os << "\n" << _ss.str();
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //  Static functions for writing JSON output
 //
-//============================================================================//
+//======================================================================================//
 
 // static function
 void
@@ -854,7 +843,7 @@ manager::write_report(path_t _fname, bool ign_cutoff)
     ofs.close();
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 void
 manager::write_json(path_t _fname)
@@ -865,7 +854,7 @@ manager::write_json(path_t _fname)
     (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 std::pair<int32_t, bool>
 manager::write_json(ostream_t& ofss)
@@ -879,7 +868,7 @@ manager::write_json(ostream_t& ofss)
     }
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 void
 manager::write_json_no_mpi(ostream_t& fss)
@@ -901,7 +890,7 @@ manager::write_json_no_mpi(ostream_t& fss)
         << "\n}" << std::endl;
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 void
 manager::write_json_no_mpi(path_t _fname)
@@ -925,12 +914,12 @@ manager::write_json_no_mpi(path_t _fname)
     if(ofs)
         ofs << fss.str() << std::endl;
     else
-        std::cerr << "Warning! Unable to write JSON output to \"" << _fname
-                  << "\"" << std::endl;
+        std::cerr << "Warning! Unable to write JSON output to \"" << _fname << "\""
+                  << std::endl;
     ofs.close();
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 std::pair<int32_t, bool>
 manager::write_json_mpi(ostream_t& ofss)
@@ -986,8 +975,7 @@ manager::write_json_mpi(ostream_t& ofss)
     if(mpi_rank(local_mpi_comm) == mpi_root)
         recvcounts = (int*) malloc(mpi_size(local_mpi_comm) * sizeof(int));
 
-    MPI_Gather(&fss_len, 1, MPI_INT, recvcounts, 1, MPI_INT, mpi_root,
-               local_mpi_comm);
+    MPI_Gather(&fss_len, 1, MPI_INT, recvcounts, 1, MPI_INT, mpi_root, local_mpi_comm);
 
     // Figure out the total length of string, and displacements for each rank
     int   fss_tot_len = 0;
@@ -1019,8 +1007,8 @@ manager::write_json_mpi(ostream_t& ofss)
     // can gather the strings
 
     char* cfss = (char*) fss_str.c_str();
-    MPI_Gatherv(cfss, fss_len, MPI_CHAR, totalstring, recvcounts, fss_tot,
-                MPI_CHAR, mpi_root, local_mpi_comm);
+    MPI_Gatherv(cfss, fss_len, MPI_CHAR, totalstring, recvcounts, fss_tot, MPI_CHAR,
+                mpi_root, local_mpi_comm);
 
     if(mpi_rank(local_mpi_comm) == mpi_root)
     {
@@ -1040,7 +1028,7 @@ manager::write_json_mpi(ostream_t& ofss)
     return std::pair<int32_t, bool>(local_mpi_file, write_rank);
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 void
 manager::write_json_mpi(path_t _fname)
@@ -1073,7 +1061,7 @@ manager::write_json_mpi(path_t _fname)
     }
 }
 
-//============================================================================//
+//======================================================================================//
 // static function
 manager::comm_group_t
 manager::get_communicator_group()
@@ -1104,18 +1092,12 @@ manager::get_communicator_group()
         int32_t local_mpi_file = mpi_rank() / local_mpi_size;
 
         std::stringstream _info;
-        _info << "\t" << mpi_rank() << " Rank      : " << mpi_rank()
-              << std::endl;
-        _info << "\t" << mpi_rank() << " Size      : " << mpi_size()
-              << std::endl;
-        _info << "\t" << mpi_rank() << " Node      : " << mpi_node_count
-              << std::endl;
-        _info << "\t" << mpi_rank() << " Local Size: " << local_mpi_size
-              << std::endl;
-        _info << "\t" << mpi_rank() << " Local Rank: " << local_mpi_rank
-              << std::endl;
-        _info << "\t" << mpi_rank() << " Local File: " << local_mpi_file
-              << std::endl;
+        _info << "\t" << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
+        _info << "\t" << mpi_rank() << " Size      : " << mpi_size() << std::endl;
+        _info << "\t" << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
+        _info << "\t" << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
+        _info << "\t" << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
+        _info << "\t" << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
         std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
     }
 #endif
@@ -1123,8 +1105,8 @@ manager::get_communicator_group()
     return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));
 }
 
-//============================================================================//
+//======================================================================================//
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//

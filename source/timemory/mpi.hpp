@@ -51,7 +51,7 @@
 
 namespace tim
 {
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline bool
 mpi_is_initialized()
@@ -63,7 +63,7 @@ mpi_is_initialized()
     return (_init != 0) ? true : false;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline int32_t
 mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
@@ -78,7 +78,7 @@ mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
     return std::max(_rank, (int32_t) 0);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline int32_t
 mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
@@ -93,7 +93,7 @@ mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
     return std::max(_size, (int32_t) 1);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline void
 mpi_barrier(MPI_Comm comm = MPI_COMM_WORLD)
@@ -106,7 +106,7 @@ mpi_barrier(MPI_Comm comm = MPI_COMM_WORLD)
 #endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline bool
 has_mpi_support()
@@ -118,41 +118,41 @@ has_mpi_support()
 #endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_USE_MPI)
 #else
 
 #    define MPI_INT int32_t
 #    define MPI_CHAR char
-#    define MPI_Gather(send_data, send_count, send_type, recv_data,            \
-                       recv_count, recv_type, root, communicator)              \
-        {                                                                      \
-            tim::consume_parameters(send_data, send_count, recv_data,          \
-                                    recv_count, root, communicator);           \
+#    define MPI_Gather(send_data, send_count, send_type, recv_data, recv_count,          \
+                       recv_type, root, communicator)                                    \
+        {                                                                                \
+            tim::consume_parameters(send_data, send_count, recv_data, recv_count, root,  \
+                                    communicator);                                       \
         }
 
-#    define MPI_Gatherv(send_buf, send_count, send_type, recv_buf, recv_count, \
-                        group_size, recv_type, root, communicator)             \
-        {                                                                      \
-            tim::consume_parameters(send_buf, send_count, recv_buf,            \
-                                    recv_count, root, communicator);           \
+#    define MPI_Gatherv(send_buf, send_count, send_type, recv_buf, recv_count,           \
+                        group_size, recv_type, root, communicator)                       \
+        {                                                                                \
+            tim::consume_parameters(send_buf, send_count, recv_buf, recv_count, root,    \
+                                    communicator);                                       \
         }
-#    define MPI_Comm_free(comm)                                                \
-        {                                                                      \
-            tim::consume_parameters(comm);                                     \
+#    define MPI_Comm_free(comm)                                                          \
+        {                                                                                \
+            tim::consume_parameters(comm);                                               \
         }
-#    define MPI_Comm_split(comm, color, key, new_comm)                         \
-        {                                                                      \
-            tim::consume_parameters(color, key, new_comm);                     \
+#    define MPI_Comm_split(comm, color, key, new_comm)                                   \
+        {                                                                                \
+            tim::consume_parameters(color, key, new_comm);                               \
         }
 
 #endif
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif

@@ -27,15 +27,15 @@
 
 #if !defined(pfunc)
 #    if defined(DEBUG)
-#        define pfunc                                                          \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__,      \
-                   __FILE__, __LINE__)
+#        define pfunc                                                                    \
+            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
+                   __LINE__)
 #    else
 #        define pfunc
 #    endif
 #endif
 
-//============================================================================//
+//======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
 extern void
@@ -59,7 +59,7 @@ cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
 extern void
 cxx_timemory_record_memory(int);
 
-//============================================================================//
+//======================================================================================//
 
 void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
@@ -69,7 +69,7 @@ c_timemory_create_auto_timer(const char* tag, int lineno)
                : NULL;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 c_timemory_delete_auto_timer(void* ctimer)
@@ -78,7 +78,7 @@ c_timemory_delete_auto_timer(void* ctimer)
     assert(ctimer == NULL);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 c_timemory_report(const char* fname)
@@ -86,7 +86,7 @@ c_timemory_report(const char* fname)
     cxx_timemory_report(fname);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 c_timemory_print(void)
@@ -94,7 +94,7 @@ c_timemory_print(void)
     cxx_timemory_print();
 }
 
-//============================================================================//
+//======================================================================================//
 
 const char*
 c_timemory_string_combine(const char* _a, const char* _b)
@@ -102,16 +102,15 @@ c_timemory_string_combine(const char* _a, const char* _b)
     return cxx_timemory_string_combine(_a, _b);
 }
 
-//============================================================================//
+//======================================================================================//
 
 const char*
-c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c,
-                          int _d)
+c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 c_timemory_record_memory(int _record_memory)
@@ -119,4 +118,4 @@ c_timemory_record_memory(int _record_memory)
     cxx_timemory_record_memory(_record_memory);
 }
 
-//============================================================================//
+//======================================================================================//

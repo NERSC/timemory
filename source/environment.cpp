@@ -28,23 +28,21 @@
 #include "timemory/manager.hpp"
 #include "timemory/utility.hpp"
 
-//============================================================================//
+//======================================================================================//
 
 bool
 get_env_bool(const tim::string& _env_var, const bool& _default)
 {
-    return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0)
-               ? true
-               : false;
+    return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0) ? true : false;
 }
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
 namespace env
 {
-//============================================================================//
+//======================================================================================//
 
 int  verbose              = 0;
 bool disable_timer_memory = false;
@@ -72,7 +70,7 @@ int16_t  timing_memory_width      = -1;
 string_t timing_memory_units      = "";
 bool     timing_memory_scientific = false;
 
-//============================================================================//
+//======================================================================================//
 
 string_t
 tolower(string_t str)
@@ -82,7 +80,7 @@ tolower(string_t str)
     return str;
 }
 
-//============================================================================//
+//======================================================================================//
 
 string_t
 toupper(string_t str)
@@ -92,7 +90,7 @@ toupper(string_t str)
     return str;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 parse()
@@ -105,42 +103,35 @@ parse()
         get_env_bool("TIMEMORY_DISABLE_TIMER_MEMORY", disable_timer_memory);
     // output_total            = get_env_bool        ("TIMEMORY_OUTPUT_TOTAL",
     // output_total);
-    env_num_threads =
-        tim::get_env<string_t>("TIMEMORY_NUM_THREADS_ENV", env_num_threads);
-    num_threads = tim::get_env<int>(env_num_threads, num_threads);
-    max_depth   = tim::get_env<int>("TIMEMORY_MAX_DEPTH", max_depth);
-    enabled     = get_env_bool("TIMEMORY_ENABLE", enabled);
+    env_num_threads = tim::get_env<string_t>("TIMEMORY_NUM_THREADS_ENV", env_num_threads);
+    num_threads     = tim::get_env<int>(env_num_threads, num_threads);
+    max_depth       = tim::get_env<int>("TIMEMORY_MAX_DEPTH", max_depth);
+    enabled         = get_env_bool("TIMEMORY_ENABLE", enabled);
 
-    timing_format =
-        tim::get_env<string_t>("TIMEMORY_TIMING_FORMAT", timing_format);
+    timing_format = tim::get_env<string_t>("TIMEMORY_TIMING_FORMAT", timing_format);
     timing_precision =
         tim::get_env<int16_t>("TIMEMORY_TIMING_PRECISION", timing_precision);
-    timing_width = tim::get_env<int16_t>("TIMEMORY_TIMING_WIDTH", timing_width);
-    timing_units =
-        tim::get_env<string_t>("TIMEMORY_TIMING_UNITS", timing_units);
-    timing_scientific =
-        get_env_bool("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific);
+    timing_width      = tim::get_env<int16_t>("TIMEMORY_TIMING_WIDTH", timing_width);
+    timing_units      = tim::get_env<string_t>("TIMEMORY_TIMING_UNITS", timing_units);
+    timing_scientific = get_env_bool("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific);
 
-    memory_format =
-        tim::get_env<string_t>("TIMEMORY_MEMORY_FORMAT", memory_format);
+    memory_format = tim::get_env<string_t>("TIMEMORY_MEMORY_FORMAT", memory_format);
     memory_precision =
         tim::get_env<int16_t>("TIMEMORY_MEMORY_PRECISION", memory_precision);
-    memory_width = tim::get_env<int16_t>("TIMEMORY_MEMORY_WIDTH", memory_width);
-    memory_units =
-        tim::get_env<string_t>("TIMEMORY_MEMORY_UNITS", memory_units);
-    memory_scientific =
-        get_env_bool("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific);
+    memory_width      = tim::get_env<int16_t>("TIMEMORY_MEMORY_WIDTH", memory_width);
+    memory_units      = tim::get_env<string_t>("TIMEMORY_MEMORY_UNITS", memory_units);
+    memory_scientific = get_env_bool("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific);
 
-    timing_memory_format = tim::get_env<string_t>(
-        "TIMEMORY_TIMING_MEMORY_FORMAT", timing_memory_format);
-    timing_memory_precision = tim::get_env<int16_t>(
-        "TIMEMORY_TIMING_MEMORY_PRECISION", timing_memory_precision);
-    timing_memory_width = tim::get_env<int16_t>("TIMEMORY_TIMING_MEMORY_WIDTH",
-                                                timing_memory_width);
-    timing_memory_units = tim::get_env<string_t>("TIMEMORY_TIMING_MEMORY_UNITS",
-                                                 timing_memory_units);
-    timing_memory_scientific = get_env_bool("TIMEMORY_TIMING_MEMORY_SCIENTIFIC",
-                                            timing_memory_scientific);
+    timing_memory_format =
+        tim::get_env<string_t>("TIMEMORY_TIMING_MEMORY_FORMAT", timing_memory_format);
+    timing_memory_precision = tim::get_env<int16_t>("TIMEMORY_TIMING_MEMORY_PRECISION",
+                                                    timing_memory_precision);
+    timing_memory_width =
+        tim::get_env<int16_t>("TIMEMORY_TIMING_MEMORY_WIDTH", timing_memory_width);
+    timing_memory_units =
+        tim::get_env<string_t>("TIMEMORY_TIMING_MEMORY_UNITS", timing_memory_units);
+    timing_memory_scientific =
+        get_env_bool("TIMEMORY_TIMING_MEMORY_SCIENTIFIC", timing_memory_scientific);
 
     tim::format::timer::push();
     tim::format::rss::push();
@@ -153,20 +144,17 @@ parse()
 
         using inner            = std::tuple<string_t, string_t, int64_t>;
         using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = {
-            inner("psec", "picosecond", tim::units::psec),
-            inner("nsec", "nanosecond", tim::units::nsec),
-            inner("usec", "microsecond", tim::units::usec),
-            inner("msec", "millisecond", tim::units::msec),
-            inner("csec", "centisecond", tim::units::csec),
-            inner("dsec", "decisecond", tim::units::dsec),
-            inner("sec", "second", tim::units::sec)
-        };
+        pair_vector_t matching = { inner("psec", "picosecond", tim::units::psec),
+                                   inner("nsec", "nanosecond", tim::units::nsec),
+                                   inner("usec", "microsecond", tim::units::usec),
+                                   inner("msec", "millisecond", tim::units::msec),
+                                   inner("csec", "centisecond", tim::units::csec),
+                                   inner("dsec", "decisecond", tim::units::dsec),
+                                   inner("sec", "second", tim::units::sec) };
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) ||
-               _unit == tolower(std::get<1>(itr)) ||
+            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<1>(itr)) + "s")
                 return std::get<2>(itr);
         return (int64_t) 0;
@@ -177,21 +165,18 @@ parse()
         if(_unit.length() == 0)
             return (int64_t) 0;
 
-        using inner         = std::tuple<string_t, string_t, string_t, int64_t>;
-        using pair_vector_t = std::vector<inner>;
-        pair_vector_t matching = {
-            inner("byte", "B", "Bi", tim::units::byte),
-            inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
-            inner("megabyte", "MB", "MiB", tim::units::megabyte),
-            inner("gigabyte", "GB", "GiB", tim::units::gigabyte),
-            inner("terabyte", "TB", "TiB", tim::units::terabyte),
-            inner("petabyte", "PB", "PiB", tim::units::petabyte)
-        };
+        using inner            = std::tuple<string_t, string_t, string_t, int64_t>;
+        using pair_vector_t    = std::vector<inner>;
+        pair_vector_t matching = { inner("byte", "B", "Bi", tim::units::byte),
+                                   inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
+                                   inner("megabyte", "MB", "MiB", tim::units::megabyte),
+                                   inner("gigabyte", "GB", "GiB", tim::units::gigabyte),
+                                   inner("terabyte", "TB", "TiB", tim::units::terabyte),
+                                   inner("petabyte", "PB", "PiB", tim::units::petabyte) };
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) ||
-               _unit == tolower(std::get<1>(itr)) ||
+            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<2>(itr)))
                 return std::get<3>(itr);
         return (int64_t) 0;
@@ -222,11 +207,11 @@ parse()
     tim::format::rss&  _timing_memory = _timing.rss_format();
     tim::format::rss   _memory        = tim::format::rss::get_default();
 
-    set_core(&_timing, timing_format, timing_precision, timing_width,
-             timing_scientific, timing_units, get_timing_unit);
+    set_core(&_timing, timing_format, timing_precision, timing_width, timing_scientific,
+             timing_units, get_timing_unit);
 
-    set_core(&_memory, memory_format, memory_precision, memory_width,
-             memory_scientific, memory_units, get_memory_unit);
+    set_core(&_memory, memory_format, memory_precision, memory_width, memory_scientific,
+             memory_units, get_memory_unit);
 
     set_core(&_timing_memory, timing_memory_format, timing_memory_precision,
              timing_memory_width, timing_memory_scientific, timing_memory_units,
@@ -242,10 +227,10 @@ parse()
     tim::manager::max_depth(max_depth);
 }
 
-//============================================================================//
+//======================================================================================//
 
 }  // namespace env
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//

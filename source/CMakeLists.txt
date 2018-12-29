@@ -17,7 +17,7 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
 # add cereal
 if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
     add_subdirectory(cereal)
-endif(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
+endif()
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
@@ -140,29 +140,28 @@ set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cereal_headers})
 if(WIN32)
     if(BUILD_SHARED_LIBS)
         set(_COMPILE_DEFS       _TIMEMORY_DLL)
-    else(BUILD_SHARED_LIBS)
+    else()
         set(_COMPILE_DEFS       _TIMEMORY_ARCHIVE)
-    endif(BUILD_SHARED_LIBS)
-else(WIN32)
+    endif()
+else()
     set(_OUTPUT_DIR ${PROJECT_BINARY_DIR}/timemory/lib)
-endif(WIN32)
+endif()
 
 # Set source file compile definitions
 if(NOT "${_COMPILE_DEFS}" STREQUAL "")
     set_source_files_properties(
         ${C_LIBRARY_SOURCES} ${CXX_LIBRARY_SOURCES} ${pysources}
         PROPERTIES COMPILE_DEFINITIONS ${_COMPILE_DEFS})
-endif(NOT "${_COMPILE_DEFS}" STREQUAL "")
+endif()
 
 
 #------------------------------------------------------------------------------#
 # build the libraries
 #
-if(BUILD_SHARED_LIBS)
-    set(_TYPE SHARED)
-else(BUILD_SHARED_LIBS)
+set(_TYPE SHARED) # default
+if(NOT BUILD_SHARED_LIBS)
     set(_TYPE STATIC)
-endif(BUILD_SHARED_LIBS)
+endif()
 
 build_library(
     PIC
@@ -183,7 +182,7 @@ build_library(
     OUTPUT_NAME         c${LIBNAME}
     LANGUAGE            C
     LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${CMAKE_BINARY_DIR} # ignored on Windows
+    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
     COMPILE_DEFINITIONS ${_COMPILE_DEFS}
     SOURCES             ${C_LIBRARY_SOURCES}
     LINK_LIBRARIES      ${LIBNAME}-cxx-library)

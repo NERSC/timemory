@@ -40,7 +40,7 @@
 #pragma GCC diagnostic ignored "-Wunused-variable"
 #pragma GCC diagnostic ignored "-Wuninitialized"
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #include <cstdint>
 #include <deque>
@@ -57,16 +57,15 @@
 
 namespace tim
 {
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 namespace internal
 {
-typedef std::tuple<uint64_t, uint64_t, uint64_t, tim::string,
-                   std::shared_ptr<tim::timer>>
+typedef std::tuple<uint64_t, uint64_t, uint64_t, tim::string, std::shared_ptr<tim::timer>>
     base_timer_tuple_t;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 struct tim_api timer_tuple : public internal::base_timer_tuple_t
 {
@@ -84,8 +83,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     {
     }
 
-    timer_tuple(uint64_t _a, uint64_t _b, uint64_t _c, string_t _d,
-                timer_ptr_t _e)
+    timer_tuple(uint64_t _a, uint64_t _b, uint64_t _c, string_t _d, timer_ptr_t _e)
     : base_type(_a, _b, _c, _d, _e)
     {
     }
@@ -178,7 +176,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     }
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 class tim_api manager
 {
@@ -227,9 +225,9 @@ public:
     static void           set_get_num_threads_func(get_num_threads_func_t f);
     static const int32_t& max_depth() { return f_max_depth; }
     static void           max_depth(const int32_t& val) { f_max_depth = val; }
-    static void    set_max_depth(const int32_t& val) { f_max_depth = val; }
-    static int32_t get_max_depth() { return f_max_depth; }
-    static bool    is_enabled() { return f_enabled; }
+    static void           set_max_depth(const int32_t& val) { f_max_depth = val; }
+    static int32_t        get_max_depth() { return f_max_depth; }
+    static bool           is_enabled() { return f_enabled; }
     // JSON writing
     static void                     write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
@@ -263,7 +261,8 @@ public:
     _Ret time(const string_t& key, _Func, _Args...);
 
     // time a function with no return type and no arguments
-    template <typename _Func> void time(const string_t& key, _Func);
+    template <typename _Func>
+    void time(const string_t& key, _Func);
 
     // time a function with no return type and arguments
     template <typename _Func, typename... _Args>
@@ -292,8 +291,7 @@ public:
     void write_missing(const path_t& _fname, tim_timer_t* = nullptr,
                        tim_timer_t* = nullptr);
 
-    void report(ostream_t& os, bool ign_cutoff = false,
-                bool endline = true) const
+    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const
     {
         report(&os, ign_cutoff, endline);
     }
@@ -303,10 +301,7 @@ public:
     {
         report(os, ign_cutoff, endline);
     }
-    void write_serialization(ostream_t& os = std::cout) const
-    {
-        write_json(os);
-    }
+    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
     // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
     //  then timer_pair_t will subtract out tim_timer_t
     void write_missing(ostream_t& = std::cout, tim_timer_t* = nullptr,
@@ -397,7 +392,7 @@ protected:
 private:
     // Private functions
     ofstream_t* get_ofstream(ostream_t* m_os) const;
-    void report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
+    void        report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
 
 private:
     // Private variables
@@ -445,7 +440,7 @@ private:
     ostream_t* m_report;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::operator+=(const base_rss_type& rhs)
 {
@@ -459,7 +454,7 @@ manager::operator+=(const base_rss_type& rhs)
             itr.timer().start();
     }
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::operator-=(const base_rss_type& rhs)
 {
@@ -473,7 +468,7 @@ manager::operator-=(const base_rss_type& rhs)
             itr.timer().start();
     }
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 template <typename _Ret, typename _Func>
 inline _Ret
 manager::time(const string_t& key, _Func func)
@@ -484,7 +479,7 @@ manager::time(const string_t& key, _Func func)
     _t.stop();
     return _ret;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 template <typename _Ret, typename _Func, typename... _Args>
 inline _Ret
 manager::time(const string_t& key, _Func func, _Args... args)
@@ -495,7 +490,7 @@ manager::time(const string_t& key, _Func func, _Args... args)
     _t.stop();
     return _ret;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 template <typename _Func>
 inline void
 manager::time(const string_t& key, _Func func)
@@ -505,7 +500,7 @@ manager::time(const string_t& key, _Func func)
     func();
     _t.stop();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 template <typename _Func, typename... _Args>
 inline void
 manager::time(const string_t& key, _Func func, _Args... args)
@@ -515,7 +510,7 @@ manager::time(const string_t& key, _Func func, _Args... args)
     func(args...);
     _t.stop();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 template <typename Archive>
 inline void
 manager::serialize(Archive& ar, const unsigned int /*version*/)
@@ -528,13 +523,13 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     ar(serializer::make_nvp("self_cost", _self_cost));
     ar(serializer::make_nvp("timers", *m_timer_list));
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline uint64_t
 manager::string_hash(const string_t& str) const
 {
     return std::hash<string_t>()(str);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline uint64_t
 manager::compute_total_laps() const
 {
@@ -543,25 +538,25 @@ manager::compute_total_laps() const
         _laps += itr.timer().laps();
     return _laps;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline uint64_t
 manager::total_laps() const
 {
     return m_laps + compute_total_laps();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::start_total_timer()
 {
     m_total_timer->stop();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::stop_total_timer()
 {
     m_total_timer->stop();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::reset_total_timer()
 {
@@ -572,7 +567,7 @@ manager::reset_total_timer()
     if(_restart)
         m_total_timer->start();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 {
@@ -617,20 +612,18 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     //    tim::format::timer::default_width(_width);
 
     for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
-        itr->timer().report(*os, (itr + 1 == this->cend()) ? endline : true,
-                            ign_cutoff);
+        itr->timer().report(*os, (itr + 1 == this->cend()) ? endline : true, ign_cutoff);
 
     os->flush();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline manager::ofstream_t*
 manager::get_ofstream(ostream_t* m_os) const
 {
-    return (m_os != &std::cout && m_os != &std::cerr)
-               ? static_cast<ofstream_t*>(m_os)
-               : nullptr;
+    return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
+                                                      : nullptr;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

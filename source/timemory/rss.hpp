@@ -46,7 +46,7 @@
 #include "timemory/serializer.hpp"
 #include "timemory/string.hpp"
 
-//============================================================================//
+//======================================================================================//
 
 #if defined(_UNIX)
 #    include <sys/resource.h>
@@ -62,8 +62,7 @@
 #    include <stdio.h>
 #    include <windows.h>
 #else
-#    error                                                                     \
-        "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
+#    error "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
 #endif
 
 // RSS - Resident set size (physical memory use, not in swap)
@@ -72,7 +71,7 @@ namespace tim
 {
 namespace rss
 {
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 /**
  * Returns the peak (maximum so far) resident set size (physical
@@ -94,8 +93,7 @@ get_peak_rss()
     int64_t _units = units::kilobyte;
 #    endif
 
-    return (int64_t)(_units *
-                     (_self_rusage.ru_maxrss + _child_rusage.ru_maxrss));
+    return (int64_t)(_units * (_self_rusage.ru_maxrss + _child_rusage.ru_maxrss));
 
 #elif defined(_WINDOWS)
     DWORD                   processID = GetCurrentProcessId();
@@ -105,8 +103,7 @@ get_peak_rss()
     // Print the process identifier.
     // printf( "\nProcess ID: %u\n", processID );
     // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE,
-                           processID);
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE, processID);
     if(NULL == hProcess)
         return (int64_t) 0;
 
@@ -122,7 +119,7 @@ get_peak_rss()
 #endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 /**
  * Returns the current resident set size (physical memory use) measured
@@ -166,8 +163,7 @@ get_current_rss()
     // Print the process identifier.
     // printf( "\nProcess ID: %u\n", processID );
     // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE,
-                           processID);
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
     if(NULL == hProcess)
         return (int64_t) 0;
 
@@ -183,9 +179,9 @@ get_current_rss()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-class tim_api usage
+tim_api class usage
 {
 public:
     typedef usage                        this_type;
@@ -224,8 +220,7 @@ public:
         }
     }
 
-    usage(size_type _curr, size_type _peak,
-          usage_format_t _fmt = usage_format_t())
+    usage(size_type _curr, size_type _peak, usage_format_t _fmt = usage_format_t())
     : m_curr_rss(_curr)
     , m_peak_rss(_peak)
     , m_format(_fmt)
@@ -359,17 +354,15 @@ public:
     //------------------------------------------------------------------------//
     friend bool operator<(const this_type& lhs, const this_type& rhs)
     {
-        return (lhs.m_peak_rss == rhs.m_peak_rss)
-                   ? (lhs.m_curr_rss < rhs.m_curr_rss)
-                   : (lhs.m_peak_rss < rhs.m_peak_rss);
+        return (lhs.m_peak_rss == rhs.m_peak_rss) ? (lhs.m_curr_rss < rhs.m_curr_rss)
+                                                  : (lhs.m_peak_rss < rhs.m_peak_rss);
     }
     //------------------------------------------------------------------------//
     //          operator ==
     //------------------------------------------------------------------------//
     friend bool operator==(const this_type& lhs, const this_type& rhs)
     {
-        return (lhs.m_peak_rss == rhs.m_peak_rss) &&
-               (lhs.m_curr_rss == rhs.m_curr_rss);
+        return (lhs.m_peak_rss == rhs.m_peak_rss) && (lhs.m_curr_rss == rhs.m_curr_rss);
     }
     //------------------------------------------------------------------------//
     //          operator !=
@@ -383,9 +376,8 @@ public:
     //------------------------------------------------------------------------//
     friend bool operator>(const this_type& lhs, const this_type& rhs)
     {
-        return (lhs.m_peak_rss == rhs.m_peak_rss)
-                   ? (lhs.m_curr_rss > rhs.m_curr_rss)
-                   : (lhs.m_peak_rss > rhs.m_peak_rss);
+        return (lhs.m_peak_rss == rhs.m_peak_rss) ? (lhs.m_curr_rss > rhs.m_curr_rss)
+                                                  : (lhs.m_peak_rss > rhs.m_peak_rss);
     }
     //------------------------------------------------------------------------//
     //          operator <=
@@ -448,8 +440,7 @@ public:
     //------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const usage& m)
     {
-        format_type _format =
-            (m.format().get()) ? (*(m.format().get())) : format_type();
+        format_type _format = (m.format().get()) ? (*(m.format().get())) : format_type();
         os << _format(&m);
         return os;
     }
@@ -460,25 +451,25 @@ protected:
     usage_format_t m_format;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage::set_format(const format_type& _format)
 {
     m_format = usage_format_t(new format_type(_format));
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage::set_format(usage_format_t _format)
 {
     m_format = _format;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline usage::usage_format_t
 usage::format() const
 {
     return m_format;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage::record()
 {
@@ -486,25 +477,24 @@ usage::record()
     m_curr_rss = std::max(m_curr_rss, get_current_rss());
     m_peak_rss = std::max(m_peak_rss, get_peak_rss());
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage::record(const usage& rhs)
 {
     // everything is bytes
-    m_curr_rss = std::max(m_curr_rss - rhs.m_curr_rss,
-                          get_current_rss() - rhs.m_curr_rss);
-    m_peak_rss =
-        std::max(m_peak_rss - rhs.m_peak_rss, get_peak_rss() - rhs.m_peak_rss);
+    m_curr_rss =
+        std::max(m_curr_rss - rhs.m_curr_rss, get_current_rss() - rhs.m_curr_rss);
+    m_peak_rss = std::max(m_peak_rss - rhs.m_peak_rss, get_peak_rss() - rhs.m_peak_rss);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-//============================================================================//
+//======================================================================================//
 //
 //  Class for handling the RSS memory usage (total and self)
 //
-//============================================================================//
+//======================================================================================//
 
-class tim_api usage_delta
+tim_api class usage_delta
 {
 public:
     typedef usage_delta                  this_type;
@@ -620,8 +610,8 @@ public:
         if(this != &rhs)
         {
             if(!m_format.get())
-                m_format = usage_format_t(
-                    new format_type(format::timer::default_rss_format()));
+                m_format =
+                    usage_format_t(new format_type(format::timer::default_rss_format()));
             if(rhs.m_format.get())
                 *m_format = *(rhs.m_format.get());
             m_rss_tot      = rhs.m_rss_tot;
@@ -637,9 +627,8 @@ public:
     //------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& m)
     {
-        format_type _format = (m.format().get())
-                                  ? (*(m.format().get()))
-                                  : format::timer::default_rss_format();
+        format_type _format = (m.format().get()) ? (*(m.format().get()))
+                                                 : format::timer::default_rss_format();
         os << _format(&m);
         return os;
     }
@@ -654,30 +643,30 @@ protected:
     usage_format_t m_format;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage_delta::set_format(const format_type& _format)
 {
     m_format = usage_format_t(new format_type(_format));
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 usage_delta::set_format(usage_format_t _format)
 {
     m_format = _format;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline usage_delta::usage_format_t
 usage_delta::format() const
 {
     return m_format;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace rss
 
 }  // namespace tim
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif  // rss_hpp_

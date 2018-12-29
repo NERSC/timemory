@@ -31,27 +31,26 @@ namespace tim
 {
 namespace format
 {
-//============================================================================//
+//======================================================================================//
 //
 //                          CORE_FORMATTER
 //
-//============================================================================//
+//======================================================================================//
 
-core_formatter::core_formatter(size_type _prec, size_type _width,
-                               unit_type _unit, string_t _fmt, bool _fixed)
+core_formatter::core_formatter(size_type _prec, size_type _width, unit_type _unit,
+                               string_t _fmt, bool _fixed)
 : m_data(_prec, _width, _unit, _fmt, _fixed)
 {
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //                          BASE_FORMATTER
 //
-//============================================================================//
+//======================================================================================//
 
-base_formatter::base_formatter(string_t _prefix, string_t _suffix,
-                               string_t _format, unit_type _unit,
-                               bool _align_width, size_type _prec,
+base_formatter::base_formatter(string_t _prefix, string_t _suffix, string_t _format,
+                               unit_type _unit, bool _align_width, size_type _prec,
                                size_type _width, bool _fixed)
 : core_type(_prec, _width, _unit, _format, _fixed)
 , m_align_width(_align_width)
@@ -60,9 +59,9 @@ base_formatter::base_formatter(string_t _prefix, string_t _suffix,
 {
 }
 
-//============================================================================//
+//======================================================================================//
 //      format strings
-//============================================================================//
+//======================================================================================//
 
 core_formatter&
 rss::f_current()
@@ -78,20 +77,19 @@ rss::f_current()
     return _instance;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer::format_pair_t&
 timer::f_current()
 {
     static timer::format_pair_t _instance = timer::format_pair_t(
-        core_formatter(
-            3,           // precision
-            5,           // min prefix field width
-            units::sec,  // timing display units
-                         // format string
-            ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
-            true  // std::fixed
-            ),
+        core_formatter(3,           // precision
+                       5,           // min prefix field width
+                       units::sec,  // timing display units
+                                    // format string
+                       ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
+                       true  // std::fixed
+                       ),
         rss("",  // prefix (ignored with timer)
                  // format string
             ": RSS {tot,self}_{curr,peak} : (%C|%M) | (%c|%m) [%A]",
@@ -105,9 +103,9 @@ timer::f_current()
     return _instance;
 }
 
-//============================================================================//
+//======================================================================================//
 //      field lists
-//============================================================================//
+//======================================================================================//
 
 rss::field_list_t
 rss::get_field_list()
@@ -121,7 +119,7 @@ rss::get_field_list()
              rss::field_pair_t("%A", rss::field::memory_unit) };
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer::field_list_t
 timer::get_field_list()
@@ -138,31 +136,29 @@ timer::get_field_list()
     };
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss::storage_type&
 rss::f_history()
 {
-    static rss::storage_type _instance =
-        rss::storage_type({ rss::f_current() });
+    static rss::storage_type _instance = rss::storage_type({ rss::f_current() });
     return _instance;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer::storage_type&
 timer::f_history()
 {
-    static timer::storage_type _instance =
-        timer::storage_type({ timer::f_current() });
+    static timer::storage_type _instance = timer::storage_type({ timer::f_current() });
     return _instance;
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //                          TIMING
 //
-//============================================================================//
+//======================================================================================//
 
 void
 timer::push()
@@ -171,7 +167,7 @@ timer::push()
     f_history().push(f_current());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 timer::pop()
@@ -185,7 +181,7 @@ timer::pop()
         f_history().pop();
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 timer::propose_default_width(size_type _w)
@@ -194,7 +190,7 @@ timer::propose_default_width(size_type _w)
     f_current().first.width() = std::max(f_current().first.width(), _w);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer::string_t
 timer::compose() const
@@ -202,18 +198,18 @@ timer::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current().first.width() + 1) << std::left << m_prefix
-            << " " << std::right << this->format() << std::left << m_suffix;
+        _ss << std::setw(f_current().first.width() + 1) << std::left << m_prefix << " "
+            << std::right << this->format() << std::left << m_suffix;
     }
     else
     {
-        _ss << std::setw(width() + 1) << std::left << m_prefix << " "
-            << std::right << this->format() << std::left << m_suffix;
+        _ss << std::setw(width() + 1) << std::left << m_prefix << " " << std::right
+            << this->format() << std::left << m_suffix;
     }
     return _ss.str();
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer::string_t
 timer::operator()(const internal::base_timer* t) const
@@ -277,9 +273,7 @@ timer::operator()(const internal::base_timer* t) const
                 _ss.precision(1);
                 _ss << _laps;
                 break;
-            case timer::field::timing_unit:
-                _ss << units::time_repr(this->unit());
-                break;
+            case timer::field::timing_unit: _ss << units::time_repr(this->unit()); break;
             default:
                 _ss << "unknown field: " << itr.first;
                 throw std::runtime_error(_ss.str().c_str());
@@ -304,7 +298,7 @@ timer::operator()(const internal::base_timer* t) const
     return _str;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 timer::set_default(const timer& rhs)
@@ -317,7 +311,7 @@ timer::set_default(const timer& rhs)
     timer::default_width(rhs.width());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer
 timer::get_default()
@@ -332,7 +326,7 @@ timer::get_default()
     return obj;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 timer*
 timer::copy_from(const timer* rhs)
@@ -347,11 +341,11 @@ timer::copy_from(const timer* rhs)
     return this;
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //                          RSS
 //
-//============================================================================//
+//======================================================================================//
 
 void
 rss::push()
@@ -360,7 +354,7 @@ rss::push()
     f_history().push(f_current());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 rss::pop()
@@ -374,7 +368,7 @@ rss::pop()
         f_history().pop();
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 rss::propose_default_width(size_type _w)
@@ -383,7 +377,7 @@ rss::propose_default_width(size_type _w)
     f_current().width() = std::max(f_current().width(), _w);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss::string_t
 rss::compose() const
@@ -391,18 +385,18 @@ rss::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current().width() + 1) << std::left << m_prefix
-            << " " << std::right << this->format() << std::left << m_suffix;
+        _ss << std::setw(f_current().width() + 1) << std::left << m_prefix << " "
+            << std::right << this->format() << std::left << m_suffix;
     }
     else
     {
-        _ss << std::setw(width() + 1) << std::left << m_prefix << " "
-            << std::right << this->format() << std::left << m_suffix;
+        _ss << std::setw(width() + 1) << std::left << m_prefix << " " << std::right
+            << this->format() << std::left << m_suffix;
     }
     return _ss.str();
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss::string_t
 rss::operator()(const string_t& _base) const
@@ -444,7 +438,7 @@ rss::operator()(const string_t& _base) const
     return _str;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss::string_t
 rss::operator()(const tim::rss::usage* m) const
@@ -511,7 +505,7 @@ rss::operator()(const tim::rss::usage* m) const
     return _str;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss::string_t
 rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
@@ -583,7 +577,7 @@ rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
     return _str;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 rss::set_default(const rss& rhs)
@@ -595,7 +589,7 @@ rss::set_default(const rss& rhs)
     rss::default_fixed(rhs.fixed());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss
 rss::get_default()
@@ -609,7 +603,7 @@ rss::get_default()
     return obj;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 rss*
 rss::copy_from(const rss* rhs)
@@ -623,7 +617,7 @@ rss::copy_from(const rss* rhs)
     return this;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace format
 

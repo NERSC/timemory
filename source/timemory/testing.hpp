@@ -40,41 +40,40 @@
 #include "timemory/string.hpp"
 #include <timemory/mpi.hpp>
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 // ASSERT_NEAR
 // EXPECT_EQ
 // EXPECT_FLOAT_EQ
 // EXPECT_DOUBLE_EQ
 
-#define EXPECT_EQ(lhs, rhs)                                                    \
-    if(lhs != rhs)                                                             \
-    {                                                                          \
-        std::stringstream ss;                                                  \
-        ss << #lhs << " != " << #rhs << " @ line " << __LINE__ << " of "       \
-           << __FILE__;                                                        \
-        std::cerr << ss.str() << std::endl;                                    \
-        throw std::runtime_error(ss.str());                                    \
+#define EXPECT_EQ(lhs, rhs)                                                              \
+    if(lhs != rhs)                                                                       \
+    {                                                                                    \
+        std::stringstream ss;                                                            \
+        ss << #lhs << " != " << #rhs << " @ line " << __LINE__ << " of " << __FILE__;    \
+        std::cerr << ss.str() << std::endl;                                              \
+        throw std::runtime_error(ss.str());                                              \
     }
 
-#define ASSERT_FALSE(expr)                                                     \
-    if(expr)                                                                   \
-    {                                                                          \
-        std::stringstream ss;                                                  \
-        ss << "Expression: ( " << #expr << " ) "                               \
-           << "failed @ line " << __LINE__ << " of " << __FILE__;              \
-        std::cerr << ss.str() << std::endl;                                    \
-        throw std::runtime_error(ss.str());                                    \
+#define ASSERT_FALSE(expr)                                                               \
+    if(expr)                                                                             \
+    {                                                                                    \
+        std::stringstream ss;                                                            \
+        ss << "Expression: ( " << #expr << " ) "                                         \
+           << "failed @ line " << __LINE__ << " of " << __FILE__;                        \
+        std::cerr << ss.str() << std::endl;                                              \
+        throw std::runtime_error(ss.str());                                              \
     }
 
-#define ASSERT_TRUE(expr)                                                      \
-    if(!(expr))                                                                \
-    {                                                                          \
-        std::stringstream ss;                                                  \
-        ss << "Expression: !( " << #expr << " ) "                              \
-           << "failed @ line " << __LINE__ << " of " << __FILE__;              \
-        std::cerr << ss.str() << std::endl;                                    \
-        throw std::runtime_error(ss.str());                                    \
+#define ASSERT_TRUE(expr)                                                                \
+    if(!(expr))                                                                          \
+    {                                                                                    \
+        std::stringstream ss;                                                            \
+        ss << "Expression: !( " << #expr << " ) "                                        \
+           << "failed @ line " << __LINE__ << " of " << __FILE__;                        \
+        std::cerr << ss.str() << std::endl;                                              \
+        throw std::runtime_error(ss.str());                                              \
     }
 
 #define PRINT_HERE printf(" [%s@'%s':%i]\n", __FUNCTION__, __FILE__, __LINE__)
@@ -90,22 +89,22 @@ rank_prefix()
 
 #define rank_cout std::cout << rank_prefix()
 
-//----------------------------------------------------------------------------//
-#define TEST_SUMMARY(argv_0, ntest_counter, nfail_counter)                     \
-    {                                                                          \
-        std::stringstream rank_sout;                                           \
-        rank_sout << "\nDone.\n" << std::endl;                                 \
-        rank_sout << "[" << argv_0 << "] ";                                    \
-        if(num_fail > 0)                                                       \
-            rank_sout << "Tests failed: " << nfail_counter << "/"              \
-                      << ntest_counter << std::endl;                           \
-        else                                                                   \
-            rank_sout << "Tests passed: " << (ntest_counter - nfail_counter)   \
-                      << "/" << ntest_counter << std::endl;                    \
-        rank_cout << rank_sout.str();                                          \
+//--------------------------------------------------------------------------------------//
+#define TEST_SUMMARY(argv_0, ntest_counter, nfail_counter)                               \
+    {                                                                                    \
+        std::stringstream rank_sout;                                                     \
+        rank_sout << "\nDone.\n" << std::endl;                                           \
+        rank_sout << "[" << argv_0 << "] ";                                              \
+        if(num_fail > 0)                                                                 \
+            rank_sout << "Tests failed: " << nfail_counter << "/" << ntest_counter       \
+                      << std::endl;                                                      \
+        else                                                                             \
+            rank_sout << "Tests passed: " << (ntest_counter - nfail_counter) << "/"      \
+                      << ntest_counter << std::endl;                                     \
+        rank_cout << rank_sout.str();                                                    \
     }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // Usage:
 //  try
 //  {
@@ -116,20 +115,20 @@ rank_prefix()
 //      std::cerr << e.what() << std::endl;
 //  }
 //
-#define RUN_TEST(func, ntest_counter, nfail_counter)                           \
-    {                                                                          \
-        try                                                                    \
-        {                                                                      \
-            ntest_counter += 1;                                                \
-            func();                                                            \
-        }                                                                      \
-        catch(std::exception & e)                                              \
-        {                                                                      \
-            std::cerr << e.what() << std::endl;                                \
-            nfail_counter += 1;                                                \
-        }                                                                      \
+#define RUN_TEST(func, ntest_counter, nfail_counter)                                     \
+    {                                                                                    \
+        try                                                                              \
+        {                                                                                \
+            ntest_counter += 1;                                                          \
+            func();                                                                      \
+        }                                                                                \
+        catch(std::exception & e)                                                        \
+        {                                                                                \
+            std::cerr << e.what() << std::endl;                                          \
+            nfail_counter += 1;                                                          \
+        }                                                                                \
     }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif

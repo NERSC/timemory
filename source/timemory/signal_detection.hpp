@@ -29,11 +29,11 @@
  *
  */
 
-//============================================================================//
+//======================================================================================//
 /// This global method should be used on LINUX or MacOSX platforms with gcc,
 /// clang, or intel compilers for activating signal detection and forcing
 /// exception being thrown that can be handled when detected.
-//============================================================================//
+//======================================================================================//
 
 #ifndef signal_detection_hpp_
 #define signal_detection_hpp_ 1
@@ -93,7 +93,7 @@
 #    include <signal.h>
 #endif
 
-//============================================================================//
+//======================================================================================//
 //  these are not in the original POSIX.1-1990 standard so we are defining
 //  them in case the OS hasn't
 //  POSIX-1.2001
@@ -131,7 +131,7 @@
 #    define SIGINFO 29
 #endif
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
@@ -159,7 +159,7 @@ namespace tim
 // time alarm (see setitimer(2)) 27    SIGPROF      terminate process profiling
 // timer alarm (see setitimer(2))
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 enum class sys_signal : int
 {
@@ -186,9 +186,9 @@ enum class sys_signal : int
     sProfileAlarm = SIGPROF
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-class tim_api signal_settings
+tim_api class signal_settings
 {
 public:
     typedef std::set<sys_signal> signal_set_t;
@@ -226,19 +226,19 @@ protected:
     static signals_data_t f_signals;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 #if defined(SIGNAL_AVAILABLE)
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 static struct sigaction tim_signal_termaction, tim_signal_oldaction;
 
@@ -249,7 +249,7 @@ enable_signal_detection(
 inline void
 disable_signal_detection();
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline void
 stack_backtrace(std::ostream& ss)
@@ -330,8 +330,8 @@ stack_backtrace(std::ostream& ss)
     for(size_type j = 0; j < nptrs; ++j)
     {
         // print the back-trace numver
-        ss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/"
-           << std::setw(nwidth) << nptrs << "] : ";
+        ss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
+           << nptrs << "] : ";
         // loop over fields
         for(size_type i = 0; i < dmang_len.size(); ++i)
         {
@@ -350,7 +350,7 @@ stack_backtrace(std::ostream& ss)
     // http://gcc.gnu.org/onlinedocs/libstdc++/manual/ext_demangling.html
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
@@ -371,15 +371,13 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
         if(sinfo)
             switch(sinfo->si_code)
             {
-                case SEGV_MAPERR:
-                    message << "Address not mapped to object.";
-                    break;
+                case SEGV_MAPERR: message << "Address not mapped to object."; break;
                 case SEGV_ACCERR:
                     message << "Invalid permissions for mapped object.";
                     break;
                 default:
-                    message << "Unknown segmentation fault error: "
-                            << sinfo->si_code << ".";
+                    message << "Unknown segmentation fault error: " << sinfo->si_code
+                            << ".";
                     break;
             }
         else
@@ -390,19 +388,11 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
         if(sinfo)
             switch(sinfo->si_code)
             {
-                case FE_DIVBYZERO:
-                    message << "Floating point divide by zero.";
-                    break;
+                case FE_DIVBYZERO: message << "Floating point divide by zero."; break;
                 case FE_OVERFLOW: message << "Floating point overflow."; break;
-                case FE_UNDERFLOW:
-                    message << "Floating point underflow.";
-                    break;
-                case FE_INEXACT:
-                    message << "Floating point inexact result.";
-                    break;
-                case FE_INVALID:
-                    message << "Floating point invalid operation.";
-                    break;
+                case FE_UNDERFLOW: message << "Floating point underflow."; break;
+                case FE_INEXACT: message << "Floating point inexact result."; break;
+                case FE_INVALID: message << "Floating point invalid operation."; break;
                 default:
                     message << "Unknown floating point exception error: "
                             << sinfo->si_code << ".";
@@ -420,23 +410,22 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
     }
     catch(std::exception& e)
     {
-        std::cerr << "signal_settings::exit_action(" << sig
-                  << ") threw an exception" << std::endl;
+        std::cerr << "signal_settings::exit_action(" << sig << ") threw an exception"
+                  << std::endl;
         std::cerr << e.what() << std::endl;
     }
 
     stack_backtrace(message);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline void
 termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
     sys_signal _sig = (sys_signal)(sig);
 
-    if(signal_settings::get_enabled().find(_sig) ==
-       signal_settings::get_enabled().end())
+    if(signal_settings::get_enabled().find(_sig) == signal_settings::get_enabled().end())
         return;
 
     std::stringstream message;
@@ -462,7 +451,7 @@ termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 #    endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline bool
 enable_signal_detection(signal_settings::signal_set_t operations)
@@ -502,7 +491,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     return true;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 inline void
 disable_signal_detection()
@@ -528,15 +517,15 @@ disable_signal_detection()
     signal_settings::set_active(false);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 #else /* Not a supported architecture */
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
@@ -557,7 +546,7 @@ stack_backtrace(std::ostream& os)
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 #endif
 

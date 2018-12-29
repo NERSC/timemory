@@ -110,13 +110,13 @@ if(TIMEMORY_USE_PYTHON_BINDING)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # make sure pybind11 gets installed in same place as TiMemory
-    if(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
+    if(PYBIND11_INSTALL)
         set(PYBIND11_CMAKECONFIG_INSTALL_DIR
             "${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/pybind11"
             CACHE STRING "install path for pybind11Config.cmake" FORCE)
         set(CMAKE_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_INCLUDEDIR}
             CACHE PATH "Include file installation path" FORCE)
-    endif(PYBIND11_INSTALL AND TIMEMORY_DEVELOPER_INSTALL)
+    endif()
 
     # C++ standard
     set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}

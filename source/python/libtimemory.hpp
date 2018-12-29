@@ -183,9 +183,8 @@ string_t
 get_file(int nback = 2, bool only_basename = true, bool use_dirname = false,
          bool noquotes = false)
 {
-    auto locals =
-        py::dict("back"_a = nback, "only_basename"_a = only_basename,
-                 "use_dirname"_a = use_dirname, "noquotes"_a = noquotes);
+    auto locals = py::dict("back"_a = nback, "only_basename"_a = only_basename,
+                           "use_dirname"_a = use_dirname, "noquotes"_a = noquotes);
     py::exec(R"(
              import sys
              import os
@@ -295,8 +294,8 @@ timer(std::string prefix = "", std::string format = "")
 //----------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(const std::string& key = "", bool report_at_exit = false,
-           int nback = 1, bool added_args = false)
+auto_timer(const std::string& key = "", bool report_at_exit = false, int nback = 1,
+           bool added_args = false)
 {
     std::stringstream keyss;
     keyss << get_func(nback);
@@ -347,8 +346,7 @@ timer_decorator(const std::string& func, const std::string& file, int line,
         keyss << ":";
         keyss << line;
     }
-    return &(*_ptr =
-                 new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
+    return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
@@ -397,10 +395,9 @@ timing_format(const std::string& prefix = "",
 //----------------------------------------------------------------------------//
 
 rss_format_t*
-memory_format(const std::string& prefix      = "",
-              const std::string& format      = rss_format_t::default_format(),
-              unit_type          unit        = rss_format_t::default_unit(),
-              bool               align_width = false)
+memory_format(const std::string& prefix = "",
+              const std::string& format = rss_format_t::default_format(),
+              unit_type unit = rss_format_t::default_unit(), bool align_width = false)
 {
     return new rss_format_t(prefix, format, unit, align_width);
 }
@@ -518,8 +515,7 @@ report(py::object man, bool ign_cutoff = false, bool serialize = false,
 
     if(do_ser && manager_t::instance()->size() > 0)
     {
-        std::cout << "Serializing manager to '" << serfnm << "'..."
-                  << std::endl;
+        std::cout << "Serializing manager to '" << serfnm << "'..." << std::endl;
         _man->write_serialization(serfnm.c_str());
         man.attr("serialized_files").cast<py::list>().append(serabs);
     }

@@ -35,15 +35,15 @@
 
 #if !defined(pfunc)
 #    if defined(DEBUG)
-#        define pfunc                                                          \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__,      \
-                   __FILE__, __LINE__)
+#        define pfunc                                                                    \
+            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
+                   __LINE__)
 #    else
 #        define pfunc
 #    endif
 #endif
 
-//============================================================================//
+//======================================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
 //__c_ctor__
@@ -55,7 +55,7 @@ setup_timemory(void)
     pfunc;
 }
 
-//============================================================================//
+//======================================================================================//
 
 //__c_dtor__
 void
@@ -66,11 +66,11 @@ cleanup_timemory(void)
     pfunc;
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //                      C++ interface
 //
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void
 cxx_timemory_initialization(void)
@@ -80,7 +80,7 @@ cxx_timemory_initialization(void)
     pfunc;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void
 cxx_timemory_finalization(void)
@@ -90,7 +90,7 @@ cxx_timemory_finalization(void)
     pfunc;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api int
 cxx_timemory_enabled(void)
@@ -98,11 +98,11 @@ cxx_timemory_enabled(void)
     return (tim::auto_timer::alloc_next()) ? 1 : 0;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int lineno,
-                               const char* lang_tag, int report)
+cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* lang_tag,
+                               int report)
 {
     std::string cxx_timer_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
@@ -111,7 +111,7 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno,
                                     (report > 0) ? true : false);
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void*
 cxx_timemory_delete_auto_timer(void* ctimer)
@@ -122,7 +122,7 @@ cxx_timemory_delete_auto_timer(void* ctimer)
     return ctimer;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api const char*
 cxx_timemory_string_combine(const char* _a, const char* _b)
@@ -132,20 +132,18 @@ cxx_timemory_string_combine(const char* _a, const char* _b)
     return (const char*) buff;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api const char*
-cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c,
-                            int _d)
+cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
-    std::string _C =
-        std::string(_c).substr(std::string(_c).find_last_of("/") + 1);
-    char* buff = (char*) malloc(sizeof(char) * 256);
+    std::string _C   = std::string(_c).substr(std::string(_c).find_last_of("/") + 1);
+    char*       buff = (char*) malloc(sizeof(char) * 256);
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void
 cxx_timemory_report(const char* fname)
@@ -170,7 +168,7 @@ cxx_timemory_report(const char* fname)
         tim::manager::master_instance()->write_json(ofs_serial);
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void
 cxx_timemory_print(void)
@@ -178,7 +176,7 @@ cxx_timemory_print(void)
     tim::manager::master_instance()->report(std::cout, true);
 }
 
-//============================================================================//
+//======================================================================================//
 
 extern "C" tim_api void
 cxx_timemory_record_memory(int _record_memory)
@@ -186,11 +184,11 @@ cxx_timemory_record_memory(int _record_memory)
     tim::timer::default_record_memory((_record_memory > 0) ? true : false);
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //                      Serialization
 //
-//============================================================================//
+//======================================================================================//
 
 CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
@@ -203,4 +201,4 @@ CEREAL_CLASS_VERSION(internal::base_duration_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_time_point_t, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(internal::base_time_pair_t, TIMEMORY_TIMER_VERSION)
 
-//============================================================================//
+//======================================================================================//

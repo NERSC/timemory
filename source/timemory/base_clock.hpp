@@ -110,52 +110,63 @@ typedef long long suseconds_t;
 
 namespace tim
 {
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-template <typename Ratio> struct time_units;
+template <typename Ratio>
+struct time_units;
 
-template <> struct time_units<std::pico>
+template <>
+struct time_units<std::pico>
 {
     static constexpr const char* str = "psec";
 };
-template <> struct time_units<std::nano>
+template <>
+struct time_units<std::nano>
 {
     static constexpr const char* str = "nsec";
 };
-template <> struct time_units<std::micro>
+template <>
+struct time_units<std::micro>
 {
     static constexpr const char* str = "usec";
 };
-template <> struct time_units<std::milli>
+template <>
+struct time_units<std::milli>
 {
     static constexpr const char* str = "msec";
 };
-template <> struct time_units<std::centi>
+template <>
+struct time_units<std::centi>
 {
     static constexpr const char* str = "csec";
 };
-template <> struct time_units<std::deci>
+template <>
+struct time_units<std::deci>
 {
     static constexpr const char* str = "dsec";
 };
-template <> struct time_units<std::ratio<1>>
+template <>
+struct time_units<std::ratio<1>>
 {
     static constexpr const char* str = "sec";
 };
-template <> struct time_units<std::ratio<60>>
+template <>
+struct time_units<std::ratio<60>>
 {
     static constexpr const char* str = "min";
 };
-template <> struct time_units<std::ratio<3600>>
+template <>
+struct time_units<std::ratio<3600>>
 {
     static constexpr const char* str = "hr";
 };
-template <> struct time_units<std::ratio<3600 * 24>>
+template <>
+struct time_units<std::ratio<3600 * 24>>
 {
     static constexpr const char* str = "day";
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 template <typename Precision>
 intmax_t
@@ -184,8 +195,7 @@ clock_tick()
         else if(result > Precision::den)  // den == std::ratio::denominator
         {
             std::stringstream ss;
-            ss << "Found more than 1 clock tick per "
-               << time_units<Precision>::str
+            ss << "Found more than 1 clock tick per " << time_units<Precision>::str
                << ". cpu_clock can't handle that.";
             result = _get_sys_tick();
             throw std::runtime_error(ss.str().c_str());
@@ -198,15 +208,14 @@ clock_tick()
     return result;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // The triple of user, system and real time used to represent
-template <typename _Prec> struct base_clock_data
+template <typename _Prec>
+struct base_clock_data
 {
     typedef _Prec                  precision;
     typedef base_clock_data<_Prec> this_type;
-    typedef std::tuple<intmax_t, intmax_t,
-                       std::chrono::high_resolution_clock::rep>
-        rep;
+    typedef std::tuple<intmax_t, intmax_t, std::chrono::high_resolution_clock::rep> rep;
 
     rep data;
 
@@ -244,9 +253,10 @@ public:
     }
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-template <typename _Precision> class tim_api base_clock
+template <typename _Precision>
+tim_api class base_clock
 {
 #if defined(__GNUC__) && !defined(__clang__)
     static_assert(std::chrono::__is_ratio<_Precision>::value,
@@ -289,8 +299,8 @@ public:
         ::times(&_tms);
         auto wall_time = get_wall_time();
 
-        return time_point(duration(rep{
-            std::make_tuple(get_user_time(), get_sys_time(), wall_time) }));
+        return time_point(
+            duration(rep{ std::make_tuple(get_user_time(), get_sys_time(), wall_time) }));
     }
 
     /*
@@ -331,25 +341,23 @@ public:
     */
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 namespace std
 {
 template <typename _Precision, typename _Period>
 ostream&
-operator<<(ostream&                                                      os,
-           const chrono::duration<tim::base_clock<_Precision>, _Period>& dur)
+operator<<(ostream& os, const chrono::duration<tim::base_clock<_Precision>, _Period>& dur)
 {
     auto rep = dur.count();
-    return (os << "[user " << get<0>(rep.data) << ", system "
-               << get<1>(rep.data) << ", real " << get<2>(rep.data) << ' '
-               << tim::time_units<_Period>::repr << " ("
-               << ((get<0>(rep.data) + get<1>(rep.data)) / (get<2>(rep.data)) *
-                   100.0)
+    return (os << "[user " << get<0>(rep.data) << ", system " << get<1>(rep.data)
+               << ", real " << get<2>(rep.data) << ' ' << tim::time_units<_Period>::repr
+               << " ("
+               << ((get<0>(rep.data) + get<1>(rep.data)) / (get<2>(rep.data)) * 100.0)
                << "%) " << ']');
 }
 
@@ -359,17 +367,15 @@ template <typename _Pr, typename _Per>
 using tim_duration_t = duration<tim::base_clock<_Pr>, _Per>;
 
 template <typename _Pr, typename _Per>
-using tim_time_point_t =
-    time_point<tim::base_clock<_Pr>, tim_duration_t<_Pr, _Per>>;
+using tim_time_point_t = time_point<tim::base_clock<_Pr>, tim_duration_t<_Pr, _Per>>;
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // Calculates the sum of two `base_clock<_Prec>::time_point`
 // objects. Both time points must be generated by combined-clocks operating
 // on the same precision level.
 template <typename _Pr, typename _Per>
 constexpr tim_duration_t<_Pr, _Per>
-operator+(const tim_time_point_t<_Pr, _Per>& lhs,
-          const tim_time_point_t<_Pr, _Per>& rhs)
+operator+(const tim_time_point_t<_Pr, _Per>& lhs, const tim_time_point_t<_Pr, _Per>& rhs)
 {
     return tim_duration_t<_Pr, _Per>(tim::base_clock<_Pr>{ make_tuple(
         // user time
@@ -383,7 +389,7 @@ operator+(const tim_time_point_t<_Pr, _Per>& lhs,
             get<2>(rhs.time_since_epoch().count().data)) });
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // This exists only to prevent users from calculating the sum of
 // two `tim::base_clock<Precision>` time-points that have different
 // precision levels. If both operands were generated by base_clocks
@@ -394,8 +400,7 @@ constexpr tim_duration_t<_Pr1, _Per1>
 operator+(const tim_time_point_t<_Pr1, _Per1>& lhs,
           const tim_time_point_t<_Pr2, _Per2>& rhs)
 {
-    static_assert(std::is_same<_Pr1, _Pr2>::value &&
-                      std::is_same<_Per1, _Per2>::value,
+    static_assert(std::is_same<_Pr1, _Pr2>::value && std::is_same<_Per1, _Per2>::value,
                   "Cannot apply operator- to combined_clock time points of "
                   "different precision");
 
@@ -411,14 +416,13 @@ operator+(const tim_time_point_t<_Pr1, _Per1>& lhs,
             get<2>(rhs.time_since_epoch().count().data)) });
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // Calculates the difference between two `base_clock<_Prec>::time_point`
 // objects. Both time points must be generated by combined-clocks operating
 // on the same precision level.
 template <typename _Pr, typename _Per>
 constexpr tim_duration_t<_Pr, _Per>
-operator-(const tim_time_point_t<_Pr, _Per>& lhs,
-          const tim_time_point_t<_Pr, _Per>& rhs)
+operator-(const tim_time_point_t<_Pr, _Per>& lhs, const tim_time_point_t<_Pr, _Per>& rhs)
 {
     return tim_duration_t<_Pr, _Per>(tim::base_clock<_Pr>{ make_tuple(
         // user time
@@ -432,7 +436,7 @@ operator-(const tim_time_point_t<_Pr, _Per>& lhs,
             get<2>(rhs.time_since_epoch().count().data)) });
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // This exists only to prevent users from calculating the difference between
 // two `tim::base_clock<Precision>` time-points that have different
 // precision levels. If both operands were generated by base_clocks
@@ -443,8 +447,7 @@ constexpr tim_duration_t<_Pr1, _Per1>
 operator-(const tim_time_point_t<_Pr1, _Per1>& lhs,
           const tim_time_point_t<_Pr2, _Per2>& rhs)
 {
-    static_assert(std::is_same<_Pr1, _Pr2>::value &&
-                      std::is_same<_Per1, _Per2>::value,
+    static_assert(std::is_same<_Pr1, _Pr2>::value && std::is_same<_Per1, _Per2>::value,
                   "Cannot apply operator- to combined_clock time points of "
                   "different precision");
 
@@ -460,7 +463,7 @@ operator-(const tim_time_point_t<_Pr1, _Per1>& lhs,
             get<2>(rhs.time_since_epoch().count().data)) });
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace chrono
 

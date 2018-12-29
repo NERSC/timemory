@@ -34,7 +34,7 @@
 #include <algorithm>
 #include <cassert>
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
@@ -45,7 +45,7 @@ timer::f_record_memory()
     return _record_memory;
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::timer(bool _auto_start, timer* _sum_timer)
 : base_type(nullptr, timer::default_record_memory())
@@ -55,16 +55,15 @@ timer::timer(bool _auto_start, timer* _sum_timer)
         this->start();
 }
 
-//============================================================================//
+//======================================================================================//
 
-timer::timer(const string_t& _prefix, const string_t& _format,
-             bool _record_memory)
+timer::timer(const string_t& _prefix, const string_t& _format, bool _record_memory)
 : base_type(timer_format_t(new format_type(_prefix, _format)), _record_memory)
 , m_sum_timer(nullptr)
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::timer(const format_type& _format, bool _record_memory)
 : base_type(timer_format_t(new format_type(_format)), _record_memory)
@@ -72,7 +71,7 @@ timer::timer(const format_type& _format, bool _record_memory)
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::timer(timer_format_t _format, bool _record_memory)
 : base_type(_format, _record_memory)
@@ -80,14 +79,14 @@ timer::timer(timer_format_t _format, bool _record_memory)
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::timer(const this_type* rhs, const string_t& _prefix, bool _align_width,
              bool _record_memory)
-: base_type(timer_format_t(new format_type(
-                _prefix, (rhs) ? rhs->format()->format()
-                               : format::timer::default_format())),
-            _record_memory)
+: base_type(
+      timer_format_t(new format_type(_prefix, (rhs) ? rhs->format()->format()
+                                                    : format::timer::default_format())),
+      _record_memory)
 , m_sum_timer(nullptr)
 {
     if(rhs)
@@ -95,22 +94,22 @@ timer::timer(const this_type* rhs, const string_t& _prefix, bool _align_width,
     this->format()->align_width(_align_width);
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::~timer() {}
 
-//============================================================================//
+//======================================================================================//
 
 timer::timer(const this_type& rhs)
-: base_type(timer_format_t(new format_type(rhs.format()->prefix(),
-                                           rhs.format()->format())),
-            rhs.m_record_memory)
+: base_type(
+      timer_format_t(new format_type(rhs.format()->prefix(), rhs.format()->format())),
+      rhs.m_record_memory)
 , m_sum_timer(rhs.m_sum_timer)
 {
     m_accum = rhs.get_accum();
 }
 
-//============================================================================//
+//======================================================================================//
 
 timer::this_type&
 timer::operator=(const this_type& rhs)
@@ -128,7 +127,7 @@ timer::operator=(const this_type& rhs)
     return *this;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 timer::grab_metadata(const this_type& rhs)
@@ -142,6 +141,6 @@ timer::grab_metadata(const this_type& rhs)
     *(m_format.get()) = *(rhs.m_format.get());
 }
 
-//============================================================================//
+//======================================================================================//
 
 }  // namespace tim

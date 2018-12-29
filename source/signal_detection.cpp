@@ -35,7 +35,7 @@
 
 namespace tim
 {
-//============================================================================//
+//======================================================================================//
 
 namespace internal
 {
@@ -46,20 +46,17 @@ dummy_func(int)
 }
 }  // namespace internal
 
-//============================================================================//
+//======================================================================================//
 
 signal_settings::signals_data_t::signals_data_t()
 : signals_active(false)
 , signals_default({
-      sys_signal::sHangup,       sys_signal::sInterrupt,
-      sys_signal::sQuit,         sys_signal::sIllegal,
-      sys_signal::sTrap,         sys_signal::sAbort,
-      sys_signal::sEmulate,      sys_signal::sKill,
-      sys_signal::sBus,          sys_signal::sSegFault,
-      sys_signal::sSystem,       sys_signal::sPipe,
-      sys_signal::sAlarm,        sys_signal::sTerminate,
-      sys_signal::sUrgent,       sys_signal::sStop,
-      sys_signal::sCPUtime,      sys_signal::sFileSize,
+      sys_signal::sHangup,       sys_signal::sInterrupt,    sys_signal::sQuit,
+      sys_signal::sIllegal,      sys_signal::sTrap,         sys_signal::sAbort,
+      sys_signal::sEmulate,      sys_signal::sKill,         sys_signal::sBus,
+      sys_signal::sSegFault,     sys_signal::sSystem,       sys_signal::sPipe,
+      sys_signal::sAlarm,        sys_signal::sTerminate,    sys_signal::sUrgent,
+      sys_signal::sStop,         sys_signal::sCPUtime,      sys_signal::sFileSize,
       sys_signal::sVirtualAlarm, sys_signal::sProfileAlarm,
   })
 , signals_enabled(signals_default)
@@ -74,12 +71,12 @@ signal_settings::signals_data_t::signals_data_t()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
 signal_settings::signals_data_t signal_settings::f_signals =
     signal_settings::signals_data_t();
 
-//============================================================================//
+//======================================================================================//
 
 void
 insert_and_remove(const sys_signal&              _type,  // signal type
@@ -93,25 +90,23 @@ insert_and_remove(const sys_signal&              _type,  // signal type
         _rem->erase(itr);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::enable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_enabled,
-                      &f_signals.signals_disabled);
+    insert_and_remove(_type, &f_signals.signals_enabled, &f_signals.signals_disabled);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::disable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_disabled,
-                      &f_signals.signals_enabled);
+    insert_and_remove(_type, &f_signals.signals_disabled, &f_signals.signals_enabled);
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::check_environment()
@@ -164,7 +159,7 @@ signal_settings::check_environment()
             signal_settings::disable(itr);
 }
 
-//============================================================================//
+//======================================================================================//
 
 tim::string
 signal_settings::str(const sys_signal& _type)
@@ -173,9 +168,8 @@ signal_settings::str(const sys_signal& _type)
 
     std::stringstream ss;
     auto              descript = [&](const descript_tuple_t& _data) {
-        ss << " Signal: " << std::get<0>(_data)
-           << " (error code: " << std::get<1>(_data) << ") "
-           << std::get<2>(_data);
+        ss << " Signal: " << std::get<0>(_data) << " (error code: " << std::get<1>(_data)
+           << ") " << std::get<2>(_data);
     };
 
     // some of these signals are not handled but added in case they are
@@ -196,12 +190,9 @@ signal_settings::str(const sys_signal& _type)
         descript_tuple_t("SIGPIPE", SIGPIPE, "write on a pipe with no reader"),
         descript_tuple_t("SIGALRM", SIGALRM, "real-time timer expired"),
         descript_tuple_t("SIGTERM", SIGTERM, "software termination signal"),
-        descript_tuple_t("SIGURG", SIGURG,
-                         "urgent condition present on socket"),
-        descript_tuple_t("SIGSTOP", SIGSTOP,
-                         "stop (cannot be caught or ignored)"),
-        descript_tuple_t("SIGTSTP", SIGTSTP,
-                         "stop signal generated from keyboard"),
+        descript_tuple_t("SIGURG", SIGURG, "urgent condition present on socket"),
+        descript_tuple_t("SIGSTOP", SIGSTOP, "stop (cannot be caught or ignored)"),
+        descript_tuple_t("SIGTSTP", SIGTSTP, "stop signal generated from keyboard"),
         descript_tuple_t("SIGCONT", SIGCONT, "continue after stop"),
         descript_tuple_t("SIGCHLD", SIGCHLD, "child status has changed"),
         descript_tuple_t("SIGTTIN", SIGTTIN,
@@ -230,7 +221,7 @@ signal_settings::str(const sys_signal& _type)
     return ss.str();
 }
 
-//============================================================================//
+//======================================================================================//
 
 tim::string
 signal_settings::str()
@@ -254,15 +245,14 @@ signal_settings::str()
 
 #else
 
-    ss << std::endl
-       << spacer() << "Signal detection not available" << std::endl;
+    ss << std::endl << spacer() << "Signal detection not available" << std::endl;
 
 #endif
 
     return ss.str();
 }
 
-//============================================================================//
+//======================================================================================//
 
 bool
 signal_settings::is_active()
@@ -270,7 +260,7 @@ signal_settings::is_active()
     return f_signals.signals_active;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::set_active(bool val)
@@ -278,7 +268,7 @@ signal_settings::set_active(bool val)
     f_signals.signals_active = val;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::set_exit_action(signal_function_t _f)
@@ -286,7 +276,7 @@ signal_settings::set_exit_action(signal_function_t _f)
     f_signals.signals_exit_func = _f;
 }
 
-//============================================================================//
+//======================================================================================//
 
 void
 signal_settings::exit_action(int errcode)
@@ -294,7 +284,7 @@ signal_settings::exit_action(int errcode)
     f_signals.signals_exit_func(errcode);
 }
 
-//============================================================================//
+//======================================================================================//
 
 const signal_settings::signal_set_t&
 signal_settings::enabled()
@@ -303,7 +293,7 @@ signal_settings::enabled()
     return f_signals.signals_enabled;
 }
 
-//============================================================================//
+//======================================================================================//
 
 const signal_settings::signal_set_t&
 signal_settings::disabled()
@@ -312,7 +302,7 @@ signal_settings::disabled()
     return f_signals.signals_disabled;
 }
 
-//============================================================================//
+//======================================================================================//
 
 const signal_settings::signal_set_t&
 signal_settings::get_enabled()
@@ -320,7 +310,7 @@ signal_settings::get_enabled()
     return f_signals.signals_enabled;
 }
 
-//============================================================================//
+//======================================================================================//
 
 const signal_settings::signal_set_t&
 signal_settings::get_disabled()
@@ -328,7 +318,7 @@ signal_settings::get_disabled()
     return f_signals.signals_disabled;
 }
 
-//============================================================================//
+//======================================================================================//
 
 const signal_settings::signal_set_t&
 signal_settings::get_default()
@@ -336,8 +326,8 @@ signal_settings::get_default()
     return f_signals.signals_default;
 }
 
-//============================================================================//
+//======================================================================================//
 
 }  // namespace tim
 
-//============================================================================//
+//======================================================================================//

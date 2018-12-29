@@ -51,17 +51,14 @@ PYBIND11_MODULE(libtimemory, tim)
             py::arg("nback") = 2, py::arg("basename_only") = true,
             py::arg("use_dirname") = false, py::arg("noquotes") = false);
     //------------------------------------------------------------------------//
-    tim.def(
-        "set_max_depth",
-        [=](int32_t ndepth) { manager_t::instance()->set_max_depth(ndepth); },
-        "Max depth of auto-timers");
-    //------------------------------------------------------------------------//
-    tim.def("get_max_depth",
-            [=]() { return manager_t::instance()->get_max_depth(); },
+    tim.def("set_max_depth",
+            [=](int32_t ndepth) { manager_t::instance()->set_max_depth(ndepth); },
             "Max depth of auto-timers");
     //------------------------------------------------------------------------//
-    tim.def("toggle",
-            [=](bool timers_on) { manager_t::instance()->enable(timers_on); },
+    tim.def("get_max_depth", [=]() { return manager_t::instance()->get_max_depth(); },
+            "Max depth of auto-timers");
+    //------------------------------------------------------------------------//
+    tim.def("toggle", [=](bool timers_on) { manager_t::instance()->enable(timers_on); },
             "Enable/disable auto-timers", py::arg("timers_on") = true);
     //------------------------------------------------------------------------//
     tim.def("enable", [=]() { manager_t::instance()->enable(true); },
@@ -105,8 +102,7 @@ PYBIND11_MODULE(libtimemory, tim)
     //      Units submodule
     //
     //========================================================================//
-    py::module units =
-        tim.def_submodule("units", "units for timing and memory");
+    py::module units = tim.def_submodule("units", "units for timing and memory");
 
     units.attr("psec")     = tim::units::psec;
     units.attr("nsec")     = tim::units::nsec;
@@ -127,21 +123,19 @@ PYBIND11_MODULE(libtimemory, tim)
     //      Format submodule
     //
     //========================================================================//
-    py::module fmt =
-        tim.def_submodule("format", "timing and memory format submodule");
+    py::module fmt = tim.def_submodule("format", "timing and memory format submodule");
 
     //------------------------------------------------------------------------//
     //      format.timer
     //------------------------------------------------------------------------//
     py::class_<tim::format::timer> timing_fmt(fmt, "timer");
 
-    timing_fmt.def(
-        py::init(&pytim::init::timing_format), "Initialize timing formatter",
-        py::return_value_policy::take_ownership, py::arg("prefix") = "",
-        py::arg("format") =
-            std::string(timer_format_t::default_format().c_str()),
-        py::arg("unit")       = timer_format_t::default_unit(),
-        py::arg("rss_format") = py::none(), py::arg("align_width") = false);
+    timing_fmt.def(py::init(&pytim::init::timing_format), "Initialize timing formatter",
+                   py::return_value_policy::take_ownership, py::arg("prefix") = "",
+                   py::arg("format") =
+                       std::string(timer_format_t::default_format().c_str()),
+                   py::arg("unit")       = timer_format_t::default_unit(),
+                   py::arg("rss_format") = py::none(), py::arg("align_width") = false);
 
     timing_fmt.def("set_default",
                    [=](PYOBJECT_SELF py::object _val) {
@@ -155,11 +149,10 @@ PYBIND11_MODULE(libtimemory, tim)
                        return new timer_format_t(_fmt);
                    },
                    "Get the default timer format");
-    timing_fmt.def("set_default_format",
-                   [=](PYOBJECT_SELF std::string _val) {
-                       timer_format_t::default_format(_val);
-                   },
-                   "Set the default timer format");
+    timing_fmt.def(
+        "set_default_format",
+        [=](PYOBJECT_SELF std::string _val) { timer_format_t::default_format(_val); },
+        "Set the default timer format");
     timing_fmt.def("set_default_rss_format",
                    [=](PYOBJECT_SELF py::object _val) {
                        try
@@ -170,7 +163,7 @@ PYBIND11_MODULE(libtimemory, tim)
                        catch(...)
                        {
                            std::string _fmt = _val.cast<std::string>();
-                           auto _rss = timer_format_t::default_rss_format();
+                           auto        _rss = timer_format_t::default_rss_format();
                            _rss.format(_fmt);
                            timer_format_t::default_rss_format(_rss);
                        }
@@ -181,26 +174,23 @@ PYBIND11_MODULE(libtimemory, tim)
                        timer_format_t::default_precision(_prec);
                    },
                    "Set the default timer precision");
-    timing_fmt.def("set_default_unit",
-                   [=](PYOBJECT_SELF const int64_t& _unit) {
-                       timer_format_t::default_unit(_unit);
-                   },
-                   "Set the default timer units");
-    timing_fmt.def("set_default_width",
-                   [=](PYOBJECT_SELF const int16_t& _w) {
-                       timer_format_t::default_width(_w);
-                   },
-                   "Set the default timer field width");
-
     timing_fmt.def(
-        "copy_from",
-        [=](py::object self, py::object rhs) {
-            timer_format_t* _self = self.cast<timer_format_t*>();
-            timer_format_t* _rhs  = rhs.cast<timer_format_t*>();
-            _self->copy_from(_rhs);
-            return self;
-        },
-        "Copy for format, precision, unit, width, etc. from another format");
+        "set_default_unit",
+        [=](PYOBJECT_SELF const int64_t& _unit) { timer_format_t::default_unit(_unit); },
+        "Set the default timer units");
+    timing_fmt.def(
+        "set_default_width",
+        [=](PYOBJECT_SELF const int16_t& _w) { timer_format_t::default_width(_w); },
+        "Set the default timer field width");
+
+    timing_fmt.def("copy_from",
+                   [=](py::object self, py::object rhs) {
+                       timer_format_t* _self = self.cast<timer_format_t*>();
+                       timer_format_t* _rhs  = rhs.cast<timer_format_t*>();
+                       _self->copy_from(_rhs);
+                       return self;
+                   },
+                   "Copy for format, precision, unit, width, etc. from another format");
     timing_fmt.def("set_format",
                    [=](py::object obj, std::string _val) {
                        obj.cast<timer_format_t*>()->format(_val);
@@ -254,8 +244,7 @@ PYBIND11_MODULE(libtimemory, tim)
         py::init(&pytim::init::memory_format), "Initialize memory formatter",
         py::return_value_policy::take_ownership, py::arg("prefix") = "",
         py::arg("format") = std::string(rss_format_t::default_format().c_str()),
-        py::arg("unit")   = rss_format_t::default_unit(),
-        py::arg("align_width") = false);
+        py::arg("unit") = rss_format_t::default_unit(), py::arg("align_width") = false);
 
     memory_fmt.def("set_default",
                    [=](PYOBJECT_SELF py::object _val) {
@@ -269,36 +258,32 @@ PYBIND11_MODULE(libtimemory, tim)
                        return new rss_format_t(_fmt);
                    },
                    "Get the default RSS format");
-    memory_fmt.def("set_default_format",
-                   [=](PYOBJECT_SELF std::string _val) {
-                       rss_format_t::default_format(_val);
-                   },
-                   "Set the default RSS format");
+    memory_fmt.def(
+        "set_default_format",
+        [=](PYOBJECT_SELF std::string _val) { rss_format_t::default_format(_val); },
+        "Set the default RSS format");
     memory_fmt.def("set_default_precision",
                    [=](PYOBJECT_SELF const int16_t& _prec) {
                        rss_format_t::default_precision(_prec);
                    },
                    "Set the default RSS precision");
-    memory_fmt.def("set_default_unit",
-                   [=](PYOBJECT_SELF const int64_t& _unit) {
-                       rss_format_t::default_unit(_unit);
-                   },
-                   "Set the default RSS units");
-    memory_fmt.def("set_default_width",
-                   [=](PYOBJECT_SELF const int16_t& _w) {
-                       rss_format_t::default_width(_w);
-                   },
-                   "Set the default RSS field width");
-
     memory_fmt.def(
-        "copy_from",
-        [=](py::object self, py::object rhs) {
-            rss_format_t* _self = self.cast<rss_format_t*>();
-            rss_format_t* _rhs  = rhs.cast<rss_format_t*>();
-            _self->copy_from(_rhs);
-            return self;
-        },
-        "Copy for format, precision, unit, width, etc. from another format");
+        "set_default_unit",
+        [=](PYOBJECT_SELF const int64_t& _unit) { rss_format_t::default_unit(_unit); },
+        "Set the default RSS units");
+    memory_fmt.def(
+        "set_default_width",
+        [=](PYOBJECT_SELF const int16_t& _w) { rss_format_t::default_width(_w); },
+        "Set the default RSS field width");
+
+    memory_fmt.def("copy_from",
+                   [=](py::object self, py::object rhs) {
+                       rss_format_t* _self = self.cast<rss_format_t*>();
+                       rss_format_t* _rhs  = rhs.cast<rss_format_t*>();
+                       _self->copy_from(_rhs);
+                       return self;
+                   },
+                   "Copy for format, precision, unit, width, etc. from another format");
     memory_fmt.def("set_format",
                    [=](py::object obj, std::string _val) {
                        obj.cast<rss_format_t*>()->format(_val);
@@ -314,16 +299,14 @@ PYBIND11_MODULE(libtimemory, tim)
                        obj.cast<rss_format_t*>()->unit(_unit);
                    },
                    "Set the RSS units");
-    memory_fmt.def("set_width",
-                   [=](py::object obj, const int16_t& _w) {
-                       obj.cast<rss_format_t*>()->width(_w);
-                   },
-                   "Set the RSS field width");
-    memory_fmt.def("set_use_align_width",
-                   [=](py::object obj, bool _val) {
-                       obj.cast<rss_format_t*>()->align_width(_val);
-                   },
-                   "Set the RSS to use the alignment width");
+    memory_fmt.def(
+        "set_width",
+        [=](py::object obj, const int16_t& _w) { obj.cast<rss_format_t*>()->width(_w); },
+        "Set the RSS field width");
+    memory_fmt.def(
+        "set_use_align_width",
+        [=](py::object obj, bool _val) { obj.cast<rss_format_t*>()->align_width(_val); },
+        "Set the RSS to use the alignment width");
     memory_fmt.def("set_prefix",
                    [=](py::object self, std::string prefix) {
                        rss_format_t* _self = self.cast<rss_format_t*>();
@@ -359,30 +342,25 @@ PYBIND11_MODULE(libtimemory, tim)
               py::return_value_policy::take_ownership, py::arg("prefix") = "",
               py::arg("format") = "");
     //------------------------------------------------------------------------//
-    timer.def("real_elapsed",
-              [=](py::object timer) {
-                  return timer.cast<tim_timer_t*>()->real_elapsed();
-              },
-              "Elapsed wall clock");
+    timer.def(
+        "real_elapsed",
+        [=](py::object timer) { return timer.cast<tim_timer_t*>()->real_elapsed(); },
+        "Elapsed wall clock");
     //------------------------------------------------------------------------//
-    timer.def("sys_elapsed",
-              [=](py::object timer) {
-                  return timer.cast<tim_timer_t*>()->system_elapsed();
-              },
-              "Elapsed system clock");
+    timer.def(
+        "sys_elapsed",
+        [=](py::object timer) { return timer.cast<tim_timer_t*>()->system_elapsed(); },
+        "Elapsed system clock");
     //------------------------------------------------------------------------//
-    timer.def("user_elapsed",
-              [=](py::object timer) {
-                  return timer.cast<tim_timer_t*>()->user_elapsed();
-              },
-              "Elapsed user time");
+    timer.def(
+        "user_elapsed",
+        [=](py::object timer) { return timer.cast<tim_timer_t*>()->user_elapsed(); },
+        "Elapsed user time");
     //------------------------------------------------------------------------//
-    timer.def("start",
-              [=](py::object timer) { timer.cast<tim_timer_t*>()->start(); },
+    timer.def("start", [=](py::object timer) { timer.cast<tim_timer_t*>()->start(); },
               "Start timer");
     //------------------------------------------------------------------------//
-    timer.def("stop",
-              [=](py::object timer) { timer.cast<tim_timer_t*>()->stop(); },
+    timer.def("stop", [=](py::object timer) { timer.cast<tim_timer_t*>()->stop(); },
               "Stop timer");
     //------------------------------------------------------------------------//
     timer.def("report",
@@ -391,13 +369,12 @@ PYBIND11_MODULE(libtimemory, tim)
               },
               "Report timer", py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
-    timer.def(
-        "__str__",
-        [=](py::object timer, bool ign_cutoff = true) {
-            return std::string(
-                timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str());
-        },
-        "Stringify timer", py::arg("ign_cutoff") = true);
+    timer.def("__str__",
+              [=](py::object timer, bool ign_cutoff = true) {
+                  return std::string(
+                      timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str());
+              },
+              "Stringify timer", py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
     timer.def("__iadd__",
               [=](py::object timer, py::object _rss) {
@@ -424,8 +401,7 @@ PYBIND11_MODULE(libtimemory, tim)
                   }
                   return _fmt.get();
               },
-              "Set the format of the timer",
-              py::return_value_policy::reference_internal);
+              "Set the format of the timer", py::return_value_policy::reference_internal);
     //------------------------------------------------------------------------//
     timer.def("set_format",
               [=](py::object timer, py::object fmt) {
@@ -435,8 +411,7 @@ PYBIND11_MODULE(libtimemory, tim)
               },
               "Set the format of the timer");
     //------------------------------------------------------------------------//
-    timer.def("reset",
-              [=](py::object self) { self.cast<tim_timer_t*>()->reset(); },
+    timer.def("reset", [=](py::object self) { self.cast<tim_timer_t*>()->reset(); },
               "Reset the timer");
     //------------------------------------------------------------------------//
 
@@ -481,15 +456,12 @@ PYBIND11_MODULE(libtimemory, tim)
             "Set the output stream file");
     //------------------------------------------------------------------------//
     man.def("size",
-            [=](py::object man) {
-                return man.cast<manager_wrapper*>()->get()->size();
-            },
+            [=](py::object man) { return man.cast<manager_wrapper*>()->get()->size(); },
             "Size of timing manager");
     //------------------------------------------------------------------------//
-    man.def(
-        "clear",
-        [=](py::object man) { man.cast<manager_wrapper*>()->get()->clear(); },
-        "Clear the timing manager");
+    man.def("clear",
+            [=](py::object man) { man.cast<manager_wrapper*>()->get()->clear(); },
+            "Clear the timing manager");
     //------------------------------------------------------------------------//
     man.def("write_missing",
             [=](py::object man, std::string fname) {
@@ -499,8 +471,7 @@ PYBIND11_MODULE(libtimemory, tim)
                          options.ensure_directory_exists(fname)
                          )",
                          py::globals(), locals);
-                man.cast<manager_wrapper*>()->get()->write_missing(
-                    fname.c_str());
+                man.cast<manager_wrapper*>()->get()->write_missing(fname.c_str());
             },
             "Write TiMemory missing to file");
     //------------------------------------------------------------------------//
@@ -524,13 +495,11 @@ PYBIND11_MODULE(libtimemory, tim)
                 tim_timer_t& _t = man.cast<manager_wrapper*>()->get()->at(i);
                 return &_t;
             },
-            "Set the max depth of the timers",
-            py::return_value_policy::reference);
+            "Set the max depth of the timers", py::return_value_policy::reference);
     //------------------------------------------------------------------------//
-    man.def(
-        "merge",
-        [=](py::object man) { man.cast<manager_wrapper*>()->get()->merge(); },
-        "Merge the thread-local timers");
+    man.def("merge",
+            [=](py::object man) { man.cast<manager_wrapper*>()->get()->merge(); },
+            "Merge the thread-local timers");
     //------------------------------------------------------------------------//
     man.def("json",
             [=](py::object man) {
@@ -543,16 +512,14 @@ PYBIND11_MODULE(libtimemory, tim)
     //------------------------------------------------------------------------//
     man.def("__iadd__",
             [=](py::object man, py::object _rss) {
-                *(man.cast<manager_wrapper*>()->get()) +=
-                    *(_rss.cast<rss_usage_t*>());
+                *(man.cast<manager_wrapper*>()->get()) += *(_rss.cast<rss_usage_t*>());
                 return man;
             },
             "Add RSS measurement");
     //------------------------------------------------------------------------//
     man.def("__isub__",
             [=](py::object man, py::object _rss) {
-                *(man.cast<manager_wrapper*>()->get()) -=
-                    *(_rss.cast<rss_usage_t*>());
+                *(man.cast<manager_wrapper*>()->get()) -= *(_rss.cast<rss_usage_t*>());
                 return man;
             },
             "Subtract an rss usage from the entire list of timer");
@@ -579,12 +546,11 @@ PYBIND11_MODULE(libtimemory, tim)
             },
             "Reset the global timer (for explicit measurement)");
     //------------------------------------------------------------------------//
-    man.def(
-        "update_total_timer_format",
-        [=](py::object self) {
-            self.cast<manager_wrapper*>()->get()->update_total_timer_format();
-        },
-        "Update the format of the total timer to the default format");
+    man.def("update_total_timer_format",
+            [=](py::object self) {
+                self.cast<manager_wrapper*>()->get()->update_total_timer_format();
+            },
+            "Update the format of the total timer to the default format");
     //------------------------------------------------------------------------//
     man.def("set_self_cost",
             [=](py::object self, bool val) {
@@ -618,18 +584,15 @@ PYBIND11_MODULE(libtimemory, tim)
     auto_timer.def(
         "global_timer",
         [=](py::object _auto_timer) {
-            return _auto_timer.cast<auto_timer_t*>()
-                ->local_timer()
-                .summation_timer();
+            return _auto_timer.cast<auto_timer_t*>()->local_timer().summation_timer();
         },
         "Get the timer for all the auto-timer instances (from manager)");
     //------------------------------------------------------------------------//
     auto_timer.def("__str__",
                    [=](py::object _pyauto_timer) {
                        std::stringstream _ss;
-                       auto_timer_t*     _auto_timer =
-                           _pyauto_timer.cast<auto_timer_t*>();
-                       tim_timer_t _local = _auto_timer->local_timer();
+                       auto_timer_t* _auto_timer = _pyauto_timer.cast<auto_timer_t*>();
+                       tim_timer_t   _local      = _auto_timer->local_timer();
                        _local.stop();
                        tim_timer_t _global =
                            *_auto_timer->local_timer().summation_timer();
@@ -640,8 +603,8 @@ PYBIND11_MODULE(libtimemory, tim)
                    },
                    "Print the auto timer");
     //------------------------------------------------------------------------//
-    timer_decorator.def(py::init(&pytim::init::timer_decorator),
-                        "Initialization", py::return_value_policy::automatic);
+    timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
+                        py::return_value_policy::automatic);
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -651,12 +614,10 @@ PYBIND11_MODULE(libtimemory, tim)
     //========================================================================//
     rss_usage.def(py::init(&pytim::init::rss_usage),
                   "Initialization of RSS measurement class",
-                  py::return_value_policy::take_ownership,
-                  py::arg("prefix") = "", py::arg("record") = false,
-                  py::arg("format") = "");
+                  py::return_value_policy::take_ownership, py::arg("prefix") = "",
+                  py::arg("record") = false, py::arg("format") = "");
     //------------------------------------------------------------------------//
-    rss_usage.def("record",
-                  [=](py::object self) { self.cast<rss_usage_t*>()->record(); },
+    rss_usage.def("record", [=](py::object self) { self.cast<rss_usage_t*>()->record(); },
                   "Record the RSS usage");
     //------------------------------------------------------------------------//
     rss_usage.def("__str__",
@@ -669,37 +630,33 @@ PYBIND11_MODULE(libtimemory, tim)
     //------------------------------------------------------------------------//
     rss_usage.def("__iadd__",
                   [=](py::object self, py::object rhs) {
-                      *(self.cast<rss_usage_t*>()) +=
-                          *(rhs.cast<rss_usage_t*>());
+                      *(self.cast<rss_usage_t*>()) += *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Add rss usage");
     //------------------------------------------------------------------------//
     rss_usage.def("__isub__",
                   [=](py::object self, py::object rhs) {
-                      *(self.cast<rss_usage_t*>()) -=
-                          *(rhs.cast<rss_usage_t*>());
+                      *(self.cast<rss_usage_t*>()) -= *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Subtract rss usage");
     //------------------------------------------------------------------------//
     rss_usage.def("__add__",
                   [=](py::object self, py::object rhs) {
-                      rss_usage_t* _rss =
-                          new rss_usage_t(*(self.cast<rss_usage_t*>()));
+                      rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
                       *_rss += *(rhs.cast<rss_usage_t*>());
                       return _rss;
                   },
                   "Add rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
-    rss_usage.def(
-        "__sub__",
-        [=](py::object self, py::object rhs) {
-            rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
-            *_rss -= *(rhs.cast<rss_usage_t*>());
-            return _rss;
-        },
-        "Subtract rss usage", py::return_value_policy::take_ownership);
+    rss_usage.def("__sub__",
+                  [=](py::object self, py::object rhs) {
+                      rss_usage_t* _rss = new rss_usage_t(*(self.cast<rss_usage_t*>()));
+                      *_rss -= *(rhs.cast<rss_usage_t*>());
+                      return _rss;
+                  },
+                  "Subtract rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_usage.def("current",
                   [=](py::object self, int64_t _units = tim::units::megabyte) {
@@ -745,15 +702,13 @@ PYBIND11_MODULE(libtimemory, tim)
     //========================================================================//
     rss_delta.def(py::init(&pytim::init::rss_delta),
                   "Initialization of RSS measurement class",
-                  py::return_value_policy::take_ownership,
-                  py::arg("prefix") = "", py::arg("format") = "");
+                  py::return_value_policy::take_ownership, py::arg("prefix") = "",
+                  py::arg("format") = "");
     //------------------------------------------------------------------------//
-    rss_delta.def("init",
-                  [=](py::object self) { self.cast<rss_delta_t*>()->init(); },
+    rss_delta.def("init", [=](py::object self) { self.cast<rss_delta_t*>()->init(); },
                   "Initialize the RSS delta usage");
     //------------------------------------------------------------------------//
-    rss_delta.def("record",
-                  [=](py::object self) { self.cast<rss_delta_t*>()->record(); },
+    rss_delta.def("record", [=](py::object self) { self.cast<rss_delta_t*>()->record(); },
                   "Record the RSS delta usage");
     //------------------------------------------------------------------------//
     rss_delta.def("__str__",
@@ -766,51 +721,45 @@ PYBIND11_MODULE(libtimemory, tim)
     //------------------------------------------------------------------------//
     rss_delta.def("__iadd__",
                   [=](py::object self, py::object rhs) {
-                      *(self.cast<rss_delta_t*>()) +=
-                          *(rhs.cast<rss_usage_t*>());
+                      *(self.cast<rss_delta_t*>()) += *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Add rss delta usage");
     //------------------------------------------------------------------------//
     rss_delta.def("__isub__",
                   [=](py::object self, py::object rhs) {
-                      *(self.cast<rss_delta_t*>()) -=
-                          *(rhs.cast<rss_usage_t*>());
+                      *(self.cast<rss_delta_t*>()) -= *(rhs.cast<rss_usage_t*>());
                       return self;
                   },
                   "Subtract rss delta usage");
     //------------------------------------------------------------------------//
-    rss_delta.def(
-        "__add__",
-        [=](py::object self, py::object rhs) {
-            rss_delta_t* _rss = new rss_delta_t(*(self.cast<rss_delta_t*>()));
-            *_rss += *(rhs.cast<rss_usage_t*>());
-            return _rss;
-        },
-        "Add rss delta usage", py::return_value_policy::take_ownership);
+    rss_delta.def("__add__",
+                  [=](py::object self, py::object rhs) {
+                      rss_delta_t* _rss = new rss_delta_t(*(self.cast<rss_delta_t*>()));
+                      *_rss += *(rhs.cast<rss_usage_t*>());
+                      return _rss;
+                  },
+                  "Add rss delta usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
-    rss_delta.def(
-        "__sub__",
-        [=](py::object self, py::object rhs) {
-            rss_delta_t* _rss = new rss_delta_t(*(self.cast<rss_delta_t*>()));
-            *_rss -= *(rhs.cast<rss_usage_t*>());
-            return _rss;
-        },
-        "Subtract delta rss usage", py::return_value_policy::take_ownership);
+    rss_delta.def("__sub__",
+                  [=](py::object self, py::object rhs) {
+                      rss_delta_t* _rss = new rss_delta_t(*(self.cast<rss_delta_t*>()));
+                      *_rss -= *(rhs.cast<rss_usage_t*>());
+                      return _rss;
+                  },
+                  "Subtract delta rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
-    rss_delta.def(
-        "total",
-        [=](py::object self) {
-            return new rss_usage_t(self.cast<rss_delta_t*>()->total());
-        },
-        "Return the total rss usage", py::return_value_policy::take_ownership);
+    rss_delta.def("total",
+                  [=](py::object self) {
+                      return new rss_usage_t(self.cast<rss_delta_t*>()->total());
+                  },
+                  "Return the total rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_delta.def("self",
                   [=](py::object self) {
                       return new rss_usage_t(self.cast<rss_delta_t*>()->self());
                   },
-                  "Return the self rss usage",
-                  py::return_value_policy::take_ownership);
+                  "Return the self rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_delta.def("get_format",
                   [=](py::object self) {
@@ -856,19 +805,18 @@ PYBIND11_MODULE(libtimemory, tim)
     tim.def("size", [=]() { return manager_t::instance()->size(); },
             "Size of the timing manager");
     //------------------------------------------------------------------------//
-    tim.def(
-        "set_exit_action",
-        [=](py::function func) {
-            auto _func = [=](int errcode) -> void { func(errcode); };
-            // typedef tim::signal_settings::signal_function_t
-            // signal_function_t;
-            typedef std::function<void(int)> signal_function_t;
-            using std::placeholders::_1;
-            signal_function_t _f = std::bind<void>(_func, _1);
-            tim::signal_settings::set_exit_action(_f);
-        },
-        "Set the exit action when a signal is raised -- function must accept "
-        "integer");
+    tim.def("set_exit_action",
+            [=](py::function func) {
+                auto _func = [=](int errcode) -> void { func(errcode); };
+                // typedef tim::signal_settings::signal_function_t
+                // signal_function_t;
+                typedef std::function<void(int)> signal_function_t;
+                using std::placeholders::_1;
+                signal_function_t _f = std::bind<void>(_func, _1);
+                tim::signal_settings::set_exit_action(_f);
+            },
+            "Set the exit action when a signal is raised -- function must accept "
+            "integer");
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -926,7 +874,7 @@ PYBIND11_MODULE(libtimemory, tim)
 
     auto set_report = [=](string_t fname) {
         std::stringstream ss;
-        std::string output_dir = opts.attr("output_dir").cast<std::string>();
+        std::string       output_dir = opts.attr("output_dir").cast<std::string>();
         if(fname.find(output_dir) != 0)
             ss << output_dir;
         if(ss.str().length() > 0 && ss.str()[ss.str().length() - 1] != '/')
@@ -939,7 +887,7 @@ PYBIND11_MODULE(libtimemory, tim)
 
     auto set_serial = [=](string_t fname) {
         std::stringstream ss;
-        std::string output_dir = opts.attr("output_dir").cast<std::string>();
+        std::string       output_dir = opts.attr("output_dir").cast<std::string>();
         if(fname.find(output_dir) != 0)
             ss << output_dir;
         if(ss.str().length() > 0 && ss.str()[ss.str().length() - 1] != '/')
@@ -950,8 +898,7 @@ PYBIND11_MODULE(libtimemory, tim)
         return ss.str();
     };
     // ---------------------------------------------------------------------- //
-    opts.def("default_max_depth",
-             [=]() { return std::numeric_limits<uint16_t>::max(); },
+    opts.def("default_max_depth", [=]() { return std::numeric_limits<uint16_t>::max(); },
              "Return the default max depth");
     // ---------------------------------------------------------------------- //
     opts.def("safe_mkdir", &pytim::opt::safe_mkdir,
@@ -965,22 +912,20 @@ PYBIND11_MODULE(libtimemory, tim)
     opts.def("set_serial", set_serial, "Set the JSON serialization filename");
     // ---------------------------------------------------------------------- //
     opts.def("add_arguments", &pytim::opt::add_arguments,
-             "Function to add default output arguments",
-             py::arg("parser") = py::none(), py::arg("fname") = "");
+             "Function to add default output arguments", py::arg("parser") = py::none(),
+             py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
     opts.def("parse_args", &pytim::opt::parse_args,
              "Function to handle the output arguments");
     // ---------------------------------------------------------------------- //
-    opts.def(
-        "add_arguments_and_parse", &pytim::opt::add_arguments_and_parse,
-        "Combination of timing.add_arguments and timing.parse_args but returns",
-        py::arg("parser") = py::none(), py::arg("fname") = "");
+    opts.def("add_arguments_and_parse", &pytim::opt::add_arguments_and_parse,
+             "Combination of timing.add_arguments and timing.parse_args but returns",
+             py::arg("parser") = py::none(), py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
-    opts.def(
-        "add_args_and_parse_known", &pytim::opt::add_args_and_parse_known,
-        "Combination of timing.add_arguments and timing.parse_args. Returns "
-        "TiMemory args and replaces sys.argv with the unknown args (used to "
-        "fix issue with unittest module)",
-        py::arg("parser") = py::none(), py::arg("fname") = "");
+    opts.def("add_args_and_parse_known", &pytim::opt::add_args_and_parse_known,
+             "Combination of timing.add_arguments and timing.parse_args. Returns "
+             "TiMemory args and replaces sys.argv with the unknown args (used to "
+             "fix issue with unittest module)",
+             py::arg("parser") = py::none(), py::arg("fname") = "");
     // ---------------------------------------------------------------------- //
 }

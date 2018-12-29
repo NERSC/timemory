@@ -179,10 +179,9 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     int ret = execvp(argv_list[0], argv_list);
     if(ret < 0)
     {
-        uint64_t argc_shell = argc + 2;
-        char**   argv_shell_list =
-            static_cast<char**>(malloc(sizeof(char*) * argc_shell));
-        char* _shell = getusershell();
+        uint64_t argc_shell    = argc + 2;
+        char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
+        char*  _shell          = getusershell();
         if(_shell)
         {
             argv_shell_list[0] = _shell;
@@ -190,7 +189,7 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
             for(uint64_t i = 0; i < argc - 1; ++i)
                 argv_shell_list[i + 2] = argv_list[i];
             argv_shell_list[argc_shell - 1] = nullptr;
-            ret = execvp(argv_shell_list[0], argv_shell_list);
+            ret                             = execvp(argv_shell_list[0], argv_shell_list);
         }
     }
 

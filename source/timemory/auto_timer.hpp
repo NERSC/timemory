@@ -46,7 +46,7 @@
 
 namespace tim
 {
-class tim_api auto_timer
+tim_api class auto_timer
 {
 public:
     typedef tim::manager::tim_timer_t tim_timer_t;
@@ -75,8 +75,7 @@ public:
     static bool       alloc_next();
 
 protected:
-    inline string_t get_tag(const string_t& timer_tag,
-                            const string_t& lang_tag);
+    inline string_t get_tag(const string_t& timer_tag, const string_t& lang_tag);
 
 private:
     bool        m_enabled;
@@ -85,7 +84,7 @@ private:
     tim_timer_t m_temp_timer;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 auto_timer::string_t
 auto_timer::get_tag(const string_t& timer_tag, const string_t& lang_tag)
@@ -103,17 +102,17 @@ auto_timer::get_tag(const string_t& timer_tag, const string_t& lang_tag)
 #endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
 typedef tim::auto_timer auto_timer_t;
 
-//============================================================================//
+//======================================================================================//
 //
 //                      CXX macros
 //
-//============================================================================//
+//======================================================================================//
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 
@@ -123,17 +122,17 @@ typedef tim::auto_timer auto_timer_t;
 #        define __TIMEMORY_FUNCTION__ __FUNCTION__
 #    endif
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
 #    define AUTO_TIMER_NAME_COMBINE(X, Y) X##Y
 #    define AUTO_TIMER_NAME(Y) AUTO_TIMER_NAME_COMBINE(macro_auto_timer, Y)
 // helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
-#    define AUTO_TIMER_STR(A, B)                                               \
-        std::string("@'") +                                                    \
-            std::string(A).substr(std::string(A).find_last_of("/") + 1) +      \
+#    define AUTO_TIMER_STR(A, B)                                                         \
+        std::string("@'") +                                                              \
+            std::string(A).substr(std::string(A).find_last_of("/") + 1) +                \
             std::string("':") + B
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_SIGN(str)
  *
  * helper macro for "__FUNC__" + str tagging
@@ -146,10 +145,10 @@ typedef tim::auto_timer auto_timer_t;
  *          ...
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_SIGN(str)                                      \
+#    define TIMEMORY_BASIC_AUTO_SIGN(str)                                                \
         std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str))
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_SIGN(str)
  *
  * helper macro for "__FUNC__" + str + '@__FILE__':__LINE__" tagging
@@ -162,11 +161,11 @@ typedef tim::auto_timer auto_timer_t;
  *          ...
  *      }
  */
-#    define TIMEMORY_AUTO_SIGN(str)                                            \
-        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +    \
+#    define TIMEMORY_AUTO_SIGN(str)                                                      \
+        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +              \
                     AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING))
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(str)
  *
  * simple tagging with <function name> + <string> where the string param
@@ -187,11 +186,11 @@ typedef tim::auto_timer auto_timer_t;
  *
  *      > [pyc] some_func(15) :  0.363 wall, ... etc.
  */
-#    define TIMEMORY_BASIC_AUTO_TIMER(str)                                     \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                \
+#    define TIMEMORY_BASIC_AUTO_TIMER(str)                                               \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                          \
             std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TIMER(str)
  *
  * standard tagging with <function name> + <string> + "@'<filename>':<line>"
@@ -213,13 +212,13 @@ typedef tim::auto_timer auto_timer_t;
  *
  *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
  */
-#    define TIMEMORY_AUTO_TIMER(str)                                           \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                \
-            std::string(__TIMEMORY_FUNCTION__) + std::string(str) +            \
-                AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),                \
+#    define TIMEMORY_AUTO_TIMER(str)                                                     \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                          \
+            std::string(__TIMEMORY_FUNCTION__) + std::string(str) +                      \
+                AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),                          \
             __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER_OBJ(str)
  *
  * Similar to \ref TIMEMORY_BASIC_AUTO_TIMER(str) but assignable.
@@ -232,11 +231,10 @@ typedef tim::auto_timer auto_timer_t;
  *          ...
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_TIMER_OBJ(str)                                 \
-        auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str),    \
-                     __LINE__)
+#    define TIMEMORY_BASIC_AUTO_TIMER_OBJ(str)                                           \
+        auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TIMER_OBJ(str)
  *
  * Similar to \ref TIMEMORY_AUTO_TIMER(str) but assignable.
@@ -250,12 +248,12 @@ typedef tim::auto_timer auto_timer_t;
  *      }
  *
  */
-#    define TIMEMORY_AUTO_TIMER_OBJ(str)                                       \
-        auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +   \
-                         AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),       \
+#    define TIMEMORY_AUTO_TIMER_OBJ(str)                                                 \
+        auto_timer_t(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +             \
+                         AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),                 \
                      __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TIMER_BASIC(str)
  *
  * backwards compatibility for \ref TIMEMORY_BASIC_AUTO_TIMER(str)
@@ -265,31 +263,31 @@ typedef tim::auto_timer auto_timer_t;
 
 #endif
 
-//============================================================================//
+//======================================================================================//
 //
 //                      PRODUCTION AND DEBUG
 //
-//============================================================================//
+//======================================================================================//
 
 #if defined(TIMEMORY_DEBUG)
-#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str)                               \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                \
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str)                                         \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                          \
             std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
-#    define TIMEMORY_DEBUG_AUTO_TIMER(str)                                     \
-        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                \
-            std::string(__TIMEMORY_FUNCTION__) + std::string(str) +            \
-                AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),                \
+#    define TIMEMORY_DEBUG_AUTO_TIMER(str)                                               \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(                                          \
+            std::string(__TIMEMORY_FUNCTION__) + std::string(str) +                      \
+                AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING),                          \
             __LINE__)
 #else
-#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str)                               \
-        {                                                                      \
-            ;                                                                  \
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(str)                                         \
+        {                                                                                \
+            ;                                                                            \
         }
-#    define TIMEMORY_DEBUG_AUTO_TIMER(str)                                     \
-        {                                                                      \
-            ;                                                                  \
+#    define TIMEMORY_DEBUG_AUTO_TIMER(str)                                               \
+        {                                                                                \
+            ;                                                                            \
         }
 #endif
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif

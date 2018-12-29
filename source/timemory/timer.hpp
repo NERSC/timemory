@@ -32,7 +32,7 @@
 #ifndef timer_hpp_
 #define timer_hpp_
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #include <cstdint>
 #include <memory>
@@ -45,11 +45,11 @@
 
 namespace tim
 {
-//============================================================================//
+//======================================================================================//
 // Main timer class
-//============================================================================//
+//======================================================================================//
 
-class tim_api timer : public internal::base_timer
+tim_api class timer : public internal::base_timer
 {
 public:
     typedef base_timer                   base_type;
@@ -72,8 +72,7 @@ public:
     timer(const format_type& _format,
           bool               _record_memory = timer::default_record_memory());
 
-    timer(timer_format_t _format,
-          bool           _record_memory = timer::default_record_memory());
+    timer(timer_format_t _format, bool _record_memory = timer::default_record_memory());
 
     timer(const timer*    rhs,  // can be nullptr,
           const string_t& _prefix, bool _align_width = false,
@@ -210,10 +209,10 @@ private:
     static bool& f_record_memory();
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif  // timer_hpp_

@@ -32,7 +32,7 @@
 #ifndef base_timer_hpp_
 #define base_timer_hpp_
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #include <atomic>
 #include <fstream>
@@ -47,19 +47,19 @@
 #include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 namespace tim
 {
 namespace internal
 {
-//============================================================================//
+//======================================================================================//
 //
 //  Class for handling the timing and memory data
 //
-//============================================================================//
+//======================================================================================//
 
-class tim_api base_timer_data
+tim_api class base_timer_data
 {
 public:
     typedef base_timer_data                         this_type;
@@ -131,7 +131,7 @@ protected:
     rss_type     m_rss;
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 template <int N>
 uint64_t
@@ -140,7 +140,7 @@ get_start(const base_timer_data& data)
     return std::get<N>(data.start().time_since_epoch().count().data);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 template <int N>
 uint64_t
@@ -149,13 +149,13 @@ get_stop(const base_timer_data& data)
     return std::get<N>(data.stop().time_since_epoch().count().data);
 }
 
-//============================================================================//
+//======================================================================================//
 //
 //  Class for handling the timing difference
 //
-//============================================================================//
+//======================================================================================//
 
-class tim_api base_timer_delta
+tim_api class base_timer_delta
 {
 public:
     typedef base_timer_delta                            this_type;
@@ -196,12 +196,24 @@ public:
         m_rss = rss_type();
     }
 
-    template <int N> uint64_t get_sum() const { return std::get<N>(m_sum); }
+    template <int N>
+    uint64_t get_sum() const
+    {
+        return std::get<N>(m_sum);
+    }
 
 #if defined(TIMEMORY_STAT_TIMERS)
-    template <int N> uint64_t get_sqr() const { return std::get<N>(m_sqr); }
+    template <int N>
+    uint64_t get_sqr() const
+    {
+        return std::get<N>(m_sqr);
+    }
 #else
-    template <int N> uint64_t get_sqr() const { return 0; }
+    template <int N>
+    uint64_t get_sqr() const
+    {
+        return 0;
+    }
 #endif
 
 public:
@@ -227,8 +239,7 @@ public:
     //
     this_type& operator+=(const op_type& data)
     {
-        auto _data =
-            incr_type(compute<0>(data), compute<1>(data), compute<2>(data));
+        auto _data = incr_type(compute<0>(data), compute<1>(data), compute<2>(data));
         compute_sum(_data);
         compute_sqr(_data);
         m_lap += 1;
@@ -308,7 +319,8 @@ public:
     }
 
 protected:
-    template <int N> uint64_t compute(const op_type& data)
+    template <int N>
+    uint64_t compute(const op_type& data)
     {
         auto _ts = get_start<N>(data);
         auto _te = get_stop<N>(data);
@@ -345,7 +357,7 @@ protected:
         std::get<2>(m_sqr) += std::pow(std::get<2>(rhs), 2);
     }
 #else
-    inline void               compute_sqr(const incr_type&) {}
+    inline void compute_sqr(const incr_type&) {}
 #endif
 
 #if defined(TIMEMORY_STAT_TIMERS)
@@ -356,7 +368,7 @@ protected:
         std::get<2>(m_sqr) -= std::pow(std::get<2>(rhs), 2);
     }
 #else
-    inline void               subtract_sqr(const incr_type&) {}
+    inline void subtract_sqr(const incr_type&) {}
 #endif
 
     inline void multiply_sum(const uint64_t& rhs)
@@ -374,7 +386,7 @@ protected:
         std::get<2>(m_sqr) *= rhs;
     }
 #else
-    inline void               multiply_sqr(const uint64_t&) {}
+    inline void multiply_sqr(const uint64_t&) {}
 #endif
 
     inline void divide_sum(const uint64_t& rhs)
@@ -392,7 +404,7 @@ protected:
         std::get<2>(m_sqr) /= rhs;
     }
 #else
-    inline void               divide_sqr(const uint64_t&) {}
+    inline void divide_sqr(const uint64_t&) {}
 #endif
 
 protected:
@@ -404,13 +416,13 @@ protected:
     rss_type m_rss;
 };
 
-//============================================================================//
+//======================================================================================//
 //
 //  Primary base class for handling the timer
 //
-//============================================================================//
+//======================================================================================//
 
-class tim_api base_timer
+tim_api class base_timer
 {
 public:
     template <typename _Key, typename _Mapped>
@@ -456,11 +468,8 @@ public:
     double      wall_elapsed() const { return this->real_elapsed(); }
     double      system_elapsed() const;
     double      user_elapsed() const;
-    double cpu_elapsed() const { return user_elapsed() + system_elapsed(); }
-    double cpu_utilization() const
-    {
-        return cpu_elapsed() / real_elapsed() * 100.;
-    }
+    double      cpu_elapsed() const { return user_elapsed() + system_elapsed(); }
+    double      cpu_utilization() const { return cpu_elapsed() / real_elapsed() * 100.; }
     inline const char*         clock_time() const;
     inline size_type           laps() const { return m_accum.size(); }
     inline void                rss_init();
@@ -561,31 +570,31 @@ public:
     }
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::set_format(const format_type& _format)
 {
     m_format = timer_format_t(new format_type(_format));
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::set_format(timer_format_t _format)
 {
     m_format = _format;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::rss_init()
 {
     m_timer().rss_init();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::rss_record()
 {
     m_timer().rss_record();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // Print timer status n std::ostream
 static inline std::ostream&
 operator<<(std::ostream& os, const base_timer& t)
@@ -599,53 +608,55 @@ operator<<(std::ostream& os, const base_timer& t)
 
     return os;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline  // Wall time
     double
     base_timer::real_elapsed() const
 {
     if(m_timer().running())
-        throw std::runtime_error("Error! base_timer::real_elapsed() - "
-                                 "timer not stopped or no times recorded!");
+        throw std::runtime_error(
+            "Error! base_timer::real_elapsed() - "
+            "timer not stopped or no times recorded!");
     return m_accum.get_sum<2>() / static_cast<double>(ratio_t::den);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline  // System time
     double
     base_timer::system_elapsed() const
 {
     if(m_timer().running())
-        throw std::runtime_error("Error! base_timer::system_elapsed() - "
-                                 "timer not stopped or no times recorded!");
+        throw std::runtime_error(
+            "Error! base_timer::system_elapsed() - "
+            "timer not stopped or no times recorded!");
     return m_accum.get_sum<1>() / static_cast<double>(ratio_t::den);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline  // CPU time
     double
     base_timer::user_elapsed() const
 {
     if(m_timer().running())
-        throw std::runtime_error("Error! base_timer::user_elapsed() - "
-                                 "timer not stopped or no times recorded!");
+        throw std::runtime_error(
+            "Error! base_timer::user_elapsed() - "
+            "timer not stopped or no times recorded!");
     return m_accum.get_sum<0>() / static_cast<double>(ratio_t::den);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
-base_timer::start_stop_debug_message(const string_t& _func,
-                                     const string_t& _already)
+base_timer::start_stop_debug_message(const string_t& _func, const string_t& _already)
 {
     int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
     if(_verbose > 0)
     {
         std::stringstream _msg;
-        _msg << "Warning! base_timer::" << _func << " called but already "
-             << _already << "..." << std::endl;
+        _msg << "Warning! base_timer::" << _func << " called but already " << _already
+             << "..." << std::endl;
         if(_verbose > 1)
             tim::stack_backtrace(_msg);
         std::cerr << _msg.str();
     }
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::configure_record()
 {
@@ -664,7 +675,7 @@ base_timer::configure_record()
         m_stop_func  = _stop;
     }
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::start_with_memory()
 {
@@ -678,7 +689,7 @@ base_timer::start_with_memory()
         start_stop_debug_message(__FUNCTION__, "running");
 #endif
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::start_without_memory()
 {
@@ -689,7 +700,7 @@ base_timer::start_without_memory()
         start_stop_debug_message(__FUNCTION__, "running");
 #endif
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::stop_with_memory()
 {
@@ -704,7 +715,7 @@ base_timer::stop_with_memory()
         start_stop_debug_message(__FUNCTION__, "stopped");
 #endif
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::stop_without_memory()
 {
@@ -718,19 +729,19 @@ base_timer::stop_without_memory()
         start_stop_debug_message(__FUNCTION__, "stopped");
 #endif
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline bool
 base_timer::is_valid() const
 {
     return (m_timer().running()) ? false : true;
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline bool
 base_timer::is_running() const
 {
     return m_timer().running();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline const char*
 base_timer::clock_time() const
 {
@@ -741,7 +752,7 @@ base_timer::clock_time() const
     timeinfo = localtime(&rawtime);
     return asctime(timeinfo);
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 inline void
 base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 {
@@ -764,25 +775,24 @@ base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
     // output to ostream
     os << ss.str();
 }
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 }  // namespace internal
 
 }  // namespace tim
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 namespace internal
 {
-typedef typename tim::internal::base_timer_data::ratio_t base_ratio_t;
-typedef tim::base_clock<base_ratio_t>                    base_clock_t;
-typedef tim::base_clock_data<base_ratio_t>               base_clock_data_t;
+typedef typename tim::internal::base_timer_data::ratio_t       base_ratio_t;
+typedef tim::base_clock<base_ratio_t>                          base_clock_t;
+typedef tim::base_clock_data<base_ratio_t>                     base_clock_data_t;
 typedef std::chrono::duration<base_clock_data_t, base_ratio_t> base_duration_t;
-typedef std::chrono::time_point<base_clock_t, base_duration_t>
-                                                         base_time_point_t;
-typedef std::tuple<base_time_point_t, base_time_point_t> base_time_pair_t;
+typedef std::chrono::time_point<base_clock_t, base_duration_t> base_time_point_t;
+typedef std::tuple<base_time_point_t, base_time_point_t>       base_time_pair_t;
 }  // namespace internal
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif  // base_timer_hpp_

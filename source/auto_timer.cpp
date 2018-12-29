@@ -30,7 +30,7 @@
 
 namespace tim
 {
-//============================================================================//
+//======================================================================================//
 
 auto_timer::counter_t&
 auto_timer::nhash()
@@ -38,7 +38,7 @@ auto_timer::nhash()
     return manager::instance()->hash();
 }
 
-//============================================================================//
+//======================================================================================//
 
 auto_timer::counter_t&
 auto_timer::ncount()
@@ -46,7 +46,7 @@ auto_timer::ncount()
     return manager::instance()->count();
 }
 
-//============================================================================//
+//======================================================================================//
 
 auto_timer::counter_t&
 auto_timer::phash()
@@ -54,7 +54,7 @@ auto_timer::phash()
     return manager::instance()->parent_hash();
 }
 
-//============================================================================//
+//======================================================================================//
 
 auto_timer::counter_t&
 auto_timer::pcount()
@@ -62,7 +62,7 @@ auto_timer::pcount()
     return manager::instance()->parent_count();
 }
 
-//============================================================================//
+//======================================================================================//
 
 bool
 auto_timer::alloc_next()
@@ -71,7 +71,7 @@ auto_timer::alloc_next()
            (uint64_t) manager::max_depth() > auto_timer::ncount();
 }
 
-//============================================================================//
+//======================================================================================//
 
 auto_timer::auto_timer(const string_t& timer_tag, const int32_t& lineno,
                        const string_t& lang_tag, bool report_at_exit)
@@ -83,17 +83,16 @@ auto_timer::auto_timer(const string_t& timer_tag, const int32_t& lineno,
       (m_enabled)
           ? &manager::instance()->timer(
                 timer_tag, lang_tag,
-                (m_enabled) ? (auto_timer::pcount() +
-                               (uint64_t)(auto_timer::ncount()++))
+                (m_enabled) ? (auto_timer::pcount() + (uint64_t)(auto_timer::ncount()++))
                             : ((uint64_t)(0)),
-                (m_enabled) ? (auto_timer::phash() +
-                               (uint64_t)(auto_timer::nhash() += m_hash))
-                            : ((uint64_t)(0)))
+                (m_enabled)
+                    ? (auto_timer::phash() + (uint64_t)(auto_timer::nhash() += m_hash))
+                    : ((uint64_t)(0)))
           : nullptr))
 {
 }
 
-//============================================================================//
+//======================================================================================//
 
 auto_timer::~auto_timer()
 {
@@ -120,9 +119,10 @@ auto_timer::~auto_timer()
         // decrement hash keys
         --auto_timer::ncount();
         auto_timer::nhash() -= m_hash;
+        // manager::instance()->pop_graph();
     }
 }
 
-//============================================================================//
+//======================================================================================//
 
 }  // namespace tim
