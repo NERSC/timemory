@@ -109,7 +109,7 @@ auto_timer::~auto_timer()
             m_temp_timer.grab_metadata(*(m_temp_timer.summation_timer()));
 
             // show number of laps in temporary timer
-            auto _laps = m_temp_timer.summation_timer()->accum().size();
+            uint64_t _laps = m_temp_timer.summation_timer()->accum().size();
             m_temp_timer.accum().size() += _laps;
 
             // threadsafe output w.r.t. other timers

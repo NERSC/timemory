@@ -29,16 +29,18 @@
  *
  */
 
-#ifndef manager_hpp_
-#define manager_hpp_
+#pragma once
 
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/mpi.hpp"
+#include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/string.hpp"
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-variable"
-#pragma GCC diagnostic ignored "-Wuninitialized"
+#include "timemory/timer.hpp"
+#include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -49,11 +51,7 @@
 #include <thread>
 #include <unordered_map>
 
-#include "timemory/graph.hpp"
-#include "timemory/mpi.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/timer.hpp"
-#include "timemory/utility.hpp"
+//--------------------------------------------------------------------------------------//
 
 namespace tim
 {
@@ -616,17 +614,18 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 
     os->flush();
 }
+
 //--------------------------------------------------------------------------------------//
+
 inline manager::ofstream_t*
 manager::get_ofstream(ostream_t* m_os) const
 {
     return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
                                                       : nullptr;
 }
+
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
-#pragma GCC diagnostic pop
-
-#endif  // manager_hpp_
+//--------------------------------------------------------------------------------------//
