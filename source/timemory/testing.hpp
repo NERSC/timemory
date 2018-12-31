@@ -96,14 +96,21 @@ rank_prefix()
 #define TEST_SUMMARY(argv_0, ntest_counter, nfail_counter)                               \
     {                                                                                    \
         std::stringstream rank_sout;                                                     \
-        rank_sout << "\nDone.\n" << std::endl;                                           \
-        rank_sout << "[" << argv_0 << "] ";                                              \
+        std::stringstream filler;                                                        \
+        filler.fill('=');                                                                \
+        filler << "#" << std::setw(78) << ""                                             \
+               << "#";                                                                   \
+        rank_sout << "\n... [TESTING COMPLETED] ... \n" << std::endl;                    \
+        rank_sout << filler.str() << "\n#\n";                                            \
+        rank_sout << "#\t"                                                               \
+                  << "[" << argv_0 << "] ";                                              \
         if(num_fail > 0)                                                                 \
-            rank_sout << "Tests failed: " << nfail_counter << "/" << ntest_counter       \
+            rank_sout << "TESTS FAILED: " << nfail_counter << "/" << ntest_counter       \
                       << std::endl;                                                      \
         else                                                                             \
-            rank_sout << "Tests passed: " << (ntest_counter - nfail_counter) << "/"      \
+            rank_sout << "TESTS PASSED: " << (ntest_counter - nfail_counter) << "/"      \
                       << ntest_counter << std::endl;                                     \
+        rank_sout << "#\n" << filler.str() << "\n" << std::endl;                         \
         rank_cout << rank_sout.str();                                                    \
     }
 
@@ -141,7 +148,7 @@ rank_prefix()
     {                                                                                    \
         if(test_num > total_num_tests || tests.count(test_num) != 0)                     \
         {                                                                                \
-            if(test_num > tests.size())                                                  \
+            if(test_num > total_num_tests)                                               \
                 printf(                                                                  \
                     "Warning! Test %i is greater than the specified number of tests: "   \
                     "%i\n",                                                              \
@@ -159,7 +166,7 @@ rank_prefix()
         }                                                                                \
         else                                                                             \
         {                                                                                \
-            printf("Skipping test #%i...\n", test_num);                                  \
+            printf("\n... Skipping test #%i ...\n\n", test_num);                         \
         }                                                                                \
     }
 

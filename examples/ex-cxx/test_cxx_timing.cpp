@@ -128,8 +128,6 @@ main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
-    TEST_SUMMARY(argv[0], num_test, num_fail);
-
     t.stop();
 
     if(tim::mpi_rank() == 0)
@@ -142,7 +140,10 @@ main(int argc, char** argv)
     }
 
     tim::format::timer::pop();
-    manager_t::instance()->write_missing();
+    // manager_t::instance()->write_missing();
+
+    TEST_SUMMARY(argv[0], num_test, num_fail);
+
     tim::disable_signal_detection();
 
     // tim::mpi_finalize();
@@ -276,6 +277,8 @@ test_2_rss_usage()
 
     print_string(rt.as_string());
     print_string(ct.as_string());
+
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -301,6 +304,7 @@ test_3_timing_pointer()
     print_depth(__FUNCTION__, __LINE__, false);
     EXPECT_EQ(set_depth, get_depth);
     manager_t::instance()->set_max_depth(std::numeric_limits<uint16_t>::max());
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -325,15 +329,16 @@ test_4_manager()
     t.stop();
 
     print_size(__FUNCTION__, __LINE__);
+    std::cout << std::endl;
     tman->report(true);
     tman->self_cost(true);
+    std::cout << std::endl;
     tman->report(true);
     tman->self_cost(false);
     tman->set_output_stream("test_output/cxx_timing_report.out");
     tman->report();
     tman->write_json("test_output/cxx_timing_report.json");
-    if(tim::mpi_rank() == 0)
-        tman->write_missing();
+    // tman->write_missing();
 
     EXPECT_EQ(manager_t::instance()->size(), 33);
 
@@ -344,6 +349,7 @@ test_4_manager()
     }
 
     tman->enable(_is_enabled);
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -395,8 +401,9 @@ test_5_timing_toggle()
     EXPECT_EQ(manager_t::instance()->size(), 11);
 
     tman->write_serialization("test_output/cxx_timing_toggle.json");
-    tman->write_missing();
+    // tman->write_missing();
     tman->enable(_is_enabled);
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -430,9 +437,10 @@ test_6_timing_depth()
     EXPECT_EQ(manager_t::instance()->size(), 8);
 
     tman->write_serialization("test_output/cxx_timing_depth.json");
-    tman->write_missing();
+    // tman->write_missing();
     tman->enable(_is_enabled);
     tman->set_max_depth(_max_depth);
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -528,11 +536,12 @@ test_7_timing_thread()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 36);
+    ASSERT_TRUE(manager_t::instance()->size() >= 30);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
-    tman->write_missing();
+    // tman->write_missing();
     tman->enable(_is_enabled);
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//
@@ -571,7 +580,7 @@ test_8_format()
     // reports to file
     tman->report();
     tman->write_json("test_output/cxx_timing_format.json");
-    tman->write_missing();
+    // tman->write_missing();
 
     EXPECT_EQ(manager_t::instance()->size(), 19);
 
@@ -588,6 +597,7 @@ test_8_format()
     usage.record();
 
     std::cout << "\nUsage " << usage << std::endl;
+    tim::manager::instance()->clear();
 }
 
 //======================================================================================//

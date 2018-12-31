@@ -525,7 +525,6 @@ public:
     usage_delta(const usage_delta& rhs)
     : m_rss_tot(rhs.m_rss_tot)
     , m_rss_self(rhs.m_rss_self)
-    , m_rss_tmp(rhs.m_rss_tmp)
     , m_rss_tot_min(rhs.m_rss_tot_min)
     , m_rss_self_min(rhs.m_rss_self_min)
     , m_format(usage_format_t())
@@ -539,18 +538,17 @@ public:
     void           set_format(usage_format_t _format);
     usage_format_t format() const;
 
-    inline void init() { m_rss_tmp.record(); }
+    inline void init() { m_rss_self.record(); }
 
     inline void record()
     {
-        m_rss_self.record(m_rss_tmp);
+        m_rss_self.record(m_rss_self);
         m_rss_tot.record();
     }
 
     void reset()
     {
         m_rss_self.reset();
-        m_rss_tmp.reset();
         m_rss_tot.reset();
         m_rss_self_min.reset();
         m_rss_tot_min.reset();
@@ -616,7 +614,6 @@ public:
                 *m_format = *(rhs.m_format.get());
             m_rss_tot      = rhs.m_rss_tot;
             m_rss_self     = rhs.m_rss_self;
-            m_rss_tmp      = rhs.m_rss_tmp;
             m_rss_tot_min  = rhs.m_rss_tot_min;
             m_rss_self_min = rhs.m_rss_self_min;
         }
@@ -637,7 +634,6 @@ protected:
     // memory usage
     base_type      m_rss_tot;
     base_type      m_rss_self;
-    base_type      m_rss_tmp;
     base_type      m_rss_tot_min;
     base_type      m_rss_self_min;
     usage_format_t m_format;

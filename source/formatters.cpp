@@ -290,10 +290,10 @@ timer::operator()(const internal::base_timer* t) const
     }
 
     // add RSS
-    if(t->record_memory())
-        _str = m_rss_format(&t->accum().rss(), _str);
-    else
-        _str = m_rss_format(_str);
+    // if(t->record_memory())
+    //    _str = m_rss_format(&t->accum().rss(), _str);
+    // else
+    _str = m_rss_format(_str);
 
     return _str;
 }

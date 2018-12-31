@@ -216,7 +216,8 @@ if(TIMEMORY_BUILD_EXAMPLES)
         COMMAND $<TARGET_FILE:${TEST_NAME}>
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     set_tests_properties(${TEST_NAME} PROPERTIES
-        LABELS "cxx;unit_test" TIMEOUT 7200)
+        LABELS "cxx;unit_test" TIMEOUT 7200
+        RUN_SERIAL ON)
 
     #----------------------------------------------#
     #   CXX Overhead
@@ -247,7 +248,8 @@ if(TIMEMORY_BUILD_EXAMPLES)
             COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:${TEST_NAME}>
             WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
         set_tests_properties(${TEST_NAME} PROPERTIES
-            LABELS "cxx;unit_test;mpi" TIMEOUT 7200)
+            LABELS "cxx;unit_test;mpi" TIMEOUT 7200
+            RUN_SERIAL ON)
     endif(_TEST_MPI)
 
     unset(_TEST_MPI)

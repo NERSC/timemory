@@ -65,7 +65,6 @@ _timemory_manager_deleter(tim::manager* ptr)
     {
         if(master && ptr != master)
         {
-            PRINT_HERE("");
             master->remove(ptr);
         }
         delete ptr;
@@ -604,8 +603,6 @@ manager::merge(pointer itr)
     if(itr == this)
         return;
 
-    PRINT_HERE("");
-
 #if defined(DEBUG)
     if(tim::env::verbose > 2)
     {
@@ -637,10 +634,10 @@ manager::merge(pointer itr)
         return ss.str();
     };
 
-    std::stringstream ss;
-    tim::print_graph(*itr->get_timer_graph(), format, ss);
-    std::cout << "\nINSTANCE: " << itr->instance_count() << "\n" << std::endl;
-    std::cout << ss.str() << std::endl;
+    // std::stringstream ss;
+    // tim::print_graph(*itr->get_timer_graph(), format, ss);
+    // std::cout << "\nINSTANCE: " << itr->instance_count() << "\n" << std::endl;
+    // std::cout << ss.str() << std::endl;
 
     auto _iter_beg = itr->get_timer_graph()->begin();
     auto _iter_end = itr->get_timer_graph()->end();
@@ -650,7 +647,6 @@ manager::merge(pointer itr)
     {
         if(*_this_itr == *_iter_beg)
         {
-            //++_iter_beg;
             this->get_timer_graph()->merge(_this_itr, _this_end, _iter_beg, _iter_end,
                                            false);
         }
@@ -688,7 +684,6 @@ manager::merge(pointer itr)
 void
 manager::merge()
 {
-    PRINT_HERE("");
     compute_self();
     if(!m_merge.load())
         return;
@@ -709,7 +704,6 @@ manager::merge()
 void
 manager::sync_hierarchy()
 {
-    PRINT_HERE("");
     for(auto& itr : m_daughters)
     {
         if(itr->hash() > 0)

@@ -32,8 +32,7 @@
  *   - Windows-specific macros
  */
 
-#ifndef macros_hpp_
-#define macros_hpp_
+#pragma once
 
 //======================================================================================//
 //
@@ -429,4 +428,17 @@
 #    endif
 #endif
 
-#endif  // macros_hpp_
+//======================================================================================//
+//
+//      DEBUG
+//
+//======================================================================================//
+
+#if !defined(pfunc)
+#    if defined(DEBUG)
+#        define PRINT_HERE(extra)                                                        \
+            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#    else
+#        define PRINT_HERE(extra)
+#    endif
+#endif

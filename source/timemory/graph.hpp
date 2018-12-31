@@ -181,6 +181,7 @@ public:
         pre_order_iterator  operator--(int);
         pre_order_iterator& operator+=(unsigned int);
         pre_order_iterator& operator-=(unsigned int);
+        pre_order_iterator  operator+(unsigned int);
 
         pre_order_iterator& next_skip_children();
     };
@@ -270,6 +271,7 @@ public:
         sibling_iterator  operator--(int);
         sibling_iterator& operator+=(unsigned int);
         sibling_iterator& operator-=(unsigned int);
+        sibling_iterator  operator+(unsigned int);
 
         graph_node* range_first() const;
         graph_node* range_last() const;
@@ -3220,6 +3222,21 @@ graph<T, AllocatorT>::pre_order_iterator::operator-=(unsigned int num)
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+typename graph<T, AllocatorT>::pre_order_iterator
+graph<T, AllocatorT>::pre_order_iterator::operator+(unsigned int num)
+{
+    auto itr = *this;
+    while(num > 0)
+    {
+        ++itr;
+        --num;
+    }
+    return itr;
+}
+
+//--------------------------------------------------------------------------------------//
 // Post-order iterator
 
 template <typename T, typename AllocatorT>
@@ -3858,6 +3875,21 @@ graph<T, AllocatorT>::sibling_iterator::operator-=(unsigned int num)
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
+typename graph<T, AllocatorT>::sibling_iterator
+graph<T, AllocatorT>::sibling_iterator::operator+(unsigned int num)
+{
+    auto itr = *this;
+    while(num > 0)
+    {
+        ++itr;
+        --num;
+    }
+    return itr;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::graph_node*
 graph<T, AllocatorT>::sibling_iterator::range_first() const
 {
@@ -4140,7 +4172,9 @@ print_subgraph(const tim::graph<T>& t, Formatter format,
     else
     {
         // parent
-        os << format(*root) << "\n";
+        std::string str = format(*root);
+        if(str.length() > 0)
+            os << str << "\n";
         // child1, ..., childn
         int sibling_count = t.number_of_siblings(t.begin(root));
         int nsiblings;
@@ -4209,7 +4243,9 @@ print_subgraph_hierarchy(const tim::graph<T>& t, Formatter format,
     else
     {
         // parent
-        os << format(*root) << "\n" << std::setw(2 * (t.depth(root) + 1)) << "|_";
+        std::string str = format(*root);
+        if(str.length() > 0)
+            os << str << "\n" << std::setw(2 * (t.depth(root) + 1)) << "|_";
         // child1, ..., childn
         int sibling_count = t.number_of_siblings(t.begin(root));
         int nsiblings;

@@ -72,7 +72,7 @@ base_timer::base_timer(const base_timer& rhs)
 
 base_timer::~base_timer()
 {
-    if(m_timer().running())
+    if(m_data.running())
     {
         this->stop();
         if(m_os != &std::cout && *m_os)

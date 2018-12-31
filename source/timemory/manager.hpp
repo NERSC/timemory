@@ -51,15 +51,6 @@
 #include <thread>
 #include <unordered_map>
 
-#if !defined(pfunc)
-#    if defined(DEBUG)
-#        define PRINT_HERE(extra)                                                        \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
-#    else
-#        define PRINT_HERE(extra)
-#    endif
-#endif
-
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -621,12 +612,10 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
 
     auto format = [&](const timer_tuple_t& node) {
         std::stringstream ss;
-        ss << "<[test]";
-        node.timer().report(ss, false, ign_cutoff);
+        node.timer().report(ss, false, true);
         return ss.str();
     };
 
-    PRINT_HERE("begin print_graph");
     tim::print_graph(*m_timer_graph, format, *os);
     if(endline)
         *os << std::endl;
@@ -636,7 +625,6 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     //    ign_cutoff);
 
     os->flush();
-    PRINT_HERE("end print_graph");
 }
 //--------------------------------------------------------------------------------------//
 inline manager::ofstream_t*

@@ -39,6 +39,7 @@
 #include <string>
 
 #include "timemory/base_clock.hpp"
+#include "timemory/data_types.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/rss.hpp"
@@ -55,369 +56,6 @@ namespace internal
 {
 //======================================================================================//
 //
-//  Class for handling the timing and memory data
-//
-//======================================================================================//
-
-tim_api class base_timer_data
-{
-public:
-    typedef base_timer_data                         this_type;
-    typedef std::micro                              ratio_t;
-    typedef tim::base_clock<ratio_t>                clock_t;
-    typedef clock_t::time_point                     time_point_t;
-    typedef std::tuple<time_point_t, time_point_t>  data_type;
-    typedef tim::rss::usage_delta                   rss_type;
-    typedef std::chrono::duration<clock_t, ratio_t> duration_t;
-
-public:
-    base_timer_data()
-    : m_running(false)
-    , m_data(data_type())
-    {
-    }
-
-    time_point_t& start()
-    {
-        m_running = true;
-        return std::get<0>(m_data);
-    }
-    time_point_t& stop()
-    {
-        m_running = false;
-        return std::get<1>(m_data);
-    }
-
-    const time_point_t& start() const
-    {
-        m_running = true;
-        return std::get<0>(m_data);
-    }
-    const time_point_t& stop() const
-    {
-        m_running = false;
-        return std::get<1>(m_data);
-    }
-
-    const bool& running() const { return m_running; }
-
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int /*version*/)
-    {
-        ar(serializer::make_nvp("start", std::get<0>(m_data)),
-           serializer::make_nvp("stop", std::get<1>(m_data)));
-    }
-
-    inline void rss_init() { m_rss.init(); }
-    inline void rss_record() { m_rss.record(); }
-
-    inline rss_type&       rss() { return m_rss; }
-    inline const rss_type& rss() const { return m_rss; }
-
-    this_type& operator=(const this_type& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_running = rhs.m_running;
-            m_data    = rhs.m_data;
-            m_rss     = rhs.m_rss;
-        }
-        return *this;
-    }
-
-protected:
-    mutable bool m_running;
-    data_type    m_data;
-    rss_type     m_rss;
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <int N>
-uint64_t
-get_start(const base_timer_data& data)
-{
-    return std::get<N>(data.start().time_since_epoch().count().data);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <int N>
-uint64_t
-get_stop(const base_timer_data& data)
-{
-    return std::get<N>(data.stop().time_since_epoch().count().data);
-}
-
-//======================================================================================//
-//
-//  Class for handling the timing difference
-//
-//======================================================================================//
-
-tim_api class base_timer_delta
-{
-public:
-    typedef base_timer_delta                            this_type;
-    typedef uint64_t                                    uint_type;
-    typedef std::tuple<uint_type, uint_type, uint_type> data_type;
-    typedef std::tuple<uint64_t, uint64_t, uint64_t>    incr_type;
-    typedef base_timer_data                             op_type;
-    typedef tim::rss::usage_delta                       rss_type;
-    typedef rss_type::base_type                         base_rss_type;
-
-public:
-    base_timer_delta()
-    : m_lap(0)
-    , m_sum(data_type(0, 0, 0))
-    ,
-#if defined(TIMEMORY_STAT_TIMERS)
-        m_sqr(data_type(0, 0, 0))
-    ,
-#endif
-        m_rss(rss_type())
-    {
-    }
-
-public:
-    const uint64_t& size() const { return m_lap; }
-    uint64_t&       size() { return m_lap; }
-
-    rss_type&       rss() { return m_rss; }
-    const rss_type& rss() const { return m_rss; }
-
-    void reset()
-    {
-        m_lap = 0;
-        m_sum = data_type(0, 0, 0);
-#if defined(TIMEMORY_STAT_TIMERS)
-        m_sqr = data_type(0, 0, 0);
-#endif
-        m_rss = rss_type();
-    }
-
-    template <int N>
-    uint64_t get_sum() const
-    {
-        return std::get<N>(m_sum);
-    }
-
-#if defined(TIMEMORY_STAT_TIMERS)
-    template <int N>
-    uint64_t get_sqr() const
-    {
-        return std::get<N>(m_sqr);
-    }
-#else
-    template <int N>
-    uint64_t get_sqr() const
-    {
-        return 0;
-    }
-#endif
-
-public:
-    //------------------------------------------------------------------------//
-    //      operator = this
-    //
-    this_type& operator=(const this_type& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_lap = rhs.m_lap;
-            m_sum = rhs.m_sum;
-#if defined(TIMEMORY_STAT_TIMERS)
-            m_sqr = rhs.m_sqr;
-#endif
-            m_rss = rhs.m_rss;
-        }
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator += data
-    //
-    this_type& operator+=(const op_type& data)
-    {
-        auto _data = incr_type(compute<0>(data), compute<1>(data), compute<2>(data));
-        compute_sum(_data);
-        compute_sqr(_data);
-        m_lap += 1;
-        m_rss.max(data.rss());
-
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator += this
-    //
-    this_type& operator+=(const this_type& rhs)
-    {
-        m_lap += rhs.m_lap;
-        compute_sum(rhs.m_sum);
-#if defined(TIMEMORY_STAT_TIMERS)
-        compute_sqr(rhs.m_sqr);
-#endif
-        m_rss.max(rhs.m_rss);
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator -= this
-    //
-    this_type& operator-=(const this_type& rhs)
-    {
-        subtract_sum(rhs.m_sum);
-#if defined(TIMEMORY_STAT_TIMERS)
-        subtract_sqr(rhs.m_sqr);
-#endif
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator += RSS
-    //
-    this_type& operator+=(const base_rss_type& rhs)
-    {
-        m_rss += rhs;
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator -= RSS
-    //
-    this_type& operator-=(const base_rss_type& rhs)
-    {
-        m_rss -= rhs;
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator *= integer
-    //
-    this_type& operator*=(const uint64_t& rhs)
-    {
-        if(rhs > 0)
-        {
-            multiply_sum(rhs);
-            multiply_sqr(rhs);
-        }
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator /= integer
-    //
-    this_type& operator/=(const uint64_t& rhs)
-    {
-        if(rhs > 0)
-        {
-            divide_sum(rhs);
-            divide_sqr(rhs);
-        }
-        return *this;
-    }
-
-protected:
-    template <int N>
-    uint64_t compute(const op_type& data)
-    {
-        auto _ts = get_start<N>(data);
-        auto _te = get_stop<N>(data);
-        return (_te > _ts) ? (_te - _ts) : uint64_t(0);
-    }
-
-    inline void compute_sum(const incr_type& rhs)
-    {
-        std::get<0>(m_sum) += std::get<0>(rhs);
-        std::get<1>(m_sum) += std::get<1>(rhs);
-        std::get<2>(m_sum) += std::get<2>(rhs);
-    }
-
-    template <int N>
-    void subtract_unsigned(data_type& lhs, const data_type& rhs)
-    {
-        std::get<N>(lhs) = (std::get<N>(lhs) < std::get<N>(rhs))
-                               ? (uint_type)(0)
-                               : std::get<N>(lhs) - std::get<N>(rhs);
-    }
-
-    inline void subtract_sum(const incr_type& rhs)
-    {
-        subtract_unsigned<0>(m_sum, rhs);
-        subtract_unsigned<1>(m_sum, rhs);
-        subtract_unsigned<2>(m_sum, rhs);
-    }
-
-#if defined(TIMEMORY_STAT_TIMERS)
-    inline void compute_sqr(const incr_type& rhs)
-    {
-        std::get<0>(m_sqr) += std::pow(std::get<0>(rhs), 2);
-        std::get<1>(m_sqr) += std::pow(std::get<1>(rhs), 2);
-        std::get<2>(m_sqr) += std::pow(std::get<2>(rhs), 2);
-    }
-#else
-    inline void compute_sqr(const incr_type&) {}
-#endif
-
-#if defined(TIMEMORY_STAT_TIMERS)
-    inline void subtract_sqr(const incr_type& rhs)
-    {
-        std::get<0>(m_sqr) -= std::pow(std::get<0>(rhs), 2);
-        std::get<1>(m_sqr) -= std::pow(std::get<1>(rhs), 2);
-        std::get<2>(m_sqr) -= std::pow(std::get<2>(rhs), 2);
-    }
-#else
-    inline void subtract_sqr(const incr_type&) {}
-#endif
-
-    inline void multiply_sum(const uint64_t& rhs)
-    {
-        std::get<0>(m_sum) *= rhs;
-        std::get<1>(m_sum) *= rhs;
-        std::get<2>(m_sum) *= rhs;
-    }
-
-#if defined(TIMEMORY_STAT_TIMERS)
-    inline void multiply_sqr(const uint64_t& rhs)
-    {
-        std::get<0>(m_sqr) *= rhs;
-        std::get<1>(m_sqr) *= rhs;
-        std::get<2>(m_sqr) *= rhs;
-    }
-#else
-    inline void multiply_sqr(const uint64_t&) {}
-#endif
-
-    inline void divide_sum(const uint64_t& rhs)
-    {
-        std::get<0>(m_sum) /= rhs;
-        std::get<1>(m_sum) /= rhs;
-        std::get<2>(m_sum) /= rhs;
-    }
-
-#if defined(TIMEMORY_STAT_TIMERS)
-    inline void divide_sqr(const uint64_t& rhs)
-    {
-        std::get<0>(m_sqr) /= rhs;
-        std::get<1>(m_sqr) /= rhs;
-        std::get<2>(m_sqr) /= rhs;
-    }
-#else
-    inline void divide_sqr(const uint64_t&) {}
-#endif
-
-protected:
-    uint_type m_lap;
-    data_type m_sum;
-#if defined(TIMEMORY_STAT_TIMERS)
-    data_type m_sqr;
-#endif
-    rss_type m_rss;
-};
-
-//======================================================================================//
-//
 //  Primary base class for handling the timer
 //
 //======================================================================================//
@@ -428,27 +66,29 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef tim::string                  string_t;
-    typedef string_t::size_type          size_type;
-    typedef std::mutex                   mutex_t;
-    typedef std::recursive_mutex         rmutex_t;
-    typedef std::ostream                 ostream_t;
-    typedef std::ofstream                ofstream_t;
-    typedef uomap<ostream_t*, rmutex_t>  mutex_map_t;
-    typedef std::lock_guard<mutex_t>     auto_lock_t;
-    typedef std::lock_guard<rmutex_t>    recursive_lock_t;
-    typedef tms                          tms_t;
-    typedef base_timer_data              data_t;
-    typedef data_t::ratio_t              ratio_t;
-    typedef data_t::clock_t              base_clock_t;
-    typedef data_t::time_point_t         time_point_t;
-    typedef base_timer_delta             data_accum_t;
-    typedef data_t::duration_t           duration_t;
-    typedef base_timer                   this_type;
-    typedef tim::rss::usage_delta        rss_type;
-    typedef format::timer                format_type;
-    typedef std::shared_ptr<format_type> timer_format_t;
-    typedef std::function<void()>        record_func_t;
+    typedef tim::string                 string_t;
+    typedef string_t::size_type         size_type;
+    typedef std::mutex                  mutex_t;
+    typedef std::recursive_mutex        rmutex_t;
+    typedef std::ostream                ostream_t;
+    typedef std::ofstream               ofstream_t;
+    typedef uomap<ostream_t*, rmutex_t> mutex_map_t;
+    typedef std::lock_guard<mutex_t>    auto_lock_t;
+    typedef std::lock_guard<rmutex_t>   recursive_lock_t;
+    //
+    typedef base_delta<timer_data> data_accum_t;
+    typedef base_data<timer_data>  data_t;
+    //
+    typedef tms                                     tms_t;
+    typedef std::micro                              ratio_t;
+    typedef tim::base_clock<ratio_t>                clock_t;
+    typedef clock_t::time_point                     time_point_t;
+    typedef std::chrono::duration<clock_t, ratio_t> duration_t;
+    typedef base_timer                              this_type;
+    typedef tim::rss::usage_delta                   rss_type;
+    typedef format::timer                           format_type;
+    typedef std::shared_ptr<format_type>            timer_format_t;
+    typedef std::function<void()>                   record_func_t;
 
 public:
     base_timer(timer_format_t = timer_format_t(), bool _record_memory = true,
@@ -500,7 +140,6 @@ public:
 
 protected:
     // protected member functions
-    data_t&             m_timer() const { return m_data; }
     data_accum_t&       get_accum() { return m_accum; }
     const data_accum_t& get_accum() const { return m_accum; }
 
@@ -532,9 +171,9 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int /*version*/)
     {
-        auto _cpu_util = (m_accum.get_sum<0>() + m_accum.get_sum<1>());
-        if(m_accum.get_sum<2>() > 0)
-            _cpu_util /= m_accum.get_sum<2>();
+        auto _cpu_util = (m_accum.sum().user() + m_accum.sum().sys());
+        if(m_accum.sum().real() > 0)
+            _cpu_util /= m_accum.sum().real();
         else
             _cpu_util = 0.0;
 
@@ -543,14 +182,14 @@ public:
 
         ar(serializer::make_nvp("laps", m_accum.size()),
            // user clock elapsed
-           serializer::make_nvp("user_elapsed", m_accum.get_sum<0>()),
+           serializer::make_nvp("user_elapsed", m_accum.sum().user()),
            // system clock elapsed
-           serializer::make_nvp("system_elapsed", m_accum.get_sum<1>()),
+           serializer::make_nvp("system_elapsed", m_accum.sum().sys()),
            // wall clock elapsed
-           serializer::make_nvp("wall_elapsed", m_accum.get_sum<2>()),
+           serializer::make_nvp("wall_elapsed", m_accum.sum().real()),
            // cpu elapsed
            serializer::make_nvp("cpu_elapsed",
-                                m_accum.get_sum<0>() + m_accum.get_sum<1>()),
+                                m_accum.sum().user() + m_accum.sum().sys()),
            // cpu utilization
            serializer::make_nvp("cpu_util", _cpu_util),
 #if defined(TIMEMORY_STAT_TIMERS)
@@ -560,13 +199,14 @@ public:
 #endif
            // conversion to seconds
            serializer::make_nvp("to_seconds_ratio_num", ratio_t::num),
-           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den),
+           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den)
            // memory usage
-           serializer::make_nvp("rss_max", m_accum.rss().total()),
-           serializer::make_nvp("rss_self", m_accum.rss().self()),
+           // serializer::make_nvp("rss_max", m_accum.rss().total()),
+           // serializer::make_nvp("rss_self", m_accum.rss().self()),
            // memory usage (minimum)
-           serializer::make_nvp("rss_min", m_accum.rss().total_min()),
-           serializer::make_nvp("rss_self_min", m_accum.rss().self_min()));
+           // serializer::make_nvp("rss_min", m_accum.rss().total_min()),
+           // serializer::make_nvp("rss_self_min", m_accum.rss().self_min())
+        );
     }
 };
 
@@ -586,13 +226,13 @@ base_timer::set_format(timer_format_t _format)
 inline void
 base_timer::rss_init()
 {
-    m_timer().rss_init();
+    // m_data.rss_init();
 }
 //--------------------------------------------------------------------------------------//
 inline void
 base_timer::rss_record()
 {
-    m_timer().rss_record();
+    // m_data.rss_record();
 }
 //--------------------------------------------------------------------------------------//
 // Print timer status n std::ostream
@@ -609,37 +249,37 @@ operator<<(std::ostream& os, const base_timer& t)
     return os;
 }
 //--------------------------------------------------------------------------------------//
-inline  // Wall time
-    double
-    base_timer::real_elapsed() const
+// Wall time
+inline double
+base_timer::real_elapsed() const
 {
-    if(m_timer().running())
+    if(m_data.running())
         throw std::runtime_error(
             "Error! base_timer::real_elapsed() - "
             "timer not stopped or no times recorded!");
-    return m_accum.get_sum<2>() / static_cast<double>(ratio_t::den);
+    return m_accum.sum().real() / static_cast<double>(ratio_t::den);
 }
 //--------------------------------------------------------------------------------------//
-inline  // System time
-    double
-    base_timer::system_elapsed() const
+// System time
+inline double
+base_timer::system_elapsed() const
 {
-    if(m_timer().running())
+    if(m_data.running())
         throw std::runtime_error(
             "Error! base_timer::system_elapsed() - "
             "timer not stopped or no times recorded!");
-    return m_accum.get_sum<1>() / static_cast<double>(ratio_t::den);
+    return m_accum.sum().sys() / static_cast<double>(ratio_t::den);
 }
 //--------------------------------------------------------------------------------------//
-inline  // CPU time
-    double
-    base_timer::user_elapsed() const
+// CPU time
+inline double
+base_timer::user_elapsed() const
 {
-    if(m_timer().running())
+    if(m_data.running())
         throw std::runtime_error(
             "Error! base_timer::user_elapsed() - "
             "timer not stopped or no times recorded!");
-    return m_accum.get_sum<0>() / static_cast<double>(ratio_t::den);
+    return m_accum.sum().user() / static_cast<double>(ratio_t::den);
 }
 //--------------------------------------------------------------------------------------//
 inline void
@@ -679,67 +319,65 @@ base_timer::configure_record()
 inline void
 base_timer::start_with_memory()
 {
-    if(!m_timer().running())
+    if(!m_data.running())
     {
-        m_timer().start() = base_clock_t::now();
+        m_data.resume();
+        m_data.start() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
+                                         clock_thread_now<uint64_t, ratio_t>(),
+                                         clock_system_now<uint64_t, ratio_t>());
         rss_init();
     }
-#if !defined(NDEBUG)
-    else
-        start_stop_debug_message(__FUNCTION__, "running");
-#endif
 }
 //--------------------------------------------------------------------------------------//
 inline void
 base_timer::start_without_memory()
 {
-    if(!m_timer().running())
-        m_timer().start() = base_clock_t::now();
-#if !defined(NDEBUG)
-    else
-        start_stop_debug_message(__FUNCTION__, "running");
-#endif
+    if(!m_data.running())
+    {
+        m_data.resume();
+        m_data.start() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
+                                         clock_thread_now<uint64_t, ratio_t>(),
+                                         clock_system_now<uint64_t, ratio_t>());
+    }
 }
 //--------------------------------------------------------------------------------------//
 inline void
 base_timer::stop_with_memory()
 {
-    if(m_timer().running())
+    if(m_data.running())
     {
-        m_timer().stop() = base_clock_t::now();
+        m_data.pause();
+        m_data.stop() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
+                                        clock_thread_now<uint64_t, ratio_t>(),
+                                        clock_system_now<uint64_t, ratio_t>());
         rss_record();
-        m_accum += m_timer();
+        m_accum += m_data;
     }
-#if !defined(NDEBUG)
-    else
-        start_stop_debug_message(__FUNCTION__, "stopped");
-#endif
 }
 //--------------------------------------------------------------------------------------//
 inline void
 base_timer::stop_without_memory()
 {
-    if(m_timer().running())
+    if(m_data.running())
     {
-        m_timer().stop() = base_clock_t::now();
-        m_accum += m_timer();
+        m_data.pause();
+        m_data.stop() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
+                                        clock_thread_now<uint64_t, ratio_t>(),
+                                        clock_system_now<uint64_t, ratio_t>());
+        m_accum += m_data;
     }
-#if !defined(NDEBUG)
-    else
-        start_stop_debug_message(__FUNCTION__, "stopped");
-#endif
 }
 //--------------------------------------------------------------------------------------//
 inline bool
 base_timer::is_valid() const
 {
-    return (m_timer().running()) ? false : true;
+    return (m_data.running()) ? false : true;
 }
 //--------------------------------------------------------------------------------------//
 inline bool
 base_timer::is_running() const
 {
-    return m_timer().running();
+    return m_data.running();
 }
 //--------------------------------------------------------------------------------------//
 inline const char*
@@ -757,7 +395,7 @@ inline void
 base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 {
     // stop, if not already stopped
-    if(m_timer().running())
+    if(m_data.running())
         const_cast<base_timer*>(this)->stop();
 
     if(!above_cutoff(ign_cutoff))
@@ -782,7 +420,7 @@ base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
-
+/*
 namespace internal
 {
 typedef typename tim::internal::base_timer_data::ratio_t       base_ratio_t;
@@ -792,7 +430,7 @@ typedef std::chrono::duration<base_clock_data_t, base_ratio_t> base_duration_t;
 typedef std::chrono::time_point<base_clock_t, base_duration_t> base_time_point_t;
 typedef std::tuple<base_time_point_t, base_time_point_t>       base_time_pair_t;
 }  // namespace internal
-
+*/
 //--------------------------------------------------------------------------------------//
 
-#endif  // base_timer_hpp_
+#endif

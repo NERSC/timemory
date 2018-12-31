@@ -167,7 +167,7 @@ public:
     //
     this_type& operator+=(const base_rss_type& rhs)
     {
-        m_accum += rhs;
+        // m_accum += rhs;
         return *this;
     }
 
@@ -176,7 +176,7 @@ public:
     //
     this_type& operator-=(const base_rss_type& rhs)
     {
-        m_accum -= rhs;
+        // m_accum -= rhs;
         return *this;
     }
 

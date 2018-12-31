@@ -255,18 +255,86 @@ public:
 };
 
 //--------------------------------------------------------------------------------------//
+// default: return in seconds
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_now(clockid_t clock_id)
+{
+    constexpr _Tp factor = static_cast<_Tp>(std::nano::den) / Precision::den;
+    timespec      tspec;
+    clock_gettime(clock_id, &tspec);
+    return (tspec.tv_sec * std::nano::den + tspec.tv_nsec) / factor;
+}
 
-template <typename _Precision>
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_realtime_now()
+{
+    return clock_now<_Tp, Precision>(CLOCK_REALTIME);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_monotonic_now()
+{
+    return clock_now<_Tp, Precision>(CLOCK_MONOTONIC);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_monotonic_raw_now()
+{
+    return clock_now<_Tp, Precision>(CLOCK_MONOTONIC_RAW);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_thread_now()
+{
+    return clock_now<_Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_process_now()
+{
+    return clock_now<_Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp = double, typename Precision = std::ratio<1>>
+_Tp
+clock_system_now()
+{
+    tms _tms;
+    ::times(&_tms);
+    return (_tms.tms_stime + _tms.tms_cstime) * static_cast<_Tp>(clock_tick<Precision>());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Precision>
 tim_api class base_clock
 {
 #if defined(__GNUC__) && !defined(__clang__)
-    static_assert(std::chrono::__is_ratio<_Precision>::value,
-                  "typename _Precision must be a std::ratio");
+    static_assert(std::chrono::__is_ratio<Precision>::value,
+                  "typename Precision must be a std::ratio");
 #endif
 
 public:
-    typedef base_clock_data<_Precision>                   rep;
-    typedef _Precision                                    period;
+    typedef base_clock_data<Precision>                    rep;
+    typedef Precision                                     period;
     typedef std::chrono::duration<rep, period>            duration;
     typedef std::chrono::time_point<base_clock, duration> time_point;
 
@@ -276,24 +344,12 @@ public:
     {
         // typedef std::chrono::high_resolution_clock             clock_type;
         // typedef std::chrono::duration<clock_type::rep, period> duration_type;
-
-        tms      _tms;
-
-        timespec ts_real;
-        timespec ts_mono;
-        timespec ts_thread;
-        timespec ts_process;
-        timespec res_real;
-        timespec res_mono;
-        timespec res_thread;
-        timespec res_process;
-
-        clock_getres(CLOCK_REALTIME, &res_real);
-        clock_getres(CLOCK_MONOTONIC_RAW, &res_mono);
-        clock_getres(CLOCK_THREAD_CPUTIME_ID, &res_thread);
-        clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res_process);
-
-        auto     ts_scale = (std::nano::den / _Precision::den);
+        tms               _tms;
+        timespec          ts_real;
+        timespec          ts_mono;
+        timespec          ts_thread;
+        timespec          ts_process;
+        constexpr int64_t ts_scale = (std::nano::den / Precision::den);
 
         // wall clock
         auto get_wall_time = [&]() {
@@ -337,7 +393,7 @@ public:
         typedef std::chrono::high_resolution_clock              clock_type;
         typedef std::chrono::duration<clock_type::rep, period>  duration_type;
 
-        constexpr float factor = (float) _Precision::den / std::nano::den;
+        constexpr float factor = (float) Precision::den / std::nano::den;
 
         // wall clock
         auto get_wall_time = [&] ()
