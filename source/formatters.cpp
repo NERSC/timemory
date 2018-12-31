@@ -54,6 +54,7 @@ base_formatter::base_formatter(string_t _prefix, string_t _suffix, string_t _for
                                size_type _width, bool _fixed)
 : core_type(_prec, _width, _unit, _format, _fixed)
 , m_align_width(_align_width)
+, m_fixed(_fixed)
 , m_prefix(_prefix)
 , m_suffix(_suffix)
 {
@@ -284,7 +285,7 @@ timer::operator()(const internal::base_timer* t) const
             continue;
 
         // replace all instances
-        auto _npos = tim::string::npos;
+        unsigned long _npos;
         while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
@@ -495,7 +496,7 @@ rss::operator()(const tim::rss::usage* m) const
             continue;
 
         // replace all instances
-        auto _npos = tim::string::npos;
+        unsigned long _npos;
         while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
@@ -567,7 +568,7 @@ rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
             continue;
 
         // replace all instances
-        auto _npos = tim::string::npos;
+        unsigned long _npos;
         while((_npos = _str.find(itr.first)) != tim::string::npos)
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
