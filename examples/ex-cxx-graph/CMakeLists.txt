@@ -3,10 +3,10 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-CXX-Overhead-Example LANGUAGES C CXX)
+project(TiMemory-CXX-Graph-Example LANGUAGES CXX)
 message(STATUS "Project: ${PROJECT_NAME}")
 
-set(EXE_NAME test_cxx_overhead)
+set(EXE_NAME test_graph)
 
 find_package(TiMemory REQUIRED)
 

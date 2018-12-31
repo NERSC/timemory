@@ -76,7 +76,10 @@
         throw std::runtime_error(ss.str());                                              \
     }
 
-#define PRINT_HERE printf(" [%s@'%s':%i]\n", __FUNCTION__, __FILE__, __LINE__)
+#if defined(PRINT_HERE)
+#    define PRINT_HERE(extra)                                                            \
+        printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#endif
 
 inline tim::string
 rank_prefix()
@@ -105,27 +108,58 @@ rank_prefix()
     }
 
 //--------------------------------------------------------------------------------------//
-// Usage:
-//  try
-//  {
-//      RUN_TEST(test_serialize, num_test, num_fail);
-//  }
-//  catch(std::exception& e)
-//  {
-//      std::cerr << e.what() << std::endl;
-//  }
+//  Usage:
+//      CONFIGURE_TEST_SELECTOR(8)
 //
-#define RUN_TEST(func, ntest_counter, nfail_counter)                                     \
+//  Required for RUN_TEST
+//
+#define CONFIGURE_TEST_SELECTOR(total_tests)                                             \
+    int           total_num_tests = total_tests;                                         \
+    std::set<int> tests;                                                                 \
+    if(argc == 1)                                                                        \
+        for(int i = 0; i < total_tests; ++i)                                             \
+            tests.insert(i + 1);                                                         \
+    for(int i = 1; i < argc; ++i)                                                        \
+        tests.insert(atoi(argv[i]));
+
+//--------------------------------------------------------------------------------------//
+//  Usage:
+//
+//      int num_fail = 0;   // tracks the number of failed tests
+//      int num_test = 0;   // tracks the number of tests executed
+//
+//      try
+//      {
+//          RUN_TEST(test_serialize, num_test, num_fail);
+//      }
+//      catch(std::exception& e)
+//      {
+//          std::cerr << e.what() << std::endl;
+//      }
+//
+#define RUN_TEST(test_num, func, ntest_counter, nfail_counter)                           \
     {                                                                                    \
-        try                                                                              \
+        if(test_num > total_num_tests || tests.count(test_num) != 0)                     \
         {                                                                                \
-            ntest_counter += 1;                                                          \
-            func();                                                                      \
+            if(test_num > tests.size())                                                  \
+                printf(                                                                  \
+                    "Warning! Test %i is greater than the specified number of tests: "   \
+                    "%i\n",                                                              \
+                    test_num, total_num_tests);                                          \
+            try                                                                          \
+            {                                                                            \
+                ntest_counter += 1;                                                      \
+                func();                                                                  \
+            }                                                                            \
+            catch(std::exception & e)                                                    \
+            {                                                                            \
+                std::cerr << e.what() << std::endl;                                      \
+                nfail_counter += 1;                                                      \
+            }                                                                            \
         }                                                                                \
-        catch(std::exception & e)                                                        \
+        else                                                                             \
         {                                                                                \
-            std::cerr << e.what() << std::endl;                                          \
-            nfail_counter += 1;                                                          \
+            printf("Skipping test #%i...\n", test_num);                                  \
         }                                                                                \
     }
 

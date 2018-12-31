@@ -33,15 +33,6 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include <cstdint>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <unordered_map>
-
-//--------------------------------------------------------------------------------------//
-
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
@@ -50,6 +41,24 @@
 #include "timemory/string.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/utility.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+#include <cstdint>
+#include <deque>
+#include <mutex>
+#include <string>
+#include <thread>
+#include <unordered_map>
+
+#if !defined(pfunc)
+#    if defined(DEBUG)
+#        define PRINT_HERE(extra)                                                        \
+            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#    else
+#        define PRINT_HERE(extra)
+#    endif
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,38 +85,34 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     //------------------------------------------------------------------------//
     //      constructors
     //
-    /*timer_tuple()
-    : base_type({ 0, 0, 0, string_t(""), timer_ptr_t(nullptr) })
+    // default and full initialization
+    timer_tuple(uint64_t _a = 0, uint64_t _b = 0, uint64_t _c = 0, string_t _d = "",
+                timer_ptr_t _e = timer_ptr_t(nullptr))
+    : base_type(_a, _b, _c, _d, _e)
     {
-    }*/
-
+    }
+    // copy constructors
+    timer_tuple(const timer_tuple&) = default;
     timer_tuple(const base_type& _data)
     : base_type(_data)
     {
     }
-
-    //timer_tuple(const timer_tuple&) = default;
-
-    timer_tuple(uint64_t _a, uint64_t _b, uint64_t _c, string_t _d, timer_ptr_t _e)
-    : base_type(_a, _b, _c, _d, _e)
-    {
-    }
-
-    /*timer_tuple& operator=(const timer_tuple& rhs)
+    // assignment operator
+    timer_tuple& operator=(const timer_tuple& rhs)
     {
         if(this == &rhs)
             return *this;
         internal::base_timer_tuple_t::operator=(rhs);
         return *this;
     }
-
+    // move operator
     timer_tuple& operator=(timer_tuple&& rhs)
     {
         if(this == &rhs)
             return *this;
         internal::base_timer_tuple_t::operator=(std::move(rhs));
         return *this;
-    }*/
+    }
 
     //------------------------------------------------------------------------//
     //
@@ -141,16 +146,19 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     //------------------------------------------------------------------------//
     //
     //
-    bool operator==(const this_type& rhs) const
+    friend bool operator==(const this_type& lhs, const this_type& rhs)
     {
-        return (key() == rhs.key() && level() == rhs.level() &&
-                tag() == rhs.tag() /*&& offset() == rhs.offset()*/);
+        return (lhs.key() == rhs.key() && lhs.level() == rhs.level() &&
+                lhs.tag() == rhs.tag());
     }
 
     //------------------------------------------------------------------------//
     //
     //
-    bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
+    friend bool operator!=(const this_type& lhs, const this_type& rhs)
+    {
+        return !(lhs == rhs);
+    }
 
     //------------------------------------------------------------------------//
     //
@@ -188,10 +196,16 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
     {
         std::stringstream ss;
-        ss << "Key = " << t.key() << ", "
+        ss << std::setw(2 * t.level()) << ""
+           << "[" << t.tag() << "]" << std::endl;
+        /*
+        ss << "["
+           << "Key = " << t.key() << ", "
            << "Count = " << t.level() << ", "
            << "Offset = " << t.offset() << ", "
-           << "Tag = " << t.tag();
+           << "Tag = " << t.tag()
+           << "]";
+        */
         os << ss.str();
         return os;
     }
@@ -251,126 +265,102 @@ public:
     static void           set_max_depth(const int32_t& val) { f_max_depth = val; }
     static int32_t        get_max_depth() { return f_max_depth; }
     static bool           is_enabled() { return f_enabled; }
-    // JSON writing
-    static void                     write_json(path_t _fname);
+    static void           write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
     static int get_instance_count() { return f_manager_instance_count.load(); }
 
 protected:
     static void                     write_json_no_mpi(path_t _fname);
-    static void                     write_json_mpi(path_t _fname);
     static void                     write_json_no_mpi(ostream_t& os);
+    static void                     write_json_mpi(path_t _fname);
     static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
 
 public:
     // Public member functions
-    void merge();
-    void merge(pointer);
-    void clear();
-
-    size_type size() const { return m_timer_list_norm.size(); }
-
     tim_timer_t& timer(const string_t& key, const string_t& tag = "cxx",
                        int32_t ncount = 0, int32_t nhash = 0);
 
-    tim_timer_t& at(size_t i) { return m_timer_list->at(i).timer(); }
-
-    // time a function with a return type and no arguments
+    /// time a function with a return type and no arguments
     template <typename _Ret, typename _Func>
     _Ret time(const string_t& key, _Func);
 
-    // time a function with a return type and arguments
+    /// time a function with a return type and arguments
     template <typename _Ret, typename _Func, typename... _Args>
     _Ret time(const string_t& key, _Func, _Args...);
 
-    // time a function with no return type and no arguments
+    /// time a function with no return type and no arguments
     template <typename _Func>
     void time(const string_t& key, _Func);
 
-    // time a function with no return type and arguments
+    /// time a function with no return type and arguments
     template <typename _Func, typename... _Args>
     void time(const string_t& key, _Func, _Args...);
 
-    // iteration of timers
-    iterator       begin() { return m_timer_list->begin(); }
-    const_iterator begin() const { return m_timer_list->cbegin(); }
-    const_iterator cbegin() const { return m_timer_list->cbegin(); }
-
-    iterator       end() { return m_timer_list->end(); }
-    const_iterator end() const { return m_timer_list->cend(); }
-    const_iterator cend() const { return m_timer_list->cend(); }
-
-    void print(bool ign_cutoff = false, bool endline = true)
-    {
-        this->report(ign_cutoff, endline);
-    }
-
-    void report(bool ign_cutoff = false, bool endline = true) const;
     void set_output_stream(const path_t&);
-    void write_report(path_t _fname, bool ign_cutoff = false);
-    void write_serialization(const path_t& _fname) const { write_json(_fname); }
-    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
-    //  then timer_pair_t will subtract out tim_timer_t
-    void write_missing(const path_t& _fname, tim_timer_t* = nullptr,
-                       tim_timer_t* = nullptr);
-
-    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const
-    {
-        report(&os, ign_cutoff, endline);
-    }
     void set_output_stream(ostream_t& = std::cout);
-    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
-                      bool endline = true)
-    {
-        report(os, ign_cutoff, endline);
-    }
-    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
-    // if tim_timer_t is not nullptr and timer_pair_t is not nullptr
-    //  then timer_pair_t will subtract out tim_timer_t
+    void write_missing(const path_t& _fname, tim_timer_t* = nullptr,
+                       tim_timer_t* = nullptr, bool rank_zero_only = true);
     void write_missing(ostream_t& = std::cout, tim_timer_t* = nullptr,
-                       tim_timer_t* = nullptr);
+                       tim_timer_t* = nullptr, bool rank_zero_only = true);
+    void write_report(path_t _fname, bool ign_cutoff = false);
+    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
+                      bool endline = true);
+    void write_serialization(const path_t& _fname) const { write_json(_fname); }
+    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
+    void report(bool ign_cutoff = false, bool endline = true) const;
+    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const;
 
-    void add(pointer ptr);
-    void remove(pointer ptr);
-
-    timer_map_t&  map() { return m_timer_map; }
-    timer_list_t& list() { return m_timer_list_norm; }
-
-    const timer_map_t&  map() const { return m_timer_map; }
-    const timer_list_t& list() const { return m_timer_list_norm; }
-
-    counter_t& hash() { return m_hash; }
-    counter_t& count() { return m_count; }
-    counter_t& parent_hash() { return m_p_hash; }
-    counter_t& parent_count() { return m_p_count; }
-
-    const counter_t& hash() const { return m_hash; }
-    const counter_t& count() const { return m_count; }
-    const counter_t& parent_hash() const { return m_p_hash; }
-    const counter_t& parent_count() const { return m_p_count; }
-
-    //void pop_graph() { m_graph_itr = m_timer_graph.parent(m_graph_itr); }
-
-    void sync_hierarchy();
-
+    void                   merge();
+    void                   merge(pointer);
+    void                   clear();
+    size_type              size() const { return m_timer_list_norm.size(); }
+    tim_timer_t&           at(size_t i) { return m_timer_list->at(i).timer(); }
+    void                   print(bool ign_cutoff = false, bool endline = true);
+    iterator               begin() { return m_timer_list->begin(); }
+    const_iterator         begin() const { return m_timer_list->cbegin(); }
+    const_iterator         cbegin() const { return m_timer_list->cbegin(); }
+    iterator               end() { return m_timer_list->end(); }
+    const_iterator         end() const { return m_timer_list->cend(); }
+    const_iterator         cend() const { return m_timer_list->cend(); }
+    timer_map_t&           map() { return m_timer_map; }
+    timer_list_t&          list() { return m_timer_list_norm; }
+    const timer_map_t&     map() const { return m_timer_map; }
+    const timer_list_t&    list() const { return m_timer_list_norm; }
+    counter_t&             hash() { return m_hash; }
+    counter_t&             count() { return m_count; }
+    counter_t&             parent_hash() { return m_p_hash; }
+    counter_t&             parent_count() { return m_p_count; }
+    const counter_t&       hash() const { return m_hash; }
+    const counter_t&       count() const { return m_count; }
+    const counter_t&       parent_hash() const { return m_p_hash; }
+    const counter_t&       parent_count() const { return m_p_count; }
+    void                   pop_graph();
+    timer_graph_itr*       get_graph_iterator() const { return m_graph_itr; }
+    timer_graph_t*         get_timer_graph() const { return m_timer_graph; }
+    void                   sync_hierarchy();
     daughter_list_t&       daughters() { return m_daughters; }
     const daughter_list_t& daughters() const { return m_daughters; }
+    void                   add(pointer ptr);
+    void                   remove(pointer ptr);
+    void                   set_merge(bool val) { m_merge.store(val); }
+    void                   operator+=(const base_rss_type& rhs);
+    void                   operator-=(const base_rss_type& rhs);
+    bool                   is_reporting_to_file() const;
+    ostream_t*             get_output_stream() const { return m_report; }
+    tim_timer_t            compute_missing(tim_timer_t* timer_ref = nullptr);
+    uint64_t               laps() const { return compute_total_laps(); }
+    uint64_t               total_laps() const;
+    void                   update_total_timer_format();
+    void                   start_total_timer();
+    void                   stop_total_timer();
+    void                   reset_total_timer();
+    tim_timer_t*           missing_timer() const { return m_missing_timer.get(); }
+    int32_t                instance_count() const { return m_instance_count; }
+    void                   self_cost(bool val);
+    bool                   self_cost() const;
 
-    void set_merge(bool val) { m_merge.store(val); }
-
-    void operator+=(const base_rss_type& rhs);
-    void operator-=(const base_rss_type& rhs);
-
-    ostream_t* get_output_stream() const { return m_report; }
-    bool       is_reporting_to_file() const
-    {
-        return (m_report != &std::cout) && (m_report != &std::cerr);
-    }
-
-    tim_timer_t compute_missing(tim_timer_t* timer_ref = nullptr);
-    uint64_t    laps() const { return compute_total_laps(); }
-    uint64_t    total_laps() const;
-    void        update_total_timer_format();
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int version);
 
     friend std::ostream& operator<<(std::ostream& os, const manager& man)
     {
@@ -380,25 +370,11 @@ public:
         return os;
     }
 
-    // reset the total timer
-    void start_total_timer();
-    void stop_total_timer();
-    void reset_total_timer();
-
 public:
     // serialization function
-    template <typename Archive>
-    void         serialize(Archive& ar, const unsigned int version);
-    tim_timer_t* missing_timer() const { return m_missing_timer.get(); }
-    int32_t      instance_count() const { return m_instance_count; }
-    void         self_cost(bool val)
-    {
-        m_timer_list = (val) ? &m_timer_list_self : &m_timer_list_norm;
-    }
-    bool self_cost() const { return (m_timer_list == &m_timer_list_self); }
 
 protected:
-    // protected functions
+    // protected static functions
     static comm_group_t get_communicator_group();
 
 protected:
@@ -415,58 +391,61 @@ protected:
     static get_num_threads_func_t f_get_num_threads;
 
 private:
-    // Private functions
-    ofstream_t* get_ofstream(ostream_t* m_os) const;
+    // private functions
     void        report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
+    ofstream_t* get_ofstream(ostream_t* m_os) const;
 
 private:
-    // Private variables
-    // for temporary enabling/disabling
+    // private static variables
+    /// for temporary enabling/disabling
     static bool f_enabled;
-    // max depth of timers
+    /// max depth of timers
     static int32_t f_max_depth;
-    // number of timing manager instances
+    /// number of timing manager instances
     static std::atomic<int> f_manager_instance_count;
-    // merge checking
+
+private:
+    // private variables
+    /// merge checking
     std::atomic<bool> m_merge;
-    // self format
+    /// self format
     bool m_self_format;
-    // instance id
+    /// instance id
     int32_t m_instance_count;
-    // total laps
+    /// total laps
     counter_t m_laps;
-    // hash counting
+    /// hash counting
     counter_t m_hash;
-    // auto timer counting
+    /// auto timer counting
     counter_t m_count;
-    // parent auto timer sync point for hashing
+    /// parent auto timer sync point for hashing
     counter_t m_p_hash;
-    // parent auto timer sync point
+    /// parent auto timer sync point
     counter_t m_p_count;
-    // hashed string map for fast lookup
+    /// hashed string map for fast lookup
     timer_map_t m_timer_map;
-    // graph for storage
-    //timer_graph_t m_timer_graph;
-    // current graph iterator
-    timer_graph_itr m_graph_itr;
-    // ordered list for output (outputs in order of timer instantiation)
+    /// ordered list for output (outputs in order of timer instantiation)
     timer_list_t m_timer_list_norm;
-    // ordered list for output (self-cost format)
+    /// ordered list for output (self-cost format)
     timer_list_t m_timer_list_self;
-    // mutex
+    /// mutex
     mutex_t m_mutex;
-    // daughter list
+    /// daughter list
     daughter_list_t m_daughters;
-    // baseline rss
+    /// baseline rss
     base_rss_type m_rss_usage;
-    // missing timer
+    /// missing timer
     timer_ptr_t m_missing_timer;
-    // global timer
+    /// global timer
     timer_ptr_t m_total_timer;
-    // current timer list (either standard or self)
+    /// current timer list (either standard or self)
     timer_list_t* m_timer_list;
-    // output stream for total timing report
+    /// output stream for total timing report
     ostream_t* m_report;
+    /// graph for storage
+    timer_graph_t* m_timer_graph;
+    /// current graph iterator
+    timer_graph_itr* m_graph_itr;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -640,10 +619,24 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     // if(_width > 10 && _width < tim::format::timer::default_width())
     //    tim::format::timer::default_width(_width);
 
-    for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
-        itr->timer().report(*os, (itr + 1 == this->cend()) ? endline : true, ign_cutoff);
+    auto format = [&](const timer_tuple_t& node) {
+        std::stringstream ss;
+        ss << "<[test]";
+        node.timer().report(ss, false, ign_cutoff);
+        return ss.str();
+    };
+
+    PRINT_HERE("begin print_graph");
+    tim::print_graph(*m_timer_graph, format, *os);
+    if(endline)
+        *os << std::endl;
+
+    // for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
+    //    itr->timer().report(*os, (itr + 1 == this->cend()) ? endline : true,
+    //    ign_cutoff);
 
     os->flush();
+    PRINT_HERE("end print_graph");
 }
 //--------------------------------------------------------------------------------------//
 inline manager::ofstream_t*
@@ -651,6 +644,48 @@ manager::get_ofstream(ostream_t* m_os) const
 {
     return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
                                                       : nullptr;
+}
+//--------------------------------------------------------------------------------------//
+inline void
+manager::print(bool ign_cutoff, bool endline)
+{
+    this->report(ign_cutoff, endline);
+}
+//--------------------------------------------------------------------------------------//
+inline void
+manager::write_report(ostream_t& os, bool ign_cutoff, bool endline)
+{
+    report(os, ign_cutoff, endline);
+}
+//--------------------------------------------------------------------------------------//
+inline void
+manager::report(ostream_t& os, bool ign_cutoff, bool endline) const
+{
+    report(&os, ign_cutoff, endline);
+}
+//--------------------------------------------------------------------------------------//
+inline bool
+manager::is_reporting_to_file() const
+{
+    return (m_report != &std::cout) && (m_report != &std::cerr);
+}
+//--------------------------------------------------------------------------------------//
+inline void
+manager::self_cost(bool val)
+{
+    m_timer_list = (val) ? &m_timer_list_self : &m_timer_list_norm;
+}
+//--------------------------------------------------------------------------------------//
+inline void
+manager::pop_graph()
+{
+    *m_graph_itr = m_timer_graph->parent(*m_graph_itr);
+}
+//--------------------------------------------------------------------------------------//
+inline bool
+manager::self_cost() const
+{
+    return (m_timer_list == &m_timer_list_self);
 }
 //--------------------------------------------------------------------------------------//
 

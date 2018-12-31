@@ -65,6 +65,28 @@ mpi_is_initialized()
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+mpi_initialize(int argc, char** argv)
+{
+#if defined(TIMEMORY_USE_MPI)
+    MPI_Init(&argc, &argv);
+#else
+    consume_parameters(argc, argv);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+mpi_finalize()
+{
+#if defined(TIMEMORY_USE_MPI)
+    MPI_Finalize();
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline int32_t
 mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
 {

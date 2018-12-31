@@ -3,27 +3,23 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-CXX-Total-Example C CXX)
+project(TiMemory-CXX-Total-Example LANGUAGES C CXX)
+message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cxx_total)
 
 find_package(TiMemory REQUIRED)
-foreach(_DIR ${TiMemory_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
 
-if(NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
-endif(NOT DEFINED CMAKE_CXX_STANDARD)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
-
-#------------------------------------------------------------------------------#
-# Add the executable, and link it to the TiMemory libraries
-#
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-target_link_libraries(${EXE_NAME} ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_link_libraries(${EXE_NAME}
+    PUBLIC ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_include_directories(${EXE_NAME} SYSTEM
+    PUBLIC ${TiMemory_INCLUDE_DIRS})
+target_compile_options(${EXE_NAME}
+    PUBLIC ${TiMemory_CXX_COMPILE_OPTIONS})
+set_target_properties(${EXE_NAME} PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON)
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})

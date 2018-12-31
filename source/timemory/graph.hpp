@@ -32,6 +32,8 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <functional>
+#include <iomanip>
 #include <iostream>
 #include <iterator>
 #include <memory>
@@ -2241,18 +2243,18 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
                             sibling_iterator from1, sibling_iterator from2,
                             bool duplicate_leaves)
 {
-    sibling_iterator fnd;
     while(from1 != from2)
     {
-        if((fnd = std::find(to1, to2, (*from1))) != to2)
-        {  // element found
-            if(from1.begin() == from1.end())
-            {  // full depth reached
+        auto fnd = std::find(to1, to2, *from1);
+        if(fnd != to2)  // element found
+        {
+            if(from1.begin() == from1.end())  // full depth reached
+            {
                 if(duplicate_leaves)
                     append_child(parent(to1), (*from1));
             }
-            else
-            {  // descend further
+            else  // descend further
+            {
                 merge(fnd.begin(), fnd.end(), from1.begin(), from1.end(),
                       duplicate_leaves);
             }
@@ -4020,14 +4022,14 @@ graph<T, AllocatorT>::leaf_iterator::operator-=(unsigned int num)
 
 template <typename T>
 void
-print_graph_bracketed(const graph<T>& t, std::ostream& str = std::cout);
+print_graph_bracketed(const graph<T>& t, std::ostream& os = std::cout);
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
 void
-print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator iRoot,
-                         std::ostream& str = std::cout);
+print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator root,
+                         std::ostream& os = std::cout);
 
 //--------------------------------------------------------------------------------------//
 // Iterate over all roots (the head) and print each one on a new line
@@ -4036,15 +4038,86 @@ print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator iRoot,
 
 template <typename T>
 void
-print_graph_bracketed(const graph<T>& t, std::ostream& str)
+print_graph_bracketed(const graph<T>& t, std::ostream& os)
 {
-    int headCount = t.number_of_siblings(t.begin());
-    int headNum   = 0;
-    for(typename graph<T>::sibling_iterator iRoots = t.begin(); iRoots != t.end();
-        ++iRoots, ++headNum)
+    int head_count = t.number_of_siblings(t.begin());
+    int nhead      = 0;
+    for(typename graph<T>::sibling_iterator ritr = t.begin(); ritr != t.end();
+        ++ritr, ++nhead)
     {
-        print_subgraph_bracketed(t, iRoots, str);
-        if(headNum != headCount)
+        print_subgraph_bracketed(t, ritr, os);
+        if(nhead != head_count)
+        {
+            os << std::endl;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+// Print everything under this root in a flat, bracketed structure.
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+void
+print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator root,
+                         std::ostream& os)
+{
+    if(t.empty())
+        return;
+    if(t.number_of_children(root) == 0)
+    {
+        os << *root;
+    }
+    else
+    {
+        // parent
+        os << *root;
+        os << "(";
+        // child1, ..., childn
+        int sibling_count = t.number_of_siblings(t.begin(root));
+        int nsiblings;
+        typename graph<T>::sibling_iterator children;
+        for(children = t.begin(root), nsiblings = 0; children != t.end(root);
+            ++children, ++nsiblings)
+        {
+            // recursively print child
+            print_subgraph_bracketed(t, children, os);
+            // comma after every child except the last one
+            if(nsiblings != sibling_count)
+            {
+                os << ", ";
+            }
+        }
+        os << ")";
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter = std::function<std::string(const T&)>>
+void
+print_graph(const tim::graph<T>& t, Formatter format, std::ostream& str = std::cout);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter = std::function<std::string(const T&)>>
+void
+print_subgraph(const tim::graph<T>& t, Formatter format,
+               typename tim::graph<T>::iterator root, std::ostream& str = std::cout);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter>
+void
+print_graph(const tim::graph<T>& t, Formatter format, std::ostream& str)
+{
+    int head_count = t.number_of_siblings(t.begin());
+    int nhead      = 0;
+    for(typename tim::graph<T>::sibling_iterator ritr = t.begin(); ritr != t.end();
+        ++ritr, ++nhead)
+    {
+        print_subgraph(t, format, ritr, str);
+        if(nhead != head_count)
         {
             str << std::endl;
         }
@@ -4052,40 +4125,106 @@ print_graph_bracketed(const graph<T>& t, std::ostream& str)
 }
 
 //--------------------------------------------------------------------------------------//
-// Print everything under this root in a flat, bracketed structure.
 
-template <typename T>
+template <typename T, typename Formatter>
 void
-print_subgraph_bracketed(const graph<T>& t, typename graph<T>::iterator iRoot,
-                         std::ostream& str)
+print_subgraph(const tim::graph<T>& t, Formatter format,
+               typename tim::graph<T>::iterator root, std::ostream& os)
 {
     if(t.empty())
         return;
-    if(t.number_of_children(iRoot) == 0)
+    if(t.number_of_children(root) == 0)
     {
-        str << *iRoot;
+        os << format(*root);
     }
     else
     {
         // parent
-        str << *iRoot;
-        str << "(";
+        os << format(*root) << "\n";
         // child1, ..., childn
-        int siblingCount = t.number_of_siblings(t.begin(iRoot));
-        int siblingNum;
-        typename graph<T>::sibling_iterator iChildren;
-        for(iChildren = t.begin(iRoot), siblingNum = 0; iChildren != t.end(iRoot);
-            ++iChildren, ++siblingNum)
+        int sibling_count = t.number_of_siblings(t.begin(root));
+        int nsiblings;
+        typename tim::graph<T>::sibling_iterator children;
+        for(children = t.begin(root), nsiblings = 0; children != t.end(root);
+            ++children, ++nsiblings)
         {
             // recursively print child
-            print_subgraph_bracketed(t, iChildren, str);
+            print_subgraph(t, format, children, os);
             // comma after every child except the last one
-            if(siblingNum != siblingCount)
+            if(nsiblings != sibling_count)
             {
-                str << ", ";
+                os << "\n";
             }
         }
-        str << ")";
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter = std::function<std::string(const T&)>>
+void
+print_graph_hierarchy(const tim::graph<T>& t, Formatter format,
+                      std::ostream& str = std::cout);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter = std::function<std::string(const T&)>>
+void
+print_subgraph_hierarchy(const tim::graph<T>& t, Formatter format,
+                         typename tim::graph<T>::iterator root,
+                         std::ostream&                    str = std::cout);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter>
+void
+print_graph_hierarchy(const tim::graph<T>& t, Formatter format, std::ostream& str)
+{
+    int head_count = t.number_of_siblings(t.begin());
+    int nhead      = 0;
+    for(typename tim::graph<T>::sibling_iterator ritr = t.begin(); ritr != t.end();
+        ++ritr, ++nhead)
+    {
+        print_subgraph_hierarchy(t, format, ritr, str);
+        if(nhead != head_count)
+        {
+            str << std::endl;
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename Formatter>
+void
+print_subgraph_hierarchy(const tim::graph<T>& t, Formatter format,
+                         typename tim::graph<T>::iterator root, std::ostream& os)
+{
+    if(t.empty())
+        return;
+    if(t.number_of_children(root) == 0)
+    {
+        os << format(*root);
+    }
+    else
+    {
+        // parent
+        os << format(*root) << "\n" << std::setw(2 * (t.depth(root) + 1)) << "|_";
+        // child1, ..., childn
+        int sibling_count = t.number_of_siblings(t.begin(root));
+        int nsiblings;
+        typename tim::graph<T>::sibling_iterator children;
+        for(children = t.begin(root), nsiblings = 0; children != t.end(root);
+            ++children, ++nsiblings)
+        {
+            // recursively print child
+            print_subgraph_hierarchy(t, format, children, os);
+            // comma after every child except the last one
+            if(nsiblings != sibling_count)
+            {
+                os << "\n" << std::setw(2 * (t.depth(root) + 1)) << "|_";
+            }
+        }
     }
 }
 

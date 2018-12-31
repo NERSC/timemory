@@ -119,7 +119,7 @@ auto_timer::~auto_timer()
         // decrement hash keys
         --auto_timer::ncount();
         auto_timer::nhash() -= m_hash;
-        // manager::instance()->pop_graph();
+        manager::instance()->pop_graph();
     }
 }
 

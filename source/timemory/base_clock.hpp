@@ -42,6 +42,7 @@
 #include <ratio>
 #include <sstream>
 #include <stdexcept>
+#include <time.h>
 #include <tuple>
 #include <type_traits>
 #include <unordered_map>
@@ -273,30 +274,54 @@ public:
 
     static time_point now() noexcept
     {
-        typedef std::chrono::high_resolution_clock             clock_type;
-        typedef std::chrono::duration<clock_type::rep, period> duration_type;
+        // typedef std::chrono::high_resolution_clock             clock_type;
+        // typedef std::chrono::duration<clock_type::rep, period> duration_type;
 
-        tms _tms;
+        tms      _tms;
+
+        timespec ts_real;
+        timespec ts_mono;
+        timespec ts_thread;
+        timespec ts_process;
+        timespec res_real;
+        timespec res_mono;
+        timespec res_thread;
+        timespec res_process;
+
+        clock_getres(CLOCK_REALTIME, &res_real);
+        clock_getres(CLOCK_MONOTONIC_RAW, &res_mono);
+        clock_getres(CLOCK_THREAD_CPUTIME_ID, &res_thread);
+        clock_getres(CLOCK_PROCESS_CPUTIME_ID, &res_process);
+
+        auto     ts_scale = (std::nano::den / _Precision::den);
 
         // wall clock
         auto get_wall_time = [&]() {
-            return std::chrono::duration_cast<duration_type>(
-                       clock_type::now().time_since_epoch())
-                .count();
+            return (ts_real.tv_sec * std::nano::den + ts_real.tv_nsec) / ts_scale;
+            // return std::chrono::duration_cast<duration_type>(
+            //           clock_type::now().time_since_epoch())
+            //    .count();
         };
 
         // user time
         auto get_user_time = [&]() {
-            return (_tms.tms_utime + _tms.tms_cutime) * clock_tick<period>();
+            return (ts_mono.tv_sec * std::nano::den + ts_mono.tv_nsec) / ts_scale;
+            // return (_tms.tms_utime + _tms.tms_cutime) * clock_tick<period>();
         };
 
         // system time
         auto get_sys_time = [&]() {
+            // return ((ts_mono.tv_sec * std::nano::den + ts_mono.tv_nsec) / ts_scale) -
+            //       get_user_time();
             return (_tms.tms_stime + _tms.tms_cstime) * clock_tick<period>();
         };
 
         // record as close as possible, user and sys before wall
         ::times(&_tms);
+        clock_gettime(CLOCK_REALTIME, &ts_real);
+        clock_gettime(CLOCK_MONOTONIC_RAW, &ts_mono);
+        clock_gettime(CLOCK_THREAD_CPUTIME_ID, &ts_thread);
+        clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts_process);
         auto wall_time = get_wall_time();
 
         return time_point(

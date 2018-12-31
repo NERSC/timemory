@@ -26,50 +26,35 @@
 #include <cstdint>
 
 #include "timemory/auto_timer.hpp"
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timer.hpp"
 
+typedef tim::graph<std::string>    graph_t;
+typedef typename graph_t::iterator graph_iterator_t;
+
 //======================================================================================//
 
 int64_t
-fibonacci(int64_t n, int64_t cutoff)
+fibonacci(int64_t n, int64_t cutoff, graph_t& g, graph_iterator_t itr)
 {
     if(n > cutoff)
     {
-        // std::stringstream ss; ss << "[" << n << "]";
-        // TIMEMORY_AUTO_TIMER(ss.str());
-        TIMEMORY_AUTO_TIMER("");
-        return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
+        auto str = TIMEMORY_BASIC_AUTO_SIGN("[" + std::to_string(n) + "]");
+        itr      = g.append_child(itr, str);
     }
-    else
-    {
-        return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
-    }
+    return (n < 2)
+               ? 1L
+               : (fibonacci(n - 2, cutoff, g, itr) + fibonacci(n - 1, cutoff, g, itr));
 }
 
 //======================================================================================//
 
 void
-print_result(std::string prefix, int64_t result)
+print_result(const std::string& prefix, int64_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
-}
-
-//======================================================================================//
-
-tim::timer
-run(int64_t n, bool with_timing, int64_t cutoff)
-{
-    std::stringstream ss;
-    ss << __FUNCTION__ << " [with timing = " << std::boolalpha << with_timing << "]";
-
-    tim::timer timer(ss.str());
-    timer.start();
-    auto result = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
-    timer.stop();
-    print_result(ss.str(), result);
-    return timer;
 }
 
 //======================================================================================//
@@ -83,46 +68,44 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 25;
+    int cutoff = nfib - 5;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    tim::format::timer::default_unit(tim::units::msec);
-    tim::format::timer::default_scientific(false);
+    graph_t          mgraph;
+    graph_iterator_t itr  = mgraph.set_head("top");
+    graph_iterator_t top  = itr;
+    auto             itr1 = mgraph.append_child(itr, "one");
+    auto             itr2 = mgraph.append_child(itr, "two");
+    mgraph.append_child(itr1, "three");
+    mgraph.append_child(itr2, "four");
+    mgraph.append_child(itr2, "five");
 
-    tim::manager* manager = tim::manager::instance();
+    // tim::manager* manager = tim::manager::instance();
 
     std::vector<tim::timer> timer_list;
     std::cout << std::endl;
-    // run without timing first so overhead is not started yet
-    timer_list.push_back(run(nfib, false, nfib));   // without timing
-    timer_list.push_back(run(nfib, true, cutoff));  // with timing
+    fibonacci(nfib, cutoff, mgraph, itr1);
     std::cout << std::endl;
-    timer_list.push_back(timer_list.at(1) - timer_list.at(0));
-    timer_list.back().format()->prefix("Timer difference");
-    manager->missing_timer()->stop();
-    timer_list.push_back(tim::timer(timer_list.back()));
-    timer_list.back().accum() /= manager->total_laps();
-    timer_list.back().format()->prefix("TiMemory avg. overhead");
-    timer_list.back().record_memory(false);
-    timer_list.back().format()->format(
-        ": %w %T (wall), %u %T (user), %s %T (sys), %t %T (cpu)");
-    timer_list.back().format()->unit(tim::units::usec);
 
-    manager->write_report("test_output/cxx_timing_overhead.out");
-    manager->write_json("test_output/cxx_timing_overhead.json");
-    manager->report(true);
-
-    std::cout << "\nReports: " << std::endl;
-    for(auto& itr : timer_list)
+    for(auto gitr : mgraph)
     {
-        itr.format()->default_width(40);
-        itr.format()->align_width(true);
-        std::cout << "\t" << itr.as_string() << std::endl;
+        std::cout << gitr << std::endl;
     }
 
     std::cout << std::endl;
-    manager->write_missing(std::cout);
+
+    auto format = [](const std::string& g) {
+        std::stringstream ss;
+        ss << "[test] " << g;
+        return ss.str();
+    };
+
+    tim::print_graph_hierarchy(mgraph, format);
+
+    std::cout << std::endl;
 
     return 0;
 }
+
+//======================================================================================//

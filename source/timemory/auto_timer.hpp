@@ -27,7 +27,7 @@
  * \headerfile auto_timer.hpp "timemory/auto_timer.hpp"
  * Automatic timers
  * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TIMER()
+ *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER()
  *    \param auto t = TIMEMORY_AUTO_TIMER_OBJ()
  *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_OBJ()
@@ -204,7 +204,7 @@ typedef tim::auto_timer auto_timer_t;
  *
  *      void some_func()
  *      {
- *          TIMEMORY_AUTO_TIMER();
+ *          TIMEMORY_AUTO_TIMER("");
  *          ...
  *      }
  *

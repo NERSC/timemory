@@ -3,22 +3,23 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-C-Example C)
+project(TiMemory-C-Example LANGUAGES C)
+message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_c_timing)
 
 find_package(TiMemory REQUIRED)
-foreach(_DIR ${TiMemory_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
-
-#------------------------------------------------------------------------------#
-# Add the executable, and link it to the TiMemory libraries
-#
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
-target_link_libraries(${EXE_NAME} ${TiMemory_C_LIBRARIES} ${TiMemory_LIBRARIES})
+target_link_libraries(${EXE_NAME}
+    PUBLIC ${TiMemory_LIBRARIES} ${TiMemory_C_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_include_directories(${EXE_NAME} SYSTEM
+    PUBLIC ${TiMemory_INCLUDE_DIRS})
+target_compile_options(${EXE_NAME}
+    PUBLIC ${TiMemory_C_COMPILE_OPTIONS})
+set_target_properties(${EXE_NAME} PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON)
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})
