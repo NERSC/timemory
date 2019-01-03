@@ -81,110 +81,15 @@ namespace rss
  * memory use) measured in bytes, or zero if the value cannot be
  * determined on this OS.
  */
-static inline
-int64_t get_peak_rss()
-{
-#if defined(_UNIX)
-    struct rusage _self_rusage, _child_rusage;
-    getrusage( RUSAGE_SELF, &_self_rusage  );
-    getrusage( RUSAGE_CHILDREN, &_child_rusage );
-
-    // Darwin reports in bytes, Linux reports in kilobytes
-    #if defined(_MACOS)
-    int64_t _units = 1;
-    #else
-    int64_t _units = units::kilobyte;
-    #endif
-
-    return (int64_t) (_units * (_self_rusage.ru_maxrss + _child_rusage.ru_maxrss));
-
-#elif defined(_WINDOWS)
-    DWORD processID = GetCurrentProcessId();
-    HANDLE hProcess;
-    PROCESS_MEMORY_COUNTERS pmc;
-
-    // Print the process identifier.
-    // printf( "\nProcess ID: %u\n", processID );
-    // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-                           PROCESS_VM_READ,
-                           TRUE, processID);
-    if (NULL == hProcess)
-        return (int64_t) 0;
-
-    int64_t nsize = 0;
-    if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-        nsize = (int64_t) pmc.PeakWorkingSetSize;
-
-    CloseHandle( hProcess );
-
-    return nsize;
-#else
-    return (int64_t) 0;
-#endif
-}
+int64_t get_peak_rss();
 
 //----------------------------------------------------------------------------//
 
 /**
-     * Returns the current resident set size (physical memory use) measured
-     * in bytes, or zero if the value cannot be determined on this OS.
-     */
-static inline
-int64_t get_current_rss()
-{
-#if defined(_UNIX)
-#   if defined(_MACOS)
-    // OSX
-    struct mach_task_basic_info info;
-    mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
-    if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
-                 (task_info_t) &info, &infoCount) != KERN_SUCCESS)
-        return (int64_t) 0L;      /* Can't access? */
-    // Darwin reports in bytes
-    return (int64_t) (info.resident_size);
-
-#   else // Linux
-
-    int64_t rss = 0;
-    FILE* fp = fopen("/proc/self/statm", "r");
-    if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
-    {
-        fclose(fp);
-        return (int64_t) (rss * units::page_size);
-    }
-
-    if(fp)
-        fclose(fp);
-
-    return (int64_t) (0);
-
-#   endif
-#elif defined(_WINDOWS)
-    DWORD processID = GetCurrentProcessId();
-    HANDLE hProcess;
-    PROCESS_MEMORY_COUNTERS pmc;
-
-    // Print the process identifier.
-    // printf( "\nProcess ID: %u\n", processID );
-    // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-                           PROCESS_VM_READ,
-                           FALSE, processID);
-    if (NULL == hProcess)
-        return (int64_t) 0;
-
-    int64_t nsize = 0;
-    if(GetProcessMemoryInfo( hProcess, &pmc, sizeof(pmc)))
-        nsize = (int64_t) pmc.WorkingSetSize;
-
-    CloseHandle( hProcess );
-
-    return nsize;
-#else
-    return (int64_t) 0;
-#endif
-}
+ * Returns the current resident set size (physical memory use) measured
+ * in bytes, or zero if the value cannot be determined on this OS.
+ */
+int64_t get_current_rss();
 
 //============================================================================//
 
