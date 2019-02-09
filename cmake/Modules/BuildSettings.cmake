@@ -24,27 +24,30 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     # if ${PROJECT_NAME}_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
     if(NOT DEFINED ${PROJECT_NAME}_OUTPUT_DIR OR "${${PROJECT_NAME}_OUTPUT_DIR}" STREQUAL "")
         set(${PROJECT_NAME}_OUTPUT_DIR ${CMAKE_BINARY_DIR})
-    endif(NOT DEFINED ${PROJECT_NAME}_OUTPUT_DIR OR "${${PROJECT_NAME}_OUTPUT_DIR}" STREQUAL "")
+    endif()
+
     # set the CMAKE_{ARCHIVE,LIBRARY,RUNTIME}_OUTPUT_DIRECTORY variables
     if(WIN32)
         # on Windows, separate types into different directories
         string(TOLOWER "${_TYPE}" _LTYPE)
         set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE})
-    else(WIN32)
+    else()
         # on UNIX, just set to same directory
         set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR})
-    endif(WIN32)
-endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
+    endif()
+endforeach()
 
 
 # ---------------------------------------------------------------------------- #
 #  debug macro
 #
+set(DEBUG OFF)
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions(-DDEBUG)
-else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    add_definitions(-DNDEBUG)
-endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(DEBUG ON)
+    list(APPEND ${PROJECT_NAME}_DEFINITIONS DEBUG)
+else()
+    list(APPEND ${PROJECT_NAME}_DEFINITIONS NDEBUG)
+endif()
 
 
 # ---------------------------------------------------------------------------- #
@@ -53,35 +56,53 @@ set(LIBNAME timemory)
 
 
 # ---------------------------------------------------------------------------- #
-# set the compiler flags
-add_c_flag_if_avail("-W")
-add_c_flag_if_avail("-Wall")
-add_c_flag_if_avail("-Wextra")
-add_c_flag_if_avail("-Wno-unused-variable")
-add_c_flag_if_avail("-Wno-unknown-pragmas")
-add_c_flag_if_avail("-Wno-unused-parameter")
-add_c_flag_if_avail("-Wno-reserved-id-macro")
-add_c_flag_if_avail("-Wunused-but-set-parameter")
+# non-debug optimizations
+if(NOT DEBUG)
+    add_c_flag_if_avail("-funroll-loops")
+    add_c_flag_if_avail("-ftree-vectorize")
+    add_c_flag_if_avail("-finline-functions")
+    add_c_flag_if_avail("-fira-loop-pressure")
 
-# SIMD OpenMP
-# add_c_flag_if_avail("-fopenmp-simd")
-# add_cxx_flag_if_avail("-fopenmp-simd")
+    add_cxx_flag_if_avail("-funroll-loops")
+    add_cxx_flag_if_avail("-ftree-vectorize")
+    add_cxx_flag_if_avail("-finline-functions")
+    add_cxx_flag_if_avail("-fira-loop-pressure")
+endif()
 
 # Intel floating-point model
 add_c_flag_if_avail("-fp-model=precise")
 add_cxx_flag_if_avail("-fp-model=precise")
 
+
+# ---------------------------------------------------------------------------- #
+# set the compiler flags
+add_c_flag_if_avail("-W")
+add_c_flag_if_avail("-Wall")
+add_c_flag_if_avail("-Wextra")
+add_c_flag_if_avail("-Wpedantic")
+add_c_flag_if_avail("-Wno-unused-variable")
+add_c_flag_if_avail("-Wno-unknown-pragmas")
+add_c_flag_if_avail("-Wno-unused-parameter")
+add_c_flag_if_avail("-Wno-reserved-id-macro")
+add_c_flag_if_avail("-Wno-deprecated-declarations")
+add_c_flag_if_avail("-Wno-unused-but-set-parameter")
+
 add_cxx_flag_if_avail("-W")
 add_cxx_flag_if_avail("-Wall")
 add_cxx_flag_if_avail("-Wextra")
+add_cxx_flag_if_avail("-Wpedantic")
 add_cxx_flag_if_avail("-Wno-unused-value")
 add_cxx_flag_if_avail("-Wno-unused-variable")
 add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-unused-parameter")
 add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
-add_cxx_flag_if_avail("-Wunused-but-set-parameter")
+add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+add_cxx_flag_if_avail("-Wno-unused-but-set-parameter")
 add_cxx_flag_if_avail("-faligned-new")
+
+# add_c_flag_if_avail("-flto")
+# add_cxx_flag_if_avail("-flto")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
@@ -135,11 +156,9 @@ endif()
 
 # ---------------------------------------------------------------------------- #
 # user customization
-add(${PROJECT_NAME}_C_FLAGS "${CFLAGS}")
-add(${PROJECT_NAME}_C_FLAGS "$ENV{CFLAGS}")
-add(${PROJECT_NAME}_CXX_FLAGS "${CXXFLAGS}")
-add(${PROJECT_NAME}_CXX_FLAGS "$ENV{CXXFLAGS}")
-
-if(TIMEMORY_EXCEPTIONS)
-    add_definitions(-DTIMEMORY_EXCEPTIONS)
-endif(TIMEMORY_EXCEPTIONS)
+set(_CFLAGS ${CFLAGS} $ENV{CFLAGS})
+set(_CXXFLAGS ${CXXFLAGS} $ENV{CXXFLAGS})
+string(REPLACE " " ";" _CFLAGS "${_CFLAGS}")
+string(REPLACE " " ";" _CXXFLAGS "${_CXXFLAGS}")
+list(APPEND ${PROJECT_NAME}_C_FLAGS ${_CFLAGS})
+list(APPEND ${PROJECT_NAME}_C_FLAGS ${_CXXFLAGS})

@@ -29,8 +29,7 @@
  * Inherits from base_timer
  */
 
-#ifndef timer_hpp_
-#define timer_hpp_
+#pragma once
 
 //--------------------------------------------------------------------------------------//
 
@@ -211,8 +210,14 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace tim
+inline timer::timer(const string_t& _prefix, const string_t& _format, bool _record_memory)
+: base_type(timer_format_t(new format_type(_prefix, _format)), _record_memory)
+, m_sum_timer(nullptr)
+{
+}
 
 //--------------------------------------------------------------------------------------//
 
-#endif  // timer_hpp_
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//

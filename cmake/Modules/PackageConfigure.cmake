@@ -12,7 +12,7 @@ set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 
 set(_INSTALL_PREFIX ${TIMEMORY_INSTALL_PREFIX})
-if(TIMEMORY_SETUP_PY)
+if(TIMEMORY_USE_PYTHON_BINDING)
     execute_process(COMMAND
         ${PYTHON_EXECUTABLE} -c "import sys; print('{}'.format(sys.prefix))"
         OUTPUT_VARIABLE _INSTALL_PREFIX
@@ -30,10 +30,21 @@ configure_package_config_file(
         LIB_INSTALL_DIR
         PYTHON_INSTALL_DIR)
 
+    message(STATUS "CONFIG: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake")
+
 write_basic_package_version_file(
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
+
+install(
+    FILES
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    DESTINATION
+        ${TIMEMORY_INSTALL_CMAKEDIR}
+    COMPONENT
+        development)
 
 if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
     install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake

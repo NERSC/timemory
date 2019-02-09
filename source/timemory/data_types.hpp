@@ -293,10 +293,90 @@ public:
     const uint64_t& user() const { return m_user; }
     const uint64_t& sys() const { return m_syst; }
 
+    void reset()
+    {
+        m_real = 0.0;
+        m_user = 0.0;
+        m_syst = 0.0;
+    }
+
 protected:
     uint64_t m_real;
     uint64_t m_user;
     uint64_t m_syst;
+};
+
+//======================================================================================//
+//
+//  class for memory data
+//
+//======================================================================================//
+
+tim_api class memory_data
+{
+public:
+    typedef memory_data                    this_type;
+    typedef rss::usage                     rusage_t;
+    typedef std::tuple<rusage_t, rusage_t> data_type;
+
+    this_type& operator=(const data_type& data)
+    {
+        m_rumax = std::get<0>(data);
+        m_ruslf = std::get<1>(data);
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        m_rumax.max(rhs.m_rumax);
+        m_ruslf.max(rhs.m_ruslf);
+        return *this;
+    }
+
+    this_type& operator+=(const base_data<this_type>& rhs)
+    {
+        m_rumax.max(rhs.stop().rusage_max());
+        m_ruslf.max(m_ruslf, rhs.stop().rusage_self().record(rhs.start().rusage_self()));
+        return *this;
+    }
+
+    this_type& operator+=(const base_delta<this_type>& rhs)
+    {
+        m_rumax.max(rhs.sum().rusage_max());
+        m_ruslf.max(m_ruslf, rhs.sum().rusage_self());
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        m_rumax -= rhs.rusage_max();
+        m_ruslf -= rhs.rusage_self();
+        return *this;
+    }
+
+    this_type& operator-=(const base_data<this_type>& rhs)
+    {
+        m_rumax.min(rhs.stop().rusage_max());
+        m_ruslf.min(m_ruslf, rhs.stop().rusage_self().record(rhs.start().rusage_self()));
+        return *this;
+    }
+
+    this_type& operator-=(const base_delta<this_type>& rhs)
+    {
+        m_rumax -= rhs.sum().rusage_max();
+        m_ruslf -= rhs.sum().rusage_self();
+        return *this;
+    }
+
+    rusage_t& rusage_max() { return m_rumax; }
+    rusage_t& rusage_self() { return m_ruslf; }
+
+    const rusage_t& rusage_max() const { return m_rumax; }
+    const rusage_t& rusage_self() const { return m_ruslf; }
+
+protected:
+    rusage_t m_rumax;
+    rusage_t m_ruslf;
 };
 
 //======================================================================================//

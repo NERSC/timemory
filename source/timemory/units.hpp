@@ -28,8 +28,7 @@
  *
  */
 
-#ifndef units_hpp_
-#define units_hpp_
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -118,5 +117,3 @@ mem_repr(const int64_t& _unit)
 //======================================================================================//
 
 }  // namespace tim
-
-#endif

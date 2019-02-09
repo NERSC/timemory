@@ -17,7 +17,7 @@ else(WIN32)
 endif(WIN32)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "TiMemory installation prefix")
+set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
 add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")

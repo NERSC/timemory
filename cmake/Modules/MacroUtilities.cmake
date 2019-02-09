@@ -532,41 +532,6 @@ MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
     endif()
 ENDMACRO()
 
-
-#----------------------------------------------------------------------------
-# Macro for building library
-#
-MACRO(BUILD_LIBRARY)
-    cmake_parse_arguments(LIB
-    "VERSION" "TYPE;TARGET_NAME;OUTPUT_NAME;EXTENSION" "LINK_LIBRARIES;SOURCES;EXTRA_ARGS"
-    ${ARGN})
-
-    MACRO(setifnot VAR)
-        if(NOT ${VAR} OR "${${VAR}}" STREQUAL "")
-            set(${VAR} ${ARGN})
-        endif()
-    ENDMACRO()
-
-    setifnot(LIB_EXTENSION  ${PYTHON_MODULE_EXTENSION})
-    setifnot(LIB_OUTPUT_NAME ${LIB_TARGET_NAME})
-
-    add_library(${LIB_TARGET_NAME} ${LIB_TYPE} ${LIB_SOURCES})
-
-    target_link_libraries(${LIB_TARGET_NAME}
-    PUBLIC ${EXTERNAL_LIBRARIES} ${LIB_LINK_LIBRARIES})
-
-    set_target_properties(${LIB_TARGET_NAME}
-        PROPERTIES
-            OUTPUT_NAME                 ${LIB_OUTPUT_NAME}
-            LANGUAGE                    CXX
-            LINKER_LANGUAGE             CXX
-            POSITION_INDEPENDENT_CODE   ON
-            ${LIB_EXTRA_ARGS})
-
-    list(APPEND INSTALL_LIBRARIES ${TARGET_NAME})
-ENDMACRO(BUILD_LIBRARY)
-
-
 #------------------------------------------------------------------------------#
 # always determine the default lib directory
 DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)

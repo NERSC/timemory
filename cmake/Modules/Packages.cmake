@@ -1,5 +1,14 @@
 ################################################################################
 #
+#                               Component
+#
+################################################################################
+
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
+
+
+################################################################################
+#
 #                               MPI
 #
 ################################################################################
@@ -14,21 +23,21 @@ if(TIMEMORY_USE_MPI)
         if(EXISTS "C:/Program\ Files/Microsoft\ SDKs/MPI")
             list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files/Microsoft\ SDKs/MPI")
         endif(EXISTS "C:/Program\ Files/Microsoft\ SDKs/MPI")
-    endif(WIN32)
+    endif()
 
     # MPI C compiler from environment
     set(_ENV MPICC)
     if(NOT DEFINED MPI_C_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
         message(STATUS "Setting MPI C compiler to: $ENV{${_ENV}}")
         set(MPI_C_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C compiler")
-    endif(NOT DEFINED MPI_C_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+    endif()
 
     # MPI C++ compiler from environment
     set(_ENV MPICC)
     if(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
         message(STATUS "Setting MPI C++ compiler to: $ENV{${_ENV}}")
         set(MPI_CXX_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C++ compiler")
-    endif(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
+    endif()
 
     unset(_ENV)
 
@@ -46,36 +55,29 @@ if(TIMEMORY_USE_MPI)
         foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
             set(_TYPE MPI_${_TYPE})
             if(${_TYPE})
-                list(APPEND MPI_LIBRARIES ${${_TYPE}})
-            endif(${_TYPE})
-        endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
+                list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
+            endif()
+        endforeach()
 
-        list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
-
-        if(WIN32)
-            add_definitions(/DTIMEMORY_USE_MPI)
-        else(WIN32)
-            add_definitions(-DTIMEMORY_USE_MPI)
-        endif(WIN32)
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_MPI)
 
         if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
           set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
-        endif(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
+        endif()
 
         if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
           set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
-        endif(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
+        endif()
 
-    else(MPI_FOUND)
+    else()
 
         set(TIMEMORY_USE_MPI OFF)
         set(TIMEMORY_TEST_MPI OFF)
         message(WARNING "MPI not found. Proceeding without MPI")
-        remove_definitions(-DTIMEMORY_USE_MPI)
 
-    endif(MPI_FOUND)
+    endif()
 
-endif(TIMEMORY_USE_MPI)
+endif()
 
 
 ################################################################################
@@ -86,14 +88,13 @@ endif(TIMEMORY_USE_MPI)
 
 if(NOT WIN32)
     set(CMAKE_THREAD_PREFER_PTHREAD ON)
-    set(THREADS_PREFER_PTHREAD_FLAG ON)
-endif(NOT WIN32)
+endif()
 
 find_package(Threads)
 
-if(THREADS_FOUND)
+if(THREADS_FOUND AND (WIN32 OR CMAKE_CXX_COMPILER_IS_INTEL))
     list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-endif(THREADS_FOUND)
+endif()
 
 
 ################################################################################
@@ -203,8 +204,13 @@ checkout_git_submodule(RECURSIVE
 # including the directories
 safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-foreach(_DIR ${EXTERNAL_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${EXTERNAL_INCLUDE_DIRS})
+list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 
 
+################################################################################
+#
+#                               Component
+#
+################################################################################
+
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)

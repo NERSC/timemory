@@ -34,8 +34,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#ifndef string_hpp_
-#define string_hpp_
+#pragma once
 
 #include <cstdint>
 #include <cstring>
@@ -47,6 +46,16 @@
 #ifdef WIN32
 #    define strcasecmp _stricmp
 #endif
+
+//--------------------------------------------------------------------------------------//
+#if !defined(TIMEMORY_CUSTOM_STRING)
+
+namespace tim
+{
+using std::string;
+}
+
+#else
 
 //--------------------------------------------------------------------------------------//
 
@@ -667,4 +676,4 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-#endif  // string_hpp_
+#endif  // TIMEMORY_CUSTOM_STRING

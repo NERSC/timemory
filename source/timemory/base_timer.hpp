@@ -29,8 +29,7 @@
  * Not directly used
  */
 
-#ifndef base_timer_hpp_
-#define base_timer_hpp_
+#pragma once
 
 //--------------------------------------------------------------------------------------//
 
@@ -180,6 +179,8 @@ public:
         if(!tim::isfinite(_cpu_util))
             _cpu_util = 0.0;
 
+        rss::usage_delta accum_rss;
+
         ar(serializer::make_nvp("laps", m_accum.size()),
            // user clock elapsed
            serializer::make_nvp("user_elapsed", m_accum.sum().user()),
@@ -199,14 +200,13 @@ public:
 #endif
            // conversion to seconds
            serializer::make_nvp("to_seconds_ratio_num", ratio_t::num),
-           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den)
+           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den),
            // memory usage
-           // serializer::make_nvp("rss_max", m_accum.rss().total()),
-           // serializer::make_nvp("rss_self", m_accum.rss().self()),
+           serializer::make_nvp("rss_max", accum_rss.total()),
+           serializer::make_nvp("rss_self", accum_rss.self()),
            // memory usage (minimum)
-           // serializer::make_nvp("rss_min", m_accum.rss().total_min()),
-           // serializer::make_nvp("rss_self_min", m_accum.rss().self_min())
-        );
+           serializer::make_nvp("rss_min", accum_rss.total_min()),
+           serializer::make_nvp("rss_self_min", accum_rss.self_min()));
     }
 };
 
@@ -432,5 +432,3 @@ typedef std::tuple<base_time_point_t, base_time_point_t>       base_time_pair_t;
 }  // namespace internal
 */
 //--------------------------------------------------------------------------------------//
-
-#endif

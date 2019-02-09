@@ -35,8 +35,7 @@
 /// exception being thrown that can be handled when detected.
 //======================================================================================//
 
-#ifndef signal_detection_hpp_
-#define signal_detection_hpp_ 1
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -549,5 +548,3 @@ stack_backtrace(std::ostream& os)
 //======================================================================================//
 
 #endif
-
-#endif /* signal_detection_hpp_ */

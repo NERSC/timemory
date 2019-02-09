@@ -29,8 +29,7 @@
  *
  */
 
-#ifndef rss_hpp_
-#define rss_hpp_
+#pragma once
 
 #include <algorithm>
 #include <cstdint>
@@ -297,8 +296,10 @@ public:
     void           set_format(usage_format_t _format);
     usage_format_t format() const;
 
-    void record();
-    void record(const usage& rhs);
+    this_type& record();
+    this_type& record(const usage& rhs);
+    this_type  record() const;
+    this_type  record(const usage& rhs) const;
 
     void reset()
     {
@@ -320,6 +321,18 @@ public:
         ret.m_curr_rss = ::std::min(lhs.m_curr_rss, rhs.m_curr_rss);
         ret.m_peak_rss = ::std::min(lhs.m_peak_rss, rhs.m_peak_rss);
         return ret;
+    }
+
+    void max(const usage& rhs)
+    {
+        m_curr_rss = ::std::max(m_curr_rss, rhs.m_curr_rss);
+        m_peak_rss = ::std::max(m_peak_rss, rhs.m_peak_rss);
+    }
+
+    void min(const usage& rhs)
+    {
+        m_curr_rss = ::std::min(m_curr_rss, rhs.m_curr_rss);
+        m_peak_rss = ::std::min(m_peak_rss, rhs.m_peak_rss);
     }
 
     template <typename _Tp = double>
@@ -347,6 +360,8 @@ public:
         ss << (*this);
         return ss.str();
     }
+
+    usage clone() const { return usage(*this); }
 
 public:
     //------------------------------------------------------------------------//
@@ -470,21 +485,36 @@ usage::format() const
     return m_format;
 }
 //--------------------------------------------------------------------------------------//
-inline void
+inline usage&
 usage::record()
 {
     // everything is bytes
     m_curr_rss = std::max(m_curr_rss, get_current_rss());
     m_peak_rss = std::max(m_peak_rss, get_peak_rss());
+    return *this;
 }
 //--------------------------------------------------------------------------------------//
-inline void
+inline usage&
 usage::record(const usage& rhs)
 {
     // everything is bytes
+
     m_curr_rss =
         std::max(m_curr_rss - rhs.m_curr_rss, get_current_rss() - rhs.m_curr_rss);
     m_peak_rss = std::max(m_peak_rss - rhs.m_peak_rss, get_peak_rss() - rhs.m_peak_rss);
+    return *this;
+}
+//--------------------------------------------------------------------------------------//
+inline usage
+usage::record() const
+{
+    return usage(*this).record();
+}
+//--------------------------------------------------------------------------------------//
+inline usage
+usage::record(const usage& rhs) const
+{
+    return usage(*this).record(rhs);
 }
 //--------------------------------------------------------------------------------------//
 
@@ -664,5 +694,3 @@ usage_delta::format() const
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
-
-#endif  // rss_hpp_

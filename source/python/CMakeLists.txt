@@ -4,6 +4,7 @@
 #        TiMemory (Python)
 #
 ################################################################################
+
 set(PYLIBNAME lib${LIBNAME})
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
@@ -24,12 +25,22 @@ endif(NOT BUILD_SHARED_LIBS AND WIN32)
 #
 pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
-# link cxx library and external libraries
-target_link_libraries(${PYLIBNAME} PUBLIC ${LIBNAME}-cxx-library ${EXTERNAL_LIBRARIES})
+
+target_link_libraries(${PYLIBNAME}
+    PRIVATE ${LIBNAME}-cxx-library)
+target_compile_definitions(${PYLIBNAME}
+    PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
+target_compile_options(${PYLIBNAME}
+    PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+get_target_property(PYTARGET_INCLUDE_DIRS ${PYLIBNAME} INCLUDE_DIRECTORIES)
+target_include_directories(${PYLIBNAME} PUBLIC
+    ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
 add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 
 set_target_properties(${PYLIBNAME} PROPERTIES
-    COMPILE_FLAGS ${${PROJECT_NAME}_CXX_FLAGS}
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory

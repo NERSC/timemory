@@ -29,8 +29,7 @@
  *
  */
 
-#ifndef TIMEMORY_UTIL_INTERNAL_HPP
-#define TIMEMORY_UTIL_INTERNAL_HPP
+#pragma once
 
 // C library
 #include <cmath>
@@ -51,6 +50,7 @@
 #include <stdexcept>
 // container
 #include <deque>
+#include <map>
 #include <set>
 #include <vector>
 // threading
@@ -152,6 +152,70 @@ dummy_str_return(tim::string str)
 
 //--------------------------------------------------------------------------------------//
 
+class env_settings
+{
+public:
+    typedef std::mutex                        mutex_t;
+    typedef std::string                       string_t;
+    typedef std::multimap<string_t, string_t> env_map_t;
+    typedef std::pair<string_t, string_t>     env_pair_t;
+
+public:
+    static env_settings* GetInstance()
+    {
+        static env_settings* _instance = new env_settings();
+        return _instance;
+    }
+
+public:
+    template <typename _Tp>
+    void insert(const std::string& env_id, _Tp val)
+    {
+        std::stringstream ss;
+        ss << std::boolalpha << val;
+        m_mutex.lock();
+        if(m_env.find(env_id) != m_env.end())
+        {
+            for(const auto& itr : m_env)
+                if(itr.first == env_id && itr.second == ss.str())
+                {
+                    m_mutex.unlock();
+                    return;
+                }
+        }
+        m_env.insert(env_pair_t(env_id, ss.str()));
+        m_mutex.unlock();
+    }
+
+    const env_map_t& get() const { return m_env; }
+    mutex_t&         mutex() const { return m_mutex; }
+
+    friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
+    {
+        std::stringstream filler;
+        filler.fill('#');
+        filler << std::setw(90) << "";
+        std::stringstream ss;
+        ss << filler.str() << "\n# Environment settings:\n";
+        env.mutex().lock();
+        for(const auto& itr : env.get())
+        {
+            ss << "# " << std::setw(35) << std::right << itr.first << "\t = \t"
+               << std::left << itr.second << "\n";
+        }
+        env.mutex().unlock();
+        ss << filler.str();
+        os << ss.str() << std::endl;
+        return os;
+    }
+
+private:
+    env_map_t       m_env;
+    mutable mutex_t m_mutex;
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 _Tp
 get_env(const tim::string& env_id, _Tp _default = _Tp())
@@ -194,11 +258,10 @@ delimit(const tim::string& _str, const tim::string& _delims,
         tim::string (*strop)(tim::string) = internal::dummy_str_return)
 {
     str_list_t _list;
-    size_t     _beg = 0;
-    size_t     _end = 0;
     while(true)
     {
-        _beg = _str.find_first_not_of(_delims, _end);
+        size_t _end = 0;
+        size_t _beg = _str.find_first_not_of(_delims, _end);
         if(_beg == tim::string::npos)
             break;
         _end = _str.find_first_of(_delims, _beg);
@@ -218,10 +281,6 @@ public:
     typedef std::basic_string<char> stl_string;
 
 public:
-    path_t(const stl_string& _path)
-    : string_t(osrepr(string_t(_path)))
-    {
-    }
     path_t(const tim::string& _path)
     : string_t(osrepr(_path))
     {
@@ -245,11 +304,18 @@ public:
         return *this;
     }
 
+#if defined(TOMOPY_CUSTOM_STRING)
+    path_t(const stl_string& _path)
+    : string_t(osrepr(string_t(_path)))
+    {
+    }
+
     path_t& operator=(const stl_string& rhs)
     {
         string_t::operator=(osrepr(string_t(rhs)));
         return *this;
     }
+#endif
 
     path_t& operator=(const path_t& rhs)
     {
@@ -393,5 +459,3 @@ get_max_threads()
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
-
-#endif

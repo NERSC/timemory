@@ -22,8 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#ifndef singleton_hpp_
-#define singleton_hpp_
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -275,5 +274,3 @@ singleton<_Tp>::master_instance()
 }  // namespace tim
 
 //======================================================================================//
-
-#endif

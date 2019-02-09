@@ -153,14 +153,6 @@ manager::get_num_threads_func_t manager::f_get_num_threads = std::bind(&get_max_
 
 //======================================================================================//
 
-void
-manager::set_get_num_threads_func(get_num_threads_func_t f)
-{
-    f_get_num_threads = std::bind(f);
-}
-
-//======================================================================================//
-
 manager::manager()
 : m_merge(false)
 , m_instance_count(f_manager_instance_count++)
@@ -373,106 +365,6 @@ manager::get_prefix() const
 
 //======================================================================================//
 
-timer&
-manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
-{
-#if defined(DEBUG)
-    if(key.find(" ") != string_t::npos)
-    {
-        std::stringstream ss;
-        ss << "tim::manager::" << __FUNCTION__ << " Warning! Space found in tag: \""
-           << key << "\"";
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cerr << ss.str() << std::endl;
-    }
-#endif
-
-    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
-
-    // thread-safe
-    // auto_lock_t lock(f_mutex);
-
-    // if already exists, return it
-    if(m_timer_map.find(ref) != m_timer_map.end())
-    {
-#if defined(HASH_DEBUG)
-        for(const auto& itr : m_timer_list_norm)
-        {
-            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-            if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
-                std::cout << "tim::manager::" << __FUNCTION__ << " Found : " << itr
-                          << std::endl;
-        }
-#endif
-        timer_graph_itr _orig = *m_graph_itr;
-        for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
-            itr != m_graph_itr->end(); ++itr)
-            if(std::get<0>(*itr) == ref)
-            {
-                *m_graph_itr = itr;
-                break;
-            }
-        if(_orig == *m_graph_itr)
-        {
-            std::stringstream ss;
-            ss << _orig->tag() << " did not find key = " << ref << " in :\n";
-            for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
-                itr != m_graph_itr->end(); ++itr)
-            {
-                ss << itr->key();
-                if(std::distance(itr, m_graph_itr->end()) < 1)
-                    ss << ", ";
-            }
-            ss << std::endl;
-            std::cerr << ss.str();
-        }
-        return *(m_timer_map[ref].get());
-    }
-
-    // synchronize format with level 1 and make sure MPI prefix is up-to-date
-    if(m_timer_list_norm.size() < 2)
-        update_total_timer_format();
-
-    std::stringstream ss;
-    // designated as [cxx], [pyc], etc.
-    ss << get_prefix() << "[" << tag << "] ";
-
-    // indent
-    for(int64_t i = 0; i < ncount; ++i)
-    {
-        if(i + 1 == ncount)
-            ss << "|_";
-        else
-            ss << "  ";
-    }
-
-    ss << std::left << key;
-    tim::format::timer::propose_default_width(ss.str().length());
-
-    m_timer_map[ref] = timer_ptr_t(new tim_timer_t(
-        tim::format::timer(ss.str(), tim::format::timer::default_format(),
-                           tim::format::timer::default_unit(),
-                           tim::format::timer::default_rss_format(), true)));
-
-    if(m_instance_count > 0)
-        m_timer_map[ref]->thread_timing(true);
-
-    std::stringstream tag_ss;
-    tag_ss << tag << "_" << std::left << key;
-    timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(), tag_ss.str(),
-                         m_timer_map[ref]);
-    m_timer_list_norm.push_back(_tuple);
-    *m_graph_itr = m_timer_graph->append_child(*m_graph_itr, _tuple);
-
-#if defined(HASH_DEBUG)
-    std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple << std::endl;
-#endif
-
-    return *(m_timer_map[ref].get());
-}
-
-//======================================================================================//
-
 void
 manager::report(bool ign_cutoff, bool endline) const
 {
@@ -623,17 +515,16 @@ manager::merge(pointer itr)
             m_timer_map[mitr.first] = mitr.second;
         else
         {
-            *m_timer_map[mitr.first] += *mitr.second;  // add in timer
-            //*m_timer_map[mitr.first] /= 2;             // running average
+            // *m_timer_map[mitr.first] += *mitr.second;  // add in timer
+            // *m_timer_map[mitr.first] /= 2;             // running average
         }
     }
 
-    auto format = [&](const timer_tuple_t& node) {
-        std::stringstream ss;
-        node.timer().report(ss, false, false);
-        return ss.str();
-    };
-
+    // auto format = [&](const timer_tuple_t& node) {
+    //     std::stringstream ss;
+    //     node.timer().report(ss, false, false);
+    //     return ss.str();
+    // };
     // std::stringstream ss;
     // tim::print_graph(*itr->get_timer_graph(), format, ss);
     // std::cout << "\nINSTANCE: " << itr->instance_count() << "\n" << std::endl;

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
 ################################################################################
 #
@@ -17,7 +17,9 @@ cmake_policy(SET CMP0042 NEW)
 #cmake_policy(SET CMP0054 NEW)
 project(TiMemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
+set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
+    ${CMAKE_CURRENT_LIST_DIR}/source/python/pybind11/tools
+    ${CMAKE_MODULE_PATH})
 
 foreach(_TYPE MAJOR MINOR PATCH)
     set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}} CACHE STRING "Timemory ${_TYPE} version" FORCE)
@@ -27,6 +29,10 @@ endforeach(_TYPE MAJOR MINOR PATCH)
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
 mark_as_advanced(TIMEMORY_VERSION)
+
+if(SKBUILD)
+    set(TIMEMORY_SETUP_PY OFF CACHE BOOL "Built with scikit-build" FORCE)
+endif()
 
 ################################################################################
 

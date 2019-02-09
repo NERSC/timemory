@@ -28,8 +28,7 @@
  * Not currently finished
  */
 
-#ifndef serializer_hpp_
-#define serializer_hpp_
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -85,5 +84,3 @@ using cereal::make_nvp;
 }  // namespace serializer
 
 //======================================================================================//
-
-#endif

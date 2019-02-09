@@ -6,28 +6,25 @@ include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 #------------------------------------------------------------------------------#
 #   Settings
 #------------------------------------------------------------------------------#
-set(@PROJECT_NAME@_C_FLAGS "@TiMemory_C_FLAGS@")
-set(@PROJECT_NAME@_CXX_FLAGS "@TiMemory_CXX_FLAGS@ -std=c++@CMAKE_CXX_STANDARD@")
-set(@PROJECT_NAME@_C_COMPILE_OPTIONS @TiMemory_C_FLAGS@)
-set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @TiMemory_CXX_FLAGS@)
 set(TIMEMORY_USE_MPI @MPI_FOUND@)
 set(TIMEMORY_EXCEPTIONS @TIMEMORY_EXCEPTIONS@)
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_USE_PYTHON_BINDING@)
-set(TIMEMORY_DYNAMIC_LINK @BUILD_SHARED_LIBS@)
 if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif(NOT DEFINED @PROJECT_NAME@_DIR)
 
+set(@PROJECT_NAME@_C_FLAGS @TiMemory_C_FLAGS@)
+set(@PROJECT_NAME@_CXX_FLAGS @TiMemory_CXX_FLAGS@)
+set(@PROJECT_NAME@_C_COMPILE_OPTIONS @TiMemory_C_FLAGS@)
+set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @TiMemory_CXX_FLAGS@)
+
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
 #------------------------------------------------------------------------------#
+set(_TIMEMORY_INSTALL_TREE ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
-    # in the build tree
-    set(_TIMEMORY_BUILD_TREE ON)
-else("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
-    # in the install tree
-    set(_TIMEMORY_INSTALL_TREE ON)
-endif("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
+    set(_TIMEMORY_INSTALL_TREE OFF) # build tree
+endif()
 
 if(_TIMEMORY_INSTALL_TREE)
 
@@ -35,7 +32,7 @@ if(_TIMEMORY_INSTALL_TREE)
     set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
     get_filename_component(@PROJECT_NAME@_ROOT_DIR ${@PROJECT_NAME@_INCLUDE_DIR} PATH)
 
-    if(TIMEMORY_PYTHON_BINDINGS)
+    if(@TIMEMORY_USE_PYTHON_BINDING@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
         if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
             find_package(PythonInterp QUIET)
@@ -45,13 +42,13 @@ if(_TIMEMORY_INSTALL_TREE)
                     OUTPUT_VARIABLE @PROJECT_NAME@_PYTHON_DIR
                     OUTPUT_STRIP_TRAILING_WHITESPACE
                     WORKING_DIRECTORY ${CMAKE_CURRENT_LIST_DIR})
-            endif(PYTHONINTERP_FOUND)
-        endif(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
-    endif(TIMEMORY_PYTHON_BINDINGS)
+            endif()
+        endif()
+    endif()
 
     foreach(_TYPE LIB INCLUDE PYTHON)
         set(@PROJECT_NAME@_${_TYPE}_DIRS ${@PROJECT_NAME@_${_TYPE}_DIR})
-    endforeach(_TYPE LIB INCLUDE PYTHON)
+    endforeach()
 
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
     check_required_components(@PROJECT_NAME@)
@@ -63,30 +60,24 @@ if(_TIMEMORY_INSTALL_TREE)
     string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
     if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
         set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-    else("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+    else()
         set(IMPORTED_LOCATION_BUILD )
-    endif("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+    endif()
+
+    set(LOCATIONS IMPORTED_LOCATION
+        ${IMPORTED_LOCATION_BUILD}
+        IMPORTED_LOCATION_RELEASE
+        IMPORTED_LOCATION_RELWITHDEBINFO
+        IMPORTED_LOCATION_DEBUG
+        IMPORTED_LOCATION_MINSIZEREL)
 
     foreach(_LANG C CXX)
         string(TOLOWER "${_LANG}" _LANG_LOWER)
-
-        foreach(_LOC
-            IMPORTED_LOCATION
-            ${IMPORTED_LOCATION_BUILD}
-            IMPORTED_LOCATION_RELEASE
-            IMPORTED_LOCATION_RELWITHDEBINFO
-            IMPORTED_LOCATION_DEBUG
-            IMPORTED_LOCATION_MINSIZEREL)
+        foreach(_LOC ${LOCATIONS})
             if(NOT _${_LANG}_LOCATION)
                 get_target_property(_${_LANG}_LOCATION @LIBNAME@-${_LANG_LOWER}-library ${_LOC})
             endif(NOT _${_LANG}_LOCATION)
-        endforeach(_LOC
-            IMPORTED_LOCATION
-            ${IMPORTED_LOCATION_BUILD}
-            IMPORTED_LOCATION_RELEASE
-            IMPORTED_LOCATION_RELWITHDEBINFO
-            IMPORTED_LOCATION_DEBUG
-            IMPORTED_LOCATION_MINSIZEREL)
+        endforeach()
 
         if(_${_LANG}_LOCATION)
             set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
@@ -94,9 +85,9 @@ if(_TIMEMORY_INSTALL_TREE)
         endif(_${_LANG}_LOCATION)
 
         unset(_${_LANG}_LOCATION)
-    endforeach(_LANG C CXX)
+    endforeach()
 
-else(_TIMEMORY_INSTALL_TREE)
+else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
     set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
@@ -120,9 +111,9 @@ else(_TIMEMORY_INSTALL_TREE)
 
     set(PROJECT_DEPENDS @LIBNAME@-c-library @LIBNAME@-cxx-library)
 
-endif(_TIMEMORY_INSTALL_TREE)
+endif()
 
-set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
+set(@PROJECT_NAME@_INCLUDE_DIRS SYSTEM ${@PROJECT_NAME@_INCLUDE_DIR})
 set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS "@EXTERNAL_INCLUDE_DIRS@")
 foreach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
     list(APPEND @PROJECT_NAME@_INCLUDE_DIRS SYSTEM ${_DIR})
@@ -131,24 +122,16 @@ endforeach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
 #------------------------------------------------------------------------------#
 #   CXX standard
 #------------------------------------------------------------------------------#
-if(DEFINED CMAKE_CXX_STANDARD)
-    if("${CMAKE_CXX_STANDARD}" VERSION_LESS 11 OR
-        "${CMAKE_CXX_STANDARD}" VERSION_GREATER 17)
-        set(CMAKE_CXX_STANDARD 11)
-        set(CMAKE_CXX_STANDARD_REQUIRED ON)
-    endif("${CMAKE_CXX_STANDARD}" VERSION_LESS 11 OR
-        "${CMAKE_CXX_STANDARD}" VERSION_GREATER 17)
-else(DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif(DEFINED CMAKE_CXX_STANDARD)
+set(@PROJECT_NAME@_CXX_STANDARD @CMAKE_CXX_STANDARD@)
+set(@PROJECT_NAME@_CXX_STANDARD_REQUIRED @CMAKE_CXX_STANDARD_REQUIRED@)
 
 #------------------------------------------------------------------------------#
-#   Linking type
+#   Definitions
 #------------------------------------------------------------------------------#
-if(NOT TIMEMORY_DYNAMIC_LINK AND WIN32)
-    add_definitions(-D_TIMEMORY_ARCHIVE)
-endif(NOT TIMEMORY_DYNAMIC_LINK AND WIN32)
+set(@PROJECT_NAME@_DEFINITIONS @TiMemory_DEFINITIONS@)
+if(NOT @BUILD_SHARED_LIBS@ AND WIN32)
+    list(APPEND @PROJECT_NAME@_DEFINITIONS _TIMEMORY_ARCHIVE)
+endif()
 
 #------------------------------------------------------------------------------#
 #   TiMemory link target
@@ -157,16 +140,6 @@ set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-library)
 set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-library)
 set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-library)
 
-#------------------------------------------------------------------------------#
-#   Definitions
-#------------------------------------------------------------------------------#
-if(TIMEMORY_EXCEPTIONS)
-    add_definitions(-DTIMEMORY_EXCEPTIONS)
-endif(TIMEMORY_EXCEPTIONS)
-
-if(TIMEMORY_USE_MPI)
-    add_definitions(-DTIMEMORY_USE_MPI)
-endif(TIMEMORY_USE_MPI)
 
 #------------------------------------------------------------------------------#
 #   find_package variables
@@ -180,3 +153,7 @@ find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_LIBRARIES
     @PROJECT_NAME@_C_LIBRARIES
     @PROJECT_NAME@_CXX_LIBRARIES)
+
+if(APPLE)
+    set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
+endif(APPLE)

@@ -28,8 +28,7 @@
  *
  */
 
-#ifndef formatters_hpp_
-#define formatters_hpp_
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -362,6 +361,97 @@ private:
 };
 
 //======================================================================================//
+//
+//                          CORE_FORMATTER
+//
+//======================================================================================//
+
+inline core_formatter::core_formatter(size_type _prec, size_type _width, unit_type _unit,
+                                      string_t _fmt, bool _fixed)
+: m_data(_prec, _width, _unit, _fmt, _fixed)
+{
+}
+
+//======================================================================================//
+//
+//                          BASE_FORMATTER
+//
+//======================================================================================//
+
+inline base_formatter::base_formatter(string_t _prefix, string_t _suffix,
+                                      string_t _format, unit_type _unit,
+                                      bool _align_width, size_type _prec,
+                                      size_type _width, bool _fixed)
+: core_type(_prec, _width, _unit, _format, _fixed)
+, m_align_width(_align_width)
+, m_fixed(_fixed)
+, m_prefix(_prefix)
+, m_suffix(_suffix)
+{
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline rss::string_t
+rss::compose() const
+{
+    std::stringstream _ss;
+    if(m_align_width)
+    {
+        _ss << std::setw(f_current().width() + 1) << std::left << m_prefix << " "
+            << std::right << this->format() << std::left << m_suffix;
+    }
+    else
+    {
+        _ss << std::setw(width() + 1) << std::left << m_prefix << " " << std::right
+            << this->format() << std::left << m_suffix;
+    }
+    return _ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline rss::string_t
+rss::operator()(const string_t& _base) const
+{
+    string_t _str = (_base.length() == 0) ? this->compose() : _base;
+
+    for(auto itr : get_field_list())
+    {
+        auto _replace = [&](const string_t& _itr, const string_t& _rep) {
+            auto _npos = tim::string::npos;
+            while((_npos = _str.find(_itr)) != tim::string::npos)
+                _str.replace(_npos, _itr.length(), _rep.c_str());
+        };
+
+        if(itr.second == rss::field::memory_unit)
+        {
+            std::stringstream _ss;
+            _ss.precision(this->precision());
+            _ss << tim::units::mem_repr(this->unit());
+            _replace(itr.first, _ss.str());
+        }
+        else
+        {
+            // replace all instances
+            _replace(", " + itr.first, "");        // CSV
+            _replace("," + itr.first, "");         // CSV
+            _replace(" " + itr.first + " ", " ");  // surrounding space
+            _replace(" " + itr.first, "");         // leading space
+            _replace(itr.first + " ", "");         // trailing space
+            _replace(itr.first, "");               // every remaining instance
+        }
+    }
+
+    string_t _pR   = "%R";
+    auto     _npos = tim::string::npos;
+    while((_npos = _str.find(_pR)) != tim::string::npos)
+        _str = _str.replace(_npos, _pR.length(), "");
+
+    return _str;
+}
+
+//======================================================================================//
 
 }  // namespace format
 
@@ -373,5 +463,3 @@ private:
 
 #undef BACKWARD_COMPAT_SET
 #undef BACKWARD_COMPAT_GET
-
-#endif

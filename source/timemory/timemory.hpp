@@ -28,8 +28,7 @@
  *
  */
 
-#ifndef timemory_hpp_
-#define timemory_hpp_
+#pragma once
 
 #include "timemory/auto_timer.hpp"
 #include "timemory/environment.hpp"
@@ -57,5 +56,3 @@ namespace tim
 {
 typedef manager timing_manager;
 }
-
-#endif

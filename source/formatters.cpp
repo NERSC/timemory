@@ -32,35 +32,6 @@ namespace tim
 namespace format
 {
 //======================================================================================//
-//
-//                          CORE_FORMATTER
-//
-//======================================================================================//
-
-core_formatter::core_formatter(size_type _prec, size_type _width, unit_type _unit,
-                               string_t _fmt, bool _fixed)
-: m_data(_prec, _width, _unit, _fmt, _fixed)
-{
-}
-
-//======================================================================================//
-//
-//                          BASE_FORMATTER
-//
-//======================================================================================//
-
-base_formatter::base_formatter(string_t _prefix, string_t _suffix, string_t _format,
-                               unit_type _unit, bool _align_width, size_type _prec,
-                               size_type _width, bool _fixed)
-: core_type(_prec, _width, _unit, _format, _fixed)
-, m_align_width(_align_width)
-, m_fixed(_fixed)
-, m_prefix(_prefix)
-, m_suffix(_suffix)
-{
-}
-
-//======================================================================================//
 //      format strings
 //======================================================================================//
 
@@ -380,63 +351,42 @@ rss::propose_default_width(size_type _w)
 
 //--------------------------------------------------------------------------------------//
 
-rss::string_t
-rss::compose() const
+void
+rss::set_default(const rss& rhs)
 {
-    std::stringstream _ss;
-    if(m_align_width)
-    {
-        _ss << std::setw(f_current().width() + 1) << std::left << m_prefix << " "
-            << std::right << this->format() << std::left << m_suffix;
-    }
-    else
-    {
-        _ss << std::setw(width() + 1) << std::left << m_prefix << " " << std::right
-            << this->format() << std::left << m_suffix;
-    }
-    return _ss.str();
+    rss::default_format(rhs.format());
+    rss::default_precision(rhs.precision());
+    rss::default_unit(rhs.unit());
+    rss::default_width(rhs.width());
+    rss::default_fixed(rhs.fixed());
 }
 
 //--------------------------------------------------------------------------------------//
 
-rss::string_t
-rss::operator()(const string_t& _base) const
+rss
+rss::get_default()
 {
-    string_t _str = (_base.length() == 0) ? this->compose() : _base;
+    rss obj;
+    obj.format(rss::default_format());
+    obj.precision(rss::default_precision());
+    obj.unit(rss::default_unit());
+    obj.width(rss::default_width());
+    obj.fixed(rss::default_fixed());
+    return obj;
+}
 
-    for(auto itr : get_field_list())
-    {
-        auto _replace = [&](const string_t& _itr, const string_t& _rep) {
-            auto _npos = tim::string::npos;
-            while((_npos = _str.find(_itr)) != tim::string::npos)
-                _str.replace(_npos, _itr.length(), _rep.c_str());
-        };
+//--------------------------------------------------------------------------------------//
 
-        if(itr.second == rss::field::memory_unit)
-        {
-            std::stringstream _ss;
-            _ss.precision(this->precision());
-            _ss << tim::units::mem_repr(this->unit());
-            _replace(itr.first, _ss.str());
-        }
-        else
-        {
-            // replace all instances
-            _replace(", " + itr.first, "");        // CSV
-            _replace("," + itr.first, "");         // CSV
-            _replace(" " + itr.first + " ", " ");  // surrounding space
-            _replace(" " + itr.first, "");         // leading space
-            _replace(itr.first + " ", "");         // trailing space
-            _replace(itr.first, "");               // every remaining instance
-        }
-    }
-
-    string_t _pR   = "%R";
-    auto     _npos = tim::string::npos;
-    while((_npos = _str.find(_pR)) != tim::string::npos)
-        _str = _str.replace(_npos, _pR.length(), "");
-
-    return _str;
+rss*
+rss::copy_from(const rss* rhs)
+{
+    this->precision()   = rhs->precision();
+    this->width()       = rhs->width();
+    this->unit()        = rhs->unit();
+    this->format()      = rhs->format();
+    this->fixed()       = rhs->fixed();
+    this->align_width() = rhs->align_width();
+    return this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -576,46 +526,6 @@ rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
     _str = (*this)(_str);
 
     return _str;
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-rss::set_default(const rss& rhs)
-{
-    rss::default_format(rhs.format());
-    rss::default_precision(rhs.precision());
-    rss::default_unit(rhs.unit());
-    rss::default_width(rhs.width());
-    rss::default_fixed(rhs.fixed());
-}
-
-//--------------------------------------------------------------------------------------//
-
-rss
-rss::get_default()
-{
-    rss obj;
-    obj.format(rss::default_format());
-    obj.precision(rss::default_precision());
-    obj.unit(rss::default_unit());
-    obj.width(rss::default_width());
-    obj.fixed(rss::default_fixed());
-    return obj;
-}
-
-//--------------------------------------------------------------------------------------//
-
-rss*
-rss::copy_from(const rss* rhs)
-{
-    this->precision()   = rhs->precision();
-    this->width()       = rhs->width();
-    this->unit()        = rhs->unit();
-    this->format()      = rhs->format();
-    this->fixed()       = rhs->fixed();
-    this->align_width() = rhs->align_width();
-    return this;
 }
 
 //--------------------------------------------------------------------------------------//

@@ -250,7 +250,6 @@ public:
     static pointer        noninit_instance();
     static pointer        noninit_master_instance();
     static void           enable(bool val = true) { f_enabled = val; }
-    static void           set_get_num_threads_func(get_num_threads_func_t f);
     static const int32_t& max_depth() { return f_max_depth; }
     static void           max_depth(const int32_t& val) { f_max_depth = val; }
     static void           set_max_depth(const int32_t& val) { f_max_depth = val; }
@@ -258,7 +257,11 @@ public:
     static bool           is_enabled() { return f_enabled; }
     static void           write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
-    static int get_instance_count() { return f_manager_instance_count.load(); }
+    static int  get_instance_count() { return f_manager_instance_count.load(); }
+    static void set_get_num_threads_func(get_num_threads_func_t f)
+    {
+        f_get_num_threads = std::bind(f);
+    }
 
 protected:
     static void                     write_json_no_mpi(path_t _fname);
@@ -598,14 +601,12 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     // temporarily store output width
     // auto _width = tim::format::timer::default_width();
     // reset output width
-    tim::format::timer::default_width(10);
-
+    // tim::format::timer::default_width(10);
     // redo output width calc, removing no displayed funcs
-    for(const auto& itr : *this)
-        if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
-            tim::format::timer::propose_default_width(
-                itr.timer().format()->prefix().length());
-
+    // for(const auto& itr : *this)
+    //     if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
+    //         tim::format::timer::propose_default_width(
+    //             itr.timer().format()->prefix().length());
     // don't make it longer
     // if(_width > 10 && _width < tim::format::timer::default_width())
     //    tim::format::timer::default_width(_width);
@@ -674,6 +675,110 @@ inline bool
 manager::self_cost() const
 {
     return (m_timer_list == &m_timer_list_self);
+}
+//--------------------------------------------------------------------------------------//
+inline timer&
+manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
+{
+#if defined(DEBUG)
+    if(key.find(" ") != string_t::npos)
+    {
+        std::stringstream ss;
+        ss << "tim::manager::" << __FUNCTION__ << " Warning! Space found in tag: \""
+           << key << "\"";
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cerr << ss.str() << std::endl;
+    }
+#endif
+
+    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+
+    // if already exists, return it
+    if(m_timer_map.find(ref) != m_timer_map.end())
+    {
+#if defined(HASH_DEBUG)
+        for(const auto& itr : m_timer_list_norm)
+        {
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+            if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
+                std::cout << "tim::manager::" << __FUNCTION__ << " Found : " << itr
+                          << std::endl;
+        }
+#endif
+        timer_graph_itr _orig = *m_graph_itr;
+        for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
+            itr != m_graph_itr->end(); ++itr)
+            if(std::get<0>(*itr) == ref)
+            {
+                *m_graph_itr = itr;
+                break;
+            }
+
+        if(_orig == *m_graph_itr)
+            for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
+                if(std::get<0>(*itr) == ref)
+                {
+                    *m_graph_itr = itr;
+                    break;
+                }
+
+        if(_orig == *m_graph_itr)
+        {
+            std::stringstream ss;
+            ss << _orig->tag() << " did not find key = " << ref << " in :\n";
+            for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
+                itr != m_graph_itr->end(); ++itr)
+            {
+                ss << itr->key();
+                if(std::distance(itr, m_graph_itr->end()) < 1)
+                    ss << ", ";
+            }
+            ss << std::endl;
+            std::cerr << ss.str();
+        }
+        return *(m_timer_map[ref].get());
+    }
+
+    // synchronize format with level 1 and make sure MPI prefix is up-to-date
+    if(m_timer_list_norm.size() < 2)
+        update_total_timer_format();
+
+    std::stringstream ss;
+    // designated as [cxx], [pyc], etc.
+    ss << get_prefix() << "[" << tag << "] ";
+
+    // indent
+    for(int64_t i = 0; i < ncount; ++i)
+    {
+        if(i + 1 == ncount)
+            ss << "|_";
+        else
+            ss << "  ";
+    }
+
+    ss << std::left << key;
+    tim::format::timer::propose_default_width(ss.str().length());
+
+    m_timer_map[ref] = timer_ptr_t(new tim_timer_t(
+        tim::format::timer(ss.str(), tim::format::timer::default_format(),
+                           tim::format::timer::default_unit(),
+                           tim::format::timer::default_rss_format(), true)));
+
+    if(m_instance_count > 0)
+        m_timer_map[ref]->thread_timing(true);
+
+    std::stringstream tag_ss;
+    tag_ss << tag << "_" << std::left << key;
+    timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(), tag_ss.str(),
+                         m_timer_map[ref]);
+    m_timer_list_norm.push_back(_tuple);
+    *m_graph_itr = m_timer_graph->append_child(*m_graph_itr, _tuple);
+
+#if defined(HASH_DEBUG)
+    std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple << std::endl;
+#endif
+
+    return *(m_timer_map[ref].get());
 }
 //--------------------------------------------------------------------------------------//
 

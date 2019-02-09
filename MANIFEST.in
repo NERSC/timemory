@@ -1,4 +1,6 @@
+
 # direct includes
+
 include CMakeLists.txt
 include VERSION
 include LICENSE
@@ -6,19 +8,31 @@ include .license.c
 include .license.py
 include README.md
 include CHANGES.md
-include timemory/timemory.py
-include cmake/Scripts/generator2file.cmake
+include meta.yaml
+include conda_build_config.yaml
+include requirements.txt
+include update-conda-yaml.py
+
 # recursive includes
+
 recursive-include cmake *
 recursive-include examples *
 recursive-include pybind11 *
 recursive-include source *
 recursive-include timemory *.py*
+
 # global exclude
+
 global-exclude *.pyc
 global-exclude *.git*
 global-exclude *__pycache__*
+
 # recursive excludes
+
 recursive-exclude pybind11/docs/.build *
-recursive-exclude examples/ex3 *
-recursive-exclude cmake/Scripts *.sh
+recursive-exclude build *
+recursive-exclude _skbuild *
+recursive-exclude dist *
+recursive-exclude TiMemory.egg-info *
+recursive-exclude html *
+recursive-exclude images *

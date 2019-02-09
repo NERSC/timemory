@@ -364,13 +364,13 @@ PYBIND11_MODULE(libtimemory, tim)
               "Stop timer");
     //------------------------------------------------------------------------//
     timer.def("report",
-              [=](py::object timer, bool ign_cutoff = true) {
+              [=](py::object timer, bool ign_cutoff) {
                   timer.cast<tim_timer_t*>()->print(ign_cutoff);
               },
               "Report timer", py::arg("ign_cutoff") = true);
     //------------------------------------------------------------------------//
     timer.def("__str__",
-              [=](py::object timer, bool ign_cutoff = true) {
+              [=](py::object timer, bool ign_cutoff) {
                   return std::string(
                       timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str());
               },
@@ -659,14 +659,14 @@ PYBIND11_MODULE(libtimemory, tim)
                   "Subtract rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_usage.def("current",
-                  [=](py::object self, int64_t _units = tim::units::megabyte) {
+                  [=](py::object self, int64_t _units) {
                       return self.cast<rss_usage_t*>()->current(_units);
                   },
                   "Return the current rss usage",
                   py::arg("units") = units.attr("megabyte"));
     //------------------------------------------------------------------------//
     rss_usage.def("peak",
-                  [=](py::object self, int64_t _units = tim::units::megabyte) {
+                  [=](py::object self, int64_t _units) {
                       return self.cast<rss_usage_t*>()->peak(_units);
                   },
                   "Return the current rss usage",
@@ -792,7 +792,7 @@ PYBIND11_MODULE(libtimemory, tim)
     tim.attr("timing_manager") = man;
     //------------------------------------------------------------------------//
     tim.def("report",
-            [=](bool ign_cutoff = true, bool endline = true) {
+            [=](bool ign_cutoff, bool endline) {
                 manager_t::instance()->report(ign_cutoff, endline);
             },
             "Report the timing manager (default: ign_cutoff = True, endline = "

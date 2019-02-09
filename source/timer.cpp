@@ -57,14 +57,6 @@ timer::timer(bool _auto_start, timer* _sum_timer)
 
 //======================================================================================//
 
-timer::timer(const string_t& _prefix, const string_t& _format, bool _record_memory)
-: base_type(timer_format_t(new format_type(_prefix, _format)), _record_memory)
-, m_sum_timer(nullptr)
-{
-}
-
-//======================================================================================//
-
 timer::timer(const format_type& _format, bool _record_memory)
 : base_type(timer_format_t(new format_type(_format)), _record_memory)
 , m_sum_timer(nullptr)

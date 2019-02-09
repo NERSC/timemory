@@ -1,6 +1,7 @@
 
 include(CMakeParseArguments)
-include_directories(${CMAKE_CURRENT_LIST_DIR})
+list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 
 ################################################################################
 #
@@ -23,7 +24,6 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
     "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
     FORCE)
 
-include_directories(SYSTEM ${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 
 ################################################################################
@@ -35,11 +35,12 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 #------------------------------------------------------------------------------#
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
-file(GLOB cxx_sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
-file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
-file(GLOB c_sources ${CMAKE_CURRENT_LIST_DIR}/*.c)
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
+file(GLOB c_sources ${CMAKE_CURRENT_LIST_DIR}/*.c)
+file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 # this is only needed for windows
+file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 # set the languages
 set_source_files_properties(${c_sources} PROPERTIES LANGUAGE C)
@@ -54,67 +55,59 @@ set(INSTALL_LIBRARIES )
 #
 macro(BUILD_LIBRARY)
 
-    set(_options    PIC)                    # options
-    set(_onevalue   TYPE                    # single-value
+    # options
+    set(_options    PIC)
+    # single-value
+    set(_onevalue   TYPE
                     OUTPUT_NAME
                     TARGET_NAME
                     OUTPUT_DIR
                     LANGUAGE
                     LINKER_LANGUAGE)
-    set(_multival   SOURCES                 # multi-value
+    # multi-value
+    set(_multival   SOURCES
                     LINK_LIBRARIES
-                    COMPILE_DEFINITIONS)
+                    COMPILE_DEFINITIONS
+                    INCLUDE_DIRECTORIES
+                    EXTRA_PROPERTIES)
 
     cmake_parse_arguments(
         LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
 
-    add_library(
-        ${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
-    target_link_libraries(
-        ${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_LIBRARIES})
+    if(NOT WIN32 AND NOT XCODE)
+        list(APPEND LIBRARY_EXTRA_PROPERTIES
+            VERSION                     ${PROJECT_VERSION}
+            SOVERSION                   ${PROJECT_VERSION_MAJOR})
+    endif()
 
-    # Windows
-	if(WIN32)
+    if(NOT WIN32)
+        set(LIB_PREFIX )
+        list(APPEND LIBRARY_EXTRA_PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR})
+    else()
+        set(LIB_PREFIX lib)
+    endif()
 
-        set_target_properties(
-            ${LIBRARY_TARGET_NAME}          PROPERTIES
-            OUTPUT_NAME                     lib${LIBRARY_OUTPUT_NAME}
-            COMPILE_FLAGS                   ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
-            COMPILE_DEFINITIONS             ${LIBRARY_COMPILE_DEFINITIONS}
-            LANGUAGE                        ${LIBRARY_LANGUAGE}
-            LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
-            POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC})
+    add_library(${LIBRARY_TARGET_NAME}
+        ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    target_include_directories(${LIBRARY_TARGET_NAME}
+        PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+    target_link_libraries(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_LINK_LIBRARIES})
+    target_compile_definitions(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
+    target_compile_options(${LIBRARY_TARGET_NAME}
+        PUBLIC
+            $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
+            $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
 
-	else(WIN32)
-
-        if(XCODE)
-
-            # xcode has issue with "cmake_symlink_library"
-            set_target_properties(
-                ${LIBRARY_TARGET_NAME}      PROPERTIES
-                OUTPUT_NAME                 ${LIBRARY_OUTPUT_NAME}
-                LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
-                COMPILE_FLAGS               ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
-                LANGUAGE                    ${LIBRARY_LANGUAGE}
-                LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
-                POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC})
-
-        else(XCODE)
-
-            set_target_properties(
-                ${LIBRARY_TARGET_NAME}      PROPERTIES
-                OUTPUT_NAME                 ${LIBRARY_OUTPUT_NAME}
-                COMPILE_FLAGS               ${${PROJECT_NAME}_${LIBRARY_LANGUAGE}_FLAGS}
-                VERSION                     ${PROJECT_VERSION}
-                SOVERSION                   ${PROJECT_VERSION_MAJOR}
-                LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR}
-                LANGUAGE                    ${LIBRARY_LANGUAGE}
-                LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
-                POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC})
-
-        endif(XCODE)
-
-    endif(WIN32)
+    set_target_properties(
+        ${LIBRARY_TARGET_NAME}          PROPERTIES
+        OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
+        LANGUAGE                        ${LIBRARY_LANGUAGE}
+        LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
+        POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
+        ${LIBRARY_EXTRA_PROPERTIES})
 
     list(APPEND INSTALL_LIBRARIES ${LIBRARY_TARGET_NAME})
 
@@ -130,7 +123,6 @@ add_subdirectory(timemory)
 #------------------------------------------------------------------------------#
 # build library setup
 #
-set(_COMPILE_DEFS )
 set(_OUTPUT_DIR )
 # directly compile sources
 set(C_LIBRARY_SOURCES   ${c_sources}   ${c_headers})
@@ -139,20 +131,20 @@ set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cereal_headers})
 # if Windows, set _COMPILE_DEFS and possibly _ARCHIVE_SUFFIX
 if(WIN32)
     if(BUILD_SHARED_LIBS)
-        set(_COMPILE_DEFS       _TIMEMORY_DLL)
+        set(PRIVATE_COMPILE_DEFINITIONS         _TIMEMORY_DLL)
     else()
-        set(_COMPILE_DEFS       _TIMEMORY_ARCHIVE)
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS _TIMEMORY_ARCHIVE)
+        set(PRIVATE_COMPILE_DEFINITIONS         _TIMEMORY_ARCHIVE)
     endif()
+
+    # Set source file compile definitions
+    set_source_files_properties(
+        ${c_sources} ${CXX_LIBRARY_SOURCES}
+        PROPERTIES COMPILE_DEFINITIONS ${PRIVATE_COMPILE_DEFINITIONS})
 else()
     set(_OUTPUT_DIR ${PROJECT_BINARY_DIR}/timemory/lib)
 endif()
 
-# Set source file compile definitions
-if(NOT "${_COMPILE_DEFS}" STREQUAL "")
-    set_source_files_properties(
-        ${C_LIBRARY_SOURCES} ${CXX_LIBRARY_SOURCES} ${pysources}
-        PROPERTIES COMPILE_DEFINITIONS ${_COMPILE_DEFS})
-endif()
 
 
 #------------------------------------------------------------------------------#
@@ -171,9 +163,11 @@ build_library(
     LANGUAGE            CXX
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-    COMPILE_DEFINITIONS ${_COMPILE_DEFS}
+    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
     SOURCES             ${CXX_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES})
+    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
 
 build_library(
     PIC
@@ -183,9 +177,10 @@ build_library(
     LANGUAGE            C
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-    COMPILE_DEFINITIONS ${_COMPILE_DEFS}
+    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
     SOURCES             ${C_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${LIBNAME}-cxx-library)
+    LINK_LIBRARIES      ${LIBNAME}-cxx-library
+    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
 
 #------------------------------------------------------------------------------#

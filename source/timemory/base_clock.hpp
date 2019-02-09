@@ -29,8 +29,7 @@
  * Not directly used
  */
 
-#ifndef base_clock_hpp_
-#define base_clock_hpp_
+#pragma once
 
 #include <chrono>
 #include <cmath>
@@ -552,6 +551,4 @@ operator-(const tim_time_point_t<_Pr1, _Per1>& lhs,
 
 #if !defined(TIMEMORY_TIMER_VERSION)
 #    define TIMEMORY_TIMER_VERSION 1
-#endif
-
 #endif

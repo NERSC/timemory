@@ -29,8 +29,7 @@
  *
  */
 
-#ifndef mpi_hpp_
-#define mpi_hpp_
+#pragma once
 
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
@@ -176,5 +175,3 @@ has_mpi_support()
 #endif
 
 //--------------------------------------------------------------------------------------//
-
-#endif

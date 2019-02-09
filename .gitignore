@@ -12,6 +12,7 @@ settings.json
 # build directories
 /build-*
 /build
+/_skbuild
 
 # setup.py files
 /dist*

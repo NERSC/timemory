@@ -272,11 +272,6 @@
 #include <cfenv>
 #include <cmath>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunknown-pragmas"
-#pragma STDC FENV_ACCESS ON
-#pragma GCC diagnostic pop
-
 #if !defined(_WINDOWS)
 #    define init_priority(N) __attribute__((init_priority(N)))
 #    define init_construct(N) __attribute__((constructor(N)))
