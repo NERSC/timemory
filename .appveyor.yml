@@ -100,15 +100,15 @@ install:
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
-# Install MS-MPI
-- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
-- MSMpiSetup.exe -unattend
-- set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
-
-# Install MS-MPI SDK
-- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
-- msmpisdk.msi /passive
-- set PATH=C:\Program Files\Microsoft MPI\Bin;%PATH%
+- ps: |
+    # Install MS-MPI
+    Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
+    MSMpiSetup.exe -unattend
+    # Install MS-MPI SDK
+    Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
+    msmpisdk.msi /passive
+    $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
+    $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:/Program Files (x86)/Microsoft SDKs/MPI;$env:CMAKE_PREFIX_PATH"
 
 build_script:
 - mkdir build-timemory

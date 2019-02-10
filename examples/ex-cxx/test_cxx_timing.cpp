@@ -245,9 +245,8 @@ test_2_rss_usage()
     vector_t* v     = new vector_t();
 
     _rss_init.record();
-    v->reserve(nsize);
-    for(uint64_t i = 0; i < nsize; ++i)
-        v->push_back(i);
+    v->resize(nsize, 0);
+    memset(v->data(), 1, nsize * sizeof(uint64_t));
     _rss_calc.record();
 
     v->clear();
