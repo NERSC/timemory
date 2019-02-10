@@ -60,14 +60,14 @@ install:
     # Python environment
     if ($env:PYTHON) {
       if ($env:PLATFORM -eq "x64") {
-        $env:PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts\;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64\;C:\Python$env:PYTHON-x64\Scripts"
+        $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
+        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
         $env:TIMEMORY_BUILD_SHARED = "ON"
         $env:TIMEMORY_USE_MPI = "ON"
       } else {
-        $env:PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts\;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON\;C:\Python$env:PYTHON\Scripts"
+        $env:PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
+        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
         $env:TIMEMORY_BUILD_SHARED = "OFF"
         $env:TIMEMORY_USE_MPI = "ON"
@@ -75,15 +75,15 @@ install:
       python -m pip install --disable-pip-version-check --user --upgrade pip wheel
     } elseif ($env:CONDA) {
       if ($env:PLATFORM -eq "x64") {
-        $env:PATH = "C:\Miniconda$env:CONDA-x64\;C:\Miniconda$env:CONDA-x64\Scripts\;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64\;C:\Miniconda$env:CONDA-x64\Scripts"
+        $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
+        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
         $env:TIMEMORY_BUILD_SHARED = "ON"
         $env:TIMEMORY_USE_MPI = "ON"
       } else {
-        $env:PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts\;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA\;C:\Miniconda$env:CONDA\Scripts"
+        $env:PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts;$env:PATH"
+        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
         $env:TIMEMORY_BUILD_SHARED = "OFF"
@@ -100,13 +100,13 @@ install:
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
+# Install MS-MPI
+- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe' -FileName "./MSMpiSetup.exe"
+- ps: ./MSMpiSetup.exe -unattend
+# Install MS-MPI SDK
+- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi' -FileName "msmpisdk.msi"
+- ps: ./msmpisdk.msi /passive
 - ps: |
-    # Install MS-MPI
-    Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
-    ./MSMpiSetup.exe -unattend
-    # Install MS-MPI SDK
-    Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
-    ./msmpisdk.msi /passive
     $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
     $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:/Program Files (x86)/Microsoft SDKs/MPI;$env:CMAKE_PREFIX_PATH"
 
