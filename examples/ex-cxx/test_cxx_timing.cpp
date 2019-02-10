@@ -241,7 +241,7 @@ test_2_rss_usage()
     rt.start();
     ct.start();
 
-    uint64_t  nsize = 1048576;
+    uint64_t  nsize = 262144;
     vector_t* v     = new vector_t();
 
     _rss_init.record();
@@ -252,22 +252,28 @@ test_2_rss_usage()
     v->clear();
     delete v;
 
-    // real usage
-    int64_t _r_usage = _rss_calc.current<int64_t>(tim::units::kilobyte) -
+    // current usage
+    int64_t _c_usage = _rss_calc.current<int64_t>(tim::units::kilobyte) -
                        _rss_init.current<int64_t>(tim::units::kilobyte);
+    // peak usage
+    int64_t _p_usage = _rss_calc.peak<int64_t>(tim::units::kilobyte) -
+                       _rss_init.peak<int64_t>(tim::units::kilobyte);
 
     // expected usage
-    int64_t _e_usage = 8192;
+    int64_t _e_usage = 2048;
     // actual difference
-    int64_t _a_diff = std::abs(_r_usage - _e_usage);
+    int64_t _c_diff = std::abs(_c_usage - _e_usage);
+    int64_t _p_diff = std::abs(_p_usage - _e_usage);
 
     std::cout << _rss_init << std::endl;
     std::cout << _rss_calc << std::endl;
-    std::cout << "    real usage diff : " << _r_usage << std::endl;
-    std::cout << "expected usage diff : " << _e_usage << std::endl;
-    std::cout << "  actual difference : " << _a_diff << std::endl;
+    std::cout << "          expected usage : " << _e_usage << std::endl;
+    std::cout << "           current usage : " << _c_usage << std::endl;
+    std::cout << "              peak usage : " << _p_usage << std::endl;
+    std::cout << "current usage difference : " << _c_diff << std::endl;
+    std::cout << "   peak usage difference : " << _p_diff << std::endl;
 
-    ASSERT_TRUE(_a_diff < 250);
+    ASSERT_TRUE(_c_diff < 256 || _p_diff < 256);
 
     fibonacci(36);
 
