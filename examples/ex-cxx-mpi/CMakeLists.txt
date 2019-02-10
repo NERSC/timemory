@@ -10,6 +10,8 @@ set(EXE_NAME test_cxx_mpi_timing)
 
 find_package(MPI REQUIRED)
 find_package(TiMemory REQUIRED)
+find_package(Threads REQUIRED)
+list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
     list(APPEND EXTERNAL_LIBRARIES ${MPI_${_TYPE}})

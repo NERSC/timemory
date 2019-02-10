@@ -8,6 +8,8 @@ message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cxx_timing)
 find_package(TiMemory REQUIRED)
+find_package(Threads REQUIRED)
+list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME}
