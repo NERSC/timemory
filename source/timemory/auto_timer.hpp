@@ -91,12 +91,16 @@ inline auto_timer::auto_timer(const string_t& timer_tag, const int32_t& lineno,
 , m_report_at_exit(report_at_exit)
 , m_hash((m_enabled) ? (lineno + std::hash<string_t>()(timer_tag)) : 0)
 , m_temp_timer(tim_timer_t(
-      m_enabled, (m_enabled) ? &manager::instance()->timer(
-                                   timer_tag, lang_tag,
-                                   (m_enabled) ? ((uint64_t)(auto_timer::ncount()++))
-                                               : ((uint64_t)(0)),
-                                   (m_enabled) ? ((uint64_t)(m_hash)) : ((uint64_t)(0)))
-                             : nullptr))
+      m_enabled,
+      (m_enabled)
+          ? &manager::instance()->timer(
+                timer_tag, lang_tag,
+                (m_enabled) ? ((uint64_t)(auto_timer::pcount() + auto_timer::ncount()++))
+                            : ((uint64_t)(0)),
+                (m_enabled)
+                    ? ((uint64_t)(auto_timer::phash() + (auto_timer::nhash() += m_hash)))
+                    : ((uint64_t)(0)))
+          : nullptr))
 {
 }
 
@@ -125,8 +129,8 @@ inline auto_timer::~auto_timer()
         }
 
         // decrement hash keys
-        --auto_timer::ncount();
-        // auto_timer::nhash() -= m_hash;
+        auto_timer::ncount()--;
+        auto_timer::nhash() -= m_hash;
         manager::instance()->pop_graph();
     }
 }

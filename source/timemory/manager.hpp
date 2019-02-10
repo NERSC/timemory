@@ -307,7 +307,7 @@ public:
     void                   merge();
     void                   merge(pointer);
     void                   clear();
-    size_type              size() const { return m_timer_list_norm.size(); }
+    size_type              size() const;
     tim_timer_t&           at(size_t i) { return m_timer_list->at(i).timer(); }
     void                   print(bool ign_cutoff = false, bool endline = true);
     iterator               begin() { return m_timer_list->begin(); }
@@ -675,6 +675,15 @@ inline bool
 manager::self_cost() const
 {
     return (m_timer_list == &m_timer_list_self);
+}
+//--------------------------------------------------------------------------------------//
+inline manager::size_type
+manager::size() const
+{
+    size_type n = 0;
+    for(auto itr = get_timer_graph()->begin(); itr != get_timer_graph()->end(); ++itr)
+        ++n;
+    return n;
 }
 //--------------------------------------------------------------------------------------//
 inline timer&
