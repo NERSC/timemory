@@ -95,7 +95,7 @@ install:
     }
     # pip installation
     python -m pip install -U setuptools
-    python -m pip install -U matplotlib numpy pillow
+    python -m pip install -U -r requirements.txt
     $env:TIMEMORY_DEBUG = 4
     mkdir "C:\Users\appveyor\CTestTemp"
     $env:TEMP = "C:\Users\appveyor\CTestTemp"
