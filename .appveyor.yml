@@ -103,10 +103,10 @@ install:
 - ps: |
     # Install MS-MPI
     Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe'
-    MSMpiSetup.exe -unattend
+    ./MSMpiSetup.exe -unattend
     # Install MS-MPI SDK
     Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
-    msmpisdk.msi /passive
+    ./msmpisdk.msi /passive
     $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
     $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:/Program Files (x86)/Microsoft SDKs/MPI;$env:CMAKE_PREFIX_PATH"
 
