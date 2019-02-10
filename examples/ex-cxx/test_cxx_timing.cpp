@@ -536,7 +536,7 @@ test_7_timing_thread()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 30);
+    ASSERT_TRUE(manager_t::instance()->size() >= 26);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
     // tman->write_missing();
