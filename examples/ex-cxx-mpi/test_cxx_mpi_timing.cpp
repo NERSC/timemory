@@ -520,9 +520,7 @@ test_7_timing_thread()
     tman->enable(true);
     tman->set_output_stream(std::cout);
 
-    uint32_t ncore = std::thread::hardware_concurrency();
-    uint32_t nmaxt = 12;
-    test_7_timing_thread(std::min(nmaxt, ncore));
+    test_7_timing_thread(4);
 
     // divide the threaded clocks that are merge
     tman->merge();
@@ -534,6 +532,9 @@ test_7_timing_thread()
     ASSERT_TRUE(manager_t::instance()->size() >= 26);
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
+    tman->set_output_stream("test_output/cxx_timing_thread.out");
+    tman->report(ign_cutoff = false);
+
     tman->write_missing();
     tman->enable(_is_enabled);
 }

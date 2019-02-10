@@ -129,7 +129,8 @@ set(@PROJECT_NAME@_CXX_STANDARD_REQUIRED @CMAKE_CXX_STANDARD_REQUIRED@)
 #   Definitions
 #------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_DEFINITIONS @TiMemory_DEFINITIONS@)
-if(NOT @BUILD_SHARED_LIBS@ AND WIN32)
+set(DYNAMIC_LINK @BUILD_SHARED_LIBS@)
+if(NOT DYNAMIC_LINK AND WIN32)
     list(APPEND @PROJECT_NAME@_DEFINITIONS _TIMEMORY_ARCHIVE)
 endif()
 
