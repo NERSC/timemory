@@ -137,7 +137,7 @@ EXTERN_C LARGE_INTEGER
 }
 
 EXTERN_C int
-clock_gettime(clockid_t, struct timeval* tv)
+clock_gettime(clockid_t, struct timespec* tv)
 {
     LARGE_INTEGER        t;
     FILETIME             f;
