@@ -217,6 +217,30 @@ typedef tim::auto_timer auto_timer_t;
                     AUTO_TIMER_STR(__FILE__, TIMEMORY_LINE_STRING))
 
 //--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_BLANK_AUTO_TIMER(str)
+ *
+ * auto-timer with fully customizable string
+ * \a str is optional
+ *
+ * Signature:
+ *      str
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_BLANK_AUTO_TIMER("some-string");
+ *          ...
+ *      }
+ *
+ * Example where str == "(15)":
+ *
+ *      > [pyc] some_func(15) :  0.363 wall, ... etc.
+ */
+#    define TIMEMORY_BLANK_AUTO_TIMER(str)                                               \
+        auto_timer_t AUTO_TIMER_NAME(__LINE__)(std::string(str), __LINE__)
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(str)
  *
  * simple tagging with <function name> + <string> where the string param

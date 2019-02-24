@@ -51,7 +51,8 @@ fibonacci(int32_t n)
 {
     if(n > 34)
     {
-        TIMEMORY_BASIC_AUTO_TIMER("");
+        // TIMEMORY_BASIC_AUTO_TIMER("[" + std::to_string(n) + "]");
+        TIMEMORY_BASIC_AUTO_TIMER();
         return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
     }
     else
@@ -112,6 +113,7 @@ main(int argc, char** argv)
     int num_fail = 0;
     int num_test = 0;
 
+    std::cout << "# tests: " << tests.size() << std::endl;
     try
     {
         RUN_TEST(1, test_1_serialize, num_test, num_fail);
@@ -465,8 +467,9 @@ thread_func(int32_t nfib, std::shared_future<void> fut)
 //======================================================================================//
 
 std::thread*
-create_thread(int32_t nfib, std::shared_future<void> fut)
+create_thread(int32_t nfib, std::shared_future<void> fut, std::atomic<int>& count)
 {
+    ++count;
     TIMEMORY_BASIC_AUTO_TIMER("");
     static int32_t n = 0;
     return new std::thread(thread_func, nfib + (n++) % 2, fut);
@@ -483,7 +486,6 @@ join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
     TIMEMORY_BASIC_AUTO_TIMER("");
 
     (*titr)->join();
-    join_thread(++titr, tlist);
 }
 
 //======================================================================================//
@@ -498,17 +500,19 @@ test_7_timing_thread(int num_threads)
 
     thread_list_t threads(num_threads, nullptr);
 
+    std::atomic<int>         count;
     std::promise<void>       prom;
     std::shared_future<void> fut = prom.get_future().share();
 
     for(auto& itr : threads)
-        itr = create_thread(43, fut);
+        itr = create_thread(43, fut, std::ref(count));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
+    while(count.load() < num_threads)
+        ;
     prom.set_value();
 
-    join_thread(threads.begin(), threads);
+    for(auto itr = threads.begin(); itr != threads.end(); ++itr)
+        join_thread(itr, threads);
 
     for(auto& itr : threads)
         delete itr;
@@ -539,7 +543,7 @@ test_7_timing_thread()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 26);
+    ASSERT_TRUE(manager_t::instance()->size() == 25);
 
     tman->write_serialization("test_output/cxx_timing_thread.json");
     tman->set_output_stream("test_output/cxx_timing_thread.out");

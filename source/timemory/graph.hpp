@@ -478,7 +478,11 @@ public:
     /// Merge with other graph, creating new branches and leaves only if they
     /// are not already present.
     void merge(sibling_iterator, sibling_iterator, sibling_iterator, sibling_iterator,
-               bool duplicate_leaves = false);
+               bool duplicate_leaves = false, bool first = false);
+    /// Reduce duplicate nodes
+    template <typename Predicate>
+    void reduce(sibling_iterator, sibling_iterator, sibling_iterator, sibling_iterator,
+                const Predicate&);
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
     void sort(sibling_iterator from, sibling_iterator to, bool deep = false);
@@ -2243,7 +2247,7 @@ template <typename T, typename AllocatorT>
 void
 graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
                             sibling_iterator from1, sibling_iterator from2,
-                            bool duplicate_leaves)
+                            bool duplicate_leaves, bool first)
 {
     while(from1 != from2)
     {
@@ -2257,8 +2261,11 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
             }
             else  // descend further
             {
-                merge(fnd.begin(), fnd.end(), from1.begin(), from1.end(),
-                      duplicate_leaves);
+                if(!first)
+                    *fnd += *from1;
+                if(from1 != from2)
+                    merge(fnd.begin(), fnd.end(), from1.begin(), from1.end(),
+                          duplicate_leaves);
             }
         }
         else
@@ -2266,6 +2273,32 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
             insert_subgraph(to2, from1);
         }
         ++from1;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+template <typename Predicate>
+void
+graph<T, AllocatorT>::reduce(sibling_iterator beg1, sibling_iterator end1,
+                             sibling_iterator beg2, sibling_iterator end2,
+                             const Predicate& predicate)
+{
+    for(auto itr1 = beg1; itr1 != end1; ++itr1)
+    {
+        for(auto itr2 = beg2; itr2 != end2; ++itr2)
+        {
+            // skip if same iterator
+            if(itr1 == itr2)
+                continue;
+            if(*itr1 == *itr2)
+            {
+                predicate(itr1, itr2);
+                reduce(itr1.begin(), itr1.end(), itr2.begin(), itr2.end(), predicate);
+                this->erase(itr2);
+            }
+        }
     }
 }
 

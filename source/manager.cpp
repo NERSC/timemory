@@ -509,39 +509,26 @@ manager::merge(pointer itr)
                   << std::endl;
 #endif
 
-    for(const auto& mitr : itr->map())
-    {
-        if(m_timer_map.find(mitr.first) == m_timer_map.end())
-            m_timer_map[mitr.first] = mitr.second;
-        else
-        {
-            // *m_timer_map[mitr.first] += *mitr.second;  // add in timer
-            // *m_timer_map[mitr.first] /= 2;             // running average
-        }
-    }
-
-    // auto format = [&](const timer_tuple_t& node) {
-    //     std::stringstream ss;
-    //     node.timer().report(ss, false, false);
-    //     return ss.str();
-    // };
-    // std::stringstream ss;
-    // tim::print_graph(*itr->get_timer_graph(), format, ss);
-    // std::cout << "\nINSTANCE: " << itr->instance_count() << "\n" << std::endl;
-    // std::cout << ss.str() << std::endl;
-
     auto _iter_beg = itr->get_timer_graph()->begin();
     auto _iter_end = itr->get_timer_graph()->end();
     auto _this_beg = this->get_timer_graph()->begin();
     auto _this_end = this->get_timer_graph()->end();
+
     for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
     {
         if(*_this_itr == *_iter_beg)
         {
             this->get_timer_graph()->merge(_this_itr, _this_end, _iter_beg, _iter_end,
-                                           false);
+                                           false, true);
+            break;
         }
     }
+
+    typedef decltype(_iter_beg) predicate_type;
+    auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+    _this_beg    = this->get_timer_graph()->begin();
+    _this_end    = this->get_timer_graph()->end();
+    this->get_timer_graph()->reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
 
     auto _list = itr->list();
     for(auto litr = _list.rbegin(); litr != _list.rend(); ++litr)

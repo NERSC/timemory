@@ -39,7 +39,7 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         // std::stringstream ss; ss << "[" << n << "]";
         // TIMEMORY_AUTO_TIMER(ss.str());
-        TIMEMORY_AUTO_TIMER("");
+        TIMEMORY_BASIC_AUTO_TIMER("");
         return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     else

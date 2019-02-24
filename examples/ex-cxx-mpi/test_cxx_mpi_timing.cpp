@@ -456,8 +456,9 @@ thread_func(int32_t nfib, std::shared_future<void> fut)
 //======================================================================================//
 
 std::thread*
-create_thread(int32_t nfib, std::shared_future<void> fut)
+create_thread(int32_t nfib, std::shared_future<void> fut, std::atomic<int>& count)
 {
+    ++count;
     TIMEMORY_BASIC_AUTO_TIMER("");
     static int32_t n = 0;
     return new std::thread(thread_func, nfib + (n++) % 2, fut);
@@ -474,7 +475,6 @@ join_thread(thread_list_t::iterator titr, thread_list_t& tlist)
     TIMEMORY_BASIC_AUTO_TIMER("");
 
     (*titr)->join();
-    join_thread(++titr, tlist);
 }
 
 //======================================================================================//
@@ -484,7 +484,6 @@ test_7_timing_thread(int num_threads)
 {
     int num_ranks = tim::mpi_size();
     assert(num_ranks > 0);
-    num_threads = num_threads / num_ranks;
 
     std::stringstream ss;
     ss << "[" << num_threads << "_threads]";
@@ -493,17 +492,19 @@ test_7_timing_thread(int num_threads)
 
     thread_list_t threads(num_threads, nullptr);
 
+    std::atomic<int>         count;
     std::promise<void>       prom;
     std::shared_future<void> fut = prom.get_future().share();
 
     for(auto& itr : threads)
-        itr = create_thread(43, fut);
+        itr = create_thread(43, fut, std::ref(count));
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(2000));
-
+    while(count.load() < num_threads)
+        ;
     prom.set_value();
 
-    join_thread(threads.begin(), threads);
+    for(auto itr = threads.begin(); itr != threads.end(); ++itr)
+        join_thread(itr, threads);
 
     for(auto& itr : threads)
         delete itr;
@@ -534,7 +535,7 @@ test_7_timing_thread()
     print_depth(__FUNCTION__, __LINE__, false);
     print_size(__FUNCTION__, __LINE__);
     tman->report(ign_cutoff = true);
-    ASSERT_TRUE(manager_t::instance()->size() >= 26);
+    ASSERT_TRUE(manager_t::instance()->size() == 25);
 
     tman->write_serialization("test_output/mpi_cxx_timing_thread.json");
     tman->set_output_stream("test_output/cxx_timing_thread.out");

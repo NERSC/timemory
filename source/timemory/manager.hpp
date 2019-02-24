@@ -188,15 +188,7 @@ struct tim_api timer_tuple : public internal::base_timer_tuple_t
     {
         std::stringstream ss;
         ss << std::setw(2 * t.level()) << ""
-           << "[" << t.tag() << "]" << std::endl;
-        /*
-        ss << "["
-           << "Key = " << t.key() << ", "
-           << "Count = " << t.level() << ", "
-           << "Offset = " << t.offset() << ", "
-           << "Tag = " << t.tag()
-           << "]";
-        */
+           << "[" << t.tag() << "]";
         os << ss.str();
         return os;
     }
@@ -446,28 +438,30 @@ private:
 inline void
 manager::operator+=(const base_rss_type& rhs)
 {
-    for(auto& itr : m_timer_list_norm)
+    for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
     {
-        bool _restart = itr.timer().is_running();
+        auto& _timer   = itr->timer();
+        bool  _restart = _timer.is_running();
         if(_restart)
-            itr.timer().stop();
-        itr.timer() += rhs;
+            _timer.stop();
+        _timer += rhs;
         if(_restart)
-            itr.timer().start();
+            _timer.start();
     }
 }
 //--------------------------------------------------------------------------------------//
 inline void
 manager::operator-=(const base_rss_type& rhs)
 {
-    for(auto& itr : m_timer_list_norm)
+    for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
     {
-        bool _restart = itr.timer().is_running();
+        auto& _timer   = itr->timer();
+        bool  _restart = _timer.is_running();
         if(_restart)
-            itr.timer().stop();
-        itr.timer() -= rhs;
+            _timer.stop();
+        _timer -= rhs;
         if(_restart)
-            itr.timer().start();
+            _timer.start();
     }
 }
 //--------------------------------------------------------------------------------------//
@@ -598,19 +592,6 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;
 
-    // temporarily store output width
-    // auto _width = tim::format::timer::default_width();
-    // reset output width
-    // tim::format::timer::default_width(10);
-    // redo output width calc, removing no displayed funcs
-    // for(const auto& itr : *this)
-    //     if(itr.timer().above_cutoff(ign_cutoff) || ign_cutoff)
-    //         tim::format::timer::propose_default_width(
-    //             itr.timer().format()->prefix().length());
-    // don't make it longer
-    // if(_width > 10 && _width < tim::format::timer::default_width())
-    //    tim::format::timer::default_width(_width);
-
     auto format = [&](const timer_tuple_t& node) {
         std::stringstream ss;
         node.timer().report(ss, false, true);
@@ -620,10 +601,6 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     tim::print_graph(*m_timer_graph, format, *os);
     if(endline)
         *os << std::endl;
-
-    // for(auto itr = this->cbegin(); itr != this->cend(); ++itr)
-    //    itr->timer().report(*os, (itr + 1 == this->cend()) ? endline : true,
-    //    ign_cutoff);
 
     os->flush();
 }
