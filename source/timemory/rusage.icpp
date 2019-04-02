@@ -30,7 +30,7 @@
 // memory use) measured in bytes, or zero if the value cannot be
 // determined on this OS.
 //
-intmax_t tim::rusage::get_peak_rss()
+inline intmax_t tim::rusage::get_peak_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -76,7 +76,7 @@ intmax_t tim::rusage::get_peak_rss()
 // Returns the current resident set size (physical memory use) measured
 // in bytes, or zero if the value cannot be determined on this OS.
 //
-intmax_t tim::rusage::get_current_rss()
+inline intmax_t tim::rusage::get_current_rss()
 {
 #if defined(_UNIX)
 #if defined(_MACOS)
@@ -133,7 +133,7 @@ intmax_t tim::rusage::get_current_rss()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_stack_rss()
+inline intmax_t tim::rusage::get_stack_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -149,7 +149,7 @@ intmax_t tim::rusage::get_stack_rss()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_data_rss()
+inline intmax_t tim::rusage::get_data_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -165,7 +165,7 @@ intmax_t tim::rusage::get_data_rss()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_num_swap()
+inline intmax_t tim::rusage::get_num_swap()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -180,7 +180,7 @@ intmax_t tim::rusage::get_num_swap()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_num_io_in()
+inline intmax_t tim::rusage::get_num_io_in()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -195,7 +195,7 @@ intmax_t tim::rusage::get_num_io_in()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_num_io_out()
+inline intmax_t tim::rusage::get_num_io_out()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -211,7 +211,7 @@ intmax_t tim::rusage::get_num_io_out()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_num_minor_page_faults()
+inline intmax_t tim::rusage::get_num_minor_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -227,7 +227,7 @@ intmax_t tim::rusage::get_num_minor_page_faults()
 
 //============================================================================//
 
-intmax_t tim::rusage::get_num_major_page_faults()
+inline intmax_t tim::rusage::get_num_major_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;

@@ -51,21 +51,15 @@ namespace tim
 tim_api class timer : public internal::base_timer
 {
 public:
-    typedef base_timer                   base_type;
-    typedef timer                        this_type;
-    typedef tim::string                  string_t;
-    typedef std::unique_ptr<this_type>   unique_ptr_type;
-    typedef std::shared_ptr<this_type>   shared_ptr_type;
-    typedef format::timer                format_type;
-    typedef std::shared_ptr<format_type> timer_format_t;
-    // typedef base_type::rss_type          rss_type;
+    typedef base_timer                 base_type;
+    typedef timer                      this_type;
+    typedef tim::string                string_t;
+    typedef std::unique_ptr<this_type> unique_ptr_type;
+    typedef std::shared_ptr<this_type> shared_ptr_type;
 
 public:
     explicit timer(bool _auto_start, timer* _sum_timer);
-    explicit timer(timer_format_t _format);
-    explicit timer(const format_type& _format);
-    timer(const string_t& _prefix = "",
-          const string_t& _format = format::timer::default_format());
+    timer(const string_t& _prefix = "");
     timer(const timer* rhs, const string_t& _prefix, bool _align_width = false);
 
     virtual ~timer();
@@ -185,9 +179,9 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-inline timer::timer(const string_t& _prefix, const string_t& _format)
-: base_type(timer_format_t(new format_type(_prefix, _format)))
-, m_sum_timer(nullptr)
+inline timer::timer(const string_t& _prefix)
+//: base_type(timer_format_t(new format_type(_prefix, _format)))
+//, m_sum_timer(nullptr)
 {
 }
 

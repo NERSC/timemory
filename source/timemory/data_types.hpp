@@ -114,7 +114,7 @@ public:
     typedef base_delta<_Tp> this_type;
     typedef _Tp             data_type;
     typedef _Tp             incr_type;
-    typedef base_data<_Tp>  op_type;
+    typedef base_data<_Tp>  base_type;
 
 public:
     base_delta()
@@ -131,7 +131,7 @@ public:
     void reset()
     {
         m_lap = 0;
-        // m_sum = data_type();
+        m_sum = data_type();
     }
 
 public:
@@ -151,9 +151,9 @@ public:
     //------------------------------------------------------------------------//
     //      operator += data
     //
-    virtual this_type& operator+=(const op_type& data)
+    virtual this_type& operator+=(const base_type& data)
     {
-        m_sum += data;
+        m_sum += data.stop() - data.start();
         m_lap += 1;
 
         return *this;
@@ -285,6 +285,16 @@ public:
         m_user /= rhs;
         m_syst /= rhs;
         return *this;
+    }
+
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) += rhs;
+    }
+
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    {
+        return this_type(lhs) -= rhs;
     }
 
     const uintmax_t& real() const { return m_real; }

@@ -155,8 +155,9 @@ public:
     _Tp*     copy_from(const _Tp* rhs);
 
     // public static functions
-    static void propose_default_width(size_type);
+    static void propose_default_width(size_type _w) { m_width = std::max(m_width, _w); }
 
+    /*
     static void default_precision(const size_type& _v) { f_current().precision() = _v; }
     static void default_width(const size_type& _v) { f_current().width() = _v; }
     static void default_unit(const unit_type& _v) { f_current().unit() = _v; }
@@ -184,9 +185,9 @@ public:
     BACKWARD_COMPAT_GET(unit_type, default_unit)
     BACKWARD_COMPAT_GET(string_t, default_format)
     BACKWARD_COMPAT_GET(bool, default_fixed)
-
-    static void set_default(const _Tp& rhs);
-    static _Tp  get_default();
+    */
+    // static void set_default(const _Tp& rhs);
+    // static _Tp  get_default();
 
     static void push();
     static void pop();
@@ -202,16 +203,21 @@ protected:
     string_t m_prefix;
     string_t m_suffix;
 
+    static size_type m_width;
+
 private:
     // private static members
-    static field_list_t    get_field_list();
-    static core_formatter& f_current();
-    static storage_type&   f_history();
+    static field_list_t get_field_list();
+    // static core_formatter& f_current();
+    // static storage_type&   f_history();
 };
+
+template <typename _Tp>
+typename formatter<_Tp>::size_type formatter<_Tp>::m_width = 10;
 
 //======================================================================================//
 
-tim_api class rusage : public formatter<rss>
+tim_api class rusage : public formatter<rusage>
 {
 public:
     enum class field
@@ -282,8 +288,8 @@ formatter<_Tp>::compose() const
     std::stringstream _ss;
     if(m_align_width)
     {
-        _ss << std::setw(f_current().width() + 1) << std::left << m_prefix << " "
-            << std::right << this->format() << std::left << m_suffix;
+        //_ss << std::setw(f_current().width() + 1) << std::left << m_prefix << " "
+        //    << std::right << this->format() << std::left << m_suffix;
     }
     else
     {

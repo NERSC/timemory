@@ -133,8 +133,8 @@ parse()
     timing_memory_scientific =
         get_env_bool("TIMEMORY_TIMING_MEMORY_SCIENTIFIC", timing_memory_scientific);
 
-    tim::format::timer::push();
-    tim::format::rss::push();
+    // tim::format::timer::push();
+    // tim::format::rss::push();
 
     //------------------------------------------------------------------------//
     //  Helper function for timing units processing
@@ -203,20 +203,22 @@ parse()
     };
     //------------------------------------------------------------------------//
 
-    tim::format::timer _timing = tim::format::timer::get_default();
-    tim::format::rss   _memory = tim::format::rss::get_default();
+    // tim::format::timer _timing = tim::format::timer::get_default();
+    // tim::format::rss   _memory = tim::format::rss::get_default();
 
-    set_core(&_timing, timing_format, timing_precision, timing_width, timing_scientific,
-             timing_units, get_timing_unit);
+    // set_core(&_timing, timing_format, timing_precision, timing_width,
+    // timing_scientific,
+    //         timing_units, get_timing_unit);
 
-    set_core(&_memory, memory_format, memory_precision, memory_width, memory_scientific,
-             memory_units, get_memory_unit);
+    // set_core(&_memory, memory_format, memory_precision, memory_width,
+    // memory_scientific,
+    //         memory_units, get_memory_unit);
 
     // set default timing format -- will be identical if no env set
     //  - memory format is included because _timing_memory is a reference
-    tim::format::timer::set_default(_timing);
+    // tim::format::timer::set_default(_timing);
     // set default memory format -- will be identical if no env set
-    tim::format::rss::set_default(_memory);
+    // tim::format::rss::set_default(_memory);
 
     tim::manager::enable(enabled);
     tim::manager::max_depth(max_depth);

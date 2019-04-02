@@ -58,61 +58,29 @@ namespace tim
 tim_api class usage : public base_usage<rusage::peak_rss, rusage::current_rss>
 {
 public:
-    typedef usage                                                  this_type;
-    typedef intmax_t                                               size_type;
-    typedef tim::base_usage<rusage::peak_rss, rusage::current_rss> base_type;
-    //
-    typedef internal::usage_data             usage_data;
-    typedef internal::base_delta<usage_data> data_accum_t;
-    typedef internal::base_data<usage_data>  data_t;
+    typedef usage                                             this_type;
+    typedef intmax_t                                          size_type;
+    typedef base_usage<rusage::peak_rss, rusage::current_rss> base_type;
     //
 
 public:
     //------------------------------------------------------------------------//
-    //      Default constructor variants with usage_format_t
+    //      Default constructor variants
     //------------------------------------------------------------------------//
-    explicit usage(usage_format_t _fmt = usage_format_t())
-    : base_type(_fmt)
-    , m_sum_usage(nullptr)
-    {
-    }
-
-    usage(size_type minus, usage_format_t _fmt = usage_format_t())
-    : base_type(minus, _fmt)
-    , m_sum_usage(nullptr)
-    {
-    }
-
-    usage(size_type _curr, size_type _peak, usage_format_t _fmt = usage_format_t())
-    : base_type(_curr, _peak, _fmt)
-    , m_sum_usage(nullptr)
-    {
-    }
-
-    //------------------------------------------------------------------------//
-    //      Constructor variants with format_type
-    //------------------------------------------------------------------------//
-    explicit usage(format_type _fmt)
-    : base_type(usage_format_t(new format_type(_fmt)))
-    , m_sum_usage(nullptr)
-    {
-    }
-
-    usage(size_type minus, format_type _fmt)
-    : base_type(minus, usage_format_t(new format_type(_fmt)))
-    , m_sum_usage(nullptr)
-    {
-    }
-
-    usage(size_type _curr, size_type _peak, format_type _fmt)
-    : base_type(_curr, _peak, usage_format_t(new format_type(_fmt)))
-    , m_sum_usage(nullptr)
+    usage()
+    : m_sum_usage(nullptr)
     {
     }
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
+    usage(const base_type& rhs)
+    : base_type(rhs)
+    , m_sum_usage(nullptr)
+    {
+    }
+
     usage(const usage& rhs)
     : base_type(rhs)
     , m_sum_usage(nullptr)
@@ -125,47 +93,6 @@ public:
         {
             base_usage::operator=(rhs);
         }
-        return *this;
-    }
-
-public:
-    //------------------------------------------------------------------------//
-    //      operator += usage
-    //
-    this_type& operator+=(const this_type& rhs)
-    {
-        // auto_lock_t l(m_mutex);
-        m_accum += rhs.get_accum();
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator -= usage
-    //
-    this_type& operator-=(const this_type& rhs)
-    {
-        // auto_lock_t l(m_mutex);
-        m_accum -= rhs.get_accum();
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator *= integer
-    //
-    this_type& operator*=(const uintmax_t& rhs)
-    {
-        // auto_lock_t l(m_mutex);
-        m_accum *= rhs;
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //      operator /= integer
-    //
-    this_type& operator/=(const uintmax_t& rhs)
-    {
-        // auto_lock_t l(m_mutex);
-        m_accum /= rhs;
         return *this;
     }
 
@@ -188,21 +115,8 @@ public:
         return this_type(lhs) += rhs;
     }
 
-public:
-    inline size_type           laps() const { return m_accum.size(); }
-    inline void                reset() { m_accum.reset(); }
-    inline data_accum_t&       accum() { return m_accum; }
-    inline const data_accum_t& accum() const { return m_accum; }
-
 protected:
-    // protected member functions
-    data_accum_t&       get_accum() { return m_accum; }
-    const data_accum_t& get_accum() const { return m_accum; }
-
-protected:
-    usage*               m_sum_usage;
-    mutable data_t       m_data;
-    mutable data_accum_t m_accum;
+    usage* m_sum_usage;
 };
 
 //--------------------------------------------------------------------------------------//

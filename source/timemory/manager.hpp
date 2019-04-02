@@ -479,8 +479,9 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     ss << std::left << key;
     format_t::propose_default_width(ss.str().length());
 
-    _data.map()[ref] = pointer_t(new value_t(
-        format_t(ss.str(), format_t::default_format(), format_t::default_unit(), true)));
+    //_data.map()[ref] = pointer_t(new value_t(
+    //    format_t(ss.str(), format_t::default_format(), format_t::default_unit(),
+    //    true)));
 
     if(m_instance_count > 0)
         _data.map()[ref]->thread_timing(true);

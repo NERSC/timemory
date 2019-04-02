@@ -57,26 +57,10 @@ timer::timer(bool _auto_start, timer* _sum_timer)
 
 //======================================================================================//
 
-timer::timer(const format_type& _format)
-: base_type(timer_format_t(new format_type(_format)))
-, m_sum_timer(nullptr)
-{
-}
-
-//======================================================================================//
-
-timer::timer(timer_format_t _format)
-: base_type(_format)
-, m_sum_timer(nullptr)
-{
-}
-
-//======================================================================================//
-
 timer::timer(const this_type* rhs, const string_t& _prefix, bool _align_width)
-: base_type(timer_format_t(new format_type(
-      _prefix, (rhs) ? rhs->format()->format() : format::timer::default_format())))
-, m_sum_timer(nullptr)
+:  // base_type(timer_format_t(new format_type(
+   //    _prefix, (rhs) ? rhs->format()->format() : format::timer::default_format())))
+    m_sum_timer(nullptr)
 {
     if(rhs)
         this->sync(*rhs);
@@ -90,9 +74,9 @@ timer::~timer() {}
 //======================================================================================//
 
 timer::timer(const this_type& rhs)
-: base_type(
-      timer_format_t(new format_type(rhs.format()->prefix(), rhs.format()->format())))
-, m_sum_timer(rhs.m_sum_timer)
+:  // base_type(
+   //    timer_format_t(new format_type(rhs.format()->prefix(), rhs.format()->format())))
+    m_sum_timer(rhs.m_sum_timer)
 {
     m_accum = rhs.get_accum();
 }
@@ -105,8 +89,8 @@ timer::operator=(const this_type& rhs)
     if(this != &rhs)
     {
         base_type::operator=(rhs);
-        if(!m_format.get())
-            m_format = timer_format_t(new format_type());
+        // if(!m_format.get())
+        //    m_format = timer_format_t(new format_type());
         if(rhs.format().get())
             *m_format = *(rhs.format().get());
         m_accum     = rhs.get_accum();
@@ -123,8 +107,8 @@ timer::grab_metadata(const this_type& rhs)
     if(!rhs.m_format.get())
         return;
 
-    if(!m_format.get())
-        m_format = timer_format_t(new format_type());
+    // if(!m_format.get())
+    //    m_format = timer_format_t(new format_type());
 
     *(m_format.get()) = *(rhs.m_format.get());
 }

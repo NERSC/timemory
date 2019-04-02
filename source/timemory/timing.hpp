@@ -36,81 +36,38 @@
 #include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/base_clock.hpp"
 
 //============================================================================//
-
-#if defined(_UNIX)
-#    include <sys/resource.h>
-#    include <unistd.h>
-#    if defined(_MACOS)
-#        include <mach/mach.h>
-#    endif
-#elif defined(_WINDOWS)
-#    if !defined(NOMINMAX)
-#        define NOMINMAX
-#    endif
-#    include <psapi.h>
-#    include <stdio.h>
-#    include <windows.h>
-#else
-#    error "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
-#endif
-
-// RSS - Resident set size (physical memory use, not in swap)
-
-//----------------------------------------------------------------------------//
 
 namespace tim
 {
 //----------------------------------------------------------------------------//
 
-namespace rusage
+namespace timing
 {
 //----------------------------------------------------------------------------//
 
 enum record_type
 {
-    PEAK_RSS,
-    CURRENT_RSS,
-    STACK_RSS,
-    DATA_RSS,
-    NUM_SWAP,
-    NUM_IO_IN,
-    NUM_IO_OUT,
-    NUM_MINOR_PAGE_FAULTS,
-    NUM_MAJOR_PAGE_FAULTS
+    REALTIME,
+    SYSTEM,
+    USER,
+    MONOTONIC,
+    MONOTONIC_RAW,
+    THREAD_CPUTIME,
+    PROCESS_CPUTIME
 };
 
 //----------------------------------------------------------------------------//
 
-intmax_t
-get_peak_rss();
-intmax_t
-get_current_rss();
-intmax_t
-get_stack_rss();
-intmax_t
-get_data_rss();
-intmax_t
-get_num_swap();
-intmax_t
-get_num_io_in();
-intmax_t
-get_num_io_out();
-intmax_t
-get_num_minor_page_faults();
-intmax_t
-get_num_major_page_faults();
-
-//----------------------------------------------------------------------------//
-
-template <typename _Tp, typename value_type = intmax_t>
+template <typename _Tp, typename value_type = double>
 struct base
 {
     using Type       = _Tp;
-    value_type value = 0;
+    value_type value = value_type(0);
 
-    base(value_type _value = 0)
+    base(value_type _value = value_type(0))
     : value(_value)
     {
     }
@@ -176,92 +133,12 @@ struct base
 
 //----------------------------------------------------------------------------//
 
-struct peak_rss : public base<peak_rss>
+struct clock_realtime : public base<clock_realtime>
 {
-    static const record_type category = PEAK_RSS;
-    static std::string       label() { return "peak RSS"; }
-    static const intmax_t    units = units::kilobyte;
-    static intmax_t          record() { return get_peak_rss(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct current_rss : public base<current_rss>
-{
-    static const record_type category = CURRENT_RSS;
-    static std::string       label() { return "current RSS"; }
-    static const intmax_t    units = units::kilobyte;
-    static intmax_t          record() { return get_current_rss(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct stack_rss : public base<stack_rss>
-{
-    static const record_type category = STACK_RSS;
-    static std::string       label() { return "stack RSS"; }
-    static const intmax_t    units = units::kilobyte;
-    static intmax_t          record() { return get_stack_rss(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct data_rss : public base<data_rss>
-{
-    static const record_type category = DATA_RSS;
-    static std::string       label() { return "data RSS"; }
-    static const intmax_t    units = units::kilobyte;
-    static intmax_t          record() { return get_data_rss(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct num_swap : public base<num_swap>
-{
-    static const record_type category = NUM_SWAP;
-    static std::string       label() { return "num swap"; }
-    static const intmax_t    units = 1;
-    static intmax_t          record() { return get_num_swap(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct num_io_in : public base<num_io_in>
-{
-    static const record_type category = NUM_IO_IN;
-    static std::string       label() { return "num I/O in"; }
-    static const intmax_t    units = 1;
-    static intmax_t          record() { return get_num_io_in(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct num_io_out : public base<num_io_out>
-{
-    static const record_type category = NUM_IO_OUT;
-    static std::string       label() { return "num I/O out"; }
-    static const intmax_t    units = 1;
-    static intmax_t          record() { return get_num_io_out(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct num_minor_page_faults : public base<num_minor_page_faults>
-{
-    static const record_type category = NUM_MINOR_PAGE_FAULTS;
-    static std::string       label() { return "num minor page faults"; }
-    static const intmax_t    units = 1;
-    static intmax_t          record() { return get_num_minor_page_faults(); }
-};
-
-//----------------------------------------------------------------------------//
-
-struct num_major_page_faults : public base<num_major_page_faults>
-{
-    static const record_type category = NUM_MAJOR_PAGE_FAULTS;
-    static std::string       label() { return "num major page faults"; }
-    static const intmax_t    units = 1;
-    static intmax_t          record() { return get_num_major_page_faults(); }
+    static const record_type category = REALTIME;
+    static std::string       label() { return "real"; }
+    static const intmax_t    units = units::usec;
+    static double          record() { return tim::get_clock_realtime_now<uintmax_t, std::micro>(); }
 };
 
 //----------------------------------------------------------------------------//

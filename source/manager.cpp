@@ -208,13 +208,13 @@ manager::update_total_timer_format()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
     {
-        timer_data.total()->format()->prefix(this->get_prefix() +
-                                             string_t("[exe] total execution time"));
-        timer_data.total()->format()->format(tim::format::timer::default_format());
-        timer_data.total()->format()->unit(tim::format::timer::default_unit());
-        timer_data.total()->format()->precision(tim::format::timer::default_precision());
-        tim::format::timer::propose_default_width(
-            timer_data.total()->format()->prefix().length());
+        // timer_data.total()->format()->prefix(this->get_prefix() +
+        //                                     string_t("[exe] total execution time"));
+        // timer_data.total()->format()->format(tim::format::timer::default_format());
+        // timer_data.total()->format()->unit(tim::format::timer::default_unit());
+        // timer_data.total()->format()->precision(tim::format::timer::default_precision());
+        // tim::format::timer::propose_default_width(
+        //    timer_data.total()->format()->prefix().length());
     }
 }
 
@@ -247,8 +247,8 @@ manager::clear()
                   << "..." << std::endl;
 #endif
 
-    if(this == singleton_t::master_instance_ptr())
-        tim::format::timer::default_width(8);
+    // if(this == singleton_t::master_instance_ptr())
+    // tim::format::timer::default_width(8);
 
     m_laps += compute_total_laps();
     timer_data.graph().clear();
@@ -632,7 +632,7 @@ manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _mis
     }
 
     std::stringstream   _ss;
-    string_t::size_type _w  = format::timer::default_width();
+    string_t::size_type _w  = 10;
     string_t            _p1 = "TiMemory auto-timer laps since last reset ";
     string_t            _p2 = "Total TiMemory auto-timer laps ";
     // find max of strings
@@ -717,7 +717,7 @@ manager::write_json_no_mpi(ostream_t& fss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 4);
         cereal::JSONOutputArchive          oa(fss, opts);
 
-        oa(cereal::make_nvp("manager", *manager::instance()));
+        // oa(cereal::make_nvp("manager", *manager::instance()));
     }
 
     fss << "]"
@@ -774,7 +774,7 @@ manager::write_json_mpi(ostream_t& ofss)
         cereal::JSONOutputArchive::Options opts(12, spacing, 1);
         cereal::JSONOutputArchive          oa(fss, opts);
 
-        oa(cereal::make_nvp("manager", *manager::instance()));
+        // oa(cereal::make_nvp("manager", *manager::instance()));
     }
 
     // if another entry follows

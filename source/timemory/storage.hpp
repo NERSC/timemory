@@ -212,32 +212,34 @@ public:
     template <typename _Up                                           = _Tp,
               enable_if_t<std::is_same<_Up, tim::timer>::value, int> = 0>
     explicit data_storage(int32_t instance_count)
-    : m_missing(tim::format::timer(tim::string("TiMemory total unrecorded time"),
+    /*: m_missing(tim::format::timer(tim::string("TiMemory total unrecorded time"),
                                    tim::format::timer::default_format(),
                                    tim::format::timer::default_unit()))
     , m_total(pointer_t(new value_t(tim::format::timer(
           tim::string("> [exe] total"), tim::format::timer::default_format(),
           tim::format::timer::default_unit(), true))))
+    */
     {
         std::stringstream ss;
         ss << "TiMemory total unrecorded time (manager " << (instance_count) << ")";
-        m_missing.format()->prefix(ss.str());
+        // m_missing.format()->prefix(ss.str());
         m_missing.start();
     }
 
     template <typename _Up                                           = _Tp,
               enable_if_t<std::is_same<_Up, tim::usage>::value, int> = 0>
     explicit data_storage(int32_t instance_count)
-    : m_missing(tim::format::rss(tim::string("TiMemory total unrecorded time"),
+    /*: m_missing(tim::format::rss(tim::string("TiMemory total unrecorded time"),
                                  tim::format::timer::default_format(),
                                  tim::format::timer::default_unit()))
     , m_total(pointer_t(new value_t(tim::format::rss(
           tim::string("> [exe] total"), tim::format::timer::default_format(),
           tim::format::timer::default_unit(), true))))
+    */
     {
         std::stringstream ss;
         ss << "TiMemory total unrecorded time (manager " << (instance_count) << ")";
-        m_missing.format()->prefix(ss.str());
+        // m_missing.format()->prefix(ss.str());
         m_missing.record();
     }
 

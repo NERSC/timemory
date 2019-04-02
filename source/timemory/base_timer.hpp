@@ -271,9 +271,9 @@ base_timer::start()
     if(!m_data.running())
     {
         m_data.resume();
-        m_data.start() = std::make_tuple(clock_monotonic_now<uintmax_t, ratio_t>(),
-                                         clock_thread_now<uintmax_t, ratio_t>(),
-                                         clock_system_now<uintmax_t, ratio_t>());
+        m_data.start() = std::make_tuple(get_clock_monotonic_now<uintmax_t, ratio_t>(),
+                                         get_clock_thread_now<uintmax_t, ratio_t>(),
+                                         get_clock_system_now<uintmax_t, ratio_t>());
     }
 }
 //--------------------------------------------------------------------------------------//
@@ -283,9 +283,9 @@ base_timer::stop()
     if(m_data.running())
     {
         m_data.pause();
-        m_data.stop() = std::make_tuple(clock_monotonic_now<uintmax_t, ratio_t>(),
-                                        clock_thread_now<uintmax_t, ratio_t>(),
-                                        clock_system_now<uintmax_t, ratio_t>());
+        m_data.stop() = std::make_tuple(get_clock_monotonic_now<uintmax_t, ratio_t>(),
+                                        get_clock_thread_now<uintmax_t, ratio_t>(),
+                                        get_clock_system_now<uintmax_t, ratio_t>());
         m_accum += m_data;
     }
 }
@@ -317,14 +317,14 @@ inline void
 base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
 {
     // stop, if not already stopped
-    if(m_data.running())
-        const_cast<base_timer*>(this)->stop();
+    // if(m_data.running())
+    //    const_cast<base_timer*>(this)->stop();
 
     if(!above_cutoff(ign_cutoff))
         return;
 
     std::stringstream ss;
-    ss << (*m_format)(this);
+    // ss << (*m_format)(this);
 
     if(endline)
         ss << std::endl;

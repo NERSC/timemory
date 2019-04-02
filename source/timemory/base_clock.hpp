@@ -332,7 +332,7 @@ public:
 // default: return in seconds
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_now(clockid_t clock_id)
+get_clock_now(clockid_t clock_id)
 {
     constexpr _Tp factor = static_cast<_Tp>(std::nano::den) / Precision::den;
     timespec      tspec;
@@ -344,52 +344,52 @@ clock_now(clockid_t clock_id)
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_realtime_now()
+get_clock_realtime_now()
 {
-    return clock_now<_Tp, Precision>(CLOCK_REALTIME);
+    return get_clock_now<_Tp, Precision>(CLOCK_REALTIME);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_monotonic_now()
+get_clock_monotonic_now()
 {
-    return clock_now<_Tp, Precision>(CLOCK_MONOTONIC);
+    return get_clock_now<_Tp, Precision>(CLOCK_MONOTONIC);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_monotonic_raw_now()
+get_clock_monotonic_raw_now()
 {
-    return clock_now<_Tp, Precision>(CLOCK_MONOTONIC_RAW);
+    return get_clock_now<_Tp, Precision>(CLOCK_MONOTONIC_RAW);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_thread_now()
+get_clock_thread_now()
 {
-    return clock_now<_Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
+    return get_clock_now<_Tp, Precision>(CLOCK_THREAD_CPUTIME_ID);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_process_now()
+get_clock_process_now()
 {
-    return clock_now<_Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
+    return get_clock_now<_Tp, Precision>(CLOCK_PROCESS_CPUTIME_ID);
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
-clock_system_now()
+get_clock_system_now()
 {
     tms _tms;
     ::times(&_tms);

@@ -76,21 +76,33 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    base_usage(const base_usage& rhs) = default;
-    base_usage& operator=(const base_usage& rhs) = default;
-    base_usage(base_usage&&)                     = default;
+    base_usage(const base_usage& rhs)
+    : m_data(rhs.m_data)
+    , m_accum(rhs.m_accum)
+    , m_laps(rhs.m_laps)
+    {
+    }
+    base_usage& operator=(const base_usage& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        m_data  = rhs.m_data;
+        m_accum = rhs.m_accum;
+        m_laps  = rhs.m_laps;
+        return *this;
+    }
+
+    base_usage(base_usage&&) = default;
     base_usage& operator=(base_usage&&) = default;
 
 public:
     this_type& record()
     {
-        // everything is bytes
         apply<void>::once(m_data);
         return *this;
     }
     this_type& record(const this_type& rhs)
     {
-        // everything is bytes
         apply<void>::once(m_data, rhs.m_data);
         return *this;
     }
@@ -110,6 +122,47 @@ public:
     {
         typedef std::tuple<rusage::reset<Types...>> reset_t;
         apply<void>::access<reset_t>(m_data);
+    }
+    // operations
+    this_type& operator-=(const this_type& rhs)
+    {
+        typedef std::tuple<rusage::minus<Types>...> apply_types;
+        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        return *this;
+    }
+    this_type& operator-=(uintmax_t&& rhs)
+    {
+        typedef std::tuple<rusage::minus<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        typedef std::tuple<rusage::plus<Types>...> apply_types;
+        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        return *this;
+    }
+    this_type& operator+=(uintmax_t&& rhs)
+    {
+        typedef std::tuple<rusage::plus<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
+        return *this;
+    }
+
+    template <typename _Op>
+    this_type& operator*=(_Op&& rhs)
+    {
+        typedef std::tuple<rusage::multiply<Types...>> apply_types;
+        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        return *this;
+    }
+    template <typename _Op>
+    this_type& operator/=(_Op&& rhs)
+    {
+        typedef std::tuple<rusage::divide<Types...>> apply_types;
+        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        return *this;
     }
 
     //--------------------------------------------------------------------------------------//
@@ -132,109 +185,21 @@ public:
     }
 
 public:
-    /*
-    //------------------------------------------------------------------------//
-    //          operator <
-    //------------------------------------------------------------------------//
-    friend bool operator<(const this_type& lhs, const this_type& rhs)
-    {
-        return (lhs.m_peak == rhs.m_peak) ? (lhs.m_curr < rhs.m_curr)
-                                          : (lhs.m_peak < rhs.m_peak);
-    }
-    //------------------------------------------------------------------------//
-    //          operator ==
-    //------------------------------------------------------------------------//
-    friend bool operator==(const this_type& lhs, const this_type& rhs)
-    {
-        return (lhs.m_peak == rhs.m_peak) && (lhs.m_curr == rhs.m_curr);
-    }
-    //------------------------------------------------------------------------//
-    //          operator !=
-    //------------------------------------------------------------------------//
-    friend bool operator!=(const this_type& lhs, const this_type& rhs)
-    {
-        return !(lhs == rhs);
-    }
-    //------------------------------------------------------------------------//
-    //          operator >
-    //------------------------------------------------------------------------//
-    friend bool operator>(const this_type& lhs, const this_type& rhs)
-    {
-        return (lhs.m_peak == rhs.m_peak) ? (lhs.m_curr > rhs.m_curr)
-                                          : (lhs.m_peak > rhs.m_peak);
-    }
-    //------------------------------------------------------------------------//
-    //          operator <=
-    //------------------------------------------------------------------------//
-    friend bool operator<=(const this_type& lhs, const this_type& rhs)
-    {
-        return !(lhs > rhs);
-    }
-    //------------------------------------------------------------------------//
-    //          operator >=
-    //------------------------------------------------------------------------//
-    friend bool operator>=(const this_type& lhs, const this_type& rhs)
-    {
-        return !(lhs < rhs);
-    }
-    //------------------------------------------------------------------------//
-    //          operator ()
-    //------------------------------------------------------------------------//
-    bool operator()(const this_type& rhs) const { return (*this < rhs); }
-    //------------------------------------------------------------------------//
-    //          operator +
-    //------------------------------------------------------------------------//
-    friend this_type operator+(const this_type& lhs, const this_type& rhs)
-    {
-        this_type r = lhs;
-        r.m_curr += rhs.m_curr;
-        r.m_peak += rhs.m_peak;
-        return r;
-    }
-    //------------------------------------------------------------------------//
-    //          operator -
-    //------------------------------------------------------------------------//
-    friend this_type operator-(const this_type& lhs, const this_type& rhs)
-    {
-        this_type r = lhs;
-        r.m_curr -= rhs.m_curr;
-        r.m_peak -= rhs.m_peak;
-        return r;
-    }
-    //------------------------------------------------------------------------//
-    //          operator +=
-    //------------------------------------------------------------------------//
-    this_type& operator+=(const this_type& rhs)
-    {
-        m_curr += rhs.m_curr;
-        m_peak += rhs.m_peak;
-        return *this;
-    }
-    //------------------------------------------------------------------------//
-    //          operator -=
-    //------------------------------------------------------------------------//
-    this_type& operator-=(const this_type& rhs)
-    {
-        m_curr -= rhs.m_curr;
-        m_peak -= rhs.m_peak;
-        return *this;
-    }
+    inline data_accum_t&       accum() { return m_accum; }
+    inline const data_accum_t& accum() const { return m_accum; }
+    inline intmax_t            laps() const { return m_laps; }
 
-    //------------------------------------------------------------------------//
-    //          operator <<
-    //------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream& os, const this_type& m)
-    {
-        format_type _format = (m.format().get()) ? (*(m.format().get())) : format_type();
-        os << _format(&m);
-        return os;
-    }
-    */
+protected:
+    // protected member functions
+    data_accum_t&       get_accum() { return m_accum; }
+    const data_accum_t& get_accum() const { return m_accum; }
+
 protected:
     // objects
     mutex_t              m_mutex;
     mutable data_t       m_data;
     mutable data_accum_t m_accum;
+    intmax_t             m_laps;
 };
 
 //--------------------------------------------------------------------------------------//

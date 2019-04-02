@@ -226,26 +226,58 @@ struct _apply_impl<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tuple, typename _Obj, typename _Next = pop_front<_Tuple>,
+    template <typename _Tuple, typename... _Obj, typename _Next = pop_front<_Tuple>,
               std::size_t _N    = std::tuple_size<_Next>::value,
               typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
               enable_if_t<(_N < 1), int> = 0>
-    static void once(_Tuple&& __t, _Obj&& __o, index_sequence<Idx, _Idx...>)
+    static void once(_Tuple&& __t, _Obj&&... __o, index_sequence<Idx, _Idx...>)
     {
-        std::get<Idx>(__t)(__o);
+        std::get<Idx>(__t)(std::forward<_Obj>(__o)...);
+    }
+
+    template <typename _Tuple, typename... _Obj,
+              typename _Next    = pop_front<decay_t<_Tuple>>,
+              std::size_t _N    = std::tuple_size<_Next>::value,
+              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
+              enable_if_t<(_N > 0), int> = 0>
+    static void once(_Tuple&& __t, _Obj&&... __o, index_sequence<Idx, _Idx...>)
+    {
+        std::get<Idx>(__t)(std::forward<_Obj>(__o)...);
+        once<_Next, _Obj...>(std::forward<_Next>(_Next(std::get<_Idx>(__t)...)),
+                             std::forward<_Obj>(__o)..., _Indices{});
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tuple, typename _Obj, typename _Next = pop_front<decay_t<_Tuple>>,
-              std::size_t _N    = std::tuple_size<_Next>::value,
+    template <typename _TupleA, typename _TupleB, typename... _Obj,
+              typename _NextA = pop_front<_TupleA>, typename _NextB = pop_front<_TupleB>,
+              std::size_t _N    = std::tuple_size<_NextA>::value,
+              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
+              enable_if_t<(_N < 1), int> = 0>
+    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o,
+                      index_sequence<Idx, _Idx...>)
+    {
+        using TypeB = decltype(std::get<Idx>(__tb));
+        std::get<Idx>(__ta)(std::forward<TypeB>(std::get<Idx>(__tb)),
+                            std::forward<_Obj>(__o)...);
+    }
+
+    template <typename _TupleA, typename _TupleB, typename... _Obj,
+              typename _NextA   = pop_front<decay_t<_TupleA>>,
+              typename _NextB   = pop_front<decay_t<_TupleB>>,
+              std::size_t _N    = std::tuple_size<_NextA>::value,
               typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
               enable_if_t<(_N > 0), int> = 0>
-    static void once(_Tuple&& __t, _Obj&& __o, index_sequence<Idx, _Idx...>)
+    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o,
+                      index_sequence<Idx, _Idx...>)
     {
-        std::get<Idx>(__t)(__o);
-        once<_Obj, _Next>(std::forward<_Next>(_Next(std::get<_Idx>(__t)...)),
-                          std::forward<_Obj>(__o), _Indices{});
+        using TypeB = decltype(std::get<Idx>(__tb));
+        std::get<Idx>(__ta)(std::forward<TypeB>(std::get<Idx>(__tb)),
+                            std::forward<_Obj>(__o)...);
+        twice<_NextA, _NextB, _Obj...>(
+            std::forward<_NextA>(_NextA(std::get<_Idx>(__ta)...)),
+            std::forward<_NextB>(_NextB(std::get<_Idx>(__tb)...)),
+            std::forward<_Obj>(__o)..., _Indices{});
     }
 
     //----------------------------------------------------------------------------------//
@@ -273,27 +305,57 @@ struct _apply_impl<void>
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
               typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
-    static void construct_accessors(_Tuple&& __t, _Args&&... __args)
+    static void apply_access(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
         using Type       = decltype(std::get<_N>(__t));
         using AccessType = typename std::tuple_element<_N, _Access>::type;
-        AccessType accessor(std::forward<Type>(std::get<_N>(__t)),
-                            std::forward<_Args>(__args)...);
+        AccessType(std::forward<Type>(std::get<_N>(__t)), std::forward<_Args>(__args)...);
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
               typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
-    static void construct_accessors(_Tuple&& __t, _Args&&... __args)
+    static void apply_access(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
         using Type       = decltype(std::get<_N>(__t));
         using AccessType = typename std::tuple_element<_N, _Access>::type;
-        AccessType accessor(std::forward<Type>(std::get<_N>(__t)),
-                            std::forward<_Args>(__args)...);
+        AccessType(std::forward<Type>(std::get<_N>(__t)), std::forward<_Args>(__args)...);
         // recursive call
-        construct_accessors<_N + 1, _Nt, _Access, _Tuple, _Args...>(
+        apply_access<_N + 1, _Nt, _Access, _Tuple, _Args...>(
             std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <std::size_t _N, std::size_t _Nt, typename _Access, typename _TupleA,
+              typename _TupleB, typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+    static void apply_access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
+    {
+        // call constructor
+        using TypeA      = decltype(std::get<_N>(__ta));
+        using TypeB      = decltype(std::get<_N>(__tb));
+        using AccessType = typename std::tuple_element<_N, _Access>::type;
+        AccessType(std::forward<TypeA>(std::get<_N>(__ta)),
+                   std::forward<TypeB>(std::get<_N>(__tb)),
+                   std::forward<_Args>(__args)...);
+    }
+
+    template <std::size_t _N, std::size_t _Nt, typename _Access, typename _TupleA,
+              typename _TupleB, typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+    static void apply_access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
+    {
+        // call constructor
+        using TypeA      = decltype(std::get<_N>(__ta));
+        using TypeB      = decltype(std::get<_N>(__tb));
+        using AccessType = typename std::tuple_element<_N, _Access>::type;
+        AccessType(std::forward<TypeA>(std::get<_N>(__ta)),
+                   std::forward<TypeB>(std::get<_N>(__tb)),
+                   std::forward<_Args>(__args)...);
+        // recursive call
+        apply_access2<_N + 1, _Nt, _Access, _TupleA, _TupleB, _Args...>(
+            std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
+            std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -440,13 +502,27 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tuple, typename _Obj,
+    template <typename _Tuple, typename... _Obj,
               std::size_t _N    = std::tuple_size<decay_t<_Tuple>>::value,
               typename _Indices = make_index_sequence<_N>>
-    static void once(_Tuple&& __t, _Obj&& __o)
+    static void once(_Tuple&& __t, _Obj&&... __o)
     {
-        _apply_impl<void>::template once<_Tuple, _Obj>(
-            std::forward<_Tuple>(__t), std::forward<_Obj>(__o), _Indices{});
+        _apply_impl<void>::template once<_Tuple, _Obj...>(
+            std::forward<_Tuple>(__t), std::forward<_Obj>(__o)..., _Indices{});
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _TupleA, typename _TupleB, typename... _Obj,
+              std::size_t _Na   = std::tuple_size<decay_t<_TupleA>>::value,
+              std::size_t _Nb   = std::tuple_size<decay_t<_TupleB>>::value,
+              typename _Indices = make_index_sequence<_Na>>
+    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o)
+    {
+        static_assert(_Na == _Nb, "tuple_size 1 must match tuple_size 2");
+        _apply_impl<void>::template twice<_TupleA, _TupleB, _Obj...>(
+            std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
+            std::forward<_Obj>(__o)..., _Indices{});
     }
 
     //----------------------------------------------------------------------------------//
@@ -465,8 +541,22 @@ struct apply<void>
               std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
     static void access(_Tuple&& __t, _Args&&... __args)
     {
-        _apply_impl<void>::template construct_accessors<0, _N - 1, _Tuple, _Args...>(
+        _apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
             std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _TupleA, typename _TupleB, typename... _Args,
+              std::size_t _N  = std::tuple_size<decay_t<_TupleA>>::value,
+              std::size_t _Nb = std::tuple_size<decay_t<_TupleB>>::value>
+    static void access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
+    {
+        static_assert(_N == _Nb, "tuple_size 1 must match tuple_size 2");
+        _apply_impl<void>::template apply_access2<0, _N - 1, _Access, _TupleA, _TupleB,
+                                                  _Args...>(
+            std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
+            std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//

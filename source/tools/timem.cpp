@@ -199,7 +199,7 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
 int
 main(int argc, char** argv)
 {
-    tim::format::timer::set_default_format(tim_format());
+    // tim::format::timer::set_default_format(tim_format());
     tim::manager::instance()->update_total_timer_format();
     rss_init().record();
 
