@@ -41,10 +41,10 @@
 #include "timemory/data_types.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/string.hpp"
+#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -84,14 +84,11 @@ public:
     typedef clock_t::time_point                     time_point_t;
     typedef std::chrono::duration<clock_t, ratio_t> duration_t;
     typedef base_timer                              this_type;
-    typedef tim::rss::usage_delta                   rss_type;
     typedef format::timer                           format_type;
     typedef std::shared_ptr<format_type>            timer_format_t;
-    typedef std::function<void()>                   record_func_t;
 
 public:
-    base_timer(timer_format_t = timer_format_t(), bool _record_memory = true,
-               ostream_t* = &std::cout);
+    base_timer(timer_format_t = timer_format_t(), ostream_t* = &std::cout);
     virtual ~base_timer();
 
     base_timer(const base_timer& rhs);
@@ -99,8 +96,8 @@ public:
 
 public:
     // public member functions
-    inline void start() { m_start_func(); }
-    inline void stop() { m_stop_func(); }
+    inline void start();
+    inline void stop();
     inline bool is_valid() const;
     inline bool is_running() const;
     double      real_elapsed() const;
@@ -111,8 +108,6 @@ public:
     double      cpu_utilization() const { return cpu_elapsed() / real_elapsed() * 100.; }
     inline const char*         clock_time() const;
     inline size_type           laps() const { return m_accum.size(); }
-    inline void                rss_init();
-    inline void                rss_record();
     inline void                reset() { m_accum.reset(); }
     inline data_accum_t&       accum() { return m_accum; }
     inline const data_accum_t& accum() const { return m_accum; }
@@ -126,14 +121,6 @@ public:
     void report(bool endline = true) const;
     bool above_cutoff(bool ign_cutoff = false) const;
     void sync(const this_type& rhs);
-
-    inline void configure_record();
-    void        record_memory(bool _val)
-    {
-        m_record_memory = _val;
-        configure_record();
-    }
-    bool record_memory() const { return m_record_memory; }
     void thread_timing(bool _val) { m_thread_timing = _val; }
     bool thread_timing() const { return m_thread_timing; }
 
@@ -141,23 +128,15 @@ protected:
     // protected member functions
     data_accum_t&       get_accum() { return m_accum; }
     const data_accum_t& get_accum() const { return m_accum; }
-
-    inline void start_stop_debug_message(const string_t&, const string_t&);
-    inline void start_with_memory();
-    inline void stop_with_memory();
-    inline void start_without_memory();
-    inline void stop_without_memory();
+    inline void         start_stop_debug_message(const string_t&, const string_t&);
 
 protected:
     // protected member variables
-    bool m_record_memory;
     bool m_thread_timing;
     // pointers
     ostream_t* m_os;
     // objects
     mutex_t              m_mutex;
-    record_func_t        m_start_func;
-    record_func_t        m_stop_func;
     mutable data_t       m_data;
     mutable data_accum_t m_accum;
     timer_format_t       m_format;
@@ -179,7 +158,7 @@ public:
         if(!tim::isfinite(_cpu_util))
             _cpu_util = 0.0;
 
-        rss::usage_delta accum_rss;
+        // rss::usage_delta accum_rss;
 
         ar(serializer::make_nvp("laps", m_accum.size()),
            // user clock elapsed
@@ -200,13 +179,14 @@ public:
 #endif
            // conversion to seconds
            serializer::make_nvp("to_seconds_ratio_num", ratio_t::num),
-           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den),
+           serializer::make_nvp("to_seconds_ratio_den", ratio_t::den)
            // memory usage
-           serializer::make_nvp("rss_max", accum_rss.total()),
-           serializer::make_nvp("rss_self", accum_rss.self()),
+           // serializer::make_nvp("rss_max", accum_rss.total()),
+           // serializer::make_nvp("rss_self", accum_rss.self()),
            // memory usage (minimum)
-           serializer::make_nvp("rss_min", accum_rss.total_min()),
-           serializer::make_nvp("rss_self_min", accum_rss.self_min()));
+           // serializer::make_nvp("rss_min", accum_rss.total_min()),
+           // serializer::make_nvp("rss_self_min", accum_rss.self_min())
+        );
     }
 };
 
@@ -221,18 +201,6 @@ inline void
 base_timer::set_format(timer_format_t _format)
 {
     m_format = _format;
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::rss_init()
-{
-    // m_data.rss_init();
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::rss_record()
-{
-    // m_data.rss_record();
 }
 //--------------------------------------------------------------------------------------//
 // Print timer status n std::ostream
@@ -298,72 +266,26 @@ base_timer::start_stop_debug_message(const string_t& _func, const string_t& _alr
 }
 //--------------------------------------------------------------------------------------//
 inline void
-base_timer::configure_record()
-{
-    if(m_record_memory)
-    {
-        auto _start  = [=]() { this->start_with_memory(); };
-        auto _stop   = [=]() { this->stop_with_memory(); };
-        m_start_func = _start;
-        m_stop_func  = _stop;
-    }
-    else
-    {
-        auto _start  = [=]() { this->start_without_memory(); };
-        auto _stop   = [=]() { this->stop_without_memory(); };
-        m_start_func = _start;
-        m_stop_func  = _stop;
-    }
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::start_with_memory()
+base_timer::start()
 {
     if(!m_data.running())
     {
         m_data.resume();
-        m_data.start() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
-                                         clock_thread_now<uint64_t, ratio_t>(),
-                                         clock_system_now<uint64_t, ratio_t>());
-        rss_init();
+        m_data.start() = std::make_tuple(clock_monotonic_now<uintmax_t, ratio_t>(),
+                                         clock_thread_now<uintmax_t, ratio_t>(),
+                                         clock_system_now<uintmax_t, ratio_t>());
     }
 }
 //--------------------------------------------------------------------------------------//
 inline void
-base_timer::start_without_memory()
-{
-    if(!m_data.running())
-    {
-        m_data.resume();
-        m_data.start() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
-                                         clock_thread_now<uint64_t, ratio_t>(),
-                                         clock_system_now<uint64_t, ratio_t>());
-    }
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::stop_with_memory()
+base_timer::stop()
 {
     if(m_data.running())
     {
         m_data.pause();
-        m_data.stop() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
-                                        clock_thread_now<uint64_t, ratio_t>(),
-                                        clock_system_now<uint64_t, ratio_t>());
-        rss_record();
-        m_accum += m_data;
-    }
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::stop_without_memory()
-{
-    if(m_data.running())
-    {
-        m_data.pause();
-        m_data.stop() = std::make_tuple(clock_monotonic_now<uint64_t, ratio_t>(),
-                                        clock_thread_now<uint64_t, ratio_t>(),
-                                        clock_system_now<uint64_t, ratio_t>());
+        m_data.stop() = std::make_tuple(clock_monotonic_now<uintmax_t, ratio_t>(),
+                                        clock_thread_now<uintmax_t, ratio_t>(),
+                                        clock_system_now<uintmax_t, ratio_t>());
         m_accum += m_data;
     }
 }

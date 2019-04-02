@@ -36,13 +36,13 @@
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/string.hpp"
 #include "timemory/timer.hpp"
 #include "timemory/units.hpp"
+#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
 // functions that do the initialization and destruction

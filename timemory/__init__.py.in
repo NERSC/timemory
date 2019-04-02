@@ -168,7 +168,6 @@ __all__ = ['version_info',
            'auto_timer',
            'timer_decorator',
            'rss_usage',
-           'rss_delta',
            # ------------ lib submodules -----------#
            'units',
            'options',

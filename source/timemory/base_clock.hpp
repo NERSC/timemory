@@ -418,12 +418,12 @@ public:
     {
         // typedef std::chrono::high_resolution_clock             clock_type;
         // typedef std::chrono::duration<clock_type::rep, period> duration_type;
-        tms               _tms;
-        timespec          ts_real;
-        timespec          ts_mono;
-        timespec          ts_thread;
-        timespec          ts_process;
-        constexpr int64_t ts_scale = (std::nano::den / Precision::den);
+        tms                _tms;
+        timespec           ts_real;
+        timespec           ts_mono;
+        timespec           ts_thread;
+        timespec           ts_process;
+        constexpr intmax_t ts_scale = (std::nano::den / Precision::den);
 
         // wall clock
         auto get_wall_time = [&]() {

@@ -33,13 +33,16 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/apply.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/storage.hpp"
 #include "timemory/string.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -57,178 +60,27 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-namespace internal
-{
-typedef std::tuple<uint64_t, uint64_t, uint64_t, tim::string, std::shared_ptr<tim::timer>>
-    base_timer_tuple_t;
-}
-
-//--------------------------------------------------------------------------------------//
-
-struct tim_api timer_tuple : public internal::base_timer_tuple_t
-{
-    typedef timer_tuple                  this_type;
-    typedef tim::string                  string_t;
-    typedef tim::timer                   tim_timer_t;
-    typedef std::shared_ptr<tim_timer_t> timer_ptr_t;
-    typedef internal::base_timer_tuple_t base_type;
-
-    //------------------------------------------------------------------------//
-    //      constructors
-    //
-    // default and full initialization
-    timer_tuple(uint64_t _a = 0, uint64_t _b = 0, uint64_t _c = 0, string_t _d = "",
-                timer_ptr_t _e = timer_ptr_t(nullptr))
-    : base_type(_a, _b, _c, _d, _e)
-    {
-    }
-    // copy constructors
-    timer_tuple(const timer_tuple&) = default;
-    timer_tuple(const base_type& _data)
-    : base_type(_data)
-    {
-    }
-    // assignment operator
-    timer_tuple& operator=(const timer_tuple& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        internal::base_timer_tuple_t::operator=(rhs);
-        return *this;
-    }
-    // move operator
-    timer_tuple& operator=(timer_tuple&& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        internal::base_timer_tuple_t::operator=(std::move(rhs));
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    uint64_t&       key() { return std::get<0>(*this); }
-    const uint64_t& key() const { return std::get<0>(*this); }
-
-    uint64_t&       level() { return std::get<1>(*this); }
-    const uint64_t& level() const { return std::get<1>(*this); }
-
-    uint64_t&       offset() { return std::get<2>(*this); }
-    const uint64_t& offset() const { return std::get<2>(*this); }
-
-    string_t        tag() { return std::get<3>(*this); }
-    const string_t& tag() const { return std::get<3>(*this); }
-
-    tim_timer_t&       timer() { return *(std::get<4>(*this).get()); }
-    const tim_timer_t& timer() const { return *(std::get<4>(*this).get()); }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    timer_tuple& operator=(const base_type& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        base_type::operator=(rhs);
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    friend bool operator==(const this_type& lhs, const this_type& rhs)
-    {
-        return (lhs.key() == rhs.key() && lhs.level() == rhs.level() &&
-                lhs.tag() == rhs.tag());
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    friend bool operator!=(const this_type& lhs, const this_type& rhs)
-    {
-        return !(lhs == rhs);
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    this_type& operator+=(const this_type& rhs)
-    {
-        timer() += rhs.timer();
-        return *this;
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    const this_type operator+(const this_type& rhs) const
-    {
-        return this_type(*this) += rhs;
-    }
-
-    //------------------------------------------------------------------------//
-    // serialization function
-    //
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int /*version*/)
-    {
-        ar(serializer::make_nvp("timer.key", key()),
-           serializer::make_nvp("timer.level", level()),
-           serializer::make_nvp("timer.offset", offset()),
-           serializer::make_nvp("timer.tag", std::string(tag().c_str())),
-           serializer::make_nvp("timer.ref", timer()));
-    }
-
-    //------------------------------------------------------------------------//
-    //
-    //
-    friend std::ostream& operator<<(std::ostream& os, const timer_tuple& t)
-    {
-        std::stringstream ss;
-        ss << std::setw(2 * t.level()) << ""
-           << "[" << t.tag() << "]";
-        os << ss.str();
-        return os;
-    }
-};
-
-//--------------------------------------------------------------------------------------//
 tim_api class manager
 {
 public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                          this_type;
-    typedef tim::timer                       tim_timer_t;
-    typedef singleton<manager>               singleton_t;
-    typedef singleton<tim_timer_t>           timer_singleton_t;
-    typedef std::shared_ptr<tim_timer_t>     timer_ptr_t;
-    typedef tim_timer_t::string_t            string_t;
-    typedef timer_tuple                      timer_tuple_t;
-    typedef std::deque<timer_tuple_t>        timer_list_t;
-    typedef timer_list_t::iterator           iterator;
-    typedef timer_list_t::const_iterator     const_iterator;
-    typedef timer_list_t::size_type          size_type;
-    typedef std::pair<uint64_t, timer_ptr_t> timer_pair_t;
-    typedef uomap<uint64_t, timer_ptr_t>     timer_map_t;
-    typedef tim::graph<timer_tuple_t>        timer_graph_t;
-    typedef typename timer_graph_t::iterator timer_graph_itr;
-    typedef tim_timer_t::ostream_t           ostream_t;
-    typedef tim_timer_t::ofstream_t          ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t>    comm_group_t;
-    typedef std::mutex                       mutex_t;
-    typedef uomap<uint64_t, mutex_t>         mutex_map_t;
-    typedef std::lock_guard<mutex_t>         auto_lock_t;
-    typedef singleton_t::pointer             pointer;
-    typedef singleton_t::shared_pointer      shared_pointer;
-    typedef std::set<this_type*>             daughter_list_t;
-    typedef tim_timer_t::rss_type            rss_type;
-    typedef rss_type::base_type              base_rss_type;
-    typedef std::function<intmax_t()>        get_num_threads_func_t;
-    typedef std::atomic<uint64_t>            counter_t;
+    typedef manager                       this_type;
+    typedef tim::timer                    tim_timer_t;
+    typedef singleton<manager>            singleton_t;
+    typedef std::size_t                   size_type;
+    typedef std::ostream                  ostream_t;
+    typedef std::ofstream                 ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
+    typedef std::mutex                    mutex_t;
+    typedef uomap<uintmax_t, mutex_t>     mutex_map_t;
+    typedef std::lock_guard<mutex_t>      auto_lock_t;
+    typedef singleton_t::pointer          pointer;
+    typedef singleton_t::shared_pointer   shared_pointer;
+    typedef std::set<this_type*>          daughter_list_t;
+    typedef std::function<intmax_t()>     get_num_threads_func_t;
+    typedef std::atomic<uintmax_t>        counter_t;
 
 public:
     // Constructor and Destructors
@@ -237,22 +89,26 @@ public:
 
 public:
     // Public static functions
-    static pointer        instance();
-    static pointer        master_instance();
-    static pointer        noninit_instance();
-    static pointer        noninit_master_instance();
-    static void           enable(bool val = true) { f_enabled = val; }
-    static const int32_t& max_depth() { return f_max_depth; }
-    static void           max_depth(const int32_t& val) { f_max_depth = val; }
-    static void           set_max_depth(const int32_t& val) { f_max_depth = val; }
-    static int32_t        get_max_depth() { return f_max_depth; }
-    static bool           is_enabled() { return f_enabled; }
-    static void           write_json(path_t _fname);
+    static pointer                  instance();
+    static pointer                  master_instance();
+    static pointer                  noninit_instance();
+    static pointer                  noninit_master_instance();
+    static void                     write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
     static int  get_instance_count() { return f_manager_instance_count.load(); }
     static void set_get_num_threads_func(get_num_threads_func_t f)
     {
         f_get_num_threads = std::bind(f);
+    }
+
+    static void    enable(bool val = true) { counted_object<void>::enable(val); }
+    static bool    is_enabled() { return counted_object<void>::enable(); }
+    static int32_t max_depth() { return counted_object<void>::max_depth(); }
+    static void    max_depth(const int32_t& val) { set_max_depth(val); }
+    static int32_t get_max_depth() { return max_depth(); }
+    static void    set_max_depth(const int32_t& val)
+    {
+        counted_object<void>::set_max_depth(val);
     }
 
 protected:
@@ -263,24 +119,9 @@ protected:
 
 public:
     // Public member functions
-    tim_timer_t& timer(const string_t& key, const string_t& tag = "cxx",
-                       int32_t ncount = 0, int32_t nhash = 0);
-
-    /// time a function with a return type and no arguments
-    template <typename _Ret, typename _Func>
-    _Ret time(const string_t& key, _Func);
-
-    /// time a function with a return type and arguments
-    template <typename _Ret, typename _Func, typename... _Args>
-    _Ret time(const string_t& key, _Func, _Args...);
-
-    /// time a function with no return type and no arguments
-    template <typename _Func>
-    void time(const string_t& key, _Func);
-
-    /// time a function with no return type and arguments
-    template <typename _Func, typename... _Args>
-    void time(const string_t& key, _Func, _Args...);
+    template <typename _Tp>
+    _Tp& get(const string_t& key, const string_t& tag = "cxx", int32_t ncount = 0,
+             int32_t nhash = 0);
 
     void set_output_stream(const path_t&);
     void set_output_stream(ostream_t& = std::cout);
@@ -300,50 +141,25 @@ public:
     void                   merge(pointer);
     void                   clear();
     size_type              size() const;
-    tim_timer_t&           at(size_t i) { return m_timer_list->at(i).timer(); }
     void                   print(bool ign_cutoff = false, bool endline = true);
-    iterator               begin() { return m_timer_list->begin(); }
-    const_iterator         begin() const { return m_timer_list->cbegin(); }
-    const_iterator         cbegin() const { return m_timer_list->cbegin(); }
-    iterator               end() { return m_timer_list->end(); }
-    const_iterator         end() const { return m_timer_list->cend(); }
-    const_iterator         cend() const { return m_timer_list->cend(); }
-    timer_map_t&           map() { return m_timer_map; }
-    timer_list_t&          list() { return m_timer_list_norm; }
-    const timer_map_t&     map() const { return m_timer_map; }
-    const timer_list_t&    list() const { return m_timer_list_norm; }
-    counter_t&             hash() { return m_hash; }
-    counter_t&             count() { return m_count; }
-    counter_t&             parent_hash() { return m_p_hash; }
-    counter_t&             parent_count() { return m_p_count; }
-    const counter_t&       hash() const { return m_hash; }
-    const counter_t&       count() const { return m_count; }
-    const counter_t&       parent_hash() const { return m_p_hash; }
-    const counter_t&       parent_count() const { return m_p_count; }
-    void                   pop_graph();
-    timer_graph_itr*       get_graph_iterator() const { return m_graph_itr; }
-    timer_graph_t*         get_timer_graph() const { return m_timer_graph; }
     void                   sync_hierarchy();
     daughter_list_t&       daughters() { return m_daughters; }
     const daughter_list_t& daughters() const { return m_daughters; }
     void                   add(pointer ptr);
     void                   remove(pointer ptr);
     void                   set_merge(bool val) { m_merge.store(val); }
-    void                   operator+=(const base_rss_type& rhs);
-    void                   operator-=(const base_rss_type& rhs);
     bool                   is_reporting_to_file() const;
     ostream_t*             get_output_stream() const { return m_report; }
     tim_timer_t            compute_missing(tim_timer_t* timer_ref = nullptr);
-    uint64_t               laps() const { return compute_total_laps(); }
-    uint64_t               total_laps() const;
+    uintmax_t              laps() const { return compute_total_laps(); }
+    uintmax_t              total_laps() const;
     void                   update_total_timer_format();
     void                   start_total_timer();
     void                   stop_total_timer();
     void                   reset_total_timer();
-    tim_timer_t*           missing_timer() const { return m_missing_timer.get(); }
     int32_t                instance_count() const { return m_instance_count; }
-    void                   self_cost(bool val);
-    bool                   self_cost() const;
+    void                   self_cost(bool val) {}
+    bool                   self_cost() const { return false; }
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version);
@@ -356,6 +172,18 @@ public:
         return os;
     }
 
+    template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::timer>::value, int> = 0>
+    void pop_graph()
+    {
+        timer_data.pop_graph();
+    }
+
+    template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::usage>::value, int> = 0>
+    void pop_graph()
+    {
+        memory_data.pop_graph();
+    }
+
 public:
     // serialization function
 
@@ -365,11 +193,11 @@ protected:
 
 protected:
     // protected functions
-    inline uint64_t string_hash(const string_t&) const;
-    string_t        get_prefix() const;
-    uint64_t        compute_total_laps() const;
-    void            insert_global_timer();
-    void            compute_self();
+    inline uintmax_t string_hash(const string_t&) const;
+    string_t         get_prefix() const;
+    uintmax_t        compute_total_laps() const;
+    void             insert_global_timer();
+    void             compute_self();
 
 protected:
     // protected static variables
@@ -400,111 +228,41 @@ private:
     int32_t m_instance_count;
     /// total laps
     counter_t m_laps;
-    /// hash counting
-    counter_t m_hash;
-    /// auto timer counting
-    counter_t m_count;
-    /// parent auto timer sync point for hashing
-    counter_t m_p_hash;
-    /// parent auto timer sync point
-    counter_t m_p_count;
-    /// hashed string map for fast lookup
-    timer_map_t m_timer_map;
-    /// ordered list for output (outputs in order of timer instantiation)
-    timer_list_t m_timer_list_norm;
-    /// ordered list for output (self-cost format)
-    timer_list_t m_timer_list_self;
     /// mutex
     mutex_t m_mutex;
     /// daughter list
     daughter_list_t m_daughters;
-    /// baseline rss
-    base_rss_type m_rss_usage;
-    /// missing timer
-    timer_ptr_t m_missing_timer;
-    /// global timer
-    timer_ptr_t m_total_timer;
-    /// current timer list (either standard or self)
-    timer_list_t* m_timer_list;
     /// output stream for total timing report
     ostream_t* m_report;
-    /// graph for storage
-    timer_graph_t* m_timer_graph;
-    /// current graph iterator
-    timer_graph_itr* m_graph_itr;
+
+public:
+    typedef data_storage<tim::timer>                timer_data_t;
+    typedef data_storage<tim::usage>                memory_data_t;
+    typedef std::tuple<timer_data_t, memory_data_t> tuple_data_t;
+
+private:
+    tuple_data_t   m_tuple_data;
+    timer_data_t&  timer_data  = std::get<0>(m_tuple_data);
+    memory_data_t& memory_data = std::get<1>(m_tuple_data);
+
+public:
+    tuple_data_t&        get_data() { return m_tuple_data; }
+    timer_data_t&        get_timer_data() { return timer_data; }
+    memory_data_t&       get_memory_data() { return memory_data; }
+    const tuple_data_t&  get_data() const { return m_tuple_data; }
+    const timer_data_t&  get_timer_data() const { return timer_data; }
+    const memory_data_t& get_memory_data() const { return memory_data; }
 };
 
 //--------------------------------------------------------------------------------------//
-inline void
-manager::operator+=(const base_rss_type& rhs)
+template <typename _Tp>
+std::deque<data_tuple<_Tp>>
+list_convert(const data_storage<_Tp>& _storage)
 {
-    for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
-    {
-        auto& _timer   = itr->timer();
-        bool  _restart = _timer.is_running();
-        if(_restart)
-            _timer.stop();
-        _timer += rhs;
-        if(_restart)
-            _timer.start();
-    }
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::operator-=(const base_rss_type& rhs)
-{
-    for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
-    {
-        auto& _timer   = itr->timer();
-        bool  _restart = _timer.is_running();
-        if(_restart)
-            _timer.stop();
-        _timer -= rhs;
-        if(_restart)
-            _timer.start();
-    }
-}
-//--------------------------------------------------------------------------------------//
-template <typename _Ret, typename _Func>
-inline _Ret
-manager::time(const string_t& key, _Func func)
-{
-    tim_timer_t& _t = this->instance()->timer(key);
-    _t.start();
-    _Ret _ret = func();
-    _t.stop();
-    return _ret;
-}
-//--------------------------------------------------------------------------------------//
-template <typename _Ret, typename _Func, typename... _Args>
-inline _Ret
-manager::time(const string_t& key, _Func func, _Args... args)
-{
-    tim_timer_t& _t = this->instance()->timer(key);
-    _t.start();
-    _Ret _ret = func(args...);
-    _t.stop();
-    return _ret;
-}
-//--------------------------------------------------------------------------------------//
-template <typename _Func>
-inline void
-manager::time(const string_t& key, _Func func)
-{
-    tim_timer_t& _t = this->instance()->timer(key);
-    _t.start();
-    func();
-    _t.stop();
-}
-//--------------------------------------------------------------------------------------//
-template <typename _Func, typename... _Args>
-inline void
-manager::time(const string_t& key, _Func func, _Args... args)
-{
-    tim_timer_t& _t = this->instance()->timer(key);
-    _t.start();
-    func(args...);
-    _t.stop();
+    std::deque<data_tuple<_Tp>> _list;
+    for(const auto& itr : _storage)
+        _list.push_back(itr);
+    return _list;
 }
 //--------------------------------------------------------------------------------------//
 template <typename Archive>
@@ -517,25 +275,24 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     bool _self_cost = this->self_cost();
     ar(serializer::make_nvp("concurrency", _nthreads));
     ar(serializer::make_nvp("self_cost", _self_cost));
-    ar(serializer::make_nvp("timers", *m_timer_list));
+    ar(serializer::make_nvp("timers", list_convert(timer_data)));
+    ar(serializer::make_nvp("memory", list_convert(memory_data)));
 }
 //--------------------------------------------------------------------------------------//
-inline uint64_t
+inline uintmax_t
 manager::string_hash(const string_t& str) const
 {
     return std::hash<string_t>()(str);
 }
 //--------------------------------------------------------------------------------------//
-inline uint64_t
+#include <algorithm>
+inline uintmax_t
 manager::compute_total_laps() const
 {
-    uint64_t _laps = 0;
-    for(const auto& itr : *this)
-        _laps += itr.timer().laps();
-    return _laps;
+    return timer_data.total_laps();
 }
 //--------------------------------------------------------------------------------------//
-inline uint64_t
+inline uintmax_t
 manager::total_laps() const
 {
     return m_laps + compute_total_laps();
@@ -544,24 +301,28 @@ manager::total_laps() const
 inline void
 manager::start_total_timer()
 {
-    m_total_timer->stop();
+    timer_data.start_total();
 }
 //--------------------------------------------------------------------------------------//
 inline void
 manager::stop_total_timer()
 {
-    m_total_timer->stop();
+    timer_data.stop_total();
 }
 //--------------------------------------------------------------------------------------//
 inline void
 manager::reset_total_timer()
 {
-    bool _restart = m_total_timer->is_running();
-    if(_restart)
-        m_total_timer->stop();
-    m_total_timer->reset();
-    if(_restart)
-        m_total_timer->start();
+    timer_data.reset_total();
+}
+//--------------------------------------------------------------------------------------//
+template <typename _Tp>
+std::string
+apply_format(const data_tuple<_Tp>& node)
+{
+    std::stringstream ss;
+    node.data().report(ss, false, true);
+    return ss.str();
 }
 //--------------------------------------------------------------------------------------//
 inline void
@@ -585,20 +346,23 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     if(os == m_report)
         check_stream(os, "total timing report");
 
-    for(const auto& itr : *this)
-        if(!itr.timer().is_valid())
-            const_cast<tim_timer_t&>(itr.timer()).stop();
+    for(const auto& itr : timer_data)
+        if(!itr.data().is_valid())
+            const_cast<tim_timer_t&>(itr.data()).stop();
 
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;
 
-    auto format = [&](const timer_tuple_t& node) {
+    auto format = [&](const data_tuple<tim::timer>& node) {
         std::stringstream ss;
-        node.timer().report(ss, false, true);
+        node.data().report(ss, false, true);
         return ss.str();
     };
 
-    tim::print_graph(*m_timer_graph, format, *os);
+    tim::print_graph(timer_data.graph(), apply_format<tim::timer>, *os);
+    if(endline)
+        *os << std::endl;
+    tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
     if(endline)
         *os << std::endl;
 
@@ -636,105 +400,75 @@ manager::is_reporting_to_file() const
     return (m_report != &std::cout) && (m_report != &std::cerr);
 }
 //--------------------------------------------------------------------------------------//
-inline void
-manager::self_cost(bool val)
-{
-    m_timer_list = (val) ? &m_timer_list_self : &m_timer_list_norm;
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::pop_graph()
-{
-    *m_graph_itr = m_timer_graph->parent(*m_graph_itr);
-}
-//--------------------------------------------------------------------------------------//
-inline bool
-manager::self_cost() const
-{
-    return (m_timer_list == &m_timer_list_self);
-}
-//--------------------------------------------------------------------------------------//
 inline manager::size_type
 manager::size() const
 {
-    size_type n = 0;
-    for(auto itr = get_timer_graph()->begin(); itr != get_timer_graph()->end(); ++itr)
-        ++n;
-    return n;
+    return timer_data.graph().size();
 }
 //--------------------------------------------------------------------------------------//
-inline timer&
-manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
+template <typename _Tp>
+inline _Tp&
+manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
 {
-#if defined(DEBUG)
-    if(key.find(" ") != string_t::npos)
-    {
-        std::stringstream ss;
-        ss << "tim::manager::" << __FUNCTION__ << " Warning! Space found in tag: \""
-           << key << "\"";
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cerr << ss.str() << std::endl;
-    }
-#endif
+    typedef data_tuple<_Tp>               tuple_t;
+    typedef data_storage<_Tp>             storage_t;
+    typedef typename storage_t::graph_t   graph_t;
+    typedef _Tp                           value_t;
+    typedef typename value_t::format_type format_t;
+    typedef typename storage_t::pointer_t pointer_t;
 
-    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+    // get a reference to the storage_t object in tuple_data
+    storage_t& _data = std::get<index_of<storage_t, tuple_data_t>::value>(m_tuple_data);
+    // compute the hash
+    uintmax_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
 
     // if already exists, return it
-    if(m_timer_map.find(ref) != m_timer_map.end())
+    if(_data.map().find(ref) != _data.map().end())
     {
-#if defined(HASH_DEBUG)
-        for(const auto& itr : m_timer_list_norm)
-        {
-            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-            if(&(std::get<3>(itr)) == &(m_timer_map[ref]))
-                std::cout << "tim::manager::" << __FUNCTION__ << " Found : " << itr
-                          << std::endl;
-        }
-#endif
-        timer_graph_itr _orig = *m_graph_itr;
-        for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
-            itr != m_graph_itr->end(); ++itr)
+        auto& m_graph_itr = _data.current();
+        auto  _orig       = m_graph_itr;
+        for(typename graph_t::sibling_iterator itr = m_graph_itr.begin();
+            itr != m_graph_itr.end(); ++itr)
             if(std::get<0>(*itr) == ref)
             {
-                *m_graph_itr = itr;
+                m_graph_itr = itr;
                 break;
             }
 
-        if(_orig == *m_graph_itr)
-            for(auto itr = m_timer_graph->begin(); itr != m_timer_graph->end(); ++itr)
+        if(_orig == m_graph_itr)
+            for(auto itr = _data.begin(); itr != _data.end(); ++itr)
                 if(std::get<0>(*itr) == ref)
                 {
-                    *m_graph_itr = itr;
+                    m_graph_itr = itr;
                     break;
                 }
 
-        if(_orig == *m_graph_itr)
+        if(_orig == m_graph_itr)
         {
             std::stringstream ss;
             ss << _orig->tag() << " did not find key = " << ref << " in :\n";
-            for(typename timer_graph_t::sibling_iterator itr = m_graph_itr->begin();
-                itr != m_graph_itr->end(); ++itr)
+            for(typename graph_t::sibling_iterator itr = m_graph_itr.begin();
+                itr != m_graph_itr.end(); ++itr)
             {
                 ss << itr->key();
-                if(std::distance(itr, m_graph_itr->end()) < 1)
+                if(std::distance(itr, m_graph_itr.end()) < 1)
                     ss << ", ";
             }
             ss << std::endl;
             std::cerr << ss.str();
         }
-        return *(m_timer_map[ref].get());
+        return *(_data.map()[ref].get());
     }
 
     // synchronize format with level 1 and make sure MPI prefix is up-to-date
-    if(m_timer_list_norm.size() < 2)
-        update_total_timer_format();
+    update_total_timer_format();
 
     std::stringstream ss;
     // designated as [cxx], [pyc], etc.
     ss << get_prefix() << "[" << tag << "] ";
 
     // indent
-    for(int64_t i = 0; i < ncount; ++i)
+    for(intmax_t i = 0; i < ncount; ++i)
     {
         if(i + 1 == ncount)
             ss << "|_";
@@ -743,28 +477,21 @@ manager::timer(const string_t& key, const string_t& tag, int32_t ncount, int32_t
     }
 
     ss << std::left << key;
-    tim::format::timer::propose_default_width(ss.str().length());
+    format_t::propose_default_width(ss.str().length());
 
-    m_timer_map[ref] = timer_ptr_t(new tim_timer_t(
-        tim::format::timer(ss.str(), tim::format::timer::default_format(),
-                           tim::format::timer::default_unit(),
-                           tim::format::timer::default_rss_format(), true)));
+    _data.map()[ref] = pointer_t(new value_t(
+        format_t(ss.str(), format_t::default_format(), format_t::default_unit(), true)));
 
     if(m_instance_count > 0)
-        m_timer_map[ref]->thread_timing(true);
+        _data.map()[ref]->thread_timing(true);
 
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;
-    timer_tuple_t _tuple(ref, ncount, master_instance()->list().size(), tag_ss.str(),
-                         m_timer_map[ref]);
-    m_timer_list_norm.push_back(_tuple);
-    *m_graph_itr = m_timer_graph->append_child(*m_graph_itr, _tuple);
+    tuple_t _tuple(ref, ncount, graph_t::depth(_data.current()) + 1, tag_ss.str(),
+                   _data.map()[ref]);
+    _data.current() = _data.graph().append_child(_data.current(), _tuple);
 
-#if defined(HASH_DEBUG)
-    std::cout << "tim::manager::" << __FUNCTION__ << " Created : " << _tuple << std::endl;
-#endif
-
-    return *(m_timer_map[ref].get());
+    return *(_data.map()[ref].get());
 }
 //--------------------------------------------------------------------------------------//
 

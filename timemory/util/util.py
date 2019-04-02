@@ -270,6 +270,7 @@ class rss_usage(base_decorator):
     def __init__(self, key="", add_args=False, is_class=False):
         super(rss_usage, self).__init__(key, add_args, is_class)
         self._self_obj = None
+        self._self_dif = None
 
 
     # ------------------------------------------------------------------------ #
@@ -292,11 +293,14 @@ class rss_usage(base_decorator):
             else:
                 _key = '{}{}'.format(self.key, _args)
 
-            self._self_obj = timemory.rss_delta(_key)
+            self._self_obj = timemory.rss_usage(_key)
+            self._self_dif = timemory.rss_usage(_key)
+            self._self_dif.record()
             # run function
             ret = func(*args, **kwargs)
             # record
             self._self_obj.record()
+            self._self_obj -= self._self_dif
             print('{}'.format(self._self_obj))
 
             return ret
@@ -321,7 +325,9 @@ class rss_usage(base_decorator):
         else:
             _key = '{}{}'.format(self.key, _args)
 
-        self._self_obj = timemory.rss_delta(_key)
+        self._self_obj = timemory.rss_usage(_key)
+        self._self_dif = timemory.rss_usage(_key)
+        self._self_dif.record()
 
 
     # ------------------------------------------------------------------------ #
@@ -330,6 +336,7 @@ class rss_usage(base_decorator):
         Context manager exit
         """
         self._self_obj.record()
+        self._self_obj -= self._self_dif
         print('{}'.format(self._self_obj))
 
         if exc_type is not None and exc_value is not None and exc_traceback is not None:

@@ -36,8 +36,8 @@ typedef typename graph_t::iterator graph_iterator_t;
 
 //======================================================================================//
 
-int64_t
-fibonacci(int64_t n, int64_t cutoff, graph_t& g, graph_iterator_t itr)
+intmax_t
+fibonacci(intmax_t n, intmax_t cutoff, graph_t& g, graph_iterator_t itr)
 {
     if(n > cutoff)
     {
@@ -52,7 +52,7 @@ fibonacci(int64_t n, int64_t cutoff, graph_t& g, graph_iterator_t itr)
 //======================================================================================//
 
 void
-print_result(const std::string& prefix, int64_t result)
+print_result(const std::string& prefix, intmax_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
 }

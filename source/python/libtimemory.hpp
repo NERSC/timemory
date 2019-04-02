@@ -61,15 +61,14 @@ using namespace py::literals;
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/usage.hpp"
 
 typedef tim::manager                           manager_t;
 typedef tim::timer                             tim_timer_t;
 typedef tim::auto_timer                        auto_timer_t;
-typedef tim::rss::usage                        rss_usage_t;
-typedef tim::rss::usage_delta                  rss_delta_t;
+typedef tim::usage                             rss_usage_t;
 typedef tim::sys_signal                        sys_signal_t;
 typedef tim::signal_settings                   signal_settings_t;
 typedef signal_settings_t::signal_set_t        signal_set_t;
@@ -324,10 +323,6 @@ auto_timer_decorator*
 timer_decorator(const std::string& func, const std::string& file, int line,
                 const std::string& key, bool added_args, bool report_at_exit)
 {
-    auto_timer_decorator* _ptr = new auto_timer_decorator();
-    if(!auto_timer_t::alloc_next())
-        return _ptr;
-
     std::stringstream keyss;
     keyss << func;
 
@@ -346,7 +341,8 @@ timer_decorator(const std::string& func, const std::string& file, int line,
         keyss << ":";
         keyss << line;
     }
-    return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
+    return new auto_timer_decorator(
+        new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
@@ -364,7 +360,7 @@ rss_usage(std::string prefix = "", bool record = false, std::string format = "")
 }
 
 //----------------------------------------------------------------------------//
-
+/*
 rss_delta_t*
 rss_delta(std::string prefix = "", std::string format = "")
 {
@@ -376,20 +372,15 @@ rss_delta(std::string prefix = "", std::string format = "")
     _rss->init();
     return _rss;
 }
-
+*/
 //----------------------------------------------------------------------------//
 
 timer_format_t*
 timing_format(const std::string& prefix = "",
               const std::string& format = timer_format_t::default_format(),
-              unit_type          unit   = timer_format_t::default_unit(),
-              py::object rss_format = py::none(), bool align_width = false)
+              unit_type unit = timer_format_t::default_unit(), bool align_width = false)
 {
-    rss_format_t _rss_format = tim::format::timer::default_rss_format();
-    if(!rss_format.is_none())
-        _rss_format = *rss_format.cast<rss_format_t*>();
-
-    return new timer_format_t(prefix, format, unit, _rss_format, align_width);
+    return new timer_format_t(prefix, format, unit, align_width);
 }
 
 //----------------------------------------------------------------------------//

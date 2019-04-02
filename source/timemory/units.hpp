@@ -47,20 +47,20 @@ namespace tim
 
 namespace units
 {
-const int64_t psec = std::pico::den;
-const int64_t nsec = std::nano::den;
-const int64_t usec = std::micro::den;
-const int64_t msec = std::milli::den;
-const int64_t csec = std::centi::den;
-const int64_t dsec = std::deci::den;
-const int64_t sec  = 1;
+const intmax_t psec = std::pico::den;
+const intmax_t nsec = std::nano::den;
+const intmax_t usec = std::micro::den;
+const intmax_t msec = std::milli::den;
+const intmax_t csec = std::centi::den;
+const intmax_t dsec = std::deci::den;
+const intmax_t sec  = 1;
 
-const int64_t byte     = 1;
-const int64_t kilobyte = 1024 * byte;
-const int64_t megabyte = 1024 * kilobyte;
-const int64_t gigabyte = 1024 * megabyte;
-const int64_t terabyte = 1024 * gigabyte;
-const int64_t petabyte = 1024 * terabyte;
+const intmax_t byte     = 1;
+const intmax_t kilobyte = 1024 * byte;
+const intmax_t megabyte = 1024 * kilobyte;
+const intmax_t gigabyte = 1024 * megabyte;
+const intmax_t terabyte = 1024 * gigabyte;
+const intmax_t petabyte = 1024 * terabyte;
 
 const double Bi  = 1.0;
 const double KiB = 1024.0 * Bi;
@@ -70,13 +70,17 @@ const double TiB = 1024.0 * GiB;
 const double PiB = 1024.0 * TiB;
 
 #if defined(_UNIX)
-const int64_t page_size = sysconf(_SC_PAGESIZE);
+const int64_t page_size      = ::sysconf(_SC_PAGESIZE);
+const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+#else
+const int64_t page_size      = 1;
+const int64_t clocks_per_sec = CLOCKS_PER_SEC;
 #endif
 
 //--------------------------------------------------------------------------------------//
 
 inline tim::string
-time_repr(const int64_t& _unit)
+time_repr(const intmax_t& _unit)
 {
     tim::string _sunit;
     switch(_unit)
@@ -94,7 +98,7 @@ time_repr(const int64_t& _unit)
 }
 
 inline tim::string
-mem_repr(const int64_t& _unit)
+mem_repr(const intmax_t& _unit)
 {
     tim::string _sunit;
     switch(_unit)

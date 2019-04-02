@@ -37,7 +37,8 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 # - headers are included so they will show up in IDEs
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 file(GLOB c_sources ${CMAKE_CURRENT_LIST_DIR}/*.c)
-file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp
+    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.icpp)
 file(GLOB cxx_sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
@@ -91,6 +92,7 @@ macro(BUILD_LIBRARY)
     add_library(${LIBRARY_TARGET_NAME}
         ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
     target_include_directories(${LIBRARY_TARGET_NAME}
+        PUBLIC ${EXTERNAL_INCLUDE_DIRS}
         PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
     target_link_libraries(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_LINK_LIBRARIES})

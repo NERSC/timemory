@@ -23,99 +23,114 @@
 // SOFTWARE.
 //
 
-/** \file timer.hpp
- * \headerfile timer.hpp "timemory/timer.hpp"
- * Primary timer class
- * Inherits from base_timer
+/** \file usage.hpp
+ * \headerfile usage.hpp "timemory/usage.hpp"
+ * Resident set size handler
+ *
  */
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-
+#include <algorithm>
 #include <cstdint>
-#include <memory>
+#include <fstream>
+#include <iomanip>
+#include <ios>
+#include <iostream>
+#include <stdio.h>
 #include <string>
 
-#include "timemory/base_timer.hpp"
+#include "timemory/base_usage.hpp"
+#include "timemory/data_types.hpp"
 #include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/serializer.hpp"
 #include "timemory/string.hpp"
+
+//======================================================================================//
+
+// RSS - Resident set size (physical memory use, not in swap)
 
 namespace tim
 {
 //======================================================================================//
-// Main timer class
-//======================================================================================//
 
-tim_api class timer : public internal::base_timer
+tim_api class usage : public base_usage<rusage::peak_rss, rusage::current_rss>
 {
 public:
-    typedef base_timer                   base_type;
-    typedef timer                        this_type;
-    typedef tim::string                  string_t;
-    typedef std::unique_ptr<this_type>   unique_ptr_type;
-    typedef std::shared_ptr<this_type>   shared_ptr_type;
-    typedef format::timer                format_type;
-    typedef std::shared_ptr<format_type> timer_format_t;
-    // typedef base_type::rss_type          rss_type;
-
-public:
-    explicit timer(bool _auto_start, timer* _sum_timer);
-    explicit timer(timer_format_t _format);
-    explicit timer(const format_type& _format);
-    timer(const string_t& _prefix = "",
-          const string_t& _format = format::timer::default_format());
-    timer(const timer* rhs, const string_t& _prefix, bool _align_width = false);
-
-    virtual ~timer();
-
-public:
-    // copy and assign
-    timer(const this_type&);
-    this_type& operator=(const this_type&);
-    // parent timer accumulating sum
-    timer* summation_timer() const { return m_sum_timer; }
-    void   summation_timer(timer* _ref) { m_sum_timer = _ref; }
-
-public:
-    // public static functions
-    static void default_record_memory(bool _val) { f_record_memory() = _val; }
-    static bool default_record_memory() { return f_record_memory(); }
-
-public:
-    // public member functions
-    timer& stop_and_return()
-    {
-        this->stop();
-        return *this;
-    }
-
-    tim::string as_string(bool ign_cutoff = true) const
-    {
-        std::stringstream ss;
-        this->report(ss, false, ign_cutoff);
-        return ss.str();
-    }
-
-    void print(bool ign_cutoff = true) const
-    {
-        std::cout << this->as_string(ign_cutoff) << std::endl;
-    }
-
-    void grab_metadata(const this_type& rhs);
-
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        internal::base_timer::serialize(ar, version);
-    }
-
-    timer* summation_object() const { return m_sum_timer; }
+    typedef usage                                                  this_type;
+    typedef intmax_t                                               size_type;
+    typedef tim::base_usage<rusage::peak_rss, rusage::current_rss> base_type;
+    //
+    typedef internal::usage_data             usage_data;
+    typedef internal::base_delta<usage_data> data_accum_t;
+    typedef internal::base_data<usage_data>  data_t;
+    //
 
 public:
     //------------------------------------------------------------------------//
-    //      operator += timer
+    //      Default constructor variants with usage_format_t
+    //------------------------------------------------------------------------//
+    explicit usage(usage_format_t _fmt = usage_format_t())
+    : base_type(_fmt)
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    usage(size_type minus, usage_format_t _fmt = usage_format_t())
+    : base_type(minus, _fmt)
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    usage(size_type _curr, size_type _peak, usage_format_t _fmt = usage_format_t())
+    : base_type(_curr, _peak, _fmt)
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    //------------------------------------------------------------------------//
+    //      Constructor variants with format_type
+    //------------------------------------------------------------------------//
+    explicit usage(format_type _fmt)
+    : base_type(usage_format_t(new format_type(_fmt)))
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    usage(size_type minus, format_type _fmt)
+    : base_type(minus, usage_format_t(new format_type(_fmt)))
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    usage(size_type _curr, size_type _peak, format_type _fmt)
+    : base_type(_curr, _peak, usage_format_t(new format_type(_fmt)))
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    //------------------------------------------------------------------------//
+    //      Copy construct and assignment
+    //------------------------------------------------------------------------//
+    usage(const usage& rhs)
+    : base_type(rhs)
+    , m_sum_usage(nullptr)
+    {
+    }
+
+    usage& operator=(const usage& rhs)
+    {
+        if(this != &rhs)
+        {
+            base_usage::operator=(rhs);
+        }
+        return *this;
+    }
+
+public:
+    //------------------------------------------------------------------------//
+    //      operator += usage
     //
     this_type& operator+=(const this_type& rhs)
     {
@@ -125,7 +140,7 @@ public:
     }
 
     //------------------------------------------------------------------------//
-    //      operator -= timer
+    //      operator -= usage
     //
     this_type& operator-=(const this_type& rhs)
     {
@@ -139,7 +154,7 @@ public:
     //
     this_type& operator*=(const uintmax_t& rhs)
     {
-        auto_lock_t l(m_mutex);
+        // auto_lock_t l(m_mutex);
         m_accum *= rhs;
         return *this;
     }
@@ -149,7 +164,7 @@ public:
     //
     this_type& operator/=(const uintmax_t& rhs)
     {
-        auto_lock_t l(m_mutex);
+        // auto_lock_t l(m_mutex);
         m_accum /= rhs;
         return *this;
     }
@@ -158,7 +173,7 @@ public:
     //------------------------------------------------------------------------//
     //                          FRIEND operators
     //------------------------------------------------------------------------//
-    //      operator - timer
+    //      operator - usage
     //
     friend this_type operator-(const this_type& lhs, const this_type& rhs)
     {
@@ -166,7 +181,7 @@ public:
     }
 
     //------------------------------------------------------------------------//
-    //      operator + timer
+    //      operator + usage
     //
     friend this_type operator+(const this_type& lhs, const this_type& rhs)
     {
@@ -174,22 +189,23 @@ public:
     }
 
 public:
-    // public member functions
+    inline size_type           laps() const { return m_accum.size(); }
+    inline void                reset() { m_accum.reset(); }
+    inline data_accum_t&       accum() { return m_accum; }
+    inline const data_accum_t& accum() const { return m_accum; }
 
 protected:
-    timer* m_sum_timer;
+    // protected member functions
+    data_accum_t&       get_accum() { return m_accum; }
+    const data_accum_t& get_accum() const { return m_accum; }
 
-private:
-    static bool& f_record_memory();
+protected:
+    usage*               m_sum_usage;
+    mutable data_t       m_data;
+    mutable data_accum_t m_accum;
 };
 
 //--------------------------------------------------------------------------------------//
-
-inline timer::timer(const string_t& _prefix, const string_t& _format)
-: base_type(timer_format_t(new format_type(_prefix, _format)))
-, m_sum_timer(nullptr)
-{
-}
 
 //--------------------------------------------------------------------------------------//
 

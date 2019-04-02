@@ -66,11 +66,7 @@ namespace internal
 {
 class base_timer;  // declaration for format::timer
 }
-namespace rss
-{
-class usage;        // declaration for format::rss
-class usage_delta;  // declaration for format::rss_usage
-}  // namespace rss
+// class base_usage;
 
 //======================================================================================//
 
@@ -78,7 +74,7 @@ namespace format
 {
 //======================================================================================//
 
-typedef std::tuple<int16_t, int16_t, int64_t, tim::string, bool> core_tuple_t;
+typedef std::tuple<int16_t, int16_t, intmax_t, tim::string, bool> core_tuple_t;
 
 //======================================================================================//
 
@@ -88,7 +84,7 @@ public:
     typedef core_tuple_t base_type;
     typedef tim::string  string_t;
     typedef int16_t      size_type;
-    typedef int64_t      unit_type;
+    typedef intmax_t     unit_type;
 
 public:
     core_formatter(size_type, size_type, unit_type, string_t, bool);
@@ -121,21 +117,24 @@ protected:
 
 //======================================================================================//
 
-tim_api class base_formatter : public core_formatter
+template <typename _Tp>
+class formatter : public core_formatter
 {
 public:
-    typedef std::stringstream stringstream_t;
-    typedef core_formatter    base_type;
-    typedef core_formatter    core_type;
+    typedef std::stringstream          stringstream_t;
+    typedef core_formatter             base_type;
+    typedef core_formatter             core_type;
+    typedef std::pair<string_t, int>   field_pair_t;
+    typedef std::vector<field_pair_t>  field_list_t;
+    typedef std::stack<core_formatter> storage_type;
 
 public:
     // public constructors
     // public constructors
-    base_formatter(string_t _prefix, string_t _suffix, string_t _format, unit_type _unit,
-                   bool _align_width, size_type _prec, size_type _width,
-                   bool _fixed = true);
+    formatter(string_t _prefix, string_t _suffix, string_t _format, unit_type _unit,
+              bool _align_width, size_type _prec, size_type _width, bool _fixed = true);
 
-    virtual ~base_formatter() {}
+    ~formatter() {}
 
 public:
     // public member functions
@@ -151,59 +150,10 @@ public:
     const string_t& prefix() const { return m_prefix; }
     const string_t& suffix() const { return m_suffix; }
 
-protected:
-    // protected member functions
-    virtual string_t compose() const = 0;
-
-protected:
-    // protected member variables
-    bool     m_align_width;
-    bool     m_fixed;
-    string_t m_prefix;
-    string_t m_suffix;
-};
-
-//======================================================================================//
-
-tim_api class rss : public base_formatter
-{
-public:
-    enum class field
-    {
-        current,
-        peak,
-        total_curr,
-        total_peak,
-        self_curr,
-        self_peak,
-        memory_unit
-    };
-
-    typedef std::pair<string_t, field> field_pair_t;
-    typedef std::vector<field_pair_t>  field_list_t;
-    typedef std::stack<core_formatter> storage_type;
-
-public:
-    rss(string_t _prefix = "", string_t _format = default_format(),
-        unit_type _unit = default_unit(), bool _align_width = false,
-        size_type _prec = default_precision(), size_type _width = default_width(),
-        bool _fixed = default_fixed())
-    : base_formatter(_prefix, "", _format, _unit, _align_width, _prec, _width, _fixed)
-    {
-        if(_align_width)
-            propose_default_width(_prefix.length());
-    }
-
-    virtual ~rss() {}
-
-public:
-    // public member functions
-    string_t operator()(const tim::rss::usage* m) const;
-    string_t operator()(const tim::rss::usage_delta* m, const string_t& = "") const;
+    string_t operator()(const _Tp* m) const;
     string_t operator()(const string_t& = "") const;
-    rss*     copy_from(const rss* rhs);
+    _Tp*     copy_from(const _Tp* rhs);
 
-public:
     // public static functions
     static void propose_default_width(size_type);
 
@@ -235,112 +185,8 @@ public:
     BACKWARD_COMPAT_GET(string_t, default_format)
     BACKWARD_COMPAT_GET(bool, default_fixed)
 
-    static void set_default(const rss& rhs);
-    static rss  get_default();
-
-    static void push();
-    static void pop();
-
-protected:
-    // protected member functions
-    virtual string_t compose() const final;
-
-private:
-    // private static members
-    static field_list_t    get_field_list();
-    static core_formatter& f_current();
-    static storage_type&   f_history();
-};
-
-//======================================================================================//
-
-tim_api class timer : public base_formatter
-{
-public:
-    enum class field
-    {
-        wall,
-        user,
-        system,
-        cpu,
-        percent,
-        rss,
-        laps,
-        timing_unit,
-    };
-
-    typedef std::pair<string_t, field>     field_pair_t;
-    typedef std::vector<field_pair_t>      field_list_t;
-    typedef rss                            rss_format_t;
-    typedef std::pair<core_formatter, rss> format_pair_t;
-    typedef std::stack<format_pair_t>      storage_type;
-
-public:
-    // public constructors
-    timer(string_t _prefix = "", string_t _format = default_format(),
-          unit_type    _unit       = default_unit(),
-          rss_format_t _rss_format = default_rss_format(), bool _align_width = false,
-          size_type _prec = default_precision(), size_type _width = default_width(),
-          bool _fixed = default_fixed())
-    : base_formatter(_prefix, "", _format, _unit, _align_width, _prec, _width, _fixed)
-    , m_rss_format(_rss_format)
-    {
-        if(_align_width)
-            propose_default_width(_prefix.length());
-    }
-
-    virtual ~timer() {}
-
-public:
-    // public member functions
-    string_t operator()(const internal::base_timer* m) const;
-    timer*   copy_from(const timer* rhs);
-
-    void                rss_format(const rss_format_t& _val) { m_rss_format = _val; }
-    rss_format_t&       rss_format() { return m_rss_format; }
-    const rss_format_t& rss_format() const { return m_rss_format; }
-
-public:
-    // public static functions
-    static void propose_default_width(size_type);
-
-    static void default_precision(const size_type& _v)
-    {
-        f_current().first.precision() = _v;
-    }
-    static void default_width(const size_type& _v) { f_current().first.width() = _v; }
-    static void default_unit(const unit_type& _v) { f_current().first.unit() = _v; }
-    static void default_format(const string_t& _v) { f_current().first.format() = _v; }
-    static void default_fixed(const bool& _v) { f_current().first.fixed() = _v; }
-    static void default_scientific(const bool& _v) { f_current().first.fixed() = !(_v); }
-    static void default_rss_format(const rss& _v) { f_current().second = _v; }
-
-    // defines set_<function>
-    BACKWARD_COMPAT_SET(size_type, default_precision)
-    BACKWARD_COMPAT_SET(size_type, default_width)
-    BACKWARD_COMPAT_SET(unit_type, default_unit)
-    BACKWARD_COMPAT_SET(string_t, default_format)
-    BACKWARD_COMPAT_SET(bool, default_fixed)
-    BACKWARD_COMPAT_SET(rss, default_rss_format)
-
-    static const size_type& default_precision() { return f_current().first.precision(); }
-    static const size_type& default_width() { return f_current().first.width(); }
-    static const unit_type& default_unit() { return f_current().first.unit(); }
-    static const string_t&  default_format() { return f_current().first.format(); }
-    static const bool&      default_fixed() { return f_current().first.fixed(); }
-    static bool             default_scientific() { return !(f_current().first.fixed()); }
-    static const rss&       default_rss_format() { return f_current().second; }
-
-    // defines get_<function>
-    BACKWARD_COMPAT_GET(size_type, default_precision)
-    BACKWARD_COMPAT_GET(size_type, default_width)
-    BACKWARD_COMPAT_GET(unit_type, default_unit)
-    BACKWARD_COMPAT_GET(string_t, default_format)
-    BACKWARD_COMPAT_GET(bool, default_fixed)
-    BACKWARD_COMPAT_GET(rss, default_rss_format)
-
-    static void  set_default(const timer& rhs);
-    static timer get_default();
+    static void set_default(const _Tp& rhs);
+    static _Tp  get_default();
 
     static void push();
     static void pop();
@@ -351,13 +197,50 @@ protected:
 
 protected:
     // protected member variables
-    rss_format_t m_rss_format;
+    bool     m_align_width;
+    bool     m_fixed;
+    string_t m_prefix;
+    string_t m_suffix;
 
 private:
     // private static members
-    static field_list_t   get_field_list();
-    static format_pair_t& f_current();
-    static storage_type&  f_history();
+    static field_list_t    get_field_list();
+    static core_formatter& f_current();
+    static storage_type&   f_history();
+};
+
+//======================================================================================//
+
+tim_api class rusage : public formatter<rss>
+{
+public:
+    enum class field
+    {
+        current,
+        peak,
+        total_curr,
+        total_peak,
+        self_curr,
+        self_peak,
+        memory_unit
+    };
+};
+
+//======================================================================================//
+
+tim_api class timer : public formatter<timer>
+{
+public:
+    enum class field
+    {
+        wall,
+        user,
+        system,
+        cpu,
+        percent,
+        laps,
+        timing_unit,
+    };
 };
 
 //======================================================================================//
@@ -378,10 +261,10 @@ inline core_formatter::core_formatter(size_type _prec, size_type _width, unit_ty
 //
 //======================================================================================//
 
-inline base_formatter::base_formatter(string_t _prefix, string_t _suffix,
-                                      string_t _format, unit_type _unit,
-                                      bool _align_width, size_type _prec,
-                                      size_type _width, bool _fixed)
+template <typename _Tp>
+inline formatter<_Tp>::formatter(string_t _prefix, string_t _suffix, string_t _format,
+                                 unit_type _unit, bool _align_width, size_type _prec,
+                                 size_type _width, bool _fixed)
 : core_type(_prec, _width, _unit, _format, _fixed)
 , m_align_width(_align_width)
 , m_fixed(_fixed)
@@ -392,8 +275,9 @@ inline base_formatter::base_formatter(string_t _prefix, string_t _suffix,
 
 //--------------------------------------------------------------------------------------//
 
-inline rss::string_t
-rss::compose() const
+template <typename _Tp>
+inline tim::string
+formatter<_Tp>::compose() const
 {
     std::stringstream _ss;
     if(m_align_width)
@@ -411,8 +295,9 @@ rss::compose() const
 
 //--------------------------------------------------------------------------------------//
 
-inline rss::string_t
-rss::operator()(const string_t& _base) const
+template <typename _Tp>
+inline tim::string
+formatter<_Tp>::operator()(const string_t& _base) const
 {
     string_t _str = (_base.length() == 0) ? this->compose() : _base;
 
@@ -424,14 +309,14 @@ rss::operator()(const string_t& _base) const
                 _str.replace(_npos, _itr.length(), _rep.c_str());
         };
 
-        if(itr.second == rss::field::memory_unit)
+        // if(itr.second == rss::field::memory_unit)
         {
             std::stringstream _ss;
             _ss.precision(this->precision());
             _ss << tim::units::mem_repr(this->unit());
             _replace(itr.first, _ss.str());
         }
-        else
+        // else
         {
             // replace all instances
             _replace(", " + itr.first, "");        // CSV

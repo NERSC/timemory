@@ -311,10 +311,16 @@ class timemory_data():
         _sys = obj['system_elapsed'] / denom
         _cpu = obj['cpu_elapsed'] / denom
         _MB = (1.0)
-        _tpeak = obj['rss_max']['peak'] / _MB
-        _tcurr = obj['rss_max']['current'] / _MB
-        _speak = obj['rss_self']['peak'] / _MB
-        _scurr = obj['rss_self']['current'] / _MB
+        _tpeak = 0.0
+        _tcurr = 0.0
+        _speak = 0.0
+        _scurr = 0.0
+        if 'rss_max' in obj:
+            _tpeak = obj['rss_max']['peak'] / _MB
+            _tcurr = obj['rss_max']['current'] / _MB
+        if 'rss_self' in obj:
+            _speak = obj['rss_self']['peak'] / _MB
+            _scurr = obj['rss_self']['current'] / _MB
         _perc = (_cpu / _wall) * 100.0 if _wall > 0.0 else 100.0
         _dict = {
             'wall' : _wall,

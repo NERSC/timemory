@@ -32,45 +32,6 @@ namespace tim
 {
 //======================================================================================//
 
-auto_timer::counter_t&
-auto_timer::nhash()
-{
-    return manager::instance()->hash();
-}
-
-//======================================================================================//
-
-auto_timer::counter_t&
-auto_timer::ncount()
-{
-    return manager::instance()->count();
-}
-
-//======================================================================================//
-
-auto_timer::counter_t&
-auto_timer::phash()
-{
-    return manager::instance()->parent_hash();
-}
-
-//======================================================================================//
-
-auto_timer::counter_t&
-auto_timer::pcount()
-{
-    return manager::instance()->parent_count();
-}
-
-//======================================================================================//
-
-bool
-auto_timer::alloc_next()
-{
-    return manager::is_enabled() &&
-           (uint64_t) manager::max_depth() > auto_timer::ncount();
-}
-
 //======================================================================================//
 
 }  // namespace tim

@@ -24,13 +24,15 @@
 
 #include "timemory/formatters.hpp"
 #include "timemory/base_timer.hpp"
-#include "timemory/rss.hpp"
+#include "timemory/base_usage.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/usage.hpp"
 
 namespace tim
 {
 namespace format
 {
+/*
 //======================================================================================//
 //      format strings
 //======================================================================================//
@@ -59,7 +61,7 @@ timer::f_current()
                        5,           // min prefix field width
                        units::sec,  // timing display units
                                     // format string
-                       ": %w wall, %u user + %s system = %t CPU [%T] (%p%) %R (x%l laps)",
+                       ": %w wall, %u user + %s system = %t CPU [%T] (%p%) (x%l laps)",
                        true  // std::fixed
                        ),
         rss("",  // prefix (ignored with timer)
@@ -102,7 +104,6 @@ timer::get_field_list()
         timer::field_pair_t("%s", timer::field::system),
         timer::field_pair_t("%t", timer::field::cpu),
         timer::field_pair_t("%p", timer::field::percent),
-        timer::field_pair_t("%R", timer::field::rss),
         timer::field_pair_t("%l", timer::field::laps),
         timer::field_pair_t("%T", timer::field::timing_unit),
     };
@@ -237,10 +238,6 @@ timer::operator()(const internal::base_timer* t) const
                 _ss.precision(1);
                 _ss << std::setw(5) << (_perc);
                 break;
-            case timer::field::rss:
-                if(t->record_memory())
-                    _ss << m_rss_format.format();
-                break;
             case timer::field::laps:
                 _ss.precision(1);
                 _ss << _laps;
@@ -261,12 +258,6 @@ timer::operator()(const internal::base_timer* t) const
             _str = _str.replace(_npos, itr.first.length(), _ss.str().c_str());
     }
 
-    // add RSS
-    // if(t->record_memory())
-    //    _str = m_rss_format(&t->accum().rss(), _str);
-    // else
-    _str = m_rss_format(_str);
-
     return _str;
 }
 
@@ -277,7 +268,6 @@ timer::set_default(const timer& rhs)
 {
     timer::default_format(rhs.format());
     timer::default_precision(rhs.precision());
-    timer::default_rss_format(rhs.rss_format());
     timer::default_unit(rhs.unit());
     timer::default_fixed(rhs.fixed());
     timer::default_width(rhs.width());
@@ -291,7 +281,6 @@ timer::get_default()
     timer obj;
     obj.format(timer::default_format());
     obj.precision(timer::default_precision());
-    obj.rss_format(timer::default_rss_format());
     obj.unit(timer::default_unit());
     obj.fixed(timer::default_fixed());
     obj.width(timer::default_width());
@@ -308,7 +297,6 @@ timer::copy_from(const timer* rhs)
     this->unit()        = rhs->unit();
     this->format()      = rhs->format();
     this->fixed()       = rhs->fixed();
-    this->rss_format()  = rhs->rss_format();
     this->align_width() = rhs->align_width();
     return this;
 }
@@ -392,7 +380,7 @@ rss::copy_from(const rss* rhs)
 //--------------------------------------------------------------------------------------//
 
 rss::string_t
-rss::operator()(const tim::rss::usage* m) const
+rss::operator()(const tim::base_usage* m) const
 {
     string_t _str = this->compose();
 
@@ -457,9 +445,9 @@ rss::operator()(const tim::rss::usage* m) const
 }
 
 //--------------------------------------------------------------------------------------//
-
+/*
 rss::string_t
-rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
+rss::operator()(const tim::usage_delta* m, const string_t& _base) const
 {
     string_t _str = (_base.length() == 0) ? this->compose() : _base;
 
@@ -527,7 +515,7 @@ rss::operator()(const tim::rss::usage_delta* m, const string_t& _base) const
 
     return _str;
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 }  // namespace format

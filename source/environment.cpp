@@ -95,8 +95,8 @@ toupper(string_t str)
 void
 parse()
 {
-    typedef tim::format::core_formatter      core_format_t;
-    typedef std::function<int64_t(string_t)> unit_func_t;
+    typedef tim::format::core_formatter       core_format_t;
+    typedef std::function<intmax_t(string_t)> unit_func_t;
 
     verbose = tim::get_env<int>("TIMEMORY_VERBOSE", verbose);
     disable_timer_memory =
@@ -140,9 +140,9 @@ parse()
     //  Helper function for timing units processing
     auto get_timing_unit = [&](string_t _unit) {
         if(_unit.length() == 0)
-            return (int64_t) 0;
+            return (intmax_t) 0;
 
-        using inner            = std::tuple<string_t, string_t, int64_t>;
+        using inner            = std::tuple<string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
         pair_vector_t matching = { inner("psec", "picosecond", tim::units::psec),
                                    inner("nsec", "nanosecond", tim::units::nsec),
@@ -157,15 +157,15 @@ parse()
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<1>(itr)) + "s")
                 return std::get<2>(itr);
-        return (int64_t) 0;
+        return (intmax_t) 0;
     };
     //------------------------------------------------------------------------//
     //  Helper function for memory units processing
     auto get_memory_unit = [&](string_t _unit) {
         if(_unit.length() == 0)
-            return (int64_t) 0;
+            return (intmax_t) 0;
 
-        using inner            = std::tuple<string_t, string_t, string_t, int64_t>;
+        using inner            = std::tuple<string_t, string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
         pair_vector_t matching = { inner("byte", "B", "Bi", tim::units::byte),
                                    inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
@@ -179,7 +179,7 @@ parse()
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<2>(itr)))
                 return std::get<3>(itr);
-        return (int64_t) 0;
+        return (intmax_t) 0;
     };
     //------------------------------------------------------------------------//
     //  Helper lambda for modifying the core_formatter components
@@ -188,7 +188,7 @@ parse()
                         const int16_t& _prec, const int16_t& _width,
                         const bool& _scientific, const string_t& _unit_string,
                         unit_func_t _unit_func) {
-        int64_t _unit = _unit_func(_unit_string);
+        intmax_t _unit = _unit_func(_unit_string);
 
         if(_format.length() > 0)
             _core->format(_format);
@@ -203,19 +203,14 @@ parse()
     };
     //------------------------------------------------------------------------//
 
-    tim::format::timer _timing        = tim::format::timer::get_default();
-    tim::format::rss&  _timing_memory = _timing.rss_format();
-    tim::format::rss   _memory        = tim::format::rss::get_default();
+    tim::format::timer _timing = tim::format::timer::get_default();
+    tim::format::rss   _memory = tim::format::rss::get_default();
 
     set_core(&_timing, timing_format, timing_precision, timing_width, timing_scientific,
              timing_units, get_timing_unit);
 
     set_core(&_memory, memory_format, memory_precision, memory_width, memory_scientific,
              memory_units, get_memory_unit);
-
-    set_core(&_timing_memory, timing_memory_format, timing_memory_precision,
-             timing_memory_width, timing_memory_scientific, timing_memory_units,
-             get_memory_unit);
 
     // set default timing format -- will be identical if no env set
     //  - memory format is included because _timing_memory is a reference

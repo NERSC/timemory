@@ -31,9 +31,7 @@
 #include <string>
 
 #include "timemory/base_clock.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/string.hpp"
@@ -126,14 +124,14 @@ public:
     }
 
 public:
-    const uint64_t& size() const { return m_lap; }
-    uint64_t&       size() { return m_lap; }
-    const _Tp&      sum() const { return m_sum; }
+    const uintmax_t& size() const { return m_lap; }
+    uintmax_t&       size() { return m_lap; }
+    const _Tp&       sum() const { return m_sum; }
 
     void reset()
     {
         m_lap = 0;
-        m_sum = data_type();
+        // m_sum = data_type();
     }
 
 public:
@@ -183,7 +181,7 @@ public:
     //------------------------------------------------------------------------//
     //      operator *= integer
     //
-    virtual this_type& operator*=(const uint64_t& rhs)
+    virtual this_type& operator*=(const uintmax_t& rhs)
     {
         if(rhs > 0)
             m_sum *= rhs;
@@ -193,7 +191,7 @@ public:
     //------------------------------------------------------------------------//
     //      operator /= integer
     //
-    virtual this_type& operator/=(const uint64_t& rhs)
+    virtual this_type& operator/=(const uintmax_t& rhs)
     {
         if(rhs > 0)
             m_sum /= rhs;
@@ -201,7 +199,7 @@ public:
     }
 
 protected:
-    uint64_t  m_lap;
+    uintmax_t m_lap;
     data_type m_sum;
 };
 
@@ -214,8 +212,8 @@ protected:
 tim_api class timer_data
 {
 public:
-    typedef timer_data                               this_type;
-    typedef std::tuple<uint64_t, uint64_t, uint64_t> data_type;
+    typedef timer_data                                  this_type;
+    typedef std::tuple<uintmax_t, uintmax_t, uintmax_t> data_type;
 
     this_type& operator=(const data_type& data)
     {
@@ -273,7 +271,7 @@ public:
         return *this;
     }
 
-    this_type& operator*=(const uint64_t& rhs)
+    this_type& operator*=(const uintmax_t& rhs)
     {
         m_real *= rhs;
         m_user *= rhs;
@@ -281,7 +279,7 @@ public:
         return *this;
     }
 
-    this_type& operator/=(const uint64_t& rhs)
+    this_type& operator/=(const uintmax_t& rhs)
     {
         m_real /= rhs;
         m_user /= rhs;
@@ -289,9 +287,9 @@ public:
         return *this;
     }
 
-    const uint64_t& real() const { return m_real; }
-    const uint64_t& user() const { return m_user; }
-    const uint64_t& sys() const { return m_syst; }
+    const uintmax_t& real() const { return m_real; }
+    const uintmax_t& user() const { return m_user; }
+    const uintmax_t& sys() const { return m_syst; }
 
     void reset()
     {
@@ -301,82 +299,9 @@ public:
     }
 
 protected:
-    uint64_t m_real;
-    uint64_t m_user;
-    uint64_t m_syst;
-};
-
-//======================================================================================//
-//
-//  class for memory data
-//
-//======================================================================================//
-
-tim_api class memory_data
-{
-public:
-    typedef memory_data                    this_type;
-    typedef rss::usage                     rusage_t;
-    typedef std::tuple<rusage_t, rusage_t> data_type;
-
-    this_type& operator=(const data_type& data)
-    {
-        m_rumax = std::get<0>(data);
-        m_ruslf = std::get<1>(data);
-        return *this;
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        m_rumax.max(rhs.m_rumax);
-        m_ruslf.max(rhs.m_ruslf);
-        return *this;
-    }
-
-    this_type& operator+=(const base_data<this_type>& rhs)
-    {
-        m_rumax.max(rhs.stop().rusage_max());
-        m_ruslf.max(m_ruslf, rhs.stop().rusage_self().record(rhs.start().rusage_self()));
-        return *this;
-    }
-
-    this_type& operator+=(const base_delta<this_type>& rhs)
-    {
-        m_rumax.max(rhs.sum().rusage_max());
-        m_ruslf.max(m_ruslf, rhs.sum().rusage_self());
-        return *this;
-    }
-
-    this_type& operator-=(const this_type& rhs)
-    {
-        m_rumax -= rhs.rusage_max();
-        m_ruslf -= rhs.rusage_self();
-        return *this;
-    }
-
-    this_type& operator-=(const base_data<this_type>& rhs)
-    {
-        m_rumax.min(rhs.stop().rusage_max());
-        m_ruslf.min(m_ruslf, rhs.stop().rusage_self().record(rhs.start().rusage_self()));
-        return *this;
-    }
-
-    this_type& operator-=(const base_delta<this_type>& rhs)
-    {
-        m_rumax -= rhs.sum().rusage_max();
-        m_ruslf -= rhs.sum().rusage_self();
-        return *this;
-    }
-
-    rusage_t& rusage_max() { return m_rumax; }
-    rusage_t& rusage_self() { return m_ruslf; }
-
-    const rusage_t& rusage_max() const { return m_rumax; }
-    const rusage_t& rusage_self() const { return m_ruslf; }
-
-protected:
-    rusage_t m_rumax;
-    rusage_t m_ruslf;
+    uintmax_t m_real;
+    uintmax_t m_user;
+    uintmax_t m_syst;
 };
 
 //======================================================================================//

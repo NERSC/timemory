@@ -157,23 +157,9 @@ manager::manager()
 : m_merge(false)
 , m_instance_count(f_manager_instance_count++)
 , m_laps(0)
-, m_hash(0)
-, m_count(0)
-, m_p_hash((singleton_t::master_instance_ptr())
-               ? singleton_t::master_instance_ptr()->hash().load()
-               : 0)
-, m_p_count((singleton_t::master_instance_ptr())
-                ? singleton_t::master_instance_ptr()->count().load()
-                : 0)
-, m_missing_timer(timer_ptr_t(new tim_timer_t()))
-, m_total_timer(timer_ptr_t(new tim::timer(tim::format::timer(
-      tim::string("> [exe] total"), tim::format::timer::default_format(),
-      tim::format::timer::default_unit(), tim::format::timer::default_rss_format(),
-      true))))
-, m_timer_list(&m_timer_list_norm)
 , m_report(&std::cout)
-, m_timer_graph(nullptr)
-, m_graph_itr(nullptr)
+, m_tuple_data(
+      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
     if(!singleton_t::master_instance_ptr())
     {
@@ -185,30 +171,10 @@ manager::manager()
         manager* master = singleton_t::master_instance_ptr();
         master->set_merge(true);
         master->add(this);
-        m_timer_graph = new timer_graph_t();
-        m_graph_itr   = new timer_graph_itr();
-        *m_graph_itr  = m_timer_graph->set_head(**master->get_graph_iterator());
+        timer_data.set_head(*master->get_timer_data().current());
+        timer_data.set_head(master->get_timer_data().current());
+        // memory_data.set_head(&master->get_memory_data().current());
     }
-
-#if defined(DEBUG)
-    if(tim::env::verbose > 2)
-    {
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "tim::manager creation " << m_instance_count << "..." << std::endl;
-    }
-#endif
-
-    if(tim::env::disable_timer_memory)
-    {
-        tim::timer::default_record_memory(false);
-        m_missing_timer->record_memory(false);
-        m_total_timer->record_memory(false);
-    }
-
-    std::stringstream ss;
-    ss << "TiMemory total unrecorded time (manager " << (m_instance_count) << ")";
-    m_missing_timer->format()->prefix(ss.str());
-    m_missing_timer->start();
 
     if(!singleton_t::master_instance_ptr())
         insert_global_timer();
@@ -232,9 +198,6 @@ manager::~manager()
                   << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
 #endif
 
-    delete m_graph_itr;
-    delete m_timer_graph;
-
     _timemory_manager_singleton().destroy();
 }
 
@@ -245,14 +208,13 @@ manager::update_total_timer_format()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
     {
-        m_total_timer->format()->prefix(this->get_prefix() +
-                                        string_t("[exe] total execution time"));
-        m_total_timer->format()->format(tim::format::timer::default_format());
-        m_total_timer->format()->unit(tim::format::timer::default_unit());
-        m_total_timer->format()->precision(tim::format::timer::default_precision());
-        m_total_timer->format()->rss_format(tim::format::timer::default_rss_format());
+        timer_data.total()->format()->prefix(this->get_prefix() +
+                                             string_t("[exe] total execution time"));
+        timer_data.total()->format()->format(tim::format::timer::default_format());
+        timer_data.total()->format()->unit(tim::format::timer::default_unit());
+        timer_data.total()->format()->precision(tim::format::timer::default_precision());
         tim::format::timer::propose_default_width(
-            m_total_timer->format()->prefix().length());
+            timer_data.total()->format()->prefix().length());
     }
 }
 
@@ -262,24 +224,15 @@ void
 manager::insert_global_timer()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0) &&
-       m_timer_map.size() == 0 && m_timer_list_norm.size() == 0)
+       timer_data.map().size() == 0)
     {
         update_total_timer_format();
-        m_timer_map[0] = m_total_timer;
-        m_timer_list_norm.push_back(
-            timer_tuple_t(0, m_count, 0, "exe_global_time", m_total_timer));
-
-        timer_tuple_t _global_tuple = { 0, m_count, 0, "exe_global_time", m_total_timer };
-        if(!m_timer_graph)
-            m_timer_graph = new timer_graph_t();
-        if(!m_graph_itr)
-            m_graph_itr = new timer_graph_itr;
-        *m_graph_itr = m_timer_graph->set_head(_global_tuple);
-
-        if(!m_total_timer->is_running())
-            m_total_timer->start();
-        if(m_count == 0)
-            m_count += 1;
+        timer_data.map()[0]           = timer_data.total();
+        timer_data_t::tuple_t _global = { 0, 0, 0, "exe_global_time",
+                                          timer_data.total() };
+        timer_data.current()          = timer_data.graph().set_head(_global);
+        if(!timer_data.total()->is_running())
+            timer_data.total()->start();
     }
 }
 
@@ -298,11 +251,9 @@ manager::clear()
         tim::format::timer::default_width(8);
 
     m_laps += compute_total_laps();
-    m_timer_list_norm.clear();
-    m_timer_list_self.clear();
-    m_timer_graph->clear();
-    *m_graph_itr = nullptr;
-    m_timer_map.clear();
+    timer_data.graph().clear();
+    timer_data.current() = nullptr;
+    timer_data.map().clear();
     for(auto& itr : m_daughters)
         if(itr != this && itr)
             itr->clear();
@@ -342,7 +293,7 @@ manager::clear()
 
 //======================================================================================//
 
-manager::string_t
+tim::string_t
 manager::get_prefix() const
 {
     if(!mpi_is_initialized())
@@ -509,51 +460,27 @@ manager::merge(pointer itr)
                   << std::endl;
 #endif
 
-    auto _iter_beg = itr->get_timer_graph()->begin();
-    auto _iter_end = itr->get_timer_graph()->end();
-    auto _this_beg = this->get_timer_graph()->begin();
-    auto _this_end = this->get_timer_graph()->end();
+    auto _this_beg = this->get_timer_data().graph().begin();
+    auto _this_end = this->get_timer_data().graph().end();
 
     for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
     {
-        if(*_this_itr == *_iter_beg)
+        if(_this_itr == itr->get_timer_data().head())
         {
-            this->get_timer_graph()->merge(_this_itr, _this_end, _iter_beg, _iter_end,
-                                           false, true);
+            auto _iter_beg = itr->get_timer_data().graph().begin();
+            auto _iter_end = itr->get_timer_data().graph().end();
+            this->get_timer_data().graph().merge(_this_itr, _this_end, _iter_beg,
+                                                 _iter_end, false, true);
             break;
         }
     }
 
-    typedef decltype(_iter_beg) predicate_type;
+    typedef decltype(_this_beg) predicate_type;
     auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-    _this_beg    = this->get_timer_graph()->begin();
-    _this_end    = this->get_timer_graph()->end();
-    this->get_timer_graph()->reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
-
-    auto _list = itr->list();
-    for(auto litr = _list.rbegin(); litr != _list.rend(); ++litr)
-    {
-        bool found =
-            std::any_of(m_timer_list_norm.begin(), m_timer_list_norm.end(),
-                        [=](const tim::timer_tuple& mlitr) { return mlitr == *litr; });
-
-        if(!found)
-        {
-#if defined(DEBUG)
-            if(tim::env::verbose > 2)
-                std::cout << "\tinserting " << litr->timer() << " at " << litr->offset()
-                          << std::endl;
-#endif
-            uint64_t insert = litr->offset();
-            auto     mitr   = m_timer_list_norm.begin();
-            if(insert + 1 > m_timer_list_norm.size())
-                mitr = m_timer_list_norm.end();
-            else
-                std::advance(mitr, insert);
-            m_timer_list_norm.insert(mitr, *litr);
-        }
-    }
-
+    _this_beg    = this->get_timer_data().graph().begin();
+    _this_end    = this->get_timer_data().graph().end();
+    this->get_timer_data().graph().reduce(_this_beg, _this_end, _this_beg, _this_end,
+                                          _reduce);
     compute_self();
 }
 
@@ -582,22 +509,6 @@ manager::merge()
 void
 manager::sync_hierarchy()
 {
-    for(auto& itr : m_daughters)
-    {
-        if(itr->hash() > 0)
-            // add difference to current hash
-            itr->hash() += (m_hash - itr->parent_hash());
-        // set the parent count to this count
-        itr->parent_hash() = m_hash.load();
-
-        if(itr->count() > 0)
-            // add difference to current hash
-            itr->count() += (m_count - itr->parent_count());
-        // set the parent count to this count
-        itr->parent_count() = m_count.load();
-
-        itr->sync_hierarchy();
-    }
 }
 
 //======================================================================================//
@@ -608,12 +519,12 @@ manager::compute_self()
     if(this != singleton_t::master_instance_ptr())
         return;
 
-    m_timer_list_self.clear();
+    // m_timer_list_self.clear();
 
     typedef std::shared_ptr<tim_timer_t> _timer_ptr_t;
     using std::get;
 
-    for(const auto& itr : m_timer_list_norm)
+    /*for(const auto& itr : m_timer_list_norm)
     {
         timer_tuple_t _ref = itr;
         timer_tuple_t _dup =
@@ -621,36 +532,22 @@ manager::compute_self()
                             _timer_ptr_t(new tim_timer_t(_ref.timer())));
         _dup.timer().grab_metadata(_ref.timer());
         m_timer_list_self.push_back(_dup);
-    }
+    }*/
 
-    auto itr1 = m_timer_list_self.begin();
+    /*auto itr1 = m_timer_list_self.begin();
     ++itr1;  // skip global timer
     for(; itr1 != m_timer_list_self.end(); ++itr1)
     {
-        uint64_t _depth1 = itr1->level();
+        uintmax_t _depth1 = itr1->level();
         for(auto itr2 = itr1; itr2 != m_timer_list_self.end(); ++itr2)
         {
-            uint64_t _depth2 = itr2->level();
+            uintmax_t _depth2 = itr2->level();
             if(_depth2 == _depth1 + 1)
                 itr1->timer() -= itr2->timer();
             if(itr2 != itr1 && _depth1 == _depth2)
                 break;  // same level move onto next
         }
-    }
-
-#if defined(DEBUG)
-    if(tim::env::verbose > 1)
-    {
-        auto itr = m_timer_list_self.begin();
-        ++itr;  // skip global timer
-        tim_timer_t _tot("Total self time");
-        for(; itr != m_timer_list_self.end(); ++itr)
-        {
-            _tot += itr->timer();
-        }
-        std::cout << _tot;
-    }
-#endif
+    }*/
 }
 
 //======================================================================================//
@@ -658,9 +555,9 @@ manager::compute_self()
 manager::tim_timer_t
 manager::compute_missing(tim_timer_t* timer_ref)
 {
-    typedef std::set<uint64_t> key_set_t;
+    typedef std::set<uintmax_t> key_set_t;
 
-    tim_timer_t* _ref    = (timer_ref) ? timer_ref : m_missing_timer.get();
+    tim_timer_t* _ref    = (timer_ref) ? timer_ref : &timer_data.missing();
     bool         restart = _ref->is_running();
     if(restart)
         _ref->stop();
@@ -677,16 +574,20 @@ manager::compute_missing(tim_timer_t* timer_ref)
     if(restart)
         _ref->start();
 
-    key_set_t _depths;
-    for(const auto& itr : *this)
-        _depths.insert(itr.level());
-
-    if(_depths.size() == 0)
+    auto max_depth = timer_data.graph().depth(timer_data.graph().end());
+    if(max_depth < 1)
         return tim_timer_t(_f_prefix);
 
-    for(const auto& itr : *this)
-        if(itr.level() == *(_depths.begin()) + 1)  // skip missing timer
-            _missing_timer -= itr.timer();
+    decltype(max_depth)      current_depth = 0;
+    std::vector<tim_timer_t> depth_timers(max_depth);
+    for(auto itr = timer_data.begin(); itr != timer_data.end(); ++itr)
+    {
+        auto cdepth = timer_data.graph().depth(itr);
+        depth_timers[cdepth] += itr->data();
+    }
+
+    for(uintmax_t i = 2; i < max_depth; ++i)
+        _missing_timer += (depth_timers[i - 1] - depth_timers[i]);
 
     return _missing_timer;
 }
@@ -884,13 +785,13 @@ manager::write_json_mpi(ostream_t& ofss)
     string_t fss_str = fss.str();
     // limit the iteration loop. Occasionally it seems that this will create
     // an infinite loop even though it shouldn't...
-    const uint64_t itr_limit = fss_str.length();
+    const uintmax_t itr_limit = fss_str.length();
     // compact the JSON
     for(auto citr : { "\n", "\t", "  " })
     {
         string_t            itr(citr);
         string_t::size_type fpos = 0;
-        uint64_t            nitr = 0;
+        uintmax_t           nitr = 0;
         do
         {
             fpos = fss_str.find(itr, fpos);

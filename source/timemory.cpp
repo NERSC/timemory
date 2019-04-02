@@ -95,7 +95,7 @@ cxx_timemory_finalization(void)
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
-    return (tim::auto_timer::alloc_next()) ? 1 : 0;
+    return (tim::counted_object<void>::is_enabled()) ? 1 : 0;
 }
 
 //======================================================================================//

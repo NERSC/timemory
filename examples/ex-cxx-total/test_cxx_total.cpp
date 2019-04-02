@@ -81,8 +81,8 @@ typedef tim::manager manager_t;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
-int64_t
-fibonacci(uint64_t n)
+intmax_t
+fibonacci(uintmax_t n)
 {
     return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
@@ -92,12 +92,12 @@ fibonacci(uint64_t n)
 void
 print_info(const std::string&);
 void
-print_size(const std::string&, int64_t, bool = true);
+print_size(const std::string&, intmax_t, bool = true);
 
 //======================================================================================//
 
-uint64_t
-run_total_test(int _sleep, uint64_t nfib)
+uintmax_t
+run_total_test(int _sleep, uintmax_t nfib)
 {
     print_info(__FUNCTION__);
     print_size(__FUNCTION__, __LINE__, false);
@@ -105,7 +105,7 @@ run_total_test(int _sleep, uint64_t nfib)
     EXPECT_EQ(tim::manager::instance()->size(), 1);
 
     std::this_thread::sleep_for(std::chrono::seconds(_sleep));
-    uint64_t n = fibonacci(nfib);
+    uintmax_t n = fibonacci(nfib);
 
     // check total still only entry that exists
     print_size(__FUNCTION__, __LINE__, false);
@@ -129,9 +129,9 @@ main(int argc, char** argv)
     if(argc > 2)
         nfib = atoi(argv[2]);
 
-    int      num_fail = 0;
-    int      num_test = 0;
-    uint64_t result   = 0;
+    int       num_fail = 0;
+    int       num_test = 0;
+    uintmax_t result   = 0;
 
 #define RUN_TEST(func, _assign, _sleep, _nfib)                                           \
     {                                                                                    \
@@ -184,7 +184,7 @@ print_info(const std::string& func)
 //======================================================================================//
 
 void
-print_size(const std::string& func, int64_t line, bool extra_endl)
+print_size(const std::string& func, intmax_t line, bool extra_endl)
 {
     if(tim::mpi_rank() == 0)
     {
@@ -200,7 +200,7 @@ print_size(const std::string& func, int64_t line, bool extra_endl)
 //======================================================================================//
 
 void
-print_depth(const std::string& func, int64_t line, bool extra_endl)
+print_depth(const std::string& func, intmax_t line, bool extra_endl)
 {
     if(tim::mpi_rank() == 0)
     {

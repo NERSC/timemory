@@ -47,25 +47,21 @@ base_timer::mutex_map_t base_timer::f_mutex_map;
 
 //======================================================================================//
 
-base_timer::base_timer(timer_format_t _format, bool _record, std::ostream* os)
-: m_record_memory(_record)
-, m_os(os)
+base_timer::base_timer(timer_format_t _format, std::ostream* os)
+: m_os(os)
 , m_data(data_t())
 , m_format(_format)
 {
-    configure_record();
 }
 
 //======================================================================================//
 
 base_timer::base_timer(const base_timer& rhs)
-: m_record_memory(rhs.m_record_memory)
-, m_os(rhs.m_os)
+: m_os(rhs.m_os)
 , m_data(rhs.m_data)
 , m_accum(rhs.m_accum)
 , m_format(rhs.m_format)
 {
-    configure_record();
 }
 
 //======================================================================================//
@@ -87,12 +83,10 @@ base_timer::operator=(const base_timer& rhs)
 {
     if(this != &rhs)
     {
-        m_record_memory = rhs.m_record_memory;
-        m_os            = rhs.m_os;
-        m_data          = rhs.m_data;
-        m_accum         = rhs.m_accum;
-        m_format        = rhs.m_format;
-        configure_record();
+        m_os     = rhs.m_os;
+        m_data   = rhs.m_data;
+        m_accum  = rhs.m_accum;
+        m_format = rhs.m_format;
     }
     return *this;
 }
@@ -104,11 +98,9 @@ base_timer::sync(const this_type& rhs)
 {
     if(this != &rhs)
     {
-        m_record_memory = rhs.m_record_memory;
-        m_os            = rhs.m_os;
-        m_data          = rhs.m_data;
-        m_accum         = rhs.m_accum;
-        configure_record();
+        m_os    = rhs.m_os;
+        m_data  = rhs.m_data;
+        m_accum = rhs.m_accum;
     }
 }
 

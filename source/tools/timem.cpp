@@ -15,8 +15,8 @@
 #endif
 
 #include "timemory/manager.hpp"
-#include "timemory/rss.hpp"
 #include "timemory/timer.hpp"
+#include "timemory/usage.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -27,8 +27,8 @@
 #include <cstdio>
 #include <cstring>
 
-typedef std::vector<uint64_t> vector_t;
-typedef tim::rss::usage       rss_usage_t;
+typedef std::vector<uintmax_t> vector_t;
+typedef tim::usage             rss_usage_t;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
@@ -53,8 +53,7 @@ rss_init()
 tim::string&
 tim_format()
 {
-    static tim::string _instance =
-        ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]";
+    static tim::string _instance = ": %w wall, %u user + %s system = %t cpu (%p%) [%T]";
     return _instance;
 }
 
@@ -82,7 +81,6 @@ declare_attribute(noreturn) void report()
     tim::manager::instance()->stop_total_timer();
     std::stringstream _ss_report;
 
-    (*tim::manager::instance()) -= rss_init();
     _ss_report << (*tim::manager::instance());
     tim::string _report = _ss_report.str();
     if(command().length() > 0)
@@ -161,7 +159,7 @@ getcharptr(const tim::string& str)
 
 //----------------------------------------------------------------------------//
 
-declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
+declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
 {
     if(argc < 2)
         exit(0);
@@ -171,7 +169,7 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     // NULL pointer
 
     char** argv_list = static_cast<char**>(malloc(sizeof(char*) * argc));
-    for(uint64_t i = 0; i < argc - 1; i++)
+    for(uintmax_t i = 0; i < argc - 1; i++)
         argv_list[i] = argv[i + 1];
     argv_list[argc - 1] = nullptr;
 
@@ -179,14 +177,14 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     int ret = execvp(argv_list[0], argv_list);
     if(ret < 0)
     {
-        uint64_t argc_shell    = argc + 2;
+        uintmax_t argc_shell   = argc + 2;
         char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
         char*  _shell          = getusershell();
         if(_shell)
         {
             argv_shell_list[0] = _shell;
             argv_shell_list[1] = getcharptr("-lc");
-            for(uint64_t i = 0; i < argc - 1; ++i)
+            for(uintmax_t i = 0; i < argc - 1; ++i)
                 argv_shell_list[i + 2] = argv_list[i];
             argv_shell_list[argc_shell - 1] = nullptr;
             ret                             = execvp(argv_shell_list[0], argv_shell_list);
@@ -216,7 +214,7 @@ main(int argc, char** argv)
     pid_t pid = fork();
     tim::manager::instance()->reset_total_timer();
 
-    uint64_t nargs = static_cast<uint64_t>(argc);
+    uintmax_t nargs = static_cast<uintmax_t>(argc);
     if(pid == -1)  // pid == -1 means error occured
         failed_fork();
     else if(pid == 0)  // pid == 0 means child process created

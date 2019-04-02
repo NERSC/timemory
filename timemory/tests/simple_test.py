@@ -41,12 +41,13 @@ from timemory import plotting
 
 
 # ---------------------------------------------------------------------------- #
-@timemory.util.auto_timer(add_args=True)
-def fibonacci(n):
-    if n < 2:
-        return n
-    return fibonacci(n-1) + fibonacci(n-2)
 
+def fibonacci(n):
+    if n > 20:
+        with timemory.util.auto_timer(add_args=True):
+            return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)
+    else:
+        return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)
 
 # ---------------------------------------------------------------------------- #
 class Fibonacci(object):
@@ -56,12 +57,12 @@ class Fibonacci(object):
 
     @timemory.util.auto_timer()
     def calculate(self):
-        t = timemory.timer("> [pyc] fib({}) ".format(self.n))
-        t.start()
+        #t = timemory.timer("> [pyc] fib({}) ".format(self.n))
+        #t.start()
         ret = fibonacci(self.n)
-        t.stop()
-        print ('fibonacci({}) = {}\n'.format(self.n, ret))
-        t.report()
+        #t.stop()
+        #print ('fibonacci({}) = {}\n'.format(self.n, ret))
+        #t.report()
         return ret
 
 
@@ -73,17 +74,20 @@ def test():
 
 # ---------------------------------------------------------------------------- #
 def main(nfib):
-    timemory.set_max_depth(5)
+    timemory.set_max_depth(10)
     print ('')
     print ('main: file() {}'.format(timemory.FILE()))
     print ('main: line() {}'.format(timemory.LINE()))
     print ('main: line() {}'.format(timemory.LINE()))
     print ('main: func() {}'.format(timemory.FUNC()))
     test()
-    print ('')
+    print ('creating manager...')
     tman = timemory.manager()
+    print ('creating Fibonacci object...')
     fib = Fibonacci(int(nfib))
+    print ('calculating fibonacci...')
     ret = fib.calculate()
+    print ('completed...')
 
     timemory.report()
     tman.report(ign_cutoff=True)

@@ -130,12 +130,11 @@ PYBIND11_MODULE(libtimemory, tim)
     //------------------------------------------------------------------------//
     py::class_<tim::format::timer> timing_fmt(fmt, "timer");
 
-    timing_fmt.def(py::init(&pytim::init::timing_format), "Initialize timing formatter",
-                   py::return_value_policy::take_ownership, py::arg("prefix") = "",
-                   py::arg("format") =
-                       std::string(timer_format_t::default_format().c_str()),
-                   py::arg("unit")       = timer_format_t::default_unit(),
-                   py::arg("rss_format") = py::none(), py::arg("align_width") = false);
+    timing_fmt.def(
+        py::init(&pytim::init::timing_format), "Initialize timing formatter",
+        py::return_value_policy::take_ownership, py::arg("prefix") = "",
+        py::arg("format") = std::string(timer_format_t::default_format().c_str()),
+        py::arg("unit") = timer_format_t::default_unit(), py::arg("align_width") = false);
 
     timing_fmt.def("set_default",
                    [=](PYOBJECT_SELF py::object _val) {
@@ -153,22 +152,6 @@ PYBIND11_MODULE(libtimemory, tim)
         "set_default_format",
         [=](PYOBJECT_SELF std::string _val) { timer_format_t::default_format(_val); },
         "Set the default timer format");
-    timing_fmt.def("set_default_rss_format",
-                   [=](PYOBJECT_SELF py::object _val) {
-                       try
-                       {
-                           rss_format_t* _rss = _val.cast<rss_format_t*>();
-                           timer_format_t::default_rss_format(*_rss);
-                       }
-                       catch(...)
-                       {
-                           std::string _fmt = _val.cast<std::string>();
-                           auto        _rss = timer_format_t::default_rss_format();
-                           _rss.format(_fmt);
-                           timer_format_t::default_rss_format(_rss);
-                       }
-                   },
-                   "Set the default timer RSS format");
     timing_fmt.def("set_default_precision",
                    [=](PYOBJECT_SELF const int16_t& _prec) {
                        timer_format_t::default_precision(_prec);
@@ -176,7 +159,7 @@ PYBIND11_MODULE(libtimemory, tim)
                    "Set the default timer precision");
     timing_fmt.def(
         "set_default_unit",
-        [=](PYOBJECT_SELF const int64_t& _unit) { timer_format_t::default_unit(_unit); },
+        [=](PYOBJECT_SELF const intmax_t& _unit) { timer_format_t::default_unit(_unit); },
         "Set the default timer units");
     timing_fmt.def(
         "set_default_width",
@@ -196,19 +179,13 @@ PYBIND11_MODULE(libtimemory, tim)
                        obj.cast<timer_format_t*>()->format(_val);
                    },
                    "Set the timer format");
-    timing_fmt.def("set_rss_format",
-                   [=](py::object obj, py::object _val) {
-                       rss_format_t* _rss = _val.cast<rss_format_t*>();
-                       obj.cast<timer_format_t*>()->rss_format(*_rss);
-                   },
-                   "Set the timer RSS format");
     timing_fmt.def("set_precision",
                    [=](py::object obj, const int16_t& _prec) {
                        obj.cast<timer_format_t*>()->precision(_prec);
                    },
                    "Set the timer precision");
     timing_fmt.def("set_unit",
-                   [=](py::object obj, const int64_t& _unit) {
+                   [=](py::object obj, const intmax_t& _unit) {
                        obj.cast<timer_format_t*>()->unit(_unit);
                    },
                    "Set the timer units");
@@ -269,7 +246,7 @@ PYBIND11_MODULE(libtimemory, tim)
                    "Set the default RSS precision");
     memory_fmt.def(
         "set_default_unit",
-        [=](PYOBJECT_SELF const int64_t& _unit) { rss_format_t::default_unit(_unit); },
+        [=](PYOBJECT_SELF const intmax_t& _unit) { rss_format_t::default_unit(_unit); },
         "Set the default RSS units");
     memory_fmt.def(
         "set_default_width",
@@ -295,7 +272,7 @@ PYBIND11_MODULE(libtimemory, tim)
                    },
                    "Set the RSS precision");
     memory_fmt.def("set_unit",
-                   [=](py::object obj, const int64_t& _unit) {
+                   [=](py::object obj, const intmax_t& _unit) {
                        obj.cast<rss_format_t*>()->unit(_unit);
                    },
                    "Set the RSS units");
@@ -328,7 +305,7 @@ PYBIND11_MODULE(libtimemory, tim)
     py::class_<auto_timer_t>         auto_timer(tim, "auto_timer");
     py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
     py::class_<rss_usage_t>          rss_usage(tim, "rss_usage");
-    py::class_<rss_delta_t>          rss_delta(tim, "rss_delta");
+    // py::class_<rss_delta_t>          rss_delta(tim, "rss_delta");
     // py::class_<manager_wrapper,
     //           std::unique_ptr<manager_wrapper, py::nodelete>>
     //        man(tim, "manager");
@@ -375,20 +352,6 @@ PYBIND11_MODULE(libtimemory, tim)
                       timer.cast<tim_timer_t*>()->as_string(ign_cutoff).c_str());
               },
               "Stringify timer", py::arg("ign_cutoff") = true);
-    //------------------------------------------------------------------------//
-    timer.def("__iadd__",
-              [=](py::object timer, py::object _rss) {
-                  *(timer.cast<tim_timer_t*>()) += *(_rss.cast<rss_usage_t*>());
-                  return timer;
-              },
-              "Add RSS measurement");
-    //------------------------------------------------------------------------//
-    timer.def("__isub__",
-              [=](py::object timer, py::object _rss) {
-                  *(timer.cast<tim_timer_t*>()) -= *(_rss.cast<rss_usage_t*>());
-                  return timer;
-              },
-              "Subtract RSS measurement");
     //------------------------------------------------------------------------//
     timer.def("get_format",
               [=](py::object self) {
@@ -490,12 +453,13 @@ PYBIND11_MODULE(libtimemory, tim)
             },
             "Get the max depth of the timers");
     //------------------------------------------------------------------------//
+    /*
     man.def("at",
             [=](py::object man, int i) {
                 tim_timer_t& _t = man.cast<manager_wrapper*>()->get()->at(i);
                 return &_t;
             },
-            "Set the max depth of the timers", py::return_value_policy::reference);
+            "Set the max depth of the timers", py::return_value_policy::reference);*/
     //------------------------------------------------------------------------//
     man.def("merge",
             [=](py::object man) { man.cast<manager_wrapper*>()->get()->merge(); },
@@ -509,20 +473,6 @@ PYBIND11_MODULE(libtimemory, tim)
                 return _json.attr("loads")(ss.str());
             },
             "Get JSON serialization of timing manager");
-    //------------------------------------------------------------------------//
-    man.def("__iadd__",
-            [=](py::object man, py::object _rss) {
-                *(man.cast<manager_wrapper*>()->get()) += *(_rss.cast<rss_usage_t*>());
-                return man;
-            },
-            "Add RSS measurement");
-    //------------------------------------------------------------------------//
-    man.def("__isub__",
-            [=](py::object man, py::object _rss) {
-                *(man.cast<manager_wrapper*>()->get()) -= *(_rss.cast<rss_usage_t*>());
-                return man;
-            },
-            "Subtract an rss usage from the entire list of timer");
     //------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
@@ -604,7 +554,7 @@ PYBIND11_MODULE(libtimemory, tim)
                    "Print the auto timer");
     //------------------------------------------------------------------------//
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
-                        py::return_value_policy::automatic);
+                        py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
 
     //========================================================================//
@@ -659,14 +609,14 @@ PYBIND11_MODULE(libtimemory, tim)
                   "Subtract rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_usage.def("current",
-                  [=](py::object self, int64_t _units) {
+                  [=](py::object self, intmax_t _units) {
                       return self.cast<rss_usage_t*>()->current(_units);
                   },
                   "Return the current rss usage",
                   py::arg("units") = units.attr("megabyte"));
     //------------------------------------------------------------------------//
     rss_usage.def("peak",
-                  [=](py::object self, int64_t _units) {
+                  [=](py::object self, intmax_t _units) {
                       return self.cast<rss_usage_t*>()->peak(_units);
                   },
                   "Return the current rss usage",
@@ -694,7 +644,7 @@ PYBIND11_MODULE(libtimemory, tim)
                   },
                   "Set the format of the RSS usage");
     //------------------------------------------------------------------------//
-
+    /*
     //========================================================================//
     //
     //                      RSS USAGE DELTA
@@ -783,7 +733,7 @@ PYBIND11_MODULE(libtimemory, tim)
                   },
                   "Set the format of the RSS usage");
     //------------------------------------------------------------------------//
-
+    */
     //========================================================================//
     //
     //                      MAIN libtimemory MODULE (part 2)

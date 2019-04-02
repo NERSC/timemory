@@ -48,10 +48,13 @@
 #include <functional>
 #include <limits>
 #include <stdexcept>
+#include <type_traits>
+#include <utility>
 // container
 #include <deque>
 #include <map>
 #include <set>
+#include <tuple>
 #include <vector>
 // threading
 #include <atomic>
@@ -452,6 +455,175 @@ get_max_threads()
 #else
     return _fallback;
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+class counted_object
+{
+public:
+    typedef counted_object<CountedType> this_type;
+    typedef counted_object<void>        void_type;
+
+public:
+    // return number of existing objects:
+    static intmax_t           live() { return count(); }
+    static constexpr intmax_t zero() { return static_cast<intmax_t>(0); }
+    static intmax_t           max_depth() { return fmax_depth; }
+
+    static void enable(const bool& val) { fenabled = val; }
+    static void set_max_depth(const intmax_t& val) { fmax_depth = val; }
+    static bool is_enabled() { return fenabled; }
+
+    template <typename _Tp = CountedType,
+              typename std::enable_if<std::is_same<_Tp, void>::value>::type* = nullptr>
+    static bool enable()
+    {
+        return fenabled && fmax_depth > count();
+    }
+    // the void type is consider the global setting
+    template <typename _Tp = CountedType,
+              typename std::enable_if<!std::is_same<_Tp, void>::value>::type* = nullptr>
+    static bool enable()
+    {
+        return void_type::is_enabled() && void_type::max_depth() > count() && fenabled &&
+               fmax_depth > count();
+    }
+
+protected:
+    // default constructor
+    counted_object() { ++count(); }
+    ~counted_object() { --count(); }
+    counted_object(const this_type&) { ++count(); }
+    explicit counted_object(this_type&&) { ++count(); }
+
+private:
+    // number of existing objects
+    static intmax_t& thread_number();
+    static intmax_t& master_count();
+    static intmax_t& count();
+    static intmax_t  fmax_depth;
+    static bool      fenabled;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+intmax_t&
+counted_object<CountedType>::thread_number()
+{
+    static std::atomic<intmax_t> _all_instance;
+    static thread_local intmax_t _instance = _all_instance++;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+intmax_t&
+counted_object<CountedType>::master_count()
+{
+    static intmax_t _instance = 0;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+intmax_t&
+counted_object<CountedType>::count()
+{
+    if(thread_number() == 0)
+        return master_count();
+    static thread_local intmax_t _instance = master_count();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+intmax_t counted_object<CountedType>::fmax_depth = std::numeric_limits<intmax_t>::max();
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+bool counted_object<CountedType>::fenabled = true;
+
+//--------------------------------------------------------------------------------------//
+
+template <typename HashedType>
+class hashed_object
+{
+public:
+    typedef hashed_object<HashedType> this_type;
+
+public:
+    // return running hash of existing objects
+    static intmax_t           live() { return hash(); }
+    static constexpr intmax_t zero() { return static_cast<intmax_t>(0); }
+
+protected:
+    // default constructor
+    template <typename _Tp,
+              typename std::enable_if<!std::is_integral<_Tp>::value>::type* = nullptr>
+    explicit hashed_object(const _Tp& _val)
+    : m_hash(std::hash<_Tp>(_val))
+    {
+        hash() += m_hash;
+    }
+
+    template <typename _Tp,
+              typename std::enable_if<std::is_integral<_Tp>::value>::type* = nullptr>
+    explicit hashed_object(const _Tp& _val)
+    : m_hash(_val)
+    {
+        hash() += m_hash;
+    }
+
+    ~hashed_object() { hash() -= m_hash; }
+    hashed_object(const this_type&)     = default;
+    explicit hashed_object(this_type&&) = default;
+    static intmax_t& hash();
+
+private:
+    // number of existing objects
+    static intmax_t& thread_number();
+    static intmax_t& master_hash();
+    intmax_t         m_hash;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename HashedType>
+intmax_t&
+hashed_object<HashedType>::thread_number()
+{
+    static std::atomic<intmax_t> _all_instance;
+    static thread_local intmax_t _instance = _all_instance++;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename HashedType>
+intmax_t&
+hashed_object<HashedType>::master_hash()
+{
+    static intmax_t _instance = 0;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename HashedType>
+intmax_t&
+hashed_object<HashedType>::hash()
+{
+    if(thread_number() == 0)
+        return master_hash();
+    static thread_local intmax_t _instance = master_hash();
+    return _instance;
 }
 
 //--------------------------------------------------------------------------------------//

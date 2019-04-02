@@ -1,0 +1,244 @@
+//  MIT License
+//
+//  Copyright (c) 2018, The Regents of the University of California,
+//  through Lawrence Berkeley National Laboratory (subject to receipt of any
+//  required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in all
+//  copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+//  SOFTWARE.
+
+#include "timemory/rusage.hpp"
+
+
+//============================================================================//
+// Returns the peak (maximum so far) resident set size (physical
+// memory use) measured in bytes, or zero if the value cannot be
+// determined on this OS.
+//
+intmax_t tim::rusage::get_peak_rss()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+// Darwin reports in bytes, Linux reports in kilobytes
+#if defined(_MACOS)
+    intmax_t _units = 1;
+#else
+    intmax_t _units = units::kilobyte;
+#endif
+
+    return (intmax_t)(_units * (_self.ru_maxrss + _child.ru_maxrss));
+
+#elif defined(_WINDOWS)
+    DWORD processID = GetCurrentProcessId();
+    HANDLE hProcess;
+    PROCESS_MEMORY_COUNTERS pmc;
+
+    // Print the process identifier.
+    // printf( "\nProcess ID: %u\n", processID );
+    // Print information about the memory usage of the process.
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                               PROCESS_VM_READ,
+                           TRUE, processID);
+    if (NULL == hProcess)
+        return (intmax_t)0;
+
+    intmax_t nsize = 0;
+    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
+        nsize = (intmax_t)pmc.PeakWorkingSetSize;
+
+    CloseHandle(hProcess);
+
+    return nsize;
+#else
+    return (intmax_t)0;
+#endif
+}
+
+//============================================================================//
+// Returns the current resident set size (physical memory use) measured
+// in bytes, or zero if the value cannot be determined on this OS.
+//
+intmax_t tim::rusage::get_current_rss()
+{
+#if defined(_UNIX)
+#if defined(_MACOS)
+    // OSX
+    struct mach_task_basic_info info;
+    mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
+    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                  (task_info_t)&info, &infoCount) != KERN_SUCCESS)
+        return (intmax_t)0L; /* Can't access? */
+    // Darwin reports in bytes
+    return (intmax_t)(info.resident_size);
+
+#else // Linux
+
+    intmax_t rss = 0;
+    FILE *fp = fopen("/proc/self/statm", "r");
+    if (fp && fscanf(fp, "%*s%ld", &rss) == 1)
+    {
+        fclose(fp);
+        return (intmax_t)(rss * units::page_size);
+    }
+
+    if (fp)
+        fclose(fp);
+
+    return (intmax_t)(0);
+
+#endif
+#elif defined(_WINDOWS)
+    DWORD processID = GetCurrentProcessId();
+    HANDLE hProcess;
+    PROCESS_MEMORY_COUNTERS pmc;
+
+    // Print the process identifier.
+    // printf( "\nProcess ID: %u\n", processID );
+    // Print information about the memory usage of the process.
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
+                               PROCESS_VM_READ,
+                           FALSE, processID);
+    if (NULL == hProcess)
+        return (intmax_t)0;
+
+    intmax_t nsize = 0;
+    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
+        nsize = (intmax_t)pmc.WorkingSetSize;
+
+    CloseHandle(hProcess);
+
+    return nsize;
+#else
+    return (intmax_t)0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_stack_rss()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    const intmax_t _units = units::kilobyte * units::clocks_per_sec;
+    return (intmax_t)(_units * (_self.ru_idrss + _child.ru_idrss));
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_data_rss()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    const intmax_t _units = units::kilobyte * units::clocks_per_sec;
+    return (intmax_t)(_units * (_self.ru_isrss + _child.ru_isrss));
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_num_swap()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    return (intmax_t)(_self.ru_nswap + _child.ru_nswap);
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_num_io_in()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    return (intmax_t)(_self.ru_inblock + _child.ru_inblock);
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_num_io_out()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    const intmax_t _units = 1;
+    return (intmax_t)(_self.ru_oublock + _child.ru_oublock);
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_num_minor_page_faults()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    const intmax_t _units = 1;
+    return (intmax_t)(_self.ru_minflt + _child.ru_minflt);
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//
+
+intmax_t tim::rusage::get_num_major_page_faults()
+{
+#if defined(_UNIX)
+    struct rusage _self, _child;
+    getrusage(RUSAGE_SELF, &_self);
+    getrusage(RUSAGE_CHILDREN, &_child);
+
+    const intmax_t _units = 1;
+    return (intmax_t)(_self.ru_majflt + _child.ru_majflt);
+#else
+    return 0;
+#endif
+}
+
+//============================================================================//

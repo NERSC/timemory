@@ -47,7 +47,17 @@ if(TIMEMORY_USE_MPI)
     if(MPI_FOUND)
 
         # Add the MPI-specific compiler and linker flags
-        add(CMAKE_CXX_FLAGS  "${MPI_CXX_COMPILE_FLAGS}")
+        to_list(_FLAGS "${MPI_C_COMPILE_FLAGS}")
+        foreach(_FLAG ${_FLAGS})
+            add_c_flag_if_avail("${_FLAG}")
+        endforeach()
+        unset(_FLAGS)
+        to_list(_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
+        foreach(_FLAG ${_FLAGS})
+            add_cxx_flag_if_avail("${_FLAG}")
+            message(STATUS "checking ${_FLAG}")
+        endforeach()
+        unset(_FLAGS)
         add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
         list(APPEND EXTERNAL_INCLUDE_DIRS
             ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})

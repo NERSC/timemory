@@ -32,8 +32,8 @@
 
 //======================================================================================//
 
-int64_t
-fibonacci(int64_t n, int64_t cutoff)
+intmax_t
+fibonacci(intmax_t n, intmax_t cutoff)
 {
     if(n > cutoff)
     {
@@ -51,7 +51,7 @@ fibonacci(int64_t n, int64_t cutoff)
 //======================================================================================//
 
 void
-print_result(std::string prefix, int64_t result)
+print_result(std::string prefix, intmax_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
 }
@@ -59,7 +59,7 @@ print_result(std::string prefix, int64_t result)
 //======================================================================================//
 
 tim::timer
-run(int64_t n, bool with_timing, int64_t cutoff)
+run(intmax_t n, bool with_timing, intmax_t cutoff)
 {
     std::stringstream ss;
     ss << __FUNCTION__ << " [with timing = " << std::boolalpha << with_timing << "]";
@@ -78,7 +78,7 @@ int
 main(int argc, char** argv)
 {
     // default calc: fibonacci(40)
-    int nfib = 40;
+    int nfib = 43;
     if(argc > 1)
         nfib = atoi(argv[1]);
 
@@ -100,11 +100,10 @@ main(int argc, char** argv)
     std::cout << std::endl;
     timer_list.push_back(timer_list.at(1) - timer_list.at(0));
     timer_list.back().format()->prefix("Timer difference");
-    manager->missing_timer()->stop();
+    // manager->missing_timer()->stop();
     timer_list.push_back(tim::timer(timer_list.back()));
     timer_list.back().accum() /= manager->total_laps();
     timer_list.back().format()->prefix("TiMemory avg. overhead");
-    timer_list.back().record_memory(false);
     timer_list.back().format()->format(
         ": %w %T (wall), %u %T (user), %s %T (sys), %t %T (cpu)");
     timer_list.back().format()->unit(tim::units::usec);

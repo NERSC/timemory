@@ -7,6 +7,8 @@
 
 include(MacroUtilities)
 
+set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
+
 # CMake options
 add_feature(CMAKE_C_STANDARD "C language standard")
 add_option (CMAKE_C_STANDARD_REQUIRED "Require C standard" ON)
@@ -27,7 +29,7 @@ add_option (TIMEMORY_USE_EXCEPTIONS "Signal handler throws exceptions (default: 
 add_option (TIMEMORY_USE_MPI "Enable MPI usage" ON)
 add_option (TIMEMORY_USE_CUSTOM_STRING "Use custom portable string implementation (experimental)" OFF)
 add_option (TIMEMORY_USE_PYTHON_BINDING "Build Python binds for ${PROJECT_NAME}" ON)
-add_option (TIMEMORY_USE_SANITIZE "Enable -fsanitize flag (=${SANITIZE_TYPE})" OFF)
+add_option (TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option (TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF)
 add_option (TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF NO_FEATURE)
 add_option (TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)

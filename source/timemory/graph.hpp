@@ -228,8 +228,10 @@ public:
     };
 
     /// The default iterator types throughout the graph class.
-    typedef pre_order_iterator            iterator;
-    typedef breadth_first_queued_iterator breadth_first_iterator;
+    typedef pre_order_iterator                 iterator;
+    typedef const iterator                     const_iterator;
+    typedef typename iterator::difference_type difference_type;
+    typedef breadth_first_queued_iterator      breadth_first_iterator;
 
     /// Iterator which traverses only the nodes at a given depth from the root.
     class fixed_depth_iterator : public iterator_base
@@ -307,6 +309,10 @@ public:
     inline pre_order_iterator begin() const;
     /// Return iterator to the end of the graph.
     inline pre_order_iterator end() const;
+    /// Return iterator to the beginning of the graph.
+    inline const pre_order_iterator cbegin() const;
+    /// Return iterator to the end of the graph.
+    inline const pre_order_iterator cend() const;
     /// Return post-order iterator to the beginning of the graph.
     post_order_iterator begin_post() const;
     /// Return post-order end iterator of the graph.
@@ -884,6 +890,24 @@ graph<T, AllocatorT>::begin() const
 template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::pre_order_iterator
 graph<T, AllocatorT>::end() const
+{
+    return pre_order_iterator(feet);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+const typename graph<T, AllocatorT>::pre_order_iterator
+graph<T, AllocatorT>::cbegin() const
+{
+    return pre_order_iterator(head->next_sibling);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename AllocatorT>
+const typename graph<T, AllocatorT>::pre_order_iterator
+graph<T, AllocatorT>::cend() const
 {
     return pre_order_iterator(feet);
 }

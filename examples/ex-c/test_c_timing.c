@@ -6,8 +6,8 @@
 
 //============================================================================//
 
-int64_t
-fibonacci(int64_t n)
+intmax_t
+fibonacci(intmax_t n)
 {
     void* timer = NULL;
     if(n > 34)
@@ -18,7 +18,7 @@ fibonacci(int64_t n)
         timer = TIMEMORY_AUTO_TIMER(str);
         free(str);
     }
-    int64_t _n = (n < 2) ? 1L : (fibonacci(n - 2) + fibonacci(n - 1));
+    intmax_t _n = (n < 2) ? 1L : (fibonacci(n - 2) + fibonacci(n - 1));
     FREE_TIMEMORY_AUTO_TIMER(timer);
     return _n;
 }
@@ -35,7 +35,7 @@ main(int argc, char** argv)
         TIMEMORY_RECORD_MEMORY(atoi(argv[1]));
 
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-    int64_t n = fibonacci(44);
+    intmax_t n = fibonacci(44);
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     TIMEMORY_PRINT();
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
