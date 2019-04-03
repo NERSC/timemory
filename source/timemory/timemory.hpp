@@ -32,7 +32,6 @@
 
 #include "timemory/auto_timer.hpp"
 #include "timemory/environment.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"

@@ -22,7 +22,7 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#include "timemory/base_clock.hpp"
+#include "timemory/clocks.hpp"
 
 #if defined(_WINDOWS)
 
@@ -58,6 +58,6 @@ times(struct tms* __buffer)
 
 #else
 
-int32_t base_clock_dummy::asymbol = 0;
+int32_t clocks_dummy::asymbol = 0;
 
 #endif

@@ -23,7 +23,6 @@
 //  IN THE SOFTWARE.
 
 #include "timemory/environment.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility.hpp"

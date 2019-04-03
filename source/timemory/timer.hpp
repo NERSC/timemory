@@ -38,7 +38,6 @@
 #include <string>
 
 #include "timemory/base_timer.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
 

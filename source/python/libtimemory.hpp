@@ -57,7 +57,6 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
 #include "timemory/auto_timer.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"

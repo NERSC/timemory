@@ -410,12 +410,10 @@ template <typename _Tp>
 inline _Tp&
 manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
 {
-    typedef data_tuple<_Tp>               tuple_t;
-    typedef data_storage<_Tp>             storage_t;
-    typedef typename storage_t::graph_t   graph_t;
-    typedef _Tp                           value_t;
-    typedef typename value_t::format_type format_t;
-    typedef typename storage_t::pointer_t pointer_t;
+    typedef data_tuple<_Tp>             tuple_t;
+    typedef data_storage<_Tp>           storage_t;
+    typedef typename storage_t::graph_t graph_t;
+    // typedef _Tp                         value_t;
 
     // get a reference to the storage_t object in tuple_data
     storage_t& _data = std::get<index_of<storage_t, tuple_data_t>::value>(m_tuple_data);
@@ -477,7 +475,7 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     }
 
     ss << std::left << key;
-    format_t::propose_default_width(ss.str().length());
+    // format_t::propose_default_width(ss.str().length());
 
     //_data.map()[ref] = pointer_t(new value_t(
     //    format_t(ss.str(), format_t::default_format(), format_t::default_unit(),

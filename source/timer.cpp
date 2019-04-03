@@ -64,7 +64,6 @@ timer::timer(const this_type* rhs, const string_t& _prefix, bool _align_width)
 {
     if(rhs)
         this->sync(*rhs);
-    this->format()->align_width(_align_width);
 }
 
 //======================================================================================//
@@ -89,12 +88,8 @@ timer::operator=(const this_type& rhs)
     if(this != &rhs)
     {
         base_type::operator=(rhs);
-        // if(!m_format.get())
-        //    m_format = timer_format_t(new format_type());
-        if(rhs.format().get())
-            *m_format = *(rhs.format().get());
-        m_accum     = rhs.get_accum();
-        m_sum_timer = rhs.m_sum_timer;
+        m_accum            = rhs.get_accum();
+        m_sum_timer        = rhs.m_sum_timer;
     }
     return *this;
 }
@@ -104,13 +99,6 @@ timer::operator=(const this_type& rhs)
 void
 timer::grab_metadata(const this_type& rhs)
 {
-    if(!rhs.m_format.get())
-        return;
-
-    // if(!m_format.get())
-    //    m_format = timer_format_t(new format_type());
-
-    *(m_format.get()) = *(rhs.m_format.get());
 }
 
 //======================================================================================//

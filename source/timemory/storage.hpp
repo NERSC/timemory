@@ -34,7 +34,6 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/apply.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"

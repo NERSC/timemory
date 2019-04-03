@@ -37,9 +37,8 @@
 #include <fstream>
 #include <string>
 
-#include "timemory/base_clock.hpp"
+#include "timemory/clocks.hpp"
 #include "timemory/data_types.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
@@ -84,11 +83,9 @@ public:
     typedef clock_t::time_point                     time_point_t;
     typedef std::chrono::duration<clock_t, ratio_t> duration_t;
     typedef base_timer                              this_type;
-    typedef format::timer                           format_type;
-    typedef std::shared_ptr<format_type>            timer_format_t;
 
 public:
-    base_timer(timer_format_t = timer_format_t(), ostream_t* = &std::cout);
+    base_timer(ostream_t* = &std::cout);
     virtual ~base_timer();
 
     base_timer(const base_timer& rhs);
@@ -111,9 +108,6 @@ public:
     inline void                reset() { m_accum.reset(); }
     inline data_accum_t&       accum() { return m_accum; }
     inline const data_accum_t& accum() const { return m_accum; }
-    inline timer_format_t      format() const { return m_format; }
-    inline void                set_format(const format_type& _format);
-    inline void                set_format(timer_format_t _format);
 
 public:
     // public member functions
@@ -139,7 +133,6 @@ protected:
     mutex_t              m_mutex;
     mutable data_t       m_data;
     mutable data_accum_t m_accum;
-    timer_format_t       m_format;
 
 private:
     // world mutex map for thread-safe ostreams
@@ -190,18 +183,6 @@ public:
     }
 };
 
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::set_format(const format_type& _format)
-{
-    m_format = timer_format_t(new format_type(_format));
-}
-//--------------------------------------------------------------------------------------//
-inline void
-base_timer::set_format(timer_format_t _format)
-{
-    m_format = _format;
-}
 //--------------------------------------------------------------------------------------//
 // Print timer status n std::ostream
 static inline std::ostream&
@@ -324,7 +305,6 @@ base_timer::report(std::ostream& os, bool endline, bool ign_cutoff) const
         return;
 
     std::stringstream ss;
-    // ss << (*m_format)(this);
 
     if(endline)
         ss << std::endl;

@@ -30,7 +30,7 @@
 #include <fstream>
 #include <string>
 
-#include "timemory/base_clock.hpp"
+#include "timemory/clocks.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"

@@ -33,10 +33,9 @@
 #include <stdio.h>
 #include <string>
 
-#include "timemory/formatters.hpp"
+#include "timemory/clocks.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
-#include "timemory/base_clock.hpp"
 
 //============================================================================//
 
@@ -61,9 +60,10 @@ enum record_type
 
 //----------------------------------------------------------------------------//
 
-template <typename _Tp, typename value_type = double>
+template <typename _Tp, typename value_type = intmax_t>
 struct base
 {
+    using ratio_t    = std::micro;
     using Type       = _Tp;
     value_type value = value_type(0);
 
@@ -76,7 +76,7 @@ struct base
     void serialize(Archive& ar, const unsigned int)
     {
         ar(serializer::make_nvp(Type::label(), value),
-           serializer::make_nvp("units", Type::units));
+           serializer::make_nvp("units", Type::unit));
     }
 
     value_type operator()() { return (value = Type::record()); }
@@ -129,22 +129,104 @@ struct base
         value /= rhs;
         return static_cast<_Tp&>(*this);
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const base<_Tp>& ru)
+    {
+        std::stringstream ss, ssv, ssi;
+        auto tmp = static_cast<double>(ru.value / static_cast<double>(ratio_t::den));
+        ss << "    > ";
+        ssv << std::setprecision(3) << std::setw(8) << std::fixed << tmp;
+        ssi << " " << std::setw(8) << std::left << _Tp::label();
+        ss << ssv.str() << ssi.str() << " [sec]";
+        os << ss.str();
+        return os;
+    }
 };
 
 //----------------------------------------------------------------------------//
 
-struct clock_realtime : public base<clock_realtime>
+struct realtime_clock : public base<realtime_clock>
 {
     static const record_type category = REALTIME;
     static std::string       label() { return "real"; }
-    static const intmax_t    units = units::usec;
-    static double          record() { return tim::get_clock_realtime_now<uintmax_t, std::micro>(); }
+    static std::string       descript() { return "wall time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_realtime_now<intmax_t, ratio_t>(); }
 };
 
 //----------------------------------------------------------------------------//
 
-typedef std::tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
-                   num_io_out, num_minor_page_faults, num_major_page_faults>
+struct system_clock : public base<system_clock>
+{
+    static const record_type category = SYSTEM;
+    static std::string       label() { return "sys"; }
+    static std::string       descript() { return "system time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_system_now<intmax_t, ratio_t>(); }
+};
+
+//----------------------------------------------------------------------------//
+
+struct user_clock : public base<user_clock>
+{
+    static const record_type category = USER;
+    static std::string       label() { return "user"; }
+    static std::string       descript() { return "user time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_monotonic_now<intmax_t, ratio_t>(); }
+};
+
+//----------------------------------------------------------------------------//
+
+struct monotonic_clock : public base<monotonic_clock>
+{
+    static const record_type category = USER;
+    static std::string       label() { return "mono"; }
+    static std::string       descript() { return "monotonic time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_monotonic_now<intmax_t, ratio_t>(); }
+};
+
+//----------------------------------------------------------------------------//
+
+struct monotonic_raw_clock : public base<monotonic_raw_clock>
+{
+    static const record_type category = USER;
+    static std::string       label() { return "raw_mono"; }
+    static std::string       descript() { return "monotonic raw time"; }
+    static const intmax_t    unit = units::usec;
+    static double            record()
+    {
+        return tim::get_clock_monotonic_raw_now<intmax_t, ratio_t>();
+    }
+};
+
+//----------------------------------------------------------------------------//
+
+struct thread_cpu_clock : public base<thread_cpu_clock>
+{
+    static const record_type category = USER;
+    static std::string       label() { return "thr_cpu"; }
+    static std::string       descript() { return "thread cpu time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_thread_now<intmax_t, ratio_t>(); }
+};
+
+//----------------------------------------------------------------------------//
+
+struct process_cpu_clock : public base<process_cpu_clock>
+{
+    static const record_type category = USER;
+    static std::string       label() { return "proc_cpu"; }
+    static std::string       descript() { return "process cpu time"; }
+    static const intmax_t    unit = units::usec;
+    static double record() { return tim::get_clock_process_now<intmax_t, ratio_t>(); }
+};
+
+//----------------------------------------------------------------------------//
+
+typedef std::tuple<realtime_clock, system_clock, user_clock, monotonic_clock,
+                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock>
     types_t;
 
 //----------------------------------------------------------------------------//
@@ -164,7 +246,7 @@ template <typename _Tp>
 struct record : public base<_Tp>
 {
     record(base<_Tp>& obj) { obj(); }
-    record(base<_Tp>& obj, const base<_Tp>& rhs) { obj = obj.max(rhs); }
+    record(base<_Tp>& obj, const base<_Tp>& rhs) { obj += rhs.value; }
 };
 
 //----------------------------------------------------------------------------//
@@ -221,12 +303,21 @@ struct divide : public base<_Tp>
 
 //----------------------------------------------------------------------------//
 
-}  // namespace rusage
+template <typename _Tp, typename Archive>
+struct serial : public base<_Tp>
+{
+    serial(base<_Tp>& obj, Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp(_Tp::label(), obj.value));
+    }
+};
+
+//----------------------------------------------------------------------------//
+
+}  // namespace timing
 
 //----------------------------------------------------------------------------//
 
 }  // namespace tim
 
 //----------------------------------------------------------------------------//
-
-#include "timemory/rusage.icpp"

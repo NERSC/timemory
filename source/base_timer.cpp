@@ -47,10 +47,9 @@ base_timer::mutex_map_t base_timer::f_mutex_map;
 
 //======================================================================================//
 
-base_timer::base_timer(timer_format_t _format, std::ostream* os)
+base_timer::base_timer(std::ostream* os)
 : m_os(os)
 , m_data(data_t())
-, m_format(_format)
 {
 }
 
@@ -60,7 +59,6 @@ base_timer::base_timer(const base_timer& rhs)
 : m_os(rhs.m_os)
 , m_data(rhs.m_data)
 , m_accum(rhs.m_accum)
-, m_format(rhs.m_format)
 {
 }
 
@@ -83,10 +81,9 @@ base_timer::operator=(const base_timer& rhs)
 {
     if(this != &rhs)
     {
-        m_os     = rhs.m_os;
-        m_data   = rhs.m_data;
-        m_accum  = rhs.m_accum;
-        m_format = rhs.m_format;
+        m_os    = rhs.m_os;
+        m_data  = rhs.m_data;
+        m_accum = rhs.m_accum;
     }
     return *this;
 }
@@ -112,13 +109,13 @@ base_timer::above_cutoff(bool ign_cutoff) const
     if(ign_cutoff)
         return true;
 
-    double _cpu = user_elapsed() + system_elapsed();
+    // double _cpu = user_elapsed() + system_elapsed();
 
-    double tmin = 1.0 / (pow((uint32_t) 10, (uint32_t) m_format->precision()));
+    // double tmin = 1.0 / (pow((uint32_t) 10, (uint32_t) m_format->precision()));
     // skip if it will be reported as all zeros
     // e.g. tmin = ( 1. / 10^3 ) = 0.001;
-    if((real_elapsed() < tmin && _cpu < tmin) || (_cpu / real_elapsed()) < 0.001)
-        return false;
+    // if((real_elapsed() < tmin && _cpu < tmin) || (_cpu / real_elapsed()) < 0.001)
+    //    return false;
 
     return true;
 }

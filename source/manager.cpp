@@ -521,8 +521,8 @@ manager::compute_self()
 
     // m_timer_list_self.clear();
 
-    typedef std::shared_ptr<tim_timer_t> _timer_ptr_t;
-    using std::get;
+    // typedef std::shared_ptr<tim_timer_t> _timer_ptr_t;
+    // using std::get;
 
     /*for(const auto& itr : m_timer_list_norm)
     {
@@ -555,7 +555,7 @@ manager::compute_self()
 manager::tim_timer_t
 manager::compute_missing(tim_timer_t* timer_ref)
 {
-    typedef std::set<uintmax_t> key_set_t;
+    // typedef std::set<uintmax_t> key_set_t;
 
     tim_timer_t* _ref    = (timer_ref) ? timer_ref : &timer_data.missing();
     bool         restart = _ref->is_running();
@@ -567,8 +567,7 @@ manager::compute_missing(tim_timer_t* timer_ref)
     if(_ref->is_running())
         _ref->stop();
 
-    string_t _f_prefix = _ref->format()->prefix();
-
+    /*
     tim_timer_t _missing_timer(_ref, _f_prefix, true);
 
     if(restart)
@@ -590,6 +589,8 @@ manager::compute_missing(tim_timer_t* timer_ref)
         _missing_timer += (depth_timers[i - 1] - depth_timers[i]);
 
     return _missing_timer;
+    */
+    return *timer_ref;
 }
 
 //======================================================================================//
@@ -649,8 +650,8 @@ manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _mis
     _ss << _sp1.str() << laps() << std::endl;
     _ss << _sp2.str() << total_laps() << std::endl;
 
-    _missing.format()->width(_w);
-    _missing.format()->align_width(false);
+    //_missing.format()->width(_w);
+    //_missing.format()->align_width(false);
 
     _ss << _missing.as_string() << std::endl;
     _os << "\n" << _ss.str();

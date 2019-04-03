@@ -40,9 +40,8 @@
 #include <stdio.h>
 #include <string>
 
-#include "timemory/base_usage.hpp"
+#include "timemory/component_tuple.hpp"
 #include "timemory/data_types.hpp"
-#include "timemory/formatters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/string.hpp"
