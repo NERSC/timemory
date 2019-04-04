@@ -23,6 +23,7 @@
 // SOFTWARE.
 //
 
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <fstream>
@@ -32,7 +33,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cassert>
+#include "papi.h"
 
 #include <timemory/auto_timer.hpp>
 #include <timemory/auto_tuple.hpp>
@@ -40,6 +41,7 @@
 #include <timemory/environment.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/mpi.hpp>
+#include <timemory/papi.hpp>
 #include <timemory/rusage.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
@@ -87,6 +89,20 @@ main(int argc, char** argv)
     tim::standard_timing_components_t timing;
     timing.start();
 
+    tim::papi::init();
+    // tim::papi::set_debug(2);
+    std::size_t nevents   = 4;
+    int*        event_set = new int[1];
+    long long*  values    = new long long[nevents];
+    memset(event_set, 0, sizeof(int));
+    memset(values, 0, nevents * sizeof(long long));
+
+    tim::papi::add_event(*event_set, PAPI_L1_DCM);
+    tim::papi::add_event(*event_set, PAPI_L1_ICM);
+    tim::papi::add_event(*event_set, PAPI_L1_TCM);
+    tim::papi::add_event(*event_set, PAPI_TOT_CYC);
+    tim::papi::start(*event_set);
+
     CONFIGURE_TEST_SELECTOR(3);
 
     int num_fail = 0;
@@ -106,6 +122,15 @@ main(int argc, char** argv)
 
     timing.stop();
     std::cout << "\nTests runtime: " << timing << std::endl;
+
+    tim::papi::stop(*event_set, values);
+    for(std::size_t i = 0; i < nevents; ++i)
+    {
+        auto info = PAPI_get_component_info(i);
+        std::cout << "PAPI value [" << i << "] = " << values[i] << std::endl;
+    }
+    delete[] event_set;
+    delete[] values;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
 

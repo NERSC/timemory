@@ -1,4 +1,4 @@
-//  MIT License
+﻿//  MIT License
 //
 //  Copyright (c) 2018, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
@@ -144,10 +144,24 @@ init()
     if(!PAPI_is_initialized())
     {
         get_master_tid();
-        int retval = PAPI_library_init(PAPI_VER_CURRENT);
-        working()  = check(retval, "Warning!! Failure initializing PAPI");
-        working()  = true;
-        PAPI_thread_init(pthread_self);
+        {
+            int events       = PAPI_L1_TCM;
+            int num_events   = 1;
+            int retval       = PAPI_start_counters(&events, num_events);
+            working()        = check(retval, "Warning!! Failure starting counters");
+            long long values = 0;
+            retval           = PAPI_stop_counters(&values, num_events);
+            working()        = check(retval, "Warning!! Failure stopping counters");
+        }
+        if(!working())
+        {
+            int retval = PAPI_library_init(PAPI_VER_CURRENT);
+            working()  = check(retval, "Warning!! Failure initializing PAPI");
+        }
+        {
+            int retval = PAPI_thread_init(pthread_self);
+            working()  = check(retval, "Warning!! Failure thread init");
+        }
     }
     if(working())
         register_thread();
@@ -176,7 +190,7 @@ start(int event_set)
     // start counting hardware events in an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_start(event_set);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to start event set");
 #else
     consume_parameters(event_set);
 #endif
@@ -190,7 +204,7 @@ stop(int event_set, long long* values)
     // stop counting hardware events in an event set and return current events
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_stop(event_set, values);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to stop event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -204,7 +218,7 @@ read(int event_set, long long* values)
     // read hardware events from an event set with no reset
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_read(event_set, values);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to read event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -218,7 +232,7 @@ write(int event_set, long long* values)
     // write counter values into counters
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_write(event_set, values);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to write event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -232,7 +246,7 @@ accum(int event_set, long long* values)
     // accumulate and reset hardware events from an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_accum(event_set, values);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to accum event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -246,7 +260,7 @@ reset(int event_set)
     // reset the hardware event counts in an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_reset(event_set);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to reset event set");
 #else
     consume_parameters(event_set);
 #endif
@@ -260,7 +274,7 @@ set_debug(int level)
     // set the current debug level for PAPI
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_set_debug(level);
-    assert(retval == PAPI_OK);
+    check(retval, "Warning!! Failure to set debug level");
 #else
     consume_parameters(level);
 #endif
@@ -308,7 +322,7 @@ add_event(int event_set, int event)
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_add_event(event_set, event);
-    check(retval, "Warning!! Failure to add event");
+    check(retval, "Warning!! Failure to add event to event set");
 #else
     consume_parameters(event_set, event);
 #endif
@@ -322,7 +336,7 @@ add_events(int event_set, int* events, int number)
     // add array of PAPI preset or native hardware events to an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_add_events(event_set, events, number);
-    check(retval, "Warning!! Failure to add events");
+    check(retval, "Warning!! Failure to add events to event set");
 #else
     consume_parameters(event_set, events, number);
 #endif

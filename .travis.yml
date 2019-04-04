@@ -457,6 +457,6 @@ script:
     #
     #- mkdir -p ${HOME}/timemory-test
     # go to empty directory for testing
-    - cd ${HOME}/timemory-test
+    #- cd ${HOME}/timemory-test
     #- python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
     - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
