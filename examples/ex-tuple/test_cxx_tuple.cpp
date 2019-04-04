@@ -33,8 +33,6 @@
 #include <unordered_map>
 #include <vector>
 
-#include "papi.h"
-
 #include <timemory/auto_timer.hpp>
 #include <timemory/auto_tuple.hpp>
 #include <timemory/component_tuple.hpp>
@@ -48,9 +46,9 @@
 
 using namespace tim::component;
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, process_cpu_clock,
-                    cpu_util, thread_cpu_util, process_cpu_util, peak_rss, current_rss>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
+                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
+                                     peak_rss, current_rss, papi_event<PAPI_L1_DCM>>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -126,7 +124,6 @@ main(int argc, char** argv)
     tim::papi::stop(*event_set, values);
     for(std::size_t i = 0; i < nevents; ++i)
     {
-        auto info = PAPI_get_component_info(i);
         std::cout << "PAPI value [" << i << "] = " << values[i] << std::endl;
     }
     delete[] event_set;
@@ -219,9 +216,9 @@ test_2_timing()
     print_info(__FUNCTION__);
 
     typedef tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                                 monotonic_clock, monotonic_raw_clock, thread_cpu_clock,
-                                 process_cpu_clock, cpu_util, thread_cpu_util,
-                                 process_cpu_util>
+                                 cpu_util, thread_cpu_clock, thread_cpu_util,
+                                 process_cpu_clock, process_cpu_util, monotonic_clock,
+                                 monotonic_raw_clock>
         measurement_t;
     using pair_t = std::pair<std::string, measurement_t>;
 
@@ -278,8 +275,8 @@ test_3_auto_tuple()
 
     // measure multiple clock time + resident set sizes
     using full_set_t =
-        tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
-                        thread_cpu_util, process_cpu_util, peak_rss, current_rss>;
+        tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                        process_cpu_util, peak_rss, current_rss>;
     // measure wall-clock, thread cpu-clock + process cpu-utilization
     using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util>;
 
@@ -288,8 +285,11 @@ test_3_auto_tuple()
         // accumulate metrics on full run
         TIMEMORY_BASIC_AUTO_TUPLE(full_set_t, "[total]");
 
+        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+
         // run a fibonacci calculation and accumulate metric
         auto run_fibonacci = [&](long n) {
+            auto man = tim::manager::instance();
             TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
             ret += fibonacci(n);
         };

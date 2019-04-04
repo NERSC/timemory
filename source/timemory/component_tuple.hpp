@@ -224,19 +224,13 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // operators
+    // this_type operators
+    //
     this_type& operator-=(const this_type& rhs)
     {
         typedef std::tuple<component::minus<Types>...> apply_types;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
-        return *this;
-    }
-
-    this_type& operator-=(uintmax_t&& rhs)
-    {
-        typedef std::tuple<component::minus<Types>...> apply_types;
-        apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
         return *this;
     }
 
@@ -248,10 +242,22 @@ public:
         return *this;
     }
 
-    this_type& operator+=(uintmax_t&& rhs)
+    //----------------------------------------------------------------------------------//
+    // generic operators
+    //
+    template <typename _Op>
+    this_type& operator-=(_Op&& rhs)
+    {
+        typedef std::tuple<component::minus<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        return *this;
+    }
+
+    template <typename _Op>
+    this_type& operator+=(_Op&& rhs)
     {
         typedef std::tuple<component::plus<Types>...> apply_types;
-        apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
+        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
@@ -274,11 +280,18 @@ public:
     //--------------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        typedef std::tuple<component::print<Types>...> apply_types;
-        std::stringstream                              ss_prefix;
-        std::stringstream                              ss_data;
-        apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                      false);
+        {
+            // stop, if not already stopped
+            typedef std::tuple<component::conditional_stop<Types>...> apply_types;
+            apply<void>::access<apply_types>(obj.m_data);
+        }
+        std::stringstream ss_prefix;
+        std::stringstream ss_data;
+        {
+            typedef std::tuple<component::print<Types>...> apply_types;
+            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
+                                                          false);
+        }
         ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
         os << ss_prefix.str() << ss_data.str() << " [laps: " << obj.m_laps << "]";
         return os;
@@ -304,13 +317,8 @@ public:
     //--------------------------------------------------------------------------------------//
     inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
     {
-        // stop, if not already stopped
-        // if(m_data.running())
-        //    const_cast<component_tuple*>(this)->stop();
-
         std::stringstream ss;
         ss << *this;
-        // ss << (*m_format)(this);
 
         if(endline)
             ss << std::endl;

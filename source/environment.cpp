@@ -114,24 +114,27 @@ parse()
         using return_type = std::tuple<std::string, long>;
 
         if(_unit.length() == 0)
-            return return_type("", 0L);
+            return return_type("sec", tim::units::sec);
 
         using inner            = std::tuple<string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = { inner("psec", "picosecond", tim::units::psec),
-                                   inner("nsec", "nanosecond", tim::units::nsec),
-                                   inner("usec", "microsecond", tim::units::usec),
-                                   inner("msec", "millisecond", tim::units::msec),
-                                   inner("csec", "centisecond", tim::units::csec),
-                                   inner("dsec", "decisecond", tim::units::dsec),
-                                   inner("sec", "second", tim::units::sec) };
+        pair_vector_t matching = { inner("ps", "picosecond", tim::units::psec),
+                                   inner("ns", "nanosecond", tim::units::nsec),
+                                   inner("us", "microsecond", tim::units::usec),
+                                   inner("ms", "millisecond", tim::units::msec),
+                                   inner("cs", "centisecond", tim::units::csec),
+                                   inner("ds", "decisecond", tim::units::dsec),
+                                   inner("s", "second", tim::units::sec) };
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
-               _unit == tolower(std::get<1>(itr)) + "s")
+               _unit == (tolower(std::get<0>(itr)) + "ec") ||
+               _unit == (tolower(std::get<1>(itr)) + "s"))
                 return return_type(std::get<0>(itr), std::get<2>(itr));
-        return return_type("", 0L);
+        std::cerr << "Warning!! No timing unit matching \"" << _unit
+                  << "\". Using default..." << std::endl;
+        return return_type("sec", tim::units::sec);
     };
     //------------------------------------------------------------------------//
     //  Helper function for memory units processing
@@ -139,7 +142,7 @@ parse()
         using return_type = std::tuple<std::string, long>;
 
         if(_unit.length() == 0)
-            return return_type("", 0L);
+            return return_type("MB", tim::units::megabyte);
 
         using inner            = std::tuple<string_t, string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
@@ -155,115 +158,116 @@ parse()
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<2>(itr)))
                 return return_type(std::get<1>(itr), std::get<3>(itr));
-        return return_type("", 0L);
+        std::cerr << "Warning!! No memory unit matching \"" << _unit
+                  << "\". Using default..." << std::endl;
+        return return_type("MB", tim::units::megabyte);
     };
 
     if(!(memory_width < 0))
     {
-        base<peak_rss>::get_width()              = memory_width;
-        base<current_rss>::get_width()           = memory_width;
-        base<stack_rss>::get_width()             = memory_width;
-        base<data_rss>::get_width()              = memory_width;
-        base<num_swap>::get_width()              = memory_width;
-        base<num_io_in>::get_width()             = memory_width;
-        base<num_io_out>::get_width()            = memory_width;
-        base<num_major_page_faults>::get_width() = memory_width;
-        base<num_minor_page_faults>::get_width() = memory_width;
+        peak_rss::get_width()              = memory_width;
+        current_rss::get_width()           = memory_width;
+        stack_rss::get_width()             = memory_width;
+        data_rss::get_width()              = memory_width;
+        num_swap::get_width()              = memory_width;
+        num_io_in::get_width()             = memory_width;
+        num_io_out::get_width()            = memory_width;
+        num_major_page_faults::get_width() = memory_width;
+        num_minor_page_faults::get_width() = memory_width;
     }
 
     if(!(timing_width < 0))
     {
-        base<real_clock>::get_width()                                = timing_width;
-        base<system_clock>::get_width()                              = timing_width;
-        base<user_clock>::get_width()                                = timing_width;
-        base<cpu_clock>::get_width()                                 = timing_width;
-        base<monotonic_clock>::get_width()                           = timing_width;
-        base<monotonic_raw_clock>::get_width()                       = timing_width;
-        base<thread_cpu_clock>::get_width()                          = timing_width;
-        base<process_cpu_clock>::get_width()                         = timing_width;
-        base<cpu_util, CType<cpu_util>>::get_width()                 = timing_width;
-        base<thread_cpu_util, CType<thread_cpu_util>>::get_width()   = timing_width;
-        base<process_cpu_util, CType<process_cpu_util>>::get_width() = timing_width;
+        real_clock::get_width()          = timing_width;
+        system_clock::get_width()        = timing_width;
+        user_clock::get_width()          = timing_width;
+        cpu_clock::get_width()           = timing_width;
+        monotonic_clock::get_width()     = timing_width;
+        monotonic_raw_clock::get_width() = timing_width;
+        thread_cpu_clock::get_width()    = timing_width;
+        process_cpu_clock::get_width()   = timing_width;
+        cpu_util::get_width()            = timing_width;
+        thread_cpu_util::get_width()     = timing_width;
+        process_cpu_util::get_width()    = timing_width;
     }
 
     if(memory_scientific)
     {
-        base<peak_rss>::get_format_flags()              = std::ios_base::scientific;
-        base<current_rss>::get_format_flags()           = std::ios_base::scientific;
-        base<stack_rss>::get_format_flags()             = std::ios_base::scientific;
-        base<data_rss>::get_format_flags()              = std::ios_base::scientific;
-        base<num_swap>::get_format_flags()              = std::ios_base::scientific;
-        base<num_io_in>::get_format_flags()             = std::ios_base::scientific;
-        base<num_io_out>::get_format_flags()            = std::ios_base::scientific;
-        base<num_major_page_faults>::get_format_flags() = std::ios_base::scientific;
-        base<num_minor_page_faults>::get_format_flags() = std::ios_base::scientific;
+        peak_rss::get_format_flags()              = std::ios_base::scientific;
+        current_rss::get_format_flags()           = std::ios_base::scientific;
+        stack_rss::get_format_flags()             = std::ios_base::scientific;
+        data_rss::get_format_flags()              = std::ios_base::scientific;
+        num_swap::get_format_flags()              = std::ios_base::scientific;
+        num_io_in::get_format_flags()             = std::ios_base::scientific;
+        num_io_out::get_format_flags()            = std::ios_base::scientific;
+        num_major_page_faults::get_format_flags() = std::ios_base::scientific;
+        num_minor_page_faults::get_format_flags() = std::ios_base::scientific;
     }
 
     if(!(memory_precision < 0))
     {
-        base<peak_rss>::get_precision()              = memory_precision;
-        base<current_rss>::get_precision()           = memory_precision;
-        base<stack_rss>::get_precision()             = memory_precision;
-        base<data_rss>::get_precision()              = memory_precision;
-        base<num_swap>::get_precision()              = memory_precision;
-        base<num_io_in>::get_precision()             = memory_precision;
-        base<num_io_out>::get_precision()            = memory_precision;
-        base<num_major_page_faults>::get_precision() = memory_precision;
-        base<num_minor_page_faults>::get_precision() = memory_precision;
+        peak_rss::get_precision()              = memory_precision;
+        current_rss::get_precision()           = memory_precision;
+        stack_rss::get_precision()             = memory_precision;
+        data_rss::get_precision()              = memory_precision;
+        num_swap::get_precision()              = memory_precision;
+        num_io_in::get_precision()             = memory_precision;
+        num_io_out::get_precision()            = memory_precision;
+        num_major_page_faults::get_precision() = memory_precision;
+        num_minor_page_faults::get_precision() = memory_precision;
     }
 
     if(!(timing_precision < 0))
     {
-        base<real_clock>::get_precision()                              = timing_precision;
-        base<system_clock>::get_precision()                            = timing_precision;
-        base<user_clock>::get_precision()                              = timing_precision;
-        base<cpu_clock>::get_precision()                               = timing_precision;
-        base<monotonic_clock>::get_precision()                         = timing_precision;
-        base<monotonic_raw_clock>::get_precision()                     = timing_precision;
-        base<thread_cpu_clock>::get_precision()                        = timing_precision;
-        base<process_cpu_clock>::get_precision()                       = timing_precision;
-        base<cpu_util, CType<cpu_util>>::get_precision()               = timing_precision;
-        base<thread_cpu_util, CType<thread_cpu_util>>::get_precision() = timing_precision;
-        base<process_cpu_util, CType<process_cpu_util>>::get_precision() =
-            timing_precision;
+        real_clock::get_precision()          = timing_precision;
+        system_clock::get_precision()        = timing_precision;
+        user_clock::get_precision()          = timing_precision;
+        cpu_clock::get_precision()           = timing_precision;
+        monotonic_clock::get_precision()     = timing_precision;
+        monotonic_raw_clock::get_precision() = timing_precision;
+        thread_cpu_clock::get_precision()    = timing_precision;
+        process_cpu_clock::get_precision()   = timing_precision;
+        cpu_util::get_precision()            = timing_precision;
+        thread_cpu_util::get_precision()     = timing_precision;
+        process_cpu_util::get_precision()    = timing_precision;
     }
 
     if(memory_units.length() > 0)
     {
         auto _memory_unit = get_memory_unit(memory_units);
 
-        base<peak_rss>::get_display_unit()    = std::get<0>(_memory_unit);
-        base<current_rss>::get_display_unit() = std::get<0>(_memory_unit);
-        base<stack_rss>::get_display_unit()   = std::get<0>(_memory_unit);
-        base<data_rss>::get_display_unit()    = std::get<0>(_memory_unit);
+        peak_rss::get_display_unit()    = std::get<0>(_memory_unit);
+        current_rss::get_display_unit() = std::get<0>(_memory_unit);
+        stack_rss::get_display_unit()   = std::get<0>(_memory_unit);
+        data_rss::get_display_unit()    = std::get<0>(_memory_unit);
 
-        base<peak_rss>::get_unit()    = std::get<1>(_memory_unit);
-        base<current_rss>::get_unit() = std::get<1>(_memory_unit);
-        base<stack_rss>::get_unit()   = std::get<1>(_memory_unit);
-        base<data_rss>::get_unit()    = std::get<1>(_memory_unit);
+        peak_rss::get_unit()    = std::get<1>(_memory_unit);
+        current_rss::get_unit() = std::get<1>(_memory_unit);
+        stack_rss::get_unit()   = std::get<1>(_memory_unit);
+        data_rss::get_unit()    = std::get<1>(_memory_unit);
     }
 
     if(timing_units.length() > 0)
     {
         auto _timing_unit = get_timing_unit(timing_units);
 
-        base<real_clock>::get_display_unit()          = std::get<0>(_timing_unit);
-        base<system_clock>::get_display_unit()        = std::get<0>(_timing_unit);
-        base<user_clock>::get_display_unit()          = std::get<0>(_timing_unit);
-        base<cpu_clock>::get_display_unit()           = std::get<0>(_timing_unit);
-        base<monotonic_clock>::get_display_unit()     = std::get<0>(_timing_unit);
-        base<monotonic_raw_clock>::get_display_unit() = std::get<0>(_timing_unit);
-        base<thread_cpu_clock>::get_display_unit()    = std::get<0>(_timing_unit);
-        base<process_cpu_clock>::get_display_unit()   = std::get<0>(_timing_unit);
+        real_clock::get_display_unit()          = std::get<0>(_timing_unit);
+        system_clock::get_display_unit()        = std::get<0>(_timing_unit);
+        user_clock::get_display_unit()          = std::get<0>(_timing_unit);
+        cpu_clock::get_display_unit()           = std::get<0>(_timing_unit);
+        monotonic_clock::get_display_unit()     = std::get<0>(_timing_unit);
+        monotonic_raw_clock::get_display_unit() = std::get<0>(_timing_unit);
+        thread_cpu_clock::get_display_unit()    = std::get<0>(_timing_unit);
+        process_cpu_clock::get_display_unit()   = std::get<0>(_timing_unit);
 
-        base<real_clock>::get_unit()          = std::get<1>(_timing_unit);
-        base<system_clock>::get_unit()        = std::get<1>(_timing_unit);
-        base<user_clock>::get_unit()          = std::get<1>(_timing_unit);
-        base<cpu_clock>::get_unit()           = std::get<1>(_timing_unit);
-        base<monotonic_clock>::get_unit()     = std::get<1>(_timing_unit);
-        base<monotonic_raw_clock>::get_unit() = std::get<1>(_timing_unit);
-        base<thread_cpu_clock>::get_unit()    = std::get<1>(_timing_unit);
-        base<process_cpu_clock>::get_unit()   = std::get<1>(_timing_unit);
+        real_clock::get_unit()          = std::get<1>(_timing_unit);
+        system_clock::get_unit()        = std::get<1>(_timing_unit);
+        user_clock::get_unit()          = std::get<1>(_timing_unit);
+        cpu_clock::get_unit()           = std::get<1>(_timing_unit);
+        monotonic_clock::get_unit()     = std::get<1>(_timing_unit);
+        monotonic_raw_clock::get_unit() = std::get<1>(_timing_unit);
+        thread_cpu_clock::get_unit()    = std::get<1>(_timing_unit);
+        process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
     }
 
     tim::manager::enable(enabled);

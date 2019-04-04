@@ -494,9 +494,24 @@ public:
 protected:
     // default constructor
     counted_object() { ++count(); }
-    ~counted_object() { --count(); }
+    ~counted_object()
+    {
+        if(count() > 0)
+        {
+            --count();
+        }
+    }
     counted_object(const this_type&) { ++count(); }
-    explicit counted_object(this_type&&) { ++count(); }
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            ++count();
+        }
+        return *this;
+    }
+    counted_object(this_type&&) = default;
+    this_type& operator=(this_type&& rhs) = default;
 
 private:
     // number of existing objects

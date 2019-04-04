@@ -52,9 +52,3 @@
 #include "timemory/testing.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
-
-// functions that do the initialization and destruction
-void
-_timemory_initialization();
-void
-_timemory_finalization();

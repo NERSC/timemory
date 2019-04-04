@@ -362,7 +362,13 @@ template <typename _Tp = double, typename Precision = std::ratio<1>>
 _Tp
 get_clock_realtime_now()
 {
-    return get_clock_now<_Tp, Precision>(CLOCK_REALTIME);
+    using clock_type    = std::chrono::high_resolution_clock;
+    using duration_type = std::chrono::duration<clock_type::rep, Precision>;
+
+    // return get_clock_now<_Tp, Precision>(CLOCK_REALTIME);
+    return std::chrono::duration_cast<duration_type>(
+               std::chrono::high_resolution_clock::now().time_since_epoch())
+        .count();
 }
 
 //--------------------------------------------------------------------------------------//

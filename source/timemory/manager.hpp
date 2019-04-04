@@ -58,26 +58,35 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
+class manager;
+
+namespace details
+{
+struct manager_deleter;
+}
+
+//--------------------------------------------------------------------------------------//
+
 tim_api class manager
 {
 public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                       this_type;
-    typedef singleton<manager>            singleton_t;
-    typedef std::size_t                   size_type;
-    typedef std::ostream                  ostream_t;
-    typedef std::ofstream                 ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
-    typedef std::mutex                    mutex_t;
-    typedef uomap<uintmax_t, mutex_t>     mutex_map_t;
-    typedef std::lock_guard<mutex_t>      auto_lock_t;
-    typedef singleton_t::pointer          pointer;
-    typedef singleton_t::shared_pointer   shared_pointer;
-    typedef std::set<this_type*>          daughter_list_t;
-    typedef std::function<intmax_t()>     get_num_threads_func_t;
-    typedef std::atomic<uintmax_t>        counter_t;
+    typedef manager                                      this_type;
+    typedef singleton<manager, details::manager_deleter> singleton_t;
+    typedef std::size_t                                  size_type;
+    typedef std::ostream                                 ostream_t;
+    typedef std::ofstream                                ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t>                comm_group_t;
+    typedef std::mutex                                   mutex_t;
+    typedef uomap<uintmax_t, mutex_t>                    mutex_map_t;
+    typedef std::lock_guard<mutex_t>                     auto_lock_t;
+    typedef singleton_t::pointer                         pointer;
+    typedef singleton_t::unique_pointer                  unique_pointer;
+    typedef std::set<this_type*>                         daughter_list_t;
+    typedef std::function<intmax_t()>                    get_num_threads_func_t;
+    typedef std::atomic<uintmax_t>                       counter_t;
 
 public:
     // Constructor and Destructors
@@ -241,6 +250,9 @@ public:
     // const tuple_data_t&  get_data() const { return m_tuple_data; }
     // const timer_data_t&  get_timer_data() const { return timer_data; }
     // const memory_data_t& get_memory_data() const { return memory_data; }
+
+private:
+    static pointer f_instance;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -458,6 +470,50 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
 
     // return *(_data.map()[ref].get());
 }
+
+//======================================================================================//
+
+namespace details
+{
 //--------------------------------------------------------------------------------------//
 
+struct manager_deleter
+{
+    using singleton_t = singleton<tim::manager, manager_deleter>;
+
+    void operator()(tim::manager* ptr)
+    {
+        tim::manager*   master     = singleton_t::master_instance_ptr();
+        std::thread::id master_tid = singleton_t::master_thread_id();
+
+        if(std::this_thread::get_id() == master_tid)
+            delete ptr;
+        else
+        {
+            if(master && ptr != master)
+            {
+                master->remove(ptr);
+            }
+            delete ptr;
+        }
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+inline manager::singleton_t&
+manager_singleton()
+{
+    static manager::singleton_t _instance = manager::singleton_t::instance();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace details
+
+//======================================================================================//
+
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//

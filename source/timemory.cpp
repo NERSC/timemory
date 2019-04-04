@@ -48,9 +48,6 @@
 void
 setup_timemory(void)
 {
-    pfunc;
-    _timemory_initialization();
-    pfunc;
 }
 
 //======================================================================================//
@@ -59,9 +56,6 @@ setup_timemory(void)
 void
 cleanup_timemory(void)
 {
-    pfunc;
-    _timemory_finalization();
-    pfunc;
 }
 
 //======================================================================================//
@@ -73,9 +67,6 @@ cleanup_timemory(void)
 extern "C" tim_api void
 cxx_timemory_initialization(void)
 {
-    pfunc;
-    _timemory_initialization();
-    pfunc;
 }
 
 //======================================================================================//
@@ -83,9 +74,6 @@ cxx_timemory_initialization(void)
 extern "C" tim_api void
 cxx_timemory_finalization(void)
 {
-    pfunc;
-    _timemory_finalization();
-    pfunc;
 }
 
 //======================================================================================//

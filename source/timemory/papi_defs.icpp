@@ -22,6 +22,8 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#include <string>
+
 // adding these definitions make things easier
 #if !defined(TIMEMORY_USE_PAPI)
 
@@ -407,5 +409,125 @@ enum
         (PAPI_REF_CYC_idx | PAPI_PRESET_MASK) /* Reference clock cycles */
 
 #    define PAPI_END (PAPI_END_idx | PAPI_PRESET_MASK) /*This should always be last! */
+
+#    define PAPI_DETACH 1 /* Detach */
+#    define PAPI_DEBUG 2  /* Option to turn on  debugging features of the PAPI library */
+#    define PAPI_MULTIPLEX 3 /* Turn on/off or multiplexing for an eventset */
+#    define PAPI_DEFDOM                                                                  \
+        4 /* Domain for all new eventsets. Takes non-NULL option pointer. */
+#    define PAPI_DOMAIN 5 /* Domain for an eventset */
+#    define PAPI_DEFGRN 6 /* Granularity for all new eventsets */
+#    define PAPI_GRANUL 7 /* Granularity for an eventset */
+#    define PAPI_DEF_MPX_NS                                                              \
+        8 /* Multiplexing/overflowing interval in ns, same as PAPI_DEF_ITIMER_NS */
+//#define PAPI_EDGE_DETECT    9       /* Count cycles of events if supported [not
+// implemented] */ #define PAPI_INVERT         10              /* Invert count detect if
+// supported [not implemented] */
+#    define PAPI_MAX_MPX_CTRS 11 /* Maximum number of counters we can multiplex */
+#    define PAPI_PROFIL                                                                  \
+        12 /* Option to turn on the overflow/profil reporting software [not implemented] \
+            */
+#    define PAPI_PRELOAD                                                                 \
+        13 /* Option to find out the environment variable that can preload libraries */
+#    define PAPI_CLOCKRATE 14  /* Clock rate in MHz */
+#    define PAPI_MAX_HWCTRS 15 /* Number of physical hardware counters */
+#    define PAPI_HWINFO 16     /* Hardware information */
+#    define PAPI_EXEINFO 17    /* Executable information */
+#    define PAPI_MAX_CPUS 18   /* Number of ncpus we can talk to from here */
+#    define PAPI_ATTACH 19     /* Attach to a another tid/pid instead of ourself */
+#    define PAPI_SHLIBINFO 20  /* Shared Library information */
+#    define PAPI_LIB_VERSION                                                             \
+        21 /* Option to find out the complete version number of the PAPI library */
+#    define PAPI_COMPONENTINFO 22 /* Find out what the component supports */
+/* Currently the following options are only available on Itanium; they may be supported
+ * elsewhere in the future */
+#    define PAPI_DATA_ADDRESS 23 /* Option to set data address range restriction */
+#    define PAPI_INSTR_ADDRESS                                                           \
+        24 /* Option to set instruction address range restriction */
+#    define PAPI_DEF_ITIMER                                                              \
+        25 /* Option to set the type of itimer used in both software multiplexing,       \
+              overflowing and profiling */
+#    define PAPI_DEF_ITIMER_NS                                                           \
+        26 /* Multiplexing/overflowing interval in ns, same as PAPI_DEF_MPX_NS */
+/* Currently the following options are only available on systems using the perf_events
+ * component within papi */
+#    define PAPI_CPU_ATTACH                                                              \
+        27                  /* Specify a cpu number the event set should be tied to      \
+                             */
+#    define PAPI_INHERIT 28 /* Option to set counter inheritance flag */
+#    define PAPI_USER_EVENTS_FILE                                                        \
+        29 /* Option to set file from where to parse user defined events */
+
+#    define PAPI_INIT_SLOTS                                                              \
+        64 /*Number of initialized slots in                                              \
+     DynamicArray of EventSets */
+
+#    define PAPI_MIN_STR_LEN 64   /* For small strings, like names & stuff */
+#    define PAPI_MAX_STR_LEN 128  /* For average run-of-the-mill strings */
+#    define PAPI_2MAX_STR_LEN 256 /* For somewhat longer run-of-the-mill strings */
+#    define PAPI_HUGE_STR_LEN                                                            \
+        1024 /* This should be defined in terms of a system parameter */
+
+#    define PAPI_PMU_MAX 40  /* maximum number of pmu's supported by one component */
+#    define PAPI_DERIVED 0x1 /* Flag to indicate that the event is derived */
+
+#    define PAPI_MAX_INFO_TERMS                                                          \
+        12 /* should match PAPI_EVENTS_IN_DERIVED_EVENT defined in papi_internal.h */
+
+typedef struct __PAPI_event_info
+{
+    unsigned int event_code; /* preset (0x8xxxxxxx) or
+                                native (0x4xxxxxxx) event code */
+    std::string symbol;      /* name of the event */
+    std::string short_descr; /* a short description suitable for
+                                           use as a label */
+    std::string long_descr;  /* a longer description:
+                                            typically a sentence for presets,
+                                            possibly a paragraph from vendor
+                                            docs for native events */
+
+    int         component_index; /* component this event belongs to */
+    std::string units;           /* units event is measured in */
+    int         location;        /* location event applies to */
+    int         data_type;       /* data type returned by PAPI */
+    int         value_type;      /* sum or absolute */
+    int         timescope;       /* from start, etc. */
+    int         update_type;     /* how event is updated */
+    int         update_freq;     /* how frequently event is updated */
+
+    /* PRESET SPECIFIC FIELDS FOLLOW */
+
+    unsigned int count; /* number of terms (usually 1)
+                           in the code and name fields
+                           - presets: these are native events
+                           - native: these are unused */
+
+    unsigned int event_type; /* event type or category
+                                for preset events only */
+
+    std::string derived; /* name of the derived type
+                                       - presets: usually NOT_DERIVED
+                                       - native: empty string */
+    std::string postfix; /* string containing postfix
+                                        operations; only defined for
+                                        preset events of derived type
+                                        DERIVED_POSTFIX */
+
+    unsigned int code[PAPI_MAX_INFO_TERMS]; /* array of values that further
+                                          describe the event:
+                                          - presets: native event_code values
+                                          - native:, register values(?) */
+
+    std::string name         /* names of code terms: */
+        [PAPI_2MAX_STR_LEN]; /* - presets: native event names,
+                                - native: descriptive strings
+                                for each register value(?) */
+
+    std::string note; /* an optional developer note
+                                   supplied with a preset event
+                                   to delineate platform specific
+                                   anomalies or restrictions */
+
+} PAPI_event_info_t;
 
 #endif  // !defined(TIMEMORY_USE_PAPI)

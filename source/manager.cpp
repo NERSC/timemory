@@ -47,52 +47,6 @@
 #    define TIMEMORY_DEFAULT_ENABLED true
 #endif
 
-using std::placeholders::_1;
-
-//======================================================================================//
-
-void
-_timemory_manager_deleter(tim::manager* ptr)
-{
-    tim::manager*   master     = tim::manager::singleton_t::master_instance_ptr();
-    std::thread::id master_tid = tim::manager::singleton_t::master_thread_id();
-
-    if(std::this_thread::get_id() == master_tid)
-        delete ptr;
-    else
-    {
-        if(master && ptr != master)
-        {
-            master->remove(ptr);
-        }
-        delete ptr;
-    }
-}
-
-//======================================================================================//
-
-tim::manager::singleton_t&
-_timemory_manager_singleton()
-{
-    static tim::manager::singleton_t _instance(new tim::manager(),
-                                               std::bind(&_timemory_manager_deleter, _1));
-    return _instance;
-}
-
-//======================================================================================//
-
-void
-_timemory_initialization()
-{
-}
-
-//======================================================================================//
-
-void
-_timemory_finalization()
-{
-}
-
 //======================================================================================//
 
 namespace tim
@@ -106,19 +60,26 @@ int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
 std::atomic<int> manager::f_manager_instance_count;
 
 //======================================================================================//
-// static function
+// this forces master manager instance to get created at the beginning of application
+//
+manager::pointer manager::f_instance = manager::master_instance();
+
+//======================================================================================//
+// get either master or thread-local instance
+//
 manager::pointer
 manager::instance()
 {
-    return _timemory_manager_singleton().instance();
+    return details::manager_singleton().instance();
 }
 
 //======================================================================================//
-// static function
+// get master instance
+//
 manager::pointer
 manager::master_instance()
 {
-    return _timemory_manager_singleton().master_instance();
+    return details::manager_singleton().master_instance();
 }
 
 //======================================================================================//
@@ -126,7 +87,7 @@ manager::master_instance()
 manager::pointer
 manager::noninit_instance()
 {
-    return _timemory_manager_singleton().instance_ptr();
+    return details::manager_singleton().instance_ptr();
 }
 
 //======================================================================================//
@@ -134,7 +95,7 @@ manager::noninit_instance()
 manager::pointer
 manager::noninit_master_instance()
 {
-    return _timemory_manager_singleton().master_instance_ptr();
+    return details::manager_singleton().master_instance_ptr();
 }
 
 //======================================================================================//
@@ -159,6 +120,9 @@ manager::manager()
 //, m_tuple_data(
 //      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
+    printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
+           __LINE__);
+
     if(!singleton_t::master_instance_ptr())
     {
         m_merge = true;
@@ -196,7 +160,9 @@ manager::~manager()
                   << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
 #endif
 
-    _timemory_manager_singleton().destroy();
+    details::manager_singleton().destroy();
+    printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
+           __LINE__);
 }
 
 //======================================================================================//
@@ -522,7 +488,7 @@ manager::compute_self()
 
     // m_timer_list_self.clear();
 
-    // typedef std::shared_ptr<tim_timer_t> _timer_ptr_t;
+    // typedef std::unique_ptr<tim_timer_t> _timer_ptr_t;
     // using std::get;
 
     /*for(const auto& itr : m_timer_list_norm)
