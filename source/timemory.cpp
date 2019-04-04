@@ -24,13 +24,11 @@
 
 #include "timemory/timemory.hpp"
 #include "timemory/auto_timer.hpp"
-#include "timemory/base_timer.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
-#include "timemory/timer.hpp"
 #include "timemory/utility.hpp"
 
 #if !defined(pfunc)
@@ -107,8 +105,9 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
     std::string cxx_timer_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    return (void*) new auto_timer_t(cxx_timer_tag.c_str(), lineno, lang_tag,
-                                    (report > 0) ? true : false);
+    // return (void*) new auto_timer_t(cxx_timer_tag.c_str(), lineno, lang_tag,
+    //                                (report > 0) ? true : false);
+    return nullptr;
 }
 
 //======================================================================================//
@@ -116,10 +115,11 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
 extern "C" tim_api void*
 cxx_timemory_delete_auto_timer(void* ctimer)
 {
-    auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
-    delete cxxtimer;
-    ctimer = NULL;
-    return ctimer;
+    // auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
+    // delete cxxtimer;
+    // ctimer = NULL;
+    // return ctimer;
+    return nullptr;
 }
 
 //======================================================================================//
@@ -181,7 +181,7 @@ cxx_timemory_print(void)
 extern "C" tim_api void
 cxx_timemory_record_memory(int _record_memory)
 {
-    tim::timer::default_record_memory((_record_memory > 0) ? true : false);
+    // tim::timer::default_record_memory((_record_memory > 0) ? true : false);
 }
 
 //======================================================================================//
@@ -192,8 +192,5 @@ cxx_timemory_record_memory(int _record_memory)
 
 // CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::timer, TIMEMORY_TIMER_VERSION)
-// CEREAL_CLASS_VERSION(tim::internal::base_timer_data, TIMEMORY_TIMER_VERSION)
-CEREAL_CLASS_VERSION(tim::internal::base_timer, TIMEMORY_TIMER_VERSION)
 
 //======================================================================================//

@@ -281,6 +281,32 @@
 
 //======================================================================================//
 //
+//      Quick way to create a globally accessible setting
+//
+//======================================================================================//
+
+#if !defined(CREATE_STATIC_VARIABLE_ACCESSOR)
+#    define CREATE_STATIC_VARIABLE_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+        static TYPE& FUNC_NAME()                                                         \
+        {                                                                                \
+            static TYPE _instance = Type::VARIABLE;                                      \
+            return _instance;                                                            \
+        }
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(CREATE_STATIC_FUNCTION_ACCESSOR)
+#    define CREATE_STATIC_FUNCTION_ACCESSOR(TYPE, FUNC_NAME, VARIABLE)                   \
+        static TYPE& FUNC_NAME()                                                         \
+        {                                                                                \
+            static TYPE _instance = Type::VARIABLE();                                    \
+            return _instance;                                                            \
+        }
+#endif
+
+//======================================================================================//
+//
 //      FLOATING POINT EXCEPTIONS
 //
 //======================================================================================//

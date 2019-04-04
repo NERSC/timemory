@@ -41,8 +41,6 @@
 #include "timemory/singleton.hpp"
 #include "timemory/storage.hpp"
 #include "timemory/string.hpp"
-#include "timemory/timer.hpp"
-#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -67,7 +65,6 @@ public:
     using uomap = std::unordered_map<_Key, _Mapped>;
 
     typedef manager                       this_type;
-    typedef tim::timer                    tim_timer_t;
     typedef singleton<manager>            singleton_t;
     typedef std::size_t                   size_type;
     typedef std::ostream                  ostream_t;
@@ -125,10 +122,6 @@ public:
 
     void set_output_stream(const path_t&);
     void set_output_stream(ostream_t& = std::cout);
-    void write_missing(const path_t& _fname, tim_timer_t* = nullptr,
-                       tim_timer_t* = nullptr, bool rank_zero_only = true);
-    void write_missing(ostream_t& = std::cout, tim_timer_t* = nullptr,
-                       tim_timer_t* = nullptr, bool rank_zero_only = true);
     void write_report(path_t _fname, bool ign_cutoff = false);
     void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
                       bool endline = true);
@@ -150,13 +143,9 @@ public:
     void                   set_merge(bool val) { m_merge.store(val); }
     bool                   is_reporting_to_file() const;
     ostream_t*             get_output_stream() const { return m_report; }
-    tim_timer_t            compute_missing(tim_timer_t* timer_ref = nullptr);
     uintmax_t              laps() const { return compute_total_laps(); }
     uintmax_t              total_laps() const;
     void                   update_total_timer_format();
-    void                   start_total_timer();
-    void                   stop_total_timer();
-    void                   reset_total_timer();
     int32_t                instance_count() const { return m_instance_count; }
     void                   self_cost(bool val) {}
     bool                   self_cost() const { return false; }
@@ -172,17 +161,17 @@ public:
         return os;
     }
 
-    template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::timer>::value, int> = 0>
+    /*template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::timer>::value, int> = 0>
     void pop_graph()
     {
-        timer_data.pop_graph();
+        //timer_data.pop_graph();
     }
 
     template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::usage>::value, int> = 0>
     void pop_graph()
     {
         memory_data.pop_graph();
-    }
+    }*/
 
 public:
     // serialization function
@@ -236,22 +225,22 @@ private:
     ostream_t* m_report;
 
 public:
-    typedef data_storage<tim::timer>                timer_data_t;
-    typedef data_storage<tim::usage>                memory_data_t;
-    typedef std::tuple<timer_data_t, memory_data_t> tuple_data_t;
+    // typedef data_storage<tim::timer>                timer_data_t;
+    // typedef data_storage<tim::usage>                memory_data_t;
+    // typedef std::tuple<timer_data_t, memory_data_t> tuple_data_t;
 
 private:
-    tuple_data_t   m_tuple_data;
-    timer_data_t&  timer_data  = std::get<0>(m_tuple_data);
-    memory_data_t& memory_data = std::get<1>(m_tuple_data);
+    // tuple_data_t   m_tuple_data;
+    // timer_data_t&  timer_data  = std::get<0>(m_tuple_data);
+    // memory_data_t& memory_data = std::get<1>(m_tuple_data);
 
 public:
-    tuple_data_t&        get_data() { return m_tuple_data; }
-    timer_data_t&        get_timer_data() { return timer_data; }
-    memory_data_t&       get_memory_data() { return memory_data; }
-    const tuple_data_t&  get_data() const { return m_tuple_data; }
-    const timer_data_t&  get_timer_data() const { return timer_data; }
-    const memory_data_t& get_memory_data() const { return memory_data; }
+    // tuple_data_t&        get_data() { return m_tuple_data; }
+    // timer_data_t&        get_timer_data() { return timer_data; }
+    // memory_data_t&       get_memory_data() { return memory_data; }
+    // const tuple_data_t&  get_data() const { return m_tuple_data; }
+    // const timer_data_t&  get_timer_data() const { return timer_data; }
+    // const memory_data_t& get_memory_data() const { return memory_data; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -275,8 +264,8 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     bool _self_cost = this->self_cost();
     ar(serializer::make_nvp("concurrency", _nthreads));
     ar(serializer::make_nvp("self_cost", _self_cost));
-    ar(serializer::make_nvp("timers", list_convert(timer_data)));
-    ar(serializer::make_nvp("memory", list_convert(memory_data)));
+    // ar(serializer::make_nvp("timers", list_convert(timer_data)));
+    // ar(serializer::make_nvp("memory", list_convert(memory_data)));
 }
 //--------------------------------------------------------------------------------------//
 inline uintmax_t
@@ -285,35 +274,10 @@ manager::string_hash(const string_t& str) const
     return std::hash<string_t>()(str);
 }
 //--------------------------------------------------------------------------------------//
-#include <algorithm>
-inline uintmax_t
-manager::compute_total_laps() const
-{
-    return timer_data.total_laps();
-}
-//--------------------------------------------------------------------------------------//
 inline uintmax_t
 manager::total_laps() const
 {
     return m_laps + compute_total_laps();
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::start_total_timer()
-{
-    timer_data.start_total();
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::stop_total_timer()
-{
-    timer_data.stop_total();
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::reset_total_timer()
-{
-    timer_data.reset_total();
 }
 //--------------------------------------------------------------------------------------//
 template <typename _Tp>
@@ -346,14 +310,14 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
     if(os == m_report)
         check_stream(os, "total timing report");
 
-    for(const auto& itr : timer_data)
-        if(!itr.data().is_valid())
-            const_cast<tim_timer_t&>(itr.data()).stop();
+    // for(const auto& itr : timer_data)
+    //    if(!itr.data().is_valid())
+    //        const_cast<tim_timer_t&>(itr.data()).stop();
 
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;
 
-    auto format = [&](const data_tuple<tim::timer>& node) {
+    /*auto format = [&](const data_tuple<tim::timer>& node) {
         std::stringstream ss;
         node.data().report(ss, false, true);
         return ss.str();
@@ -364,7 +328,7 @@ manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
         *os << std::endl;
     tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
     if(endline)
-        *os << std::endl;
+        *os << std::endl;*/
 
     os->flush();
 }
@@ -403,25 +367,27 @@ manager::is_reporting_to_file() const
 inline manager::size_type
 manager::size() const
 {
-    return timer_data.graph().size();
+    // return timer_data.graph().size();
+    return 0UL;
 }
 //--------------------------------------------------------------------------------------//
 template <typename _Tp>
 inline _Tp&
 manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
 {
-    typedef data_tuple<_Tp>             tuple_t;
-    typedef data_storage<_Tp>           storage_t;
-    typedef typename storage_t::graph_t graph_t;
+    // typedef data_tuple<_Tp>             tuple_t;
+    // typedef data_storage<_Tp>           storage_t;
+    // typedef typename storage_t::graph_t graph_t;
     // typedef _Tp                         value_t;
 
     // get a reference to the storage_t object in tuple_data
-    storage_t& _data = std::get<index_of<storage_t, tuple_data_t>::value>(m_tuple_data);
+    // storage_t& _data = std::get<index_of<storage_t,
+    // tuple_data_t>::value>(m_tuple_data);
     // compute the hash
     uintmax_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
 
     // if already exists, return it
-    if(_data.map().find(ref) != _data.map().end())
+    /*if(_data.map().find(ref) != _data.map().end())
     {
         auto& m_graph_itr = _data.current();
         auto  _orig       = m_graph_itr;
@@ -456,7 +422,7 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
             std::cerr << ss.str();
         }
         return *(_data.map()[ref].get());
-    }
+    }*/
 
     // synchronize format with level 1 and make sure MPI prefix is up-to-date
     update_total_timer_format();
@@ -481,16 +447,16 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     //    format_t(ss.str(), format_t::default_format(), format_t::default_unit(),
     //    true)));
 
-    if(m_instance_count > 0)
-        _data.map()[ref]->thread_timing(true);
+    // if(m_instance_count > 0)
+    //    _data.map()[ref]->thread_timing(true);
 
     std::stringstream tag_ss;
     tag_ss << tag << "_" << std::left << key;
-    tuple_t _tuple(ref, ncount, graph_t::depth(_data.current()) + 1, tag_ss.str(),
-                   _data.map()[ref]);
-    _data.current() = _data.graph().append_child(_data.current(), _tuple);
+    // tuple_t _tuple(ref, ncount, graph_t::depth(_data.current()) + 1, tag_ss.str(),
+    //               _data.map()[ref]);
+    //_data.current() = _data.graph().append_child(_data.current(), _tuple);
 
-    return *(_data.map()[ref].get());
+    // return *(_data.map()[ref].get());
 }
 //--------------------------------------------------------------------------------------//
 

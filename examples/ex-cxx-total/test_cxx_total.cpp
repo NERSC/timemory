@@ -175,7 +175,7 @@ void
 print_info(const std::string& func)
 {
     if(tim::mpi_rank() == 0)
-        std::cout << "\n[" << tim::mpi_rank() << "]\e[1;31m TESTING \e[0m["
+        std::cout << "\n[" << tim::mpi_rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;

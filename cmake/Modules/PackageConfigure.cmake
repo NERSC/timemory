@@ -30,8 +30,6 @@ configure_package_config_file(
         LIB_INSTALL_DIR
         PYTHON_INSTALL_DIR)
 
-    message(STATUS "CONFIG: ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake")
-
 write_basic_package_version_file(
     ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     VERSION ${PROJECT_VERSION}

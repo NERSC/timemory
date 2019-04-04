@@ -42,9 +42,9 @@
 #include "timemory/auto_object.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
-#include "timemory/timer.hpp"
 #include "timemory/utility.hpp"
 
+/*
 TIM_NAMESPACE_BEGIN
 
 tim_api class auto_timer : public tim::auto_object<auto_timer, tim::timer>
@@ -101,5 +101,5 @@ typedef tim::auto_timer auto_timer_t;
     TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(tim::auto_timer, str)
 
 #define TIMEMORY_DEBUG_AUTO_TIMER(str) TIMEMORY_DEBUG_AUTO_OBJECT(tim::auto_timer, str)
-
+*/
 //--------------------------------------------------------------------------------------//

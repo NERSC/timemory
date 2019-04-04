@@ -75,7 +75,7 @@
         throw std::runtime_error(ss.str());                                              \
     }
 
-#if defined(PRINT_HERE)
+#if !defined(PRINT_HERE)
 #    define PRINT_HERE(extra)                                                            \
         printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #endif
@@ -99,16 +99,17 @@ rank_prefix()
         filler.fill('=');                                                                \
         filler << "#" << std::setw(78) << ""                                             \
                << "#";                                                                   \
-        rank_sout << "\n... [TESTING COMPLETED] ... \n" << std::endl;                    \
+        rank_sout << "\n... [\e[1;33mTESTING COMPLETED\e[0m] ... \n" << std::endl;       \
         rank_sout << filler.str() << "\n#\n";                                            \
         rank_sout << "#\t"                                                               \
                   << "[" << argv_0 << "] ";                                              \
         if(num_fail > 0)                                                                 \
-            rank_sout << "TESTS FAILED: " << nfail_counter << "/" << ntest_counter       \
-                      << std::endl;                                                      \
-        else                                                                             \
-            rank_sout << "TESTS PASSED: " << (ntest_counter - nfail_counter) << "/"      \
+            rank_sout << "\e[1;31mTESTS FAILED\e[0m: " << nfail_counter << "/"           \
                       << ntest_counter << std::endl;                                     \
+        else                                                                             \
+            rank_sout << "\e[1;36mTESTS PASSED\e[0m: "                                   \
+                      << (ntest_counter - nfail_counter) << "/" << ntest_counter         \
+                      << std::endl;                                                      \
         rank_sout << "#\n" << filler.str() << "\n" << std::endl;                         \
         rank_cout << rank_sout.str();                                                    \
     }

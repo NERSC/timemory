@@ -15,8 +15,6 @@
 #endif
 
 #include "timemory/manager.hpp"
-#include "timemory/timer.hpp"
-#include "timemory/usage.hpp"
 
 #include <chrono>
 #include <cstdint>
@@ -28,16 +26,15 @@
 #include <cstring>
 
 typedef std::vector<uintmax_t> vector_t;
-typedef tim::usage             rss_usage_t;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
 #elif defined(_WIN32)
 #    define declare_attribute(attr) __declspec(attr)
 #endif
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-rss_usage_t&
+/*rss_usage_t&
 rss_init()
 {
     static std::shared_ptr<rss_usage_t> _instance(nullptr);
@@ -47,8 +44,8 @@ rss_init()
     }
     return *(_instance.get());
 }
-
-//----------------------------------------------------------------------------//
+*/
+//--------------------------------------------------------------------------------------//
 
 tim::string&
 tim_format()
@@ -57,7 +54,7 @@ tim_format()
     return _instance;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 tim::string&
 command()
@@ -66,7 +63,7 @@ command()
     return _instance;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 declare_attribute(noreturn) void failed_fork()
 {
@@ -74,11 +71,10 @@ declare_attribute(noreturn) void failed_fork()
     exit(EXIT_FAILURE);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 declare_attribute(noreturn) void report()
 {
-    tim::manager::instance()->stop_total_timer();
     std::stringstream _ss_report;
 
     _ss_report << (*tim::manager::instance());
@@ -91,7 +87,7 @@ declare_attribute(noreturn) void report()
     exit(0);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 declare_attribute(noreturn) void parent_process(pid_t pid)
 {
@@ -139,7 +135,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     exit(ret);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 void
 print_command(int argc, char** argv)
@@ -149,7 +145,7 @@ print_command(int argc, char** argv)
     printf("\n");
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 char*
 getcharptr(const tim::string& str)
@@ -157,7 +153,7 @@ getcharptr(const tim::string& str)
     return const_cast<char*>(str.c_str());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
 {
@@ -194,25 +190,19 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
     exit(0);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 int
 main(int argc, char** argv)
 {
-    // tim::format::timer::set_default_format(tim_format());
-    tim::manager::instance()->update_total_timer_format();
-    rss_init().record();
-
     if(argc > 1)
         command() = tim::string(const_cast<const char*>(argv[1]));
     else
     {
-        tim::manager::instance()->reset_total_timer();
         report();
     }
 
     pid_t pid = fork();
-    tim::manager::instance()->reset_total_timer();
 
     uintmax_t nargs = static_cast<uintmax_t>(argc);
     if(pid == -1)  // pid == -1 means error occured

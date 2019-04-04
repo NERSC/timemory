@@ -23,9 +23,16 @@
 //  IN THE SOFTWARE.
 
 #include "timemory/environment.hpp"
+#include "timemory/components.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/units.hpp"
 #include "timemory/utility.hpp"
+
+using namespace tim::component;
+
+template <typename Type>
+using CType = typename Type::value_type;
 
 //======================================================================================//
 
@@ -43,31 +50,22 @@ namespace env
 {
 //======================================================================================//
 
-int  verbose              = 0;
-bool disable_timer_memory = false;
-// bool        output_total                = false;
-string_t env_num_threads = "TIMEMORY_NUM_THREADS";
-int      num_threads     = 0;
-int      max_depth       = std::numeric_limits<uint16_t>::max();
-bool     enabled         = TIMEMORY_DEFAULT_ENABLED;
+int      verbose              = 0;
+bool     disable_timer_memory = false;
+string_t env_num_threads      = "TIMEMORY_NUM_THREADS";
+int      num_threads          = 0;
+int      max_depth            = std::numeric_limits<uint16_t>::max();
+bool     enabled              = TIMEMORY_DEFAULT_ENABLED;
 
-string_t timing_format     = "";
 int16_t  timing_precision  = -1;
 int16_t  timing_width      = -1;
 string_t timing_units      = "";
 bool     timing_scientific = false;
 
-string_t memory_format     = "";
 int16_t  memory_precision  = -1;
 int16_t  memory_width      = -1;
 string_t memory_units      = "";
 bool     memory_scientific = false;
-
-string_t timing_memory_format     = "";
-int16_t  timing_memory_precision  = -1;
-int16_t  timing_memory_width      = -1;
-string_t timing_memory_units      = "";
-bool     timing_memory_scientific = false;
 
 //======================================================================================//
 
@@ -94,52 +92,29 @@ toupper(string_t str)
 void
 parse()
 {
-    typedef tim::format::core_formatter       core_format_t;
-    typedef std::function<intmax_t(string_t)> unit_func_t;
-
-    verbose = tim::get_env<int>("TIMEMORY_VERBOSE", verbose);
-    disable_timer_memory =
-        get_env_bool("TIMEMORY_DISABLE_TIMER_MEMORY", disable_timer_memory);
-    // output_total            = get_env_bool        ("TIMEMORY_OUTPUT_TOTAL",
-    // output_total);
-    env_num_threads = tim::get_env<string_t>("TIMEMORY_NUM_THREADS_ENV", env_num_threads);
-    num_threads     = tim::get_env<int>(env_num_threads, num_threads);
-    max_depth       = tim::get_env<int>("TIMEMORY_MAX_DEPTH", max_depth);
+    verbose         = tim::get_env("TIMEMORY_VERBOSE", verbose);
+    env_num_threads = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads);
+    num_threads     = tim::get_env(env_num_threads, num_threads);
+    max_depth       = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth);
     enabled         = get_env_bool("TIMEMORY_ENABLE", enabled);
 
-    timing_format = tim::get_env<string_t>("TIMEMORY_TIMING_FORMAT", timing_format);
-    timing_precision =
-        tim::get_env<int16_t>("TIMEMORY_TIMING_PRECISION", timing_precision);
-    timing_width      = tim::get_env<int16_t>("TIMEMORY_TIMING_WIDTH", timing_width);
-    timing_units      = tim::get_env<string_t>("TIMEMORY_TIMING_UNITS", timing_units);
+    timing_precision  = tim::get_env("TIMEMORY_TIMING_PRECISION", timing_precision);
+    timing_width      = tim::get_env("TIMEMORY_TIMING_WIDTH", timing_width);
+    timing_units      = tim::get_env("TIMEMORY_TIMING_UNITS", timing_units);
     timing_scientific = get_env_bool("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific);
 
-    memory_format = tim::get_env<string_t>("TIMEMORY_MEMORY_FORMAT", memory_format);
-    memory_precision =
-        tim::get_env<int16_t>("TIMEMORY_MEMORY_PRECISION", memory_precision);
-    memory_width      = tim::get_env<int16_t>("TIMEMORY_MEMORY_WIDTH", memory_width);
-    memory_units      = tim::get_env<string_t>("TIMEMORY_MEMORY_UNITS", memory_units);
+    memory_precision  = tim::get_env("TIMEMORY_MEMORY_PRECISION", memory_precision);
+    memory_width      = tim::get_env("TIMEMORY_MEMORY_WIDTH", memory_width);
+    memory_units      = tim::get_env("TIMEMORY_MEMORY_UNITS", memory_units);
     memory_scientific = get_env_bool("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific);
-
-    timing_memory_format =
-        tim::get_env<string_t>("TIMEMORY_TIMING_MEMORY_FORMAT", timing_memory_format);
-    timing_memory_precision = tim::get_env<int16_t>("TIMEMORY_TIMING_MEMORY_PRECISION",
-                                                    timing_memory_precision);
-    timing_memory_width =
-        tim::get_env<int16_t>("TIMEMORY_TIMING_MEMORY_WIDTH", timing_memory_width);
-    timing_memory_units =
-        tim::get_env<string_t>("TIMEMORY_TIMING_MEMORY_UNITS", timing_memory_units);
-    timing_memory_scientific =
-        get_env_bool("TIMEMORY_TIMING_MEMORY_SCIENTIFIC", timing_memory_scientific);
-
-    // tim::format::timer::push();
-    // tim::format::rss::push();
 
     //------------------------------------------------------------------------//
     //  Helper function for timing units processing
     auto get_timing_unit = [&](string_t _unit) {
+        using return_type = std::tuple<std::string, long>;
+
         if(_unit.length() == 0)
-            return (intmax_t) 0;
+            return return_type("", 0L);
 
         using inner            = std::tuple<string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
@@ -155,14 +130,16 @@ parse()
         for(const auto& itr : matching)
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<1>(itr)) + "s")
-                return std::get<2>(itr);
-        return (intmax_t) 0;
+                return return_type(std::get<0>(itr), std::get<2>(itr));
+        return return_type("", 0L);
     };
     //------------------------------------------------------------------------//
     //  Helper function for memory units processing
     auto get_memory_unit = [&](string_t _unit) {
+        using return_type = std::tuple<std::string, long>;
+
         if(_unit.length() == 0)
-            return (intmax_t) 0;
+            return return_type("", 0L);
 
         using inner            = std::tuple<string_t, string_t, string_t, intmax_t>;
         using pair_vector_t    = std::vector<inner>;
@@ -177,47 +154,117 @@ parse()
         for(const auto& itr : matching)
             if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
                _unit == tolower(std::get<2>(itr)))
-                return std::get<3>(itr);
-        return (intmax_t) 0;
+                return return_type(std::get<1>(itr), std::get<3>(itr));
+        return return_type("", 0L);
     };
-    //------------------------------------------------------------------------//
-    //  Helper lambda for modifying the core_formatter components
-    //------------------------------------------------------------------------//
-    auto set_core = [&](core_format_t* _core, const string_t& _format,
-                        const int16_t& _prec, const int16_t& _width,
-                        const bool& _scientific, const string_t& _unit_string,
-                        unit_func_t _unit_func) {
-        intmax_t _unit = _unit_func(_unit_string);
 
-        if(_format.length() > 0)
-            _core->format(_format);
-        if(_prec > 0)
-            _core->precision(_prec);
-        if(_width > 0)
-            _core->width(_width);
-        if(_scientific)
-            _core->fixed(false);
-        if(_unit > 0)
-            _core->unit(_unit);
-    };
-    //------------------------------------------------------------------------//
+    if(!(memory_width < 0))
+    {
+        base<peak_rss>::get_width()              = memory_width;
+        base<current_rss>::get_width()           = memory_width;
+        base<stack_rss>::get_width()             = memory_width;
+        base<data_rss>::get_width()              = memory_width;
+        base<num_swap>::get_width()              = memory_width;
+        base<num_io_in>::get_width()             = memory_width;
+        base<num_io_out>::get_width()            = memory_width;
+        base<num_major_page_faults>::get_width() = memory_width;
+        base<num_minor_page_faults>::get_width() = memory_width;
+    }
 
-    // tim::format::timer _timing = tim::format::timer::get_default();
-    // tim::format::rss   _memory = tim::format::rss::get_default();
+    if(!(timing_width < 0))
+    {
+        base<real_clock>::get_width()                                = timing_width;
+        base<system_clock>::get_width()                              = timing_width;
+        base<user_clock>::get_width()                                = timing_width;
+        base<cpu_clock>::get_width()                                 = timing_width;
+        base<monotonic_clock>::get_width()                           = timing_width;
+        base<monotonic_raw_clock>::get_width()                       = timing_width;
+        base<thread_cpu_clock>::get_width()                          = timing_width;
+        base<process_cpu_clock>::get_width()                         = timing_width;
+        base<cpu_util, CType<cpu_util>>::get_width()                 = timing_width;
+        base<thread_cpu_util, CType<thread_cpu_util>>::get_width()   = timing_width;
+        base<process_cpu_util, CType<process_cpu_util>>::get_width() = timing_width;
+    }
 
-    // set_core(&_timing, timing_format, timing_precision, timing_width,
-    // timing_scientific,
-    //         timing_units, get_timing_unit);
+    if(memory_scientific)
+    {
+        base<peak_rss>::get_format_flags()              = std::ios_base::scientific;
+        base<current_rss>::get_format_flags()           = std::ios_base::scientific;
+        base<stack_rss>::get_format_flags()             = std::ios_base::scientific;
+        base<data_rss>::get_format_flags()              = std::ios_base::scientific;
+        base<num_swap>::get_format_flags()              = std::ios_base::scientific;
+        base<num_io_in>::get_format_flags()             = std::ios_base::scientific;
+        base<num_io_out>::get_format_flags()            = std::ios_base::scientific;
+        base<num_major_page_faults>::get_format_flags() = std::ios_base::scientific;
+        base<num_minor_page_faults>::get_format_flags() = std::ios_base::scientific;
+    }
 
-    // set_core(&_memory, memory_format, memory_precision, memory_width,
-    // memory_scientific,
-    //         memory_units, get_memory_unit);
+    if(!(memory_precision < 0))
+    {
+        base<peak_rss>::get_precision()              = memory_precision;
+        base<current_rss>::get_precision()           = memory_precision;
+        base<stack_rss>::get_precision()             = memory_precision;
+        base<data_rss>::get_precision()              = memory_precision;
+        base<num_swap>::get_precision()              = memory_precision;
+        base<num_io_in>::get_precision()             = memory_precision;
+        base<num_io_out>::get_precision()            = memory_precision;
+        base<num_major_page_faults>::get_precision() = memory_precision;
+        base<num_minor_page_faults>::get_precision() = memory_precision;
+    }
 
-    // set default timing format -- will be identical if no env set
-    //  - memory format is included because _timing_memory is a reference
-    // tim::format::timer::set_default(_timing);
-    // set default memory format -- will be identical if no env set
-    // tim::format::rss::set_default(_memory);
+    if(!(timing_precision < 0))
+    {
+        base<real_clock>::get_precision()                              = timing_precision;
+        base<system_clock>::get_precision()                            = timing_precision;
+        base<user_clock>::get_precision()                              = timing_precision;
+        base<cpu_clock>::get_precision()                               = timing_precision;
+        base<monotonic_clock>::get_precision()                         = timing_precision;
+        base<monotonic_raw_clock>::get_precision()                     = timing_precision;
+        base<thread_cpu_clock>::get_precision()                        = timing_precision;
+        base<process_cpu_clock>::get_precision()                       = timing_precision;
+        base<cpu_util, CType<cpu_util>>::get_precision()               = timing_precision;
+        base<thread_cpu_util, CType<thread_cpu_util>>::get_precision() = timing_precision;
+        base<process_cpu_util, CType<process_cpu_util>>::get_precision() =
+            timing_precision;
+    }
+
+    if(memory_units.length() > 0)
+    {
+        auto _memory_unit = get_memory_unit(memory_units);
+
+        base<peak_rss>::get_display_unit()    = std::get<0>(_memory_unit);
+        base<current_rss>::get_display_unit() = std::get<0>(_memory_unit);
+        base<stack_rss>::get_display_unit()   = std::get<0>(_memory_unit);
+        base<data_rss>::get_display_unit()    = std::get<0>(_memory_unit);
+
+        base<peak_rss>::get_unit()    = std::get<1>(_memory_unit);
+        base<current_rss>::get_unit() = std::get<1>(_memory_unit);
+        base<stack_rss>::get_unit()   = std::get<1>(_memory_unit);
+        base<data_rss>::get_unit()    = std::get<1>(_memory_unit);
+    }
+
+    if(timing_units.length() > 0)
+    {
+        auto _timing_unit = get_timing_unit(timing_units);
+
+        base<real_clock>::get_display_unit()          = std::get<0>(_timing_unit);
+        base<system_clock>::get_display_unit()        = std::get<0>(_timing_unit);
+        base<user_clock>::get_display_unit()          = std::get<0>(_timing_unit);
+        base<cpu_clock>::get_display_unit()           = std::get<0>(_timing_unit);
+        base<monotonic_clock>::get_display_unit()     = std::get<0>(_timing_unit);
+        base<monotonic_raw_clock>::get_display_unit() = std::get<0>(_timing_unit);
+        base<thread_cpu_clock>::get_display_unit()    = std::get<0>(_timing_unit);
+        base<process_cpu_clock>::get_display_unit()   = std::get<0>(_timing_unit);
+
+        base<real_clock>::get_unit()          = std::get<1>(_timing_unit);
+        base<system_clock>::get_unit()        = std::get<1>(_timing_unit);
+        base<user_clock>::get_unit()          = std::get<1>(_timing_unit);
+        base<cpu_clock>::get_unit()           = std::get<1>(_timing_unit);
+        base<monotonic_clock>::get_unit()     = std::get<1>(_timing_unit);
+        base<monotonic_raw_clock>::get_unit() = std::get<1>(_timing_unit);
+        base<thread_cpu_clock>::get_unit()    = std::get<1>(_timing_unit);
+        base<process_cpu_clock>::get_unit()   = std::get<1>(_timing_unit);
+    }
 
     tim::manager::enable(enabled);
     tim::manager::max_depth(max_depth);

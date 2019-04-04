@@ -23,14 +23,15 @@
 //  SOFTWARE.
 
 #include "timemory/rusage.hpp"
+#include "timemory/units.hpp"
 
-
-//============================================================================//
+//======================================================================================//
 // Returns the peak (maximum so far) resident set size (physical
 // memory use) measured in bytes, or zero if the value cannot be
 // determined on this OS.
 //
-inline intmax_t tim::get_peak_rss()
+inline intmax_t
+tim::get_peak_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -38,102 +39,100 @@ inline intmax_t tim::get_peak_rss()
     getrusage(RUSAGE_CHILDREN, &_child);
 
 // Darwin reports in bytes, Linux reports in kilobytes
-#if defined(_MACOS)
+#    if defined(_MACOS)
     intmax_t _units = 1;
-#else
+#    else
     intmax_t _units = units::kilobyte;
-#endif
+#    endif
 
     return (intmax_t)(_units * (_self.ru_maxrss + _child.ru_maxrss));
 
 #elif defined(_WINDOWS)
-    DWORD processID = GetCurrentProcessId();
-    HANDLE hProcess;
+    DWORD                   processID = GetCurrentProcessId();
+    HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
 
     // Print the process identifier.
     // printf( "\nProcess ID: %u\n", processID );
     // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-                               PROCESS_VM_READ,
-                           TRUE, processID);
-    if (NULL == hProcess)
-        return (intmax_t)0;
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE, processID);
+    if(NULL == hProcess)
+        return (intmax_t) 0;
 
     intmax_t nsize = 0;
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = (intmax_t)pmc.PeakWorkingSetSize;
+    if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
+        nsize = (intmax_t) pmc.PeakWorkingSetSize;
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return (intmax_t)0;
+    return (intmax_t) 0;
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 // Returns the current resident set size (physical memory use) measured
 // in bytes, or zero if the value cannot be determined on this OS.
 //
-inline intmax_t tim::get_current_rss()
+inline intmax_t
+tim::get_current_rss()
 {
 #if defined(_UNIX)
-#if defined(_MACOS)
+#    if defined(_MACOS)
     // OSX
     struct mach_task_basic_info info;
-    mach_msg_type_number_t infoCount = MACH_TASK_BASIC_INFO_COUNT;
-    if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
-                  (task_info_t)&info, &infoCount) != KERN_SUCCESS)
-        return (intmax_t)0L; /* Can't access? */
+    mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
+    if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
+                 &infoCount) != KERN_SUCCESS)
+        return (intmax_t) 0L; /* Can't access? */
     // Darwin reports in bytes
     return (intmax_t)(info.resident_size);
 
-#else // Linux
+#    else  // Linux
 
     intmax_t rss = 0;
-    FILE *fp = fopen("/proc/self/statm", "r");
-    if (fp && fscanf(fp, "%*s%ld", &rss) == 1)
+    FILE*    fp  = fopen("/proc/self/statm", "r");
+    if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
     {
         fclose(fp);
         return (intmax_t)(rss * units::page_size);
     }
 
-    if (fp)
+    if(fp)
         fclose(fp);
 
     return (intmax_t)(0);
 
-#endif
+#    endif
 #elif defined(_WINDOWS)
-    DWORD processID = GetCurrentProcessId();
-    HANDLE hProcess;
+    DWORD                   processID = GetCurrentProcessId();
+    HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
 
     // Print the process identifier.
     // printf( "\nProcess ID: %u\n", processID );
     // Print information about the memory usage of the process.
-    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION |
-                               PROCESS_VM_READ,
-                           FALSE, processID);
-    if (NULL == hProcess)
-        return (intmax_t)0;
+    hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
+    if(NULL == hProcess)
+        return (intmax_t) 0;
 
     intmax_t nsize = 0;
-    if (GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = (intmax_t)pmc.WorkingSetSize;
+    if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
+        nsize = (intmax_t) pmc.WorkingSetSize;
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return (intmax_t)0;
+    return (intmax_t) 0;
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_stack_rss()
+inline intmax_t
+tim::get_stack_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -147,9 +146,10 @@ inline intmax_t tim::get_stack_rss()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_data_rss()
+inline intmax_t
+tim::get_data_rss()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -163,9 +163,10 @@ inline intmax_t tim::get_data_rss()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_num_swap()
+inline intmax_t
+tim::get_num_swap()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -178,9 +179,10 @@ inline intmax_t tim::get_num_swap()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_num_io_in()
+inline intmax_t
+tim::get_num_io_in()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -193,9 +195,10 @@ inline intmax_t tim::get_num_io_in()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_num_io_out()
+inline intmax_t
+tim::get_num_io_out()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -209,9 +212,10 @@ inline intmax_t tim::get_num_io_out()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_num_minor_page_faults()
+inline intmax_t
+tim::get_num_minor_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -225,9 +229,10 @@ inline intmax_t tim::get_num_minor_page_faults()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//
 
-inline intmax_t tim::get_num_major_page_faults()
+inline intmax_t
+tim::get_num_major_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _self, _child;
@@ -241,4 +246,4 @@ inline intmax_t tim::get_num_major_page_faults()
 #endif
 }
 
-//============================================================================//
+//======================================================================================//

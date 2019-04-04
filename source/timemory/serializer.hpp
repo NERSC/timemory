@@ -24,8 +24,7 @@
 
 /** \file serializer.hpp
  * \headerfile serializer.hpp "timemory/serializer.hpp"
- * Serialization not using Cereal
- * Not currently finished
+ * Headers for serialization
  */
 
 #pragma once
@@ -64,8 +63,6 @@
 #include <cereal/archives/portable_binary.hpp>
 #include <cereal/archives/xml.hpp>
 
-//#define CLASS_VERSION(_class, _version) CEREAL_CLASS_VERSION(_class, _version)
-
 //======================================================================================//
 
 namespace serializer
@@ -76,11 +73,58 @@ using cereal::make_nvp;
 
 //--------------------------------------------------------------------------------------//
 
-// template <bool B, typename T = void>
-// using _enable_if_t = typename std::enable_if<B, T>::type;
+}  // namespace serializer
+
+namespace cereal
+{
+//--------------------------------------------------------------------------------------//
+//  save specialization for pair of string and type
+//
+template <typename Archive, typename Type,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+save(Archive& ar, const std::pair<std::string, Type>& p)
+{
+    ar(cereal::make_nvp(p.first, p.second));
+}
+
+//--------------------------------------------------------------------------------------//
+//  load specialization for pair of string and type
+//
+template <class Archive, typename Type,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+load(Archive& ar, std::pair<std::string, Type>& p)
+{
+    const auto key = ar.getNodeName();
+    p.first        = key;
+    ar(p.second);
+}
+
+//--------------------------------------------------------------------------------------//
+//  save specialization for pair
+//
+template <typename Archive, typename TypeF, typename TypeS,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+save(Archive& ar, const std::pair<TypeF, TypeS>& p)
+{
+    ar(cereal::make_nvp("first", p.first), cereal::make_nvp("second", p.second));
+}
+
+//--------------------------------------------------------------------------------------//
+//  load specialization for pair
+//
+template <class Archive, typename TypeF, typename TypeS,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+load(Archive& ar, std::pair<TypeF, TypeS>& p)
+{
+    ar(p.first, p.second);
+}
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace serializer
+}  // namespace cereal
 
 //======================================================================================//

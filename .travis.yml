@@ -19,7 +19,7 @@ matrix:
     # ------------------------------------------------------------------------ #
     # GCC 4.9
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
@@ -31,13 +31,15 @@ matrix:
             - g++-4.9
             - build-essential
             - cmake
+            - libpapi-dev
+            - papi-tools
             #- libopenmpi-dev
             #- openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # GCC 5
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
@@ -51,11 +53,13 @@ matrix:
             - cmake
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
     # GCC 6
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
@@ -69,11 +73,13 @@ matrix:
             - cmake
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=OFF"
     # GCC 7
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
@@ -87,17 +93,19 @@ matrix:
             - cmake
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release && BUILD_SHARED=ON"
     # Clang 4.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-xenial-4.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-4.0
@@ -106,17 +114,19 @@ matrix:
             - cmake
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # Clang 5.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '2.7'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-xenial-5.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
@@ -125,6 +135,8 @@ matrix:
             - cmake
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
     # ------------------------------------------------------------------------ #
@@ -134,7 +146,7 @@ matrix:
     # ------------------------------------------------------------------------ #
     # GCC 4.9
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
@@ -148,11 +160,13 @@ matrix:
             - cmake3
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # GCC 5
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
@@ -166,11 +180,13 @@ matrix:
             - cmake3
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
     # GCC 6
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
@@ -182,13 +198,15 @@ matrix:
             - g++-6
             - build-essential
             - cmake3
+            - libpapi-dev
+            - papi-tools
             #- libopenmpi-dev
             #- openmpi-bin
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # GCC 7
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
@@ -202,17 +220,19 @@ matrix:
             - cmake3
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # Clang 4.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-xenial-4.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-4.0
@@ -221,23 +241,27 @@ matrix:
             - cmake3
             - libopenmpi-dev
             - openmpi-bin
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # Clang 5.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.5'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-xenial-5.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
             - clang++-5.0
             - build-essential
             - cmake3
+            - libpapi-dev
+            - papi-tools
             #- libopenmpi-dev
             #- openmpi-bin
       env:
@@ -249,7 +273,7 @@ matrix:
     # ------------------------------------------------------------------------ #
     # GCC 4.9
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
@@ -263,11 +287,13 @@ matrix:
             - cmake
             - libmpich-dev
             - mpich
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # GCC 5
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
@@ -281,11 +307,13 @@ matrix:
             - cmake
             - libmpich-dev
             - mpich
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # GCC 6
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
@@ -299,11 +327,13 @@ matrix:
             - cmake
             - libmpich-dev
             - mpich
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
     # GCC 7
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
@@ -317,36 +347,40 @@ matrix:
             - cmake
             - libmpich-dev
             - mpich
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
     # Clang 4.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-4.0
+            - llvm-toolchain-xenial-4.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-4.0
             - clang++-4.0
             - build-essential
             - cmake
+            - libpapi-dev
+            - papi-tools
             #- libmpich-dev
             #- mpich
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # Clang 5.0
     - os: linux
-      dist: trusty
+      dist: xenial
       sudo: false
       python: '3.6'
       addons:
         apt:
           sources:
-            - llvm-toolchain-trusty-5.0
+            - llvm-toolchain-xenial-5.0
             - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
@@ -355,6 +389,8 @@ matrix:
             - cmake
             - libmpich-dev
             - mpich
+            - libpapi-dev
+            - papi-tools
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # ------------------------------------------------------------------------ #
@@ -403,6 +439,7 @@ install:
         -DPYTHON_EXECUTABLE=$(which python)
         -DTIMEMORY_USE_MPI=${USE_MPI}
         -DTIMEMORY_BUILD_TESTING=ON
+        -DTIMEMORY_USE_PYTHON_BINDING=OFF
         -DBUILD_SHARED_LIBS=${BUILD_SHARED}
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
@@ -411,15 +448,15 @@ install:
     # Python testing
     #
     - cd ${SOURCE_DIR}
-    - pip install .
+    #- pip install .
 
 
 script:
     #
     # Python testing
     #
-    - mkdir -p ${HOME}/timemory-test
+    #- mkdir -p ${HOME}/timemory-test
     # go to empty directory for testing
     - cd ${HOME}/timemory-test
-    - python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
+    #- python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
     - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"

@@ -56,31 +56,21 @@ typedef tim::string string_t;
 
 //--------------------------------------------------------------------------------------//
 
-extern int  verbose;
-extern bool disable_timer_memory;
-// extern  bool        output_total;
+extern int      verbose;
 extern string_t env_num_threads;
 extern int      num_threads;
 extern int      max_depth;
 extern bool     enabled;
 
-extern string_t timing_format;
 extern int16_t  timing_precision;
 extern int16_t  timing_width;
 extern string_t timing_units;
 extern bool     timing_scientific;
 
-extern string_t memory_format;
 extern int16_t  memory_precision;
 extern int16_t  memory_width;
 extern string_t memory_units;
 extern bool     memory_scientific;
-
-extern string_t timing_memory_format;
-extern int16_t  timing_memory_precision;
-extern int16_t  timing_memory_width;
-extern string_t timing_memory_units;
-extern bool     timing_memory_scientific;
 
 //--------------------------------------------------------------------------------------//
 

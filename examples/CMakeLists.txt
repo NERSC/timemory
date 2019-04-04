@@ -32,11 +32,12 @@ endif()
 #------------------------------------------------------------------------------#
 #   Add the examples
 #
-add_subdirectory(ex-c)
-add_subdirectory(ex-cxx)
-add_subdirectory(ex-cxx-total)
-add_subdirectory(ex-cxx-graph)
-add_subdirectory(ex-cxx-overhead)
+add_subdirectory(ex-tuple)
+#add_subdirectory(ex-c)
+#add_subdirectory(ex-cxx)
+#add_subdirectory(ex-cxx-total)
+#add_subdirectory(ex-cxx-graph)
+#add_subdirectory(ex-cxx-overhead)
 if(TIMEMORY_USE_MPI AND MPI_FOUND)
-    add_subdirectory(ex-cxx-mpi)
+#    add_subdirectory(ex-cxx-mpi)
 endif(TIMEMORY_USE_MPI AND MPI_FOUND)

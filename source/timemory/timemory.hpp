@@ -30,18 +30,27 @@
 
 #pragma once
 
+#include "timemory/apply.hpp"
+#include "timemory/auto_macros.hpp"
+#include "timemory/auto_object.hpp"
+#include "timemory/auto_rusage.hpp"
 #include "timemory/auto_timer.hpp"
+#include "timemory/clocks.hpp"
+#include "timemory/component_tuple.hpp"
+#include "timemory/components.hpp"
 #include "timemory/environment.hpp"
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
+#include "timemory/rusage.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/storage.hpp"
 #include "timemory/string.hpp"
-#include "timemory/timer.hpp"
+#include "timemory/testing.hpp"
 #include "timemory/units.hpp"
-#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
 // functions that do the initialization and destruction
@@ -49,9 +58,3 @@ void
 _timemory_initialization();
 void
 _timemory_finalization();
-
-// for backwards-compatibility
-namespace tim
-{
-typedef manager timing_manager;
-}

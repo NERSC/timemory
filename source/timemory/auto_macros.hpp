@@ -33,11 +33,11 @@
 #include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
-//============================================================================//
+//======================================================================================//
 //
 //                      CXX macros
 //
-//============================================================================//
+//======================================================================================//
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 
@@ -47,7 +47,7 @@
 #        define __TIMEMORY_FUNCTION__ __FUNCTION__
 #    endif
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
 #    define AUTO_NAME_COMBINE(X, Y) X##Y
 #    define AUTO_NAME(Y) AUTO_NAME_COMBINE(macro_auto_timer, Y)
@@ -57,7 +57,7 @@
             tim::string(A).substr(std::string(A).find_last_of("/") + 1) +                \
             tim::string("':") + B
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_SIGN(str)
  *
  * helper macro for "__FUNC__" + str tagging
@@ -73,7 +73,7 @@
 #    define TIMEMORY_BASIC_AUTO_SIGN(str)                                                \
         tim::string(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str))
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_SIGN(str)
  *
  * helper macro for "__FUNC__" + str + '@__FILE__':__LINE__" tagging
@@ -90,7 +90,7 @@
         tim::string(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str) +              \
                     AUTO_STR(__FILE__, TIMEMORY_LINE_STRING))
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_OBJECT(str)
  *
  * simple tagging with <function name> + <string> where the string param
@@ -115,7 +115,7 @@
         type AUTO_NAME(__LINE__)(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str),  \
                                  __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_OBJECT(str)
  *
  * standard tagging with <function name> + <string> + "@'<filename>':<line>"
@@ -142,7 +142,7 @@
                                      AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),           \
                                  __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_OBJECT_OBJ(str)
  *
  * Similar to \ref TIMEMORY_BASIC_AUTO_OBJECT(str) but assignable.
@@ -158,7 +158,7 @@
 #    define TIMEMORY_BASIC_AUTO_OBJECT_OBJ(type, str)                                    \
         type(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str), __LINE__)
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_OBJECT_OBJ(str)
  *
  * Similar to \ref TIMEMORY_AUTO_OBJECT(str) but assignable.
@@ -179,11 +179,11 @@
 
 #endif
 
-//============================================================================//
+//======================================================================================//
 //
 //                      PRODUCTION AND DEBUG
 //
-//============================================================================//
+//======================================================================================//
 
 #if defined(TIMEMORY_DEBUG)
 #    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(type, str)                                  \
@@ -204,6 +204,6 @@
         }
 #endif
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 #endif

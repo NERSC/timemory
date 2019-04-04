@@ -153,7 +153,7 @@ endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
 # ---------------------------------------------------------------------------- #
 #   Python tests
 #
-if(TIMEMORY_USE_PYTHON_BINDING)
+if(TIMEMORY_USE_PYTHON_BINDING AND TIMEMORY_BUILD_TESTING)
 
     add_test(NAME python_simple
         COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
@@ -185,12 +185,12 @@ if(TIMEMORY_USE_PYTHON_BINDING)
     set_tests_properties(python_array PROPERTIES
         LABELS "python;unit_test" TIMEOUT 7200)
 
-endif(TIMEMORY_USE_PYTHON_BINDING)
+endif()
 
 # ---------------------------------------------------------------------------- #
 #   Compiled tests
 #
-if(TIMEMORY_BUILD_EXAMPLES)
+if(TIMEMORY_BUILD_EXAMPLES AND TIMEMORY_BUILD_TESTING)
 
     if(TIMEMORY_USE_MPI AND MPI_FOUND AND TIMEMORY_TEST_MPI)
         set(_TEST_MPI ON)
@@ -201,57 +201,67 @@ if(TIMEMORY_BUILD_EXAMPLES)
     #----------------------------------------------#
     #   C Timing
     #
-    set(TEST_NAME test_c_timing)
-    add_test(NAME ${TEST_NAME}
-        COMMAND $<TARGET_FILE:${TEST_NAME}>
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(${TEST_NAME} PROPERTIES
-        LABELS "c;unit_test" TIMEOUT 7200)
+    #set(TEST_NAME test_c_timing)
+    #add_test(NAME ${TEST_NAME}
+    #    COMMAND $<TARGET_FILE:${TEST_NAME}>
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(${TEST_NAME} PROPERTIES
+    #    LABELS "c;unit_test" TIMEOUT 7200)
 
     #----------------------------------------------#
     #   CXX Timing
     #
-    set(TEST_NAME test_cxx_timing)
-    add_test(NAME ${TEST_NAME}
-        COMMAND $<TARGET_FILE:${TEST_NAME}>
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(${TEST_NAME} PROPERTIES
-        LABELS "cxx;unit_test" TIMEOUT 7200
-        RUN_SERIAL ON)
+    #set(TEST_NAME test_cxx_timing)
+    #add_test(NAME ${TEST_NAME}
+    #    COMMAND $<TARGET_FILE:${TEST_NAME}>
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(${TEST_NAME} PROPERTIES
+    #    LABELS "cxx;unit_test" TIMEOUT 7200
+    #    RUN_SERIAL ON)
 
     #----------------------------------------------#
     #   CXX Overhead
     #
-    set(TEST_NAME test_cxx_overhead)
-    add_test(NAME ${TEST_NAME}
-        COMMAND $<TARGET_FILE:${TEST_NAME}>
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(${TEST_NAME} PROPERTIES
-        LABELS "cxx;unit_test" TIMEOUT 7200)
+    #set(TEST_NAME test_cxx_overhead)
+    #add_test(NAME ${TEST_NAME}
+    #    COMMAND $<TARGET_FILE:${TEST_NAME}>
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(${TEST_NAME} PROPERTIES
+    #    LABELS "cxx;unit_test" TIMEOUT 7200)
 
     #----------------------------------------------#
     #   CXX Total
     #
-    set(TEST_NAME test_cxx_total)
+    #set(TEST_NAME test_cxx_total)
+    #add_test(NAME ${TEST_NAME}
+    #    COMMAND $<TARGET_FILE:${TEST_NAME}>
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(${TEST_NAME} PROPERTIES
+    #    LABELS "cxx;unit_test" TIMEOUT 7200)
+
+    #----------------------------------------------#
+    #   CXX + MPI Timing
+    #
+    #if(_TEST_MPI)
+    #    set(TEST_NAME test_cxx_mpi_timing)
+    #    add_test(NAME ${TEST_NAME}
+    #        COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:${TEST_NAME}>
+    #        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #    set_tests_properties(${TEST_NAME} PROPERTIES
+    #        LABELS "cxx;unit_test;mpi" TIMEOUT 7200
+    #        RUN_SERIAL ON)
+    #endif(_TEST_MPI)
+
+    #unset(_TEST_MPI)
+
+    #----------------------------------------------#
+    #   CXX Total
+    #
+    set(TEST_NAME test_cxx_tuple)
     add_test(NAME ${TEST_NAME}
         COMMAND $<TARGET_FILE:${TEST_NAME}>
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
     set_tests_properties(${TEST_NAME} PROPERTIES
         LABELS "cxx;unit_test" TIMEOUT 7200)
 
-    #----------------------------------------------#
-    #   CXX + MPI Timing
-    #
-    if(_TEST_MPI)
-        set(TEST_NAME test_cxx_mpi_timing)
-        add_test(NAME ${TEST_NAME}
-            COMMAND ${MPIEXEC_EXECUTABLE} -np 2 $<TARGET_FILE:${TEST_NAME}>
-            WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-        set_tests_properties(${TEST_NAME} PROPERTIES
-            LABELS "cxx;unit_test;mpi" TIMEOUT 7200
-            RUN_SERIAL ON)
-    endif(_TEST_MPI)
-
-    unset(_TEST_MPI)
-
-endif(TIMEMORY_BUILD_EXAMPLES)
+endif()

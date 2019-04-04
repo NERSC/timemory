@@ -58,12 +58,6 @@
 #    include <sys/times.h>
 #    include <unistd.h>
 
-// avoid no symbols warning
-struct clocks_dummy
-{
-    static int32_t asymbol;
-};
-
 #elif defined(_WINDOWS)
 //
 //  Windows does not have tms definition
@@ -79,7 +73,18 @@ struct clocks_dummy
 #    include <winsock.h>
 
 EXTERN_C int
-gettimeofday(struct timeval* t, void* timezone);
+gettimeofday(struct timeval* t, void* timezone)
+{
+    struct _timeb timebuffer;
+#    if defined(_WIN64)
+    _ftime64(&timebuffer);
+#    elif defined(_WIN32)
+    _ftime(&timebuffer);
+#    endif
+    t->tv_sec  = timebuffer.time;
+    t->tv_usec = 1000 * timebuffer.millitm;
+    return 0;
+}
 
 #    define __need_clock_t
 
@@ -102,7 +107,14 @@ struct tms
 // All times are in CLK_TCKths of a second.
 
 EXTERN_C clock_t
-         times(struct tms* __buffer);
+         times(struct tms* __buffer)
+{
+    __buffer->tms_utime  = clock();
+    __buffer->tms_stime  = 0;
+    __buffer->tms_cstime = 0;
+    __buffer->tms_cutime = 0;
+    return __buffer->tms_utime;
+}
 
 typedef long long suseconds_t;
 
@@ -335,7 +347,13 @@ _Tp
 get_clock_now(clockid_t clock_id)
 {
     constexpr _Tp factor = static_cast<_Tp>(std::nano::den) / Precision::den;
+#if defined(_MACOS)
     return clock_gettime_nsec_np(clock_id) / factor;
+#else
+    struct timespec ts;
+    clock_gettime(clock_id, &ts);
+    return (ts.tv_sec * std::nano::den + ts.tv_nsec) / factor;
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

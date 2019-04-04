@@ -35,8 +35,6 @@
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
-#include "timemory/timemory.hpp"
-#include "timemory/timer.hpp"
 #include "timemory/utility.hpp"
 
 #include <algorithm>
@@ -158,8 +156,8 @@ manager::manager()
 , m_instance_count(f_manager_instance_count++)
 , m_laps(0)
 , m_report(&std::cout)
-, m_tuple_data(
-      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
+//, m_tuple_data(
+//      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
     if(!singleton_t::master_instance_ptr())
     {
@@ -171,8 +169,8 @@ manager::manager()
         manager* master = singleton_t::master_instance_ptr();
         master->set_merge(true);
         master->add(this);
-        timer_data.set_head(*master->get_timer_data().current());
-        timer_data.set_head(master->get_timer_data().current());
+        // timer_data.set_head(*master->get_timer_data().current());
+        // timer_data.set_head(master->get_timer_data().current());
         // memory_data.set_head(&master->get_memory_data().current());
     }
 
@@ -223,16 +221,17 @@ manager::update_total_timer_format()
 void
 manager::insert_global_timer()
 {
-    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0) &&
-       timer_data.map().size() == 0)
+    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0)
+       // && timer_data.map().size() == 0
+    )
     {
         update_total_timer_format();
-        timer_data.map()[0]           = timer_data.total();
-        timer_data_t::tuple_t _global = { 0, 0, 0, "exe_global_time",
-                                          timer_data.total() };
-        timer_data.current()          = timer_data.graph().set_head(_global);
-        if(!timer_data.total()->is_running())
-            timer_data.total()->start();
+        // timer_data.map()[0]           = timer_data.total();
+        // timer_data_t::tuple_t _global = { 0, 0, 0, "exe_global_time",
+        //                                  timer_data.total() };
+        // timer_data.current()          = timer_data.graph().set_head(_global);
+        // if(!timer_data.total()->is_running())
+        //    timer_data.total()->start();
     }
 }
 
@@ -250,10 +249,10 @@ manager::clear()
     // if(this == singleton_t::master_instance_ptr())
     // tim::format::timer::default_width(8);
 
-    m_laps += compute_total_laps();
-    timer_data.graph().clear();
-    timer_data.current() = nullptr;
-    timer_data.map().clear();
+    // m_laps += compute_total_laps();
+    // timer_data.graph().clear();
+    // timer_data.current() = nullptr;
+    // timer_data.map().clear();
     for(auto& itr : m_daughters)
         if(itr != this && itr)
             itr->clear();
@@ -460,6 +459,7 @@ manager::merge(pointer itr)
                   << std::endl;
 #endif
 
+    /*
     auto _this_beg = this->get_timer_data().graph().begin();
     auto _this_end = this->get_timer_data().graph().end();
 
@@ -482,6 +482,7 @@ manager::merge(pointer itr)
     this->get_timer_data().graph().reduce(_this_beg, _this_end, _this_beg, _this_end,
                                           _reduce);
     compute_self();
+    */
 }
 
 //======================================================================================//
@@ -551,7 +552,7 @@ manager::compute_self()
 }
 
 //======================================================================================//
-
+/*
 manager::tim_timer_t
 manager::compute_missing(tim_timer_t* timer_ref)
 {
@@ -567,7 +568,6 @@ manager::compute_missing(tim_timer_t* timer_ref)
     if(_ref->is_running())
         _ref->stop();
 
-    /*
     tim_timer_t _missing_timer(_ref, _f_prefix, true);
 
     if(restart)
@@ -589,10 +589,9 @@ manager::compute_missing(tim_timer_t* timer_ref)
         _missing_timer += (depth_timers[i - 1] - depth_timers[i]);
 
     return _missing_timer;
-    */
+
     return *timer_ref;
 }
-
 //======================================================================================//
 
 void
@@ -656,7 +655,7 @@ manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _mis
     _ss << _missing.as_string() << std::endl;
     _os << "\n" << _ss.str();
 }
-
+*/
 //======================================================================================//
 //
 //  Static functions for writing JSON output

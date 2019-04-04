@@ -328,6 +328,33 @@ struct _apply_impl<void>
 
     //----------------------------------------------------------------------------------//
 
+    template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
+              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+    static void apply_access_with_indices(_Tuple&& __t, _Args&&... __args)
+    {
+        // call constructor
+        using Type       = decltype(std::get<_N>(__t));
+        using AccessType = typename std::tuple_element<_N, _Access>::type;
+        AccessType(_N, _Nt + 1, std::forward<Type>(std::get<_N>(__t)),
+                   std::forward<_Args>(__args)...);
+    }
+
+    template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
+              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+    static void apply_access_with_indices(_Tuple&& __t, _Args&&... __args)
+    {
+        // call constructor
+        using Type       = decltype(std::get<_N>(__t));
+        using AccessType = typename std::tuple_element<_N, _Access>::type;
+        AccessType(_N, _Nt + 1, std::forward<Type>(std::get<_N>(__t)),
+                   std::forward<_Args>(__args)...);
+        // recursive call
+        apply_access_with_indices<_N + 1, _Nt, _Access, _Tuple, _Args...>(
+            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _TupleA,
               typename _TupleB, typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
     static void apply_access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
@@ -542,6 +569,17 @@ struct apply<void>
     static void access(_Tuple&& __t, _Args&&... __args)
     {
         _apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
+            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args,
+              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+    static void access_with_indices(_Tuple&& __t, _Args&&... __args)
+    {
+        _apply_impl<void>::template apply_access_with_indices<0, _N - 1, _Access, _Tuple,
+                                                              _Args...>(
             std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
     }
 

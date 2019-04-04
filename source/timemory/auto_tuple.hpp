@@ -23,14 +23,14 @@
 // SOFTWARE.
 //
 
-/** \file auto_object.hpp
- * \headerfile auto_object.hpp "timemory/auto_object.hpp"
+/** \file auto_tuple.hpp
+ * \headerfile auto_tuple.hpp "timemory/auto_tuple.hpp"
  * Automatic timers
  * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TIMER()
- *    \param TIMEMORY_BASIC_AUTO_TIMER()
- *    \param auto t = TIMEMORY_AUTO_TIMER_OBJ()
- *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_OBJ()
+ *    \param TIMEMORY_AUTO_TUPLE()
+ *    \param TIMEMORY_BASIC_AUTO_TUPLE()
+ *    \param auto t = TIMEMORY_AUTO_TUPLE_OBJ()
+ *    \param auto t = TIMEMORY_BASIC_AUTO_TUPLE_OBJ()
  */
 
 #pragma once
@@ -38,6 +38,8 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/auto_macros.hpp"
+#include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/string.hpp"
@@ -47,29 +49,29 @@ TIM_NAMESPACE_BEGIN
 
 //--------------------------------------------------------------------------------------//
 
-template <typename AutoType, typename ObjectType>
-class tim_api auto_object
-: public tim::counted_object<AutoType>
-, public tim::hashed_object<AutoType>
+template <typename... Types>
+class auto_tuple
+: public tim::counted_object<auto_tuple<Types...>>
+, public tim::hashed_object<auto_tuple<Types...>>
 {
 public:
-    typedef tim::counted_object<AutoType>     counter_type;
-    typedef tim::counted_object<void>         counter_void;
-    typedef tim::hashed_object<AutoType>      hashed_type;
-    typedef ObjectType                        object_type;
-    typedef auto_object<AutoType, ObjectType> this_type;
-    typedef tim::string                       string_t;
+    using this_type    = auto_tuple<Types...>;
+    using object_type  = component_tuple<Types...>;
+    using counter_type = tim::counted_object<this_type>;
+    using counter_void = tim::counted_object<void>;
+    using hashed_type  = tim::hashed_object<this_type>;
+    using string_t     = tim::string;
 
 public:
     // standard constructor
-    auto_object(const string_t&, const int32_t& lineno, const string_t& = "cxx",
-                bool report_at_exit = false);
+    auto_tuple(const string_t&, const int32_t& lineno, const string_t& = "cxx",
+               bool report_at_exit = true);
     // destructor
-    virtual ~auto_object();
+    virtual ~auto_tuple();
 
     // copy and move
-    auto_object(const this_type&) = default;
-    auto_object(this_type&&)      = default;
+    auto_tuple(const this_type&) = default;
+    auto_tuple(this_type&&)      = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) = default;
 
@@ -90,36 +92,35 @@ private:
 
 //======================================================================================//
 
-template <typename AutoType, typename ObjectType>
-auto_object<AutoType, ObjectType>::auto_object(const string_t& object_tag,
-                                               const int32_t&  lineno,
-                                               const string_t& lang_tag,
-                                               bool            report_at_exit)
+template <typename... Types>
+auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& lineno,
+                                 const string_t& lang_tag, bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable()) ? (lineno + std::hash<string_t>()(object_tag)) : 0)
 , m_enabled(counter_type::enable())
 , m_report_at_exit(report_at_exit)
-, m_temp_object(object_type(
-      m_enabled, (m_enabled)
-                     ? &manager::instance()->get<ObjectType>(
-                           object_tag, lang_tag,
-                           (m_enabled) ? counter_type::live() : counter_type::zero(),
-                           (m_enabled) ? hashed_type::live() : hashed_type::zero())
-                     : nullptr))
+, m_temp_object(object_tag, lang_tag,
+                (m_enabled) ? counter_type::live() : counter_type::zero(),
+                (m_enabled) ? hashed_type::live() : hashed_type::zero())
 {
+    if(m_enabled)
+    {
+        m_temp_object.start();
+    }
 }
 
 //======================================================================================//
 
-template <typename AutoType, typename ObjectType>
-auto_object<AutoType, ObjectType>::~auto_object()
+template <typename... Types>
+auto_tuple<Types...>::~auto_tuple()
 {
     if(m_enabled)
     {
         // stop the timer
         m_temp_object.stop();
-        assert(m_temp_object.summation_object() != nullptr);
-        *m_temp_object.summation_object() += m_temp_object;
+
+        // assert(m_temp_object.summation_object() != nullptr);
+        //*m_temp_object.summation_object() += m_temp_object;
 
         // report timer at exit
         if(m_report_at_exit)
@@ -127,12 +128,15 @@ auto_object<AutoType, ObjectType>::~auto_object()
             // m_temp_object.grab_metadata(*(m_temp_object.summation_object()));
 
             // show number of laps in temporary timer
-            auto _laps = m_temp_object.summation_object()->accum().size();
-            m_temp_object.accum().size() += _laps;
+            // auto _laps = m_temp_object.summation_object()->accum().size();
+            // m_temp_object.accum().size() += _laps;
 
             // threadsafe output w.r.t. other timers
-            m_temp_object.grab_metadata(*m_temp_object.summation_object());
-            m_temp_object.report(std::cout, true, true);
+            // m_temp_object.grab_metadata(*m_temp_object.summation_object());
+            // m_temp_object.report(std::cout, true, true);
+            std::stringstream ss;
+            ss << m_temp_object;
+            std::cout << ss.str() << std::endl;
         }
         // count and hash keys already taken care of so just pop the graph
         // manager::instance()->pop_graph<typename _Tp::value_type>();
@@ -142,10 +146,9 @@ auto_object<AutoType, ObjectType>::~auto_object()
 
 //======================================================================================//
 
-template <typename AutoType, typename ObjectType>
-typename auto_object<AutoType, ObjectType>::string_t
-auto_object<AutoType, ObjectType>::get_tag(const string_t& timer_tag,
-                                           const string_t& lang_tag)
+template <typename... Types>
+typename auto_tuple<Types...>::string_t
+auto_tuple<Types...>::get_tag(const string_t& timer_tag, const string_t& lang_tag)
 {
 #if defined(TIMEMORY_USE_MPI)
     std::stringstream ss;
@@ -161,5 +164,30 @@ auto_object<AutoType, ObjectType>::get_tag(const string_t& timer_tag,
 }
 
 //======================================================================================//
-
+//-----------------------------------------------------------------------
 TIM_NAMESPACE_END
+
+//======================================================================================//
+
+#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, str)                                  \
+    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, str)
+
+#define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, str)                                  \
+    TIMEMORY_BASIC_AUTO_OBJECT(auto_tuple_type, str)
+
+#define TIMEMORY_AUTO_TUPLE(auto_tuple_type, str)                                        \
+    TIMEMORY_AUTO_OBJECT(auto_tuple_type, str)
+
+#define TIMEMORY_AUTO_TUPLE_OBJ(auto_tuple_type, str)                                    \
+    TIMEMORY_AUTO_OBJECT_OBJ(auto_tuple_type, str)
+
+#define TIMEMORY_BASIC_AUTO_TUPLE_OBJ(auto_tuple_type, str)                              \
+    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_tuple_type, str)
+
+#define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, str)                            \
+    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_tuple_type, str)
+
+#define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, str)                                  \
+    TIMEMORY_DEBUG_AUTO_OBJECT(auto_tuple_type, str)
+
+//======================================================================================//

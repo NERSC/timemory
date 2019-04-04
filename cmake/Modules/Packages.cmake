@@ -196,6 +196,26 @@ endif(TIMEMORY_USE_PYTHON_BINDING)
 
 ################################################################################
 #
+#                               PAPI
+#
+################################################################################
+
+if(TIMEMORY_USE_PAPI)
+    find_package(PAPI)
+
+    if(PAPI_FOUND)
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${PAPI_INCLUDE_DIRS})
+        list(APPEND EXTERNAL_LIBRARIES ${PAPI_LIBRARIES})
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_PAPI)
+    else(PAPI_FOUND)
+        set(TIMEMORY_USE_PAPI OFF)
+        message(WARNING "PAPI package not found!")
+    endif(PAPI_FOUND)
+
+endif()
+
+################################################################################
+#
 #        Checkout Cereal if not checked out
 #
 ################################################################################

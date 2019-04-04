@@ -1,0 +1,244 @@
+// MIT License
+//
+// Copyright (c) 2018, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
+#include <chrono>
+#include <cmath>
+#include <fstream>
+#include <future>
+#include <iterator>
+#include <thread>
+#include <unordered_map>
+#include <vector>
+
+#include <cassert>
+
+#include <timemory/auto_timer.hpp>
+#include <timemory/auto_tuple.hpp>
+#include <timemory/component_tuple.hpp>
+#include <timemory/environment.hpp>
+#include <timemory/manager.hpp>
+#include <timemory/mpi.hpp>
+#include <timemory/rusage.hpp>
+#include <timemory/signal_detection.hpp>
+#include <timemory/testing.hpp>
+
+using namespace tim::component;
+
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, process_cpu_clock,
+                    cpu_util, thread_cpu_util, process_cpu_util, peak_rss, current_rss>;
+
+//--------------------------------------------------------------------------------------//
+// fibonacci calculation
+intmax_t
+fibonacci(int32_t n)
+{
+    return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
+}
+//--------------------------------------------------------------------------------------//
+// time fibonacci with return type and arguments
+// e.g. std::function < int32_t ( int32_t ) >
+intmax_t
+time_fibonacci(int32_t n)
+{
+    return fibonacci(n);
+}
+//--------------------------------------------------------------------------------------//
+
+void
+print_info(const std::string&);
+void
+print_string(const std::string& str);
+void
+test_1_usage();
+void
+test_2_timing();
+
+//======================================================================================//
+
+int
+main(int argc, char** argv)
+{
+    tim::env::parse();
+    tim::standard_timing_components_t timing;
+    timing.start();
+
+    CONFIGURE_TEST_SELECTOR(2);
+
+    int num_fail = 0;
+    int num_test = 0;
+
+    std::cout << "# tests: " << tests.size() << std::endl;
+    try
+    {
+        RUN_TEST(1, test_1_usage, num_test, num_fail);
+        RUN_TEST(2, test_2_timing, num_test, num_fail);
+    }
+    catch(std::exception& e)
+    {
+        std::cerr << e.what() << std::endl;
+    }
+
+    timing.stop();
+    std::cout << "\nTests runtime: " << timing << std::endl;
+
+    TEST_SUMMARY(argv[0], num_test, num_fail);
+
+    exit(num_fail);
+}
+
+//======================================================================================//
+
+void
+print_info(const std::string& func)
+{
+    if(tim::mpi_rank() == 0)
+        std::cout << "\n[" << tim::mpi_rank() << "]\e[1;33m TESTING \e[0m["
+                  << "\e[1;36m" << func << "\e[0m"
+                  << "]...\n"
+                  << std::endl;
+}
+
+//======================================================================================//
+
+void
+print_string(const std::string& str)
+{
+    std::stringstream _ss;
+    _ss << "[" << tim::mpi_rank() << "] " << str << std::endl;
+    std::cout << _ss.str();
+}
+
+//======================================================================================//
+
+template <typename _Tp>
+void
+serialize(const std::string& fname, const std::string& title, const _Tp& obj)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa(cereal::make_nvp(title, obj));
+    }
+    std::ofstream ofs(fname.c_str());
+    ofs << ss.str() << std::endl;
+}
+
+//======================================================================================//
+
+void
+test_1_usage()
+{
+    print_info(__FUNCTION__);
+    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+
+    typedef tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap,
+                                 num_io_in, num_io_out, num_minor_page_faults,
+                                 num_major_page_faults>
+        measurement_t;
+
+    measurement_t _use_beg;
+    measurement_t _use_delta;
+    measurement_t _use_end;
+
+    _use_beg.record();
+    _use_delta.start();
+    fibonacci(30);
+    _use_delta.stop();
+    _use_end.record();
+
+    std::cout << "usage (begin): " << _use_beg << std::endl;
+    std::cout << "usage (delta): " << _use_delta << std::endl;
+    std::cout << "usage (end):   " << _use_end << std::endl;
+
+    std::vector<std::pair<std::string, measurement_t>> measurements = {
+        { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
+    };
+    serialize("rusage.json", "usage", measurements);
+}
+
+//======================================================================================//
+
+void
+test_2_timing()
+{
+    print_info(__FUNCTION__);
+
+    typedef tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                                 monotonic_clock, monotonic_raw_clock, thread_cpu_clock,
+                                 process_cpu_clock, cpu_util, thread_cpu_util,
+                                 process_cpu_util>
+        measurement_t;
+    using pair_t = std::pair<std::string, measurement_t>;
+
+    static std::mutex    mtx;
+    std::deque<pair_t>   measurements;
+    measurement_t        runtime;
+    std::atomic_intmax_t ret;
+    std::stringstream    lambda_ss;
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+
+        auto run_fib = [&](long n) {
+            TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+            measurement_t _tm;
+            _tm.start();
+            ret += fibonacci(n);
+            _tm.stop();
+            mtx.lock();
+            std::stringstream ss;
+            ss << "fibonacci(" << n << ")";
+            measurements.push_back(pair_t(ss.str(), _tm));
+            lambda_ss << "thread fibonacci(" << n << "): " << _tm << std::endl;
+            mtx.unlock();
+        };
+
+        runtime.start();
+        {
+            std::thread _t1(run_fib, 43);
+            std::thread _t2(run_fib, 43);
+
+            run_fib(40);
+
+            _t1.join();
+            _t2.join();
+        }
+        runtime.stop();
+    }
+
+    std::cout << "\n" << lambda_ss.str() << std::endl;
+    std::cout << "total runtime: " << runtime << std::endl;
+    std::cout << "fibonacci total: " << ret.load() << "\n" << std::endl;
+
+    measurements.push_front(pair_t("run", runtime));
+    serialize("timing.json", "runtime", measurements);
+}
+
+//======================================================================================//

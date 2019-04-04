@@ -42,9 +42,9 @@
 #include "timemory/auto_object.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/string.hpp"
-#include "timemory/usage.hpp"
 #include "timemory/utility.hpp"
 
+/*
 TIM_NAMESPACE_BEGIN
 
 tim_api class auto_rusage : public tim::auto_object<auto_rusage, tim::usage>
@@ -101,5 +101,5 @@ typedef tim::auto_rusage auto_rusage_t;
     TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(tim::auto_rusage, str)
 
 #define TIMEMORY_DEBUG_AUTO_RUSAGE(str) TIMEMORY_DEBUG_AUTO_OBJECT(tim::auto_rusage, str)
-
+*/
 //--------------------------------------------------------------------------------------//

@@ -15,6 +15,8 @@ if(CLANG_FORMATTER)
     file(GLOB headers
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/*.icpp
+        ${PROJECT_SOURCE_DIR}/source/timemory/*.thpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp)
     file(GLOB sources
         ${PROJECT_SOURCE_DIR}/source/*.c

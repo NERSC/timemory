@@ -41,9 +41,10 @@
 #include <string>
 
 #include "timemory/apply.hpp"
+#include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
-#include "timemory/data_types.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/string.hpp"
 
@@ -63,15 +64,62 @@ public:
 
 public:
     explicit component_tuple()
-    : m_laps(0)
+    : m_identifier("")
+    , m_laps(0)
     {
     }
 
+    component_tuple(const string_t& key, const string_t& tag, const int32_t& ncount,
+                    const int32_t& nhash)
+    : m_identifier("")
+    , m_laps(0)
+    {
+        auto string_hash = [](const string_t& str) { return std::hash<string_t>()(str); };
+
+        auto get_prefix = []() {
+            if(!mpi_is_initialized())
+                return string_t("> ");
+
+            static string_t* _prefix = nullptr;
+            if(!_prefix)
+            {
+                // prefix spacing
+                static uint16_t width = 1;
+                if(mpi_size() > 9)
+                    width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
+                std::stringstream ss;
+                ss.fill('0');
+                ss << "|" << std::setw(width) << mpi_rank() << "> ";
+                _prefix = new string_t(ss.str());
+            }
+            return *_prefix;
+        };
+
+        uintmax_t ref =
+            (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+
+        std::stringstream ss;
+
+        // designated as [cxx], [pyc], etc.
+        ss << get_prefix() << "[" << tag << "] ";
+        // indent
+        for(intmax_t i = 0; i < ncount; ++i)
+        {
+            if(i + 1 == ncount)
+                ss << "|_";
+            else
+                ss << "  ";
+        }
+        ss << std::left << key;
+        m_identifier = ss.str();
+        output_width(m_identifier.length());
+    }
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
     component_tuple(const component_tuple& rhs)
-    : m_data(rhs.m_data)
+    : m_identifier(rhs.m_identifier)
+    , m_data(rhs.m_data)
     , m_accum(rhs.m_accum)
     , m_laps(rhs.m_laps)
     {
@@ -80,9 +128,10 @@ public:
     {
         if(this == &rhs)
             return *this;
-        m_data  = rhs.m_data;
-        m_accum = rhs.m_accum;
-        m_laps  = rhs.m_laps;
+        m_identifier = rhs.m_identifier;
+        m_data       = rhs.m_data;
+        m_accum      = rhs.m_accum;
+        m_laps       = rhs.m_laps;
         return *this;
     }
 
@@ -91,11 +140,45 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
+    // start/stop functions
+    void start()
+    {
+        ++m_laps;
+        typedef std::tuple<component::start<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    void stop()
+    {
+        typedef std::tuple<component::stop<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // conditional start/stop functions
+    void conditional_start()
+    {
+        auto increment = [&](bool did_start) { ++m_laps; };
+        typedef std::tuple<component::conditional_start<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data, increment);
+    }
+
+    void conditional_stop()
+    {
+        typedef std::tuple<component::conditional_stop<Types>...> apply_types;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // recording
+    //
     this_type& record()
     {
-        typedef std::tuple<timing::record<Types>...> apply_types;
-        apply<void>::access<apply_types>(m_data);
         ++m_laps;
+        {
+            typedef std::tuple<component::record<Types>...> apply_types;
+            apply<void>::access<apply_types>(m_data);
+        }
         return *this;
     }
 
@@ -105,12 +188,16 @@ public:
             ++m_laps;
         auto c_data = std::move(rhs.m_data);
         {
-            typedef std::tuple<timing::record<Types>...> apply_types;
+            typedef std::tuple<component::record<Types>...> apply_types;
             apply<void>::access<apply_types>(m_data);
         }
         {
-            typedef std::tuple<timing::minus<Types>...> apply_types;
+            typedef std::tuple<component::minus<Types>...> apply_types;
             apply<void>::access2<apply_types>(m_data, c_data);
+        }
+        {
+            typedef std::tuple<component::plus<Types>...> apply_types;
+            apply<void>::access2<apply_types>(m_accum, m_data);
         }
         return *this;
     }
@@ -118,32 +205,20 @@ public:
     //----------------------------------------------------------------------------------//
     this_type record() const
     {
-        this_type                                    tmp(*this);
-        typedef std::tuple<timing::record<Types>...> apply_types;
-        apply<void>::access<apply_types>(tmp.m_data);
-        tmp.m_laps += 1;
-        return tmp;
+        this_type tmp(*this);
+        return tmp.record();
     }
 
     this_type record(const this_type& rhs) const
     {
         this_type tmp(*this);
-        {
-            typedef std::tuple<timing::record<Types>...> apply_types;
-            apply<void>::access<apply_types>(tmp.m_data);
-        }
-        {
-            typedef std::tuple<timing::minus<Types>...> apply_types;
-            apply<void>::access2<apply_types>(tmp.m_data, rhs.m_data);
-        }
-        tmp.m_laps += 1;
-        return tmp;
+        return tmp.record(rhs);
     }
 
     //----------------------------------------------------------------------------------//
     void reset()
     {
-        typedef std::tuple<timing::reset<Types>...> apply_types;
+        typedef std::tuple<component::reset<Types>...> apply_types;
         apply<void>::access<apply_types>(m_data);
         m_laps = 0;
     }
@@ -152,7 +227,7 @@ public:
     // operators
     this_type& operator-=(const this_type& rhs)
     {
-        typedef std::tuple<timing::minus<Types>...> apply_types;
+        typedef std::tuple<component::minus<Types>...> apply_types;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -160,14 +235,14 @@ public:
 
     this_type& operator-=(uintmax_t&& rhs)
     {
-        typedef std::tuple<timing::minus<Types>...> apply_types;
+        typedef std::tuple<component::minus<Types>...> apply_types;
         apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        typedef std::tuple<timing::plus<Types>...> apply_types;
+        typedef std::tuple<component::plus<Types>...> apply_types;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -175,7 +250,7 @@ public:
 
     this_type& operator+=(uintmax_t&& rhs)
     {
-        typedef std::tuple<timing::plus<Types>...> apply_types;
+        typedef std::tuple<component::plus<Types>...> apply_types;
         apply<void>::access<apply_types>(m_data, std::forward<uintmax_t>(rhs));
         return *this;
     }
@@ -183,7 +258,7 @@ public:
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        typedef std::tuple<timing::multiply<Types>...> apply_types;
+        typedef std::tuple<component::multiply<Types>...> apply_types;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -191,17 +266,21 @@ public:
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        typedef std::tuple<timing::divide<Types>...> apply_types;
+        typedef std::tuple<component::divide<Types>...> apply_types;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     //--------------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream& os, const this_type& _timing)
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        typedef std::tuple<timing::print<Types>...> apply_types;
-        data_t                                      _data = _timing.m_data;
-        apply<void>::access<apply_types>(_timing.m_data, std::ref(os));
+        typedef std::tuple<component::print<Types>...> apply_types;
+        std::stringstream                              ss_prefix;
+        std::stringstream                              ss_data;
+        apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
+                                                      false);
+        ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
+        os << ss_prefix.str() << ss_data.str();
         return os;
     }
 
@@ -209,9 +288,17 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        typedef std::tuple<timing::serial<Types, Archive>...> apply_types;
+        typedef std::tuple<component::serial<Types, Archive>...> apply_types;
+        ar(serializer::make_nvp("identifier", m_identifier),
+           serializer::make_nvp("laps", m_laps));
+        ar.setNextName("data");
+        ar.startNode();
         apply<void>::access<apply_types>(m_data, std::ref(ar), version);
-        ar(serializer::make_nvp("laps", m_laps));
+        ar.finishNode();
+        ar.setNextName("accum");
+        ar.startNode();
+        apply<void>::access<apply_types>(m_accum, std::ref(ar), version);
+        ar.finishNode();
     }
 
     //--------------------------------------------------------------------------------------//
@@ -235,21 +322,48 @@ public:
     }
 
 public:
-    inline data_accum_t&       accum() { return m_accum; }
-    inline const data_accum_t& accum() const { return m_accum; }
-    inline intmax_t            laps() const { return m_laps; }
+    inline data_t&       accum() { return m_accum; }
+    inline const data_t& accum() const { return m_accum; }
+    inline intmax_t      laps() const { return m_laps; }
 
 protected:
     // protected member functions
-    data_accum_t&       get_accum() { return m_accum; }
-    const data_accum_t& get_accum() const { return m_accum; }
+    data_t&       get_accum() { return m_accum; }
+    const data_t& get_accum() const { return m_accum; }
 
 protected:
     // objects
     mutex_t        m_mutex;
+    string_t       m_identifier;
     mutable data_t m_data;
     mutable data_t m_accum;
     intmax_t       m_laps;
+
+protected:
+    static intmax_t output_width(intmax_t width = 0)
+    {
+        static std::atomic_intmax_t _instance;
+        if(width > 0)
+        {
+            auto current_width = _instance.load(std::memory_order_relaxed);
+            auto compute       = [&]() {
+                current_width = _instance.load(std::memory_order_relaxed);
+                return std::max(_instance.load(), width);
+            };
+            intmax_t propose_width = compute();
+            do
+            {
+                if(propose_width > current_width)
+                {
+                    auto ret = _instance.compare_exchange_strong(
+                        current_width, propose_width, std::memory_order_relaxed);
+                    if(!ret)
+                        compute();
+                }
+            } while(propose_width > current_width);
+        }
+        return _instance.load();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
