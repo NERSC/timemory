@@ -795,7 +795,7 @@ struct peak_rss : public base<peak_rss>
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return units::megabyte; }
-    static std::string label() { return "rss_peak"; }
+    static std::string label() { return "peak_rss"; }
     static std::string descript() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
     static intmax_t    record() { return get_peak_rss(); }
@@ -836,7 +836,7 @@ struct current_rss : public base<current_rss>
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return units::megabyte; }
-    static std::string label() { return "rss_curr"; }
+    static std::string label() { return "current_rss"; }
     static std::string descript() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
     static intmax_t    record() { return get_current_rss(); }

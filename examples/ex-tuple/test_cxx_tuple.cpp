@@ -75,6 +75,8 @@ void
 test_1_usage();
 void
 test_2_timing();
+void
+test_3_auto_tuple();
 
 //======================================================================================//
 
@@ -85,7 +87,7 @@ main(int argc, char** argv)
     tim::standard_timing_components_t timing;
     timing.start();
 
-    CONFIGURE_TEST_SELECTOR(2);
+    CONFIGURE_TEST_SELECTOR(3);
 
     int num_fail = 0;
     int num_test = 0;
@@ -95,6 +97,7 @@ main(int argc, char** argv)
     {
         RUN_TEST(1, test_1_usage, num_test, num_fail);
         RUN_TEST(2, test_2_timing, num_test, num_fail);
+        RUN_TEST(3, test_3_auto_tuple, num_test, num_fail);
     }
     catch(std::exception& e)
     {
@@ -239,6 +242,41 @@ test_2_timing()
 
     measurements.push_front(pair_t("run", runtime));
     serialize("timing.json", "runtime", measurements);
+}
+
+//======================================================================================//
+
+void
+test_3_auto_tuple()
+{
+    print_info(__FUNCTION__);
+
+    // measure multiple clock time + resident set sizes
+    using full_set_t =
+        tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
+                        thread_cpu_util, process_cpu_util, peak_rss, current_rss>;
+    // measure wall-clock, thread cpu-clock + process cpu-utilization
+    using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util>;
+
+    std::atomic_intmax_t ret;
+    {
+        // accumulate metrics on full run
+        TIMEMORY_BASIC_AUTO_TUPLE(full_set_t, "[total]");
+
+        // run a fibonacci calculation and accumulate metric
+        auto run_fibonacci = [&](long n) {
+            TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+            ret += fibonacci(n);
+        };
+
+        // run shorter fibonacci calculations on two threads
+        std::thread t(run_fibonacci, 42);
+        // run longer fibonacci calculation on main thread
+        run_fibonacci(43);
+
+        t.join();
+    }
+    std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 }
 
 //======================================================================================//

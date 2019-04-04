@@ -280,7 +280,7 @@ public:
         apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
                                                       false);
         ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
-        os << ss_prefix.str() << ss_data.str();
+        os << ss_prefix.str() << ss_data.str() << " [laps: " << obj.m_laps << "]";
         return os;
     }
 
