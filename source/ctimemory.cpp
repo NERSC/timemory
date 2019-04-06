@@ -37,8 +37,6 @@
 void
 setup_timemory(void)
 {
-    printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__);
-    tim::manager::master_instance();
 }
 
 //======================================================================================//
