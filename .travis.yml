@@ -157,7 +157,7 @@ matrix:
             - gcc-4.9
             - g++-4.9
             - build-essential
-            - cmake3
+            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -177,7 +177,7 @@ matrix:
             - gcc-5
             - g++-5
             - build-essential
-            - cmake3
+            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -197,7 +197,7 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - cmake3
+            - cmake
             - libpapi-dev
             - papi-tools
             #- libopenmpi-dev
@@ -217,7 +217,7 @@ matrix:
             - gcc-7
             - g++-7
             - build-essential
-            - cmake3
+            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -238,7 +238,7 @@ matrix:
             - clang-4.0
             - clang++-4.0
             - build-essential
-            - cmake3
+            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -259,7 +259,7 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - cmake3
+            - cmake
             - libpapi-dev
             - papi-tools
             #- libopenmpi-dev

@@ -90,24 +90,6 @@ main(int argc, char** argv)
     tim::component_tuple<papi_event<PAPI_TOT_CYC, 0>> m("PAPI measurements", "cxx", 0, 0);
     m.start();
 
-    /*
-    tim::papi::init();
-    // tim::papi::set_debug(2);
-    std::size_t nevents   = 4;
-    int*        event_set = new int[1];
-    long long*  values    = new long long[nevents];
-    memset(event_set, 0, sizeof(int));
-    memset(values, 0, nevents * sizeof(long long));
-    tim::papi::add_event(*event_set, PAPI_L1_DCM);
-    tim::papi::add_event(*event_set, PAPI_L1_ICM);
-    tim::papi::add_event(*event_set, PAPI_L1_TCM);
-    tim::papi::add_event(*event_set, PAPI_TOT_CYC);
-    tim::papi::start(*event_set);
-    */
-    // evt_l1_dcm.start();
-    // evt_l1_icm.start();
-    m.stop();
-
     CONFIGURE_TEST_SELECTOR(3);
 
     int num_fail = 0;
@@ -129,23 +111,7 @@ main(int argc, char** argv)
     std::cout << "\nTests runtime: " << timing << std::endl;
 
     m.stop();
-
     std::cout << m << std::endl;
-
-    /*
-    tim::papi::read(*event_set, values);
-    for(std::size_t i = 0; i < nevents; ++i)
-    {
-        std::cout << "PAPI value [" << i << "] = " << values[i] << std::endl;
-    }
-    tim::papi::stop(*event_set, values);
-    for(std::size_t i = 0; i < nevents; ++i)
-    {
-        std::cout << "PAPI value [" << i << "] = " << values[i] << std::endl;
-    }
-    delete[] event_set;
-    delete[] values;
-    */
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
 
