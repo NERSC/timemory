@@ -146,7 +146,7 @@ struct minus
     using value_type = typename _Tp::value_type;
     using base_type  = base<_Tp, value_type>;
 
-    minus(base_type& obj, const intmax_t& rhs) { obj.value -= rhs; }
+    minus(base_type& obj, const intmax_t& rhs) { obj -= rhs; }
     minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
 };
 
@@ -161,7 +161,7 @@ struct plus
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true), int> = 0>
     plus(base_type& obj, const base_type& rhs)
     {
-        obj.value = std::max(obj.value, rhs.value);
+        obj = std::max(obj, rhs);
     }
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false), int> = 0>
@@ -170,7 +170,7 @@ struct plus
         obj += rhs;
     }
 
-    plus(base_type& obj, const intmax_t& rhs) { obj.value += rhs; }
+    plus(base_type& obj, const intmax_t& rhs) { obj += rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -181,8 +181,8 @@ struct multiply
     using value_type = typename _Tp::value_type;
     using base_type  = base<_Tp, value_type>;
 
-    multiply(base_type& obj, const intmax_t& rhs) { obj.value *= rhs; }
-    multiply(base_type& obj, const base_type& rhs) { obj.value *= rhs.value; }
+    multiply(base_type& obj, const intmax_t& rhs) { obj *= rhs; }
+    multiply(base_type& obj, const base_type& rhs) { obj *= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -193,8 +193,8 @@ struct divide
     using value_type = typename _Tp::value_type;
     using base_type  = base<_Tp, value_type>;
 
-    divide(base_type& obj, const intmax_t& rhs) { obj.value /= rhs; }
-    divide(base_type& obj, const base_type& rhs) { obj.value /= rhs.value; }
+    divide(base_type& obj, const intmax_t& rhs) { obj /= rhs; }
+    divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -211,6 +211,7 @@ struct serial
         ar(serializer::make_nvp(_Tp::label() + ".value", obj.accum),
            serializer::make_nvp(_Tp::label() + ".unit.value", _Tp::unit()),
            serializer::make_nvp(_Tp::label() + ".unit.repr", _Tp::display_unit()));
+        consume_parameters(version);
     }
 
     template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
@@ -220,6 +221,7 @@ struct serial
         ar(serializer::make_nvp(_Tp::label() + ".value", value),
            serializer::make_nvp(_Tp::label() + ".unit.value", _Tp::unit()),
            serializer::make_nvp(_Tp::label() + ".unit.repr", _Tp::display_unit()));
+        consume_parameters(version);
     }
 };
 

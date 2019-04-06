@@ -43,6 +43,7 @@ add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
 add_option(TIMEMORY_USE_PYTHON_BINDING "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_USE_PAPI})
+add_option(TIMEMORY_USE_FILTERING "Enable filtering out types not implemented" ON)
 
 if(TIMEMORY_USE_MPI)
     add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON)
@@ -82,4 +83,8 @@ endif()
 
 if(TIMEMORY_USE_EXCEPTIONS)
     list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_EXCEPTIONS)
+endif()
+
+if(TIMEMORY_USE_FILTERING)
+    list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_FILTERING)
 endif()

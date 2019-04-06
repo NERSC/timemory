@@ -69,7 +69,9 @@ const double TiB = 1024.0 * GiB;
 const double PiB = 1024.0 * TiB;
 
 #if defined(_UNIX)
-const int64_t page_size      = ::sysconf(_SC_PAGESIZE);
+#    if defined(_LINUX)
+const int64_t page_size = ::sysconf(_SC_PAGESIZE);
+#    endif
 const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
 #else
 const int64_t page_size      = 1;

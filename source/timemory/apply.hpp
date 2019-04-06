@@ -226,6 +226,27 @@ struct _apply_impl<void>
 
     //----------------------------------------------------------------------------------//
 
+    template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
+              enable_if_t<(_N == _Nt), int> = 0>
+    static void set_value(_Tuple&& __t, _Value&& __v)
+    {
+        // assign argument
+        std::get<_N>(__t) = std::forward<_Value>(__v);
+    }
+
+    template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
+              enable_if_t<(_N < _Nt), int> = 0>
+    static void set_value(_Tuple&& __t, _Value&& __v)
+    {
+        // call operator()
+        std::get<_N>(__t) = std::forward<_Value>(__v);
+        // recursive call
+        set_value<_N + 1, _Nt, _Tuple, _Value>(std::forward<_Tuple>(__t),
+                                               std::forward<_Value>(__v));
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename... _Args,
               enable_if_t<(_N == _Nt), int> = 0>
     static void loop(_Tuple&& __t, _Args&&... __args)
@@ -469,6 +490,16 @@ struct apply<void>
     {
         _apply_impl<void>::template all<_Fn, _Tuple>(
             std::forward<_Fn>(__f), std::forward<_Tuple>(__t), _Indices{});
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tuple, typename _Value,
+              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+    static void set_value(_Tuple&& __t, _Value&& __v)
+    {
+        _apply_impl<void>::template set_value<0, _N - 1, _Tuple, _Value>(
+            std::forward<_Tuple>(__t), std::forward<_Value>(__v));
     }
 
     //----------------------------------------------------------------------------------//

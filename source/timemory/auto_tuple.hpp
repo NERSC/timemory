@@ -54,8 +54,12 @@ class auto_tuple
 , public tim::hashed_object<auto_tuple<Types...>>
 {
 public:
+#if defined(TIMEMORY_USE_FILTERING)
+    using object_type = type_filter<component::impl_available, component_tuple<Types...>>;
+#else
+    using object_type = component_tuple<Types...>;
+#endif
     using this_type    = auto_tuple<Types...>;
-    using object_type  = component_tuple<Types...>;
     using counter_type = tim::counted_object<this_type>;
     using counter_void = tim::counted_object<void>;
     using hashed_type  = tim::hashed_object<this_type>;
@@ -63,8 +67,8 @@ public:
 
 public:
     // standard constructor
-    auto_tuple(const string_t&, const int32_t& lineno, const string_t& = "cxx",
-               bool report_at_exit = true);
+    auto_tuple(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
+               bool report_at_exit = false);
     // destructor
     virtual ~auto_tuple();
 
@@ -78,9 +82,6 @@ public:
     // public member functions
     object_type&       local_object() { return m_temp_object; }
     const object_type& local_object() const { return m_temp_object; }
-
-protected:
-    inline string_t get_tag(const string_t& timer_tag, const string_t& lang_tag);
 
 private:
     bool        m_enabled;
@@ -145,25 +146,6 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-template <typename... Types>
-typename auto_tuple<Types...>::string_t
-auto_tuple<Types...>::get_tag(const string_t& timer_tag, const string_t& lang_tag)
-{
-#if defined(TIMEMORY_USE_MPI)
-    std::stringstream ss;
-    if(tim::mpi_is_initialized())
-        ss << tim::mpi_rank();
-    ss << "> [" << lang_tag << "] " << timer_tag;
-    return string_t(ss.str().c_str());
-#else
-    std::stringstream ss;
-    ss << "> [" << lang_tag << "] " << timer_tag;
-    return ss.str().c_str();
-#endif
-}
-
-//======================================================================================//
-//-----------------------------------------------------------------------
 TIM_NAMESPACE_END
 
 //======================================================================================//

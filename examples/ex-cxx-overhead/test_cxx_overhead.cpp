@@ -25,11 +25,21 @@
 
 #include <cstdint>
 
-#include "timemory/auto_timer.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/timer.hpp"
+#include <timemory/auto_tuple.hpp>
+#include <timemory/component_tuple.hpp>
+#include <timemory/environment.hpp>
+#include <timemory/manager.hpp>
+#include <timemory/mpi.hpp>
+#include <timemory/papi.hpp>
+#include <timemory/rusage.hpp>
+#include <timemory/signal_detection.hpp>
+#include <timemory/testing.hpp>
 
+using namespace tim::component;
+using auto_tuple_t  = tim::auto_tuple<real_clock>;
+using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
+
+static intmax_t nlaps = 0;
 //======================================================================================//
 
 intmax_t
@@ -37,9 +47,8 @@ fibonacci(intmax_t n, intmax_t cutoff)
 {
     if(n > cutoff)
     {
-        // std::stringstream ss; ss << "[" << n << "]";
-        // TIMEMORY_AUTO_TIMER(ss.str());
-        TIMEMORY_BASIC_AUTO_TIMER("");
+        ++nlaps;
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
         return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     else
@@ -58,13 +67,15 @@ print_result(std::string prefix, intmax_t result)
 
 //======================================================================================//
 
-tim::timer
+timer_tuple_t
 run(intmax_t n, bool with_timing, intmax_t cutoff)
 {
-    std::stringstream ss;
-    ss << __FUNCTION__ << " [with timing = " << std::boolalpha << with_timing << "]";
+    std::stringstream ss, ss_b;
+    ss_b << std::boolalpha << with_timing;
+    ss << __FUNCTION__ << " [with timing = " << std::boolalpha << std::setw(5)
+       << ss_b.str() << "]";
 
-    tim::timer timer(ss.str());
+    timer_tuple_t timer(ss.str());
     timer.start();
     auto result = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
     timer.stop();
@@ -77,6 +88,8 @@ run(intmax_t n, bool with_timing, intmax_t cutoff)
 int
 main(int argc, char** argv)
 {
+    setenv("TIMEMORY_TIMING_SCIENTIFIC", "1", 1);
+
     // default calc: fibonacci(40)
     int nfib = 43;
     if(argc > 1)
@@ -87,41 +100,25 @@ main(int argc, char** argv)
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    tim::format::timer::default_unit(tim::units::msec);
-    tim::format::timer::default_scientific(false);
+    tim::consume_parameters(tim::manager::instance());
 
-    tim::manager* manager = tim::manager::instance();
-
-    std::vector<tim::timer> timer_list;
+    std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     // run without timing first so overhead is not started yet
-    timer_list.push_back(run(nfib, false, nfib));   // without timing
+    timer_list.push_back(run(nfib, false, nfib));  // without timing
+    nlaps = 0;
     timer_list.push_back(run(nfib, true, cutoff));  // with timing
     std::cout << std::endl;
     timer_list.push_back(timer_list.at(1) - timer_list.at(0));
-    timer_list.back().format()->prefix("Timer difference");
-    // manager->missing_timer()->stop();
-    timer_list.push_back(tim::timer(timer_list.back()));
-    timer_list.back().accum() /= manager->total_laps();
-    timer_list.back().format()->prefix("TiMemory avg. overhead");
-    timer_list.back().format()->format(
-        ": %w %T (wall), %u %T (user), %s %T (sys), %t %T (cpu)");
-    timer_list.back().format()->unit(tim::units::usec);
+    timer_list.push_back(timer_list.back() / nlaps);
 
-    manager->write_report("test_output/cxx_timing_overhead.out");
-    manager->write_json("test_output/cxx_timing_overhead.json");
-    manager->report(true);
-
-    std::cout << "\nReports: " << std::endl;
+    std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;
     for(auto& itr : timer_list)
     {
-        itr.format()->default_width(40);
-        itr.format()->align_width(true);
-        std::cout << "\t" << itr.as_string() << std::endl;
+        std::cout << "\t" << itr << std::endl;
     }
 
     std::cout << std::endl;
-    manager->write_missing(std::cout);
 
     return 0;
 }

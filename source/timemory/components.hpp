@@ -25,12 +25,13 @@
 #pragma once
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
 #include <iomanip>
 #include <ios>
 #include <iostream>
-#include <stdio.h>
 #include <string>
 
 #include "timemory/clocks.hpp"
@@ -55,12 +56,19 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 
 //--------------------------------------------------------------------------------------//
 
+// trait that signifies that updating w.r.t. another instance should
+// be a max of the two instances
 template <typename _Tp>
-struct record_max
+struct record_max : std::false_type
 {
-    // trait that signifies that updating w.r.t. another instance should
-    // be a max of the two instances
-    static constexpr bool value = false;
+};
+
+//--------------------------------------------------------------------------------------//
+
+// trait that signifies that an implementation (e.g. PAPI) is available
+template <typename _Tp>
+struct impl_available : std::true_type
+{
 };
 
 //--------------------------------------------------------------------------------------//
@@ -93,14 +101,26 @@ struct base
     }
 
     //----------------------------------------------------------------------------------//
-    // just record a measurment
+    // reset the values
     //
+    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
     void reset()
     {
         is_running   = false;
         is_transient = false;
         value        = value_type();
         accum        = value_type();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset the values
+    //
+    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
+    void reset()
+    {
+        is_running   = false;
+        is_transient = false;
+        static_cast<Type&>(this).reset();
     }
 
     //----------------------------------------------------------------------------------//
@@ -189,6 +209,7 @@ struct base
     Type& operator+=(const this_type& rhs)
     {
         value += rhs.value;
+        accum += rhs.accum;
         return static_cast<Type&>(*this);
     }
 
@@ -196,6 +217,7 @@ struct base
     Type& operator-=(const this_type& rhs)
     {
         value -= rhs.value;
+        accum -= rhs.accum;
         return static_cast<Type&>(*this);
     }
 
@@ -221,6 +243,7 @@ struct base
     Type& operator+=(const value_type& rhs)
     {
         value += rhs;
+        accum += rhs;
         return static_cast<Type&>(*this);
     }
 
@@ -228,6 +251,7 @@ struct base
     Type& operator-=(const value_type& rhs)
     {
         value -= rhs;
+        accum -= rhs;
         return static_cast<Type&>(*this);
     }
 
@@ -235,6 +259,7 @@ struct base
     Type& operator*=(const value_type& rhs)
     {
         value *= rhs;
+        accum *= rhs;
         return static_cast<Type&>(*this);
     }
 
@@ -242,6 +267,7 @@ struct base
     Type& operator/=(const value_type& rhs)
     {
         value /= rhs;
+        accum /= rhs;
         return static_cast<Type&>(*this);
     }
 
@@ -285,6 +311,7 @@ struct base
         return base<Type>(lhs) -= rhs;
     }
 
+    template <typename U = Type, enable_if_t<(impl_available<U>::value)> = 0>
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         auto obj_value = static_cast<const Type&>(obj).compute_display();
@@ -299,10 +326,18 @@ struct base
         ssv << std::setw(width) << std::setprecision(prec) << obj_value;
         if(!disp.empty())
             ssv << " " << disp;
-        ssi << " " << label;
+        if(!label.empty())
+            ssi << " " << label;
         ss << ssv.str() << ssi.str();
         os << ss.str();
 
+        return os;
+    }
+
+    template <typename U = Type, enable_if_t<(!impl_available<U>::value)> = 0>
+    friend std::ostream& operator<<(std::ostream& os, const this_type&)
+    {
+        os << " ?";
         return os;
     }
 };
@@ -315,7 +350,7 @@ struct base
 
 struct real_clock : public base<real_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<real_clock, value_type>;
 
@@ -360,7 +395,7 @@ using wall_clock = real_clock;
 
 struct system_clock : public base<system_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<system_clock, value_type>;
 
@@ -398,7 +433,7 @@ struct system_clock : public base<system_clock>
 
 struct user_clock : public base<user_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<user_clock, value_type>;
 
@@ -436,7 +471,7 @@ struct user_clock : public base<user_clock>
 
 struct cpu_clock : public base<cpu_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<cpu_clock, value_type>;
 
@@ -474,7 +509,7 @@ struct cpu_clock : public base<cpu_clock>
 
 struct monotonic_clock : public base<monotonic_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<monotonic_clock, value_type>;
 
@@ -515,7 +550,7 @@ struct monotonic_clock : public base<monotonic_clock>
 
 struct monotonic_raw_clock : public base<monotonic_raw_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<monotonic_raw_clock, value_type>;
 
@@ -556,7 +591,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
 
 struct thread_cpu_clock : public base<thread_cpu_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
@@ -594,7 +629,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 
 struct process_cpu_clock : public base<process_cpu_clock>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = intmax_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
@@ -632,7 +667,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
 
 struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = std::pair<intmax_t, intmax_t>;
     using base_type  = base<cpu_util, value_type>;
     using this_type  = cpu_util;
@@ -693,7 +728,7 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 
 struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intmax_t>>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = std::pair<intmax_t, intmax_t>;
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
@@ -753,7 +788,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
 
 struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax_t>>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::nano;
     using value_type = std::pair<intmax_t, intmax_t>;
     using base_type  = base<thread_cpu_util, value_type>;
     using this_type  = thread_cpu_util;
@@ -853,9 +888,8 @@ struct peak_rss : public base<peak_rss>
 //--------------------------------------------------------------------------------------//
 //
 template <>
-struct record_max<peak_rss>
+struct record_max<peak_rss> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -898,9 +932,8 @@ struct current_rss : public base<current_rss>
 //--------------------------------------------------------------------------------------//
 //
 template <>
-struct record_max<current_rss>
+struct record_max<current_rss> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -943,9 +976,8 @@ struct stack_rss : public base<stack_rss>
 //--------------------------------------------------------------------------------------//
 //
 template <>
-struct record_max<stack_rss>
+struct record_max<stack_rss> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -988,9 +1020,8 @@ struct data_rss : public base<data_rss>
 //--------------------------------------------------------------------------------------//
 //
 template <>
-struct record_max<data_rss>
+struct record_max<data_rss> : std::true_type
 {
-    static constexpr bool value = true;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1174,21 +1205,24 @@ struct num_major_page_faults : public base<num_major_page_faults>
 //
 //--------------------------------------------------------------------------------------//
 
-template <int EventType, int EventSet>
+template <int EventSet, int... EventTypes>
 struct papi_event
-: public base<papi_event<EventType, EventSet>, long long>
-, public counted_object<papi_event<EventType, EventSet>>
-, public counted_object<papi_event<0, EventSet>>
+: public base<papi_event<EventSet, EventTypes...>,
+              std::array<long long, sizeof...(EventTypes)>>
+, public counted_object<papi_event<EventSet, EventTypes...>>
+, public counted_object<papi_event<EventSet>>
 {
-    using value_type       = long long;
-    using base_type        = base<papi_event<EventType, EventSet>, value_type>;
-    using this_type        = papi_event<EventType, EventSet>;
-    using event_type_count = counted_object<papi_event<EventType, EventSet>>;
-    using event_set_count  = counted_object<papi_event<0, EventSet>>;
+    using size_type        = std::size_t;
+    using value_type       = std::array<long long, sizeof...(EventTypes)>;
+    using base_type        = base<papi_event<EventSet, EventTypes...>, value_type>;
+    using this_type        = papi_event<EventSet, EventTypes...>;
+    using event_type_count = counted_object<papi_event<EventSet, EventTypes...>>;
+    using event_set_count  = counted_object<papi_event<EventSet>>;
 
     static const short                   precision    = 0;
     static const short                   width        = 6;
     static const std::ios_base::fmtflags format_flags = {};
+    static const size_type               num_events   = sizeof...(EventTypes);
 
     using base_type::accum;
     using base_type::is_transient;
@@ -1209,30 +1243,66 @@ struct papi_event
     papi_event(papi_event&& rhs)               = default;
     this_type& operator=(this_type&&) = default;
 
-    static PAPI_event_info_t info()
+    static PAPI_event_info_t info(int evt_type)
     {
         PAPI_event_info_t evt_info;
 #if defined(TIMEMORY_USE_PAPI)
-        PAPI_get_event_info(EventType, &evt_info);
+        PAPI_get_event_info(evt_type, &evt_info);
+#else
+        consume_parameters(std::move(evt_type));
 #endif
         return evt_info;
     }
 
-    static intmax_t    unit() { return 1; }
-    static std::string label() { return info().short_descr; }
-    static std::string descript() { return info().long_descr; }
-    static std::string display_unit() { return info().units; }
-    value_type         record()
+    static intmax_t unit() { return 1; }
+    // leave these empty
+    static std::string label() { return ""; }
+    static std::string descript() { return ""; }
+    static std::string display_unit() { return ""; }
+    // use these instead
+    static std::string label(int evt_type) { return info(evt_type).short_descr; }
+    static std::string descript(int evt_type) { return info(evt_type).long_descr; }
+    static std::string display_unit(int evt_type) { return info(evt_type).units; }
+
+    value_type record()
     {
         start_event_set();
-        std::vector<long long> read_value(event_type_count::live(), 0);
+        value_type read_value;
+        apply<void>::set_value(read_value, 0);
         tim::papi::read(EventSet, read_value.data());
-        return read_value[read_offset];
+        return read_value;
     }
-    value_type compute_display() const
+    string_t compute_display() const
     {
-        auto val = (is_transient) ? accum : value;
-        return val;
+        auto val              = (is_transient) ? accum : value;
+        int  evt_types[]      = { EventTypes... };
+        auto _compute_display = [&](std::ostream& os, size_type idx) {
+            auto _obj_value = val[idx];
+            auto _evt_type  = evt_types[idx];
+            auto _label     = label(_evt_type);
+            auto _disp      = display_unit(_evt_type);
+            auto _prec      = base_type::get_precision();
+            auto _width     = base_type::get_width();
+            auto _flags     = base_type::get_format_flags();
+
+            std::stringstream ss, ssv, ssi;
+            ssv.setf(_flags);
+            ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
+            if(!_disp.empty())
+                ssv << " " << _disp;
+            if(!_label.empty())
+                ssi << " " << _label;
+            ss << ssv.str() << ssi.str();
+            os << ss.str();
+        };
+        std::stringstream ss;
+        for(size_type i = 0; i < num_events; ++i)
+        {
+            _compute_display(ss, i);
+            if(i + 1 < num_events)
+                ss << ", ";
+        }
+        return ss.str();
     }
     void start()
     {
@@ -1243,7 +1313,7 @@ struct papi_event
     void stop()
     {
         auto tmp = record();
-        accum += (tmp - value);
+        // accum += (tmp - value);
         value = std::move(tmp);
         stop_event_set();
         set_stopped();
@@ -1268,7 +1338,8 @@ private:
     {
         if(!event_type_added())
         {
-            tim::papi::add_event(EventSet, EventType);
+            int evt_types[] = { EventTypes... };
+            tim::papi::add_events(EventSet, evt_types, num_events);
             event_type_added() = true;
         }
     }
@@ -1277,7 +1348,8 @@ private:
     {
         if(event_type_added() && event_type_count::live() < 1)
         {
-            tim::papi::remove_event(EventSet, EventType);
+            for(auto itr : { EventTypes... })
+                tim::papi::remove_event(EventSet, itr);
             event_type_added() = true;
         }
     }
@@ -1303,6 +1375,17 @@ private:
         }
     }
 };
+
+#if !defined(TIMEMORY_USE_PAPI)
+//--------------------------------------------------------------------------------------//
+//
+template <int EventSet, int... EventTypes>
+struct impl_available<papi_event<EventSet, EventTypes...>> : std::false_type
+{
+};
+
+#endif
+//--------------------------------------------------------------------------------------//
 
 }  // namespace component
 

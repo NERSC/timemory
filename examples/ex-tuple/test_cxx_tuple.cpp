@@ -48,7 +48,8 @@ using namespace tim::component;
 
 using auto_tuple_t =
     tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, peak_rss, current_rss>;
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -86,10 +87,10 @@ int
 main(int argc, char** argv)
 {
     tim::env::parse();
-    tim::standard_timing_components_t timing;
-    timing.start();
+    tim::standard_timing_components_t                 timing("Tests runtime");
+    tim::component_tuple<papi_event<0, PAPI_TOT_CYC>> m("PAPI measurements");
 
-    tim::component_tuple<papi_event<PAPI_TOT_CYC, 0>> m("PAPI measurements", "cxx", 0, 0);
+    timing.start();
     m.start();
 
     CONFIGURE_TEST_SELECTOR(4);
@@ -110,11 +111,11 @@ main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
-    timing.stop();
-    std::cout << "\nTests runtime: " << timing << std::endl;
-
     m.stop();
-    std::cout << m << std::endl;
+    timing.stop();
+
+    std::cout << "\n" << m << std::endl;
+    std::cout << "\n" << timing << std::endl;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
 
@@ -291,7 +292,7 @@ test_3_auto_tuple()
 
         // run a fibonacci calculation and accumulate metric
         auto run_fibonacci = [&](long n) {
-            auto man = tim::manager::instance();
+            tim::manager::instance();
             TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
             ret += fibonacci(n);
         };

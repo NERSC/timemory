@@ -115,7 +115,8 @@ inline manager::manager()
 {
     printf("############## %s:'%s'@%i [%p, %i] ##############\n", __FUNCTION__, __FILE__,
            __LINE__, static_cast<void*>(this), m_instance_count);
-    tim::papi::init();
+    if(m_instance_count == 0)
+        tim::papi::init();
 
     if(!singleton_t::master_instance_ptr())
     {
@@ -157,7 +158,8 @@ inline manager::~manager()
                   << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
 #endif
 
-    tim::papi::shutdown();
+    if(m_instance_count == 0)
+        tim::papi::shutdown();
     details::manager_singleton().destroy();
 }
 

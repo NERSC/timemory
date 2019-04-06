@@ -57,63 +57,32 @@ template <typename... Types>
 class component_tuple
 {
 public:
-    using size_type = intmax_t;
-    using this_type = component_tuple<Types...>;
-    using data_t    = std::tuple<Types...>;
+    using size_type   = intmax_t;
+    using this_type   = component_tuple<Types...>;
+    using data_t      = std::tuple<Types...>;
+    using string_hash = std::hash<string_t>;
 
 public:
     explicit component_tuple()
-    : m_identifier("")
-    , m_laps(0)
+    : m_laps(0)
+    , m_count(0)
+    , m_hash(0)
+    , m_identifier(get_prefix())
     {
         init_manager();
     }
 
-    component_tuple(const string_t& key, const string_t& tag, const int32_t& ncount,
-                    const int32_t& nhash)
-    : m_identifier("")
-    , m_laps(0)
+    component_tuple(const string_t& key, const string_t& tag = "cxx",
+                    const int32_t& ncount = 0, const int32_t& nhash = 0)
+    : m_laps(0)
+    , m_count(ncount)
+    , m_hash((string_hash()(key) + string_hash()(tag)) * (ncount + 2) * (nhash + 2))
+    , m_identifier("")
     {
-        auto string_hash = [](const string_t& str) { return std::hash<string_t>()(str); };
-
-        auto get_prefix = []() {
-            if(!mpi_is_initialized())
-                return string_t("> ");
-
-            static string_t* _prefix = nullptr;
-            if(!_prefix)
-            {
-                // prefix spacing
-                static uint16_t width = 1;
-                if(mpi_size() > 9)
-                    width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
-                std::stringstream ss;
-                ss.fill('0');
-                ss << "|" << std::setw(width) << mpi_rank() << "> ";
-                _prefix = new string_t(ss.str());
-            }
-            return *_prefix;
-        };
-
-        uintmax_t ref =
-            (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
-
-        std::stringstream ss;
-
-        // designated as [cxx], [pyc], etc.
-        ss << get_prefix() << "[" << tag << "] ";
-        // indent
-        for(intmax_t i = 0; i < ncount; ++i)
-        {
-            if(i + 1 == ncount)
-                ss << "|_";
-            else
-                ss << "  ";
-        }
-        ss << std::left << key;
-        m_identifier = ss.str();
-        output_width(m_identifier.length());
+        compute_identifier(key, tag);
+        init_manager();
     }
+
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
@@ -124,6 +93,7 @@ public:
     , m_laps(rhs.m_laps)
     {
     }
+
     component_tuple& operator=(const component_tuple& rhs)
     {
         if(this == &rhs)
@@ -158,7 +128,12 @@ public:
     // conditional start/stop functions
     void conditional_start()
     {
-        auto increment    = [&](bool did_start) { ++m_laps; };
+        auto increment = [&](bool did_start) {
+            if(did_start)
+            {
+                ++m_laps;
+            }
+        };
         using apply_types = std::tuple<component::conditional_start<Types>...>;
         apply<void>::access<apply_types>(m_data, increment);
     }
@@ -278,6 +253,35 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // friend operators
+    //
+    friend this_type operator+(const this_type& lhs, const this_type& rhs)
+    {
+        this_type tmp(lhs);
+        return tmp += rhs;
+    }
+
+    friend this_type operator-(const this_type& lhs, const this_type& rhs)
+    {
+        this_type tmp(lhs);
+        return tmp -= rhs;
+    }
+
+    template <typename _Op>
+    friend this_type operator*(const this_type& lhs, _Op&& rhs)
+    {
+        this_type tmp(lhs);
+        return tmp *= std::forward<_Op>(rhs);
+    }
+
+    template <typename _Op>
+    friend this_type operator/(const this_type& lhs, _Op&& rhs)
+    {
+        this_type tmp(lhs);
+        return tmp /= std::forward<_Op>(rhs);
+    }
+
+    //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         {
@@ -317,6 +321,7 @@ public:
     //----------------------------------------------------------------------------------//
     inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
     {
+        consume_parameters(std::move(ign_cutoff));
         std::stringstream ss;
         ss << *this;
 
@@ -342,12 +347,54 @@ protected:
 protected:
     // objects
     mutex_t        m_mutex;
-    string_t       m_identifier;
     mutable data_t m_data;
     mutable data_t m_accum;
     intmax_t       m_laps;
+    intmax_t       m_count;
+    intmax_t       m_hash;
+    string_t       m_identifier;
 
 protected:
+    string_t get_prefix()
+    {
+        auto _get_prefix = []() {
+            if(!mpi_is_initialized())
+                return string_t("> ");
+
+            // prefix spacing
+            static uint16_t width = 1;
+            if(mpi_size() > 9)
+                width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
+            std::stringstream ss;
+            ss.fill('0');
+            ss << "|" << std::setw(width) << mpi_rank() << "> ";
+            return ss.str();
+        };
+        static string_t _prefix = _get_prefix();
+        return _prefix;
+    }
+
+    void compute_identifier(const string_t& key, const string_t& tag)
+    {
+        static string_t   _prefix = get_prefix();
+        std::stringstream ss;
+
+        // designated as [cxx], [pyc], etc.
+        ss << _prefix << "[" << tag << "] ";
+
+        // indent
+        for(intmax_t i = 0; i < m_count; ++i)
+        {
+            if(i + 1 == m_count)
+                ss << "|_";
+            else
+                ss << "  ";
+        }
+        ss << std::left << key;
+        m_identifier = ss.str();
+        output_width(m_identifier.length());
+    }
+
     static intmax_t output_width(intmax_t width = 0)
     {
         static std::atomic_intmax_t _instance;
@@ -422,8 +469,8 @@ protected:
         using value_type = typename _Tp::value_type;
         using base_type  = tim::component::base<_Tp, value_type>;
 
-        custom_print(std::size_t _N, std::size_t _Ntot, base_type& obj, std::ostream& os,
-                     bool endline)
+        custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj,
+                     std::ostream& os, bool /*endline*/)
         {
             std::stringstream ss;
             if(_N == 0)
@@ -436,7 +483,76 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
+#if defined(TIMEMORY_USE_FILTERING)
+
+//--------------------------------------------------------------------------------------//
+
+template <typename...>
+struct component_concat
+{
+};
+
+template <>
+struct component_concat<>
+{
+    using type = component_tuple<>;
+};
+
+template <typename... Ts>
+struct component_concat<component_tuple<Ts...>>
+{
+    using type = component_tuple<Ts...>;
+};
+
+template <typename... Ts0, typename... Ts1, typename... Rest>
+struct component_concat<component_tuple<Ts0...>, component_tuple<Ts1...>, Rest...>
+: component_concat<component_tuple<Ts0..., Ts1...>, Rest...>
+{
+};
+
+template <typename... Ts>
+using component_concat_t = typename component_concat<Ts...>::type;
+
+//--------------------------------------------------------------------------------------//
+
+template <bool>
+struct component_filter_if_result
+{
+    template <typename T>
+    using type = component_tuple<T>;
+};
+
+template <>
+struct component_filter_if_result<false>
+{
+    template <typename T>
+    using type = component_tuple<>;
+};
+
+template <template <typename> class Predicate, typename Sequence>
+struct component_filter_if;
+
+template <template <typename> class Predicate, typename... Ts>
+struct component_filter_if<Predicate, component_tuple<Ts...>>
+{
+    using type = component_concat_t<
+        typename component_filter_if_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace details
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_FILTERING)
+template <template <typename> class Predicate, typename Sequence>
+using type_filter = typename details::component_filter_if<Predicate, Sequence>::type;
+#endif
 
 //--------------------------------------------------------------------------------------//
 

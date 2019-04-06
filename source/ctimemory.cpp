@@ -76,8 +76,8 @@ cxx_timemory_enabled(void)
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* lang_tag,
-                               int report)
+cxx_timemory_create_auto_timer(const char* timer_tag, int /*lineno*/,
+                               const char* /*lang_tag*/, int /*report*/)
 {
     std::string cxx_timer_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
@@ -90,7 +90,7 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_delete_auto_timer(void* ctimer)
+cxx_timemory_delete_auto_timer(void* /*ctimer*/)
 {
     // auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
     // delete cxxtimer;
@@ -151,14 +151,6 @@ extern "C" tim_api void
 cxx_timemory_print(void)
 {
     tim::manager::master_instance()->report(std::cout, true);
-}
-
-//======================================================================================//
-
-extern "C" tim_api void
-cxx_timemory_record_memory(int _record_memory)
-{
-    // tim::timer::default_record_memory((_record_memory > 0) ? true : false);
 }
 
 //======================================================================================//

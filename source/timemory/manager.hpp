@@ -155,7 +155,7 @@ public:
     uintmax_t              total_laps() const;
     void                   update_total_timer_format();
     int32_t                instance_count() const { return m_instance_count; }
-    void                   self_cost(bool val) {}
+    void                   self_cost(bool) {}
     bool                   self_cost() const { return false; }
 
     template <typename Archive>
@@ -298,7 +298,7 @@ apply_format(const data_tuple<_Tp>& node)
 }
 //--------------------------------------------------------------------------------------//
 inline void
-manager::report(ostream_t* os, bool ign_cutoff, bool endline) const
+manager::report(ostream_t* os, bool /*ign_cutoff*/, bool /*endline*/) const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -393,6 +393,7 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     // tuple_data_t>::value>(m_tuple_data);
     // compute the hash
     uintmax_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+    consume_parameters(std::move(ref));
 
     // if already exists, return it
     /*if(_data.map().find(ref) != _data.map().end())

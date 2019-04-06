@@ -123,7 +123,11 @@ typedef std::deque<string_t>      str_list_t;
 typedef std::mutex                mutex_t;
 typedef std::unique_lock<mutex_t> auto_lock_t;
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
+//
+//  General functions
+//
+//======================================================================================//
 
 template <typename _Tp>
 mutex_t&
@@ -143,16 +147,95 @@ type_mutex(const uintmax_t& _n = 0)
 
 //--------------------------------------------------------------------------------------//
 
+inline std::string
+dirname(std::string _fname)
+{
+#if defined(_UNIX)
+    char* _cfname = realpath(_fname.c_str(), NULL);
+    _fname        = std::string(_cfname);
+    free(_cfname);
+
+    while(_fname.find("\\\\") != std::string::npos)
+        _fname.replace(_fname.find("\\\\"), 2, "/");
+    while(_fname.find("\\") != std::string::npos)
+        _fname.replace(_fname.find("\\"), 1, "/");
+
+    return _fname.substr(0, _fname.find_last_of("/"));
+#elif defined(_WINDOWS)
+    while(_fname.find("/") != std::string::npos)
+        _fname.replace(_fname.find("/"), 1, "\\\\");
+
+    _fname = _fname.substr(0, _fname.find_last_of("\\"));
+    return (_fname.at(_fname.length() - 1) == '\\')
+               ? _fname.substr(0, _fname.length() - 1)
+               : _fname;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int
+makedir(std::string _dir, int umask = DEFAULT_UMASK)
+{
+#if defined(_UNIX)
+    while(_dir.find("\\\\") != std::string::npos)
+        _dir.replace(_dir.find("\\\\"), 2, "/");
+    while(_dir.find("\\") != std::string::npos)
+        _dir.replace(_dir.find("\\"), 1, "/");
+
+    if(mkdir(_dir.c_str(), umask) != 0)
+    {
+        std::stringstream _sdir;
+        _sdir << "mkdir -p " << _dir;
+        return system(_sdir.str().c_str());
+    }
+#elif defined(_WINDOWS)
+    consume_parameters<int>(umask);
+    while(_dir.find("/") != std::string::npos)
+        _dir.replace(_dir.find("/"), 1, "\\\\");
+
+    if(_mkdir(_dir.c_str()) != 0)
+    {
+        std::stringstream _sdir;
+        _sdir << "dir " << _dir;
+        return system(_sdir.str().c_str());
+    }
+#endif
+    return 0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int32_t
+get_max_threads()
+{
+    int32_t _fallback = std::thread::hardware_concurrency();
+#ifdef ENV_NUM_THREADS_PARAM
+    return get_env<int32_t>(TIMEMORY_STRINGIZE(ENV_NUM_THREADS_PARAM), _fallback);
+#else
+    return _fallback;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 namespace internal
 {
+//--------------------------------------------------------------------------------------//
 inline std::string
 dummy_str_return(std::string str)
 {
     return str;
 }
-}  // namespace internal
 
 //--------------------------------------------------------------------------------------//
+}  // namespace internal
+
+//======================================================================================//
+//
+//  Environment
+//
+//======================================================================================//
 
 class env_settings
 {
@@ -175,18 +258,16 @@ public:
     {
         std::stringstream ss;
         ss << std::boolalpha << val;
-        m_mutex.lock();
+        std::unique_lock<std::mutex> lock(m_mutex);
         if(m_env.find(env_id) != m_env.end())
         {
             for(const auto& itr : m_env)
                 if(itr.first == env_id && itr.second == ss.str())
                 {
-                    m_mutex.unlock();
                     return;
                 }
         }
         m_env.insert(env_pair_t(env_id, ss.str()));
-        m_mutex.unlock();
     }
 
     const env_map_t& get() const { return m_env; }
@@ -273,7 +354,11 @@ delimit(const std::string& _str, const std::string& _delims,
     return _list;
 }
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
+//
+//  path
+//
+//======================================================================================//
 
 class path_t : public std::string
 {
@@ -346,7 +431,6 @@ public:
     // OS-dependent representation
     string_t osrepr(string_t _path)
     {
-        // auto _orig = _path;
 #if defined(_WINDOWS)
         while(_path.find("/") != std::string::npos)
             _path.replace(_path.find("/"), 1, "\\\\");
@@ -356,13 +440,10 @@ public:
         while(_path.find("\\") != std::string::npos)
             _path.replace(_path.find("\\"), 1, "/");
 #endif
-        // std::cout << "path_t::osrepr - converted \"" << _orig << "\" to \""
-        //          << _path << "\"..." << std::endl;
         return _path;
     }
 };
 
-//--------------------------------------------------------------------------------------//
 // use this function to get rid of "unused parameter" warnings
 template <typename _Tp, typename... _Args>
 void
@@ -370,80 +451,11 @@ consume_parameters(_Tp, _Args...)
 {
 }
 
-//--------------------------------------------------------------------------------------//
-
-inline std::string
-dirname(std::string _fname)
-{
-#if defined(_UNIX)
-    char* _cfname = realpath(_fname.c_str(), NULL);
-    _fname        = std::string(_cfname);
-    free(_cfname);
-
-    while(_fname.find("\\\\") != std::string::npos)
-        _fname.replace(_fname.find("\\\\"), 2, "/");
-    while(_fname.find("\\") != std::string::npos)
-        _fname.replace(_fname.find("\\"), 1, "/");
-
-    return _fname.substr(0, _fname.find_last_of("/"));
-#elif defined(_WINDOWS)
-    while(_fname.find("/") != std::string::npos)
-        _fname.replace(_fname.find("/"), 1, "\\\\");
-
-    _fname = _fname.substr(0, _fname.find_last_of("\\"));
-    return (_fname.at(_fname.length() - 1) == '\\')
-               ? _fname.substr(0, _fname.length() - 1)
-               : _fname;
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline int
-makedir(std::string _dir, int umask = DEFAULT_UMASK)
-{
-#if defined(_UNIX)
-    while(_dir.find("\\\\") != std::string::npos)
-        _dir.replace(_dir.find("\\\\"), 2, "/");
-    while(_dir.find("\\") != std::string::npos)
-        _dir.replace(_dir.find("\\"), 1, "/");
-
-    if(mkdir(_dir.c_str(), umask) != 0)
-    {
-        std::stringstream _sdir;
-        _sdir << "mkdir -p " << _dir;
-        return system(_sdir.str().c_str());
-    }
-#elif defined(_WINDOWS)
-    consume_parameters<int>(umask);
-    while(_dir.find("/") != std::string::npos)
-        _dir.replace(_dir.find("/"), 1, "\\\\");
-
-    if(_mkdir(_dir.c_str()) != 0)
-    {
-        std::stringstream _sdir;
-        _sdir << "dir " << _dir;
-        return system(_sdir.str().c_str());
-    }
-#endif
-    return 0;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline int32_t
-get_max_threads()
-{
-    int32_t _fallback = std::thread::hardware_concurrency();
-
-#ifdef ENV_NUM_THREADS_PARAM
-    return get_env<int32_t>(TIMEMORY_STRINGIZE(ENV_NUM_THREADS_PARAM), _fallback);
-#else
-    return _fallback;
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
+//
+//
+//
+//======================================================================================//
 
 template <typename CountedType>
 class counted_object
@@ -551,7 +563,11 @@ intmax_t counted_object<CountedType>::fmax_depth = std::numeric_limits<intmax_t>
 template <typename CountedType>
 bool counted_object<CountedType>::fenabled = true;
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
+//
+//
+//
+//======================================================================================//
 
 template <typename HashedType>
 class hashed_object
