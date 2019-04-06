@@ -93,6 +93,20 @@ check(int retval, const std::string& mesg)
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+set_debug(int level)
+{
+    // set the current debug level for PAPI
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_set_debug(level);
+    check(retval, "Warning!! Failure to set debug level");
+#else
+    consume_parameters(level);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline string_t
 as_string(int* events, long long* values, int num_events, const string_t& indent)
 {
@@ -269,24 +283,11 @@ reset(int event_set)
 //--------------------------------------------------------------------------------------//
 
 inline void
-set_debug(int level)
-{
-    // set the current debug level for PAPI
-#if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_set_debug(level);
-    check(retval, "Warning!! Failure to set debug level");
-#else
-    consume_parameters(level);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
 create_event_set(int* event_set)
 {
     // create a new empty PAPI event set
 #if defined(TIMEMORY_USE_PAPI)
+    init();
     int retval = PAPI_create_eventset(event_set);
     check(retval, "Warning!! Failure to create event set");
 #else
@@ -321,6 +322,7 @@ add_event(int event_set, int event)
 {
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
+    init();
     int retval = PAPI_add_event(event_set, event);
     check(retval, "Warning!! Failure to add event to event set");
 #else
@@ -349,6 +351,7 @@ add_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
 #if defined(TIMEMORY_USE_PAPI)
+    init();
     int retval = PAPI_add_events(event_set, events, number);
     check(retval, "Warning!! Failure to add events to event set");
 #else

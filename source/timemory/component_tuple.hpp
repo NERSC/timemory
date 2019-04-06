@@ -66,6 +66,7 @@ public:
     : m_identifier("")
     , m_laps(0)
     {
+        init_manager();
     }
 
     component_tuple(const string_t& key, const string_t& tag, const int32_t& ncount,
@@ -371,6 +372,9 @@ protected:
         }
         return _instance.load();
     }
+
+private:
+    void init_manager();
 };
 
 //--------------------------------------------------------------------------------------//
@@ -437,5 +441,18 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/manager.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+void
+tim::component_tuple<Types...>::init_manager()
+{
+    tim::manager::instance();
+}
 
 //--------------------------------------------------------------------------------------//
