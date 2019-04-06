@@ -175,6 +175,7 @@ shutdown()
 {
     // finish using PAPI and free all related resources
 #if defined(TIMEMORY_USE_PAPI)
+    unregister_thread();
     if(get_tid() != get_master_tid())
         return;
     PAPI_shutdown();
@@ -323,6 +324,20 @@ add_event(int event_set, int event)
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_add_event(event_set, event);
     check(retval, "Warning!! Failure to add event to event set");
+#else
+    consume_parameters(event_set, event);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+remove_event(int event_set, int event)
+{
+    // add single PAPI preset or native hardware event to an event set
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_remove_event(event_set, event);
+    check(retval, "Warning!! Failure to remove event to event set");
 #else
     consume_parameters(event_set, event);
 #endif

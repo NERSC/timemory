@@ -46,9 +46,10 @@
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
-                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, papi_event<PAPI_L1_DCM>>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_event<PAPI_L1_DCM, 1>, papi_event<PAPI_TOT_CYC, 1>>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -121,6 +122,11 @@ main(int argc, char** argv)
     timing.stop();
     std::cout << "\nTests runtime: " << timing << std::endl;
 
+    tim::papi::read(*event_set, values);
+    for(std::size_t i = 0; i < nevents; ++i)
+    {
+        std::cout << "PAPI value [" << i << "] = " << values[i] << std::endl;
+    }
     tim::papi::stop(*event_set, values);
     for(std::size_t i = 0; i < nevents; ++i)
     {

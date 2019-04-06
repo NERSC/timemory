@@ -1098,36 +1098,33 @@ struct num_major_page_faults : public base<num_major_page_faults>
 //--------------------------------------------------------------------------------------//
 
 using papi_event_type_t = decltype(PAPI_END);
-template <papi_event_type_t EventType>
-struct papi_event : public base<papi_event<EventType>, long long>
+
+template <papi_event_type_t EventType, int EventSet>
+struct papi_event
+: public base<papi_event<EventType, EventSet>, long long>
+, public counted_object<papi_event<0, EventSet>>
 {
     using value_type = long long;
-    using base_type  = base<papi_event<EventType>, value_type>;
-    using this_type  = papi_event<EventType>;
+    using base_type  = base<papi_event<EventType, EventSet>, value_type>;
+    using this_type  = papi_event<EventType, EventSet>;
+    using count_type = counted_object<papi_event<0, EventSet>>;
 
     static const component_type          category     = PAPI_EVENT;
     static const short                   precision    = 0;
     static const short                   width        = 6;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static PAPI_event_info_t* info()
+    static PAPI_event_info_t info()
     {
-        using pointer_t = std::unique_ptr<PAPI_event_info_t>;
-        auto get_info   = []() {
-            static pointer_t instance = pointer_t(new PAPI_event_info_t);
-#if defined(TIMEMORY_USE_PAPI)
-            PAPI_get_event_info(EventType, &info);
-#endif
-            return std::move(instance);
-        };
-        static pointer_t instance = get_info();
-        return instance.get();
+        PAPI_event_info_t evt_info;
+        PAPI_get_event_info(EventType, &evt_info);
+        return evt_info;
     }
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return info()->short_descr; }
-    static std::string descript() { return info()->long_descr; }
-    static std::string display_unit() { return info()->units; }
+    static std::string label() { return info().short_descr; }
+    static std::string descript() { return info().long_descr; }
+    static std::string display_unit() { return info().units; }
     static value_type  record()
     {
         value_type _value = 0;
@@ -1139,13 +1136,28 @@ struct papi_event : public base<papi_event<EventType>, long long>
         auto val = (obj.is_transient) ? obj.accum : obj.value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
+    static void start(base_type& obj)
+    {
+        if(count_type::live() <= 1)
+        {
+            tim::papi::add_event(EventSet, EventType);
+            tim::papi::start(EventSet);
+        }
+        obj.value = record();
+    }
     static void stop(base_type& obj)
     {
         auto tmp = record();
         obj.accum += (tmp - obj.value);
         obj.value = std::move(tmp);
+        if(count_type::live() <= 1)
+        {
+            tim::papi::remove_event(EventSet, EventType);
+        }
     }
+
+private:
+    int event_set = EventSet;
 };
 
 }  // namespace component

@@ -32,6 +32,7 @@
 #include "timemory/auto_timer.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/papi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
@@ -122,6 +123,7 @@ manager::manager()
 {
     printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
            __LINE__);
+    tim::papi::init();
 
     if(!singleton_t::master_instance_ptr())
     {
@@ -160,6 +162,7 @@ manager::~manager()
                   << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
 #endif
 
+    tim::papi::shutdown();
     details::manager_singleton().destroy();
     printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
            __LINE__);
