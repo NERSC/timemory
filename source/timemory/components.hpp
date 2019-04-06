@@ -1161,21 +1161,44 @@ struct num_major_page_faults : public base<num_major_page_faults>
 template <int EventType, int EventSet>
 struct papi_event
 : public base<papi_event<EventType, EventSet>, long long>
-, public counted_object<papi_event<0, EventSet>>
+, public counted_object<papi_event<EventType, EventSet>>
+, public counted_object<papi_event<-1, EventSet>>
 {
-    using value_type = long long;
-    using base_type  = base<papi_event<EventType, EventSet>, value_type>;
-    using this_type  = papi_event<EventType, EventSet>;
-    using count_type = counted_object<papi_event<0, EventSet>>;
+    using value_type       = long long;
+    using base_type        = base<papi_event<EventType, EventSet>, value_type>;
+    using this_type        = papi_event<EventType, EventSet>;
+    using event_type_count = counted_object<papi_event<EventType, EventSet>>;
+    using event_set_count  = counted_object<papi_event<-1, EventSet>>;
 
     static const short                   precision    = 0;
     static const short                   width        = 6;
     static const std::ios_base::fmtflags format_flags = {};
 
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
+    papi_event()
+    : read_offset(event_type_count::live() - 1)
+    {
+        add_event_type();
+    }
+
+    ~papi_event() { remove_event_type(); }
+
+    papi_event(const papi_event& rhs) = default;
+    this_type& operator=(const this_type& rhs) = default;
+    papi_event(papi_event&& rhs)               = default;
+    this_type& operator=(this_type&&) = default;
+
     static PAPI_event_info_t info()
     {
         PAPI_event_info_t evt_info;
+#if defined(TIMEMORY_USE_PAPI)
         PAPI_get_event_info(EventType, &evt_info);
+#endif
         return evt_info;
     }
 
@@ -1183,41 +1206,98 @@ struct papi_event
     static std::string label() { return info().short_descr; }
     static std::string descript() { return info().long_descr; }
     static std::string display_unit() { return info().units; }
-    static value_type  record()
+    value_type         record()
     {
-        value_type _value = 0;
-        tim::papi::read(EventType, &_value);
-        return _value;
+        start_event_set();
+        std::vector<long long> read_value(event_type_count::live(), 0);
+        tim::papi::read(EventType, read_value.data());
+        return read_value[read_offset];
     }
     value_type compute_display() const
     {
-        auto val = (base_type::is_transient) ? base_type::accum : base_type::value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
     void start()
     {
-        if(count_type::live() <= 1)
-        {
-            tim::papi::add_event(EventSet, EventType);
-            tim::papi::start(EventSet);
-        }
-        base_type::set_started();
-        base_type::value = record();
+        set_started();
+        start_event_set();
+        value = record();
     }
     void stop()
     {
         auto tmp = record();
-        base_type::accum += (tmp - base_type::value);
-        base_type::value = std::move(tmp);
-        if(count_type::live() <= 1)
-        {
-            tim::papi::remove_event(EventSet, EventType);
-        }
-        base_type::set_stopped();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        stop_event_set();
+        set_stopped();
     }
 
 private:
-    int event_set = EventSet;
+    intmax_t read_offset = 0;
+
+    static bool& event_type_added()
+    {
+        static thread_local bool instance = false;
+        return instance;
+    }
+
+    static bool& event_set_started()
+    {
+        static thread_local bool instance = false;
+        return instance;
+    }
+
+    static void add_event_type()
+    {
+        if(!event_type_added())
+        {
+            printf("%s @ %i. event set count = %li, event type count = %i\n",
+                   __FUNCTION__, __LINE__, event_set_count::live(),
+                   event_type_count::live());
+            tim::papi::add_event(EventSet, EventType);
+            event_type_added() = true;
+        }
+    }
+
+    static void remove_event_type()
+    {
+        if(event_type_added() && event_type_count::live() < 1)
+        {
+            printf("%s @ %i. event set count = %li, event type count = %i\n",
+                   __FUNCTION__, __LINE__, event_set_count::live(),
+                   event_type_count::live());
+            tim::papi::remove_event(EventSet, EventType);
+            event_type_added() = true;
+        }
+    }
+
+    static void start_event_set()
+    {
+        if(!event_set_started())
+        {
+            printf("%s @ %i. event set count = %li, event type count = %i\n",
+                   __FUNCTION__, __LINE__, event_set_count::live(),
+                   event_type_count::live());
+            tim::papi::start(EventSet);
+            event_set_started() = true;
+        }
+    }
+
+    static void stop_event_set()
+    {
+        if(event_set_started() && event_set_count::live() < 1)
+        {
+            printf("%s @ %i. event set count = %li, event type count = %i\n",
+                   __FUNCTION__, __LINE__, event_set_count::live(),
+                   event_type_count::live());
+            long long* tmp = new long long(0);
+            tim::papi::stop(EventSet, tmp);
+            tim::papi::destroy_event_set(EventSet);
+            delete tmp;
+            event_set_started() = false;
+        }
+    }
 };
 
 }  // namespace component
