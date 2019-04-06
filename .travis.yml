@@ -440,6 +440,7 @@ install:
         -DTIMEMORY_USE_MPI=${USE_MPI}
         -DTIMEMORY_BUILD_TESTING=ON
         -DTIMEMORY_USE_PYTHON_BINDING=OFF
+	-DTIMEMORY_USE_PAPI=OFF
         -DBUILD_SHARED_LIBS=${BUILD_SHARED}
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
