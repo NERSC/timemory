@@ -36,7 +36,6 @@
 #include <stdexcept>
 
 // TiMemory headers
-#include "timemory/string.hpp"
 #include <timemory/mpi.hpp>
 
 //--------------------------------------------------------------------------------------//
@@ -80,7 +79,7 @@
         printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #endif
 
-inline tim::string
+inline std::string
 rank_prefix()
 {
     std::stringstream ss;

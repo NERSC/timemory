@@ -22,6 +22,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+#include "timemory/macros.hpp"
 #include "timemory/rusage.hpp"
 #include "timemory/units.hpp"
 
@@ -34,9 +35,8 @@ inline intmax_t
 tim::get_peak_rss()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
 // Darwin reports in bytes, Linux reports in kilobytes
 #    if defined(_MACOS)
@@ -45,7 +45,7 @@ tim::get_peak_rss()
     intmax_t _units = units::kilobyte;
 #    endif
 
-    return (intmax_t)(_units * (_self.ru_maxrss + _child.ru_maxrss));
+    return static_cast<intmax_t>(_units * _usage.ru_maxrss);
 
 #elif defined(_WINDOWS)
     DWORD                   processID = GetCurrentProcessId();
@@ -57,17 +57,17 @@ tim::get_peak_rss()
     // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE, processID);
     if(NULL == hProcess)
-        return (intmax_t) 0;
+        return static_cast<intmax_t>(0);
 
     intmax_t nsize = 0;
     if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = (intmax_t) pmc.PeakWorkingSetSize;
+        nsize = static_cast<intmax_t>(pmc.PeakWorkingSetSize);
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return (intmax_t) 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -85,9 +85,9 @@ tim::get_current_rss()
     mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
                  &infoCount) != KERN_SUCCESS)
-        return (intmax_t) 0L; /* Can't access? */
+        return static_cast<intmax_t>(0); /* Can't access? */
     // Darwin reports in bytes
-    return (intmax_t)(info.resident_size);
+    return static_cast<intmax_t>(info.resident_size);
 
 #    else  // Linux
 
@@ -96,13 +96,13 @@ tim::get_current_rss()
     if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
     {
         fclose(fp);
-        return (intmax_t)(rss * units::page_size);
+        return static_cast<intmax_t>(rss * units::page_size);
     }
 
     if(fp)
         fclose(fp);
 
-    return (intmax_t)(0);
+    return static_cast<intmax_t>(0);
 
 #    endif
 #elif defined(_WINDOWS)
@@ -115,17 +115,17 @@ tim::get_current_rss()
     // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
     if(NULL == hProcess)
-        return (intmax_t) 0;
+        return static_cast<intmax_t>(0);
 
     intmax_t nsize = 0;
     if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = (intmax_t) pmc.WorkingSetSize;
+        nsize = static_cast<intmax_t>(pmc.WorkingSetSize);
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return (intmax_t) 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -135,14 +135,13 @@ inline intmax_t
 tim::get_stack_rss()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
     const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return (intmax_t)(_units * (_self.ru_idrss + _child.ru_idrss));
+    return static_cast<intmax_t>(_units * _usage.ru_idrss);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -152,14 +151,13 @@ inline intmax_t
 tim::get_data_rss()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
     const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return (intmax_t)(_units * (_self.ru_isrss + _child.ru_isrss));
+    return static_cast<intmax_t>(_units * _usage.ru_isrss);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -169,13 +167,12 @@ inline intmax_t
 tim::get_num_swap()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
-    return (intmax_t)(_self.ru_nswap + _child.ru_nswap);
+    return static_cast<intmax_t>(_usage.ru_nswap);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -185,13 +182,12 @@ inline intmax_t
 tim::get_num_io_in()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
-    return (intmax_t)(_self.ru_inblock + _child.ru_inblock);
+    return static_cast<intmax_t>(_usage.ru_inblock);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -201,14 +197,12 @@ inline intmax_t
 tim::get_num_io_out()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
-    const intmax_t _units = 1;
-    return (intmax_t)(_self.ru_oublock + _child.ru_oublock);
+    return static_cast<intmax_t>(_usage.ru_oublock);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -218,14 +212,12 @@ inline intmax_t
 tim::get_num_minor_page_faults()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
-    const intmax_t _units = 1;
-    return (intmax_t)(_self.ru_minflt + _child.ru_minflt);
+    return static_cast<intmax_t>(_usage.ru_minflt);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 
@@ -235,14 +227,12 @@ inline intmax_t
 tim::get_num_major_page_faults()
 {
 #if defined(_UNIX)
-    struct rusage _self, _child;
-    getrusage(RUSAGE_SELF, &_self);
-    getrusage(RUSAGE_CHILDREN, &_child);
+    struct rusage _usage;
+    getrusage(get_rusage_type(), &_usage);
 
-    const intmax_t _units = 1;
-    return (intmax_t)(_self.ru_majflt + _child.ru_majflt);
+    return static_cast<intmax_t>(_usage.ru_majflt);
 #else
-    return 0;
+    return static_cast<intmax_t>(0);
 #endif
 }
 

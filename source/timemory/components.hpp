@@ -95,7 +95,23 @@ struct base
     //----------------------------------------------------------------------------------//
     // just record a measurment
     //
-    void measure() { value = Type::record(); }
+    void reset()
+    {
+        is_running   = false;
+        is_transient = false;
+        value        = value_type();
+        accum        = value_type();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // just record a measurment
+    //
+    void measure()
+    {
+        is_running   = false;
+        is_transient = false;
+        value        = Type::record();
+    }
 
     //----------------------------------------------------------------------------------//
     // start

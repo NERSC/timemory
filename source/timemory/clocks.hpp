@@ -49,7 +49,6 @@
 
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 #if defined(_UNIX)
@@ -238,17 +237,17 @@ struct time_units<std::ratio<1>>
     static constexpr const char* str = "sec";
 };
 template <>
-struct time_units<std::ratio<60>>
+struct time_units<std::ratio<60, 1>>
 {
     static constexpr const char* str = "min";
 };
 template <>
-struct time_units<std::ratio<3600>>
+struct time_units<std::ratio<3600, 1>>
 {
     static constexpr const char* str = "hr";
 };
 template <>
-struct time_units<std::ratio<3600 * 24>>
+struct time_units<std::ratio<3600 * 24, 1>>
 {
     static constexpr const char* str = "day";
 };

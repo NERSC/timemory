@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 #include <cassert>
@@ -53,7 +52,7 @@ namespace papi
 //--------------------------------------------------------------------------------------//
 
 using tid_t    = std::thread::id;
-using string_t = tim::string;
+using string_t = std::string;
 
 //--------------------------------------------------------------------------------------//
 

@@ -25,6 +25,7 @@ add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)
 add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF)
 add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING})
+add_option(TIMEMORY_BUILD_C_LIBRARY "Build the C compatible library" ON)
 
 # Features
 add_feature(CMAKE_C_STANDARD "C language standard")
@@ -39,10 +40,8 @@ add_feature(${PROJECT_NAME}_DEFINITIONS "${PROJECT_NAME} compile definitions")
 # TiMemory options
 add_option(TIMEMORY_USE_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
 add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
-add_option(TIMEMORY_USE_CUSTOM_STRING "Use custom portable string implementation (experimental)" OFF)
-add_option(TIMEMORY_USE_PYTHON_BINDING "Build Python binds for ${PROJECT_NAME}" ON)
+add_option(TIMEMORY_USE_PYTHON_BINDING "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
-add_option(TIMEMORY_USE_DUAL_ABI "Enable/disable defining _GLIBCXX_USE_CXX11_ABI" OFF)
 add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_USE_PAPI})
 
 if(TIMEMORY_USE_MPI)
@@ -81,15 +80,6 @@ if(TIMEMORY_USE_PYTHON_BINDING)
     set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11")
 endif()
 
-
 if(TIMEMORY_USE_EXCEPTIONS)
     list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_EXCEPTIONS)
-endif()
-
-if(TIMEMORY_USE_CUSTOM_STRING)
-    list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_CUSTOM_STRING)
-endif()
-
-if(TIMEMORY_USE_DUAL_ABI)
-    list(APPEND ${PROJECT_NAME}_DEFINITIONS _GLIBCXX_USE_CXX11_ABI=0)
 endif()

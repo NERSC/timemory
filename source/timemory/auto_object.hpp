@@ -40,7 +40,6 @@
 
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 TIM_NAMESPACE_BEGIN
@@ -58,7 +57,7 @@ public:
     typedef tim::hashed_object<AutoType>      hashed_type;
     typedef ObjectType                        object_type;
     typedef auto_object<AutoType, ObjectType> this_type;
-    typedef tim::string                       string_t;
+    typedef std::string                       string_t;
 
 public:
     // standard constructor

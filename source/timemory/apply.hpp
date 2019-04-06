@@ -226,62 +226,6 @@ struct _apply_impl<void>
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Tuple, typename... _Obj, typename _Next = pop_front<_Tuple>,
-              std::size_t _N    = std::tuple_size<_Next>::value,
-              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
-              enable_if_t<(_N < 1), int> = 0>
-    static void once(_Tuple&& __t, _Obj&&... __o, index_sequence<Idx, _Idx...>)
-    {
-        std::get<Idx>(__t)(std::forward<_Obj>(__o)...);
-    }
-
-    template <typename _Tuple, typename... _Obj,
-              typename _Next    = pop_front<decay_t<_Tuple>>,
-              std::size_t _N    = std::tuple_size<_Next>::value,
-              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
-              enable_if_t<(_N > 0), int> = 0>
-    static void once(_Tuple&& __t, _Obj&&... __o, index_sequence<Idx, _Idx...>)
-    {
-        std::get<Idx>(__t)(std::forward<_Obj>(__o)...);
-        once<_Next, _Obj...>(std::forward<_Next>(_Next(std::get<_Idx>(__t)...)),
-                             std::forward<_Obj>(__o)..., _Indices{});
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename _TupleA, typename _TupleB, typename... _Obj,
-              typename _NextA = pop_front<_TupleA>, typename _NextB = pop_front<_TupleB>,
-              std::size_t _N    = std::tuple_size<_NextA>::value,
-              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
-              enable_if_t<(_N < 1), int> = 0>
-    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o,
-                      index_sequence<Idx, _Idx...>)
-    {
-        using TypeB = decltype(std::get<Idx>(__tb));
-        std::get<Idx>(__ta)(std::forward<TypeB>(std::get<Idx>(__tb)),
-                            std::forward<_Obj>(__o)...);
-    }
-
-    template <typename _TupleA, typename _TupleB, typename... _Obj,
-              typename _NextA   = pop_front<decay_t<_TupleA>>,
-              typename _NextB   = pop_front<decay_t<_TupleB>>,
-              std::size_t _N    = std::tuple_size<_NextA>::value,
-              typename _Indices = make_index_sequence<_N>, size_t Idx, size_t... _Idx,
-              enable_if_t<(_N > 0), int> = 0>
-    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o,
-                      index_sequence<Idx, _Idx...>)
-    {
-        using TypeB = decltype(std::get<Idx>(__tb));
-        std::get<Idx>(__ta)(std::forward<TypeB>(std::get<Idx>(__tb)),
-                            std::forward<_Obj>(__o)...);
-        twice<_NextA, _NextB, _Obj...>(
-            std::forward<_NextA>(_NextA(std::get<_Idx>(__ta)...)),
-            std::forward<_NextB>(_NextB(std::get<_Idx>(__tb)...)),
-            std::forward<_Obj>(__o)..., _Indices{});
-    }
-
-    //----------------------------------------------------------------------------------//
-
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename... _Args,
               enable_if_t<(_N == _Nt), int> = 0>
     static void loop(_Tuple&& __t, _Args&&... __args)
@@ -525,31 +469,6 @@ struct apply<void>
     {
         _apply_impl<void>::template all<_Fn, _Tuple>(
             std::forward<_Fn>(__f), std::forward<_Tuple>(__t), _Indices{});
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename _Tuple, typename... _Obj,
-              std::size_t _N    = std::tuple_size<decay_t<_Tuple>>::value,
-              typename _Indices = make_index_sequence<_N>>
-    static void once(_Tuple&& __t, _Obj&&... __o)
-    {
-        _apply_impl<void>::template once<_Tuple, _Obj...>(
-            std::forward<_Tuple>(__t), std::forward<_Obj>(__o)..., _Indices{});
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    template <typename _TupleA, typename _TupleB, typename... _Obj,
-              std::size_t _Na   = std::tuple_size<decay_t<_TupleA>>::value,
-              std::size_t _Nb   = std::tuple_size<decay_t<_TupleB>>::value,
-              typename _Indices = make_index_sequence<_Na>>
-    static void twice(_TupleA&& __ta, _TupleB&& __tb, _Obj&&... __o)
-    {
-        static_assert(_Na == _Nb, "tuple_size 1 must match tuple_size 2");
-        _apply_impl<void>::template twice<_TupleA, _TupleB, _Obj...>(
-            std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
-            std::forward<_Obj>(__o)..., _Indices{});
     }
 
     //----------------------------------------------------------------------------------//

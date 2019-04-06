@@ -42,7 +42,6 @@
 #include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 TIM_NAMESPACE_BEGIN
@@ -60,7 +59,7 @@ public:
     using counter_type = tim::counted_object<this_type>;
     using counter_void = tim::counted_object<void>;
     using hashed_type  = tim::hashed_object<this_type>;
-    using string_t     = tim::string;
+    using string_t     = std::string;
 
 public:
     // standard constructor

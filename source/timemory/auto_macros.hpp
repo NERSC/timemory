@@ -30,7 +30,6 @@
 
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 //======================================================================================//
@@ -53,9 +52,9 @@
 #    define AUTO_NAME(Y) AUTO_NAME_COMBINE(macro_auto_timer, Y)
 // helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
 #    define AUTO_STR(A, B)                                                               \
-        tim::string("@'") +                                                              \
-            tim::string(A).substr(std::string(A).find_last_of("/") + 1) +                \
-            tim::string("':") + B
+        std::string("@'") +                                                              \
+            std::string(A).substr(std::string(A).find_last_of("/") + 1) +                \
+            std::string("':") + B
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_SIGN(str)
@@ -71,7 +70,7 @@
  *      }
  */
 #    define TIMEMORY_BASIC_AUTO_SIGN(str)                                                \
-        tim::string(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str))
+        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str))
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_SIGN(str)
@@ -87,7 +86,7 @@
  *      }
  */
 #    define TIMEMORY_AUTO_SIGN(str)                                                      \
-        tim::string(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str) +              \
+        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +              \
                     AUTO_STR(__FILE__, TIMEMORY_LINE_STRING))
 
 //--------------------------------------------------------------------------------------//
@@ -112,7 +111,7 @@
  *      > [pyc] some_func(15) :  0.363 wall, ... etc.
  */
 #    define TIMEMORY_BASIC_AUTO_OBJECT(type, str)                                        \
-        type AUTO_NAME(__LINE__)(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str),  \
+        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str),  \
                                  __LINE__)
 
 //--------------------------------------------------------------------------------------//
@@ -138,7 +137,7 @@
  *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
  */
 #    define TIMEMORY_AUTO_OBJECT(type, str)                                              \
-        type AUTO_NAME(__LINE__)(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str) + \
+        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
                                      AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),           \
                                  __LINE__)
 
@@ -156,7 +155,7 @@
  *      }
  */
 #    define TIMEMORY_BASIC_AUTO_OBJECT_OBJ(type, str)                                    \
-        type(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str), __LINE__)
+        type(std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_OBJECT_OBJ(str)
@@ -173,7 +172,7 @@
  *
  */
 #    define TIMEMORY_AUTO_OBJECT_OBJ(type, str)                                          \
-        type(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str) +                     \
+        type(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +                     \
                  AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),                               \
              __LINE__)
 
@@ -187,10 +186,10 @@
 
 #if defined(TIMEMORY_DEBUG)
 #    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(type, str)                                  \
-        type AUTO_NAME(__LINE__)(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str),  \
+        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str),  \
                                  __LINE__)
 #    define TIMEMORY_DEBUG_AUTO_OBJECT(type, str)                                        \
-        type AUTO_NAME(__LINE__)(tim::string(__TIMEMORY_FUNCTION__) + tim::string(str) + \
+        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
                                      AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),           \
                                  __LINE__)
 #else

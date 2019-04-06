@@ -31,7 +31,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 
 #include <cstdint>
 #include <ratio>
@@ -79,10 +78,10 @@ const int64_t clocks_per_sec = CLOCKS_PER_SEC;
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::string
+inline std::string
 time_repr(const intmax_t& _unit)
 {
-    tim::string _sunit;
+    std::string _sunit;
     switch(_unit)
     {
         case psec: _sunit = "psec"; break;
@@ -97,10 +96,10 @@ time_repr(const intmax_t& _unit)
     return _sunit;
 }
 
-inline tim::string
+inline std::string
 mem_repr(const intmax_t& _unit)
 {
-    tim::string _sunit;
+    std::string _sunit;
     switch(_unit)
     {
         case byte: _sunit = "B"; break;

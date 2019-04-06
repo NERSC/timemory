@@ -36,16 +36,13 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB c_sources ${CMAKE_CURRENT_LIST_DIR}/*.c)
+file(GLOB c_sources ctimemory.c ctimemory.cpp)
 file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp
     ${CMAKE_CURRENT_LIST_DIR}/timemory/*.icpp)
-file(GLOB cxx_sources ${CMAKE_CURRENT_LIST_DIR}/*.cpp)
+file(GLOB cxx_sources manager.cpp)
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
-# set the languages
-set_source_files_properties(${c_sources} PROPERTIES LANGUAGE C)
-set_source_files_properties(${cxx_sources} PROPERTIES LANGUAGE CXX)
 
 # libraries to install
 set(INSTALL_LIBRARIES )
@@ -159,7 +156,7 @@ endif()
 
 build_library(
     PIC
-    TYPE                ${_TYPE}
+    TYPE                SHARED
     TARGET_NAME         ${LIBNAME}-cxx-library
     OUTPUT_NAME         ${LIBNAME}
     LANGUAGE            CXX
@@ -170,20 +167,37 @@ build_library(
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
+if(BUILD_SHARED_LIBS)
+    build_library(
+        PIC
+        TYPE                STATIC
+        TARGET_NAME         ${LIBNAME}-cxx-library-static
+        OUTPUT_NAME         ${LIBNAME}
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             ${CXX_LIBRARY_SOURCES}
+        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+else()
+    add_library(${LIBNAME}-cxx-library-static ALIAS ${LIBNAME}-cxx-library)
+endif()
 
-build_library(
-    PIC
-    TYPE                ${_TYPE}
-    TARGET_NAME         ${LIBNAME}-c-library
-    OUTPUT_NAME         c${LIBNAME}
-    LANGUAGE            C
-    LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-    SOURCES             ${C_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${LIBNAME}-cxx-library
-    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-
+if(TIMEMORY_BUILD_C_LIBRARY)
+    build_library(
+        PIC
+        TYPE                ${_TYPE}
+        TARGET_NAME         ${LIBNAME}-c-library
+        OUTPUT_NAME         c${LIBNAME}
+        LANGUAGE            C
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             ${C_LIBRARY_SOURCES}
+        LINK_LIBRARIES      ${LIBNAME}-cxx-library
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+endif()
 
 #------------------------------------------------------------------------------#
 # Install the targets and export

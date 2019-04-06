@@ -63,6 +63,16 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
+#if defined(_UNIX)
+using rusage_type_t = decltype(RUSAGE_SELF);
+inline rusage_type_t&
+get_rusage_type()
+{
+    static auto instance = RUSAGE_SELF;
+    return instance;
+}
+#endif
+
 intmax_t
 get_peak_rss();
 intmax_t

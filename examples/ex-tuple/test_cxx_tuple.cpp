@@ -29,11 +29,11 @@
 #include <fstream>
 #include <future>
 #include <iterator>
+#include <random>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/auto_timer.hpp>
 #include <timemory/auto_tuple.hpp>
 #include <timemory/component_tuple.hpp>
 #include <timemory/environment.hpp>
@@ -77,6 +77,8 @@ void
 test_2_timing();
 void
 test_3_auto_tuple();
+void
+test_4_measure();
 
 //======================================================================================//
 
@@ -90,7 +92,7 @@ main(int argc, char** argv)
     tim::component_tuple<papi_event<PAPI_TOT_CYC, 0>> m("PAPI measurements", "cxx", 0, 0);
     m.start();
 
-    CONFIGURE_TEST_SELECTOR(3);
+    CONFIGURE_TEST_SELECTOR(4);
 
     int num_fail = 0;
     int num_test = 0;
@@ -101,6 +103,7 @@ main(int argc, char** argv)
         RUN_TEST(1, test_1_usage, num_test, num_fail);
         RUN_TEST(2, test_2_timing, num_test, num_fail);
         RUN_TEST(3, test_3_auto_tuple, num_test, num_fail);
+        RUN_TEST(4, test_4_measure, num_test, num_fail);
     }
     catch(std::exception& e)
     {
@@ -143,6 +146,18 @@ print_string(const std::string& str)
 //======================================================================================//
 
 template <typename _Tp>
+size_t
+random_entry(const std::vector<_Tp>& v)
+{
+    std::mt19937 rng;
+    rng.seed(std::random_device()());
+    std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
+    return v.at(dist(rng));
+}
+
+//======================================================================================//
+
+template <typename _Tp>
 void
 serialize(const std::string& fname, const std::string& title, const _Tp& obj)
 {
@@ -176,9 +191,12 @@ test_1_usage()
     measurement_t _use_delta;
     measurement_t _use_end;
 
+    auto n = 5000000;
     _use_beg.record();
     _use_delta.start();
-    fibonacci(30);
+    std::vector<intmax_t> v(n, 30);
+    long                  nfib = random_entry(v);
+    fibonacci(nfib);
     _use_delta.stop();
     _use_end.record();
 
@@ -255,16 +273,6 @@ test_2_timing()
 void
 test_3_auto_tuple()
 {
-    peak_rss prss;
-    // just record the peak rss
-    prss.measure();
-    std::cout << "Current peak rss: " << prss << std::endl;
-
-    prss.start();
-    // do something, where you want delta peak rss
-    prss.stop();
-    std::cout << "Change in peak rss: " << prss << std::endl;
-
     print_info(__FUNCTION__);
 
     // measure multiple clock time + resident set sizes
@@ -296,6 +304,31 @@ test_3_auto_tuple()
         t.join();
     }
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
+}
+
+//======================================================================================//
+
+void
+test_4_measure()
+{
+    print_info(__FUNCTION__);
+
+    peak_rss prss;
+    // just record the peak rss
+    prss.measure();
+    std::cout << "  Current peak rss: " << prss << std::endl;
+
+    prss.start();
+    // do something, where you want delta peak rss
+    auto                  n = 10000000;
+    std::vector<intmax_t> v(n, 10);
+    long                  nfib = random_entry(v);
+    fibonacci(nfib);
+    prss.stop();
+    std::cout << "Change in peak rss: " << prss << std::endl;
+    // prss.reset();
+    prss.measure();
+    std::cout << "  Current peak rss: " << prss << std::endl;
 }
 
 //======================================================================================//

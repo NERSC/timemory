@@ -14,6 +14,7 @@
 #    include <unistd.h>
 #endif
 
+#include "timemory/auto_tuple.hpp"
 #include "timemory/manager.hpp"
 
 #include <chrono>
@@ -25,41 +26,24 @@
 #include <cstdio>
 #include <cstring>
 
-typedef std::vector<uintmax_t> vector_t;
+using vector_t = std::vector<uintmax_t>;
+using namespace tim::component;
+using comp_tuple_t =
+    tim::details::custom_component_tuple<real_clock, system_clock, cpu_clock,
+                                         process_cpu_clock, process_cpu_util, peak_rss>;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
 #elif defined(_WIN32)
 #    define declare_attribute(attr) __declspec(attr)
 #endif
-//--------------------------------------------------------------------------------------//
-
-/*rss_usage_t&
-rss_init()
-{
-    static std::shared_ptr<rss_usage_t> _instance(nullptr);
-    if(!_instance.get())
-    {
-        _instance.reset(new rss_usage_t);
-    }
-    return *(_instance.get());
-}
-*/
-//--------------------------------------------------------------------------------------//
-
-tim::string&
-tim_format()
-{
-    static tim::string _instance = ": %w wall, %u user + %s system = %t cpu (%p%) [%T]";
-    return _instance;
-}
 
 //--------------------------------------------------------------------------------------//
 
-tim::string&
+std::string&
 command()
 {
-    static tim::string _instance = "";
+    static std::string _instance = "";
     return _instance;
 }
 
@@ -69,22 +53,6 @@ declare_attribute(noreturn) void failed_fork()
 {
     printf("failure forking, error occured\n");
     exit(EXIT_FAILURE);
-}
-
-//--------------------------------------------------------------------------------------//
-
-declare_attribute(noreturn) void report()
-{
-    std::stringstream _ss_report;
-
-    _ss_report << (*tim::manager::instance());
-    tim::string _report = _ss_report.str();
-    if(command().length() > 0)
-        _report.replace(_report.find("[exe]") + 1, 3, command().c_str());
-
-    std::cout << "\n" << _report << std::endl;
-
-    exit(0);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -102,7 +70,11 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     // used here
 
     int status;
-    int ret = 0;
+    int ret                = 0;
+    tim::get_rusage_type() = RUSAGE_CHILDREN;
+    comp_tuple_t measure("total execution time", command().c_str());
+    if(getpid() != getppid() + 1)
+        measure.start();
 
     if(waitpid(pid, &status, 0) > 0)
     {
@@ -130,25 +102,18 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     }
 
     if(getpid() != getppid() + 1)
-        report();
+    {
+        measure.stop();
+        std::cout << "\n" << measure << std::endl;
+    }
 
     exit(ret);
 }
 
 //--------------------------------------------------------------------------------------//
 
-void
-print_command(int argc, char** argv)
-{
-    for(int i = 0; i < argc; ++i)
-        printf("%s ", argv[i]);
-    printf("\n");
-}
-
-//--------------------------------------------------------------------------------------//
-
 char*
-getcharptr(const tim::string& str)
+getcharptr(const std::string& str)
 {
     return const_cast<char*>(str.c_str());
 }
@@ -179,7 +144,7 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
         if(_shell)
         {
             argv_shell_list[0] = _shell;
-            argv_shell_list[1] = getcharptr("-lc");
+            argv_shell_list[1] = getcharptr("-c");
             for(uintmax_t i = 0; i < argc - 1; ++i)
                 argv_shell_list[i + 2] = argv_list[i];
             argv_shell_list[argc_shell - 1] = nullptr;
@@ -196,10 +161,16 @@ int
 main(int argc, char** argv)
 {
     if(argc > 1)
-        command() = tim::string(const_cast<const char*>(argv[1]));
+        command() = std::string(const_cast<const char*>(argv[1]));
     else
     {
-        report();
+        command()              = std::string(const_cast<const char*>(argv[0]));
+        tim::get_rusage_type() = RUSAGE_CHILDREN;
+        comp_tuple_t measure("total execution time", command().c_str());
+        measure.start();
+        measure.stop();
+        std::cout << "\n" << measure << std::endl;
+        exit(EXIT_SUCCESS);
     }
 
     pid_t pid = fork();

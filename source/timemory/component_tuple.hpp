@@ -46,7 +46,6 @@
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
-#include "timemory/string.hpp"
 
 //======================================================================================//
 
@@ -144,13 +143,13 @@ public:
     void start()
     {
         ++m_laps;
-        typedef std::tuple<component::start<Types>...> apply_types;
+        using apply_types = std::tuple<component::start<Types>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
     void stop()
     {
-        typedef std::tuple<component::stop<Types>...> apply_types;
+        using apply_types = std::tuple<component::stop<Types>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -158,14 +157,14 @@ public:
     // conditional start/stop functions
     void conditional_start()
     {
-        auto increment = [&](bool did_start) { ++m_laps; };
-        typedef std::tuple<component::conditional_start<Types>...> apply_types;
+        auto increment    = [&](bool did_start) { ++m_laps; };
+        using apply_types = std::tuple<component::conditional_start<Types>...>;
         apply<void>::access<apply_types>(m_data, increment);
     }
 
     void conditional_stop()
     {
-        typedef std::tuple<component::conditional_stop<Types>...> apply_types;
+        using apply_types = std::tuple<component::conditional_stop<Types>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -176,7 +175,7 @@ public:
     {
         ++m_laps;
         {
-            typedef std::tuple<component::record<Types>...> apply_types;
+            using apply_types = std::tuple<component::record<Types>...>;
             apply<void>::access<apply_types>(m_data);
         }
         return *this;
@@ -188,15 +187,15 @@ public:
             ++m_laps;
         auto c_data = std::move(rhs.m_data);
         {
-            typedef std::tuple<component::record<Types>...> apply_types;
+            using apply_types = std::tuple<component::record<Types>...>;
             apply<void>::access<apply_types>(m_data);
         }
         {
-            typedef std::tuple<component::minus<Types>...> apply_types;
+            using apply_types = std::tuple<component::minus<Types>...>;
             apply<void>::access2<apply_types>(m_data, c_data);
         }
         {
-            typedef std::tuple<component::plus<Types>...> apply_types;
+            using apply_types = std::tuple<component::plus<Types>...>;
             apply<void>::access2<apply_types>(m_accum, m_data);
         }
         return *this;
@@ -218,7 +217,7 @@ public:
     //----------------------------------------------------------------------------------//
     void reset()
     {
-        typedef std::tuple<component::reset<Types>...> apply_types;
+        using apply_types = std::tuple<component::reset<Types>...>;
         apply<void>::access<apply_types>(m_data);
         m_laps = 0;
     }
@@ -228,7 +227,7 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        typedef std::tuple<component::minus<Types>...> apply_types;
+        using apply_types = std::tuple<component::minus<Types>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -236,7 +235,7 @@ public:
 
     this_type& operator+=(const this_type& rhs)
     {
-        typedef std::tuple<component::plus<Types>...> apply_types;
+        using apply_types = std::tuple<component::plus<Types>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -248,7 +247,7 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        typedef std::tuple<component::minus<Types>...> apply_types;
+        using apply_types = std::tuple<component::minus<Types>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -256,7 +255,7 @@ public:
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        typedef std::tuple<component::plus<Types>...> apply_types;
+        using apply_types = std::tuple<component::plus<Types>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -264,7 +263,7 @@ public:
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        typedef std::tuple<component::multiply<Types>...> apply_types;
+        using apply_types = std::tuple<component::multiply<Types>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -272,23 +271,23 @@ public:
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        typedef std::tuple<component::divide<Types>...> apply_types;
+        using apply_types = std::tuple<component::divide<Types>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         {
             // stop, if not already stopped
-            typedef std::tuple<component::conditional_stop<Types>...> apply_types;
+            using apply_types = std::tuple<component::conditional_stop<Types>...>;
             apply<void>::access<apply_types>(obj.m_data);
         }
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         {
-            typedef std::tuple<component::print<Types>...> apply_types;
+            using apply_types = std::tuple<component::print<Types>...>;
             apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
                                                           false);
         }
@@ -297,11 +296,11 @@ public:
         return os;
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        typedef std::tuple<component::serial<Types, Archive>...> apply_types;
+        using apply_types = std::tuple<component::serial<Types, Archive>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
@@ -314,7 +313,7 @@ public:
         ar.finishNode();
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
     inline void report(std::ostream& os, bool endline, bool ign_cutoff) const
     {
         std::stringstream ss;
@@ -373,6 +372,67 @@ protected:
         return _instance.load();
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+namespace details
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+class custom_component_tuple : public component_tuple<Types...>
+{
+public:
+    custom_component_tuple(const string_t& key, const string_t& tag)
+    : component_tuple<Types...>(key, tag, 0, 0)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    friend std::ostream& operator<<(std::ostream&                           os,
+                                    const custom_component_tuple<Types...>& obj)
+    {
+        {
+            // stop, if not already stopped
+            using apply_types = std::tuple<component::conditional_stop<Types>...>;
+            apply<void>::access<apply_types>(obj.m_data);
+        }
+        std::stringstream ss_prefix;
+        std::stringstream ss_data;
+        {
+            using apply_types = std::tuple<custom_print<Types>...>;
+            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
+                                                          false);
+        }
+        ss_prefix << std::setw(obj.output_width()) << std::left << obj.m_identifier
+                  << " : ";
+        os << ss_prefix.str() << ss_data.str();
+        return os;
+    }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    template <typename _Tp>
+    struct custom_print
+    {
+        using value_type = typename _Tp::value_type;
+        using base_type  = tim::component::base<_Tp, value_type>;
+
+        custom_print(std::size_t _N, std::size_t _Ntot, base_type& obj, std::ostream& os,
+                     bool endline)
+        {
+            std::stringstream ss;
+            if(_N == 0)
+                ss << std::endl;
+            ss << "    " << obj << std::endl;
+            os << ss.str();
+        }
+    };
+};
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 

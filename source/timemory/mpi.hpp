@@ -32,7 +32,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 #include <algorithm>

@@ -13,6 +13,7 @@ settings.json
 /build-*
 /build
 /_skbuild
+/examples/ex-tuple/*build*
 
 # setup.py files
 /dist*
@@ -43,4 +44,4 @@ timing_report*
 /html
 /docs
 
-/source/alloc
+/source

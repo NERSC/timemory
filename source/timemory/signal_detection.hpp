@@ -38,10 +38,10 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 
 #include <cmath>
 #include <cstdlib>
+#include <cstdlib> /* abort(), exit() */
 #include <cstring>
 #include <deque>
 #include <exception>
@@ -51,7 +51,6 @@
 #include <set>
 #include <sstream>
 #include <stdexcept>
-#include <stdlib.h> /* abort(), exit() */
 #include <string>
 #include <vector>
 
@@ -190,8 +189,7 @@ enum class sys_signal : int
 tim_api class signal_settings
 {
 public:
-    typedef std::set<sys_signal> signal_set_t;
-    // typedef void (*signal_function_t)(int errcode);
+    typedef std::set<sys_signal>     signal_set_t;
     typedef std::function<void(int)> signal_function_t;
 
 public:
@@ -199,8 +197,8 @@ public:
     static void        set_active(bool val);
     static void        enable(const sys_signal&);
     static void        disable(const sys_signal&);
-    static tim::string str(const sys_signal&);
-    static tim::string str();
+    static std::string str(const sys_signal&);
+    static std::string str();
     static void        check_environment();
     static void        set_exit_action(signal_function_t _f);
     static void        exit_action(int errcode);
@@ -222,7 +220,11 @@ protected:
         signal_function_t signals_exit_func;
     };
 
-    static signals_data_t f_signals;
+    static signals_data_t& f_signals()
+    {
+        static signal_settings::signals_data_t instance;
+        return instance;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -239,12 +241,30 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-static struct sigaction tim_signal_termaction, tim_signal_oldaction;
+inline struct sigaction&
+tim_signal_termaction()
+{
+    static struct sigaction instance;
+    return instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline struct sigaction&
+tim_signal_oldaction()
+{
+    static struct sigaction instance;
+    return instance;
+}
+
+//--------------------------------------------------------------------------------------//
 
 // declarations
-inline bool
-enable_signal_detection(
-    signal_settings::signal_set_t ops = signal_settings::signal_set_t());
+inline bool enable_signal_detection(
+    signal_settings::signal_set_t = signal_settings::signal_set_t());
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 disable_signal_detection();
 
@@ -253,7 +273,7 @@ disable_signal_detection();
 inline void
 stack_backtrace(std::ostream& ss)
 {
-    typedef tim::string::size_type size_type;
+    typedef std::string::size_type size_type;
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
 #    define BSIZE 50
@@ -266,23 +286,23 @@ stack_backtrace(std::ostream& ss)
         return;
     }
 
-    std::deque<std::deque<tim::string>> dmang_buf;
+    std::deque<std::deque<std::string>> dmang_buf;
     std::deque<size_type>               dmang_len;
 
     // lambda for demangling a string when delimiting
-    auto _transform = [](tim::string _str) {
+    auto _transform = [](std::string _str) {
         int   _ret    = 0;
         char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
         if(_demang && _ret == 0)
-            return tim::string(const_cast<const char*>(_demang));
+            return std::string(const_cast<const char*>(_demang));
         else
             return _str;
     };
 
     for(size_type j = 0; j < nptrs; ++j)
     {
-        tim::string str = strings[j];
-        if(str.find("+") != tim::string::npos)
+        std::string str = strings[j];
+        if(str.find("+") != std::string::npos)
             str.replace(str.find_last_of("+"), 1, " +");
 
         auto _delim = delimit(str, " \t\n\r()");
@@ -339,7 +359,7 @@ stack_backtrace(std::ostream& ss)
             int mwidth = (i + 1 < dmang_len.size()) ? dmang_len.at(i) : 0;
             _ss << std::setw(mwidth) << std::left
                 << ((i < dmang_buf.at(j).size()) ? dmang_buf.at(j).at(i)
-                                                 : tim::string(" "));
+                                                 : std::string(" "));
             ss << _ss.str() << "  ";
         }
         ss << std::endl;
@@ -474,13 +494,13 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     for(auto itr = operations.cbegin(); itr != operations.cend(); ++itr)
         _signals.insert(static_cast<int>(*itr));
 
-    sigfillset(&tim_signal_termaction.sa_mask);
+    sigfillset(&tim_signal_termaction().sa_mask);
     for(auto& itr : _signals)
-        sigdelset(&tim_signal_termaction.sa_mask, itr);
-    tim_signal_termaction.sa_sigaction = termination_signal_handler;
-    tim_signal_termaction.sa_flags     = SA_SIGINFO;
+        sigdelset(&tim_signal_termaction().sa_mask, itr);
+    tim_signal_termaction().sa_sigaction = termination_signal_handler;
+    tim_signal_termaction().sa_flags     = SA_SIGINFO;
     for(auto& itr : _signals)
-        sigaction(itr, &tim_signal_termaction, &tim_signal_oldaction);
+        sigaction(itr, &tim_signal_termaction(), &tim_signal_oldaction());
 
     signal_settings::set_active(true);
 
@@ -499,14 +519,14 @@ disable_signal_detection()
     if(!signal_settings::is_active())
         return;
 
-    sigemptyset(&tim_signal_termaction.sa_mask);
-    tim_signal_termaction.sa_handler = SIG_DFL;
+    sigemptyset(&tim_signal_termaction().sa_mask);
+    tim_signal_termaction().sa_handler = SIG_DFL;
 
     auto _disable = [](const signal_settings::signal_set_t& _set) {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);
-            sigaction(_itr, &tim_signal_termaction, 0);
+            sigaction(_itr, &tim_signal_termaction(), 0);
         }
     };
 
@@ -528,23 +548,35 @@ disable_signal_detection()
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+
 inline bool enable_signal_detection(
     signal_settings::signal_set_t = signal_settings::signal_set_t())
 {
     return false;
 }
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 disable_signal_detection()
 {
 }
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 stack_backtrace(std::ostream& os)
 {
     os << "stack_backtrace() not available." << std::endl;
 }
 
+//--------------------------------------------------------------------------------------//
+
 }  // namespace tim
 
 //======================================================================================//
 
 #endif
+
+#include "timemory/signal_detection.icpp"

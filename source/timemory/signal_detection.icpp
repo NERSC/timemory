@@ -39,16 +39,21 @@ namespace tim
 
 namespace internal
 {
-void
+//--------------------------------------------------------------------------------------//
+
+inline void
 dummy_func(int)
 {
     return;
 }
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace internal
 
 //======================================================================================//
 
-signal_settings::signals_data_t::signals_data_t()
+inline signal_settings::signals_data_t::signals_data_t()
 : signals_active(false)
 , signals_default({
       sys_signal::sHangup,       sys_signal::sInterrupt,    sys_signal::sQuit,
@@ -73,12 +78,7 @@ signal_settings::signals_data_t::signals_data_t()
 
 //======================================================================================//
 
-signal_settings::signals_data_t signal_settings::f_signals =
-    signal_settings::signals_data_t();
-
-//======================================================================================//
-
-void
+inline void
 insert_and_remove(const sys_signal&              _type,  // signal type
                   signal_settings::signal_set_t* _ins,   // set to insert into
                   signal_settings::signal_set_t* _rem)   // set to remove from
@@ -92,26 +92,26 @@ insert_and_remove(const sys_signal&              _type,  // signal type
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::enable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_enabled, &f_signals.signals_disabled);
+    insert_and_remove(_type, &f_signals().signals_enabled, &f_signals().signals_disabled);
 }
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::disable(const sys_signal& _type)
 {
-    insert_and_remove(_type, &f_signals.signals_disabled, &f_signals.signals_enabled);
+    insert_and_remove(_type, &f_signals().signals_disabled, &f_signals().signals_enabled);
 }
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::check_environment()
 {
-    typedef std::pair<tim::string, sys_signal> match_t;
+    typedef std::pair<std::string, sys_signal> match_t;
 
     auto _list = {
         match_t("HANGUP", sys_signal::sHangup),
@@ -150,21 +150,21 @@ signal_settings::check_environment()
 
     int _enable_all = get_env<int>("SIGNAL_ENABLE_ALL", 0);
     if(_enable_all > 0)
-        for(const auto& itr : f_signals.signals_disabled)
+        for(const auto& itr : f_signals().signals_disabled)
             signal_settings::enable(itr);
 
     int _disable_all = get_env<int>("SIGNAL_DISABLE_ALL", 0);
     if(_disable_all > 0)
-        for(const auto& itr : f_signals.signals_enabled)
+        for(const auto& itr : f_signals().signals_enabled)
             signal_settings::disable(itr);
 }
 
 //======================================================================================//
 
-tim::string
+inline std::string
 signal_settings::str(const sys_signal& _type)
 {
-    typedef std::tuple<tim::string, int, tim::string> descript_tuple_t;
+    typedef std::tuple<std::string, int, std::string> descript_tuple_t;
 
     std::stringstream ss;
     auto              descript = [&](const descript_tuple_t& _data) {
@@ -223,7 +223,7 @@ signal_settings::str(const sys_signal& _type)
 
 //======================================================================================//
 
-tim::string
+inline std::string
 signal_settings::str()
 {
     std::stringstream ss;
@@ -236,11 +236,11 @@ signal_settings::str()
        << std::endl;
 
     ss << spacer() << "Enabled:" << std::endl;
-    for(const auto& itr : f_signals.signals_enabled)
+    for(const auto& itr : f_signals().signals_enabled)
         ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
 
     ss << "\n" << spacer() << "Disabled:" << std::endl;
-    for(const auto& itr : f_signals.signals_disabled)
+    for(const auto& itr : f_signals().signals_disabled)
         ss << spacer() << spacer() << signal_settings::str(itr) << std::endl;
 
 #else
@@ -254,76 +254,76 @@ signal_settings::str()
 
 //======================================================================================//
 
-bool
+inline bool
 signal_settings::is_active()
 {
-    return f_signals.signals_active;
+    return f_signals().signals_active;
 }
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::set_active(bool val)
 {
-    f_signals.signals_active = val;
+    f_signals().signals_active = val;
 }
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::set_exit_action(signal_function_t _f)
 {
-    f_signals.signals_exit_func = _f;
+    f_signals().signals_exit_func = _f;
 }
 
 //======================================================================================//
 
-void
+inline void
 signal_settings::exit_action(int errcode)
 {
-    f_signals.signals_exit_func(errcode);
+    f_signals().signals_exit_func(errcode);
 }
 
 //======================================================================================//
 
-const signal_settings::signal_set_t&
+inline const signal_settings::signal_set_t&
 signal_settings::enabled()
 {
     check_environment();
-    return f_signals.signals_enabled;
+    return f_signals().signals_enabled;
 }
 
 //======================================================================================//
 
-const signal_settings::signal_set_t&
+inline const signal_settings::signal_set_t&
 signal_settings::disabled()
 {
     check_environment();
-    return f_signals.signals_disabled;
+    return f_signals().signals_disabled;
 }
 
 //======================================================================================//
 
-const signal_settings::signal_set_t&
+inline const signal_settings::signal_set_t&
 signal_settings::get_enabled()
 {
-    return f_signals.signals_enabled;
+    return f_signals().signals_enabled;
 }
 
 //======================================================================================//
 
-const signal_settings::signal_set_t&
+inline const signal_settings::signal_set_t&
 signal_settings::get_disabled()
 {
-    return f_signals.signals_disabled;
+    return f_signals().signals_disabled;
 }
 
 //======================================================================================//
 
-const signal_settings::signal_set_t&
+inline const signal_settings::signal_set_t&
 signal_settings::get_default()
 {
-    return f_signals.signals_default;
+    return f_signals().signals_default;
 }
 
 //======================================================================================//

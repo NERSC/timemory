@@ -22,38 +22,27 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-#include "timemory/timemory.hpp"
-#include "timemory/auto_timer.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/timemory.hpp"
 #include "timemory/utility.hpp"
-
-#if !defined(pfunc)
-#    if defined(DEBUG)
-#        define pfunc                                                                    \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
-                   __LINE__)
-#    else
-#        define pfunc
-#    endif
-#endif
 
 //======================================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
-//__c_ctor__
-void
+__c_ctor__ void
 setup_timemory(void)
 {
+    printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__);
+    tim::manager::master_instance();
 }
 
 //======================================================================================//
 
-//__c_dtor__
-void
+__c_dtor__ void
 cleanup_timemory(void)
 {
 }
@@ -136,7 +125,7 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 extern "C" tim_api void
 cxx_timemory_report(const char* fname)
 {
-    tim::string _fname(fname);
+    std::string _fname(fname);
     for(auto itr : { ".txt", ".out", ".json" })
     {
         if(_fname.find(itr) != std::string::npos)
@@ -144,8 +133,8 @@ cxx_timemory_report(const char* fname)
     }
     _fname = _fname.substr(0, _fname.find_last_of("."));
 
-    tim::path_t _fpath_report = _fname + tim::string(".out");
-    tim::path_t _fpath_serial = _fname + tim::string(".json");
+    tim::path_t _fpath_report = _fname + std::string(".out");
+    tim::path_t _fpath_serial = _fname + std::string(".json");
     tim::manager::master_instance()->set_output_stream(_fpath_report);
     tim::makedir(tim::dirname(_fpath_report));
     std::ofstream ofs_report(_fpath_report);
@@ -178,7 +167,6 @@ cxx_timemory_record_memory(int _record_memory)
 //
 //======================================================================================//
 
-// CEREAL_CLASS_VERSION(tim::timer_tuple, TIMEMORY_TIMER_VERSION)
 CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
 //======================================================================================//

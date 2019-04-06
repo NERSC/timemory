@@ -60,6 +60,17 @@ struct record
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct reset
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = base<_Tp, value_type>;
+
+    reset(base_type& obj) { obj.reset(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct start
 {
     using value_type = typename _Tp::value_type;
@@ -104,17 +115,6 @@ struct conditional_stop
     using base_type  = base<_Tp, value_type>;
 
     conditional_stop(base_type& obj) { obj.conditional_stop(); }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct reset
-{
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
-
-    reset(base_type& obj) { obj.value = 0; }
 };
 
 //--------------------------------------------------------------------------------------//

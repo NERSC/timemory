@@ -25,7 +25,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 
 #include <cstddef>
 #include <functional>

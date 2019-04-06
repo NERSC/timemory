@@ -28,10 +28,9 @@
  *
  */
 
-#include "timemory/manager.hpp"
-#include "timemory/auto_timer.hpp"
 #include "timemory/environment.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/manager.hpp"
 #include "timemory/papi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/signal_detection.hpp"
@@ -54,21 +53,17 @@ namespace tim
 {
 //======================================================================================//
 
-int32_t manager::f_max_depth = std::numeric_limits<uint16_t>::max();
-
-//======================================================================================//
-
-std::atomic<int> manager::f_manager_instance_count;
-
-//======================================================================================//
-// this forces master manager instance to get created at the beginning of application
-//
-manager::pointer manager::f_instance = manager::master_instance();
+inline std::atomic_int&
+manager::f_manager_instance_count()
+{
+    static std::atomic_int instance;
+    return instance;
+}
 
 //======================================================================================//
 // get either master or thread-local instance
 //
-manager::pointer
+inline manager::pointer
 manager::instance()
 {
     return details::manager_singleton().instance();
@@ -77,7 +72,7 @@ manager::instance()
 //======================================================================================//
 // get master instance
 //
-manager::pointer
+inline manager::pointer
 manager::master_instance()
 {
     return details::manager_singleton().master_instance();
@@ -85,7 +80,7 @@ manager::master_instance()
 
 //======================================================================================//
 // static function
-manager::pointer
+inline manager::pointer
 manager::noninit_instance()
 {
     return details::manager_singleton().instance_ptr();
@@ -93,7 +88,7 @@ manager::noninit_instance()
 
 //======================================================================================//
 // static function
-manager::pointer
+inline manager::pointer
 manager::noninit_master_instance()
 {
     return details::manager_singleton().master_instance_ptr();
@@ -101,28 +96,25 @@ manager::noninit_master_instance()
 
 //======================================================================================//
 
-bool manager::f_enabled = TIMEMORY_DEFAULT_ENABLED;
+inline manager::get_num_threads_func_t&
+manager::f_get_num_threads()
+{
+    static manager::get_num_threads_func_t instance = std::bind(&get_max_threads);
+    return instance;
+}
 
 //======================================================================================//
 
-manager::mutex_t manager::f_mutex;
-
-//======================================================================================//
-
-manager::get_num_threads_func_t manager::f_get_num_threads = std::bind(&get_max_threads);
-
-//======================================================================================//
-
-manager::manager()
+inline manager::manager()
 : m_merge(false)
-, m_instance_count(f_manager_instance_count++)
+, m_instance_count(f_manager_instance_count()++)
 , m_laps(0)
 , m_report(&std::cout)
 //, m_tuple_data(
 //      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
-    printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
-           __LINE__);
+    printf("############## %s:'%s'@%i [%p, %i] ##############\n", __FUNCTION__, __FILE__,
+           __LINE__, static_cast<void*>(this), m_instance_count);
     tim::papi::init();
 
     if(!singleton_t::master_instance_ptr())
@@ -152,10 +144,13 @@ manager::manager()
 
 //======================================================================================//
 
-manager::~manager()
+inline manager::~manager()
 {
+    printf("############## %s:'%s'@%i [%p, %i] ##############\n", __FUNCTION__, __FILE__,
+           __LINE__, static_cast<void*>(this), m_instance_count);
+
 #if defined(DEBUG)
-    if(tim::env::verbose > 2)
+    if(tim::env::verbose() > 2)
         std::cout << "tim::manager::" << __FUNCTION__
                   << " deleting thread-local instance of manager..."
                   << "\nglobal instance: \t" << singleton_t::master_instance_ptr()
@@ -164,13 +159,11 @@ manager::~manager()
 
     tim::papi::shutdown();
     details::manager_singleton().destroy();
-    printf("############## %s:'%s'@%i ##############\n", __FUNCTION__, __FILE__,
-           __LINE__);
 }
 
 //======================================================================================//
 
-void
+inline void
 manager::update_total_timer_format()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
@@ -187,7 +180,7 @@ manager::update_total_timer_format()
 
 //======================================================================================//
 
-void
+inline void
 manager::insert_global_timer()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0)
@@ -206,11 +199,11 @@ manager::insert_global_timer()
 
 //======================================================================================//
 
-void
+inline void
 manager::clear()
 {
 #if defined(DEBUG)
-    if(tim::env::verbose > 1)
+    if(tim::env::verbose() > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing " << instance()
                   << "..." << std::endl;
 #endif
@@ -261,7 +254,7 @@ manager::clear()
 
 //======================================================================================//
 
-tim::string_t
+inline std::string
 manager::get_prefix() const
 {
     if(!mpi_is_initialized())
@@ -284,7 +277,7 @@ manager::get_prefix() const
 
 //======================================================================================//
 
-void
+inline void
 manager::report(bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
@@ -318,7 +311,7 @@ manager::report(bool ign_cutoff, bool endline) const
 
 //======================================================================================//
 
-void
+inline void
 manager::set_output_stream(ostream_t& _os)
 {
     m_report = &_os;
@@ -326,10 +319,10 @@ manager::set_output_stream(ostream_t& _os)
 
 //======================================================================================//
 
-void
+inline void
 manager::set_output_stream(const path_t& fname)
 {
-    if(fname.find(fname.os()) != tim::string::npos)
+    if(fname.find(fname.os()) != std::string::npos)
         tim::makedir(fname.substr(0, fname.find_last_of(fname.os())));
 
     auto ostreamop = [&](ostream_t*& m_os, const string_t& _fname) {
@@ -354,7 +347,7 @@ manager::set_output_stream(const path_t& fname)
         else
         {
 #if defined(DEBUG)
-            if(tim::env::verbose > 2)
+            if(tim::env::verbose() > 2)
             {
                 tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
@@ -372,12 +365,12 @@ manager::set_output_stream(const path_t& fname)
 
 //======================================================================================//
 
-void
+inline void
 manager::add(pointer ptr)
 {
     auto_lock_t lock(m_mutex);
 #if defined(DEBUG)
-    if(tim::env::verbose > 2)
+    if(tim::env::verbose() > 2)
         std::cout << "tim::manager::" << __FUNCTION__ << " Adding " << ptr << " to "
                   << this << "..." << std::endl;
 #endif
@@ -387,7 +380,7 @@ manager::add(pointer ptr)
 
 //======================================================================================//
 
-void
+inline void
 manager::remove(pointer ptr)
 {
     if(ptr == this)
@@ -396,7 +389,7 @@ manager::remove(pointer ptr)
     auto_lock_t lock(m_mutex);
 
 #if defined(DEBUG)
-    if(tim::env::verbose > 2)
+    if(tim::env::verbose() > 2)
         std::cout << "tim::manager::" << __FUNCTION__ << " - Removing " << ptr << " from "
                   << this << "..." << std::endl;
 #endif
@@ -408,14 +401,14 @@ manager::remove(pointer ptr)
 
 //======================================================================================//
 
-void
+inline void
 manager::merge(pointer itr)
 {
     if(itr == this)
         return;
 
 #if defined(DEBUG)
-    if(tim::env::verbose > 2)
+    if(tim::env::verbose() > 2)
     {
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         std::cout << "\tinstance " << m_instance_count << " merging "
@@ -423,7 +416,7 @@ manager::merge(pointer itr)
                   << std::endl;
     }
 
-    if(tim::env::verbose > 1)
+    if(tim::env::verbose() > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr << "..."
                   << std::endl;
 #endif
@@ -456,7 +449,7 @@ manager::merge(pointer itr)
 
 //======================================================================================//
 
-void
+inline void
 manager::merge()
 {
     compute_self();
@@ -476,14 +469,14 @@ manager::merge()
 
 //======================================================================================//
 
-void
+inline void
 manager::sync_hierarchy()
 {
 }
 
 //======================================================================================//
 
-void
+inline void
 manager::compute_self()
 {
     if(this != singleton_t::master_instance_ptr())
@@ -632,10 +625,10 @@ manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _mis
 //======================================================================================//
 
 // static function
-void
+inline void
 manager::write_report(path_t _fname, bool ign_cutoff)
 {
-    if(_fname.find(_fname.os()) != tim::string::npos)
+    if(_fname.find(_fname.os()) != std::string::npos)
         tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
 
     ofstream_t ofs(_fname.c_str());
@@ -648,10 +641,10 @@ manager::write_report(path_t _fname, bool ign_cutoff)
 
 //======================================================================================//
 // static function
-void
+inline void
 manager::write_json(path_t _fname)
 {
-    if(_fname.find(_fname.os()) != tim::string::npos)
+    if(_fname.find(_fname.os()) != std::string::npos)
         tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
 
     (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
@@ -659,7 +652,7 @@ manager::write_json(path_t _fname)
 
 //======================================================================================//
 // static function
-std::pair<int32_t, bool>
+inline std::pair<int32_t, bool>
 manager::write_json(ostream_t& ofss)
 {
     if(mpi_is_initialized())
@@ -673,7 +666,7 @@ manager::write_json(ostream_t& ofss)
 
 //======================================================================================//
 // static function
-void
+inline void
 manager::write_json_no_mpi(ostream_t& fss)
 {
     fss << "{\n\"ranks\": [" << std::endl;
@@ -695,7 +688,7 @@ manager::write_json_no_mpi(ostream_t& fss)
 
 //======================================================================================//
 // static function
-void
+inline void
 manager::write_json_no_mpi(path_t _fname)
 {
     int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
@@ -724,7 +717,7 @@ manager::write_json_no_mpi(path_t _fname)
 
 //======================================================================================//
 // static function
-std::pair<int32_t, bool>
+inline std::pair<int32_t, bool>
 manager::write_json_mpi(ostream_t& ofss)
 {
     const int32_t mpi_root       = 0;
@@ -833,7 +826,7 @@ manager::write_json_mpi(ostream_t& ofss)
 
 //======================================================================================//
 // static function
-void
+inline void
 manager::write_json_mpi(path_t _fname)
 {
     {
@@ -866,12 +859,12 @@ manager::write_json_mpi(path_t _fname)
 
 //======================================================================================//
 // static function
-manager::comm_group_t
+inline manager::comm_group_t
 manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    int32_t nthreads = tim::env::num_threads;
+    int32_t nthreads = tim::env::num_threads();
     if(nthreads == 0)
         nthreads = 1;
     int32_t max_processes    = max_concurrency / nthreads;
@@ -888,7 +881,7 @@ manager::get_communicator_group()
     MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    if(tim::env::verbose > 1)
+    if(tim::env::verbose() > 1)
     {
         int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
         int32_t local_mpi_size = mpi_size(local_mpi_comm);

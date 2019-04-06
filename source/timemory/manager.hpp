@@ -40,7 +40,6 @@
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/storage.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -101,10 +100,10 @@ public:
     static pointer                  noninit_master_instance();
     static void                     write_json(path_t _fname);
     static std::pair<int32_t, bool> write_json(ostream_t& os);
-    static int  get_instance_count() { return f_manager_instance_count.load(); }
+    static int  get_instance_count() { return f_manager_instance_count().load(); }
     static void set_get_num_threads_func(get_num_threads_func_t f)
     {
-        f_get_num_threads = std::bind(f);
+        f_get_num_threads() = std::bind(f);
     }
 
     static void    enable(bool val = true) { counted_object<void>::enable(val); }
@@ -199,8 +198,7 @@ protected:
 
 protected:
     // protected static variables
-    static mutex_t                f_mutex;
-    static get_num_threads_func_t f_get_num_threads;
+    static get_num_threads_func_t& f_get_num_threads();
 
 private:
     // private functions
@@ -210,11 +208,9 @@ private:
 private:
     // private static variables
     /// for temporary enabling/disabling
-    static bool f_enabled;
-    /// max depth of timers
-    static int32_t f_max_depth;
+    // static bool f_enabled();
     /// number of timing manager instances
-    static std::atomic<int> f_manager_instance_count;
+    static std::atomic_int& f_manager_instance_count();
 
 private:
     // private variables
@@ -270,9 +266,9 @@ template <typename Archive>
 inline void
 manager::serialize(Archive& ar, const unsigned int /*version*/)
 {
-    uint32_t _nthreads = f_get_num_threads();
+    auto _nthreads = (f_get_num_threads())();
     if(_nthreads == 1)
-        _nthreads = f_manager_instance_count;
+        _nthreads = f_manager_instance_count();
     bool _self_cost = this->self_cost();
     ar(serializer::make_nvp("concurrency", _nthreads));
     ar(serializer::make_nvp("self_cost", _self_cost));
@@ -517,3 +513,5 @@ manager_singleton()
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
+
+#include "timemory/manager.icpp"

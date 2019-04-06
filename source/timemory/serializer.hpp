@@ -30,7 +30,6 @@
 #pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 
 #include <fstream>
 #include <initializer_list>

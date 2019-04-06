@@ -39,7 +39,6 @@
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
-#include "timemory/string.hpp"
 #include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
@@ -59,13 +58,13 @@ namespace tim
 
 template <typename _Tp>
 struct tim_api data_tuple
-: public std::tuple<uintmax_t, uintmax_t, uintmax_t, tim::string, std::shared_ptr<_Tp>>
+: public std::tuple<uintmax_t, uintmax_t, uintmax_t, std::string, std::shared_ptr<_Tp>>
 {
     typedef data_tuple<_Tp>            this_type;
-    typedef tim::string                string_t;
+    typedef std::string                string_t;
     typedef _Tp                        data_type;
     typedef std::shared_ptr<data_type> pointer_type;
-    typedef std::tuple<uintmax_t, uintmax_t, uintmax_t, tim::string, std::shared_ptr<_Tp>>
+    typedef std::tuple<uintmax_t, uintmax_t, uintmax_t, std::string, std::shared_ptr<_Tp>>
         base_type;
 
     //------------------------------------------------------------------------//
