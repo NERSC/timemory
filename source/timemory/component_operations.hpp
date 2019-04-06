@@ -47,7 +47,7 @@ struct record
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true)> = 0>
     record(base_type& obj, const base_type& rhs)
     {
-        obj.max(rhs);
+        obj = std::max(obj, rhs);
     }
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false)> = 0>
@@ -216,7 +216,7 @@ struct serial
     template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
     serial(base_type& obj, Archive& ar, const unsigned int version)
     {
-        auto value = static_cast<_Tp&>(obj).serial(obj);
+        auto value = static_cast<_Tp&>(obj).serial();
         ar(serializer::make_nvp(_Tp::label() + ".value", value),
            serializer::make_nvp(_Tp::label() + ".unit.value", _Tp::unit()),
            serializer::make_nvp(_Tp::label() + ".unit.repr", _Tp::display_unit()));

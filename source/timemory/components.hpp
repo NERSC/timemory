@@ -55,32 +55,6 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 
 //--------------------------------------------------------------------------------------//
 
-enum component_type
-{
-    REALTIME,
-    SYSTEM,
-    USER,
-    MONOTONIC,
-    MONOTONIC_RAW,
-    THREAD_CPUTIME,
-    PROCESS_CPUTIME,
-    CPU_UTIL,
-    PROCESS_CPU_UTIL,
-    THREAD_CPU_UTIL,
-    PEAK_RSS,
-    CURRENT_RSS,
-    STACK_RSS,
-    DATA_RSS,
-    NUM_SWAP,
-    NUM_IO_IN,
-    NUM_IO_OUT,
-    NUM_MINOR_PAGE_FAULTS,
-    NUM_MAJOR_PAGE_FAULTS,
-    PAPI_EVENT
-};
-
-//--------------------------------------------------------------------------------------//
-
 template <typename _Tp>
 struct record_max
 {
@@ -119,23 +93,33 @@ struct base
     }
 
     //----------------------------------------------------------------------------------//
+    // just record a measurment
+    //
+    void measure() { value = Type::record(); }
+
+    //----------------------------------------------------------------------------------//
     // start
     //
-    void start()
-    {
-        is_running   = true;
-        is_transient = true;
-        Type::start(*this);
-    }
+    void start() { static_cast<Type&>(*this).start(); }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    void stop()
+    void stop() { static_cast<Type&>(*this).stop(); }
+
+    //----------------------------------------------------------------------------------//
+    // set the firsts notify that start has been called
+    //
+    void set_started()
     {
-        Type::stop(*this);
-        is_running = false;
+        is_running   = true;
+        is_transient = true;
     }
+
+    //----------------------------------------------------------------------------------//
+    // set the firsts notify that stop has been called
+    //
+    void set_stopped() { is_running = false; }
 
     //----------------------------------------------------------------------------------//
     // conditional start if not running
@@ -144,7 +128,7 @@ struct base
     {
         if(!is_running)
         {
-            start();
+            static_cast<Type&>(*this).start();
             return true;
         }
         return false;
@@ -157,13 +141,12 @@ struct base
     {
         if(is_running)
         {
-            stop();
+            static_cast<Type&>(*this).stop();
             return true;
         }
         return false;
     }
 
-    CREATE_STATIC_VARIABLE_ACCESSOR(component_type, get_component_type, category)
     CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
     CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
     CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
@@ -288,7 +271,7 @@ struct base
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        auto obj_value = Type::compute_display(obj);
+        auto obj_value = static_cast<const Type&>(obj).compute_display();
         auto label     = get_label();
         auto disp      = get_display_unit();
         auto prec      = get_precision();
@@ -320,7 +303,6 @@ struct real_clock : public base<real_clock>
     using value_type = intmax_t;
     using base_type  = base<real_clock, value_type>;
 
-    static const component_type          category  = REALTIME;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -334,18 +316,23 @@ struct real_clock : public base<real_clock>
     {
         return tim::get_clock_realtime_now<intmax_t, ratio_t>();
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -361,7 +348,6 @@ struct system_clock : public base<system_clock>
     using value_type = intmax_t;
     using base_type  = base<system_clock, value_type>;
 
-    static const component_type          category  = SYSTEM;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -372,18 +358,23 @@ struct system_clock : public base<system_clock>
     static std::string descript() { return "system time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_system_now<intmax_t, ratio_t>(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -395,7 +386,6 @@ struct user_clock : public base<user_clock>
     using value_type = intmax_t;
     using base_type  = base<user_clock, value_type>;
 
-    static const component_type          category  = USER;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -406,18 +396,23 @@ struct user_clock : public base<user_clock>
     static std::string descript() { return "user time"; }
     static std::string display_unit() { return "sec"; }
     static value_type record() { return tim::get_clock_process_now<intmax_t, ratio_t>(); }
-    static double     compute_display(const base_type& obj)
+    double            compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -429,7 +424,6 @@ struct cpu_clock : public base<cpu_clock>
     using value_type = intmax_t;
     using base_type  = base<cpu_clock, value_type>;
 
-    static const component_type          category  = USER;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -440,18 +434,23 @@ struct cpu_clock : public base<cpu_clock>
     static std::string descript() { return "cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return user_clock::record() + system_clock::record(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -463,7 +462,6 @@ struct monotonic_clock : public base<monotonic_clock>
     using value_type = intmax_t;
     using base_type  = base<monotonic_clock, value_type>;
 
-    static const component_type          category  = MONOTONIC;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -477,18 +475,23 @@ struct monotonic_clock : public base<monotonic_clock>
     {
         return tim::get_clock_monotonic_now<intmax_t, ratio_t>();
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -500,7 +503,6 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     using value_type = intmax_t;
     using base_type  = base<monotonic_raw_clock, value_type>;
 
-    static const component_type          category  = MONOTONIC_RAW;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -514,18 +516,23 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     {
         return tim::get_clock_monotonic_raw_now<intmax_t, ratio_t>();
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -537,7 +544,6 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using value_type = intmax_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
-    static const component_type          category  = THREAD_CPUTIME;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -548,18 +554,23 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static std::string descript() { return "thread cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_thread_now<intmax_t, ratio_t>(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -571,7 +582,6 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using value_type = intmax_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
-    static const component_type          category  = PROCESS_CPUTIME;
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
@@ -582,18 +592,23 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static std::string descript() { return "process cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type record() { return tim::get_clock_process_now<intmax_t, ratio_t>(); }
-    static double     compute_display(const base_type& obj)
+    double            compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -606,7 +621,6 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
     using base_type  = base<cpu_util, value_type>;
     using this_type  = cpu_util;
 
-    static const component_type          category  = CPU_UTIL;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -621,24 +635,27 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
         return value_type(user_clock::record() + system_clock::record(),
                           real_clock::record());
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        double denom = (obj.accum.second > 0)
-                           ? obj.accum.second
-                           : ((obj.value.second > 0) ? obj.value.second : 1);
-        double numer = (obj.accum.second > 0)
-                           ? obj.accum.first
-                           : ((obj.value.second > 0) ? obj.value.first : 0);
+        double denom =
+            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
+        double numer =
+            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    static double serial(const base_type& obj) { return compute_display(obj); }
-    static void   start(base_type& obj) { obj.value = record(); }
-    static void   stop(base_type& obj)
+    double serial() { return compute_display(); }
+    void   start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum.first += (tmp.first - obj.value.first);
-        obj.accum.second += (tmp.second - obj.value.second);
-        obj.value = std::move(tmp);
+        accum.first += (tmp.first - value.first);
+        accum.second += (tmp.second - value.second);
+        value = std::move(tmp);
+        set_stopped();
     }
 
     this_type& operator+=(const value_type& rhs)
@@ -665,7 +682,6 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
 
-    static const component_type          category  = PROCESS_CPU_UTIL;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -679,24 +695,27 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
     {
         return value_type(process_cpu_clock::record(), real_clock::record());
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        double denom = (obj.accum.second > 0)
-                           ? obj.accum.second
-                           : ((obj.value.second > 0) ? obj.value.second : 1);
-        double numer = (obj.accum.second > 0)
-                           ? obj.accum.first
-                           : ((obj.value.second > 0) ? obj.value.first : 0);
+        double denom =
+            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
+        double numer =
+            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    static double serial(const base_type& obj) { return compute_display(obj); }
-    static void   start(base_type& obj) { obj.value = record(); }
-    static void   stop(base_type& obj)
+    double serial() { return compute_display(); }
+    void   start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum.first += (tmp.first - obj.value.first);
-        obj.accum.second += (tmp.second - obj.value.second);
-        obj.value = std::move(tmp);
+        accum.first += (tmp.first - value.first);
+        accum.second += (tmp.second - value.second);
+        value = std::move(tmp);
+        set_stopped();
     }
 
     this_type& operator+=(const value_type& rhs)
@@ -723,7 +742,6 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
     using base_type  = base<thread_cpu_util, value_type>;
     using this_type  = thread_cpu_util;
 
-    static const component_type          category  = THREAD_CPU_UTIL;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -737,24 +755,27 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
     {
         return value_type(thread_cpu_clock::record(), real_clock::record());
     }
-    static double compute_display(const base_type& obj)
+    double compute_display() const
     {
-        double denom = (obj.accum.second > 0)
-                           ? obj.accum.second
-                           : ((obj.value.second > 0) ? obj.value.second : 1);
-        double numer = (obj.accum.second > 0)
-                           ? obj.accum.first
-                           : ((obj.value.second > 0) ? obj.value.first : 0);
+        double denom =
+            (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
+        double numer =
+            (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
         return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    static double serial(const base_type& obj) { return compute_display(obj); }
-    static void   start(base_type& obj) { obj.value = record(); }
-    static void   stop(base_type& obj)
+    double serial() { return compute_display(); }
+    void   start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum.first += (tmp.first - obj.value.first);
-        obj.accum.second += (tmp.second - obj.value.second);
-        obj.value = std::move(tmp);
+        accum.first += (tmp.first - value.first);
+        accum.second += (tmp.second - value.second);
+        value = std::move(tmp);
+        set_stopped();
     }
 
     this_type& operator+=(const value_type& rhs)
@@ -783,7 +804,6 @@ struct peak_rss : public base<peak_rss>
     using value_type = intmax_t;
     using base_type  = base<peak_rss, value_type>;
 
-    static const component_type          category  = PEAK_RSS;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -794,17 +814,23 @@ struct peak_rss : public base<peak_rss>
     static std::string descript() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_peak_rss(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
     {
-        auto tmp  = record();
-        obj.accum = std::max(obj.accum, tmp);
-        obj.value = std::move(tmp);
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -823,7 +849,6 @@ struct current_rss : public base<current_rss>
     using value_type = intmax_t;
     using base_type  = base<current_rss, value_type>;
 
-    static const component_type          category  = CURRENT_RSS;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -834,17 +859,23 @@ struct current_rss : public base<current_rss>
     static std::string descript() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_current_rss(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
     {
-        auto tmp  = record();
-        obj.accum = std::max(obj.accum, tmp);
-        obj.value = std::move(tmp);
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -863,7 +894,6 @@ struct stack_rss : public base<stack_rss>
     using value_type = intmax_t;
     using base_type  = base<stack_rss, value_type>;
 
-    static const component_type          category  = STACK_RSS;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -874,17 +904,23 @@ struct stack_rss : public base<stack_rss>
     static std::string descript() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
     {
-        auto tmp  = record();
-        obj.accum = std::max(obj.accum, tmp);
-        obj.value = std::move(tmp);
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -903,7 +939,6 @@ struct data_rss : public base<data_rss>
     using value_type = intmax_t;
     using base_type  = base<data_rss, value_type>;
 
-    static const component_type          category  = DATA_RSS;
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
@@ -914,17 +949,23 @@ struct data_rss : public base<data_rss>
     static std::string descript() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
-    static double      compute_display(const base_type& obj)
+    double             compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val / static_cast<double>(base_type::get_unit());
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
     {
-        auto tmp  = record();
-        obj.accum = std::max(obj.accum, tmp);
-        obj.value = std::move(tmp);
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -943,7 +984,6 @@ struct num_swap : public base<num_swap>
     using value_type = intmax_t;
     using base_type  = base<num_swap>;
 
-    static const component_type          category     = NUM_SWAP;
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
@@ -953,17 +993,22 @@ struct num_swap : public base<num_swap>
     static std::string descript() { return "swaps out of main memory"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_swap(); }
-    static value_type  compute_display(const base_type& obj)
+    value_type         compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -974,7 +1019,6 @@ struct num_io_in : public base<num_io_in>
     using value_type = intmax_t;
     using base_type  = base<num_io_in>;
 
-    static const component_type          category     = NUM_IO_IN;
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
@@ -984,17 +1028,22 @@ struct num_io_in : public base<num_io_in>
     static std::string descript() { return "block input operations"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_in(); }
-    static value_type  compute_display(const base_type& obj)
+    value_type         compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -1005,7 +1054,6 @@ struct num_io_out : public base<num_io_out>
     using value_type = intmax_t;
     using base_type  = base<num_io_out>;
 
-    static const component_type          category     = NUM_IO_OUT;
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
@@ -1015,17 +1063,22 @@ struct num_io_out : public base<num_io_out>
     static std::string descript() { return "block output operations"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_out(); }
-    static value_type  compute_display(const base_type& obj)
+    value_type         compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -1036,7 +1089,6 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     using value_type = intmax_t;
     using base_type  = base<num_minor_page_faults>;
 
-    static const component_type          category     = NUM_MINOR_PAGE_FAULTS;
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
@@ -1046,17 +1098,22 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static std::string descript() { return "page reclaims"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_minor_page_faults(); }
-    static value_type  compute_display(const base_type& obj)
+    value_type         compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -1067,7 +1124,6 @@ struct num_major_page_faults : public base<num_major_page_faults>
     using value_type = intmax_t;
     using base_type  = base<num_major_page_faults>;
 
-    static const component_type          category     = NUM_MAJOR_PAGE_FAULTS;
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
@@ -1077,17 +1133,22 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static std::string descript() { return "page faults"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_major_page_faults(); }
-    static value_type  compute_display(const base_type& obj)
+    value_type         compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (is_transient) ? accum : value;
         return val;
     }
-    static void start(base_type& obj) { obj.value = record(); }
-    static void stop(base_type& obj)
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
     }
 };
 
@@ -1097,9 +1158,7 @@ struct num_major_page_faults : public base<num_major_page_faults>
 //
 //--------------------------------------------------------------------------------------//
 
-using papi_event_type_t = decltype(PAPI_END);
-
-template <papi_event_type_t EventType, int EventSet>
+template <int EventType, int EventSet>
 struct papi_event
 : public base<papi_event<EventType, EventSet>, long long>
 , public counted_object<papi_event<0, EventSet>>
@@ -1109,7 +1168,6 @@ struct papi_event
     using this_type  = papi_event<EventType, EventSet>;
     using count_type = counted_object<papi_event<0, EventSet>>;
 
-    static const component_type          category     = PAPI_EVENT;
     static const short                   precision    = 0;
     static const short                   width        = 6;
     static const std::ios_base::fmtflags format_flags = {};
@@ -1131,29 +1189,31 @@ struct papi_event
         tim::papi::read(EventType, &_value);
         return _value;
     }
-    static value_type compute_display(const base_type& obj)
+    value_type compute_display() const
     {
-        auto val = (obj.is_transient) ? obj.accum : obj.value;
+        auto val = (base_type::is_transient) ? base_type::accum : base_type::value;
         return val;
     }
-    static void start(base_type& obj)
+    void start()
     {
         if(count_type::live() <= 1)
         {
             tim::papi::add_event(EventSet, EventType);
             tim::papi::start(EventSet);
         }
-        obj.value = record();
+        base_type::set_started();
+        base_type::value = record();
     }
-    static void stop(base_type& obj)
+    void stop()
     {
         auto tmp = record();
-        obj.accum += (tmp - obj.value);
-        obj.value = std::move(tmp);
+        base_type::accum += (tmp - base_type::value);
+        base_type::value = std::move(tmp);
         if(count_type::live() <= 1)
         {
             tim::papi::remove_event(EventSet, EventType);
         }
+        base_type::set_stopped();
     }
 
 private:
