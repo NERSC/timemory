@@ -33,7 +33,8 @@
 //======================================================================================//
 // These two functions are guaranteed to be called at load and
 // unload of the library containing this code.
-__c_ctor__ void
+//__c_ctor__
+void
 setup_timemory(void)
 {
     printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__, __LINE__);
@@ -42,7 +43,8 @@ setup_timemory(void)
 
 //======================================================================================//
 
-__c_dtor__ void
+//__c_dtor__
+void
 cleanup_timemory(void)
 {
 }
