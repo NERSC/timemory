@@ -1162,13 +1162,13 @@ template <int EventType, int EventSet>
 struct papi_event
 : public base<papi_event<EventType, EventSet>, long long>
 , public counted_object<papi_event<EventType, EventSet>>
-, public counted_object<papi_event<-1, EventSet>>
+, public counted_object<papi_event<0, EventSet>>
 {
     using value_type       = long long;
     using base_type        = base<papi_event<EventType, EventSet>, value_type>;
     using this_type        = papi_event<EventType, EventSet>;
     using event_type_count = counted_object<papi_event<EventType, EventSet>>;
-    using event_set_count  = counted_object<papi_event<-1, EventSet>>;
+    using event_set_count  = counted_object<papi_event<0, EventSet>>;
 
     static const short                   precision    = 0;
     static const short                   width        = 6;
@@ -1210,7 +1210,7 @@ struct papi_event
     {
         start_event_set();
         std::vector<long long> read_value(event_type_count::live(), 0);
-        tim::papi::read(EventType, read_value.data());
+        tim::papi::read(EventSet, read_value.data());
         return read_value[read_offset];
     }
     value_type compute_display() const
@@ -1252,9 +1252,6 @@ private:
     {
         if(!event_type_added())
         {
-            printf("%s @ %i. event set count = %li, event type count = %i\n",
-                   __FUNCTION__, __LINE__, event_set_count::live(),
-                   event_type_count::live());
             tim::papi::add_event(EventSet, EventType);
             event_type_added() = true;
         }
@@ -1264,9 +1261,6 @@ private:
     {
         if(event_type_added() && event_type_count::live() < 1)
         {
-            printf("%s @ %i. event set count = %li, event type count = %i\n",
-                   __FUNCTION__, __LINE__, event_set_count::live(),
-                   event_type_count::live());
             tim::papi::remove_event(EventSet, EventType);
             event_type_added() = true;
         }
@@ -1276,9 +1270,6 @@ private:
     {
         if(!event_set_started())
         {
-            printf("%s @ %i. event set count = %li, event type count = %i\n",
-                   __FUNCTION__, __LINE__, event_set_count::live(),
-                   event_type_count::live());
             tim::papi::start(EventSet);
             event_set_started() = true;
         }
@@ -1288,9 +1279,6 @@ private:
     {
         if(event_set_started() && event_set_count::live() < 1)
         {
-            printf("%s @ %i. event set count = %li, event type count = %i\n",
-                   __FUNCTION__, __LINE__, event_set_count::live(),
-                   event_type_count::live());
             long long* tmp = new long long(0);
             tim::papi::stop(EventSet, tmp);
             tim::papi::destroy_event_set(EventSet);

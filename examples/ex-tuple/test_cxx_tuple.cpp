@@ -46,9 +46,9 @@
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
-                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, papi_event<PAPI_TOT_CYC, 1>>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -87,10 +87,9 @@ main(int argc, char** argv)
     tim::standard_timing_components_t timing;
     timing.start();
 
-    papi_event<PAPI_L1_DCM, 0>  evt_l1_dcm;
-    papi_event<PAPI_L1_ICM, 0>  evt_l1_icm;
-    papi_event<PAPI_L1_TCM, 0>  evt_l1_tcm;
-    papi_event<PAPI_TOT_CYC, 1> evt_tot_cyc;
+    tim::component_tuple<papi_event<PAPI_TOT_CYC, 0>> m("PAPI measurements", "cxx", 0, 0);
+    m.start();
+
     /*
     tim::papi::init();
     // tim::papi::set_debug(2);
@@ -105,10 +104,9 @@ main(int argc, char** argv)
     tim::papi::add_event(*event_set, PAPI_TOT_CYC);
     tim::papi::start(*event_set);
     */
-    evt_l1_dcm.start();
-    evt_l1_icm.start();
-    evt_l1_tcm.start();
-    evt_tot_cyc.start();
+    // evt_l1_dcm.start();
+    // evt_l1_icm.start();
+    m.stop();
 
     CONFIGURE_TEST_SELECTOR(3);
 
@@ -130,15 +128,9 @@ main(int argc, char** argv)
     timing.stop();
     std::cout << "\nTests runtime: " << timing << std::endl;
 
-    evt_l1_dcm.stop();
-    evt_l1_icm.stop();
-    evt_l1_tcm.stop();
-    evt_tot_cyc.stop();
+    m.stop();
 
-    std::cout << evt_l1_dcm << std::endl;
-    std::cout << evt_l1_icm << std::endl;
-    std::cout << evt_l1_tcm << std::endl;
-    std::cout << evt_tot_cyc << std::endl;
+    std::cout << m << std::endl;
 
     /*
     tim::papi::read(*event_set, values);
