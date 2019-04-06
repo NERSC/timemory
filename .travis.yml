@@ -3,12 +3,6 @@
 language: python
 
 
-cache:
-  directories:
-  - "$HOME/.cache/pip"
-  - "$HOME/.pyenv"
-
-
 # The apt packages here install our compiled code dependencies.
 matrix:
   include:
