@@ -466,58 +466,55 @@ public:
 
 public:
     // return number of existing objects:
-    static intmax_t           live() { return count(); }
+    static intmax_t           live() { return count().load(); }
     static constexpr intmax_t zero() { return static_cast<intmax_t>(0); }
     static intmax_t           max_depth() { return fmax_depth; }
 
     static void enable(const bool& val) { fenabled = val; }
     static void set_max_depth(const intmax_t& val) { fmax_depth = val; }
     static bool is_enabled() { return fenabled; }
+    static bool is_master() { return thread_number() == 0; }
 
     template <typename _Tp = CountedType,
               typename std::enable_if<std::is_same<_Tp, void>::value>::type* = nullptr>
     static bool enable()
     {
-        return fenabled && fmax_depth > count();
+        return fenabled && fmax_depth > count().load();
     }
     // the void type is consider the global setting
     template <typename _Tp = CountedType,
               typename std::enable_if<!std::is_same<_Tp, void>::value>::type* = nullptr>
     static bool enable()
     {
-        return void_type::is_enabled() && void_type::max_depth() > count() && fenabled &&
-               fmax_depth > count();
+        return void_type::is_enabled() && void_type::max_depth() > count().load() &&
+               fenabled && fmax_depth > count().load();
     }
 
 protected:
     // default constructor
-    counted_object() { ++count(); }
-    ~counted_object()
+    counted_object()
+    : m_instance(count()++)
     {
-        if(count() > 0)
-        {
-            --count();
-        }
     }
-    counted_object(const this_type&) { ++count(); }
-    this_type& operator=(const this_type& rhs)
+    ~counted_object() { --count(); }
+    counted_object(const this_type&)
+    : m_instance(count()++)
     {
-        if(this != &rhs)
-        {
-            ++count();
-        }
-        return *this;
     }
     counted_object(this_type&&) = default;
+    this_type& operator         =(const this_type&) { return *this; }
     this_type& operator=(this_type&& rhs) = default;
+
+protected:
+    intmax_t m_instance;
 
 private:
     // number of existing objects
-    static intmax_t& thread_number();
-    static intmax_t& master_count();
-    static intmax_t& count();
-    static intmax_t  fmax_depth;
-    static bool      fenabled;
+    static intmax_t&             thread_number();
+    static std::atomic_intmax_t& master_count();
+    static std::atomic_intmax_t& count();
+    static intmax_t              fmax_depth;
+    static bool                  fenabled;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -534,22 +531,22 @@ counted_object<CountedType>::thread_number()
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-intmax_t&
+std::atomic_intmax_t&
 counted_object<CountedType>::master_count()
 {
-    static intmax_t _instance = 0;
+    static std::atomic_intmax_t _instance(0);
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-intmax_t&
+std::atomic_intmax_t&
 counted_object<CountedType>::count()
 {
     if(thread_number() == 0)
         return master_count();
-    static thread_local intmax_t _instance = master_count();
+    static thread_local std::atomic_intmax_t _instance(master_count().load());
     return _instance;
 }
 

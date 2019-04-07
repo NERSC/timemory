@@ -46,10 +46,10 @@
 
 using namespace tim::component;
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
-                    papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>>;
+using papi_tuple_t = papi_event<0, PAPI_L1_TCM, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
+                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
+                                     peak_rss, current_rss, papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -87,8 +87,8 @@ int
 main(int argc, char** argv)
 {
     tim::env::parse();
-    tim::standard_timing_components_t                 timing("Tests runtime");
-    tim::component_tuple<papi_event<0, PAPI_TOT_CYC>> m("PAPI measurements");
+    tim::standard_timing_components_t  timing("Tests runtime");
+    tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 
     timing.start();
     m.start();
@@ -185,7 +185,7 @@ test_1_usage()
 
     typedef tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap,
                                  num_io_in, num_io_out, num_minor_page_faults,
-                                 num_major_page_faults>
+                                 num_major_page_faults, papi_tuple_t>
         measurement_t;
 
     measurement_t _use_beg;
@@ -221,7 +221,7 @@ test_2_timing()
     typedef tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
                                  cpu_util, thread_cpu_clock, thread_cpu_util,
                                  process_cpu_clock, process_cpu_util, monotonic_clock,
-                                 monotonic_raw_clock>
+                                 monotonic_raw_clock, papi_tuple_t>
         measurement_t;
     using pair_t = std::pair<std::string, measurement_t>;
 
@@ -279,9 +279,10 @@ test_3_auto_tuple()
     // measure multiple clock time + resident set sizes
     using full_set_t =
         tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                        process_cpu_util, peak_rss, current_rss>;
+                        process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
     // measure wall-clock, thread cpu-clock + process cpu-utilization
-    using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util>;
+    using small_set_t =
+        tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
 
     std::atomic_intmax_t ret;
     {

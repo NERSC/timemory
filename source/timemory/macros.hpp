@@ -479,11 +479,18 @@
 //
 //======================================================================================//
 
-#if !defined(pfunc)
-#    if defined(DEBUG)
-#        define PRINT_HERE(extra)                                                        \
-            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#if !defined(PRINT_HERE)
+#    define PRINT_HERE(extra)                                                            \
+        printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#endif
+
+#if !defined(PRETTY_PRINT_HERE)
+#    if defined(_C_GNU) || defined(_C_CLANG)
+#        define PRETTY_PRINT_HERE(extra)                                                 \
+            printf("> [%s@'%s':%i] %s...\n", __PRETTY_FUNCTION__, __FILE__, __LINE__,    \
+                   extra)
 #    else
-#        define PRINT_HERE(extra)
+#        define PRETTY_PRINT_HERE(extra)                                                 \
+            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #    endif
 #endif

@@ -68,7 +68,7 @@ public:
 public:
     // standard constructor
     auto_tuple(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
-               bool report_at_exit = false);
+               bool report_at_exit = true);
     // destructor
     virtual ~auto_tuple();
 

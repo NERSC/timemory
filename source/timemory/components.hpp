@@ -1209,37 +1209,46 @@ template <int EventSet, int... EventTypes>
 struct papi_event
 : public base<papi_event<EventSet, EventTypes...>,
               std::array<long long, sizeof...(EventTypes)>>
-, public counted_object<papi_event<EventSet, EventTypes...>>
 , public counted_object<papi_event<EventSet>>
 {
-    using size_type        = std::size_t;
-    using value_type       = std::array<long long, sizeof...(EventTypes)>;
-    using base_type        = base<papi_event<EventSet, EventTypes...>, value_type>;
-    using this_type        = papi_event<EventSet, EventTypes...>;
-    using event_type_count = counted_object<papi_event<EventSet, EventTypes...>>;
-    using event_set_count  = counted_object<papi_event<EventSet>>;
+    using size_type   = std::size_t;
+    using value_type  = std::array<long long, sizeof...(EventTypes)>;
+    using base_type   = base<papi_event<EventSet, EventTypes...>, value_type>;
+    using this_type   = papi_event<EventSet, EventTypes...>;
+    using event_count = counted_object<papi_event<EventSet>>;
 
-    static const short                   precision    = 0;
-    static const short                   width        = 6;
-    static const std::ios_base::fmtflags format_flags = {};
-    static const size_type               num_events   = sizeof...(EventTypes);
+    static const size_type               num_events = sizeof...(EventTypes);
+    static const short                   precision  = 6;
+    static const short                   width      = 8;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::scientific | std::ios_base::dec;
 
     using base_type::accum;
     using base_type::is_transient;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
+    using event_count::m_instance;
 
     papi_event()
-    : read_offset(event_type_count::live() - 1)
     {
-        add_event_type();
+        if(m_instance == 0 && event_count::is_master())
+        {
+            add_event_types();
+            start_event_set();
+        }
+    }
+    ~papi_event()
+    {
+        if(m_instance == 0 && event_count::is_master())
+        {
+            // stop_event_set();
+            // remove_event_types();
+        }
     }
 
-    ~papi_event() { remove_event_type(); }
-
     papi_event(const papi_event& rhs) = default;
-    this_type& operator=(const this_type& rhs) = default;
+    this_type& operator=(const this_type& rhs) = delete;
     papi_event(papi_event&& rhs)               = default;
     this_type& operator=(this_type&&) = default;
 
@@ -1264,9 +1273,8 @@ struct papi_event
     static std::string descript(int evt_type) { return info(evt_type).long_descr; }
     static std::string display_unit(int evt_type) { return info(evt_type).units; }
 
-    value_type record()
+    static value_type record()
     {
-        start_event_set();
         value_type read_value;
         apply<void>::set_value(read_value, 0);
         tim::papi::read(EventSet, read_value.data());
@@ -1277,13 +1285,13 @@ struct papi_event
         auto val              = (is_transient) ? accum : value;
         int  evt_types[]      = { EventTypes... };
         auto _compute_display = [&](std::ostream& os, size_type idx) {
-            auto _obj_value = val[idx];
-            auto _evt_type  = evt_types[idx];
-            auto _label     = label(_evt_type);
-            auto _disp      = display_unit(_evt_type);
-            auto _prec      = base_type::get_precision();
-            auto _width     = base_type::get_width();
-            auto _flags     = base_type::get_format_flags();
+            double _obj_value = val[idx];
+            auto   _evt_type  = evt_types[idx];
+            auto   _label     = label(_evt_type);
+            auto   _disp      = display_unit(_evt_type);
+            auto   _prec      = base_type::get_precision();
+            auto   _width     = base_type::get_width();
+            auto   _flags     = base_type::get_format_flags();
 
             std::stringstream ss, ssv, ssi;
             ssv.setf(_flags);
@@ -1307,21 +1315,18 @@ struct papi_event
     void start()
     {
         set_started();
-        start_event_set();
         value = record();
     }
     void stop()
     {
         auto tmp = record();
-        // accum += (tmp - value);
+        for(size_type i = 0; i < num_events; ++i)
+            accum[i] += (tmp[i] - value[i]);
         value = std::move(tmp);
-        stop_event_set();
         set_stopped();
     }
 
 private:
-    intmax_t read_offset = 0;
-
     static bool& event_type_added()
     {
         static thread_local bool instance = false;
@@ -1334,39 +1339,43 @@ private:
         return instance;
     }
 
-    static void add_event_type()
+    void add_event_types()
     {
-        if(!event_type_added())
+        if(!event_type_added() && m_instance == 0 && event_count::is_master())
         {
+            PRINT_HERE(std::to_string(event_count::live()).c_str());
             int evt_types[] = { EventTypes... };
             tim::papi::add_events(EventSet, evt_types, num_events);
             event_type_added() = true;
         }
     }
 
-    static void remove_event_type()
+    void remove_event_types()
     {
-        if(event_type_added() && event_type_count::live() < 1)
+        if(event_type_added() && m_instance == 0 && event_count::is_master())
         {
+            PRINT_HERE(std::to_string(event_count::live()).c_str());
             for(auto itr : { EventTypes... })
                 tim::papi::remove_event(EventSet, itr);
-            event_type_added() = true;
+            event_type_added() = false;
         }
     }
 
-    static void start_event_set()
+    void start_event_set()
     {
-        if(!event_set_started())
+        if(!event_set_started() && m_instance == 0 && event_count::is_master())
         {
+            PRINT_HERE(std::to_string(event_count::live()).c_str());
             tim::papi::start(EventSet);
             event_set_started() = true;
         }
     }
 
-    static void stop_event_set()
+    void stop_event_set()
     {
-        if(event_set_started() && event_set_count::live() < 1)
+        if(event_set_started() && m_instance == 0 && event_count::is_master())
         {
+            PRINT_HERE(std::to_string(event_count::live()).c_str());
             long long* tmp = new long long(0);
             tim::papi::stop(EventSet, tmp);
             tim::papi::destroy_event_set(EventSet);

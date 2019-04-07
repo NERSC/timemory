@@ -123,6 +123,34 @@ load(Archive& ar, std::pair<TypeF, TypeS>& p)
 }
 
 //--------------------------------------------------------------------------------------//
+//  save specialization for pair
+//
+template <typename Archive, typename Type, std::size_t Size,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+save(Archive& ar, const std::array<Type, Size>& arr)
+{
+    std::vector<Type> vec(Size, Type());
+    for(std::size_t i = 0; i < Size; ++i)
+        vec[i] = arr[i];
+    ar(vec);
+}
+
+//--------------------------------------------------------------------------------------//
+//  load specialization for pair
+//
+template <typename Archive, typename Type, std::size_t Size,
+          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
+inline void
+load(Archive& ar, std::array<Type, Size>& arr)
+{
+    std::vector<Type> vec(Size, Type());
+    ar(vec);
+    for(std::size_t i = 0; i < Size; ++i)
+        arr[i] = vec[i];
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace cereal
 

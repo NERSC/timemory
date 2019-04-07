@@ -48,7 +48,8 @@ fibonacci(intmax_t n, intmax_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+        // TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+        auto_tuple_t impl("", 0, "cxx", false);
         return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     else
