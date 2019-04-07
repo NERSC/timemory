@@ -108,7 +108,7 @@ main(int argc, char** argv)
 
     tim::consume_parameters(tim::manager::instance());
 
-    TIMEMORY_AUTO_TUPLE(global_tuple_t, argv[0]);
+    TIMEMORY_AUTO_TUPLE(global_tuple_t, std::string("[") + argv[0] + "]");
     std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     // run without timing first so overhead is not started yet

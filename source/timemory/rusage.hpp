@@ -91,6 +91,16 @@ intmax_t
 get_num_minor_page_faults();
 intmax_t
 get_num_major_page_faults();
+intmax_t
+get_num_messages_sent();
+intmax_t
+get_num_messages_received();
+intmax_t
+get_num_signals();
+intmax_t
+get_num_voluntary_context_switch();
+intmax_t
+get_num_priority_context_switch();
 
 //--------------------------------------------------------------------------------------//
 

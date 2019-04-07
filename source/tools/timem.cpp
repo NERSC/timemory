@@ -28,9 +28,10 @@
 
 using vector_t = std::vector<uintmax_t>;
 using namespace tim::component;
-using comp_tuple_t =
-    tim::details::custom_component_tuple<real_clock, system_clock, cpu_clock,
-                                         process_cpu_clock, process_cpu_util, peak_rss>;
+using comp_tuple_t = tim::details::custom_component_tuple<
+    real_clock, system_clock, cpu_clock, cpu_util, peak_rss, data_rss, stack_rss,
+    num_minor_page_faults, num_major_page_faults, voluntary_context_switch,
+    priority_context_switch>;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))

@@ -71,6 +71,17 @@ struct reset
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct measure
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = base<_Tp, value_type>;
+
+    measure(base_type& obj) { obj.measure(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct start
 {
     using value_type = typename _Tp::value_type;

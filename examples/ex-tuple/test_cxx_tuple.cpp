@@ -183,9 +183,10 @@ test_1_usage()
     print_info(__FUNCTION__);
     TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
 
-    typedef tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap,
-                                 num_io_in, num_io_out, num_minor_page_faults,
-                                 num_major_page_faults, papi_tuple_t>
+    typedef tim::component_tuple<
+        peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
+        num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv,
+        num_signals, voluntary_context_switch, priority_context_switch, papi_tuple_t>
         measurement_t;
 
     measurement_t _use_beg;
@@ -263,6 +264,7 @@ test_2_timing()
 
     std::cout << "\n" << lambda_ss.str() << std::endl;
     std::cout << "total runtime: " << runtime << std::endl;
+    std::cout << "std::get: " << std::get<0>(runtime) << std::endl;
     std::cout << "fibonacci total: " << ret.load() << "\n" << std::endl;
 
     measurements.push_front(pair_t("run", runtime));

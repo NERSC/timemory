@@ -56,24 +56,24 @@ namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
-#include "timemory/auto_timer.hpp"
+#include "timemory/auto_tuple.hpp"
+#include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/signal_detection.hpp"
-#include "timemory/timer.hpp"
-#include "timemory/usage.hpp"
 
-typedef tim::manager                           manager_t;
-typedef tim::timer                             tim_timer_t;
-typedef tim::auto_timer                        auto_timer_t;
-typedef tim::usage                             rss_usage_t;
-typedef tim::sys_signal                        sys_signal_t;
-typedef tim::signal_settings                   signal_settings_t;
-typedef signal_settings_t::signal_set_t        signal_set_t;
-typedef tim::format::timer                     timer_format_t;
-typedef tim::format::rss                       rss_format_t;
-typedef tim::format::base_formatter::unit_type unit_type;
+using namespace tim::component;
+using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
+                                         process_cpu_util>;
+using auto_timer_t =
+    tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, process_cpu_util>;
+using rss_usage_t = tim::component_tuple<current_rss, peak_rss>;
+
+typedef tim::manager                    manager_t;
+typedef tim::sys_signal                 sys_signal_t;
+typedef tim::signal_settings            signal_settings_t;
+typedef signal_settings_t::signal_set_t signal_set_t;
 
 typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
 
@@ -104,8 +104,6 @@ public:
     auto_timer_decorator(auto_timer_t* _ptr = nullptr)
     : m_ptr(_ptr)
     {
-        if(m_ptr)
-            m_ptr->local_timer().summation_timer()->format()->align_width(true);
     }
 
     ~auto_timer_decorator() { delete m_ptr; }
@@ -115,7 +113,6 @@ public:
         if(m_ptr)
             delete m_ptr;
         m_ptr = _ptr;
-        m_ptr->local_timer().summation_timer()->format()->align_width(true);
         return *this;
     }
 
@@ -274,7 +271,7 @@ manager()
 //--------------------------------------------------------------------------------------//
 
 tim_timer_t*
-timer(std::string prefix = "", std::string format = "")
+timer(std::string prefix = "")
 {
     if(prefix.empty())
     {
@@ -283,10 +280,7 @@ timer(std::string prefix = "", std::string format = "")
         prefix = keyss.str();
     }
 
-    if(format.empty())
-        format = tim::format::timer::default_format();
-
-    return new tim_timer_t(prefix, format);
+    return new tim_timer_t(prefix);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -318,113 +312,24 @@ auto_timer(const std::string& key = "", bool report_at_exit = false, int nback =
 
 //--------------------------------------------------------------------------------------//
 
-auto_timer_decorator*
-timer_decorator(const std::string& func, const std::string& file, int line,
-                const std::string& key, bool added_args, bool report_at_exit)
-{
-    std::stringstream keyss;
-    keyss << func;
-
-    // add arguments to end of function
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << file;
-        keyss << ":";
-        keyss << line;
-    }
-    return new auto_timer_decorator(
-        new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
-}
-
-//--------------------------------------------------------------------------------------//
-
 rss_usage_t*
-rss_usage(std::string prefix = "", bool record = false, std::string format = "")
+rss_usage(std::string prefix = "", bool record = false)
 {
-    rss_format_t _fmt(prefix);
-    if(format.length() > 0)
-        _fmt.format(format);
-    rss_usage_t* _rss = new rss_usage_t(_fmt);
+    if(prefix.empty())
+    {
+        std::stringstream keyss;
+        keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
+        prefix = keyss.str();
+    }
+    rss_usage_t* _rss = new rss_usage_t(prefix);
     if(record)
-        _rss->record();
+        _rss->measure();
     return _rss;
-}
-
-//--------------------------------------------------------------------------------------//
-/*
-rss_delta_t*
-rss_delta(std::string prefix = "", std::string format = "")
-{
-    rss_format_t _fmt = tim::format::timer::default_rss_format();
-    _fmt.prefix(prefix);
-    if(format.length() > 0)
-        _fmt.format(format);
-    rss_delta_t* _rss = new rss_delta_t(_fmt);
-    _rss->init();
-    return _rss;
-}
-*/
-//--------------------------------------------------------------------------------------//
-
-timer_format_t*
-timing_format(const std::string& prefix = "",
-              const std::string& format = timer_format_t::default_format(),
-              unit_type unit = timer_format_t::default_unit(), bool align_width = false)
-{
-    return new timer_format_t(prefix, format, unit, align_width);
-}
-
-//--------------------------------------------------------------------------------------//
-
-rss_format_t*
-memory_format(const std::string& prefix = "",
-              const std::string& format = rss_format_t::default_format(),
-              unit_type unit = rss_format_t::default_unit(), bool align_width = false)
-{
-    return new rss_format_t(prefix, format, unit, align_width);
 }
 
 //--------------------------------------------------------------------------------------//
 
 }  // namespace init
-
-//======================================================================================//
-//
-//                              FORMAT
-//
-//======================================================================================//
-
-namespace format
-{
-//--------------------------------------------------------------------------------------//
-
-void
-set_timer_default(std::string format)
-{
-    // update C++
-    tim::format::timer::default_format(format);
-}
-
-//--------------------------------------------------------------------------------------//
-
-tim::format::timer
-get_timer_default()
-{
-    // in case changed in python, update C++
-    return tim::format::timer::default_format();
-}
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace format
 
 //======================================================================================//
 //

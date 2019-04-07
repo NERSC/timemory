@@ -27,6 +27,19 @@
 #include "timemory/units.hpp"
 
 //======================================================================================//
+
+void
+check_rusage_call(int ret, const char* _func)
+{
+#if defined(DEBUG)
+    if(ret > 0)
+        printf("[WARN]> rusage call in '%s' returned a non-zero error code: %i\n", _func,
+               ret);
+#else
+    tim::consume_parameters(ret, _func);
+#endif
+}
+//======================================================================================//
 // Returns the peak (maximum so far) resident set size (physical
 // memory use) measured in bytes, or zero if the value cannot be
 // determined on this OS.
@@ -36,7 +49,7 @@ tim::get_peak_rss()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
 // Darwin reports in bytes, Linux reports in kilobytes
 #    if defined(_MACOS)
@@ -136,10 +149,10 @@ tim::get_stack_rss()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<intmax_t>(_units * _usage.ru_idrss);
+    return static_cast<intmax_t>(_units * _usage.ru_isrss);
 #else
     return static_cast<intmax_t>(0);
 #endif
@@ -152,10 +165,10 @@ tim::get_data_rss()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<intmax_t>(_units * _usage.ru_isrss);
+    return static_cast<intmax_t>(_units * _usage.ru_idrss);
 #else
     return static_cast<intmax_t>(0);
 #endif
@@ -168,7 +181,7 @@ tim::get_num_swap()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     return static_cast<intmax_t>(_usage.ru_nswap);
 #else
@@ -183,7 +196,7 @@ tim::get_num_io_in()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     return static_cast<intmax_t>(_usage.ru_inblock);
 #else
@@ -198,7 +211,7 @@ tim::get_num_io_out()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     return static_cast<intmax_t>(_usage.ru_oublock);
 #else
@@ -213,7 +226,7 @@ tim::get_num_minor_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     return static_cast<intmax_t>(_usage.ru_minflt);
 #else
@@ -228,9 +241,84 @@ tim::get_num_major_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _usage;
-    getrusage(get_rusage_type(), &_usage);
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
     return static_cast<intmax_t>(_usage.ru_majflt);
+#else
+    return static_cast<intmax_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline intmax_t
+tim::get_num_messages_sent()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    return static_cast<intmax_t>(_usage.ru_msgsnd);
+#else
+    return static_cast<intmax_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline intmax_t
+tim::get_num_messages_received()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    return static_cast<intmax_t>(_usage.ru_msgrcv);
+#else
+    return static_cast<intmax_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline intmax_t
+tim::get_num_signals()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    return static_cast<intmax_t>(_usage.ru_nsignals);
+#else
+    return static_cast<intmax_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline intmax_t
+tim::get_num_voluntary_context_switch()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    return static_cast<intmax_t>(_usage.ru_nvcsw);
+#else
+    return static_cast<intmax_t>(0);
+#endif
+}
+
+//======================================================================================//
+
+inline intmax_t
+tim::get_num_priority_context_switch()
+{
+#if defined(_UNIX)
+    struct rusage _usage;
+    check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
+
+    return static_cast<intmax_t>(_usage.ru_nivcsw);
 #else
     return static_cast<intmax_t>(0);
 #endif

@@ -88,10 +88,9 @@ public:
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
     component_tuple(const component_tuple& rhs)
-    : m_identifier(rhs.m_identifier)
-    , m_data(rhs.m_data)
-    , m_accum(rhs.m_accum)
+    : m_data(rhs.m_data)
     , m_laps(rhs.m_laps)
+    , m_identifier(rhs.m_identifier)
     {
     }
 
@@ -101,7 +100,6 @@ public:
             return *this;
         m_identifier = rhs.m_identifier;
         m_data       = rhs.m_data;
-        m_accum      = rhs.m_accum;
         m_laps       = rhs.m_laps;
         return *this;
     }
@@ -110,6 +108,14 @@ public:
     component_tuple& operator=(component_tuple&&) = default;
 
 public:
+    //----------------------------------------------------------------------------------//
+    // measure functions
+    void measure()
+    {
+        using apply_types = std::tuple<component::measure<Types>...>;
+        apply<void>::access<apply_types>(m_data);
+    }
+
     //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
@@ -171,10 +177,10 @@ public:
             using apply_types = std::tuple<component::minus<Types>...>;
             apply<void>::access2<apply_types>(m_data, c_data);
         }
-        {
-            using apply_types = std::tuple<component::plus<Types>...>;
-            apply<void>::access2<apply_types>(m_accum, m_data);
-        }
+        //{
+        //    using apply_types = std::tuple<component::plus<Types>...>;
+        //    apply<void>::access2<apply_types>(m_accum, m_data);
+        //}
         return *this;
     }
 
@@ -210,7 +216,23 @@ public:
         return *this;
     }
 
+    this_type& operator-=(this_type& rhs)
+    {
+        using apply_types = std::tuple<component::minus<Types>...>;
+        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        m_laps -= rhs.m_laps;
+        return *this;
+    }
+
     this_type& operator+=(const this_type& rhs)
+    {
+        using apply_types = std::tuple<component::plus<Types>...>;
+        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        m_laps += rhs.m_laps;
+        return *this;
+    }
+
+    this_type& operator+=(this_type& rhs)
     {
         using apply_types = std::tuple<component::plus<Types>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
@@ -313,10 +335,6 @@ public:
         ar.startNode();
         apply<void>::access<apply_types>(m_data, std::ref(ar), version);
         ar.finishNode();
-        ar.setNextName("accum");
-        ar.startNode();
-        apply<void>::access<apply_types>(m_accum, std::ref(ar), version);
-        ar.finishNode();
     }
 
     //----------------------------------------------------------------------------------//
@@ -336,20 +354,19 @@ public:
     }
 
 public:
-    inline data_t&       accum() { return m_accum; }
-    inline const data_t& accum() const { return m_accum; }
+    inline data_t&       data() { return m_data; }
+    inline const data_t& data() const { return m_data; }
     inline intmax_t      laps() const { return m_laps; }
 
 protected:
     // protected member functions
-    data_t&       get_accum() { return m_accum; }
-    const data_t& get_accum() const { return m_accum; }
+    data_t&       get_data() { return m_data; }
+    const data_t& get_data() const { return m_data; }
 
 protected:
     // objects
     mutex_t        m_mutex;
     mutable data_t m_data;
-    mutable data_t m_accum;
     intmax_t       m_laps;
     intmax_t       m_count;
     intmax_t       m_hash;
@@ -559,17 +576,56 @@ using type_filter = typename details::component_filter_if<Predicate, Sequence>::
 
 }  // namespace tim
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 #include "timemory/manager.hpp"
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 template <typename... Types>
 void
 tim::component_tuple<Types...>::init_manager()
 {
     tim::manager::instance();
+}
+
+//======================================================================================//
+//
+//      std::get operator
+//
+namespace std
+{
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(tim::component_tuple<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+const typename std::tuple_element<N, std::tuple<Types...>>::type&
+get(const tim::component_tuple<Types...>& obj)
+{
+    return get<N>(obj.data());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <std::size_t N, typename... Types>
+auto
+get(tim::component_tuple<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::component_tuple<Types...>>(obj).data()))
+{
+    using obj_type = tim::component_tuple<Types...>;
+    return get<N>(std::forward<obj_type>(obj).data());
+}
+
+//======================================================================================//
+
 }
 
 //--------------------------------------------------------------------------------------//

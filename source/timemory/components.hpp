@@ -120,7 +120,7 @@ struct base
     {
         is_running   = false;
         is_transient = false;
-        static_cast<Type&>(this).reset();
+        static_cast<Type&>(*this).reset();
     }
 
     //----------------------------------------------------------------------------------//
@@ -347,7 +347,8 @@ struct base
 //          Timing types
 //
 //--------------------------------------------------------------------------------------//
-
+// the system's real time (i.e. wall time) clock, expressed as the amount of time since
+// the epoch.
 struct real_clock : public base<real_clock>
 {
     using ratio_t    = std::nano;
@@ -363,11 +364,8 @@ struct real_clock : public base<real_clock>
     static std::string label() { return "real"; }
     static std::string descript() { return "wall time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record()
-    {
-        return tim::get_clock_realtime_now<intmax_t, ratio_t>();
-    }
-    double compute_display() const
+    static value_type  record() { return tim::get_clock_real_now<intmax_t, ratio_t>(); }
+    double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -388,11 +386,15 @@ struct real_clock : public base<real_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// alias for "real" clock
 using wall_clock = real_clock;
 
 //--------------------------------------------------------------------------------------//
-
+// uses clock() -- only relevant as a time when a different is computed
+// Do not use a single CPU time as an amount of time; it doesn’t work that way.
+// units are reported in number of clock ticks per second
+//
+// this struct extracts only the CPU time spent in kernel-mode
 struct system_clock : public base<system_clock>
 {
     using ratio_t    = std::nano;
@@ -430,7 +432,11 @@ struct system_clock : public base<system_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// uses clock() -- only relevant as a time when a different is computed
+// Do not use a single CPU time as an amount of time; it doesn’t work that way.
+// units are reported in number of clock ticks per second
+//
+// this struct extracts only the CPU time spent in user-mode
 struct user_clock : public base<user_clock>
 {
     using ratio_t    = std::nano;
@@ -446,45 +452,7 @@ struct user_clock : public base<user_clock>
     static std::string label() { return "user"; }
     static std::string descript() { return "user time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type record() { return tim::get_clock_process_now<intmax_t, ratio_t>(); }
-    double            compute_display() const
-    {
-        auto val = (is_transient) ? accum : value;
-        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
-                                   base_type::get_unit());
-    }
-    void start()
-    {
-        set_started();
-        value = record();
-    }
-    void stop()
-    {
-        auto tmp = record();
-        accum += (tmp - value);
-        value = std::move(tmp);
-        set_stopped();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-struct cpu_clock : public base<cpu_clock>
-{
-    using ratio_t    = std::nano;
-    using value_type = intmax_t;
-    using base_type  = base<cpu_clock, value_type>;
-
-    static const short                   precision = 3;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
-
-    static intmax_t    unit() { return units::sec; }
-    static std::string label() { return "cpu"; }
-    static std::string descript() { return "cpu time"; }
-    static std::string display_unit() { return "sec"; }
-    static value_type  record() { return user_clock::record() + system_clock::record(); }
+    static value_type  record() { return tim::get_clock_user_now<intmax_t, ratio_t>(); }
     double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -506,7 +474,50 @@ struct cpu_clock : public base<cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
+// uses clock() -- only relevant as a time when a different is computed
+// Do not use a single CPU time as an amount of time; it doesn’t work that way.
+// units are reported in number of clock ticks per second
+//
+// this struct extracts only the CPU time spent in both user- and kernel- mode
+struct cpu_clock : public base<cpu_clock>
+{
+    using ratio_t    = std::nano;
+    using value_type = intmax_t;
+    using base_type  = base<cpu_clock, value_type>;
 
+    static const short                   precision = 3;
+    static const short                   width     = 6;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec;
+
+    static intmax_t    unit() { return units::sec; }
+    static std::string label() { return "cpu"; }
+    static std::string descript() { return "cpu time"; }
+    static std::string display_unit() { return "sec"; }
+    static value_type  record() { return tim::get_clock_cpu_now<intmax_t, ratio_t>(); }
+    double             compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// clock that increments monotonically, tracking the time since an arbitrary point,
+// and will continue to increment while the system is asleep.
 struct monotonic_clock : public base<monotonic_clock>
 {
     using ratio_t    = std::nano;
@@ -547,7 +558,9 @@ struct monotonic_clock : public base<monotonic_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// clock that increments monotonically, tracking the time since an arbitrary point like
+// CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time adjustments.
+// It should not be compared to other system time sources.
 struct monotonic_raw_clock : public base<monotonic_raw_clock>
 {
     using ratio_t    = std::nano;
@@ -588,7 +601,10 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this clock measures the CPU time within the current thread (excludes sibling/child
+// threads)
+// clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
+// thread.
 struct thread_cpu_clock : public base<thread_cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -626,7 +642,9 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this clock measures the CPU time within the current process (excludes child processes)
+// clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
+// process.
 struct process_cpu_clock : public base<process_cpu_clock>
 {
     using ratio_t    = std::nano;
@@ -664,7 +682,13 @@ struct process_cpu_clock : public base<process_cpu_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this computes the CPU utilization percentage for the calling process and child
+// processes.
+// uses clock() -- only relevant as a time when a different is computed
+// Do not use a single CPU time as an amount of time; it doesn’t work that way.
+//
+// this struct extracts only the CPU time spent in both user- and kernel- mode
+// and divides by wall clock time
 struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 {
     using ratio_t    = std::nano;
@@ -683,8 +707,7 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
     static std::string display_unit() { return "%"; }
     static value_type  record()
     {
-        return value_type(user_clock::record() + system_clock::record(),
-                          real_clock::record());
+        return value_type(cpu_clock::record(), real_clock::record());
     }
     double compute_display() const
     {
@@ -725,7 +748,11 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this computes the CPU utilization percentage for ONLY the calling process (excludes
+// child processes)
+//
+// this struct extracts only the CPU time spent in both user- and kernel- mode
+// and divides by wall clock time
 struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intmax_t>>
 {
     using ratio_t    = std::nano;
@@ -785,7 +812,11 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this computes the CPU utilization percentage for ONLY the calling thread (excludes
+// sibling and child threads)
+//
+// this struct extracts only the CPU time spent in both user- and kernel- mode
+// and divides by wall clock time
 struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax_t>>
 {
     using ratio_t    = std::nano;
@@ -849,7 +880,11 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
 //          Usage types
 //
 //--------------------------------------------------------------------------------------//
-
+// this struct extracts the high-water mark (or a change in the high-water mark) of
+// the resident set size (RSS). Which is current amount of memory in RAM
+//
+// when used on a system with swap enabled, this value may fluctuate but should not
+// on an HPC system.
 struct peak_rss : public base<peak_rss>
 {
     using value_type = intmax_t;
@@ -893,7 +928,9 @@ struct record_max<peak_rss> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-
+// this struct measures the resident set size (RSS) currently allocated in pages of
+// memory. Unlike the peak_rss, this value will fluctuate as memory gets freed and
+// allocated
 struct current_rss : public base<current_rss>
 {
     using value_type = intmax_t;
@@ -937,7 +974,10 @@ struct record_max<current_rss> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-
+// an integral value indicating the amount of memory used by the text segment that was
+// also shared among other processes.
+// an integral value of the amount of unshared memory residing in the stack segment
+// of a process
 struct stack_rss : public base<stack_rss>
 {
     using value_type = intmax_t;
@@ -949,7 +989,7 @@ struct stack_rss : public base<stack_rss>
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return units::kilobyte; }
-    static std::string label() { return "rss_stack"; }
+    static std::string label() { return "stack_rss"; }
     static std::string descript() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
@@ -981,7 +1021,8 @@ struct record_max<stack_rss> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-
+// an integral value of the amount of unshared memory residing in the data segment of
+// a process
 struct data_rss : public base<data_rss>
 {
     using value_type = intmax_t;
@@ -993,7 +1034,7 @@ struct data_rss : public base<data_rss>
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return units::kilobyte; }
-    static std::string label() { return "rss_data"; }
+    static std::string label() { return "data_rss"; }
     static std::string descript() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
@@ -1025,7 +1066,7 @@ struct record_max<data_rss> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-
+// the number of times a process was swapped out of main memory.
 struct num_swap : public base<num_swap>
 {
     using value_type = intmax_t;
@@ -1060,7 +1101,7 @@ struct num_swap : public base<num_swap>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// the number of times the file system had to perform input.
 struct num_io_in : public base<num_io_in>
 {
     using value_type = intmax_t;
@@ -1095,7 +1136,7 @@ struct num_io_in : public base<num_io_in>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// the number of times the file system had to perform output.
 struct num_io_out : public base<num_io_out>
 {
     using value_type = intmax_t;
@@ -1130,7 +1171,8 @@ struct num_io_out : public base<num_io_out>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// the number of page faults serviced without any I/O activity; here I/O activity is
+// avoided by reclaiming a page frame from the list of pages awaiting reallocation.
 struct num_minor_page_faults : public base<num_minor_page_faults>
 {
     using value_type = intmax_t;
@@ -1141,7 +1183,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
     static const std::ios_base::fmtflags format_flags = {};
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return "minor_page_faults"; }
+    static std::string label() { return "minor_page_flts"; }
     static std::string descript() { return "page reclaims"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_minor_page_faults(); }
@@ -1165,7 +1207,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
 };
 
 //--------------------------------------------------------------------------------------//
-
+// the number of page faults serviced that required I/O activity.
 struct num_major_page_faults : public base<num_major_page_faults>
 {
     using value_type = intmax_t;
@@ -1176,10 +1218,189 @@ struct num_major_page_faults : public base<num_major_page_faults>
     static const std::ios_base::fmtflags format_flags = {};
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return "major_page_faults"; }
+    static std::string label() { return "major_page_flts"; }
     static std::string descript() { return "page faults"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_major_page_faults(); }
+    value_type         compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val;
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// the number of IPC messages sent.
+struct num_msg_sent : public base<num_msg_sent>
+{
+    using value_type = intmax_t;
+    using base_type  = base<num_msg_sent>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 3;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static intmax_t    unit() { return 1; }
+    static std::string label() { return "num_msg_sent"; }
+    static std::string descript() { return "messages sent"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return get_num_messages_sent(); }
+    value_type         compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val;
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// the number of IPC messages received.
+struct num_msg_recv : public base<num_msg_recv>
+{
+    using value_type = intmax_t;
+    using base_type  = base<num_msg_recv>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 3;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static intmax_t    unit() { return 1; }
+    static std::string label() { return "num_msg_recv"; }
+    static std::string descript() { return "messages received"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return get_num_messages_received(); }
+    value_type         compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val;
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// the number of signals delivered
+struct num_signals : public base<num_signals>
+{
+    using value_type = intmax_t;
+    using base_type  = base<num_signals>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 3;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static intmax_t    unit() { return 1; }
+    static std::string label() { return "num_signals"; }
+    static std::string descript() { return "signals delievered"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return get_num_signals(); }
+    value_type         compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val;
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// the number of times a context switch resulted due to a process voluntarily giving up
+// the processor before its time slice was completed (usually to await availability of a
+// resource).
+struct voluntary_context_switch : public base<voluntary_context_switch>
+{
+    using value_type = intmax_t;
+    using base_type  = base<voluntary_context_switch>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 3;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static intmax_t    unit() { return 1; }
+    static std::string label() { return "vol_cxt_swch"; }
+    static std::string descript() { return "voluntary context switches"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return get_num_voluntary_context_switch(); }
+    value_type         compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val;
+    }
+    void start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp = record();
+        accum += (tmp - value);
+        value = std::move(tmp);
+        set_stopped();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// the number of times a context switch resulted due to a process voluntarily giving up
+// the processor before its time slice was completed (usually to await availability of a
+// resource).
+struct priority_context_switch : public base<priority_context_switch>
+{
+    using value_type = intmax_t;
+    using base_type  = base<priority_context_switch>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 3;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static intmax_t    unit() { return 1; }
+    static std::string label() { return "prio_cxt_swch"; }
+    static std::string descript() { return "priority context switches"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return get_num_priority_context_switch(); }
     value_type         compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -1265,7 +1486,7 @@ struct papi_event
 
     static intmax_t unit() { return 1; }
     // leave these empty
-    static std::string label() { return ""; }
+    static std::string label() { return "papi"; }
     static std::string descript() { return ""; }
     static std::string display_unit() { return ""; }
     // use these instead
@@ -1410,11 +1631,12 @@ class component_tuple;
 //--------------------------------------------------------------------------------------//
 //  all configurations
 //
-using usage_components_t =
-    component_tuple<component::peak_rss, component::current_rss, component::stack_rss,
-                    component::data_rss, component::num_swap, component::num_io_in,
-                    component::num_io_out, component::num_minor_page_faults,
-                    component::num_major_page_faults>;
+using usage_components_t = component_tuple<
+    component::current_rss, component::peak_rss, component::stack_rss,
+    component::data_rss, component::num_swap, component::num_io_in, component::num_io_out,
+    component::num_minor_page_faults, component::num_major_page_faults,
+    component::num_msg_sent, component::num_msg_recv, component::num_signals,
+    component::voluntary_context_switch, component::priority_context_switch>;
 
 using timing_components_t =
     component_tuple<component::real_clock, component::system_clock, component::user_clock,
@@ -1427,7 +1649,9 @@ using timing_components_t =
 //  standard configurations
 //
 using standard_usage_components_t =
-    component_tuple<component::peak_rss, component::current_rss>;
+    component_tuple<component::current_rss, component::peak_rss, component::num_io_in,
+                    component::num_io_out, component::num_minor_page_faults,
+                    component::num_major_page_faults, component::priority_context_switch>;
 
 using standard_timing_components_t =
     component_tuple<component::real_clock, component::thread_cpu_clock,

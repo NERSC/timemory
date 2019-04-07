@@ -201,15 +201,20 @@ tim::env::parse()
 
     if(!(memory_width() < 0))
     {
-        peak_rss::get_width()              = memory_width();
-        current_rss::get_width()           = memory_width();
-        stack_rss::get_width()             = memory_width();
-        data_rss::get_width()              = memory_width();
-        num_swap::get_width()              = memory_width();
-        num_io_in::get_width()             = memory_width();
-        num_io_out::get_width()            = memory_width();
-        num_major_page_faults::get_width() = memory_width();
-        num_minor_page_faults::get_width() = memory_width();
+        peak_rss::get_width()                 = memory_width();
+        current_rss::get_width()              = memory_width();
+        stack_rss::get_width()                = memory_width();
+        data_rss::get_width()                 = memory_width();
+        num_swap::get_width()                 = memory_width();
+        num_io_in::get_width()                = memory_width();
+        num_io_out::get_width()               = memory_width();
+        num_major_page_faults::get_width()    = memory_width();
+        num_minor_page_faults::get_width()    = memory_width();
+        num_msg_sent::get_width()             = memory_width();
+        num_msg_recv::get_width()             = memory_width();
+        num_signals::get_width()              = memory_width();
+        voluntary_context_switch::get_width() = memory_width();
+        priority_context_switch::get_width()  = memory_width();
     }
 
     if(!(timing_width() < 0))
@@ -229,15 +234,20 @@ tim::env::parse()
 
     if(memory_scientific())
     {
-        peak_rss::get_format_flags()              = std::ios_base::scientific;
-        current_rss::get_format_flags()           = std::ios_base::scientific;
-        stack_rss::get_format_flags()             = std::ios_base::scientific;
-        data_rss::get_format_flags()              = std::ios_base::scientific;
-        num_swap::get_format_flags()              = std::ios_base::scientific;
-        num_io_in::get_format_flags()             = std::ios_base::scientific;
-        num_io_out::get_format_flags()            = std::ios_base::scientific;
-        num_major_page_faults::get_format_flags() = std::ios_base::scientific;
-        num_minor_page_faults::get_format_flags() = std::ios_base::scientific;
+        peak_rss::get_format_flags()                 = std::ios_base::scientific;
+        current_rss::get_format_flags()              = std::ios_base::scientific;
+        stack_rss::get_format_flags()                = std::ios_base::scientific;
+        data_rss::get_format_flags()                 = std::ios_base::scientific;
+        num_swap::get_format_flags()                 = std::ios_base::scientific;
+        num_io_in::get_format_flags()                = std::ios_base::scientific;
+        num_io_out::get_format_flags()               = std::ios_base::scientific;
+        num_major_page_faults::get_format_flags()    = std::ios_base::scientific;
+        num_minor_page_faults::get_format_flags()    = std::ios_base::scientific;
+        num_msg_sent::get_format_flags()             = std::ios_base::scientific;
+        num_msg_recv::get_format_flags()             = std::ios_base::scientific;
+        num_signals::get_format_flags()              = std::ios_base::scientific;
+        voluntary_context_switch::get_format_flags() = std::ios_base::scientific;
+        priority_context_switch::get_format_flags()  = std::ios_base::scientific;
     }
 
     if(timing_scientific())
@@ -257,15 +267,20 @@ tim::env::parse()
 
     if(!(memory_precision() < 0))
     {
-        peak_rss::get_precision()              = memory_precision();
-        current_rss::get_precision()           = memory_precision();
-        stack_rss::get_precision()             = memory_precision();
-        data_rss::get_precision()              = memory_precision();
-        num_swap::get_precision()              = memory_precision();
-        num_io_in::get_precision()             = memory_precision();
-        num_io_out::get_precision()            = memory_precision();
-        num_major_page_faults::get_precision() = memory_precision();
-        num_minor_page_faults::get_precision() = memory_precision();
+        peak_rss::get_precision()                 = memory_precision();
+        current_rss::get_precision()              = memory_precision();
+        stack_rss::get_precision()                = memory_precision();
+        data_rss::get_precision()                 = memory_precision();
+        num_swap::get_precision()                 = memory_precision();
+        num_io_in::get_precision()                = memory_precision();
+        num_io_out::get_precision()               = memory_precision();
+        num_major_page_faults::get_precision()    = memory_precision();
+        num_minor_page_faults::get_precision()    = memory_precision();
+        num_msg_sent::get_precision()             = memory_precision();
+        num_msg_recv::get_precision()             = memory_precision();
+        num_signals::get_precision()              = memory_precision();
+        voluntary_context_switch::get_precision() = memory_precision();
+        priority_context_switch::get_precision()  = memory_precision();
     }
 
     if(!(timing_precision() < 0))

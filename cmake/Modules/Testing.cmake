@@ -155,35 +155,35 @@ endif(NOT TIMEMORY_DASHBOARD_MODE AND TIMEMORY_BUILD_TESTING)
 #
 if(TIMEMORY_USE_PYTHON_BINDING AND TIMEMORY_BUILD_TESTING)
 
-    add_test(NAME python_simple
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
-            --enable-dart --write-ctest-notes
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(python_simple PROPERTIES
-        LABELS "python;unit_test" TIMEOUT 7200)
+    #add_test(NAME python_simple
+    #    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/simple_test.py
+    #        --enable-dart --write-ctest-notes
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(python_simple PROPERTIES
+    #    LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME python_unit_test
-        # we don't enable dart because this always print
-        # (unittest will repeat DartMeasurementFiles)
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/timemory_test.py
-            --write-ctest-notes
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(python_unit_test PROPERTIES
-        LABELS "python;unit_test" TIMEOUT 7200)
+    #add_test(NAME python_unit_test
+    #    # we don't enable dart because this always print
+    #    # (unittest will repeat DartMeasurementFiles)
+    #    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/timemory_test.py
+    #        --write-ctest-notes
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(python_unit_test PROPERTIES
+    #    LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME python_nested
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/nested_test.py
-            --enable-dart --write-ctest-notes
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(python_nested PROPERTIES
-        LABELS "python;unit_test" TIMEOUT 7200)
+    #add_test(NAME python_nested
+    #    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/nested_test.py
+    #        --enable-dart --write-ctest-notes
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(python_nested PROPERTIES
+    #    LABELS "python;unit_test" TIMEOUT 7200)
 
-    add_test(NAME python_array
-        COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/array_test.py
-            --enable-dart --write-ctest-notes
-        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    set_tests_properties(python_array PROPERTIES
-        LABELS "python;unit_test" TIMEOUT 7200)
+    #add_test(NAME python_array
+    #    COMMAND ${PYTHON_EXECUTABLE} ${PROJECT_BINARY_DIR}/array_test.py
+    #        --enable-dart --write-ctest-notes
+    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    #set_tests_properties(python_array PROPERTIES
+    #    LABELS "python;unit_test" TIMEOUT 7200)
 
 endif()
 
@@ -222,12 +222,12 @@ if(TIMEMORY_BUILD_EXAMPLES AND TIMEMORY_BUILD_TESTING)
     #----------------------------------------------#
     #   CXX Overhead
     #
-    #set(TEST_NAME test_cxx_overhead)
-    #add_test(NAME ${TEST_NAME}
-    #    COMMAND $<TARGET_FILE:${TEST_NAME}>
-    #    WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
-    #set_tests_properties(${TEST_NAME} PROPERTIES
-    #    LABELS "cxx;unit_test" TIMEOUT 7200)
+    set(TEST_NAME test_cxx_overhead)
+    add_test(NAME ${TEST_NAME}
+        COMMAND $<TARGET_FILE:${TEST_NAME}>
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR})
+    set_tests_properties(${TEST_NAME} PROPERTIES
+        LABELS "cxx;unit_test" TIMEOUT 7200)
 
     #----------------------------------------------#
     #   CXX Total
