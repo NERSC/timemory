@@ -46,7 +46,7 @@
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_event<0, PAPI_L1_TCM, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using papi_tuple_t = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
                                      peak_rss, current_rss, papi_tuple_t>;

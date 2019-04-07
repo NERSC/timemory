@@ -38,6 +38,10 @@
 using namespace tim::component;
 using auto_tuple_t  = tim::auto_tuple<real_clock>;
 using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
+using papi_tuple_t = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
+using global_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
+                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
+                                     peak_rss, current_rss, papi_tuple_t>;
 
 static intmax_t nlaps = 0;
 //======================================================================================//
@@ -103,6 +107,7 @@ main(int argc, char** argv)
 
     tim::consume_parameters(tim::manager::instance());
 
+    TIMEMORY_AUTO_TUPLE(global_tuple_t, argv[0]);
     std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     // run without timing first so overhead is not started yet
