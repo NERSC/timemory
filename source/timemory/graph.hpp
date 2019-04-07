@@ -1635,12 +1635,12 @@ graph<T, AllocatorT>::insert_after(iter position, T&& x)
 template <typename T, typename AllocatorT>
 template <class iter>
 iter
-graph<T, AllocatorT>::insert_subgraph(iter position, const iterator_base& subgraph)
+graph<T, AllocatorT>::insert_subgraph(iter position, const iterator_base& _subgraph)
 {
     // insert dummy
     iter it = insert(position, value_type());
     // replace dummy with subgraph
-    return replace(it, subgraph);
+    return replace(it, _subgraph);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1648,12 +1648,12 @@ graph<T, AllocatorT>::insert_subgraph(iter position, const iterator_base& subgra
 template <typename T, typename AllocatorT>
 template <class iter>
 iter
-graph<T, AllocatorT>::insert_subgraph_after(iter position, const iterator_base& subgraph)
+graph<T, AllocatorT>::insert_subgraph_after(iter position, const iterator_base& _subgraph)
 {
     // insert dummy
     iter it = insert_after(position, value_type());
     // replace dummy with subgraph
-    return replace(it, subgraph);
+    return replace(it, _subgraph);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1850,18 +1850,18 @@ graph<T, AllocatorT>::flatten(iter position)
 template <typename T, typename AllocatorT>
 template <typename iter>
 iter
-graph<T, AllocatorT>::reparent(iter position, sibling_iterator begin,
-                               sibling_iterator end)
+graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
+                               sibling_iterator _end)
 {
-    graph_node* first = begin.node;
+    graph_node* first = _begin.node;
     graph_node* last  = first;
 
     assert(first != position.node);
 
-    if(begin == end)
-        return begin;
+    if(_begin == _end)
+        return _begin;
     // determine last node
-    while((++begin) != end)
+    while((++_begin) != _end)
     {
         last = last->next_sibling;
     }
@@ -2770,12 +2770,12 @@ graph<T, AllocatorT>::swap(iterator one, iterator two)
 
 template <typename T, typename AllocatorT>
 bool
-graph<T, AllocatorT>::is_in_subgraph(const iterator_base& it, const iterator_base& begin,
-                                     const iterator_base& end) const
+graph<T, AllocatorT>::is_in_subgraph(const iterator_base& it, const iterator_base& _begin,
+                                     const iterator_base& _end) const
 {
     // FIXME: this should be optimised.
-    pre_order_iterator tmp = begin;
-    while(tmp != end)
+    pre_order_iterator tmp = _begin;
+    while(tmp != _end)
     {
         if(tmp == it)
             return true;

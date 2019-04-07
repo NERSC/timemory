@@ -43,6 +43,7 @@
 #include "timemory/apply.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
