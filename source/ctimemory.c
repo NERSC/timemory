@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2018, The Regents of the University of California,
+//  Copyright (c) 2019, The Regents of the University of California,
 //  through Lawrence Berkeley National Laboratory (subject to receipt of any
 //  required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -24,16 +24,6 @@
 
 #include "timemory/ctimemory.h"
 #include "assert.h"
-
-#if !defined(pfunc)
-#    if defined(DEBUG)
-#        define pfunc                                                                    \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
-                   __LINE__)
-#    else
-#        define pfunc
-#    endif
-#endif
 
 //======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)

@@ -1,6 +1,6 @@
 //  MIT License
 //
-//  Copyright (c) 2018, The Regents of the University of California,
+//  Copyright (c) 2019, The Regents of the University of California,
 // through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
@@ -22,6 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
+#include "timemory/auto_tuple.hpp"
+#include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/serializer.hpp"
@@ -29,6 +31,10 @@
 #include "timemory/singleton.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility.hpp"
+
+using namespace tim::component;
+using auto_timer_t =
+    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
 //======================================================================================//
 // These two functions are guaranteed to be called at load and
@@ -76,27 +82,27 @@ cxx_timemory_enabled(void)
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int /*lineno*/,
-                               const char* /*lang_tag*/, int /*report*/)
+cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* lang_tag,
+                               int report)
 {
+    using namespace tim::component;
     std::string cxx_timer_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    // return (void*) new auto_timer_t(cxx_timer_tag.c_str(), lineno, lang_tag,
-    //                                (report > 0) ? true : false);
+    return (void*) new auto_timer_t(cxx_timer_tag.c_str(), lineno, lang_tag,
+                                    (report > 0) ? true : false);
     return nullptr;
 }
 
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_delete_auto_timer(void* /*ctimer*/)
+cxx_timemory_delete_auto_timer(void* ctimer)
 {
-    // auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
-    // delete cxxtimer;
-    // ctimer = NULL;
-    // return ctimer;
-    return nullptr;
+    auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
+    delete cxxtimer;
+    ctimer = NULL;
+    return ctimer;
 }
 
 //======================================================================================//
@@ -152,13 +158,5 @@ cxx_timemory_print(void)
 {
     tim::manager::master_instance()->report(std::cout, true);
 }
-
-//======================================================================================//
-//
-//                      Serialization
-//
-//======================================================================================//
-
-CEREAL_CLASS_VERSION(tim::manager, TIMEMORY_TIMER_VERSION)
 
 //======================================================================================//
