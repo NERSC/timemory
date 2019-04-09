@@ -60,19 +60,18 @@ template <typename _Tp>
 struct tim_api data_tuple
 : public std::tuple<uintmax_t, uintmax_t, uintmax_t, std::string, std::shared_ptr<_Tp>>
 {
-    typedef data_tuple<_Tp>            this_type;
-    typedef std::string                string_t;
-    typedef _Tp                        data_type;
-    typedef std::shared_ptr<data_type> pointer_type;
-    typedef std::tuple<uintmax_t, uintmax_t, uintmax_t, std::string, std::shared_ptr<_Tp>>
-        base_type;
+    using this_type = data_tuple<_Tp>;
+    using string_t  = std::string;
+    using data_type = _Tp;
+    using pointer   = std::shared_ptr<data_type>;
+    using base_type = std::tuple<uintmax_t, uintmax_t, uintmax_t, string_t, pointer>;
 
     //------------------------------------------------------------------------//
     //      constructors
     //
     // default and full initialization
     data_tuple(uintmax_t _a = 0, uintmax_t _b = 0, uintmax_t _c = 0, string_t _d = "",
-               pointer_type _e = pointer_type(nullptr))
+               pointer _e = pointer(nullptr))
     : base_type(_a, _b, _c, _d, _e)
     {
     }
@@ -206,6 +205,7 @@ public:
     typedef typename graph_t::const_iterator const_iterator;
 
 public:
+    // explicit data_storage(const tuple_t& _head) {}
     explicit data_storage(int32_t instance_count)
     {
         std::stringstream ss;
@@ -213,8 +213,7 @@ public:
         // m_missing.format()->prefix(ss.str());
     }
 
-    ~data_storage() = default;
-
+    ~data_storage()                   = default;
     data_storage(const data_storage&) = default;
     data_storage(data_storage&&)      = default;
     data_storage& operator=(const data_storage&) = default;

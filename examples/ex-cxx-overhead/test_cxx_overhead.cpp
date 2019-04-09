@@ -94,7 +94,8 @@ run(intmax_t n, bool with_timing, intmax_t cutoff)
 int
 main(int argc, char** argv)
 {
-    setenv("TIMEMORY_TIMING_SCIENTIFIC", "1", 1);
+    tim::env::timing_scientific() = true;
+    tim::env::parse();
 
     // default calc: fibonacci(40)
     int nfib = 43;

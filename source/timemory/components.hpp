@@ -35,11 +35,14 @@
 #include <string>
 
 #include "timemory/clocks.hpp"
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/papi.hpp"
 #include "timemory/rusage.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/singleton.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility.hpp"
 
 //======================================================================================//
 
@@ -76,16 +79,18 @@ struct impl_available : std::true_type
 template <typename _Tp, typename value_type = intmax_t>
 struct base
 {
-    using Type      = _Tp;
-    using this_type = base<_Tp, value_type>;
+    using Type       = _Tp;
+    using this_type  = base<_Tp, value_type>;
+    using graph_type = graph_object<Type>;
 
     bool       is_running   = false;
     bool       is_transient = false;
     value_type value        = value_type();
     value_type accum        = value_type();
+    intmax_t   hashid       = 0;
 
-    base()                 = default;
-    virtual ~base()        = default;
+    base() = default;
+    virtual ~base() {}
     base(const this_type&) = default;
     base(this_type&&)      = default;
     base& operator=(const this_type&) = default;
@@ -98,6 +103,15 @@ struct base
     {
         value = Type::record();
         return value;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset the values
+    //
+    void insert_node(intmax_t _hashid)
+    {
+        hashid = _hashid;
+        graph_type::instance()->insert(hashid, static_cast<Type*>(this));
     }
 
     //----------------------------------------------------------------------------------//

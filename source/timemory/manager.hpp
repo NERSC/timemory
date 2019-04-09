@@ -44,11 +44,14 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include <atomic>
 #include <cstdint>
 #include <deque>
 #include <mutex>
+#include <set>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <unordered_map>
 
 //--------------------------------------------------------------------------------------//

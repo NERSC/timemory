@@ -61,7 +61,9 @@
 #include <mutex>
 #include <thread>
 
+#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/singleton.hpp"
 
 #if defined(_UNIX)
 #    include <errno.h>
@@ -639,6 +641,137 @@ hashed_object<HashedType>::hash()
     static thread_local intmax_t _instance = master_hash();
     return _instance;
 }
+
+//======================================================================================//
+//
+//
+//
+//======================================================================================//
+
+template <typename ObjectType>
+class graph_object
+{
+public:
+    struct graph_node
+    {
+        intmax_t    id;
+        ObjectType* ptr;
+
+        graph_node(intmax_t _id, ObjectType* _ptr)
+        : id(_id)
+        , ptr(_ptr)
+        {
+        }
+
+        bool operator==(const graph_node& rhs) const { return id == rhs.id; }
+        bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
+    };
+
+    using this_type      = graph_object<ObjectType>;
+    using void_type      = graph_object<void>;
+    using graph_t        = tim::graph<graph_node>;
+    using iterator       = typename graph_t::iterator;
+    using const_iterator = typename graph_t::const_iterator;
+    using pointer_t      = std::unique_ptr<this_type>;
+    using singleton_t    = singleton<this_type>;
+
+    struct graph_data
+    {
+        graph_t  m_graph;
+        iterator m_current = nullptr;
+        iterator m_head    = nullptr;
+
+        graph_t&  graph() { return m_graph; }
+        iterator& current() { return m_current; }
+        iterator& head() { return m_head; }
+
+        iterator       begin() { return m_graph.begin(); }
+        iterator       end() { return m_graph.end(); }
+        const_iterator begin() const { return m_graph.cbegin(); }
+        const_iterator end() const { return m_graph.cend(); }
+        const_iterator cbegin() const { return m_graph.cbegin(); }
+        const_iterator cend() const { return m_graph.cend(); }
+
+        void pop_graph() { m_current = graph_t::parent(m_current); }
+    };
+
+public:
+    // return number of existing objects:
+    // default constructor
+    graph_object()
+    {
+        if(!instance().get())
+        {
+            instance().reset(this);
+            if(!master_instance())
+            {
+                master_instance() = this;
+            }
+        }
+    }
+    ~graph_object()
+    {
+        // if(instance())
+        //    instance()->current() = graph_t::parent(instance()->current());
+    }
+
+    graph_object(const this_type&) = default;
+    graph_object(this_type&&)      = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&& rhs) = default;
+
+    static graph_object*& master_instance()
+    {
+        static graph_object* _instance = nullptr;
+        return _instance;
+    }
+
+    static pointer_t& instance()
+    {
+        static thread_local pointer_t _instance = pointer_t(nullptr);
+        return _instance;
+    }
+
+    void insert(intmax_t hash_id, ObjectType* obj)
+    {
+        graph_node node(hash_id, obj);
+        if(!m_data.head())
+        {
+            if(this == master_instance())
+            {
+                m_data.head()    = m_data.graph().set_head(node);
+                m_data.current() = m_data.head();
+            }
+            else
+            {
+                m_data.head()    = m_data.graph().set_head(*master_instance()->current());
+                m_data.current() = m_data.head();
+            }
+        }
+        else
+        {
+            using sibling_itr = typename graph_t::sibling_iterator;
+            for(sibling_itr itr = m_data.begin(); itr != m_data.end(); ++itr)
+            {
+                if(node == *itr)
+                    return;
+            }
+            m_data.current() = instance()->graph().append_child(current(), node);
+        }
+    }
+
+protected:
+    graph_data m_data;
+
+    iterator& current() { return m_data.current(); }
+    iterator& head() { return m_data.head(); }
+    graph_t&  graph() { return m_data.graph(); }
+
+private:
+    // number of existing objects
+};
+
+//--------------------------------------------------------------------------------------//
 
 //--------------------------------------------------------------------------------------//
 
