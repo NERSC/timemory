@@ -25,7 +25,8 @@ add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)
 add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF)
 add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING})
-add_option(TIMEMORY_BUILD_C_LIBRARY "Build the C compatible library" ON)
+add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON)
+add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON)
 
 # Features
 add_feature(CMAKE_C_STANDARD "C language standard")
@@ -40,7 +41,6 @@ add_feature(${PROJECT_NAME}_DEFINITIONS "${PROJECT_NAME} compile definitions")
 # TiMemory options
 add_option(TIMEMORY_USE_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
 add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
-add_option(TIMEMORY_USE_PYTHON_BINDING "Build Python binds for ${PROJECT_NAME}" OFF)
 add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
 add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_FILTERING "Enable filtering out types not implemented" ON)
@@ -56,8 +56,8 @@ add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
 add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
 if(TIMEMORY_DOXYGEN_DOCS)
-    add_option(TIMEMORY_BUILD_DOXYGEN_DOCS "Include `doc` make target in all" OFF NO_FEATURE)
-    mark_as_advanced(TIMEMORY_BUILD_DOXYGEN_DOCS)
+    add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF NO_FEATURE)
+    mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
 endif()
 
 set(CTEST_SITE "${HOSTNAME}" CACHE STRING "CDash submission site")
@@ -77,7 +77,7 @@ if(TIMEMORY_BUILD_TESTING)
     endif()
 endif()
 
-if(TIMEMORY_USE_PYTHON_BINDING)
+if(TIMEMORY_BUILD_PYTHON)
     set(PYBIND11_INSTALL OFF CACHE BOOL "Don't install Pybind11")
 endif()
 

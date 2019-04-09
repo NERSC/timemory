@@ -6,11 +6,11 @@ include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 #------------------------------------------------------------------------------#
 #   Settings
 #------------------------------------------------------------------------------#
-set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_USE_PYTHON_BINDING@)
+set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_BUILD_PYTHON@)
 if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif(NOT DEFINED @PROJECT_NAME@_DIR)
-set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C_LIBRARY@)
+set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -26,7 +26,7 @@ if(_TIMEMORY_INSTALL_TREE)
     set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
     get_filename_component(@PROJECT_NAME@_ROOT_DIR ${@PROJECT_NAME@_INCLUDE_DIR} PATH)
 
-    if(@TIMEMORY_USE_PYTHON_BINDING@)
+    if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PACKAGE_PYTHON_INSTALL_DIR@")
         if(NOT EXISTS ${@PROJECT_NAME@_PYTHON_DIR})
             find_package(PythonInterp QUIET)

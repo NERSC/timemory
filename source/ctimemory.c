@@ -25,16 +25,6 @@
 #include "timemory/ctimemory.h"
 #include "assert.h"
 
-#if !defined(pfunc)
-#    if defined(DEBUG)
-#        define pfunc                                                                    \
-            printf("TiMemory -- calling %s@\"%s\":%i...\n", __FUNCTION__, __FILE__,      \
-                   __LINE__)
-#    else
-#        define pfunc
-#    endif
-#endif
-
 //======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 

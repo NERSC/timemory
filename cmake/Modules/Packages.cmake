@@ -113,7 +113,7 @@ endif()
 #
 ################################################################################
 
-if(TIMEMORY_USE_PYTHON_BINDING)
+if(TIMEMORY_BUILD_PYTHON)
 
     # checkout PyBind11 if not checked out
     checkout_git_submodule(RECURSIVE
@@ -187,11 +187,11 @@ if(TIMEMORY_USE_PYTHON_BINDING)
     set(TIMEMORY_CONFIG_PYTHONDIR
         ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
 
-else(TIMEMORY_USE_PYTHON_BINDING)
+else()
 
     set(TIMEMORY_CONFIG_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
 
-endif(TIMEMORY_USE_PYTHON_BINDING)
+endif()
 
 
 ################################################################################

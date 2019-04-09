@@ -184,7 +184,7 @@ else()
     add_library(${LIBNAME}-cxx-library-static ALIAS ${LIBNAME}-cxx-library)
 endif()
 
-if(TIMEMORY_BUILD_C_LIBRARY)
+if(TIMEMORY_BUILD_C)
     build_library(
         PIC
         TYPE                ${_TYPE}
@@ -232,7 +232,7 @@ add_subdirectory(tools)
 #------------------------------------------------------------------------------#
 # Python bindings
 #
-if(TIMEMORY_USE_PYTHON_BINDING)
+if(TIMEMORY_BUILD_PYTHON)
 
     add_subdirectory(python)
 
@@ -243,7 +243,7 @@ if(TIMEMORY_USE_PYTHON_BINDING)
             COMPONENT python)
     endif(BUILD_SHARED_LIBS)
 
-endif(TIMEMORY_USE_PYTHON_BINDING)
+endif()
 
 
 #------------------------------------------------------------------------------#
