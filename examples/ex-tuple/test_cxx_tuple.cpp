@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <timemory/auto_macros.hpp>
 #include <timemory/auto_tuple.hpp>
 #include <timemory/component_tuple.hpp>
 #include <timemory/environment.hpp>
@@ -87,10 +88,10 @@ int
 main(int argc, char** argv)
 {
     tim::env::parse();
-    tim::standard_timing_components_t  timing("Tests runtime");
+    auto* timing = new tim::standard_timing_components_t(true, "Tests runtime");
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 
-    timing.start();
+    timing->start();
     m.start();
 
     CONFIGURE_TEST_SELECTOR(4);
@@ -112,12 +113,13 @@ main(int argc, char** argv)
     }
 
     m.stop();
-    timing.stop();
+    timing->stop();
 
     std::cout << "\n" << m << std::endl;
-    std::cout << "\n" << timing << std::endl;
+    std::cout << "\n" << *timing << std::endl;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
+    delete timing;
 
     exit(num_fail);
 }
@@ -183,11 +185,10 @@ test_1_usage()
     print_info(__FUNCTION__);
     TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
 
-    typedef tim::component_tuple<
+    using measurement_t = tim::component_tuple<
         peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
         num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv,
-        num_signals, voluntary_context_switch, priority_context_switch, papi_tuple_t>
-        measurement_t;
+        num_signals, voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
     measurement_t _use_beg;
     measurement_t _use_delta;
@@ -219,11 +220,11 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    typedef tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                                 cpu_util, thread_cpu_clock, thread_cpu_util,
-                                 process_cpu_clock, process_cpu_util, monotonic_clock,
-                                 monotonic_raw_clock, papi_tuple_t>
-        measurement_t;
+    using measurement_t =
+        tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+                             thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                             process_cpu_util, monotonic_clock, monotonic_raw_clock,
+                             papi_tuple_t>;
     using pair_t = std::pair<std::string, measurement_t>;
 
     static std::mutex    mtx;
@@ -317,19 +318,26 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    peak_rss prss;
-    // just record the peak rss
-    prss.measure();
-    std::cout << "  Current peak rss: " << prss << std::endl;
+    tim::component_tuple<peak_rss> prss(true, __FUNCTION__);
+    {
+        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
+        // just record the peak rss
+        prss.measure();
+        std::cout << "  Current peak rss: " << prss << std::endl;
+    }
 
-    prss.start();
-    // do something, where you want delta peak rss
-    auto                  n = 10000000;
-    std::vector<intmax_t> v(n, 10);
-    long                  nfib = random_entry(v);
-    fibonacci(nfib);
-    prss.stop();
-    std::cout << "Change in peak rss: " << prss << std::endl;
+    {
+        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", current_rss, peak_rss);
+        prss.start();
+        // do something, where you want delta peak rss
+        auto                  n = 10000000;
+        std::vector<intmax_t> v(n, 10);
+        long                  nfib = random_entry(v);
+        fibonacci(nfib);
+        prss.stop();
+        std::cout << "Change in peak rss: " << prss << std::endl;
+    }
+
     // prss.reset();
     prss.measure();
     std::cout << "  Current peak rss: " << prss << std::endl;

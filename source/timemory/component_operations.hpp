@@ -37,6 +37,48 @@ namespace component
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct set_prefix
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = base<_Tp, value_type>;
+    using string_t   = std::string;
+
+    set_prefix(base_type& obj, const bool& exists, const string_t& _prefix)
+    {
+        if(!exists)
+            obj.set_prefix(_prefix);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct insert_node
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = base<_Tp, value_type>;
+
+    insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
+                const intmax_t& id)
+    {
+        obj.insert_node(exists[_N], id);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct pop_node
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = base<_Tp, value_type>;
+
+    pop_node(base_type& obj) { obj.pop_node(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct record
 {
     using value_type = typename _Tp::value_type;
@@ -131,27 +173,6 @@ struct conditional_stop
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
-struct print
-{
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
-
-    print(std::size_t _N, std::size_t _Ntot, base_type& obj, std::ostream& os,
-          bool endline)
-    {
-        std::stringstream ss;
-        ss << obj;
-        if(_N + 1 < _Ntot)
-            ss << ", ";
-        else if(_N + 1 == _Ntot && endline)
-            ss << std::endl;
-        os << ss.str();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
 struct minus
 {
     using value_type = typename _Tp::value_type;
@@ -206,6 +227,40 @@ struct divide
 
     divide(base_type& obj, const intmax_t& rhs) { obj /= rhs; }
     divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct print
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = base<Type, value_type>;
+
+    print(std::size_t _N, std::size_t _Ntot, base_type& obj, std::ostream& os,
+          bool endline)
+    {
+        std::stringstream ss;
+        ss << obj;
+        if(_N + 1 < _Ntot)
+            ss << ", ";
+        else if(_N + 1 == _Ntot && endline)
+            ss << std::endl;
+        os << ss.str();
+    }
+
+    print(const Type& obj, std::ostream& os, const string_t& _prefix, intmax_t _laps,
+          intmax_t _output_width, bool endline)
+    {
+        std::stringstream ss_prefix;
+        std::stringstream ss;
+        ss_prefix << std::setw(_output_width) << std::left << _prefix << " : ";
+        ss << ss_prefix.str() << static_cast<base_type>(obj) << ", " << _laps << " laps";
+        if(endline)
+            ss << std::endl;
+        os << ss.str();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

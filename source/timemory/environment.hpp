@@ -78,12 +78,19 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, memory_width, -1)
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, memory_units, "")
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
 
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
+
 //--------------------------------------------------------------------------------------//
 
 string_t tolower(string_t);
 string_t toupper(string_t);
 void
 parse();
+inline string_t
+get_output_prefix();
+inline string_t
+compose_output_filename(const std::string& _tag, std::string _ext);
 
 //--------------------------------------------------------------------------------------//
 
@@ -127,6 +134,9 @@ tim::env::parse()
         return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0) ? true
                                                                              : false;
     };
+
+    output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
+    output_prefix() = tim::get_env("TIMEMORY_OUTPUT_PREFIX", output_prefix());
 
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
     env_num_threads() = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads());
@@ -335,6 +345,39 @@ tim::env::parse()
         thread_cpu_clock::get_unit()    = std::get<1>(_timing_unit);
         process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
     }
+}
+
+//--------------------------------------------------------------------------------------//
+
+#include <timemory/mpi.hpp>
+#include <timemory/utility.hpp>
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::env::string_t
+tim::env::get_output_prefix()
+{
+    auto dir = output_path();
+    auto ret = makedir(dir);
+    return (ret == 0) ? path_t(dir + string_t("/") + output_prefix())
+                      : path_t(string_t("./") + output_prefix());
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::env::string_t
+tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
+{
+    auto _prefix      = get_output_prefix();
+    auto _rank_suffix = (!mpi_is_initialized())
+                            ? std::string("")
+                            : (std::string("_") + std::to_string(mpi_rank()));
+    if(_ext.find(".") != 0)
+        _ext = std::string(".") + _ext;
+    auto plast = _prefix.length() - 1;
+    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+        _prefix += "_";
+    return path_t(_prefix + _tag + _rank_suffix + _ext);
 }
 
 //--------------------------------------------------------------------------------------//

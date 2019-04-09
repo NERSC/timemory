@@ -28,6 +28,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <list>
 #include <memory>
 #include <thread>
 
@@ -37,26 +38,20 @@ namespace tim
 {
 //======================================================================================//
 
-template <typename _Tp>
-void
-default_deleter(_Tp* ptr)
-{
-    delete ptr;
-}
-
-//======================================================================================//
-
-template <typename _Tp, typename Deleter = std::default_delete<_Tp>>
+template <typename Type,
+          typename Pointer = std::unique_ptr<Type, std::default_delete<Type>>>
 class singleton
 {
 public:
-    using Type           = _Tp;
-    using this_type      = singleton<Type, Deleter>;
-    using value_type     = Type;
-    using pointer        = Type*;
-    using reference      = Type&;
-    using thread_id_t    = std::thread::id;
-    using unique_pointer = std::unique_ptr<value_type, Deleter>;
+    using this_type     = singleton<Type, Pointer>;
+    using thread_id_t   = std::thread::id;
+    using mutex_t       = std::mutex;
+    using auto_lock_t   = std::unique_lock<mutex_t>;
+    using pointer       = Type*;
+    using list_t        = std::set<pointer>;
+    using smart_pointer = Pointer;
+    template <bool B, typename T = int>
+    using enable_if_t = typename std::enable_if<B, T>::type;
 
 public:
     // Constructor and Destructors
@@ -75,7 +70,8 @@ public:
     static pointer master_instance();
 
     // instance functions that do not initialize
-    static unique_pointer raw_instance() { return _local_instance(); }
+    static smart_pointer smart_instance() { return _local_instance(); }
+    static smart_pointer smart_master_instance() { return _master_instance(); }
 
     // for checking but not allocating
     static pointer instance_ptr() { return _local_instance().get(); }
@@ -87,8 +83,8 @@ public:
     // since we are overloading delete we overload new
     void* operator new(size_t)
     {
-        void* ptr = ::new this_type();
-        return ptr;
+        this_type* ptr = ::new this_type();
+        return static_cast<void*>(ptr);
     }
 
     // overload delete so that f_master_instance is guaranteed to be
@@ -101,17 +97,41 @@ public:
             f_master_instance = nullptr;
     }
 
+    static list_t children() { return f_children; }
+    static bool   is_master(pointer ptr) { return ptr == master_instance_ptr(); }
+
+    static void insert(pointer itr)
+    {
+        auto_lock_t l(f_mutex);
+        f_children.insert(itr);
+    }
+
+    static void remove(pointer itr)
+    {
+        auto_lock_t l(f_mutex);
+        for(auto litr = f_children.begin(); litr != f_children.end(); ++litr)
+        {
+            if(*litr == itr)
+            {
+                f_children.erase(litr);
+                break;
+            }
+        }
+    }
+
+    static mutex_t& get_mutex() { return f_mutex; }
+
 private:
     // Private functions
-    static unique_pointer& _local_instance()
+    static smart_pointer& _local_instance()
     {
-        tim_static_thread_local unique_pointer _instance = unique_pointer();
+        static thread_local smart_pointer _instance = smart_pointer();
         return _instance;
     }
 
-    static unique_pointer& _master_instance()
+    static smart_pointer& _master_instance()
     {
-        static unique_pointer _instance = unique_pointer();
+        static smart_pointer _instance = smart_pointer();
         return _instance;
     }
 
@@ -121,41 +141,53 @@ private:
 private:
     // Private variables
     static thread_id_t f_master_thread;
+    static mutex_t     f_mutex;
     static pointer     f_master_instance;
+    static list_t      f_children;
 };
 
 //======================================================================================//
 
-template <typename _Tp, typename Deleter>
-typename singleton<_Tp, Deleter>::thread_id_t singleton<_Tp, Deleter>::f_master_thread =
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::thread_id_t singleton<Type, Pointer>::f_master_thread =
     std::this_thread::get_id();
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-typename singleton<_Tp, Deleter>::pointer singleton<_Tp, Deleter>::f_master_instance =
-    singleton<_Tp, Deleter>::_master_instance().get();
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::pointer singleton<Type, Pointer>::f_master_instance =
+    singleton<Type, Pointer>::_master_instance().get();
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-singleton<_Tp, Deleter>::singleton()
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::mutex_t singleton<Type, Pointer>::f_mutex;
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::list_t singleton<Type, Pointer>::f_children;
+
+//--------------------------------------------------------------------------------------//
+
+template <typename Type, typename Pointer>
+singleton<Type, Pointer>::singleton()
 {
     initialize();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-singleton<_Tp, Deleter>::singleton(pointer ptr)
+template <typename Type, typename Pointer>
+singleton<Type, Pointer>::singleton(pointer ptr)
 {
     initialize(ptr);
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-singleton<_Tp, Deleter>::~singleton()
+template <typename Type, typename Pointer>
+singleton<Type, Pointer>::~singleton()
 {
     // should be called at __cxa_finalize so don't bother deleting
     delete f_master_instance;
@@ -164,22 +196,22 @@ singleton<_Tp, Deleter>::~singleton()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
+template <typename Type, typename Pointer>
 void
-singleton<_Tp, Deleter>::initialize()
+singleton<Type, Pointer>::initialize()
 {
     if(!f_master_instance)
     {
         f_master_thread   = std::this_thread::get_id();
-        f_master_instance = new _Tp();
+        f_master_instance = new Type();
     }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
+template <typename Type, typename Pointer>
 void
-singleton<_Tp, Deleter>::initialize(pointer ptr)
+singleton<Type, Pointer>::initialize(pointer ptr)
 {
     if(!f_master_instance)
     {
@@ -190,38 +222,45 @@ singleton<_Tp, Deleter>::initialize(pointer ptr)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
+template <typename Type, typename Pointer>
 void
-singleton<_Tp, Deleter>::destroy()
+singleton<Type, Pointer>::destroy()
 {
     //_local_instance().reset();
     if(std::this_thread::get_id() == f_master_thread)
         f_master_instance = nullptr;
+    else
+    {
+        remove(_local_instance().get());
+    }
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-typename singleton<_Tp, Deleter>::pointer
-singleton<_Tp, Deleter>::instance()
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::pointer
+singleton<Type, Pointer>::instance()
 {
     if(std::this_thread::get_id() == f_master_thread)
         return master_instance();
     else if(!_local_instance())
-        _local_instance().reset(new _Tp());
+    {
+        _local_instance().reset(new Type());
+        insert(_local_instance().get());
+    }
     return _local_instance().get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Deleter>
-typename singleton<_Tp, Deleter>::pointer
-singleton<_Tp, Deleter>::master_instance()
+template <typename Type, typename Pointer>
+typename singleton<Type, Pointer>::pointer
+singleton<Type, Pointer>::master_instance()
 {
     if(!f_master_instance)
     {
         f_master_thread   = std::this_thread::get_id();
-        f_master_instance = new _Tp();
+        f_master_instance = new Type();
     }
     return f_master_instance;
 }

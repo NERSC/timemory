@@ -75,20 +75,21 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    typedef manager                                      this_type;
-    typedef singleton<manager, details::manager_deleter> singleton_t;
-    typedef std::size_t                                  size_type;
-    typedef std::ostream                                 ostream_t;
-    typedef std::ofstream                                ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t>                comm_group_t;
-    typedef std::mutex                                   mutex_t;
-    typedef uomap<uintmax_t, mutex_t>                    mutex_map_t;
-    typedef std::lock_guard<mutex_t>                     auto_lock_t;
-    typedef singleton_t::pointer                         pointer;
-    typedef singleton_t::unique_pointer                  unique_pointer;
-    typedef std::set<this_type*>                         daughter_list_t;
-    typedef std::function<intmax_t()>                    get_num_threads_func_t;
-    typedef std::atomic<uintmax_t>                       counter_t;
+    using this_type   = manager;
+    using pointer_t   = std::unique_ptr<this_type, details::manager_deleter>;
+    using singleton_t = singleton<this_type, pointer_t>;
+    typedef std::size_t                   size_type;
+    typedef std::ostream                  ostream_t;
+    typedef std::ofstream                 ofstream_t;
+    typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
+    typedef std::mutex                    mutex_t;
+    typedef uomap<uintmax_t, mutex_t>     mutex_map_t;
+    typedef std::lock_guard<mutex_t>      auto_lock_t;
+    typedef singleton_t::pointer          pointer;
+    typedef singleton_t::smart_pointer    smart_pointer;
+    typedef std::set<this_type*>          daughter_list_t;
+    typedef std::function<intmax_t()>     get_num_threads_func_t;
+    typedef std::atomic<uintmax_t>        counter_t;
 
 public:
     // Constructor and Destructors
@@ -172,18 +173,6 @@ public:
         return os;
     }
 
-    /*template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::timer>::value, int> = 0>
-    void pop_graph()
-    {
-        //timer_data.pop_graph();
-    }
-
-    template <typename _Tp, enable_if_t<std::is_same<_Tp, tim::usage>::value, int> = 0>
-    void pop_graph()
-    {
-        memory_data.pop_graph();
-    }*/
-
 public:
     // serialization function
 
@@ -205,7 +194,7 @@ protected:
 
 private:
     // private functions
-    void        report(ostream_t*, bool ign_cutoff = false, bool endline = true) const;
+    void        report(ostream_t*, bool = false, bool = true) const {}
     ofstream_t* get_ofstream(ostream_t* m_os) const;
 
 private:
@@ -255,6 +244,7 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+/*
 template <typename _Tp>
 std::deque<data_tuple<_Tp>>
 list_convert(const data_storage<_Tp>& _storage)
@@ -263,7 +253,7 @@ list_convert(const data_storage<_Tp>& _storage)
     for(const auto& itr : _storage)
         _list.push_back(itr);
     return _list;
-}
+}*/
 //--------------------------------------------------------------------------------------//
 template <typename Archive>
 inline void
@@ -291,17 +281,20 @@ manager::total_laps() const
     return m_laps + compute_total_laps();
 }
 //--------------------------------------------------------------------------------------//
+/*
 template <typename _Tp>
 std::string
-apply_format(const data_tuple<_Tp>& node)
+apply_format(const graph_storage<_Tp>& node)
 {
     std::stringstream ss;
     node.data().report(ss, false, true);
     return ss.str();
 }
 //--------------------------------------------------------------------------------------//
+template <typename _Tp>
 inline void
-manager::report(ostream_t* os, bool /*ign_cutoff*/, bool /*endline*/) const
+manager::report(ostream_t* os, graph_storage<_Tp>* data, bool ign_cutoff, bool endline)
+const
 {
     const_cast<this_type*>(this)->merge();
 
@@ -321,14 +314,14 @@ manager::report(ostream_t* os, bool /*ign_cutoff*/, bool /*endline*/) const
     if(os == m_report)
         check_stream(os, "total timing report");
 
-    // for(const auto& itr : timer_data)
-    //    if(!itr.data().is_valid())
-    //        const_cast<tim_timer_t&>(itr.data()).stop();
+    for(const auto& itr : data)
+        if(!itr.data().is_valid())
+            itr.obj.stop();
 
     if(mpi_is_initialized())
         *os << "> rank " << mpi_rank() << std::endl;
 
-    /*auto format = [&](const data_tuple<tim::timer>& node) {
+    auto format = [&](const data_tuple<tim::timer>& node) {
         std::stringstream ss;
         node.data().report(ss, false, true);
         return ss.str();
@@ -339,10 +332,10 @@ manager::report(ostream_t* os, bool /*ign_cutoff*/, bool /*endline*/) const
         *os << std::endl;
     tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
     if(endline)
-        *os << std::endl;*/
+        *os << std::endl;
 
     os->flush();
-}
+}*/
 //--------------------------------------------------------------------------------------//
 inline manager::ofstream_t*
 manager::get_ofstream(ostream_t* m_os) const
@@ -479,11 +472,13 @@ namespace details
 
 struct manager_deleter
 {
-    using singleton_t = singleton<tim::manager, manager_deleter>;
+    using type        = tim::manager;
+    using pointer_t   = std::unique_ptr<type, manager_deleter>;
+    using singleton_t = singleton<type, pointer_t>;
 
-    void operator()(tim::manager* ptr)
+    void operator()(type* ptr)
     {
-        tim::manager*   master     = singleton_t::master_instance_ptr();
+        type*           master     = singleton_t::master_instance_ptr();
         std::thread::id master_tid = singleton_t::master_thread_id();
 
         if(std::this_thread::get_id() == master_tid)

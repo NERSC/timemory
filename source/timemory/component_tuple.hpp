@@ -47,6 +47,7 @@
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/storage.hpp"
 
 //======================================================================================//
 
@@ -57,39 +58,65 @@ namespace tim
 template <typename... Types>
 class component_tuple
 {
+    static const std::size_t num_elements = sizeof...(Types);
+
 public:
     using size_type   = intmax_t;
     using this_type   = component_tuple<Types...>;
     using data_t      = std::tuple<Types...>;
     using string_hash = std::hash<string_t>;
+    using bool_array  = std::array<bool, num_elements>;
 
 public:
-    explicit component_tuple()
-    : m_laps(0)
+    explicit component_tuple(bool store = false)
+    : m_store(store)
+    , m_laps(0)
     , m_count(0)
     , m_hash(0)
     , m_identifier(get_prefix())
     {
         init_manager();
+        push();
     }
 
-    component_tuple(const string_t& key, const string_t& tag = "cxx",
+    component_tuple(bool store, const string_t& key, const string_t& tag = "cxx",
                     const int32_t& ncount = 0, const int32_t& nhash = 0)
-    : m_laps(0)
+    : m_store(store)
+    , m_laps(0)
     , m_count(ncount)
     , m_hash((string_hash()(key) + string_hash()(tag)) * (ncount + 2) * (nhash + 2))
     , m_identifier("")
     {
         compute_identifier(key, tag);
         init_manager();
+        push();
     }
+
+    component_tuple(const string_t& key, const string_t& tag = "cxx",
+                    const int32_t& ncount = 0, const int32_t& nhash = 0,
+                    bool store = true)
+    : m_store(store)
+    , m_laps(0)
+    , m_count(ncount)
+    , m_hash((string_hash()(key) + string_hash()(tag)) * (ncount + 2) * (nhash + 2))
+    , m_identifier("")
+    {
+        compute_identifier(key, tag);
+        init_manager();
+        push();
+    }
+
+    ~component_tuple() { pop(); }
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
     component_tuple(const component_tuple& rhs)
-    : m_data(rhs.m_data)
+    : m_store(rhs.m_store)
     , m_laps(rhs.m_laps)
+    , m_count(rhs.m_count)
+    , m_hash(rhs.m_hash)
+    , m_data(rhs.m_data)
     , m_identifier(rhs.m_identifier)
     {
     }
@@ -98,9 +125,12 @@ public:
     {
         if(this == &rhs)
             return *this;
-        m_identifier = rhs.m_identifier;
-        m_data       = rhs.m_data;
+        m_store      = rhs.m_store;
         m_laps       = rhs.m_laps;
+        m_count      = rhs.m_count;
+        m_hash       = rhs.m_hash;
+        m_data       = rhs.m_data;
+        m_identifier = rhs.m_identifier;
         return *this;
     }
 
@@ -108,6 +138,37 @@ public:
     component_tuple& operator=(component_tuple&&) = default;
 
 public:
+    //----------------------------------------------------------------------------------//
+    // insert into graph
+    inline void push()
+    {
+        if(m_store)
+        {
+            {
+                apply<void>::set_value(m_exists, false);
+                using apply_types = std::tuple<component::insert_node<Types>...>;
+                apply<void>::access_with_indices<apply_types>(m_data, m_exists.data(),
+                                                              m_hash);
+            }
+            {
+                using apply_types = std::tuple<component::set_prefix<Types>...>;
+                apply<void>::access2<apply_types>(m_data, m_exists, m_identifier);
+            }
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pop out of grapsh
+    inline void pop()
+    {
+        if(m_store)
+        {
+            key_identifier_storage::instance()->insert(m_hash, m_identifier);
+            using apply_types = std::tuple<component::pop_node<Types>...>;
+            apply<void>::access<apply_types>(m_data);
+        }
+    }
+
     //----------------------------------------------------------------------------------//
     // measure functions
     void measure()
@@ -177,10 +238,6 @@ public:
             using apply_types = std::tuple<component::minus<Types>...>;
             apply<void>::access2<apply_types>(m_data, c_data);
         }
-        //{
-        //    using apply_types = std::tuple<component::plus<Types>...>;
-        //    apply<void>::access2<apply_types>(m_accum, m_data);
-        //}
         return *this;
     }
 
@@ -365,12 +422,14 @@ protected:
 
 protected:
     // objects
+    bool           m_store = false;
     mutex_t        m_mutex;
+    intmax_t       m_laps  = 0;
+    intmax_t       m_count = 0;
+    intmax_t       m_hash  = 0;
     mutable data_t m_data;
-    intmax_t       m_laps;
-    intmax_t       m_count;
-    intmax_t       m_hash;
-    string_t       m_identifier;
+    string_t       m_identifier = "";
+    bool_array     m_exists;
 
 protected:
     string_t get_prefix()

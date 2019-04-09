@@ -68,7 +68,7 @@ public:
 public:
     // standard constructor
     auto_tuple(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
-               bool report_at_exit = true);
+               bool report_at_exit = false);
     // destructor
     virtual ~auto_tuple();
 
@@ -119,28 +119,13 @@ auto_tuple<Types...>::~auto_tuple()
         // stop the timer
         m_temp_object.stop();
 
-        // assert(m_temp_object.summation_object() != nullptr);
-        //*m_temp_object.summation_object() += m_temp_object;
-
         // report timer at exit
         if(m_report_at_exit)
         {
-            // m_temp_object.grab_metadata(*(m_temp_object.summation_object()));
-
-            // show number of laps in temporary timer
-            // auto _laps = m_temp_object.summation_object()->accum().size();
-            // m_temp_object.accum().size() += _laps;
-
-            // threadsafe output w.r.t. other timers
-            // m_temp_object.grab_metadata(*m_temp_object.summation_object());
-            // m_temp_object.report(std::cout, true, true);
             std::stringstream ss;
             ss << m_temp_object;
             std::cout << ss.str() << std::endl;
         }
-        // count and hash keys already taken care of so just pop the graph
-        // manager::instance()->pop_graph<typename _Tp::value_type>();
-        // manager::instance()->pop_graph<ObjectType>();
     }
 }
 
@@ -170,5 +155,16 @@ TIM_NAMESPACE_END
 
 #define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, str)                                  \
     TIMEMORY_DEBUG_AUTO_OBJECT(auto_tuple_type, str)
+
+//--------------------------------------------------------------------------------------//
+// variadic versions
+
+#define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
+    typedef tim::auto_tuple<__VA_ARGS__> AUTO_TYPEDEF(__LINE__);                         \
+    TIMEMORY_BASIC_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
+
+#define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
+    typedef tim::auto_tuple<__VA_ARGS__> AUTO_TYPEDEF(__LINE__);                         \
+    TIMEMORY_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

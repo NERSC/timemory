@@ -41,6 +41,7 @@
 #include "timemory/rusage.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
+#include "timemory/storage.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 
@@ -79,18 +80,19 @@ struct impl_available : std::true_type
 template <typename _Tp, typename value_type = intmax_t>
 struct base
 {
-    using Type       = _Tp;
-    using this_type  = base<_Tp, value_type>;
-    using graph_type = graph_object<Type>;
+    using Type         = _Tp;
+    using this_type    = base<_Tp, value_type>;
+    using storage_type = graph_storage<Type>;
 
-    bool       is_running   = false;
-    bool       is_transient = false;
-    value_type value        = value_type();
-    value_type accum        = value_type();
-    intmax_t   hashid       = 0;
+    bool                            is_running   = false;
+    bool                            is_transient = false;
+    value_type                      value        = value_type();
+    value_type                      accum        = value_type();
+    intmax_t                        hashid       = 0;
+    typename storage_type::iterator itr;
 
-    base() = default;
-    virtual ~base() {}
+    base()                 = default;
+    virtual ~base()        = default;
     base(const this_type&) = default;
     base(this_type&&)      = default;
     base& operator=(const this_type&) = default;
@@ -106,12 +108,47 @@ struct base
     }
 
     //----------------------------------------------------------------------------------//
-    // reset the values
+    // set the graph node prefix
     //
-    void insert_node(intmax_t _hashid)
+    void set_prefix(const string_t& _prefix)
     {
-        hashid = _hashid;
-        graph_type::instance()->insert(hashid, static_cast<Type*>(this));
+        storage_type::instance()->set_prefix(_prefix);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // insert the node into the graph
+    //
+    void insert_node(bool& exists, const intmax_t& _hashid)
+    {
+        hashid    = _hashid;
+        Type& obj = static_cast<Type&>(*this);
+        itr       = storage_type::instance()->insert(hashid, obj, exists);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pop the node off the graph
+    //
+    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value)> = 0>
+    void pop_node()
+    {
+        Type& obj = itr->obj();
+        obj.accum += accum;
+        obj.value += value;
+        obj.is_transient = is_transient;
+        obj.is_running   = false;
+        storage_type::instance()->pop();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pop the node off the graph
+    //
+    template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
+    void pop_node()
+    {
+        Type& obj = itr->obj();
+        Type& rhs = static_cast<Type&>(*this);
+        obj += rhs;
+        storage_type::instance()->pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -260,6 +297,14 @@ struct base
         accum += rhs;
         return static_cast<Type&>(*this);
     }
+
+    /*template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
+    Type& operator+=(const value_type& rhs)
+    {
+        value += rhs;
+        accum += rhs;
+        return static_cast<Type&>(*this);
+    }*/
 
     template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
     Type& operator-=(const value_type& rhs)
@@ -748,15 +793,49 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 
     this_type& operator+=(const value_type& rhs)
     {
-        this->value.first += rhs.first;
-        this->value.second += rhs.second;
+        if(is_transient)
+        {
+            accum.first += rhs.first;
+            accum.second += rhs.second;
+        }
+        else
+        {
+            value.first += rhs.first;
+            value.second += rhs.second;
+        }
         return *this;
     }
 
     this_type& operator-=(const value_type& rhs)
     {
-        this->value.first -= rhs.first;
-        this->value.second -= rhs.second;
+        if(is_transient)
+        {
+            accum.first -= rhs.first;
+            accum.second -= rhs.second;
+        }
+        else
+        {
+            value.first -= rhs.first;
+            value.second -= rhs.second;
+        }
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        accum.first += rhs.accum.first;
+        accum.second += rhs.accum.second;
+        value.first += rhs.value.first;
+        value.second += rhs.value.second;
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        accum.first -= rhs.accum.first;
+        accum.second -= rhs.accum.second;
+        value.first -= rhs.value.first;
+        value.second -= rhs.value.second;
         return *this;
     }
 };
@@ -812,15 +891,49 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
 
     this_type& operator+=(const value_type& rhs)
     {
-        this->value.first += rhs.first;
-        this->value.second += rhs.second;
+        if(is_transient)
+        {
+            accum.first += rhs.first;
+            accum.second += rhs.second;
+        }
+        else
+        {
+            value.first += rhs.first;
+            value.second += rhs.second;
+        }
         return *this;
     }
 
     this_type& operator-=(const value_type& rhs)
     {
-        this->value.first -= rhs.first;
-        this->value.second -= rhs.second;
+        if(is_transient)
+        {
+            accum.first -= rhs.first;
+            accum.second -= rhs.second;
+        }
+        else
+        {
+            value.first -= rhs.first;
+            value.second -= rhs.second;
+        }
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        accum.first += rhs.accum.first;
+        accum.second += rhs.accum.second;
+        value.first += rhs.value.first;
+        value.second += rhs.value.second;
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        accum.first -= rhs.accum.first;
+        accum.second -= rhs.accum.second;
+        value.first -= rhs.value.first;
+        value.second -= rhs.value.second;
         return *this;
     }
 };
@@ -876,15 +989,49 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
 
     this_type& operator+=(const value_type& rhs)
     {
-        this->value.first += rhs.first;
-        this->value.second += rhs.second;
+        if(is_transient)
+        {
+            accum.first += rhs.first;
+            accum.second += rhs.second;
+        }
+        else
+        {
+            value.first += rhs.first;
+            value.second += rhs.second;
+        }
         return *this;
     }
 
     this_type& operator-=(const value_type& rhs)
     {
-        this->value.first -= rhs.first;
-        this->value.second -= rhs.second;
+        if(is_transient)
+        {
+            accum.first -= rhs.first;
+            accum.second -= rhs.second;
+        }
+        else
+        {
+            value.first -= rhs.first;
+            value.second -= rhs.second;
+        }
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        accum.first += rhs.accum.first;
+        accum.second += rhs.accum.second;
+        value.first += rhs.value.first;
+        value.second += rhs.value.second;
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        accum.first -= rhs.accum.first;
+        accum.second -= rhs.accum.second;
+        value.first -= rhs.value.first;
+        value.second -= rhs.value.second;
         return *this;
     }
 };
@@ -1559,6 +1706,14 @@ struct papi_event
             accum[i] += (tmp[i] - value[i]);
         value = std::move(tmp);
         set_stopped();
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        for(size_type i = 0; i < num_events; ++i)
+            accum[i] += rhs.accum[i];
+        for(size_type i = 0; i < num_events; ++i)
+            value[i] += rhs.value[i];
     }
 
 private:

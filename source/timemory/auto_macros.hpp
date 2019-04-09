@@ -50,6 +50,7 @@
 // helper macros for assembling unique variable name
 #    define AUTO_NAME_COMBINE(X, Y) X##Y
 #    define AUTO_NAME(Y) AUTO_NAME_COMBINE(macro_auto_timer, Y)
+#    define AUTO_TYPEDEF(Y) AUTO_NAME_COMBINE(typedef_auto_tuple, Y)
 // helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
 #    define AUTO_STR(A, B)                                                               \
         std::string("@'") +                                                              \
