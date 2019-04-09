@@ -31,7 +31,7 @@ using namespace tim::component;
 using comp_tuple_t = tim::details::custom_component_tuple<
     real_clock, system_clock, cpu_clock, cpu_util, peak_rss, data_rss, stack_rss,
     num_minor_page_faults, num_major_page_faults, voluntary_context_switch,
-    priority_context_switch>;
+    priority_context_switch, papi_event<0, PAPI_FP_OPS, PAPI_SP_OPS>>;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
