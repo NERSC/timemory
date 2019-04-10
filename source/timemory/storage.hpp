@@ -98,8 +98,9 @@ public:
     //  the node type
     //
     //----------------------------------------------------------------------------------//
-    struct graph_node : public std::tuple<intmax_t, ObjectType, string_t>
+    class graph_node : public std::tuple<intmax_t, ObjectType, string_t>
     {
+    public:
         using this_type = graph_node;
         using base_type = std::tuple<intmax_t, ObjectType, string_t>;
 
@@ -140,6 +141,9 @@ public:
             obj() += rhs.obj();
             return *this;
         }
+
+        // template <typename Archive>
+        // inline void serialize(Archive& ar, const unsigned int /*version*/);
     };
 
     //----------------------------------------------------------------------------------//
@@ -442,12 +446,30 @@ protected:
 
 protected:
     graph_data m_data;
+    string_t m_label = ObjectType::label();
+    string_t m_descript = ObjectType::descript();
 
 private:
     static singleton_t& get_singleton()
     {
         static singleton_t _instance = singleton_t::instance();
         return _instance;
+    }
+
+public:
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int /*version*/)
+    {
+        auto convert_graph = [&]() {
+            std::deque<std::tuple<intmax_t, ObjectType, string_t>> _list;
+            for(const auto& itr : m_data.graph())
+                _list.push_back(itr);
+            return _list;
+        };
+        auto graph_list = convert_graph();
+        ar(serializer::make_nvp("type", m_label),
+           serializer::make_nvp("descript", m_descript),
+           serializer::make_nvp("graph", graph_list));
     }
 };
 
@@ -459,6 +481,29 @@ private:
 
 #include "timemory/component_operations.hpp"
 #include "timemory/environment.hpp"
+
+#include <cereal/types/deque.hpp>
+#include <cereal/types/tuple.hpp>
+#include <cereal/types/vector.hpp>
+
+//======================================================================================//
+
+template <typename _Tp>
+void
+serialize_storage(const std::string& fname, const std::string& title, const _Tp& obj)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa(cereal::make_nvp(title, obj));
+    }
+    std::ofstream ofs(fname.c_str());
+    ofs << ss.str() << std::endl;
+}
 
 //======================================================================================//
 
@@ -506,7 +551,10 @@ tim::graph_storage<ObjectType>::print()
             std::cout << _oss.str();
         }
 
-        // fname = tim::env::compose_output_filename(label, ".json");
+        auto jname = tim::env::compose_output_filename(label, ".json");
+        printf("[graph_storage<%s>::%s @ %i]> Outputting '%s'...\n",
+               ObjectType::label().c_str(), __FUNCTION__, __LINE__, jname.c_str());
+        serialize_storage(jname, ObjectType::label(), *this);
     }
 }
 //======================================================================================//

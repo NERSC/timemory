@@ -45,6 +45,15 @@ using global_tuple_t =
                     papi_tuple_t>;
 
 static intmax_t nlaps = 0;
+
+//======================================================================================//
+
+intmax_t
+fibonacci(intmax_t n)
+{
+    return (n < 2) ? n : (fibonacci(n - 2) + fibonacci(n - 1));
+}
+
 //======================================================================================//
 
 intmax_t
@@ -53,20 +62,16 @@ fibonacci(intmax_t n, intmax_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
-        // auto_tuple_t impl("", 0, "cxx", false);
-        return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[", cutoff, "]");
+        return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
-    else
-    {
-        return (n < 2) ? 1L : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
-    }
+    return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
 }
 
 //======================================================================================//
 
 void
-print_result(std::string prefix, intmax_t result)
+print_result(const std::string& prefix, intmax_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
 }
@@ -76,16 +81,13 @@ print_result(std::string prefix, intmax_t result)
 timer_tuple_t
 run(intmax_t n, bool with_timing, intmax_t cutoff)
 {
-    std::stringstream ss, ss_b;
-    ss_b << std::boolalpha << with_timing;
-    ss << __FUNCTION__ << " [with timing = " << std::boolalpha << std::setw(5)
-       << ss_b.str() << "]";
-
-    timer_tuple_t timer(ss.str());
+    auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
+                                        with_timing, "]");
+    timer_tuple_t timer(signature);
     timer.start();
     auto result = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
     timer.stop();
-    print_result(ss.str(), result);
+    print_result(signature, result);
     return timer;
 }
 
@@ -109,7 +111,7 @@ main(int argc, char** argv)
 
     tim::consume_parameters(tim::manager::instance());
 
-    TIMEMORY_AUTO_TUPLE(global_tuple_t, std::string("[") + argv[0] + "]");
+    TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
     std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     // run without timing first so overhead is not started yet

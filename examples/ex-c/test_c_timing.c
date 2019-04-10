@@ -26,17 +26,13 @@ fibonacci(intmax_t n)
 //======================================================================================//
 
 int
-main(int argc, char** argv)
+main()
 {
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
 
-    // modify recording memory
-    if(argc > 1)
-        TIMEMORY_RECORD_MEMORY(atoi(argv[1]));
-
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     intmax_t n = fibonacci(44);
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
+    printf("... \"%s\" : %s @ %i --> n = %li\n", __FILE__, __FUNCTION__, __LINE__, n);
     TIMEMORY_PRINT();
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
     TIMEMORY_REPORT("test_output/c_timing_report");

@@ -37,23 +37,6 @@ using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
 //======================================================================================//
-// These two functions are guaranteed to be called at load and
-// unload of the library containing this code.
-//__c_ctor__
-void
-setup_timemory(void)
-{
-}
-
-//======================================================================================//
-
-//__c_dtor__
-void
-cleanup_timemory(void)
-{
-}
-
-//======================================================================================//
 //
 //                      C++ interface
 //
@@ -89,7 +72,7 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
     std::string cxx_timer_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    return (void*) new auto_timer_t(cxx_timer_tag.c_str(), lineno, lang_tag,
+    return (void*) new auto_timer_t(cxx_timer_tag, lineno, lang_tag,
                                     (report > 0) ? true : false);
     return nullptr;
 }
@@ -101,7 +84,7 @@ cxx_timemory_delete_auto_timer(void* ctimer)
 {
     auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
     delete cxxtimer;
-    ctimer = NULL;
+    ctimer = nullptr;
     return ctimer;
 }
 
@@ -120,7 +103,7 @@ cxx_timemory_string_combine(const char* _a, const char* _b)
 extern "C" tim_api const char*
 cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
-    std::string _C   = std::string(_c).substr(std::string(_c).find_last_of("/") + 1);
+    std::string _C   = std::string(_c).substr(std::string(_c).find_last_of('/') + 1);
     char*       buff = (char*) malloc(sizeof(char) * 256);
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
@@ -137,7 +120,7 @@ cxx_timemory_report(const char* fname)
         if(_fname.find(itr) != std::string::npos)
             _fname = _fname.substr(0, _fname.find(itr));
     }
-    _fname = _fname.substr(0, _fname.find_last_of("."));
+    _fname = _fname.substr(0, _fname.find_last_of('.'));
 
     tim::path_t _fpath_report = _fname + std::string(".out");
     tim::path_t _fpath_serial = _fname + std::string(".json");

@@ -25,14 +25,22 @@
 
 #include <cstdint>
 
-#include "timemory/auto_timer.hpp"
+#include "timemory/auto_tuple.hpp"
+#include "timemory/components.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/timer.hpp"
 
-typedef tim::graph<std::string>    graph_t;
-typedef typename graph_t::iterator graph_iterator_t;
+using graph_t          = tim::graph<std::string>;
+using graph_iterator_t = typename graph_t::iterator;
+using namespace tim::component;
+using auto_tuple_t  = tim::auto_tuple<real_clock>;
+using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
+using papi_tuple_t  = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
+using global_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_tuple_t>;
 
 //======================================================================================//
 
@@ -45,7 +53,7 @@ fibonacci(intmax_t n, intmax_t cutoff, graph_t& g, graph_iterator_t itr)
         itr      = g.append_child(itr, str);
     }
     return (n < 2)
-               ? 1L
+               ? n
                : (fibonacci(n - 2, cutoff, g, itr) + fibonacci(n - 1, cutoff, g, itr));
 }
 
@@ -74,7 +82,6 @@ main(int argc, char** argv)
 
     graph_t          mgraph;
     graph_iterator_t itr  = mgraph.set_head("top");
-    graph_iterator_t top  = itr;
     auto             itr1 = mgraph.append_child(itr, "one");
     auto             itr2 = mgraph.append_child(itr, "two");
     mgraph.append_child(itr1, "three");
@@ -83,12 +90,12 @@ main(int argc, char** argv)
 
     // tim::manager* manager = tim::manager::instance();
 
-    std::vector<tim::timer> timer_list;
+    std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     fibonacci(nfib, cutoff, mgraph, itr1);
     std::cout << std::endl;
 
-    for(auto gitr : mgraph)
+    for(const auto& gitr : mgraph)
     {
         std::cout << gitr << std::endl;
     }

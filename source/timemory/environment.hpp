@@ -33,6 +33,7 @@
 //--------------------------------------------------------------------------------------//
 
 #include <timemory/macros.hpp>
+#include <timemory/utility.hpp>
 
 #include <cstdint>
 #include <cstring>
@@ -101,7 +102,8 @@ compose_output_filename(const std::string& _tag, std::string _ext);
 #include "timemory/components.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility.hpp"
+#include <timemory/mpi.hpp>
+#include <timemory/utility.hpp>
 
 //======================================================================================//
 
@@ -346,11 +348,6 @@ tim::env::parse()
         process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
     }
 }
-
-//--------------------------------------------------------------------------------------//
-
-#include <timemory/mpi.hpp>
-#include <timemory/utility.hpp>
 
 //--------------------------------------------------------------------------------------//
 

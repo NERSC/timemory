@@ -30,6 +30,10 @@
 
 #pragma once
 
+#include <functional>
+#include <iomanip>
+#include <sstream>
+#include <string>
 #include <tuple>
 #include <type_traits>
 #include <utility>
@@ -204,11 +208,34 @@ struct index_of<_Tp, std::tuple<Head, Tail...>>
 template <typename _Ret>
 struct _apply_impl
 {
+    //----------------------------------------------------------------------------------//
+
     template <typename _Fn, typename _Tuple, size_t... _Idx>
     static _Ret all(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
     {
         return __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
     }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Sep, typename _Arg,
+              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+    static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
+    {
+        _ss << _sep << std::forward<_Arg>(_arg);
+        return _ss.str();
+    }
+
+    template <typename _Sep, typename _Arg, typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+    static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
+                     _Args&&... __args)
+    {
+        _ss << _sep << std::forward<_Arg>(_arg);
+        return join<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
 };
 
 //======================================================================================//
@@ -466,6 +493,8 @@ struct _apply_impl<void>
 template <typename _Ret>
 struct apply
 {
+    //----------------------------------------------------------------------------------//
+
     template <typename _Fn, typename _Tuple,
               std::size_t _N    = std::tuple_size<decay_t<_Tuple>>::value,
               typename _Indices = make_index_sequence<_N>>
@@ -474,6 +503,20 @@ struct apply
         return _apply_impl<_Ret>::template all<_Fn, _Tuple>(
             std::forward<_Fn>(__f), std::forward<_Tuple>(__t), _Indices{});
     }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+    static _Ret join(const std::string& separator, _Args&&... __args)
+    {
+        std::stringstream ss;
+        ss << std::boolalpha;
+        return _apply_impl<_Ret>::template join<std::string, _Args...>(
+            std::ref(ss), separator, std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
 };
 
 //======================================================================================//

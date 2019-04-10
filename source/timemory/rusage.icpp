@@ -28,7 +28,7 @@
 
 //======================================================================================//
 
-void
+inline void
 check_rusage_call(int ret, const char* _func)
 {
 #if defined(DEBUG)

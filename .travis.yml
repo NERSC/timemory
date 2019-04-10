@@ -304,7 +304,7 @@ install:
         -DTIMEMORY_BUILD_TESTING=ON
         -DTIMEMORY_BUILD_PYTHON=ON
         -DTIMEMORY_BUILD_C=ON
-        -DTIMEMORY_USE_PAPI=ON
+        -DTIMEMORY_USE_PAPI=OFF
         -DBUILD_SHARED_LIBS=${BUILD_SHARED}
         ${PWD}/..
     - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced

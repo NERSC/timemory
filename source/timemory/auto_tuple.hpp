@@ -137,26 +137,26 @@ TIM_NAMESPACE_END
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, str)                                  \
-    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, str)
+#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
+    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, str)                                  \
-    TIMEMORY_BASIC_AUTO_OBJECT(auto_tuple_type, str)
+#define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
+    TIMEMORY_BASIC_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TUPLE(auto_tuple_type, str)                                        \
-    TIMEMORY_AUTO_OBJECT(auto_tuple_type, str)
+#define TIMEMORY_AUTO_TUPLE(auto_tuple_type, ...)                                        \
+    TIMEMORY_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TUPLE_OBJ(auto_tuple_type, str)                                    \
-    TIMEMORY_AUTO_OBJECT_OBJ(auto_tuple_type, str)
+#define TIMEMORY_AUTO_TUPLE_OBJ(auto_tuple_type, ...)                                    \
+    TIMEMORY_AUTO_OBJECT_OBJ(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TUPLE_OBJ(auto_tuple_type, str)                              \
-    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_tuple_type, str)
+#define TIMEMORY_BASIC_AUTO_TUPLE_OBJ(auto_tuple_type, ...)                              \
+    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, str)                            \
-    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_tuple_type, str)
+#define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                            \
+    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, str)                                  \
-    TIMEMORY_DEBUG_AUTO_OBJECT(auto_tuple_type, str)
+#define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, ...)                                  \
+    TIMEMORY_DEBUG_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // variadic versions

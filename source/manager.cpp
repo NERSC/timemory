@@ -29,6 +29,7 @@
  */
 
 #include "timemory/manager.hpp"
+#include "timemory/components.hpp"
 #include "timemory/utility.hpp"
 
 //======================================================================================//
@@ -44,16 +45,20 @@
 namespace
 {
 // just a symbol
-static int manager_symbol_dummy = 0;
+int manager_symbol_dummy = 0;
 
 //--------------------------------------------------------------------------------------//
 
 void
-func()
+func(int i)
 {
     tim::consume_parameters(manager_symbol_dummy);
+    if(i > 0)
+    {
+        func(i - 1);
+    }
 }
 
-}
+}  // empty namespace
 
 //======================================================================================//

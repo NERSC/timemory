@@ -22,7 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include "timemory/auto_tuple.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/manager.hpp"
 
 #include <errno.h>
 #include <stdio.h>
@@ -35,17 +37,13 @@
 #    include <unistd.h>
 #endif
 
-#include "timemory/auto_tuple.hpp"
-#include "timemory/manager.hpp"
-
 #include <chrono>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <iostream>
 #include <thread>
 #include <vector>
-
-#include <cstdio>
-#include <cstring>
 
 using vector_t = std::vector<uintmax_t>;
 using namespace tim::component;
@@ -65,7 +63,7 @@ using comp_tuple_t = tim::details::custom_component_tuple<
 std::string&
 command()
 {
-    static std::string _instance = "";
+    static std::string _instance;
     return _instance;
 }
 
@@ -94,7 +92,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     int status;
     int ret                = 0;
     tim::get_rusage_type() = RUSAGE_CHILDREN;
-    comp_tuple_t measure("total execution time", command().c_str());
+    comp_tuple_t measure("total execution time", command());
     if(getpid() != getppid() + 1)
         measure.start();
 
@@ -108,9 +106,13 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
         {
             ret = WEXITSTATUS(status);
             if(ret == 127)
+            {
                 printf("execv failed\n");
+            }
             else
+            {
                 printf("program terminated with a non-zero status\n");
+            }
         }
         else
         {
@@ -183,12 +185,14 @@ int
 main(int argc, char** argv)
 {
     if(argc > 1)
+    {
         command() = std::string(const_cast<const char*>(argv[1]));
+    }
     else
     {
         command()              = std::string(const_cast<const char*>(argv[0]));
         tim::get_rusage_type() = RUSAGE_CHILDREN;
-        comp_tuple_t measure("total execution time", command().c_str());
+        comp_tuple_t measure("total execution time", command());
         measure.start();
         measure.stop();
         std::cout << "\n" << measure << std::endl;
@@ -199,9 +203,15 @@ main(int argc, char** argv)
 
     uintmax_t nargs = static_cast<uintmax_t>(argc);
     if(pid == -1)  // pid == -1 means error occured
+    {
         failed_fork();
+    }
     else if(pid == 0)  // pid == 0 means child process created
+    {
         child_process(nargs, argv);
+    }
     else
+    {
         parent_process(pid);  // means parent process
+    }
 }

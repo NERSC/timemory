@@ -68,8 +68,8 @@ public:
     using bool_array  = std::array<bool, num_elements>;
 
 public:
-    explicit component_tuple(bool store = false)
-    : m_store(store)
+    explicit component_tuple()
+    : m_store(false)
     , m_laps(0)
     , m_count(0)
     , m_hash(0)
@@ -79,8 +79,9 @@ public:
         push();
     }
 
-    component_tuple(bool store, const string_t& key, const string_t& tag = "cxx",
-                    const int32_t& ncount = 0, const int32_t& nhash = 0)
+    explicit component_tuple(const string_t& key, const bool& store,
+                             const string_t& tag = "cxx", const int32_t& ncount = 0,
+                             const int32_t& nhash = 0)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)

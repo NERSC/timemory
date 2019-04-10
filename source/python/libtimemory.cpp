@@ -51,26 +51,23 @@ PYBIND11_MODULE(libtimemory, tim)
             py::arg("nback") = 2, py::arg("basename_only") = true,
             py::arg("use_dirname") = false, py::arg("noquotes") = false);
     //------------------------------------------------------------------------//
-    tim.def("set_max_depth",
-            [=](int32_t ndepth) { manager_t::instance()->set_max_depth(ndepth); },
+    tim.def("set_max_depth", [=](int32_t ndepth) { manager_t::set_max_depth(ndepth); },
             "Max depth of auto-timers");
     //------------------------------------------------------------------------//
-    tim.def("get_max_depth", [=]() { return manager_t::instance()->get_max_depth(); },
+    tim.def("get_max_depth", [=]() { return manager_t::get_max_depth(); },
             "Max depth of auto-timers");
     //------------------------------------------------------------------------//
-    tim.def("toggle", [=](bool timers_on) { manager_t::instance()->enable(timers_on); },
+    tim.def("toggle", [=](bool timers_on) { manager_t::enable(timers_on); },
             "Enable/disable auto-timers", py::arg("timers_on") = true);
     //------------------------------------------------------------------------//
-    tim.def("enable", [=]() { manager_t::instance()->enable(true); },
-            "Enable auto-timers");
+    tim.def("enable", [=]() { manager_t::enable(true); }, "Enable auto-timers");
     //------------------------------------------------------------------------//
-    tim.def("disable", [=]() { manager_t::instance()->enable(false); },
-            "Disable auto-timers");
+    tim.def("disable", [=]() { manager_t::enable(false); }, "Disable auto-timers");
     //------------------------------------------------------------------------//
-    tim.def("is_enabled", [=]() { return manager_t::instance()->is_enabled(); },
+    tim.def("is_enabled", [=]() { return manager_t::is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
     //------------------------------------------------------------------------//
-    tim.def("enabled", [=]() { return manager_t::instance()->is_enabled(); },
+    tim.def("enabled", [=]() { return manager_t::is_enabled(); },
             "Return if the auto-timers are enabled or disabled");
     //------------------------------------------------------------------------//
     tim.def("enable_signal_detection", &pytim::enable_signal_detection,
@@ -237,15 +234,10 @@ PYBIND11_MODULE(libtimemory, tim)
             "Serialize the timing manager to JSON", py::arg("fname") = "");
     //------------------------------------------------------------------------//
     man.def("set_max_depth",
-            [=](py::object man, int depth) {
-                man.cast<manager_wrapper*>()->get()->set_max_depth(depth);
-            },
+            [=](py::object, int depth) { manager_t::set_max_depth(depth); },
             "Set the max depth of the timers");
     //------------------------------------------------------------------------//
-    man.def("get_max_depth",
-            [=](py::object man) {
-                return man.cast<manager_wrapper*>()->get()->get_max_depth();
-            },
+    man.def("get_max_depth", [=](py::object) { return manager_t::get_max_depth(); },
             "Get the max depth of the timers");
     //------------------------------------------------------------------------//
     /*

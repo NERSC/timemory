@@ -28,15 +28,23 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/apply.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility.hpp"
 
 //======================================================================================//
 //
-//                      CXX macros
+//                      CXX variadic macros
 //
 //======================================================================================//
+
+namespace priv
+{
+using apply = tim::apply<std::string>;
+}
+
+//--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_AUTO_TIMER)
 
@@ -48,35 +56,36 @@
 
 //--------------------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
+#    define LINE_STRING priv::apply::join("", __LINE__)
 #    define AUTO_NAME_COMBINE(X, Y) X##Y
 #    define AUTO_NAME(Y) AUTO_NAME_COMBINE(macro_auto_timer, Y)
 #    define AUTO_TYPEDEF(Y) AUTO_NAME_COMBINE(typedef_auto_tuple, Y)
-// helper macro for "__FUNC__@'__FILE__':__LINE__" tagging
+// helper macro for "__FUNCTION__@'__FILE__':__LINE__" tagging
 #    define AUTO_STR(A, B)                                                               \
-        std::string("@'") +                                                              \
-            std::string(A).substr(std::string(A).find_last_of("/") + 1) +                \
-            std::string("':") + B
+        priv::apply::join("", "@'",                                                      \
+                          std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
+                          "':", B)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_AUTO_SIGN(str)
+/*! \def TIMEMORY_BASIC_AUTO_SIGN(...)
  *
- * helper macro for "__FUNC__" + str tagging
+ * helper macro for "__FUNCTION__" + ... tagging
  *
  * Usage:
  *
  *      void func()
  *      {
- *          auto_timer_t timer(TIMEMORY_AUTO_SIGN_BASIC("example"), __LINE__)
+ *          auto_timer_t timer(TIMEMORY_BASIC_AUTO_SIGN("example"), __LINE__)
  *          ...
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_SIGN(str)                                                \
-        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str))
+#    define TIMEMORY_BASIC_AUTO_SIGN(...)                                                \
+        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_AUTO_SIGN(str)
+/*! \def TIMEMORY_AUTO_SIGN(...)
  *
- * helper macro for "__FUNC__" + str + '@__FILE__':__LINE__" tagging
+ * helper macro for "__FUNCTION__" + ... + '@__FILE__':__LINE__" tagging
  *
  * Usage:
  *
@@ -86,18 +95,18 @@
  *          ...
  *      }
  */
-#    define TIMEMORY_AUTO_SIGN(str)                                                      \
-        std::string(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +              \
-                    AUTO_STR(__FILE__, TIMEMORY_LINE_STRING))
+#    define TIMEMORY_AUTO_SIGN(...)                                                      \
+        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                        \
+                          AUTO_STR(__FILE__, LINE_STRING))
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_AUTO_OBJECT(str)
+/*! \def TIMEMORY_BASIC_AUTO_OBJECT(type, ...)
  *
  * simple tagging with <function name> + <string> where the string param
- * \a str is optional
+ * \a ... is optional
  *
  * Signature:
- *      __FUNC__ + str
+ *      __FUNCTION__ + ...
  *
  * Usage:
  *
@@ -107,23 +116,23 @@
  *          ...
  *      }
  *
- * Example where str == "(15)":
+ * Example where ... == "(15)":
  *
  *      > [pyc] some_func(15) :  0.363 wall, ... etc.
  */
-#    define TIMEMORY_BASIC_AUTO_OBJECT(type, str)                                        \
-        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str),  \
-                                 __LINE__)
+#    define TIMEMORY_BASIC_AUTO_OBJECT(type, ...)                                        \
+        type AUTO_NAME(__LINE__)(                                                        \
+            priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_AUTO_OBJECT(str)
+/*! \def TIMEMORY_AUTO_OBJECT(type, ...)
  *
  * standard tagging with <function name> + <string> + "@'<filename>':<line>"
- * where the string param \a str is optional
+ * where the string param \a ... is optional
  *
  * Signature:
  *
- *      __FUNC__ + str + '@__FILE__':__LINE__
+ *      __FUNCTION__ + ... + '@__FILE__':__LINE__
  *
  * Usage:
  *
@@ -133,19 +142,20 @@
  *          ...
  *      }
  *
- * Example where str == "(15)":
+ * Example where ... == "(15)":
  *
  *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
  */
-#    define TIMEMORY_AUTO_OBJECT(type, str)                                              \
-        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
-                                     AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),           \
+#    define TIMEMORY_AUTO_OBJECT(type, ...)                                              \
+        type AUTO_NAME(__LINE__)(priv::apply::join("", __TIMEMORY_FUNCTION__,            \
+                                                   __VA_ARGS__,                          \
+                                                   AUTO_STR(__FILE__, LINE_STRING)),     \
                                  __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_AUTO_OBJECT_OBJ(str)
+/*! \def TIMEMORY_BASIC_AUTO_OBJECT_OBJ(type, ...)
  *
- * Similar to \ref TIMEMORY_BASIC_AUTO_OBJECT(str) but assignable.
+ * Similar to \ref TIMEMORY_BASIC_AUTO_OBJECT(...) but assignable.
  *
  * Usage:
  *
@@ -155,13 +165,13 @@
  *          ...
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_OBJECT_OBJ(type, str)                                    \
-        type(std::string(__TIMEMORY_FUNCTION__) + std::string(str), __LINE__)
+#    define TIMEMORY_BASIC_AUTO_OBJECT_OBJ(type, ...)                                    \
+        type(priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_AUTO_OBJECT_OBJ(str)
+/*! \def TIMEMORY_AUTO_OBJECT_OBJ(type, ...)
  *
- * Similar to \ref TIMEMORY_AUTO_OBJECT(str) but assignable.
+ * Similar to \ref TIMEMORY_AUTO_OBJECT(...) but assignable.
  *
  * Usage:
  *
@@ -172,9 +182,9 @@
  *      }
  *
  */
-#    define TIMEMORY_AUTO_OBJECT_OBJ(type, str)                                          \
-        type(std::string(__TIMEMORY_FUNCTION__) + std::string(str) +                     \
-                 AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),                               \
+#    define TIMEMORY_AUTO_OBJECT_OBJ(type, ...)                                          \
+        type(priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                   \
+                               AUTO_STR(__FILE__, LINE_STRING)),                         \
              __LINE__)
 
 #endif
@@ -185,20 +195,21 @@
 //
 //======================================================================================//
 
-#if defined(TIMEMORY_DEBUG)
-#    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(type, str)                                  \
-        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str),  \
-                                 __LINE__)
-#    define TIMEMORY_DEBUG_AUTO_OBJECT(type, str)                                        \
-        type AUTO_NAME(__LINE__)(std::string(__TIMEMORY_FUNCTION__) + std::string(str) + \
-                                     AUTO_STR(__FILE__, TIMEMORY_LINE_STRING),           \
+#if defined(DEBUG)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(type, ...)                                  \
+        type AUTO_NAME(__LINE__)(                                                        \
+            priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
+#    define TIMEMORY_DEBUG_AUTO_OBJECT(type, ...)                                        \
+        type AUTO_NAME(__LINE__)(priv::apply::join("", __TIMEMORY_FUNCTION__,            \
+                                                   __VA_ARGS__,                          \
+                                                   AUTO_STR(__FILE__, LINE_STRING)),     \
                                  __LINE__)
 #else
-#    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(str)                                        \
+#    define TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(type, ...)                                  \
         {                                                                                \
             ;                                                                            \
         }
-#    define TIMEMORY_DEBUG_AUTO_OBJECT(str)                                              \
+#    define TIMEMORY_DEBUG_AUTO_OBJECT(type, ...)                                        \
         {                                                                                \
             ;                                                                            \
         }

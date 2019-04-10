@@ -408,6 +408,25 @@ struct base
         os << " ?";
         return os;
     }
+
+    template <typename Archive, typename U = value_type,
+              enable_if_t<(!std::is_class<U>::value)> = 0>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp(Type::label() + ".value", accum),
+           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
+           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
+    }
+
+    template <typename Archive, typename U = value_type,
+              enable_if_t<(std::is_class<U>::value)> = 0>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        auto value = static_cast<Type&>(*this).serial();
+        ar(serializer::make_nvp(Type::label() + ".value", value),
+           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
+           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1724,6 +1743,8 @@ struct papi_event
         for(size_type i = 0; i < num_events; ++i)
             value[i] += rhs.value[i];
     }
+
+    value_type serial() { return accum; }
 
 private:
     static bool& event_type_added()

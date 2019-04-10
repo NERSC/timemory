@@ -89,7 +89,7 @@ int
 main(int argc, char** argv)
 {
     tim::env::parse();
-    auto* timing = new tim::standard_timing_components_t(true, "Tests runtime");
+    auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 
     timing->start();
@@ -131,10 +131,12 @@ void
 print_info(const std::string& func)
 {
     if(tim::mpi_rank() == 0)
+    {
         std::cout << "\n[" << tim::mpi_rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
+    }
 }
 
 //======================================================================================//
@@ -211,7 +213,7 @@ test_1_usage()
     std::vector<std::pair<std::string, measurement_t>> measurements = {
         { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
     };
-    serialize("rusage.json", "usage", measurements);
+    // serialize("rusage.json", "usage", measurements);
 }
 
 //======================================================================================//
@@ -319,7 +321,7 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(true, __FUNCTION__);
+    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_SIGN(""));
     {
         TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
         // just record the peak rss

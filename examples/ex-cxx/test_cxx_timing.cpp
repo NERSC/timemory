@@ -34,15 +34,23 @@
 
 #include <cassert>
 
-#include <timemory/auto_timer.hpp>
+#include <timemory/auto_tuple.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/mpi.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
 #include <timemory/usage.hpp>
 
-typedef tim::timer   tim_timer_t;
-typedef tim::manager manager_t;
+using graph_t          = tim::graph<std::string>;
+using graph_iterator_t = typename graph_t::iterator;
+using namespace tim::component;
+using auto_tuple_t  = tim::auto_tuple<real_clock>;
+using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
+using papi_tuple_t  = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
+using global_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation

@@ -261,16 +261,18 @@ public:
     {
         std::stringstream ss;
         ss << std::boolalpha << val;
-        std::unique_lock<std::mutex> lock(m_mutex);
+        m_mutex.lock();
         if(m_env.find(env_id) != m_env.end())
         {
             for(const auto& itr : m_env)
                 if(itr.first == env_id && itr.second == ss.str())
                 {
+                    m_mutex.unlock();
                     return;
                 }
         }
         m_env.insert(env_pair_t(env_id, ss.str()));
+        m_mutex.unlock();
     }
 
     const env_map_t& get() const { return m_env; }
@@ -313,8 +315,12 @@ get_env(const std::string& env_id, _Tp _default = _Tp())
         std::istringstream iss(str_var);
         _Tp                var = _Tp();
         iss >> var;
+        env_settings::GetInstance()->insert<_Tp>(env_id, var);
         return var;
     }
+    // record default value
+    env_settings::GetInstance()->insert<_Tp>(env_id, _default);
+
     // return default if not specified in environment
     return _default;
 }
@@ -331,10 +337,53 @@ get_env(const std::string& env_id, std::string _default)
     {
         std::stringstream ss;
         ss << env_var;
+        env_settings::GetInstance()->insert(env_id, ss.str());
         return ss.str();
     }
+    // record default value
+    env_settings::GetInstance()->insert(env_id, _default);
+
     // return default if not specified in environment
     return _default;
+}
+
+//--------------------------------------------------------------------------------------//
+//  overload for boolean
+//
+template <>
+inline bool
+get_env(const std::string& env_id, bool _default)
+{
+    char* env_var = std::getenv(env_id.c_str());
+    if(env_var)
+    {
+        std::string var = std::string(env_var);
+        bool        val = true;
+        if(var.find_first_not_of("0123456789") == std::string::npos)
+            val = (bool) atoi(var.c_str());
+        else
+        {
+            for(auto& itr : var)
+                itr = tolower(itr);
+            if(var == "off" || var == "false")
+                val = false;
+        }
+        env_settings::GetInstance()->insert<bool>(env_id, val);
+        return val;
+    }
+    // record default value
+    env_settings::GetInstance()->insert<bool>(env_id, false);
+
+    // return default if not specified in environment
+    return _default;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+print_env(std::ostream& os = std::cout)
+{
+    os << (*env_settings::GetInstance());
 }
 
 //--------------------------------------------------------------------------------------//
