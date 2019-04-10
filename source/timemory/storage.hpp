@@ -230,13 +230,13 @@ public:
     graph_storage()
     {
         static std::atomic<short> _once;
-        short _once_num = _once++;
+        short                     _once_num = _once++;
         if(_once_num > 0 && !singleton_t::is_master(this))
         {
-            m_data = graph_data(*master_instance()->current());
-            m_data.head() = master_instance()->data().current();
+            m_data           = graph_data(*master_instance()->current());
+            m_data.head()    = master_instance()->data().current();
             m_data.current() = master_instance()->data().current();
-            m_data.depth() = master_instance()->data().depth();
+            m_data.depth()   = master_instance()->data().depth();
         }
     }
 
@@ -436,8 +436,7 @@ protected:
             std::cerr << "Failure to merge graphs!" << std::endl;
             auto g = graph();
             graph().insert_subgraph_after(m_data.current(), itr->data().head());
-            //itr->graph()
-
+            // itr->graph()
         }
     }
 

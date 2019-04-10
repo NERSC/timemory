@@ -48,10 +48,9 @@
 using namespace tim::component;
 
 using papi_tuple_t = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
-                    papi_tuple_t>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
+                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
+                                     peak_rss, current_rss, papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -66,6 +65,7 @@ fibonacci(int32_t n)
 intmax_t
 time_fibonacci(int32_t n)
 {
+    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
     return fibonacci(n);
 }
 //--------------------------------------------------------------------------------------//
@@ -200,7 +200,7 @@ test_1_usage()
     _use_delta.start();
     std::vector<intmax_t> v(n, 30);
     long                  nfib = random_entry(v);
-    fibonacci(nfib);
+    time_fibonacci(nfib);
     _use_delta.stop();
     _use_end.record();
 
@@ -241,7 +241,7 @@ test_2_timing()
             TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
             measurement_t _tm;
             _tm.start();
-            ret += fibonacci(n);
+            ret += time_fibonacci(n);
             _tm.stop();
             mtx.lock();
             std::stringstream ss;
@@ -299,7 +299,7 @@ test_3_auto_tuple()
         auto run_fibonacci = [&](long n) {
             tim::manager::instance();
             TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
-            ret += fibonacci(n);
+            ret += time_fibonacci(n);
         };
 
         // run shorter fibonacci calculations on two threads
