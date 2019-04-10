@@ -64,6 +64,7 @@ public:
     using counter_void = tim::counted_object<void>;
     using hashed_type  = tim::hashed_object<this_type>;
     using string_t     = std::string;
+    using string_hash  = std::hash<string_t>;
 
 public:
     // standard constructor
@@ -96,12 +97,13 @@ template <typename... Types>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& lineno,
                                  const string_t& lang_tag, bool report_at_exit)
 : counter_type()
-, hashed_type((counter_type::enable()) ? (lineno + std::hash<string_t>()(object_tag)) : 0)
+, hashed_type((counter_type::enable())
+                  ? (string_hash()(lang_tag + object_tag) *
+                     (counter_type::live() + hashed_type::live() + lineno))
+                  : 0)
 , m_enabled(counter_type::enable())
 , m_report_at_exit(report_at_exit)
-, m_temp_object(object_tag, lang_tag,
-                (m_enabled) ? counter_type::live() : counter_type::zero(),
-                (m_enabled) ? hashed_type::live() : hashed_type::zero())
+, m_temp_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash)
 {
     if(m_enabled)
     {

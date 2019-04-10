@@ -496,20 +496,20 @@ public:
 protected:
     // default constructor
     counted_object()
-    : m_instance(count()++)
+    : m_count(count()++)
     {
     }
     ~counted_object() { --count(); }
     counted_object(const this_type&)
-    : m_instance(count()++)
+    : m_count(count()++)
     {
     }
     counted_object(this_type&&) = default;
-    this_type& operator         =(const this_type&) { return *this; }
+    this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&& rhs) = default;
 
 protected:
-    intmax_t m_instance;
+    intmax_t m_count;
 
 private:
     // number of existing objects
@@ -603,11 +603,13 @@ protected:
     explicit hashed_object(this_type&&) = default;
     static intmax_t& hash();
 
+protected:
+    intmax_t m_hash;
+
 private:
     // number of existing objects
     static intmax_t& thread_number();
     static intmax_t& master_hash();
-    intmax_t         m_hash;
 };
 
 //--------------------------------------------------------------------------------------//

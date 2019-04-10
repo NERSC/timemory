@@ -84,7 +84,7 @@ public:
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash((string_hash()(key) + string_hash()(tag)) * (ncount + 2) * (nhash + 2))
+    , m_hash(nhash)
     , m_identifier("")
     {
         compute_identifier(key, tag);
@@ -98,7 +98,7 @@ public:
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash((string_hash()(key) + string_hash()(tag)) * (ncount + 2) * (nhash + 2))
+    , m_hash(nhash)
     , m_identifier("")
     {
         compute_identifier(key, tag);
@@ -163,7 +163,6 @@ public:
     {
         if(m_store)
         {
-            key_identifier_storage::instance()->insert(m_hash, m_identifier);
             using apply_types = std::tuple<component::pop_node<Types>...>;
             apply<void>::access<apply_types>(m_data);
         }

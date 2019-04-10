@@ -89,12 +89,13 @@ struct base
     value_type                      value        = value_type();
     value_type                      accum        = value_type();
     intmax_t                        hashid       = 0;
+    intmax_t                        laps         = 0;
     typename storage_type::iterator itr;
 
-    base()                 = default;
-    virtual ~base()        = default;
-    base(const this_type&) = default;
-    base(this_type&&)      = default;
+    base()                          = default;
+    virtual ~base()                 = default;
+    explicit base(const this_type&) = default;
+    explicit base(this_type&&)      = default;
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
@@ -136,7 +137,8 @@ struct base
         obj.value += value;
         obj.is_transient = is_transient;
         obj.is_running   = false;
-        storage_type::instance()->pop();
+        obj.laps += laps;
+        itr = storage_type::instance()->pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -148,6 +150,7 @@ struct base
         Type& obj = itr->obj();
         Type& rhs = static_cast<Type&>(*this);
         obj += rhs;
+        obj.laps += rhs.laps;
         storage_type::instance()->pop();
     }
 
@@ -159,6 +162,7 @@ struct base
     {
         is_running   = false;
         is_transient = false;
+        laps         = 0;
         value        = value_type();
         accum        = value_type();
     }
@@ -171,6 +175,7 @@ struct base
     {
         is_running   = false;
         is_transient = false;
+        laps         = 0;
         static_cast<Type&>(*this).reset();
     }
 
@@ -187,7 +192,11 @@ struct base
     //----------------------------------------------------------------------------------//
     // start
     //
-    void start() { static_cast<Type&>(*this).start(); }
+    void start()
+    {
+        ++laps;
+        static_cast<Type&>(*this).start();
+    }
 
     //----------------------------------------------------------------------------------//
     // stop
@@ -1610,11 +1619,11 @@ struct papi_event
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
-    using event_count::m_instance;
+    using event_count::m_count;
 
     papi_event()
     {
-        if(m_instance == 0 && event_count::is_master())
+        if(m_count == 0 && event_count::is_master())
         {
             add_event_types();
             start_event_set();
@@ -1622,7 +1631,7 @@ struct papi_event
     }
     ~papi_event()
     {
-        if(m_instance == 0 && event_count::is_master())
+        if(m_count == 0 && event_count::is_master())
         {
             // stop_event_set();
             // remove_event_types();
@@ -1630,7 +1639,7 @@ struct papi_event
     }
 
     papi_event(const papi_event& rhs) = default;
-    this_type& operator=(const this_type& rhs) = delete;
+    this_type& operator=(const this_type& rhs) = default;
     papi_event(papi_event&& rhs)               = default;
     this_type& operator=(this_type&&) = default;
 
@@ -1731,7 +1740,7 @@ private:
 
     void add_event_types()
     {
-        if(!event_type_added() && m_instance == 0 && event_count::is_master())
+        if(!event_type_added() && m_count == 0 && event_count::is_master())
         {
             PRINT_HERE(std::to_string(event_count::live()).c_str());
             int evt_types[] = { EventTypes... };
@@ -1742,7 +1751,7 @@ private:
 
     void remove_event_types()
     {
-        if(event_type_added() && m_instance == 0 && event_count::is_master())
+        if(event_type_added() && m_count == 0 && event_count::is_master())
         {
             PRINT_HERE(std::to_string(event_count::live()).c_str());
             for(auto itr : { EventTypes... })
@@ -1753,7 +1762,7 @@ private:
 
     void start_event_set()
     {
-        if(!event_set_started() && m_instance == 0 && event_count::is_master())
+        if(!event_set_started() && m_count == 0 && event_count::is_master())
         {
             PRINT_HERE(std::to_string(event_count::live()).c_str());
             tim::papi::start(EventSet);
@@ -1763,7 +1772,7 @@ private:
 
     void stop_event_set()
     {
-        if(event_set_started() && m_instance == 0 && event_count::is_master())
+        if(event_set_started() && m_count == 0 && event_count::is_master())
         {
             PRINT_HERE(std::to_string(event_count::live()).c_str());
             long long* tmp = new long long(0);

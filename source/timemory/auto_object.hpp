@@ -102,8 +102,8 @@ auto_object<AutoType, ObjectType>::auto_object(const string_t& object_tag,
       m_enabled, (m_enabled)
                      ? &manager::instance()->get<ObjectType>(
                            object_tag, lang_tag,
-                           (m_enabled) ? counter_type::live() : counter_type::zero(),
-                           (m_enabled) ? hashed_type::live() : hashed_type::zero())
+                           (m_enabled) ? counter_type::m_count : counter_type::zero(),
+                           (m_enabled) ? hashed_type::m_hash : hashed_type::zero())
                      : nullptr))
 {
 }

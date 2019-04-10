@@ -240,7 +240,7 @@ public:
     // const memory_data_t& get_memory_data() const { return memory_data; }
 
 private:
-    static pointer f_instance;
+    // static pointer f_instance;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -463,6 +463,10 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
 
     // return *(_data.map()[ref].get());
 }
+
+//--------------------------------------------------------------------------------------//
+
+// tim::manager::pointer tim::manager::f_instance = tim::manager::instance();
 
 //======================================================================================//
 

@@ -113,9 +113,12 @@ inline manager::manager()
 //, m_tuple_data(
 //      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
-    printf("############## %s:'%s'@%i [%p, %i] ##############\n", __FUNCTION__, __FILE__,
-           __LINE__, static_cast<void*>(this), m_instance_count);
-    // if(m_instance_count == 0)
+    if(m_instance_count == 0)
+    {
+        printf("############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
+               static_cast<void*>(this), m_instance_count);
+    }
+
     tim::papi::init();
 
     if(!singleton_t::master_instance_ptr())
@@ -128,9 +131,6 @@ inline manager::manager()
         manager* master = singleton_t::master_instance_ptr();
         master->set_merge(true);
         master->add(this);
-        // timer_data.set_head(*master->get_timer_data().current());
-        // timer_data.set_head(master->get_timer_data().current());
-        // memory_data.set_head(&master->get_memory_data().current());
     }
 
     if(!singleton_t::master_instance_ptr())
@@ -147,8 +147,11 @@ inline manager::manager()
 
 inline manager::~manager()
 {
-    printf("############## %s:'%s'@%i [%p, %i] ##############\n", __FUNCTION__, __FILE__,
-           __LINE__, static_cast<void*>(this), m_instance_count);
+    if(m_instance_count == 0)
+    {
+        printf("\n############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
+               static_cast<void*>(this), m_instance_count);
+    }
 
 #if defined(DEBUG)
     if(tim::env::verbose() > 2)
@@ -170,13 +173,6 @@ manager::update_total_timer_format()
 {
     if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
     {
-        // timer_data.total()->format()->prefix(this->get_prefix() +
-        //                                     string_t("[exe] total execution time"));
-        // timer_data.total()->format()->format(tim::format::timer::default_format());
-        // timer_data.total()->format()->unit(tim::format::timer::default_unit());
-        // timer_data.total()->format()->precision(tim::format::timer::default_precision());
-        // tim::format::timer::propose_default_width(
-        //    timer_data.total()->format()->prefix().length());
     }
 }
 
@@ -185,9 +181,7 @@ manager::update_total_timer_format()
 inline void
 manager::insert_global_timer()
 {
-    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0)
-       // && timer_data.map().size() == 0
-    )
+    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
     {
         update_total_timer_format();
         // timer_data.map()[0]           = timer_data.total();

@@ -87,120 +87,6 @@ struct storage_deleter
 }  // namespace details
 
 //======================================================================================//
-//
-//
-//
-//======================================================================================//
-template <typename _Key, typename _Mapped>
-using uomap = std::unordered_map<_Key, _Mapped>;
-
-class key_identifier_storage
-{
-public:
-    using this_type      = key_identifier_storage;
-    using string_t       = std::string;
-    using singleton_t    = singleton<this_type, std::shared_ptr<this_type>>;
-    using pointer        = typename singleton_t::pointer;
-    using smart_pointer  = typename singleton_t::smart_pointer;
-    using list_t         = typename singleton_t::list_t;
-    using auto_lock_t    = typename singleton_t::auto_lock_t;
-    using key_t          = intmax_t;
-    using value_t        = string_t;
-    using data_type      = std::map<key_t, value_t>;
-    using iterator       = typename data_type::iterator;
-    using const_iterator = typename data_type::const_iterator;
-    using size_type      = typename data_type::size_type;
-
-public:
-    static pointer instance() { return get_singleton().instance(); }
-    static pointer master_instance() { return get_singleton().master_instance(); }
-
-public:
-    key_identifier_storage() = default;
-    ~key_identifier_storage()
-    {
-        if(!singleton_t::is_master(this))
-        {
-            singleton_t::master_instance()->merge(this);
-        }
-        else
-        {
-        }
-    }
-
-    iterator       begin() { return m_data.begin(); }
-    iterator       end() { return m_data.end(); }
-    const_iterator begin() const { return m_data.begin(); }
-    const_iterator end() const { return m_data.end(); }
-    size_type      size() const { return m_data.size(); }
-
-    data_type&       data() { return m_data; }
-    const data_type& data() const { return m_data; }
-
-    value_t& operator[](const key_t& key) { return m_data[key]; }
-    bool     count(const key_t& key) const { return m_data.count(key); }
-    bool     exists(const key_t& key) const { return m_data.find(key) != m_data.end(); }
-    void     insert(const key_t& key, const value_t& val)
-    {
-        if(!exists(key))
-            m_data[key] = val;
-        else if(m_data[key].length() < val.length())
-            m_data[key] = val;
-        // singleton_t::auto_lock_t l(type_mutex<decltype(std::cout)>());
-        // std::cout << "key = " << key << ", val = " << val << ", size = " << size()
-        //          << std::endl;
-    }
-    value_t get(const key_t& key) const
-    {
-        if(exists(key))
-        {
-            return m_data.find(key)->second;
-        }
-        else
-        {
-            auto _get_prefix = []() {
-                if(!mpi_is_initialized())
-                    return string_t("> ");
-                // prefix spacing
-                static uint16_t width = 1;
-                if(mpi_size() > 9)
-                    width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
-                std::stringstream ss;
-                ss.fill('0');
-                ss << "|" << std::setw(width) << mpi_rank() << "> ";
-                return ss.str();
-            };
-            static string_t _prefix = _get_prefix();
-            return _prefix;
-        }
-    }
-
-    void merge(this_type* itr)
-    {
-        if(itr == this)
-            return;
-
-        auto_lock_t l(singleton_t::get_mutex());
-        // printf("Merging %p into %p (master = %p) @ %s:%i...\n", (void*) itr, (void*)
-        // this,
-        //       (void*) singleton_t::master_instance_ptr(), __PRETTY_FUNCTION__,
-        //       __LINE__);
-        for(const auto& mitr : itr->data())
-            insert(mitr.first, mitr.second);
-    }
-
-private:
-    static singleton_t& get_singleton()
-    {
-        static singleton_t _instance = singleton_t::instance();
-        return _instance;
-    }
-
-private:
-    data_type m_data;
-};
-
-//======================================================================================//
 
 template <typename ObjectType>
 class graph_storage
@@ -212,23 +98,21 @@ public:
     //  the node type
     //
     //----------------------------------------------------------------------------------//
-    struct graph_node : public std::tuple<intmax_t, intmax_t, ObjectType, string_t>
+    struct graph_node : public std::tuple<intmax_t, ObjectType, string_t>
     {
         using this_type = graph_node;
-        using base_type = std::tuple<intmax_t, intmax_t, ObjectType, string_t>;
+        using base_type = std::tuple<intmax_t, ObjectType, string_t>;
 
         intmax_t&   id() { return std::get<0>(*this); }
-        intmax_t&   laps() { return std::get<1>(*this); }
-        ObjectType& obj() { return std::get<2>(*this); }
-        string_t&   prefix() { return std::get<3>(*this); }
+        ObjectType& obj() { return std::get<1>(*this); }
+        string_t&   prefix() { return std::get<2>(*this); }
 
         const intmax_t&   id() const { return std::get<0>(*this); }
-        const intmax_t&   laps() const { return std::get<1>(*this); }
-        const ObjectType& obj() const { return std::get<2>(*this); }
-        const string_t&   prefix() const { return std::get<3>(*this); }
+        const ObjectType& obj() const { return std::get<1>(*this); }
+        const string_t&   prefix() const { return std::get<2>(*this); }
 
         graph_node()
-        : base_type(0, 0, ObjectType(), "")
+        : base_type(0, ObjectType(), "")
         {
         }
 
@@ -238,15 +122,15 @@ public:
         }
 
         graph_node(const intmax_t& _id, const ObjectType& _obj)
-        : base_type(_id, 0, _obj, "")
+        : base_type(_id, _obj, "")
         {
         }
 
-        ~graph_node()                         = default;
-        explicit graph_node(const this_type&) = default;
-        explicit graph_node(this_type&&)      = default;
-        graph_node& operator=(const this_type&) = default;
-        graph_node& operator=(this_type&&) = default;
+        ~graph_node() {}
+        // explicit graph_node(const this_type&) = default;
+        // explicit graph_node(this_type&&)      = default;
+        // graph_node& operator=(const this_type&) = default;
+        // graph_node& operator=(this_type&&) = default;
 
         bool operator==(const graph_node& rhs) const { return id() == rhs.id(); }
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
@@ -256,15 +140,9 @@ public:
             obj() += rhs.obj();
             return *this;
         }
-
-        intmax_t operator++() { return ++laps(); }
-        intmax_t operator++(int) { return laps()++; }
-        intmax_t operator--() { return --laps(); }
-        intmax_t operator--(int) { return laps()--; }
     };
 
     //----------------------------------------------------------------------------------//
-    using key_id_pointer = std::shared_ptr<key_identifier_storage>;
     using this_type      = graph_storage<ObjectType>;
     using void_type      = graph_storage<void>;
     using graph_t        = tim::graph<graph_node>;
@@ -282,23 +160,27 @@ public:
     //----------------------------------------------------------------------------------//
     struct graph_data
     {
-        using this_type    = graph_data;
-        intmax_t m_depth   = -1;
-        graph_t  m_graph   = graph_t();
-        iterator m_current = nullptr;
-        iterator m_head    = nullptr;
+        using this_type  = graph_data;
+        intmax_t m_depth = -1;
+        graph_t  m_graph;
+        iterator m_current;
+        iterator m_head;
 
-        graph_data() {}
-        explicit graph_data(const graph_node& rhs)
-        : m_depth(0)
-        , m_graph(rhs)
-        , m_current(m_graph.begin())
-        , m_head(m_graph.begin())
+        graph_data()
+        : m_depth(-1)
         {
         }
-        ~graph_data()                = default;
+
+        explicit graph_data(const graph_node& rhs)
+        : m_depth(0)
+        {
+            m_head    = m_graph.set_head(rhs);
+            m_current = m_head;
+        }
+
+        ~graph_data() { m_graph.clear(); }
+
         graph_data(const this_type&) = default;
-        graph_data(this_type&&)      = default;
         graph_data& operator=(const this_type&) = default;
         graph_data& operator=(this_type&&) = default;
 
@@ -314,27 +196,27 @@ public:
         const_iterator cbegin() const { return m_graph.cbegin(); }
         const_iterator cend() const { return m_graph.cend(); }
 
-        inline void clear()
+        inline void reset()
         {
-            m_depth = -1;
-            m_graph.clear();
-            ;
-            m_graph   = graph_t();
-            m_current = nullptr;
-            m_head    = nullptr;
+            m_graph.erase_children(m_head);
+            m_depth   = 0;
+            m_current = m_head;
         }
 
-        inline void pop_graph()
+        inline iterator pop_graph()
         {
-            --m_depth;
-            m_current = graph_t::parent(m_current);
+            if(m_depth > 0 && !m_graph.is_head(m_current))
+            {
+                m_current = graph_t::parent(m_current);
+                --m_depth;
+            }
+            return m_current;
         }
 
-        inline void insert(const graph_node& node)
+        inline iterator append_child(const graph_node& node)
         {
             ++m_depth;
-            m_current = m_graph.append_child(m_current, node);
-            m_current->operator++();
+            return (m_current = m_graph.append_child(m_current, node));
         }
     };
 
@@ -345,7 +227,19 @@ public:
     //
     //----------------------------------------------------------------------------------//
 
-    graph_storage() {}
+    graph_storage()
+    {
+        static std::atomic<short> _once;
+        short _once_num = _once++;
+        if(_once_num > 0 && !singleton_t::is_master(this))
+        {
+            m_data = graph_data(*master_instance()->current());
+            m_data.head() = master_instance()->data().current();
+            m_data.current() = master_instance()->data().current();
+            m_data.depth() = master_instance()->data().depth();
+        }
+    }
+
     ~graph_storage()
     {
         if(!singleton_t::is_master(this))
@@ -355,81 +249,127 @@ public:
             print();
         }
     }
+    explicit graph_storage(const this_type&) = delete;
+    graph_storage(this_type&&)               = default;
+    this_type& operator=(const this_type&) = delete;
+    this_type& operator=(this_type&& rhs) = default;
 
     static pointer instance() { return get_singleton().instance(); }
     static pointer master_instance() { return get_singleton().master_instance(); }
 
     void print();
 
-    iterator pop()
-    {
-        if(!m_data.graph().is_head(m_data.current()))
-        {
-            m_data.pop_graph();
-        }
-        return m_data.current();
-    }
-
-    iterator insert(const intmax_t& hash_id, const ObjectType& obj, bool& exists)
-    {
-        graph_node node(hash_id, obj);
-        auto       _insert_child = [&]() { m_data.insert(node); };
-
-        if(m_data.depth() < 0)
-        {
-            if(this == master_instance())
-            {
-                m_data = graph_data(node);
-            }
-            else
-            {
-                m_data = graph_data(*master_instance()->current());
-                _insert_child();
-            }
-        }
-        else
-        {
-            using sibling_itr = typename graph_t::sibling_iterator;
-            auto nchildren    = graph_t::number_of_children(m_data.current());
-            if(nchildren == 0)
-            {
-                _insert_child();
-            }
-            else
-            {
-                auto fchild = graph_t::child(m_data.current(), 0);
-                for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                {
-                    if(node == *itr)
-                    {
-                        m_data.current() = itr;
-                        exists           = true;
-                        break;
-                    }
-                }
-                if(!exists)
-                    _insert_child();
-            }
-        }
-        return m_data.current();
-    }
-
-    void set_prefix(const string_t& _prefix) { m_data.current()->prefix() = _prefix; }
-
-protected:
-    explicit graph_storage(const this_type&) = default;
-    explicit graph_storage(this_type&&)      = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&& rhs) = default;
-
     const graph_data& data() const { return m_data; }
     const graph_t&    graph() const { return m_data.graph(); }
 
     graph_data& data() { return m_data; }
     iterator&   current() { return m_data.current(); }
-    iterator&   head() { return m_data.head(); }
     graph_t&    graph() { return m_data.graph(); }
 
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    iterator pop() { return m_data.pop_graph(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    iterator insert(const intmax_t& hash_id, const ObjectType& obj, bool& exists)
+    {
+        using sibling_itr = typename graph_t::sibling_iterator;
+        graph_node node(hash_id, obj);
+
+        // lambda for inserting child
+        auto _insert_child = [&]() {
+            exists = false;
+            return m_data.append_child(node);
+        };
+
+        // lambda for updating settings
+        auto _update = [&](iterator itr) {
+            exists = true;
+            return (m_data.current() = itr);
+        };
+
+        // if first instance
+        if(m_data.depth() < 0)
+        {
+            if(this == master_instance())
+            {
+                m_data = graph_data(node);
+                exists = false;
+                return m_data.current();
+            }
+            else
+            {
+                m_data = graph_data(*master_instance()->current());
+                return _insert_child();
+            }
+        }
+        else
+        {
+            auto current = m_data.current();
+
+            if(hash_id == current->id())
+            {
+                exists = true;
+                return current;
+            }
+            else if(m_data.graph().is_valid(current))
+            {
+                // check parent if not head
+                if(!m_data.graph().is_head(current))
+                {
+                    auto parent = graph_t::parent(current);
+                    for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
+                    {
+                        // check hash id's
+                        if(hash_id == itr->id())
+                        {
+                            return _update(itr);
+                        }
+                    }
+                }
+
+                // check siblings
+                for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+                {
+                    // skip if current
+                    if(itr == current)
+                        continue;
+                    // check hash id's
+                    if(hash_id == itr->id())
+                    {
+                        return _update(itr);
+                    }
+                }
+
+                // check children
+                auto nchildren = graph_t::number_of_children(current);
+                if(nchildren == 0)
+                {
+                    return _insert_child();
+                }
+                else
+                {
+                    auto fchild = graph_t::child(current, 0);
+                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+                    {
+                        if(hash_id == itr->id())
+                        {
+                            return _update(itr);
+                        }
+                    }
+                    if(!exists)
+                        return _insert_child();
+                }
+            }
+        }
+        return _insert_child();
+    }
+
+    void set_prefix(const string_t& _prefix) { m_data.current()->prefix() = _prefix; }
+
+protected:
     void merge()
     {
         if(!singleton_t::is_master(this))
@@ -442,13 +382,16 @@ protected:
         for(auto& itr : m_children)
             merge(itr);
 
+        // create lock but don't immediately lock
         auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+        // lock if not already owned
         if(!l.owns_lock())
             l.lock();
 
         for(auto& itr : m_children)
             if(itr != this)
-                itr->data().clear();
+                itr->data().reset();
     }
 
     void merge(this_type* itr)
@@ -456,34 +399,46 @@ protected:
         if(itr == this)
             return;
 
+        // create lock but don't immediately lock
         auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+        // lock if not already owned
         if(!l.owns_lock())
             l.lock();
-
-        // printf("Merging %p into %p (master = %p) @ %s:%i...\n", (void*) itr, (void*)
-        // this,
-        //       (void*) singleton_t::master_instance_ptr(), __PRETTY_FUNCTION__,
-        //       __LINE__);
 
         auto _this_beg = graph().begin();
         auto _this_end = graph().end();
 
+        bool _merged = false;
         for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
         {
-            if(_this_itr == itr->head())
+            if(_this_itr == itr->data().head())
             {
                 auto _iter_beg = itr->graph().begin();
                 auto _iter_end = itr->graph().end();
                 graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
+                _merged = true;
                 break;
             }
         }
 
-        typedef decltype(_this_beg) predicate_type;
-        auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-        _this_beg    = graph().begin();
-        _this_end    = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+        if(_merged)
+        {
+            typedef decltype(_this_beg) predicate_type;
+            auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+            _this_beg    = graph().begin();
+            _this_end    = graph().end();
+            graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+        }
+        else
+        {
+            auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
+            std::cerr << "Failure to merge graphs!" << std::endl;
+            auto g = graph();
+            graph().insert_subgraph_after(m_data.current(), itr->data().head());
+            //itr->graph()
+
+        }
     }
 
 protected:
@@ -519,7 +474,8 @@ tim::graph_storage<ObjectType>::print()
     else
     {
         merge();
-        intmax_t _width = ObjectType::get_width();
+        m_data.current() = m_data.head();
+        intmax_t _width  = ObjectType::get_width();
         for(const auto& itr : m_data.graph())
         {
             intmax_t _len = itr.prefix().length();
@@ -529,9 +485,9 @@ tim::graph_storage<ObjectType>::print()
         std::stringstream _oss;
         for(const auto& itr : m_data.graph())
         {
-            const ObjectType& _obj    = itr.obj();
-            auto              _prefix = itr.prefix();
-            auto              _laps   = itr.laps();
+            auto _obj    = itr.obj();
+            auto _prefix = itr.prefix();
+            auto _laps   = _obj.laps;
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
         }
 
@@ -540,6 +496,8 @@ tim::graph_storage<ObjectType>::print()
         std::ofstream ofs(fname.c_str());
         if(ofs)
         {
+            printf("[graph_storage<%s>::%s @ %i]> Outputting '%s'...\n",
+                   ObjectType::label().c_str(), __FUNCTION__, __LINE__, fname.c_str());
             ofs << _oss.str();
             ofs.close();
         }

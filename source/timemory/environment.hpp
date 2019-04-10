@@ -377,7 +377,10 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
     auto plast = _prefix.length() - 1;
     if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
         _prefix += "_";
-    return path_t(_prefix + _tag + _rank_suffix + _ext);
+    auto f = path_t(_prefix + _tag + _rank_suffix + _ext);
+    while(f.find("//") != std::string::npos)
+        f.replace(f.find("//"), 2, "/");
+    return f;
 }
 
 //--------------------------------------------------------------------------------------//

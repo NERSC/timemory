@@ -29,11 +29,31 @@
  */
 
 #include "timemory/manager.hpp"
+#include "timemory/utility.hpp"
 
 //======================================================================================//
 
 // this forces master manager instance to get created at the beginning of application
 //
-tim::manager::pointer tim::manager::f_instance = tim::manager::instance();
+// tim::manager::pointer tim::manager::f_instance = tim::manager::instance();
+//
+// above can cause static initialization fiasco
+
+//======================================================================================//
+
+namespace
+{
+// just a symbol
+static int manager_symbol_dummy = 0;
+
+//--------------------------------------------------------------------------------------//
+
+void
+func()
+{
+    tim::consume_parameters(manager_symbol_dummy);
+}
+
+}
 
 //======================================================================================//

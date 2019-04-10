@@ -48,9 +48,10 @@
 using namespace tim::component;
 
 using papi_tuple_t = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
-                                     thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, papi_tuple_t>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -318,12 +319,12 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<peak_rss> prss(true, __FUNCTION__);
+    tim::component_tuple<current_rss, peak_rss> prss(true, __FUNCTION__);
     {
         TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
         // just record the peak rss
         prss.measure();
-        std::cout << "  Current peak rss: " << prss << std::endl;
+        std::cout << "  Current rss: " << prss << std::endl;
     }
 
     {
@@ -335,12 +336,12 @@ test_4_measure()
         long                  nfib = random_entry(v);
         fibonacci(nfib);
         prss.stop();
-        std::cout << "Change in peak rss: " << prss << std::endl;
+        std::cout << "Change in rss: " << prss << std::endl;
     }
 
     // prss.reset();
     prss.measure();
-    std::cout << "  Current peak rss: " << prss << std::endl;
+    std::cout << "  Current rss: " << prss << std::endl;
 }
 
 //======================================================================================//
