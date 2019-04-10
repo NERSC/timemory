@@ -37,13 +37,21 @@
 #include <vector>
 
 // TiMemory headers
-#include <timemory/auto_timer.hpp>
+#include <timemory/auto_tuple.hpp>
 #include <timemory/manager.hpp>
 #include <timemory/mpi.hpp>
 #include <timemory/signal_detection.hpp>
 
-typedef tim::timer   tim_timer_t;
-typedef tim::manager manager_t;
+using graph_t          = tim::graph<std::string>;
+using graph_iterator_t = typename graph_t::iterator;
+using namespace tim::component;
+using auto_tuple_t  = tim::auto_tuple<real_clock>;
+using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
+using papi_tuple_t  = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
+using global_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
+                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
+                    papi_tuple_t>;
 
 // ASSERT_NEAR
 // EXPECT_EQ
@@ -161,10 +169,14 @@ main(int argc, char** argv)
     std::cout << (*tim::manager::instance()) << std::endl;
 
     if(num_fail > 0)
+    {
         std::cout << "Tests failed: " << num_fail << "/" << num_test << std::endl;
+    }
     else
+    {
         std::cout << "Tests passed: " << (num_test - num_fail) << "/" << num_test
                   << std::endl;
+    }
 
     exit(num_fail);
 }
@@ -175,10 +187,12 @@ void
 print_info(const std::string& func)
 {
     if(tim::mpi_rank() == 0)
+    {
         std::cout << "\n[" << tim::mpi_rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
+    }
 }
 
 //======================================================================================//
@@ -189,7 +203,7 @@ print_size(const std::string& func, intmax_t line, bool extra_endl)
     if(tim::mpi_rank() == 0)
     {
         std::cout << "[" << tim::mpi_rank() << "] " << func << "@" << line
-                  << " : Timing manager size: " << manager_t::instance()->size()
+                  << " : Timing manager size: " << tim::manager::instance()->size()
                   << std::endl;
 
         if(extra_endl)
@@ -205,7 +219,7 @@ print_depth(const std::string& func, intmax_t line, bool extra_endl)
     if(tim::mpi_rank() == 0)
     {
         std::cout << "[" << tim::mpi_rank() << "] " << func << "@" << line
-                  << " : Timing manager size: " << manager_t::instance()->get_max_depth()
+                  << " : Timing manager size: " << tim::manager::get_max_depth()
                   << std::endl;
 
         if(extra_endl)
