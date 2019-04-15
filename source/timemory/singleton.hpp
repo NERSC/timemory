@@ -83,6 +83,7 @@ public:
     // since we are overloading delete we overload new
     void* operator new(size_t)
     {
+        DEBUG_PRINT_HERE("");
         this_type* ptr = ::new this_type();
         return static_cast<void*>(ptr);
     }
@@ -91,6 +92,7 @@ public:
     // a nullptr after deletion
     void operator delete(void* ptr)
     {
+        DEBUG_PRINT_HERE("");
         this_type* _instance = (this_type*) (ptr);
         ::delete _instance;
         if(std::this_thread::get_id() == f_master_thread)
@@ -174,6 +176,7 @@ template <typename Type, typename Pointer>
 singleton<Type, Pointer>::singleton()
 {
     initialize();
+    DEBUG_PRINT_HERE("");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -182,6 +185,7 @@ template <typename Type, typename Pointer>
 singleton<Type, Pointer>::singleton(pointer ptr)
 {
     initialize(ptr);
+    DEBUG_PRINT_HERE("");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -189,9 +193,11 @@ singleton<Type, Pointer>::singleton(pointer ptr)
 template <typename Type, typename Pointer>
 singleton<Type, Pointer>::~singleton()
 {
+    DEBUG_PRINT_HERE("");
     // should be called at __cxa_finalize so don't bother deleting
-    delete f_master_instance;
-    f_master_instance = nullptr;
+    auto& del = _master_instance().get_deleter();
+    del(_master_instance().get());
+    //_master_instance().reset();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -205,6 +211,7 @@ singleton<Type, Pointer>::initialize()
         f_master_thread   = std::this_thread::get_id();
         f_master_instance = new Type();
     }
+    DEBUG_PRINT_HERE("");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -218,6 +225,7 @@ singleton<Type, Pointer>::initialize(pointer ptr)
         f_master_thread   = std::this_thread::get_id();
         f_master_instance = ptr;
     }
+    DEBUG_PRINT_HERE("");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -228,11 +236,15 @@ singleton<Type, Pointer>::destroy()
 {
     //_local_instance().reset();
     if(std::this_thread::get_id() == f_master_thread)
+    {
+        delete f_master_instance;
         f_master_instance = nullptr;
+    }
     else
     {
         remove(_local_instance().get());
     }
+    DEBUG_PRINT_HERE("");
 }
 
 //--------------------------------------------------------------------------------------//

@@ -81,6 +81,7 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
 
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
 
 //--------------------------------------------------------------------------------------//
 
@@ -139,6 +140,7 @@ tim::env::parse()
 
     output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
     output_prefix() = tim::get_env("TIMEMORY_OUTPUT_PREFIX", output_prefix());
+    auto_output()   = tim::get_env("TIMEMORY_AUTO_OUTPUT", auto_output());
 
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
     env_num_threads() = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads());

@@ -184,7 +184,7 @@ using push_back = typename push_back_t<List, NewElement>::type;
 
 //======================================================================================//
 
-template <typename _Tp, typename _Tuple>
+template <typename _Tp, typename Type>
 struct index_of;
 
 //--------------------------------------------------------------------------------------//

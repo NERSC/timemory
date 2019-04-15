@@ -46,6 +46,33 @@ using global_tuple_t =
 
 static intmax_t nlaps = 0;
 
+template <intmax_t _N, intmax_t _Nt, typename... T,
+          typename std::enable_if<(_N == _Nt), int>::type = 0>
+void
+_test_print(std::tuple<T...>&& a)
+{
+    std::cout << std::get<_N>(a) << std::endl;
+}
+
+template <intmax_t _N, intmax_t _Nt, typename... T,
+          typename std::enable_if<(_N < _Nt), int>::type = 0>
+void
+_test_print(std::tuple<T...>&& a)
+{
+    std::cout << std::get<_N>(a) << ", ";
+    _test_print<_N + 1, _Nt, T...>(std::forward<std::tuple<T...>>(a));
+}
+
+template <typename... T, typename... U>
+void
+test_print(std::tuple<T...>&& a, std::tuple<U...>&& b)
+{
+    constexpr intmax_t Ts = sizeof...(T);
+    constexpr intmax_t Us = sizeof...(U);
+    _test_print<0, Ts - 1, T...>(std::forward<std::tuple<T...>>(a));
+    _test_print<0, Us - 1, U...>(std::forward<std::tuple<U...>>(b));
+}
+
 //======================================================================================//
 
 intmax_t
@@ -129,6 +156,8 @@ main(int argc, char** argv)
     }
 
     std::cout << std::endl;
+
+    test_print(std::make_tuple(1.0, "abc", 1), std::make_tuple("def", 6UL));
 
     return 0;
 }

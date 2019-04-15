@@ -158,7 +158,9 @@ public:
         sibling_iterator begin() const;
         sibling_iterator end() const;
 
-        graph_node* node;
+        operator bool() const { return node != nullptr; }
+
+        graph_node* node = nullptr;
 
     protected:
         bool m_skip_current_children;
@@ -2275,7 +2277,21 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
 {
     while(from1 != from2)
     {
-        auto fnd = std::find(to1, to2, *from1);
+        sibling_iterator fnd;
+        for(sibling_iterator itr = to1; itr != to2; ++itr)
+        {
+            if(itr && from1 && *itr == *from1)
+            {
+                fnd = itr;
+                break;
+            }
+            if(!itr)
+            {
+                fnd = to2;
+                break;
+            }
+        }
+        // auto fnd = std::find(to1, to2, *from1);
         if(fnd != to2)  // element found
         {
             if(from1.begin() == from1.end())  // full depth reached
@@ -2296,7 +2312,10 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
         {  // element missing
             insert_subgraph(to2, from1);
         }
-        ++from1;
+        do
+        {
+            ++from1;
+        } while(!from1 && from1 != from2);
     }
 }
 

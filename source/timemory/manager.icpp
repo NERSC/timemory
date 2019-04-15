@@ -163,7 +163,7 @@ inline manager::~manager()
 
     // if(m_instance_count == 0)
     tim::papi::shutdown();
-    details::manager_singleton().destroy();
+    // details::manager_singleton().destroy();
 }
 
 //======================================================================================//

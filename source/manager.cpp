@@ -47,18 +47,12 @@ namespace
 // just a symbol
 int manager_symbol_dummy = 0;
 
-//--------------------------------------------------------------------------------------//
-
-void
-func(int i)
-{
-    tim::consume_parameters(manager_symbol_dummy);
-    if(i > 0)
-    {
-        func(i - 1);
-    }
-}
-
 }  // empty namespace
+
+extern "C" int
+get_timemory_manager_symbol_dummy()
+{
+    return manager_symbol_dummy;
+}
 
 //======================================================================================//

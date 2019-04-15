@@ -54,9 +54,51 @@ endif()
 # used by configure_package_*
 set(LIBNAME timemory)
 
+# ---------------------------------------------------------------------------- #
+# set the compiler flags
+add_c_flag_if_avail("-W")
+if(NOT WIN32)
+    add_c_flag_if_avail("-Wall")
+endif()
+add_c_flag_if_avail("-Wextra")
+add_c_flag_if_avail("-Wno-unused-value")
+add_c_flag_if_avail("-Wno-unknown-pragmas")
+add_c_flag_if_avail("-Wno-reserved-id-macro")
+add_c_flag_if_avail("-Wno-deprecated-declarations")
+
+add_cxx_flag_if_avail("-W")
+if(NOT WIN32)
+    add_cxx_flag_if_avail("-Wall")
+endif()
+add_cxx_flag_if_avail("-Wextra")
+# add_cxx_flag_if_avail("-Wshadow")
+add_cxx_flag_if_avail("-Wno-unused-value")
+add_cxx_flag_if_avail("-Wno-class-memaccess")
+add_cxx_flag_if_avail("-Wno-unknown-pragmas")
+add_cxx_flag_if_avail("-Wno-c++17-extensions")
+add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
+add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+add_cxx_flag_if_avail("-faligned-new")
+
+if(NOT CMAKE_CXX_COMPILER_IS_GNU)
+    # these flags succeed with GNU compiler but are unknown (clang flags)
+    add_cxx_flag_if_avail("-Wno-exceptions")
+    add_cxx_flag_if_avail("-Wno-reserved-id-macro")
+    add_cxx_flag_if_avail("-Wno-unused-private-field")
+endif()
+
+if(TIMEMORY_BUILD_LTO)
+    add_c_flag_if_avail("-flto")
+    add_cxx_flag_if_avail("-flto")
+endif()
+
+# Intel floating-point model
+add_c_flag_if_avail("-fp-model=precise")
+add_cxx_flag_if_avail("-fp-model=precise")
 
 # ---------------------------------------------------------------------------- #
 # non-debug optimizations
+#
 if(NOT DEBUG)
     add_c_flag_if_avail("-funroll-loops")
     add_c_flag_if_avail("-ftree-vectorize")
@@ -69,43 +111,9 @@ if(NOT DEBUG)
     # add_cxx_flag_if_avail("-fira-loop-pressure")
 endif()
 
-# Intel floating-point model
-add_c_flag_if_avail("-fp-model=precise")
-add_cxx_flag_if_avail("-fp-model=precise")
-
-
 # ---------------------------------------------------------------------------- #
-# set the compiler flags
-add_c_flag_if_avail("-W")
-add_c_flag_if_avail("-Wall")
-add_c_flag_if_avail("-Wextra")
-add_c_flag_if_avail("-Wno-unused-value")
-add_c_flag_if_avail("-Wno-unknown-pragmas")
-add_c_flag_if_avail("-Wno-reserved-id-macro")
-add_c_flag_if_avail("-Wno-deprecated-declarations")
-
-add_cxx_flag_if_avail("-W")
-add_cxx_flag_if_avail("-Wall")
-add_cxx_flag_if_avail("-Wextra")
-# add_cxx_flag_if_avail("-Wshadow")
-add_cxx_flag_if_avail("-Wno-unused-value")
-add_cxx_flag_if_avail("-Wno-class-memaccess")
-add_cxx_flag_if_avail("-Wno-unknown-pragmas")
-add_cxx_flag_if_avail("-Wno-c++17-extensions")
-add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
-add_cxx_flag_if_avail("-Wno-deprecated-declarations")
-add_cxx_flag_if_avail("-faligned-new")
-
-# add_c_flag_if_avail("-flto")
-# add_cxx_flag_if_avail("-flto")
-
-if(NOT CMAKE_CXX_COMPILER_IS_GNU)
-    # these flags succeed with GNU compiler but are unknown (clang flags)
-    add_cxx_flag_if_avail("-Wno-exceptions")
-    add_cxx_flag_if_avail("-Wno-reserved-id-macro")
-    add_cxx_flag_if_avail("-Wno-unused-private-field")
-endif()
-
+# architecture optimizations
+#
 if(TIMEMORY_USE_ARCH)
     if(CMAKE_C_COMPILER_IS_INTEL)
         add_c_flag_if_avail("-xHOST")
@@ -148,6 +156,9 @@ if(TIMEMORY_USE_ARCH)
     endif()
 endif()
 
+# ---------------------------------------------------------------------------- #
+# sanitizer
+#
 if(TIMEMORY_USE_SANITIZER)
     add_c_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
     add_cxx_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
@@ -179,6 +190,7 @@ endif()
 
 # ---------------------------------------------------------------------------- #
 # user customization
+#
 set(_CFLAGS ${CFLAGS} $ENV{CFLAGS})
 set(_CXXFLAGS ${CXXFLAGS} $ENV{CXXFLAGS})
 string(REPLACE " " ";" _CFLAGS "${_CFLAGS}")

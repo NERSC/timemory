@@ -39,11 +39,10 @@ namespace component
 template <typename _Tp>
 struct set_prefix
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
-    using string_t   = std::string;
+    using Type     = _Tp;
+    using string_t = std::string;
 
-    set_prefix(base_type& obj, const bool& exists, const string_t& _prefix)
+    set_prefix(Type& obj, const bool& exists, const string_t& _prefix)
     {
         if(!exists)
             obj.set_prefix(_prefix);
@@ -55,11 +54,9 @@ struct set_prefix
 template <typename _Tp>
 struct insert_node
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
-                const intmax_t& id)
+    insert_node(std::size_t _N, std::size_t, Type& obj, bool* exists, const intmax_t& id)
     {
         obj.insert_node(exists[_N], id);
     }
@@ -70,10 +67,9 @@ struct insert_node
 template <typename _Tp>
 struct pop_node
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    pop_node(base_type& obj) { obj.pop_node(); }
+    pop_node(Type& obj) { obj.pop_node(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -81,19 +77,18 @@ struct pop_node
 template <typename _Tp>
 struct record
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    record(base_type& obj) { obj.value = _Tp::record(); }
+    record(Type& obj) { obj.value = _Tp::record(); }
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true)> = 0>
-    record(base_type& obj, const base_type& rhs)
+    record(Type& obj, const Type& rhs)
     {
         obj = std::max(obj, rhs);
     }
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false)> = 0>
-    record(base_type& obj, const base_type& rhs)
+    record(Type& obj, const Type& rhs)
     {
         obj += rhs;
     }
@@ -104,10 +99,9 @@ struct record
 template <typename _Tp>
 struct reset
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    reset(base_type& obj) { obj.reset(); }
+    reset(Type& obj) { obj.reset(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -115,10 +109,9 @@ struct reset
 template <typename _Tp>
 struct measure
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    measure(base_type& obj) { obj.measure(); }
+    measure(Type& obj) { obj.measure(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -126,10 +119,9 @@ struct measure
 template <typename _Tp>
 struct start
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    start(base_type& obj) { obj.start(); }
+    start(Type& obj) { obj.start(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -137,10 +129,9 @@ struct start
 template <typename _Tp>
 struct stop
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    stop(base_type& obj) { obj.stop(); }
+    stop(Type& obj) { obj.stop(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -148,11 +139,10 @@ struct stop
 template <typename _Tp>
 struct conditional_start
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
     template <typename _Func>
-    conditional_start(base_type& obj, _Func&& func)
+    conditional_start(Type& obj, _Func&& func)
     {
         bool did_start = obj.conditional_start();
         std::forward<_Func>(func)(did_start);
@@ -164,10 +154,9 @@ struct conditional_start
 template <typename _Tp>
 struct conditional_stop
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    conditional_stop(base_type& obj) { obj.conditional_stop(); }
+    conditional_stop(Type& obj) { obj.conditional_stop(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -175,11 +164,10 @@ struct conditional_stop
 template <typename _Tp>
 struct minus
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    minus(base_type& obj, const intmax_t& rhs) { obj -= rhs; }
-    minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
+    minus(Type& obj, const intmax_t& rhs) { obj -= rhs; }
+    minus(Type& obj, const Type& rhs) { obj -= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -187,22 +175,21 @@ struct minus
 template <typename _Tp>
 struct plus
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true), int> = 0>
-    plus(base_type& obj, const base_type& rhs)
+    plus(Type& obj, const Type& rhs)
     {
         obj = std::max(obj, rhs);
     }
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false), int> = 0>
-    plus(base_type& obj, const base_type& rhs)
+    plus(Type& obj, const Type& rhs)
     {
         obj += rhs;
     }
 
-    plus(base_type& obj, const intmax_t& rhs) { obj += rhs; }
+    plus(Type& obj, const intmax_t& rhs) { obj += rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -210,11 +197,10 @@ struct plus
 template <typename _Tp>
 struct multiply
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    multiply(base_type& obj, const intmax_t& rhs) { obj *= rhs; }
-    multiply(base_type& obj, const base_type& rhs) { obj *= rhs; }
+    multiply(Type& obj, const intmax_t& rhs) { obj *= rhs; }
+    multiply(Type& obj, const Type& rhs) { obj *= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -222,11 +208,10 @@ struct multiply
 template <typename _Tp>
 struct divide
 {
-    using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type = _Tp;
 
-    divide(base_type& obj, const intmax_t& rhs) { obj /= rhs; }
-    divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
+    divide(Type& obj, const intmax_t& rhs) { obj /= rhs; }
+    divide(Type& obj, const Type& rhs) { obj /= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -238,7 +223,7 @@ struct print
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    print(std::size_t _N, std::size_t _Ntot, base_type& obj, std::ostream& os,
+    print(std::size_t _N, std::size_t _Ntot, const Type& obj, std::ostream& os,
           bool endline)
     {
         std::stringstream ss;
@@ -269,10 +254,10 @@ template <typename _Tp, typename Archive>
 struct serial
 {
     using value_type = typename _Tp::value_type;
-    using base_type  = base<_Tp, value_type>;
+    using Type       = _Tp;
 
     template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
-    serial(base_type& obj, Archive& ar, const unsigned int version)
+    serial(Type& obj, Archive& ar, const unsigned int version)
     {
         ar(serializer::make_nvp(_Tp::label() + ".value", obj.accum),
            serializer::make_nvp(_Tp::label() + ".unit.value", _Tp::unit()),
@@ -281,9 +266,9 @@ struct serial
     }
 
     template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
-    serial(base_type& obj, Archive& ar, const unsigned int version)
+    serial(Type& obj, Archive& ar, const unsigned int version)
     {
-        auto value = static_cast<_Tp&>(obj).serial();
+        auto value = static_cast<Type&>(obj).serial();
         ar(serializer::make_nvp(_Tp::label() + ".value", value),
            serializer::make_nvp(_Tp::label() + ".unit.value", _Tp::unit()),
            serializer::make_nvp(_Tp::label() + ".unit.repr", _Tp::display_unit()));

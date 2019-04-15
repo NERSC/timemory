@@ -485,14 +485,20 @@ struct manager_deleter
         type*           master     = singleton_t::master_instance_ptr();
         std::thread::id master_tid = singleton_t::master_thread_id();
 
+        DEBUG_PRINT_HERE("manager_deleter");
         if(std::this_thread::get_id() == master_tid)
-            delete ptr;
+        {
+            DEBUG_PRINT_HERE("manager_deleter");
+            // delete ptr;
+        }
         else
         {
             if(master && ptr != master)
             {
+                DEBUG_PRINT_HERE("manager_deleter");
                 master->remove(ptr);
             }
+            DEBUG_PRINT_HERE("manager_deleter");
             delete ptr;
         }
     }

@@ -100,6 +100,10 @@ struct base
     base& operator=(this_type&&) = default;
 
     //----------------------------------------------------------------------------------//
+    //
+    value_type get_measurement() const { return Type::record(); }
+
+    //----------------------------------------------------------------------------------//
     // function operator
     //
     value_type& operator()()
@@ -452,17 +456,20 @@ struct real_clock : public base<real_clock>
     static std::string descript() { return "wall time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_real_now<intmax_t, ratio_t>(); }
-    double             compute_display() const
+
+    double compute_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
+
     void start()
     {
         set_started();
         value = record();
     }
+
     void stop()
     {
         auto tmp = record();
@@ -1763,7 +1770,7 @@ private:
     {
         if(!event_type_added() && m_count == 0 && event_count::is_master())
         {
-            // PRINT_HERE(std::to_string(event_count::live()).c_str());
+            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             int evt_types[] = { EventTypes... };
             tim::papi::add_events(EventSet, evt_types, num_events);
             event_type_added() = true;
@@ -1774,7 +1781,7 @@ private:
     {
         if(event_type_added() && m_count == 0 && event_count::is_master())
         {
-            // PRINT_HERE(std::to_string(event_count::live()).c_str());
+            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             for(auto itr : { EventTypes... })
                 tim::papi::remove_event(EventSet, itr);
             event_type_added() = false;
@@ -1785,7 +1792,7 @@ private:
     {
         if(!event_set_started() && m_count == 0 && event_count::is_master())
         {
-            // PRINT_HERE(std::to_string(event_count::live()).c_str());
+            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             tim::papi::start(EventSet);
             event_set_started() = true;
         }
@@ -1795,7 +1802,7 @@ private:
     {
         if(event_set_started() && m_count == 0 && event_count::is_master())
         {
-            // PRINT_HERE(std::to_string(event_count::live()).c_str());
+            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             long long* tmp = new long long(0);
             tim::papi::stop(EventSet, tmp);
             tim::papi::destroy_event_set(EventSet);

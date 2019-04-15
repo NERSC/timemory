@@ -96,7 +96,7 @@ macro(BUILD_LIBRARY)
     target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
     target_compile_options(${LIBRARY_TARGET_NAME}
-        PUBLIC
+        PRIVATE
             $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
             $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
 

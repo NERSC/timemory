@@ -103,6 +103,14 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
+// use this function to get rid of "unused parameter" warnings
+template <typename... _Args>
+void
+consume_parameters(_Args...)
+{
+}
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 inline bool
@@ -193,7 +201,7 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
         return system(_sdir.str().c_str());
     }
 #elif defined(_WINDOWS)
-    consume_parameters<int>(umask);
+    consume_parameters(umask);
     while(_dir.find("/") != std::string::npos)
         _dir.replace(_dir.find("/"), 1, "\\\\");
 
@@ -495,13 +503,6 @@ public:
         return _path;
     }
 };
-
-// use this function to get rid of "unused parameter" warnings
-template <typename _Tp, typename... _Args>
-void
-consume_parameters(_Tp, _Args...)
-{
-}
 
 //======================================================================================//
 //

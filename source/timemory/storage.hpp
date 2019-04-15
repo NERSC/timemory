@@ -56,34 +56,8 @@ namespace tim
 {
 namespace details
 {
-//--------------------------------------------------------------------------------------//
-
-template <typename Type>
-struct storage_deleter
-{
-    using Pointer     = std::unique_ptr<Type, storage_deleter<Type>>;
-    using singleton_t = singleton<Type, Pointer>;
-
-    void operator()(Type* ptr)
-    {
-        Type*           master     = singleton_t::master_instance_ptr();
-        std::thread::id master_tid = singleton_t::master_thread_id();
-
-        if(std::this_thread::get_id() == master_tid)
-            delete ptr;
-        else
-        {
-            if(master && ptr != master)
-            {
-                singleton_t::remove(ptr);
-            }
-            delete ptr;
-        }
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
+template <typename StorageType>
+struct storage_deleter;
 }  // namespace details
 
 //======================================================================================//
@@ -92,7 +66,16 @@ template <typename ObjectType>
 class graph_storage
 {
 public:
-    using string_t = std::string;
+    //----------------------------------------------------------------------------------//
+    //
+    using this_type     = graph_storage<ObjectType>;
+    using void_type     = graph_storage<void>;
+    using string_t      = std::string;
+    using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
+    using singleton_t   = singleton<this_type, smart_pointer>;
+    using pointer       = typename singleton_t::pointer;
+    using auto_lock_t   = typename singleton_t::auto_lock_t;
+
     //----------------------------------------------------------------------------------//
     //
     //  the node type
@@ -147,15 +130,9 @@ public:
     };
 
     //----------------------------------------------------------------------------------//
-    using this_type      = graph_storage<ObjectType>;
-    using void_type      = graph_storage<void>;
     using graph_t        = tim::graph<graph_node>;
     using iterator       = typename graph_t::iterator;
     using const_iterator = typename graph_t::const_iterator;
-    using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
-    using singleton_t   = singleton<this_type, smart_pointer>;
-    using pointer       = typename singleton_t::pointer;
-    using auto_lock_t   = typename singleton_t::auto_lock_t;
 
     //----------------------------------------------------------------------------------//
     //
@@ -246,12 +223,13 @@ public:
 
     ~graph_storage()
     {
+        DEBUG_PRINT_HERE("graph_storage");
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
-        else
+        /*else
         {
             print();
-        }
+        }*/
     }
     explicit graph_storage(const this_type&) = delete;
     graph_storage(this_type&&)               = default;
@@ -374,6 +352,8 @@ public:
     void set_prefix(const string_t& _prefix) { m_data.current()->prefix() = _prefix; }
 
 protected:
+    friend struct details::storage_deleter<this_type>;
+
     void merge()
     {
         if(!singleton_t::is_master(this))
@@ -446,8 +426,8 @@ protected:
 
 protected:
     graph_data m_data;
-    string_t m_label = ObjectType::label();
-    string_t m_descript = ObjectType::descript();
+    string_t   m_label    = ObjectType::label();
+    string_t   m_descript = ObjectType::descript();
 
 private:
     static singleton_t& get_singleton()
@@ -515,7 +495,7 @@ tim::graph_storage<ObjectType>::print()
     {
         singleton_t::master_instance()->merge(this);
     }
-    else
+    else if(tim::env::auto_output())
     {
         merge();
         m_data.current() = m_data.head();
@@ -557,4 +537,57 @@ tim::graph_storage<ObjectType>::print()
         serialize_storage(jname, ObjectType::label(), *this);
     }
 }
+
+//======================================================================================//
+
+template <typename StorageType>
+struct tim::details::storage_deleter : public std::default_delete<StorageType>
+{
+    using Pointer     = std::unique_ptr<StorageType, storage_deleter<StorageType>>;
+    using singleton_t = tim::singleton<StorageType, Pointer>;
+
+    void operator()(StorageType* ptr)
+    {
+        StorageType*    master     = singleton_t::master_instance_ptr();
+        std::thread::id master_tid = singleton_t::master_thread_id();
+        std::thread::id this_tid   = std::this_thread::get_id();
+
+        if(ptr && master && ptr != master)
+        {
+            DEBUG_PRINT_HERE("storage_deleter");
+            master->StorageType::merge(ptr);
+        }
+        else
+        {
+            DEBUG_PRINT_HERE("storage_deleter");
+            if(ptr)
+            {
+                DEBUG_PRINT_HERE("storage_deleter");
+                ptr->StorageType::print();
+            }
+            else if(master)
+            {
+                DEBUG_PRINT_HERE("storage_deleter");
+                master->StorageType::print();
+            }
+        }
+
+        DEBUG_PRINT_HERE("storage_deleter");
+        if(this_tid == master_tid)
+        {
+            delete ptr;
+        }
+        else
+        {
+            if(master && ptr != master)
+            {
+                DEBUG_PRINT_HERE("storage_deleter");
+                singleton_t::remove(ptr);
+            }
+            DEBUG_PRINT_HERE("storage_deleter");
+            delete ptr;
+        }
+    }
+};
+
 //======================================================================================//

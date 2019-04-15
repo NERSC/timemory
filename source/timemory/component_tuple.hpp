@@ -140,6 +140,11 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
+    // get the size
+    //
+    static constexpr std::size_t size() { return num_elements; }
+
+    //----------------------------------------------------------------------------------//
     // insert into graph
     inline void push()
     {

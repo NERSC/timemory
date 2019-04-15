@@ -484,6 +484,15 @@
         printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #endif
 
+#if !defined(DEBUG_PRINT_HERE)
+#    if defined(DEBUG)
+#        define DEBUG_PRINT_HERE(extra)                                                  \
+            printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
+#    else
+#        define DEBUG_PRINT_HERE(extra)
+#    endif
+#endif
+
 #if !defined(PRETTY_PRINT_HERE)
 #    if defined(_C_GNU) || defined(_C_CLANG)
 #        define PRETTY_PRINT_HERE(extra)                                                 \

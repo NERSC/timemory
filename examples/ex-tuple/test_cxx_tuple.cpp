@@ -218,6 +218,60 @@ test_1_usage()
 
 //======================================================================================//
 
+// measure functions
+template <typename Type, typename... Types,
+          typename ReturnType = decltype(Type::record())>
+ReturnType
+get_measurment(tim::component_tuple<Types...>& comp)
+{
+    Type& _data = std::get<tim::index_of<Type, std::tuple<Types...>>::value>(comp.data());
+    return _data.get_measurement();
+}
+
+//======================================================================================//
+
+// measure functions
+template <typename... Types>
+auto
+get_measurments(tim::component_tuple<Types...>& comp)
+    -> decltype(std::make_tuple(get_measurment<Types>(comp)...))
+{
+    return std::make_tuple(get_measurment<Types>(comp)...);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct base_printer
+{
+    base_printer(std::size_t _N, std::size_t _Ntot, const _Tp& obj, std::ostream& os,
+                 bool endline)
+    {
+        std::stringstream ss;
+        ss << obj;
+        if(_N + 1 < _Ntot)
+        {
+            ss << ", ";
+        }
+        else if(_N + 1 == _Ntot && endline)
+        {
+            ss << std::endl;
+        }
+        os << ss.str();
+    }
+};
+
+template <typename... Types>
+std::ostream&
+operator<<(std::ostream& os, const std::tuple<Types...>& data)
+{
+    using apply_types = std::tuple<base_printer<Types>...>;
+    tim::apply<void>::access_with_indices<apply_types>(data, std::ref(os), false);
+    return os;
+}
+
+//======================================================================================//
+
 void
 test_2_timing()
 {
@@ -228,11 +282,16 @@ test_2_timing()
                              thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                              process_cpu_util, monotonic_clock, monotonic_raw_clock,
                              papi_tuple_t>;
+    using printed_t =
+        tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                             thread_cpu_clock, process_cpu_clock>;
+
     using pair_t = std::pair<std::string, measurement_t>;
 
     static std::mutex    mtx;
     std::deque<pair_t>   measurements;
     measurement_t        runtime;
+    printed_t            runtime_printed;
     std::atomic_intmax_t ret;
     std::stringstream    lambda_ss;
 
@@ -253,6 +312,7 @@ test_2_timing()
             mtx.unlock();
         };
 
+        runtime_printed.start();
         runtime.start();
         {
             std::thread _t1(run_fib, 43);
@@ -264,12 +324,16 @@ test_2_timing()
             _t2.join();
         }
         runtime.stop();
+        runtime_printed.stop();
     }
 
     std::cout << "\n" << lambda_ss.str() << std::endl;
     std::cout << "total runtime: " << runtime << std::endl;
     std::cout << "std::get: " << std::get<0>(runtime) << std::endl;
     std::cout << "fibonacci total: " << ret.load() << "\n" << std::endl;
+    std::cout << "runtime process cpu time: "
+              << get_measurment<process_cpu_clock>(runtime) << std::endl;
+    std::cout << "measured data: " << get_measurments(runtime_printed) << std::endl;
 
     measurements.push_front(pair_t("run", runtime));
     serialize("timing.json", "runtime", measurements);
