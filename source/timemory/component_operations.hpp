@@ -303,20 +303,14 @@ struct serial
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
     serial(base_type& obj, Archive& ar, const unsigned int version)
     {
-        ar(serializer::make_nvp(Type::label() + ".value", obj.accum),
-           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
-           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
-        consume_parameters(version);
-    }
-
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
-    serial(base_type& obj, Archive& ar, const unsigned int version)
-    {
-        auto value = static_cast<Type&>(obj).serial();
-        ar(serializer::make_nvp(Type::label() + ".value", value),
+        auto _disp = static_cast<const Type&>(obj).compute_display();
+        ar(serializer::make_nvp(Type::label() + ".is_transient", obj.is_transient),
+           serializer::make_nvp(Type::label() + ".laps", obj.laps),
+           serializer::make_nvp(Type::label() + ".value", obj.value),
+           serializer::make_nvp(Type::label() + ".accum", obj.accum),
+           serializer::make_nvp(Type::label() + ".display", _disp),
            serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
            serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
         consume_parameters(version);

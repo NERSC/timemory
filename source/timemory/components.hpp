@@ -389,15 +389,15 @@ struct base
         auto width     = get_width();
         auto flags     = get_format_flags();
 
-        std::stringstream ss, ssv, ssi;
-        ssv.setf(flags);
-        ssv << std::setw(width) << std::setprecision(prec) << obj_value;
+        std::stringstream ss_value;
+        std::stringstream ss_extra;
+        ss_value.setf(flags);
+        ss_value << std::setw(width) << std::setprecision(prec) << obj_value;
         if(!disp.empty())
-            ssv << " " << disp;
+            ss_extra << " " << disp;
         if(!label.empty())
-            ssi << " " << label;
-        ss << ssv.str() << ssi.str();
-        os << ss.str();
+            ss_extra << " " << label;
+        os << ss_value.str() << ss_extra.str();
 
         return os;
     }
@@ -890,7 +890,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return "process_cpu_util"; }
+    static std::string label() { return "proc_cpu_util"; }
     static std::string descript() { return "process cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
@@ -1679,7 +1679,7 @@ struct papi_event
 
     static intmax_t unit() { return 1; }
     // leave these empty
-    static std::string label() { return "papi"; }
+    static std::string label() { return "papi" + std::to_string(EventSet); }
     static std::string descript() { return ""; }
     static std::string display_unit() { return ""; }
     // use these instead
