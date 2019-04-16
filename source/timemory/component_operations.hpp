@@ -256,7 +256,7 @@ struct print
           bool _endline)
     {
         std::stringstream ss;
-        ss << _obj;
+        ss << static_cast<base_type>(_obj);
         if(_N + 1 < _Ntot)
             ss << ", ";
         else if(_N + 1 == _Ntot && _endline)
