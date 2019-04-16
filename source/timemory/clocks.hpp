@@ -465,7 +465,7 @@ get_clock_cpu_now()
 //--------------------------------------------------------------------------------------//
 
 template <typename Precision>
-tim_api class base_clock
+class base_clock
 {
 #if defined(__GNUC__) && !defined(__clang__)
     static_assert(std::chrono::__is_ratio<Precision>::value,
@@ -507,43 +507,6 @@ public:
         return time_point(
             duration(rep{ std::make_tuple(get_user_time(), get_sys_time(), wall_time) }));
     }
-
-    /*
-    static time_point thread_now() noexcept
-    {
-  #if defined(_WINDOWS)
-        return now();
-  #else
-        typedef std::chrono::high_resolution_clock              clock_type;
-        typedef std::chrono::duration<clock_type::rep, period>  duration_type;
-
-        constexpr float factor = (float) Precision::den / std::nano::den;
-
-        // wall clock
-        auto get_wall_time = [&] ()
-        { return std::chrono::duration_cast<duration_type>(
-                        clock_type::now().time_since_epoch()).count(); };
-
-        // user time
-        auto get_user_time = [&] ()
-        {
-            return (intmax_t) (clock_gettime_nsec_np(CLOCK_UPTIME_RAW) *
-                               factor);
-        };
-
-        // system time
-        auto get_sys_time = [&] ()
-        {
-            return (intmax_t)
-                    (clock_gettime_nsec_np(CLOCK_MONOTONIC) -
-                     clock_gettime_nsec_np(CLOCK_UPTIME_RAW)) * factor;
-        };
-
-        return time_point(duration(rep
-        { std::make_tuple(get_user_time(), get_sys_time(), get_wall_time()) }
-  )); #endif
-    }
-    */
 };
 
 //--------------------------------------------------------------------------------------//
@@ -673,7 +636,3 @@ operator-(const tim_time_point_t<_Pr1, _Per1>& lhs,
 }  // namespace chrono
 
 }  // namespace std
-
-#if !defined(TIMEMORY_TIMER_VERSION)
-#    define TIMEMORY_TIMER_VERSION 1
-#endif
