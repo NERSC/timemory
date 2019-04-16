@@ -11,24 +11,6 @@ matrix:
     #   Python 2.7
     #
     # ------------------------------------------------------------------------ #
-    # GCC 4.9
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.9
-            - g++-4.9
-            - build-essential
-            - cmake
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
     # GCC 5
     - os: linux
       dist: xenial
@@ -136,26 +118,6 @@ matrix:
     #   Python 3.6
     #
     # ------------------------------------------------------------------------ #
-    # GCC 4.9
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '3.6'
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-4.9
-            - g++-4.9
-            - build-essential
-            - cmake
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-4.9) && CXX=$(which g++-4.9) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
     # GCC 5
     - os: linux
       dist: xenial
@@ -240,6 +202,111 @@ matrix:
       dist: xenial
       sudo: false
       python: '3.6'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-5.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-5.0
+            - clang++-5.0
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+      env:
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+    # ------------------------------------------------------------------------ #
+    #
+    #   Python 3.7
+    #
+    # ------------------------------------------------------------------------ #
+    # GCC 5
+    - os: linux
+      dist: xenial
+      sudo: false
+      python: '3.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-5
+            - g++-5
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+    # GCC 6
+    - os: linux
+      dist: xenial
+      sudo: false
+      python: '3.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-6
+            - g++-6
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
+    # GCC 7
+    - os: linux
+      dist: xenial
+      sudo: false
+      python: '3.7'
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7
+            - g++-7
+            - build-essential
+            - cmake
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
+    # Clang 4.0
+    - os: linux
+      dist: xenial
+      sudo: false
+      python: '3.7'
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-xenial-4.0
+            - ubuntu-toolchain-r-test
+          packages:
+            - clang-4.0
+            - clang++-4.0
+            - build-essential
+            - cmake
+            - libpapi-dev
+            - papi-tools
+      env:
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
+    # Clang 5.0
+    - os: linux
+      dist: xenial
+      sudo: false
+      python: '3.7'
       addons:
         apt:
           sources:
