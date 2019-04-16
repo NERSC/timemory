@@ -264,6 +264,13 @@ struct print
         _os << ss.str();
     }
 
+    // fix for exact match issue on Windows
+    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
+          bool _endline)
+    {
+        print(_N, _Ntot, static_cast<const base_type&>(_obj), _os, _endline);
+    }
+
     print(const base_type& _obj, std::ostream& _os, const string_t& _prefix,
           intmax_t _laps, intmax_t _output_width, bool _endline)
     {
@@ -276,6 +283,14 @@ struct print
         if(_endline)
             ss << std::endl;
         _os << ss.str();
+    }
+
+    // fix for exact match issue on Windows
+    print(const Type& _obj, std::ostream& _os, const string_t& _prefix, intmax_t _laps,
+          intmax_t _output_width, bool _endline)
+    {
+        print(static_cast<const base_type&>(_obj), _os, _prefix, _laps, _output_width,
+              _endline);
     }
 };
 

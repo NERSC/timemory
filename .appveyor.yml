@@ -1,21 +1,16 @@
 version: 1.0.{build}
 
-
 image:
 - Visual Studio 2015
 - Visual Studio 2017
 
-
 test: off
-
 
 build:
   parallel: true
 
-
 platform:
 - x64
-
 
 environment:
   matrix:
@@ -29,15 +24,12 @@ environment:
     CPP: 17
     CONFIG: Release
 
-
 matrix:
   exclude:
   - image: Visual Studio 2015
     CPP: latest
 
-
 install:
-
 # Configure environment
 - ps: |
     # CMake architecture
