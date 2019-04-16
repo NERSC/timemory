@@ -121,7 +121,7 @@ build_script:
 #- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
 #
 - ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure & exit 0
-- cd ..
-- python -m pip install -v -v -v --no-cache-dir .
-- cd ..
-- python -c "import timemory ; timemory.tests.run()"
+#- cd ..
+#- python -m pip install -v -v -v --no-cache-dir .
+#- cd ..
+#- python -c "import timemory ; timemory.tests.run()"
