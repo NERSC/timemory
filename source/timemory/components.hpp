@@ -269,35 +269,39 @@ struct base
     //----------------------------------------------------------------------------------//
     // this_type operators (plain-old data)
     //
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
+    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value)> = 0>
     Type& operator+=(const this_type& rhs)
     {
         value += rhs.value;
         accum += rhs.accum;
+        laps += rhs.laps;
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
+    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value)> = 0>
     Type& operator-=(const this_type& rhs)
     {
         value -= rhs.value;
         accum -= rhs.accum;
+        laps -= rhs.laps;
         return static_cast<Type&>(*this);
     }
 
     //----------------------------------------------------------------------------------//
     // this_type operators (complex data)
     //
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
+    template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
     Type& operator+=(const this_type& rhs)
     {
-        return static_cast<Type&>(*this).operator+=(rhs.value);
+        laps += rhs.laps;
+        return static_cast<Type&>(*this).operator+=(static_cast<const Type&>(rhs));
     }
 
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
+    template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
     Type& operator-=(const this_type& rhs)
     {
-        return static_cast<Type&>(*this).operator-=(rhs.value);
+        laps -= rhs.laps;
+        return static_cast<Type&>(*this).operator-=(static_cast<const Type&>(rhs));
     }
 
     //----------------------------------------------------------------------------------//
@@ -310,14 +314,6 @@ struct base
         accum += rhs;
         return static_cast<Type&>(*this);
     }
-
-    /*template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
-    Type& operator+=(const value_type& rhs)
-    {
-        value += rhs;
-        accum += rhs;
-        return static_cast<Type&>(*this);
-    }*/
 
     template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
     Type& operator-=(const value_type& rhs)
@@ -894,7 +890,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return "process_perc_cpu"; }
+    static std::string label() { return "process_cpu_util"; }
     static std::string descript() { return "process cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
@@ -992,7 +988,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
         std::ios_base::fixed | std::ios_base::dec;
 
     static intmax_t    unit() { return 1; }
-    static std::string label() { return "thread_perc_cpu"; }
+    static std::string label() { return "thread_cpu_util"; }
     static std::string descript() { return "thread cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
@@ -1642,6 +1638,7 @@ struct papi_event
 
     using base_type::accum;
     using base_type::is_transient;
+    using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;

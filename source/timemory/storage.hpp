@@ -84,8 +84,10 @@ public:
     class graph_node : public std::tuple<intmax_t, ObjectType, string_t>
     {
     public:
-        using this_type = graph_node;
-        using base_type = std::tuple<intmax_t, ObjectType, string_t>;
+        using this_type      = graph_node;
+        using base_type      = std::tuple<intmax_t, ObjectType, string_t>;
+        using obj_value_type = typename ObjectType::value_type;
+        using obj_base_type  = typename ObjectType::base_type;
 
         intmax_t&   id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
@@ -121,7 +123,9 @@ public:
 
         graph_node& operator+=(const graph_node& rhs)
         {
-            obj() += rhs.obj();
+            auto&       _obj = obj();
+            const auto& _rhs = rhs.obj();
+            static_cast<obj_base_type&>(_obj) += static_cast<const obj_base_type&>(_rhs);
             return *this;
         }
 

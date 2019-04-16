@@ -369,9 +369,9 @@ test_3_auto_tuple()
         };
 
         // run shorter fibonacci calculations on two threads
-        std::thread t(run_fibonacci, 42);
+        std::thread t(run_fibonacci, 43);
         // run longer fibonacci calculation on main thread
-        run_fibonacci(43);
+        run_fibonacci(42);
 
         t.join();
     }
