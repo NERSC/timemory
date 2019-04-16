@@ -252,28 +252,30 @@ struct print
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    print(std::size_t _N, std::size_t _Ntot, const base_type& obj, std::ostream& os,
-          bool endline)
+    print(std::size_t _N, std::size_t _Ntot, const base_type& _obj, std::ostream& _os,
+          bool _endline)
     {
         std::stringstream ss;
-        ss << obj;
+        ss << _obj;
         if(_N + 1 < _Ntot)
             ss << ", ";
-        else if(_N + 1 == _Ntot && endline)
+        else if(_N + 1 == _Ntot && _endline)
             ss << std::endl;
-        os << ss.str();
+        _os << ss.str();
     }
 
-    print(const base_type& obj, std::ostream& os, const string_t& _prefix, intmax_t _laps,
-          intmax_t _output_width, bool endline)
+    print(const base_type& _obj, std::ostream& _os, const string_t& _prefix,
+          intmax_t _laps, intmax_t _output_width, bool _endline)
     {
         std::stringstream ss_prefix;
         std::stringstream ss;
         ss_prefix << std::setw(_output_width) << std::left << _prefix << " : ";
-        ss << ss_prefix.str() << static_cast<base_type>(obj) << ", " << _laps << " laps";
-        if(endline)
+        ss << ss_prefix.str() << static_cast<base_type>(_obj);
+        if(_laps > 0)
+            ss << ", " << _laps << " laps";
+        if(_endline)
             ss << std::endl;
-        os << ss.str();
+        _os << ss.str();
     }
 };
 

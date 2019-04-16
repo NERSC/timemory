@@ -62,31 +62,47 @@ typedef std::string string_t;
     }
 
 //--------------------------------------------------------------------------------------//
+// logic
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, enabled, true)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, suppress_parsing, false)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, file_output, true)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, text_output, true)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, true)
 
+// general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, env_num_threads, "TIMEMORY_NUM_THREADS")
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, num_threads, 0)
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, max_depth, std::numeric_limits<uint16_t>::max())
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, enabled, true)
 
+// general formatting
+DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, precision, -1)
+DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, width, -1)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, scientific, false)
+
+// timing formatting
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, timing_precision, -1)
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, timing_width, -1)
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, timing_units, "")
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, timing_scientific, false)
 
+// memory formatting
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, memory_precision, -1)
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, memory_width, -1)
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, memory_units, "")
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
 
+// output control
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
 
 //--------------------------------------------------------------------------------------//
 
 string_t tolower(string_t);
 string_t toupper(string_t);
+void
+process();
 void
 parse();
 inline string_t
@@ -127,36 +143,84 @@ tim::env::toupper(std::string str)
 }
 
 //--------------------------------------------------------------------------------------//
-
+// function to parse the environment for settings
+//
 inline void
 tim::env::parse()
 {
-    using namespace tim::component;
+    if(suppress_parsing())
+    {
+        process();
+        return;
+    }
 
     auto get_env_bool = [](const std::string& _env_var, const bool& _default) {
         return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0) ? true
                                                                              : false;
     };
 
-    output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
-    output_prefix() = tim::get_env("TIMEMORY_OUTPUT_PREFIX", output_prefix());
-    auto_output()   = tim::get_env("TIMEMORY_AUTO_OUTPUT", auto_output());
+    // logic
+    enabled()     = get_env_bool("TIMEMORY_ENABLE", enabled());
+    auto_output() = get_env_bool("TIMEMORY_AUTO_OUTPUT", auto_output());
+    file_output() = get_env_bool("TIMEMORY_FILE_OUTPUT", file_output());
+    text_output() = get_env_bool("TIMEMORY_TEXT_OUTPUT", text_output());
+    json_output() = get_env_bool("TIMEMORY_JSON_OUTPUT", json_output());
 
+    // settings
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
     env_num_threads() = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads());
     num_threads()     = tim::get_env(env_num_threads(), num_threads());
     max_depth()       = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
-    enabled()         = get_env_bool("TIMEMORY_ENABLE", enabled());
 
+    // general formatting
+    precision() = tim::get_env("TIMEMORY_PRECISION", precision());
+    width()     = tim::get_env("TIMEMORY_WIDTH", width());
+
+    // timing formatting
     timing_precision()  = tim::get_env("TIMEMORY_TIMING_PRECISION", timing_precision());
     timing_width()      = tim::get_env("TIMEMORY_TIMING_WIDTH", timing_width());
     timing_units()      = tim::get_env("TIMEMORY_TIMING_UNITS", timing_units());
     timing_scientific() = get_env_bool("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific());
 
+    // memory formatting
     memory_precision()  = tim::get_env("TIMEMORY_MEMORY_PRECISION", memory_precision());
     memory_width()      = tim::get_env("TIMEMORY_MEMORY_WIDTH", memory_width());
     memory_units()      = tim::get_env("TIMEMORY_MEMORY_UNITS", memory_units());
     memory_scientific() = get_env_bool("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific());
+
+    // file settings
+    output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
+    output_prefix() = tim::get_env("TIMEMORY_OUTPUT_PREFIX", output_prefix());
+
+    process();
+}
+
+//--------------------------------------------------------------------------------------//
+// function to process the settings -- always called even when environment processesing
+// is suppressed
+//
+inline void
+tim::env::process()
+{
+    using namespace tim::component;
+
+    if(precision() > 0)
+    {
+        timing_precision() = precision();
+        memory_precision() = precision();
+    }
+
+    if(width() > 0)
+    {
+        timing_width() = width();
+        memory_width() = width();
+    }
+
+    if(scientific())
+    {
+        timing_scientific() = true;
+        memory_scientific() = true;
+    }
 
     //------------------------------------------------------------------------//
     //  Helper function for memory units processing
@@ -371,7 +435,7 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
     auto _rank_suffix = (!mpi_is_initialized())
                             ? std::string("")
                             : (std::string("_") + std::to_string(mpi_rank()));
-    if(_ext.find(".") != 0)
+    if(_ext.find('.') != 0)
         _ext = std::string(".") + _ext;
     auto plast = _prefix.length() - 1;
     if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))

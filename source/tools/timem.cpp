@@ -23,6 +23,7 @@
 // SOFTWARE.
 
 #include "timemory/auto_tuple.hpp"
+#include "timemory/environment.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 
@@ -128,7 +129,40 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     if(getpid() != getppid() + 1)
     {
         measure.stop();
-        std::cout << "\n" << measure << std::endl;
+        std::stringstream _oss;
+        _oss << "\n" << measure << std::endl;
+
+        if(tim::env::file_output())
+        {
+            std::string label = "timem";
+            if(tim::env::text_output())
+            {
+                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                std::ofstream ofs(fname.c_str());
+                if(ofs)
+                {
+                    printf("[timem]> Outputting '%s'...\n", fname.c_str());
+                    ofs << _oss.str();
+                    ofs.close();
+                }
+                else
+                {
+                    std::cout << "[timem]>  opening output file '" << fname << "'...\n";
+                    std::cout << _oss.str();
+                }
+            }
+
+            if(tim::env::json_output())
+            {
+                auto jname = tim::env::compose_output_filename(label, ".json");
+                printf("[timem]> Outputting '%s'...\n", jname.c_str());
+                serialize_storage(jname, label, measure);
+            }
+        }
+        else
+        {
+            std::cout << _oss.str();
+        }
     }
 
     exit(ret);
@@ -184,6 +218,23 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
 int
 main(int argc, char** argv)
 {
+    // set some defaults
+    tim::env::file_output() = false;
+    tim::env::scientific()  = true;
+    tim::env::width()       = 12;
+    tim::env::precision()   = 3;
+
+    // parse for settings configurations
+    tim::env::parse();
+
+    // override a some settings
+    tim::env::suppress_parsing() = true;
+    tim::env::auto_output()      = false;
+    tim::env::output_prefix()    = "";
+
+    // update values to reflect modifications
+    tim::env::process();
+
     if(argc > 1)
     {
         command() = std::string(const_cast<const char*>(argv[1]));

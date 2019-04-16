@@ -499,7 +499,7 @@ tim::graph_storage<ObjectType>::print()
     {
         singleton_t::master_instance()->merge(this);
     }
-    else if(tim::env::auto_output())
+    else if(env::auto_output())
     {
         merge();
         m_data.current() = m_data.head();
@@ -519,26 +519,52 @@ tim::graph_storage<ObjectType>::print()
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
         }
 
-        auto          label = ObjectType::label();
-        auto          fname = tim::env::compose_output_filename(label, ".txt");
-        std::ofstream ofs(fname.c_str());
-        if(ofs)
+        if(env::file_output())
         {
-            printf("[graph_storage<%s>::%s @ %i]> Outputting '%s'...\n",
-                   ObjectType::label().c_str(), __FUNCTION__, __LINE__, fname.c_str());
-            ofs << _oss.str();
-            ofs.close();
+            auto label = ObjectType::label();
+            //--------------------------------------------------------------------------//
+            // output to text
+            //
+            if(env::text_output())
+            {
+                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                std::ofstream ofs(fname.c_str());
+                if(ofs)
+                {
+                    auto_lock_t l(type_mutex<std::ofstream>());
+                    printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                           ObjectType::label().c_str(), fname.c_str());
+                    ofs << _oss.str();
+                    ofs.close();
+                }
+                else
+                {
+                    auto_lock_t l(type_mutex<decltype(std::cout)>());
+                    fprintf(stderr,
+                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
+                            fname.c_str());
+                    std::cout << _oss.str();
+                }
+            }
+
+            //--------------------------------------------------------------------------//
+            // output to json
+            //
+            if(env::json_output())
+            {
+                auto_lock_t l(type_mutex<std::ofstream>());
+                auto        jname = tim::env::compose_output_filename(label, ".json");
+                printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                       ObjectType::label().c_str(), jname.c_str());
+                serialize_storage(jname, ObjectType::label(), *this);
+            }
         }
         else
         {
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str();
         }
-
-        auto jname = tim::env::compose_output_filename(label, ".json");
-        printf("[graph_storage<%s>::%s @ %i]> Outputting '%s'...\n",
-               ObjectType::label().c_str(), __FUNCTION__, __LINE__, jname.c_str());
-        serialize_storage(jname, ObjectType::label(), *this);
     }
 }
 

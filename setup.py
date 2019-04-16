@@ -6,6 +6,7 @@ import glob
 import shutil
 import argparse
 import warnings
+import platform
 import subprocess as sp
 from setuptools import Command
 from setuptools import find_packages
@@ -184,32 +185,42 @@ class custom_install(skinstall):
 
 
 # ---------------------------------------------------------------------------- #
-setup(
-    name='TiMemory',
-    packages=find_packages(exclude=['test*']),
-    version=get_project_version(),
-    include_package_data=False,
-    cmake_args=cmake_args,
-    cmake_languages=('C', 'CXX'),
-    author=get_name(),
-    author_email=get_email(),
-    maintainer=get_name(),
-    maintainer_email=get_email(),
-    contact=get_name(),
-    contact_email=get_email(),
-    description=get_short_description(),
-    long_description=get_long_description(),
-    long_description_content_type='text/markdown',
-    license='MIT',
-    url='http://timemory.readthedocs.org',
-    download_url='http://github.com/jrmadsen/TiMemory.git',
-    zip_safe=False,
-    install_requires=[],
-    setup_requires=[],
-    keywords=get_keywords(),
-    classifiers=get_classifiers(),
-    python_requires='>=2.6',
-    cmdclass=dict(install=custom_install),
+if platform.system() == "Darwin":
+    # scikit-build will set this to 10.6 and C++ compiler check will fail
+    version = platform.mac_ver()[0].split('.')
+    version = ".".join([version[0], version[1]])
+    cmake_args += ["-DCMAKE_OSX_DEPLOYMENT_TARGET={}".format(version)]
+
+# suppress:
+#  "setuptools_scm/git.py:68: UserWarning: "/.../tomopy" is shallow and may cause errors"
+# since 'error' in output causes CDash to interpret warning as error
+with warnings.catch_warnings():
+    setup(
+        name='TiMemory',
+        packages=['timemory'],
+        version=get_project_version(),
+        include_package_data=False,
+        cmake_args=cmake_args,
+        cmake_languages=('C', 'CXX'),
+        author=get_name(),
+        author_email=get_email(),
+        maintainer=get_name(),
+        maintainer_email=get_email(),
+        contact=get_name(),
+        contact_email=get_email(),
+        description=get_short_description(),
+        long_description=get_long_description(),
+        long_description_content_type='text/markdown',
+        license='MIT',
+        url='http://timemory.readthedocs.org',
+        download_url='http://github.com/jrmadsen/TiMemory.git',
+        zip_safe=False,
+        install_requires=[],
+        setup_requires=[],
+        keywords=get_keywords(),
+        classifiers=get_classifiers(),
+        python_requires='>=2.6',
+        cmdclass=dict(install=custom_install),
 )
 
 
