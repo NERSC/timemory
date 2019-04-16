@@ -44,7 +44,7 @@ from timemory import plotting
 
 def fibonacci(n):
     if n > 20:
-        with timemory.util.auto_timer(add_args=True):
+        with timemory.util.auto_timer():
             return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)
     else:
         return n if n < 2 else fibonacci(n-1) + fibonacci(n-2)
@@ -90,11 +90,11 @@ def main(nfib):
     print ('completed...')
 
     timemory.report()
-    tman.report(ign_cutoff=True)
-    _jsonf = os.path.join(options.output_dir, 'simple_output.json')
-    tman.serialize(_jsonf)
-    print ('')
-    plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
+    #tman.report(ign_cutoff=True)
+    #_jsonf = os.path.join(options.output_dir, 'simple_output.json')
+    #tman.serialize(_jsonf)
+    #print ('')
+    #plotting.plot(files=[_jsonf], display=False, output_dir=options.output_dir)
 
     
 # ---------------------------------------------------------------------------- #

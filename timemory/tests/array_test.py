@@ -225,13 +225,11 @@ def dummy():
 
 
 # ---------------------------------------------------------------------------- #
-def measure(name, _time = 1, _rss = None):
+def measure(name, _time = 1):
     t = timemory.timer(name)
     t.start()
     time.sleep(_time)
     t.stop()
-    if _rss is not None:
-        t -= _rss
     print('\n{}\n'.format(t))
 
 
@@ -244,7 +242,7 @@ def run_test():
     rss.record()
     print('\nRSS at initialization: {}\n'.format(rss))
 
-    measure('begin', _rss = rss)
+    measure('begin')
 
     main()
     main()
@@ -252,15 +250,13 @@ def run_test():
     dummy()
 
     manager = timemory.manager()
-    manager -= rss
     print('\nTiming report:\n{}'.format(manager))
     freport = options.set_report("timing_array_test.out")
     fserial = options.set_serial("timing_array_test.json")
-    manager.report(ign_cutoff = True)
-    plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
+    #manager.report(ign_cutoff = True)
+    #plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 
-    measure('end', _rss = rss)
-    print("{}".format(timemory.get_missing_report()))
+    measure('end')
 
     timemory.disable_signal_detection()
     print('"{}" testing finished'.format(__file__))

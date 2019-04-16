@@ -64,11 +64,15 @@ using namespace py::literals;
 #include "timemory/signal_detection.hpp"
 
 using namespace tim::component;
-using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
-                                         process_cpu_util>;
-using auto_timer_t =
-    tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, process_cpu_util>;
-using rss_usage_t = tim::component_tuple<current_rss, peak_rss>;
+using tim_timer_t  = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
+                                         cpu_util, thread_cpu_clock, thread_cpu_util,
+                                         process_cpu_clock, process_cpu_util>;
+using auto_timer_t = tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock,
+                                     cpu_util, thread_cpu_clock, thread_cpu_util,
+                                     process_cpu_clock, process_cpu_util>;
+using rss_usage_t  = tim::component_tuple<current_rss, peak_rss, num_minor_page_faults,
+                                         num_major_page_faults, voluntary_context_switch,
+                                         priority_context_switch>;
 
 typedef tim::manager                    manager_t;
 typedef tim::sys_signal                 sys_signal_t;
@@ -280,7 +284,8 @@ timer(std::string prefix = "")
         prefix = keyss.str();
     }
 
-    return new tim_timer_t(prefix);
+    auto op_line = get_line(1);
+    return new tim_timer_t(prefix, op_line, "pyc");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -306,7 +311,7 @@ auto_timer(const std::string& key = "", bool report_at_exit = false, int nback =
         keyss << ":";
         keyss << get_line(nback);
     }
-    auto op_line = get_line();
+    auto op_line = get_line(1);
     return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
 }
 
@@ -321,10 +326,42 @@ rss_usage(std::string prefix = "", bool record = false)
         keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
         prefix = keyss.str();
     }
-    rss_usage_t* _rss = new rss_usage_t(prefix);
+    auto         op_line = get_line(1);
+    rss_usage_t* _rss    = new rss_usage_t(prefix, op_line, "pyc");
     if(record)
         _rss->measure();
     return _rss;
+}
+
+//----------------------------------------------------------------------------//
+
+auto_timer_decorator*
+timer_decorator(const std::string& func, const std::string& file, int line,
+                const std::string& key, bool added_args, bool report_at_exit)
+{
+    auto_timer_decorator* _ptr = new auto_timer_decorator();
+    if(!auto_timer_t::is_enabled())
+        return _ptr;
+
+    std::stringstream keyss;
+    keyss << func;
+
+    // add arguments to end of function
+    if(added_args)
+        keyss << key;
+    else if(key != "" && key[0] != '@' && !added_args)
+        keyss << "@";
+
+    if(key != "" && !added_args)
+        keyss << key;
+    else
+    {
+        keyss << "@";
+        keyss << file;
+        keyss << ":";
+        keyss << line;
+    }
+    return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
 }
 
 //--------------------------------------------------------------------------------------//

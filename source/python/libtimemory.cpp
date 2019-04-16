@@ -109,10 +109,6 @@ PYBIND11_MODULE(libtimemory, tim)
     py::class_<auto_timer_t>         auto_timer(tim, "auto_timer");
     py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
     py::class_<rss_usage_t>          rss_usage(tim, "rss_usage");
-    // py::class_<rss_delta_t>          rss_delta(tim, "rss_delta");
-    // py::class_<manager_wrapper,
-    //           std::unique_ptr<manager_wrapper, py::nodelete>>
-    //        man(tim, "manager");
 
     //========================================================================//
     //
@@ -240,14 +236,6 @@ PYBIND11_MODULE(libtimemory, tim)
     man.def("get_max_depth", [=](py::object) { return manager_t::get_max_depth(); },
             "Get the max depth of the timers");
     //------------------------------------------------------------------------//
-    /*
-    man.def("at",
-            [=](py::object man, int i) {
-                tim_timer_t& _t = man.cast<manager_wrapper*>()->get()->at(i);
-                return &_t;
-            },
-            "Set the max depth of the timers", py::return_value_policy::reference);*/
-    //------------------------------------------------------------------------//
     man.def("merge",
             [=](py::object man) { man.cast<manager_wrapper*>()->get()->merge(); },
             "Merge the thread-local timers");
@@ -276,19 +264,6 @@ PYBIND11_MODULE(libtimemory, tim)
                    py::arg("nback") = 1, py::arg("added_args") = false,
                    py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
-    auto_timer.def("local_timer",
-                   [=](py::object /*_auto_timer*/) {
-                       // return _auto_timer.cast<auto_timer_t*>()->local_timer();
-                   },
-                   "Get the timer for the auto-timer instance");
-    //------------------------------------------------------------------------//
-    auto_timer.def("global_timer",
-                   [=](py::object /*_auto_timer*/) {
-                       // return
-                       // _auto_timer.cast<auto_timer_t*>()->local_timer().summation_timer();
-                   },
-                   "Get the timer for all the auto-timer instances (from manager)");
-    //------------------------------------------------------------------------//
     auto_timer.def("__str__",
                    [=](py::object _pyauto_timer) {
                        std::stringstream _ss;
@@ -297,6 +272,9 @@ PYBIND11_MODULE(libtimemory, tim)
                        return _ss.str();
                    },
                    "Print the auto timer");
+    //------------------------------------------------------------------------//
+    timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
+                        py::return_value_policy::automatic);
     //------------------------------------------------------------------------//
 
     //========================================================================//
