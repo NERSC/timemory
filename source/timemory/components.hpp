@@ -1694,6 +1694,7 @@ struct papi_event
         tim::papi::read(EventSet, read_value.data());
         return read_value;
     }
+
     string_t compute_display() const
     {
         auto val              = (is_transient) ? accum : value;
@@ -1726,11 +1727,13 @@ struct papi_event
         }
         return ss.str();
     }
+
     void start()
     {
         set_started();
         value = record();
     }
+
     void stop()
     {
         auto tmp = record();
@@ -1746,6 +1749,16 @@ struct papi_event
             accum[i] += rhs.accum[i];
         for(size_type i = 0; i < num_events; ++i)
             value[i] += rhs.value[i];
+        return *this;
+    }
+
+    this_type& operator-=(const this_type& rhs)
+    {
+        for(size_type i = 0; i < num_events; ++i)
+            accum[i] -= rhs.accum[i];
+        for(size_type i = 0; i < num_events; ++i)
+            value[i] -= rhs.value[i];
+        return *this;
     }
 
     value_type serial() { return accum; }

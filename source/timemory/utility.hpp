@@ -174,7 +174,7 @@ dirname(std::string _fname)
     return _fname.substr(0, _fname.find_last_of("/"));
 #elif defined(_WINDOWS)
     while(_fname.find("/") != std::string::npos)
-        _fname.replace(_fname.find("/"), 1, "\\\\");
+        _fname.replace(_fname.find("/"), 1, "\\");
 
     _fname = _fname.substr(0, _fname.find_last_of("\\"));
     return (_fname.at(_fname.length() - 1) == '\\')
@@ -203,7 +203,7 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
 #elif defined(_WINDOWS)
     consume_parameters(umask);
     while(_dir.find("/") != std::string::npos)
-        _dir.replace(_dir.find("/"), 1, "\\\\");
+        _dir.replace(_dir.find("/"), 1, "\\");
 
     if(_mkdir(_dir.c_str()) != 0)
     {
@@ -473,7 +473,7 @@ public:
     string_t os() const
     {
 #if defined(_WINDOWS)
-        return "\\\\";
+        return "\\";
 #elif defined(_UNIX)
         return "/";
 #endif
@@ -484,7 +484,7 @@ public:
 #if defined(_WINDOWS)
         return "/";
 #elif defined(_UNIX)
-        return "\\\\";
+        return "\\";
 #endif
     }
 
@@ -493,7 +493,7 @@ public:
     {
 #if defined(_WINDOWS)
         while(_path.find("/") != std::string::npos)
-            _path.replace(_path.find("/"), 1, "\\\\");
+            _path.replace(_path.find("/"), 1, "\\");
 #elif defined(_UNIX)
         while(_path.find("\\\\") != std::string::npos)
             _path.replace(_path.find("\\\\"), 2, "/");
