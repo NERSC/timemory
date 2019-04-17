@@ -118,19 +118,17 @@ public:
         // graph_node& operator=(const this_type&) = default;
         // graph_node& operator=(this_type&&) = default;
 
-        bool operator==(const graph_node& rhs) const { return id() == rhs.id(); }
+        bool operator==(const graph_node& rhs) const { return (id() == rhs.id()); }
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
         graph_node& operator+=(const graph_node& rhs)
         {
+            DEBUG_PRINT_HERE("");
             auto&       _obj = obj();
             const auto& _rhs = rhs.obj();
             static_cast<obj_base_type&>(_obj) += static_cast<const obj_base_type&>(_rhs);
             return *this;
         }
-
-        // template <typename Archive>
-        // inline void serialize(Archive& ar, const unsigned int /*version*/);
     };
 
     //----------------------------------------------------------------------------------//
@@ -154,11 +152,13 @@ public:
         graph_data()
         : m_depth(-1)
         {
+            DEBUG_PRINT_HERE("default");
         }
 
-        explicit graph_data(const graph_node& rhs)
+        graph_data(const graph_node& rhs)
         : m_depth(0)
         {
+            DEBUG_PRINT_HERE("explicit");
             m_head    = m_graph.set_head(rhs);
             m_current = m_head;
         }
@@ -166,7 +166,7 @@ public:
         ~graph_data() { m_graph.clear(); }
 
         graph_data(const this_type&) = default;
-        graph_data& operator=(const this_type&) = default;
+        graph_data& operator=(const this_type&) = delete;
         graph_data& operator=(this_type&&) = default;
 
         intmax_t& depth() { return m_depth; }
@@ -190,16 +190,38 @@ public:
 
         inline iterator pop_graph()
         {
+            DEBUG_PRINT_HERE("");
             if(m_depth > 0 && !m_graph.is_head(m_current))
             {
-                m_current = graph_t::parent(m_current);
                 --m_depth;
+                m_current = graph_t::parent(m_current);
+            }
+            else if(m_depth == 0)
+            {
+                m_current = m_head;
+            }
+            else
+            {
+#if defined(DEBUG)
+                if(m_graph.is_head(m_current))
+                {
+                    m_depth = 0;
+                }
+                else
+                {
+                    std::stringstream ss;
+                    ss << "graph_data[<" << ObjectType::label()
+                       << ">] Should not be here. depth = " << m_depth << "...";
+                    DEBUG_PRINT_HERE(ss.str().c_str());
+                }
+#endif
             }
             return m_current;
         }
 
         inline iterator append_child(const graph_node& node)
         {
+            DEBUG_PRINT_HERE("");
             ++m_depth;
             return (m_current = m_graph.append_child(m_current, node));
         }
@@ -218,6 +240,7 @@ public:
         short                     _once_num = _once++;
         if(_once_num > 0 && !singleton_t::is_master(this))
         {
+            DEBUG_PRINT_HERE(ObjectType::label().c_str());
             m_data           = graph_data(*master_instance()->current());
             m_data.head()    = master_instance()->data().current();
             m_data.current() = master_instance()->data().current();
@@ -264,29 +287,38 @@ public:
         using sibling_itr = typename graph_t::sibling_iterator;
         graph_node node(hash_id, obj);
 
-        // lambda for inserting child
-        auto _insert_child = [&]() {
-            exists = false;
-            return m_data.append_child(node);
-        };
-
         // lambda for updating settings
         auto _update = [&](iterator itr) {
             exists = true;
             return (m_data.current() = itr);
         };
 
+        // lambda for inserting child
+        auto _insert_child = [&]() {
+            exists = false;
+            auto itr = m_data.append_child(node);
+            m_node_ids.insert(std::make_pair(hash_id, itr));
+            return itr;
+        };
+
+        if(m_node_ids.find(hash_id) != m_node_ids.end())
+        {
+            _update(m_node_ids.find(hash_id)->second);
+        }
+
         // if first instance
         if(m_data.depth() < 0)
         {
             if(this == master_instance())
             {
+                DEBUG_PRINT_HERE("insert first in master");
                 m_data = graph_data(node);
                 exists = false;
                 return m_data.current();
             }
             else
             {
+                DEBUG_PRINT_HERE("insert first in worker");
                 m_data = graph_data(*master_instance()->current());
                 return _insert_child();
             }
@@ -430,6 +462,7 @@ protected:
 
 protected:
     graph_data m_data;
+    std::unordered_map<intmax_t, iterator> m_node_ids;
     string_t   m_label    = ObjectType::label();
     string_t   m_descript = ObjectType::descript();
 
@@ -502,6 +535,13 @@ tim::graph_storage<ObjectType>::print()
     else if(env::auto_output())
     {
         merge();
+
+        typedef decltype(graph().begin()) predicate_type;
+        auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+        auto _this_beg = graph().begin();
+        auto _this_end = graph().end();
+        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+
         m_data.current() = m_data.head();
         intmax_t _width  = ObjectType::get_width();
         for(const auto& itr : m_data.graph())
@@ -514,7 +554,7 @@ tim::graph_storage<ObjectType>::print()
         for(const auto& itr : m_data.graph())
         {
             auto _obj    = itr.obj();
-            auto _prefix = itr.prefix();
+            auto _prefix = itr.prefix();  // + std::to_string(itr.id());
             auto _laps   = _obj.laps;
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
         }
@@ -563,7 +603,7 @@ tim::graph_storage<ObjectType>::print()
         else
         {
             auto_lock_t l(type_mutex<decltype(std::cout)>());
-            std::cout << _oss.str();
+            std::cout << _oss.str() << std::endl;
         }
     }
 }
