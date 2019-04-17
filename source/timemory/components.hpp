@@ -224,7 +224,11 @@ struct base
     //----------------------------------------------------------------------------------//
     // set the firsts notify that stop has been called
     //
-    void set_stopped() { is_running = false; }
+    void set_stopped()
+    {
+        is_running   = false;
+        is_transient = true;
+    }
 
     //----------------------------------------------------------------------------------//
     // conditional start if not running
