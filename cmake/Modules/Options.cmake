@@ -7,6 +7,11 @@
 
 include(MacroUtilities)
 
+set(_FEATURE )
+if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
+    set(_FEATURE NO_FEATURE)
+endif()
+
 set(SANITIZER_TYPE leak CACHE STRING "Sanitizer type")
 set(_USE_PAPI OFF)
 if(UNIX AND NOT APPLE)
@@ -21,13 +26,13 @@ add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 add_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Build settings
-add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF)
-add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF)
-add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF)
-add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING})
-add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON)
-add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON)
-add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF)
+add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF ${_FEATURE})
+add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF ${_FEATURE})
+add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
+add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON ${_FEATURE})
+add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON ${_FEATURE})
+add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF ${_FEATURE})
 
 # Features
 add_feature(CMAKE_C_STANDARD "C language standard")
@@ -36,19 +41,21 @@ add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSiz
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
 add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
 add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
-add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
 add_feature(${PROJECT_NAME}_DEFINITIONS "${PROJECT_NAME} compile definitions")
+if(${PROJECT_NAME}_MASTER_PROJECT)
+    add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
+endif()
 
 # TiMemory options
-add_option(TIMEMORY_USE_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF)
-add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
-add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF)
+add_option(TIMEMORY_USE_EXCEPTIONS "Signal handler throws exceptions (default: exit)" OFF ${_FEATURE})
+add_option(TIMEMORY_USE_MPI "Enable MPI usage" ON ${_FEATURE})
+add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_FILTERING "Enable filtering out types not implemented" ON)
 add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
 
 if(TIMEMORY_USE_MPI)
-    add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON)
+    add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON ${_FEATURE})
 endif(TIMEMORY_USE_MPI)
 
 # cereal options
@@ -113,4 +120,3 @@ if(TIMEMORY_USE_CLANG_TIDY)
     endif()
     configure_file(${PROJECT_SOURCE_DIR}/.clang-tidy ${PROJECT_SOURCE_DIR}/.clang-tidy COPYONLY)
 endif()
-

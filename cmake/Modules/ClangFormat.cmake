@@ -28,7 +28,13 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/examples/*.c
         ${PROJECT_SOURCE_DIR}/examples/*.hpp
         ${PROJECT_SOURCE_DIR}/examples/*.cpp)
-    add_custom_target(format
+
+    set(FORMAT_NAME format)
+    if(TARGET format)
+        set(FORMAT_NAME format-timemory)
+    endif()
+
+    add_custom_target(${FORMAT_NAME}
         COMMAND ${CLANG_FORMATTER} -i ${headers} ${sources} ${examples}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running '${CLANG_FORMATTER}'..."

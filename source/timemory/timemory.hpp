@@ -24,7 +24,7 @@
 
 /** \file timemory.hpp
  * \headerfile timemory.hpp "timemory/timemory.hpp"
- * All-inclusive timemory header + extern declarations
+ * All-inclusive timemory header
  *
  */
 
@@ -32,6 +32,7 @@
 
 #include "timemory/apply.hpp"
 #include "timemory/auto_macros.hpp"
+#include "timemory/auto_timer.hpp"
 #include "timemory/clocks.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/components.hpp"

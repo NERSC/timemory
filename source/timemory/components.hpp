@@ -409,24 +409,29 @@ struct base
         return os;
     }
 
-    template <typename Archive, typename U = value_type,
-              enable_if_t<(!std::is_class<U>::value)> = 0>
+    template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp(Type::label() + ".value", accum),
+        auto _disp = static_cast<const Type&>(*this).compute_display();
+        ar(serializer::make_nvp(Type::label() + ".is_transient", is_transient),
+           serializer::make_nvp(Type::label() + ".laps", laps),
+           serializer::make_nvp(Type::label() + ".value", value),
+           serializer::make_nvp(Type::label() + ".accum", accum),
+           serializer::make_nvp(Type::label() + ".display", _disp),
            serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
            serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
     }
 
+    /*
     template <typename Archive, typename U = value_type,
               enable_if_t<(std::is_class<U>::value)> = 0>
     void serialize(Archive& ar, const unsigned int)
     {
-        auto value = static_cast<Type&>(*this).serial();
+        auto obj_value = static_cast<Type&>(*this).serial();
         ar(serializer::make_nvp(Type::label() + ".value", value),
            serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
            serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
-    }
+    }*/
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1792,8 +1797,9 @@ private:
         if(event_type_added() && m_count == 0 && event_count::is_master())
         {
             // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
-            for(auto itr : { EventTypes... })
-                tim::papi::remove_event(EventSet, itr);
+            int evt_types[] = { EventTypes... };
+            for(size_type i = 0; i < num_events; ++i)
+                tim::papi::remove_event(EventSet, evt_types[i]);
             event_type_added() = false;
         }
     }

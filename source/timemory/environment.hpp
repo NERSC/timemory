@@ -74,7 +74,7 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
 DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, env_num_threads, "TIMEMORY_NUM_THREADS")
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, num_threads, 0)
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, max_depth, std::numeric_limits<uint16_t>::max())
+DEFINE_STATIC_ACCESSOR_FUNCTION(uint16_t, max_depth, std::numeric_limits<uint16_t>::max())
 
 // general formatting
 DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, precision, -1)

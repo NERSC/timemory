@@ -1,21 +1,38 @@
+################################################################################
+#   cmake settings
+#
 cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 
-################################################################################
-#
-#   CMake settings
-#
-################################################################################
+if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
+    set(MSG "")
+    message(STATUS "Warning! Building from the source directory is not recommended")
+    message(STATUS "If unintented, please remove 'CMakeCache.txt' and 'CMakeFiles'")
+    message(STATUS "and build from a separate directory")
+    message(WARNING "In-source build")
+endif()
 
+cmake_policy(SET CMP0048 NEW)
+cmake_policy(SET CMP0042 NEW)
+
+################################################################################
+#   version
+#
 file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" VERSION_STRING LIMIT_COUNT 1)
 string(REGEX REPLACE "(\n|\r)" "" VERSION_STRING "${VERSION_STRING}")
 string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${VERSION_STRING}")
 set(TIMEMORY_VERSION "${VERSION_STRING}" CACHE STRING "Version of TiMemory project" FORCE)
 message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 
-cmake_policy(SET CMP0048 NEW)
-cmake_policy(SET CMP0042 NEW)
-#cmake_policy(SET CMP0054 NEW)
+################################################################################
+#   project
+#
 project(TiMemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
+
+# Check if project is being used directly or via add_subdirectory
+set(${PROJECT_NAME}_MASTER_PROJECT ON)
+if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
+  set(${PROJECT_NAME}_MASTER_PROJECT OFF)
+endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_CURRENT_LIST_DIR}/source/python/pybind11/tools
@@ -61,7 +78,6 @@ include(PackageConfigure)
 #   Examples and Testing
 ################################################################################
 
-set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING 
-    "TiMemory install directory" FORCE)
+set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
 add_subdirectory(examples)
 include(Testing)
