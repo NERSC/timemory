@@ -160,6 +160,8 @@ struct conditional_start
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
+    conditional_start(base_type& obj) { obj.conditional_start(); }
+
     template <typename _Func>
     conditional_start(base_type& obj, _Func&& func)
     {
@@ -178,6 +180,13 @@ struct conditional_stop
     using base_type  = base<Type, value_type>;
 
     conditional_stop(base_type& obj) { obj.conditional_stop(); }
+
+    template <typename _Func>
+    conditional_stop(base_type& obj, _Func&& func)
+    {
+        bool did_stop = obj.conditional_stop();
+        std::forward<_Func>(func)(did_stop);
+    }
 };
 
 //--------------------------------------------------------------------------------------//

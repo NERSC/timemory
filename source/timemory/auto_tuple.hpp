@@ -54,11 +54,7 @@ class auto_tuple
 , public tim::hashed_object<auto_tuple<Types...>>
 {
 public:
-#if defined(TIMEMORY_USE_FILTERING)
-    using object_type = type_filter<component::impl_available, component_tuple<Types...>>;
-#else
-    using object_type = component_tuple<Types...>;
-#endif
+    using object_type  = implemented_component_tuple<Types...>;
     using this_type    = auto_tuple<Types...>;
     using counter_type = tim::counted_object<this_type>;
     using counter_void = tim::counted_object<void>;
@@ -84,6 +80,22 @@ public:
     object_type&       local_object() { return m_temp_object; }
     const object_type& local_object() const { return m_temp_object; }
 
+    // partial interface to underlying component_tuple
+    void record() { m_temp_object.record(); }
+    void pause() { m_temp_object.pause(); }
+    void resume() { m_temp_object.resume(); }
+    void start() { m_temp_object.start(); }
+    void stop() { m_temp_object.stop(); }
+    void push() { m_temp_object.push(); }
+    void pop() { m_temp_object.pop(); }
+
+public:
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        os << obj.m_temp_object;
+        return os;
+    }
+
 private:
     bool        m_enabled;
     bool        m_report_at_exit;
@@ -103,7 +115,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& line
                   : 0)
 , m_enabled(counter_type::enable())
 , m_report_at_exit(report_at_exit)
-, m_temp_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash)
+, m_temp_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash, true)
 {
     if(m_enabled)
     {

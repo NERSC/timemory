@@ -148,18 +148,19 @@ public:
     // insert into graph
     inline void push()
     {
-        if(m_store)
+        if(m_store && !m_is_pushed)
         {
-            {
-                apply<void>::set_value(m_exists, false);
-                using apply_types = std::tuple<component::insert_node<Types>...>;
-                apply<void>::access_with_indices<apply_types>(m_data, m_exists.data(),
-                                                              m_hash);
-            }
-            {
-                using apply_types = std::tuple<component::set_prefix<Types>...>;
-                apply<void>::access2<apply_types>(m_data, m_exists, m_identifier);
-            }
+            using insert_types = std::tuple<component::insert_node<Types>...>;
+            using prefix_types = std::tuple<component::set_prefix<Types>...>;
+            // avoid pushing/popping when already pushed/popped
+            m_is_pushed = true;
+            // set m_exists array to false
+            apply<void>::set_value(m_exists, false);
+            // insert node or find existing node
+            apply<void>::access_with_indices<insert_types>(m_data, m_exists.data(),
+                                                           m_hash);
+            // set the prefix is node was inserted
+            apply<void>::access2<prefix_types>(m_data, m_exists, m_identifier);
         }
     }
 
@@ -167,10 +168,13 @@ public:
     // pop out of grapsh
     inline void pop()
     {
-        if(m_store)
+        if(m_store && m_is_pushed)
         {
             using apply_types = std::tuple<component::pop_node<Types>...>;
+            // set the current node to the parent node
             apply<void>::access<apply_types>(m_data);
+            // avoid pushing/popping when already pushed/popped
+            m_is_pushed = false;
         }
     }
 
@@ -186,15 +190,22 @@ public:
     // start/stop functions
     void start()
     {
-        ++m_laps;
         using apply_types = std::tuple<component::start<Types>...>;
+        // increment laps
+        ++m_laps;
+        // insert into graph
+        // push();
+        // start components
         apply<void>::access<apply_types>(m_data);
     }
 
     void stop()
     {
         using apply_types = std::tuple<component::stop<Types>...>;
+        // stop components
         apply<void>::access<apply_types>(m_data);
+        // set the current node to parent node
+        // pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -215,6 +226,32 @@ public:
     {
         using apply_types = std::tuple<component::conditional_stop<Types>...>;
         apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // pause/resume functions (typically for printing)
+    void pause()
+    {
+        auto increment = [&](bool did_start) {
+            if(did_start)
+            {
+                ++m_laps;
+            }
+        };
+        using apply_types = std::tuple<component::conditional_start<Types>...>;
+        apply<void>::access<apply_types>(m_data, increment);
+    }
+
+    void resume()
+    {
+        auto decrement = [&](bool did_stop) {
+            if(did_stop)
+            {
+                --m_laps;
+            }
+        };
+        using apply_types = std::tuple<component::conditional_stop<Types>...>;
+        apply<void>::access<apply_types>(m_data, decrement);
     }
 
     //----------------------------------------------------------------------------------//
@@ -427,7 +464,8 @@ protected:
 
 protected:
     // objects
-    bool           m_store = false;
+    bool           m_store     = false;
+    bool           m_is_pushed = false;
     mutex_t        m_mutex;
     intmax_t       m_laps  = 0;
     intmax_t       m_count = 0;
@@ -512,59 +550,6 @@ namespace details
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-class custom_component_tuple : public component_tuple<Types...>
-{
-public:
-    custom_component_tuple(const string_t& key, const string_t& tag)
-    : component_tuple<Types...>(key, tag, 0, 0)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream&                           os,
-                                    const custom_component_tuple<Types...>& obj)
-    {
-        {
-            // stop, if not already stopped
-            using apply_types = std::tuple<component::conditional_stop<Types>...>;
-            apply<void>::access<apply_types>(obj.m_data);
-        }
-        std::stringstream ss_prefix;
-        std::stringstream ss_data;
-        {
-            using apply_types = std::tuple<custom_print<Types>...>;
-            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                          false);
-        }
-        ss_prefix << std::setw(obj.output_width()) << std::left << obj.m_identifier
-                  << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        return os;
-    }
-
-protected:
-    //----------------------------------------------------------------------------------//
-    template <typename _Tp>
-    struct custom_print
-    {
-        using value_type = typename _Tp::value_type;
-        using base_type  = tim::component::base<_Tp, value_type>;
-
-        custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj,
-                     std::ostream& os, bool /*endline*/)
-        {
-            std::stringstream ss;
-            if(_N == 0)
-                ss << std::endl;
-            ss << "    " << obj << std::endl;
-            os << ss.str();
-        }
-    };
-};
-
-//--------------------------------------------------------------------------------------//
-
 #if defined(TIMEMORY_USE_FILTERING)
 
 //--------------------------------------------------------------------------------------//
@@ -632,9 +617,79 @@ struct component_filter_if<Predicate, component_tuple<Ts...>>
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_USE_FILTERING)
+
 template <template <typename> class Predicate, typename Sequence>
 using type_filter = typename details::component_filter_if<Predicate, Sequence>::type;
+
+template <typename... Types>
+using implemented_component_tuple =
+    type_filter<component::impl_available, component_tuple<Types...>>;
+
+#else
+
+template <typename... Types>
+using implemented_component_tuple = component_tuple<Types...>;
+
 #endif
+
+//======================================================================================//
+
+namespace details
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+class custom_component_tuple : public implemented_component_tuple<Types...>
+{
+public:
+    custom_component_tuple(const string_t& key, const string_t& tag)
+    : component_tuple<Types...>(key, tag, 0, 0)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    friend std::ostream& operator<<(std::ostream&                           os,
+                                    const custom_component_tuple<Types...>& obj)
+    {
+        {
+            // stop, if not already stopped
+            using apply_types = std::tuple<component::conditional_stop<Types>...>;
+            apply<void>::access<apply_types>(obj.m_data);
+        }
+        std::stringstream ss_prefix;
+        std::stringstream ss_data;
+        {
+            using apply_types = std::tuple<custom_print<Types>...>;
+            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
+                                                          false);
+        }
+        ss_prefix << std::setw(obj.output_width()) << std::left << obj.m_identifier
+                  << " : ";
+        os << ss_prefix.str() << ss_data.str();
+        return os;
+    }
+
+protected:
+    //----------------------------------------------------------------------------------//
+    template <typename _Tp>
+    struct custom_print
+    {
+        using value_type = typename _Tp::value_type;
+        using base_type  = tim::component::base<_Tp, value_type>;
+
+        custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj,
+                     std::ostream& os, bool /*endline*/)
+        {
+            std::stringstream ss;
+            if(_N == 0)
+                ss << std::endl;
+            ss << "    " << obj << std::endl;
+            os << ss.str();
+        }
+    };
+};
+
+}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 

@@ -2277,9 +2277,9 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
 {
     while(from1 != from2)
     {
-        sibling_iterator fnd;
-        auto nsiblings = number_of_siblings(to1);
-        decltype(nsiblings) count = 0;
+        sibling_iterator    fnd;
+        auto                nsiblings = number_of_siblings(to1);
+        decltype(nsiblings) count     = 0;
         for(sibling_iterator itr = to1; itr != to2; ++itr, ++count)
         {
             if(itr && from1 && *itr == *from1)

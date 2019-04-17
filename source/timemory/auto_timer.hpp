@@ -54,25 +54,24 @@ TIM_NAMESPACE_END
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TIMER(...)                                            \
+#define TIMEMORY_BLANK_AUTO_TIMER(...)                                                   \
     TIMEMORY_BLANK_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TIMER(...)                                            \
+#define TIMEMORY_BASIC_AUTO_TIMER(...)                                                   \
     TIMEMORY_BASIC_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER(...)                                                  \
-    TIMEMORY_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER_OBJ(...)                                              \
+#define TIMEMORY_AUTO_TIMER_OBJ(...)                                                     \
     TIMEMORY_AUTO_OBJECT_OBJ(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TIMER_OBJ(...)                                        \
+#define TIMEMORY_BASIC_AUTO_TIMER_OBJ(...)                                               \
     TIMEMORY_BASIC_AUTO_OBJECT_OBJ(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)                                      \
+#define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)                                             \
     TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_AUTO_TIMER(...)                                            \
+#define TIMEMORY_DEBUG_AUTO_TIMER(...)                                                   \
     TIMEMORY_DEBUG_AUTO_OBJECT(tim::auto_timer, __VA_ARGS__)
 
 //======================================================================================//

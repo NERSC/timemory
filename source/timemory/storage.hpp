@@ -295,7 +295,7 @@ public:
 
         // lambda for inserting child
         auto _insert_child = [&]() {
-            exists = false;
+            exists   = false;
             auto itr = m_data.append_child(node);
             m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
@@ -461,10 +461,10 @@ protected:
     }
 
 protected:
-    graph_data m_data;
+    graph_data                             m_data;
     std::unordered_map<intmax_t, iterator> m_node_ids;
-    string_t   m_label    = ObjectType::label();
-    string_t   m_descript = ObjectType::descript();
+    string_t                               m_label    = ObjectType::label();
+    string_t                               m_descript = ObjectType::descript();
 
 private:
     static singleton_t& get_singleton()

@@ -199,13 +199,18 @@ struct base
     void start()
     {
         ++laps;
+        set_started();
         static_cast<Type&>(*this).start();
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    void stop() { static_cast<Type&>(*this).stop(); }
+    void stop()
+    {
+        static_cast<Type&>(*this).stop();
+        set_stopped();
+    }
 
     //----------------------------------------------------------------------------------//
     // set the firsts notify that start has been called
@@ -228,6 +233,7 @@ struct base
     {
         if(!is_running)
         {
+            set_started();
             static_cast<Type&>(*this).start();
             return true;
         }
@@ -242,6 +248,7 @@ struct base
         if(is_running)
         {
             static_cast<Type&>(*this).stop();
+            set_stopped();
             return true;
         }
         return false;
