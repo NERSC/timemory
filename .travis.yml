@@ -30,7 +30,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel"
     # GCC 6
     - os: linux
       dist: xenial
@@ -50,7 +50,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo"
     # GCC 7
     - os: linux
       dist: xenial
@@ -70,7 +70,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -91,7 +91,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -112,7 +112,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.6
@@ -137,7 +137,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
       dist: xenial
@@ -157,7 +157,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
     - os: linux
       dist: xenial
@@ -177,7 +177,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -196,7 +196,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -217,7 +217,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -242,7 +242,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
     - os: linux
       dist: xenial
@@ -262,7 +262,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
     - os: linux
       dist: xenial
@@ -282,7 +282,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=MinSizeRel && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -301,7 +301,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=RelWithDebInfo && BUILD_SHARED=ON"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -322,7 +322,7 @@ matrix:
             - libpapi-dev
             - papi-tools
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
 
 before_install:
@@ -348,10 +348,10 @@ before_install:
 install:
     - env
     - conda install pyctest
-    - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --papi"
-    - if [ -z "${NOTBB}" ]; then ARGS="${ARGS} --tbb"; fi
+    - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
+    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
     - if [ -n "${COVERAGE}" ]; then
-        ARGS="${ARGS} --coverage";
+        ARGS="${ARGS} --coverage --pyctest-build-type=${BUILD_TYPE}";
       else
         ARGS="${ARGS} --pyctest-build-type=RelWithDebInfo";
       fi
