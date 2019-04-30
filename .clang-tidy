@@ -31,7 +31,7 @@ readability-*,\
 -readability-redundant-member-init,\
 -readability-simplify-boolean-expr,\
 "
-HeaderFilterRegex: 'source/[^/]*\.(hh|cc)$'
+HeaderFilterRegex: 'source/[^/]*\.(hh|cc|h|c|hpp|cpp|icpp)$'
 CheckOptions:
   - key:             readability-braces-around-statements.ShortStatementLines
     value:           '2'

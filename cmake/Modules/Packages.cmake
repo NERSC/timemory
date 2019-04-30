@@ -214,6 +214,25 @@ if(TIMEMORY_USE_PAPI)
 
 endif()
 
+
+################################################################################
+#
+#        Google PerfTools
+#
+################################################################################
+
+if(TIMEMORY_USE_GPERF)
+    find_package(GPerfTools COMPONENTS profiler)
+
+    if(GPerfTools_FOUND)
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${GPerfTools_INCLUDE_DIRS})
+        list(APPEND EXTERNAL_LIBRARIES ${GPerfTools_LIBRARIES})
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_GPERF)
+    endif()
+
+endif()
+
+
 ################################################################################
 #
 #        Checkout Cereal if not checked out

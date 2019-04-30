@@ -189,6 +189,22 @@ if(TIMEMORY_USE_SANITIZER)
 endif()
 
 # ---------------------------------------------------------------------------- #
+# code coverage
+#
+if(TIMEMORY_USE_COVERAGE)
+    add_c_flag_if_avail("-ftest-coverage")
+    if(c_ftest_coverage)
+        add(${PROJECT_NAME}_C_FLAGS "-fprofile-arcs")
+    endif()
+    add_cxx_flag_if_avail("-ftest-coverage")
+    if(cxx_ftest_coverage)
+        add(${PROJECT_NAME}_CXX_FLAGS "-fprofile-arcs")
+        add(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs")
+        add_feature(CMAKE_EXE_LINKER_FLAGS "Linker flags")
+    endif()
+endif()
+
+# ---------------------------------------------------------------------------- #
 # user customization
 #
 set(_CFLAGS ${CFLAGS} $ENV{CFLAGS})

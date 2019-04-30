@@ -1,8 +1,7 @@
 
-# QtCreator config file
+# IDE files
 /CMakeLists.txt.user*
-
-# Ninja-IDE project files
+/.vscode
 /*.nja
 settings.json
 

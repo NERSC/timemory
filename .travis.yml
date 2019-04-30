@@ -325,63 +325,40 @@ matrix:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=Release && BUILD_SHARED=OFF"
     # ------------------------------------------------------------------------ #
 
-
 before_install:
     - eval "${MATRIX_EVAL}"
     - export CC=${CC}
     - export CXX=${CXX}
-    - export PYBINPATH=$(dirname $(which python))
-    - export PYROOTPATH=$(dirname ${PYBINPATH})
-    - export PATH=${PYBINPATH}:${PATH}
-    - export CMAKE_PREFIX_PATH=${PYROOTPATH}:${CMAKE_PREFIX_PATH}
-    - export PYTHON_VERSION="$(python --version | awk '{print $NF}')"
+    - export TIMEMORY_VERBOSE=4
+    - export TIMEMORY_OUTPUT_TOTAL=1
+    - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+    - bash miniconda.sh -b -p ${HOME}/miniconda
+    - export PATH="${HOME}/miniconda/bin:${PATH}"
+    - conda config --add channels conda-forge
+    - conda config --set always_yes yes --set changeps1 no
+    - conda update conda
     - echo "CC = ${CC} $(${CC} -dumpversion)"
     - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
     - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
     - echo "PYBINPATH = ${PYBINPATH}"
     - echo "PYROOTPATH = ${PYROOTPATH}"
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
-    - export INSTALL_DIR=${HOME}/timemory/current
-    - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
-
 
 install:
     - env
-    - echo "--> ${PWD}"
-    - export SOURCE_DIR=${PWD}
-    - export TIMEMORY_VERBOSE=4
-    - export TIMEMORY_OUTPUT_TOTAL=1
-    #- pip install -U -r requirements.txt
-    - mkdir -p build-timemory
-    - cd build-timemory
-    - export BUILD_DIR=${PWD}
-    - echo "CC = ${CC} $(${CC} -dumpversion)"
-    - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
-    - echo "--> ${PWD}"
-    - cmake
-        -DCMAKE_INSTALL_PREFIX=${INSTALL_DIR}
-        -DCMAKE_BUILD_TYPE=${BUILD_TYPE}
-        -DCMAKE_C_COMPILER=${CC}
-        -DCMAKE_CXX_COMPILER=${CXX}
-        -DCTEST_SITE=Travis
-        -DCTEST_MODEL=Continuous
-        -DCTEST_LOCAL_CHECKOUT=ON
-        -DPYTHON_EXECUTABLE=$(which python)
-        -DTIMEMORY_USE_MPI=${USE_MPI}
-        -DTIMEMORY_BUILD_TESTING=ON
-        -DTIMEMORY_BUILD_PYTHON=ON
-        -DTIMEMORY_BUILD_C=ON
-        -DTIMEMORY_USE_PAPI=OFF
-        -DBUILD_SHARED_LIBS=${BUILD_SHARED}
-        ${PWD}/..
-    - grep '^[A-Za-z]' CMakeCache.txt | grep -vi advanced
-    - ctest -S cdash/Stages.cmake -DSTAGES="Build;Test" -DTRIGGER=Test -V --output-on-failure
-    #
-    # Python testing
-    #
-    - cd ${SOURCE_DIR}
-    #- pip install .
-
+    - conda install pyctest
+    - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --papi"
+    - if [ -z "${NOTBB}" ]; then ARGS="${ARGS} --tbb"; fi
+    - if [ -n "${COVERAGE}" ]; then
+        ARGS="${ARGS} --coverage";
+      else
+        ARGS="${ARGS} --pyctest-build-type=RelWithDebInfo";
+      fi
+    - if [ -z "${USE_MPI}" ]; then
+        ARGS="${ARGS} --no-mpi";
+      fi
+    - python ./pyctest-runner.py ${ARGS};
 
 script:
     #

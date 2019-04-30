@@ -18,6 +18,11 @@ if(UNIX AND NOT APPLE)
     set(_USE_PAPI ON)
 endif()
 
+set(_USE_COVERAGE OFF)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(_USE_COVERAGE ON)
+endif()
+
 # CMake options
 add_option(CMAKE_C_STANDARD_REQUIRED "Require C standard" ON)
 add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
@@ -53,6 +58,8 @@ add_option(TIMEMORY_USE_SANITIZER "Enable -fsanitize flag (=${SANITIZER_TYPE})" 
 add_option(TIMEMORY_USE_PAPI "Enable PAPI" ${_USE_PAPI})
 add_option(TIMEMORY_USE_FILTERING "Enable filtering out types not implemented" ON)
 add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
+add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE})
+add_option(TIMEMORY_USE_GPERF "Enable gperf-tools" OFF)
 
 if(TIMEMORY_USE_MPI)
     add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON ${_FEATURE})

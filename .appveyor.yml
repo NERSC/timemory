@@ -113,14 +113,15 @@ build_script:
     -DMPI_CXX_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include"
     -DMS_MPI_ARCH_DIR="%CMAKE_ARCH%"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-#
-#- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-#
-#- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger% & exit 0
+- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+- ./test_c_timing
+- ./test_cxx_overhead
+- ./test_cxx_tuple
 #
 #- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
 #
-- ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure & exit 0
+#- ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure & exit 0
 #- cd ..
 #- python -m pip install -v -v -v --no-cache-dir .
 #- cd ..

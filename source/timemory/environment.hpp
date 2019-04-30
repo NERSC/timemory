@@ -68,7 +68,7 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, suppress_parsing, false)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, file_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, text_output, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, true)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, false)
 
 // general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)

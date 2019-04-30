@@ -39,7 +39,7 @@ set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_MODULE_PATH})
 
 foreach(_TYPE MAJOR MINOR PATCH)
-    set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}} CACHE STRING "Timemory ${_TYPE} version" FORCE)
+    set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}} CACHE STRING "${PROJECT_NAME} ${_TYPE} version" FORCE)
     mark_as_advanced(TIMEMORY_VERSION_${_TYPE})
 endforeach(_TYPE MAJOR MINOR PATCH)
 
@@ -50,6 +50,8 @@ mark_as_advanced(TIMEMORY_VERSION)
 if(SKBUILD)
     set(TIMEMORY_SETUP_PY OFF CACHE BOOL "Built with scikit-build" FORCE)
 endif()
+
+set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
 
 ################################################################################
 
@@ -80,4 +82,4 @@ include(PackageConfigure)
 
 set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
 add_subdirectory(examples)
-include(Testing)
+enable_testing()

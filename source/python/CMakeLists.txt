@@ -28,15 +28,20 @@ pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
 
 target_link_libraries(${PYLIBNAME}
     PRIVATE ${LIBNAME}-cxx-library)
+
 target_compile_definitions(${PYLIBNAME}
     PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
+
 target_compile_options(${PYLIBNAME}
     PRIVATE
         $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
         $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+
 get_target_property(PYTARGET_INCLUDE_DIRS ${PYLIBNAME} INCLUDE_DIRECTORIES)
+
 target_include_directories(${PYLIBNAME} PUBLIC
-    ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+    ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS}
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
 
 add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 
