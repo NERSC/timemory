@@ -517,7 +517,7 @@ protected:
 
     static int64_t output_width(int64_t width = 0)
     {
-        static std::atomic_int64_t _instance;
+        static std::atomic<int64_t> _instance;
         if(width > 0)
         {
             auto current_width = _instance.load(std::memory_order_relaxed);

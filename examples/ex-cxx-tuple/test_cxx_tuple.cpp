@@ -288,12 +288,12 @@ test_2_timing()
 
     using pair_t = std::pair<std::string, measurement_t>;
 
-    static std::mutex   mtx;
-    std::deque<pair_t>  measurements;
-    measurement_t       runtime;
-    printed_t           runtime_printed;
-    std::atomic_int64_t ret;
-    std::stringstream   lambda_ss;
+    static std::mutex    mtx;
+    std::deque<pair_t>   measurements;
+    measurement_t        runtime;
+    printed_t            runtime_printed;
+    std::atomic<int64_t> ret;
+    std::stringstream    lambda_ss;
 
     {
         TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
@@ -354,7 +354,7 @@ test_3_auto_tuple()
     using small_set_t =
         tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
 
-    std::atomic_int64_t ret;
+    std::atomic<int64_t> ret;
     {
         // accumulate metrics on full run
         TIMEMORY_BASIC_AUTO_TUPLE(full_set_t, "[total]");

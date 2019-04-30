@@ -563,11 +563,11 @@ protected:
 
 private:
     // number of existing objects
-    static int64_t&             thread_number();
-    static std::atomic_int64_t& master_count();
-    static std::atomic_int64_t& count();
-    static int64_t              fmax_depth;
-    static bool                 fenabled;
+    static int64_t&              thread_number();
+    static std::atomic<int64_t>& master_count();
+    static std::atomic<int64_t>& count();
+    static int64_t               fmax_depth;
+    static bool                  fenabled;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -584,22 +584,22 @@ counted_object<CountedType>::thread_number()
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-std::atomic_int64_t&
+std::atomic<int64_t>&
 counted_object<CountedType>::master_count()
 {
-    static std::atomic_int64_t _instance(0);
+    static std::atomic<int64_t> _instance(0);
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-std::atomic_int64_t&
+std::atomic<int64_t>&
 counted_object<CountedType>::count()
 {
     if(thread_number() == 0)
         return master_count();
-    static thread_local std::atomic_int64_t _instance(master_count().load());
+    static thread_local std::atomic<int64_t> _instance(master_count().load());
     return _instance;
 }
 
