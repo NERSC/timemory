@@ -49,7 +49,7 @@ add_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # Build settings
 add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF ${_FEATURE})
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF ${_FEATURE})
-add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
+add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON ${_FEATURE})
 add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON ${_FEATURE})
 add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF ${_FEATURE})
