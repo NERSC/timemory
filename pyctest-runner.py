@@ -33,6 +33,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-static-analysis", help="TIMEMORY_USE_CLANG_TIDY=OFF",
                         default=False, action='store_true')
+    parser.add_argument("--no-papi", help="TIMEMORY_USE_PAPI=OFF",
+                        default=False, action='store_true')
     parser.add_argument("--no-mpi", help="TIMEMORY_USE_MPI=OFF",
                         default=False, action='store_true')
     parser.add_argument("--no-py", help="TIMEMORY_BUILD_PYTHON=OFF",
@@ -110,6 +112,7 @@ def run_pyctest():
         "TIMEMORY_USE_ARCH": "OFF",
         "TIMEMORY_USE_MPI": "ON",
         "TIMEMORY_USE_GPERF": "OFF",
+        "TIMEMORY_USE_PAPI": "ON",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON",
         "TIMEMORY_USE_COVERAGE" : "OFF",
@@ -127,6 +130,10 @@ def run_pyctest():
         build_opts["TIMEMORY_USE_MPI"] = "OFF"
     else:
         pyctest.BUILD_NAME = "{} MPI".format(pyctest.BUILD_NAME)
+    if args.no_papi:
+        build_opts["TIMEMORY_USE_PAPI"] = "OFF"
+    else:
+        pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
     if args.arch:
         pyctest.BUILD_NAME = "{} arch".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
