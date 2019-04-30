@@ -82,7 +82,7 @@ saxpy(int64_t n, float a, float* x, float* y)
         {
             atomicAdd(&y[i], (a * x[i]) - y[i]);
         }
-        //if(i < 8)
+        // if(i < 8)
         //    printf("i = %li, y = %8.4e, x = %8.4e, y = %8.4e\n", i, y[i], x[i], y[i]);
     }
 }
