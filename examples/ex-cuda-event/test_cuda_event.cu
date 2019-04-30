@@ -52,7 +52,7 @@ using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_ut
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
 __global__ void
-saxpy(int n, float a, float* x, float* y)
+saxpy(int64_t n, float a, float* x, float* y)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     if(i < n)
@@ -73,7 +73,9 @@ int
 main(int argc, char** argv)
 {
     tim::env::parse();
-    auto* timing = new auto_tuple_t("Tests runtime", true);
+    auto* timing =
+        new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>(
+            "Tests runtime", true);
 
     timing->start();
 
@@ -133,57 +135,91 @@ test_1_saxpy()
     print_info(__FUNCTION__);
     TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
 
-    int    N = 20 * (1 << 20);
-    float *x, *y, *d_x, *d_y;
-    x = (float*) malloc(N * sizeof(float));
-    y = (float*) malloc(N * sizeof(float));
-
-    cudaMalloc(&d_x, N * sizeof(float));
-    cudaMalloc(&d_y, N * sizeof(float));
-
-    for(int i = 0; i < N; i++)
-    {
-        x[i] = 1.0f;
-        y[i] = 2.0f;
-    }
-
+    int64_t     N = 20 * (1 << 23);
+    float *     x, *y, *d_x, *d_y;
+    int         block        = 512;
+    int         ngrid        = (N + block - 1) / block;
+    float       milliseconds = 0.0f;
+    float       maxError     = 0.0f;
     cudaEvent_t start, stop;
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cuda_event _evt;
+    cuda_event* _evt = nullptr;
 
-    cudaMemcpy(d_x, x, N * sizeof(float), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_y, y, N * sizeof(float), cudaMemcpyHostToDevice);
-
-    cudaEventRecord(start);
-    _evt.start();
-
-    int block = 512;
-    int ngrid = (N + block - 1) / block;
-
-    // Perform SAXPY on 1M elements
-    saxpy<<<ngrid, block>>>(N, 2.0f, d_x, d_y);
-
-    cudaEventRecord(stop);
-    _evt.stop();
-
-    cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
-
-    cudaEventSynchronize(stop);
-    _evt.sync();
-
-    float milliseconds = 0;
-    cudaEventElapsedTime(&milliseconds, start, stop);
-
-    float maxError = 0.0f;
-    for(int i = 0; i < N; i++)
     {
-        maxError = max(maxError, abs(y[i] - 4.0f));
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[malloc]");
+        x = (float*) malloc(N * sizeof(float));
+        y = (float*) malloc(N * sizeof(float));
     }
 
-    std::cout << "Event: " << _evt << std::endl;
-    printf("Max error: %f\n", maxError);
-    printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
+        cudaMalloc(&d_x, N * sizeof(float));
+        cudaMalloc(&d_y, N * sizeof(float));
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[assign]");
+        for(int i = 0; i < N; i++)
+        {
+            x[i] = 1.0f;
+            y[i] = 2.0f;
+        }
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[create_event]");
+        cudaEventCreate(&start);
+        cudaEventCreate(&stop);
+        _evt                     = new cuda_event();
+        _evt->get_precision()    = 12;
+        _evt->get_format_flags() = std::ios_base::scientific;
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[H2D]");
+        cudaMemcpy(d_x, x, N * sizeof(float), cudaMemcpyHostToDevice);
+        cudaMemcpy(d_y, y, N * sizeof(float), cudaMemcpyHostToDevice);
+    }
+
+    for(int i = 0; i < 5; ++i)
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
+        _evt->start();
+        cudaEventRecord(start);
+
+        // Perform SAXPY on 1M elements
+        saxpy<<<ngrid, block>>>(N, 2.0f, d_x, d_y);
+
+        cudaEventRecord(stop);
+        _evt->stop();
+
+        cudaEventSynchronize(stop);
+        float tmp = 0.0f;
+        cudaEventElapsedTime(&tmp, start, stop);
+        milliseconds += tmp;
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[D2H]");
+        cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[check]");
+        for(int64_t i = 0; i < N; i++)
+        {
+            maxError = max(maxError, abs(y[i] - 4.0f));
+        }
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[output]");
+        std::cout << "Event: " << _evt << std::endl;
+        printf("Max error: %f\n", maxError);
+        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
+        printf("Runtime (s): %16.12e\n", milliseconds / 1e6);
+    }
+
+    delete _evt;
 }
 
 //======================================================================================//

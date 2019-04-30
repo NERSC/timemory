@@ -1854,7 +1854,7 @@ struct impl_available<papi_event<EventSet, EventTypes...>> : std::false_type
 // this struct extracts only the CPU time spent in kernel-mode
 struct cuda_event : public base<cuda_event, float>
 {
-    using ratio_t    = std::milli;
+    using ratio_t    = std::micro;
     using value_type = float;
     using base_type  = base<cuda_event, value_type>;
 
@@ -1885,6 +1885,7 @@ struct cuda_event : public base<cuda_event, float>
 
     float compute_display() const
     {
+        const_cast<cuda_event&>(*this).sync();
         auto val = (is_transient) ? accum : value;
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
@@ -1893,14 +1894,17 @@ struct cuda_event : public base<cuda_event, float>
     void start()
     {
         set_started();
-        cudaStreamAddCallback(m_stream, &cuda_event::callback, static_cast<void*>(this),
-                              0);
+        m_is_synced = false;
+        // cudaStreamAddCallback(m_stream, &cuda_event::callback,
+        // static_cast<void*>(this),
+        //                     0);
         cudaEventRecord(m_start, m_stream);
     }
 
     void stop()
     {
         cudaEventRecord(m_stop, m_stream);
+        sync();
         set_stopped();
     }
 
@@ -1915,10 +1919,22 @@ struct cuda_event : public base<cuda_event, float>
         _this->value = std::move(tmp);
     }
 
-    void sync() { cudaEventSynchronize(m_stop); }
+    void sync()
+    {
+        cudaEventSynchronize(m_stop);
+        if(!m_is_synced)
+        {
+            float tmp = 0.0f;
+            cudaEventElapsedTime(&tmp, m_start, m_stop);
+            accum += tmp;
+            value       = std::move(tmp);
+            m_is_synced = true;
+        }
+    }
 
 private:
-    cudaStream_t m_stream = 0;
+    bool         m_is_synced = false;
+    cudaStream_t m_stream    = 0;
     cudaEvent_t  m_start;
     cudaEvent_t  m_stop;
 };
