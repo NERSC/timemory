@@ -81,19 +81,19 @@ public:
     //  the node type
     //
     //----------------------------------------------------------------------------------//
-    class graph_node : public std::tuple<intmax_t, ObjectType, string_t>
+    class graph_node : public std::tuple<int64_t, ObjectType, string_t>
     {
     public:
         using this_type      = graph_node;
-        using base_type      = std::tuple<intmax_t, ObjectType, string_t>;
+        using base_type      = std::tuple<int64_t, ObjectType, string_t>;
         using obj_value_type = typename ObjectType::value_type;
         using obj_base_type  = typename ObjectType::base_type;
 
-        intmax_t&   id() { return std::get<0>(*this); }
+        int64_t&    id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
         string_t&   prefix() { return std::get<2>(*this); }
 
-        const intmax_t&   id() const { return std::get<0>(*this); }
+        const int64_t&    id() const { return std::get<0>(*this); }
         const ObjectType& obj() const { return std::get<1>(*this); }
         const string_t&   prefix() const { return std::get<2>(*this); }
 
@@ -107,7 +107,7 @@ public:
         {
         }
 
-        graph_node(const intmax_t& _id, const ObjectType& _obj)
+        graph_node(const int64_t& _id, const ObjectType& _obj)
         : base_type(_id, _obj, "")
         {
         }
@@ -144,7 +144,7 @@ public:
     struct graph_data
     {
         using this_type  = graph_data;
-        intmax_t m_depth = -1;
+        int64_t  m_depth = -1;
         graph_t  m_graph;
         iterator m_current;
         iterator m_head;
@@ -169,7 +169,7 @@ public:
         graph_data& operator=(const this_type&) = delete;
         graph_data& operator=(this_type&&) = default;
 
-        intmax_t& depth() { return m_depth; }
+        int64_t&  depth() { return m_depth; }
         graph_t&  graph() { return m_graph; }
         iterator& current() { return m_current; }
         iterator& head() { return m_head; }
@@ -282,7 +282,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    iterator insert(const intmax_t& hash_id, const ObjectType& obj, bool& exists)
+    iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
     {
         using sibling_itr = typename graph_t::sibling_iterator;
         graph_node node(hash_id, obj);
@@ -461,10 +461,10 @@ protected:
     }
 
 protected:
-    graph_data                             m_data;
-    std::unordered_map<intmax_t, iterator> m_node_ids;
-    string_t                               m_label    = ObjectType::label();
-    string_t                               m_descript = ObjectType::descript();
+    graph_data                            m_data;
+    std::unordered_map<int64_t, iterator> m_node_ids;
+    string_t                              m_label    = ObjectType::label();
+    string_t                              m_descript = ObjectType::descript();
 
 private:
     static singleton_t& get_singleton()
@@ -478,7 +478,7 @@ public:
     void serialize(Archive& ar, const unsigned int /*version*/)
     {
         auto convert_graph = [&]() {
-            std::deque<std::tuple<intmax_t, ObjectType, string_t>> _list;
+            std::deque<std::tuple<int64_t, ObjectType, string_t>> _list;
             for(const auto& itr : m_data.graph())
                 _list.push_back(itr);
             return _list;
@@ -543,11 +543,11 @@ tim::graph_storage<ObjectType>::print()
         graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
 
         m_data.current() = m_data.head();
-        intmax_t _width  = ObjectType::get_width();
+        int64_t _width   = ObjectType::get_width();
         for(const auto& itr : m_data.graph())
         {
-            intmax_t _len = itr.prefix().length();
-            _width        = std::max(_len, _width);
+            int64_t _len = itr.prefix().length();
+            _width       = std::max(_len, _width);
         }
 
         std::stringstream _oss;

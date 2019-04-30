@@ -99,7 +99,7 @@ public:
 private:
     bool        m_enabled;
     bool        m_report_at_exit;
-    uintmax_t   m_hash;
+    uint64_t    m_hash;
     object_type m_temp_object;
 };
 

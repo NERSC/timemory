@@ -329,14 +329,14 @@ PYBIND11_MODULE(libtimemory, tim)
                   "Subtract rss usage", py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
     rss_usage.def("current",
-                  [=](py::object self, intmax_t /*_units*/) {
+                  [=](py::object self, int64_t /*_units*/) {
                       return std::get<0>(*self.cast<rss_usage_t*>()).compute_display();
                   },
                   "Return the current rss usage",
                   py::arg("units") = units.attr("megabyte"));
     //------------------------------------------------------------------------//
     rss_usage.def("peak",
-                  [=](py::object self, intmax_t /*_units*/) {
+                  [=](py::object self, int64_t /*_units*/) {
                       return std::get<1>(*self.cast<rss_usage_t*>()).compute_display();
                   },
                   "Return the current rss usage",

@@ -61,7 +61,7 @@ class component_tuple
     static const std::size_t num_elements = sizeof...(Types);
 
 public:
-    using size_type   = intmax_t;
+    using size_type   = int64_t;
     using this_type   = component_tuple<Types...>;
     using data_t      = std::tuple<Types...>;
     using string_hash = std::hash<string_t>;
@@ -455,7 +455,7 @@ public:
 public:
     inline data_t&       data() { return m_data; }
     inline const data_t& data() const { return m_data; }
-    inline intmax_t      laps() const { return m_laps; }
+    inline int64_t       laps() const { return m_laps; }
 
 protected:
     // protected member functions
@@ -467,9 +467,9 @@ protected:
     bool           m_store     = false;
     bool           m_is_pushed = false;
     mutex_t        m_mutex;
-    intmax_t       m_laps  = 0;
-    intmax_t       m_count = 0;
-    intmax_t       m_hash  = 0;
+    int64_t        m_laps  = 0;
+    int64_t        m_count = 0;
+    int64_t        m_hash  = 0;
     mutable data_t m_data;
     string_t       m_identifier = "";
     bool_array     m_exists;
@@ -503,7 +503,7 @@ protected:
         ss << _prefix << "[" << tag << "] ";
 
         // indent
-        for(intmax_t i = 0; i < m_count; ++i)
+        for(int64_t i = 0; i < m_count; ++i)
         {
             if(i + 1 == m_count)
                 ss << "|_";
@@ -515,9 +515,9 @@ protected:
         output_width(m_identifier.length());
     }
 
-    static intmax_t output_width(intmax_t width = 0)
+    static int64_t output_width(int64_t width = 0)
     {
-        static std::atomic_intmax_t _instance;
+        static std::atomic_int64_t _instance;
         if(width > 0)
         {
             auto current_width = _instance.load(std::memory_order_relaxed);
@@ -525,7 +525,7 @@ protected:
                 current_width = _instance.load(std::memory_order_relaxed);
                 return std::max(_instance.load(), width);
             };
-            intmax_t propose_width = compute();
+            int64_t propose_width = compute();
             do
             {
                 if(propose_width > current_width)

@@ -46,7 +46,7 @@
 #include <thread>
 #include <vector>
 
-using vector_t = std::vector<uintmax_t>;
+using vector_t = std::vector<uint64_t>;
 using namespace tim::component;
 using comp_tuple_t = tim::details::custom_component_tuple<
     real_clock, system_clock, cpu_clock, cpu_util, peak_rss, data_rss, stack_rss,
@@ -178,7 +178,7 @@ getcharptr(const std::string& str)
 
 //--------------------------------------------------------------------------------------//
 
-declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
+declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 {
     if(argc < 2)
         exit(0);
@@ -188,7 +188,7 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
     // NULL pointer
 
     char** argv_list = static_cast<char**>(malloc(sizeof(char*) * argc));
-    for(uintmax_t i = 0; i < argc - 1; i++)
+    for(uint64_t i = 0; i < argc - 1; i++)
         argv_list[i] = argv[i + 1];
     argv_list[argc - 1] = nullptr;
 
@@ -196,14 +196,14 @@ declare_attribute(noreturn) void child_process(uintmax_t argc, char** argv)
     int ret = execvp(argv_list[0], argv_list);
     if(ret < 0)
     {
-        uintmax_t argc_shell   = argc + 2;
+        uint64_t argc_shell    = argc + 2;
         char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
         char*  _shell          = getusershell();
         if(_shell)
         {
             argv_shell_list[0] = _shell;
             argv_shell_list[1] = getcharptr("-c");
-            for(uintmax_t i = 0; i < argc - 1; ++i)
+            for(uint64_t i = 0; i < argc - 1; ++i)
                 argv_shell_list[i + 2] = argv_list[i];
             argv_shell_list[argc_shell - 1] = nullptr;
             ret                             = execvp(argv_shell_list[0], argv_shell_list);
@@ -252,7 +252,7 @@ main(int argc, char** argv)
 
     pid_t pid = fork();
 
-    uintmax_t nargs = static_cast<uintmax_t>(argc);
+    uint64_t nargs = static_cast<uint64_t>(argc);
     if(pid == -1)  // pid == -1 means error occured
     {
         failed_fork();

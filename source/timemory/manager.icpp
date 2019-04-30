@@ -497,10 +497,10 @@ manager::compute_self()
     ++itr1;  // skip global timer
     for(; itr1 != m_timer_list_self.end(); ++itr1)
     {
-        uintmax_t _depth1 = itr1->level();
+        uint64_t _depth1 = itr1->level();
         for(auto itr2 = itr1; itr2 != m_timer_list_self.end(); ++itr2)
         {
-            uintmax_t _depth2 = itr2->level();
+            uint64_t _depth2 = itr2->level();
             if(_depth2 == _depth1 + 1)
                 itr1->timer() -= itr2->timer();
             if(itr2 != itr1 && _depth1 == _depth2)
@@ -514,7 +514,7 @@ manager::compute_self()
 manager::tim_timer_t
 manager::compute_missing(tim_timer_t* timer_ref)
 {
-    // typedef std::set<uintmax_t> key_set_t;
+    // typedef std::set<uint64_t> key_set_t;
 
     tim_timer_t* _ref    = (timer_ref) ? timer_ref : &timer_data.missing();
     bool         restart = _ref->is_running();
@@ -543,7 +543,7 @@ manager::compute_missing(tim_timer_t* timer_ref)
         depth_timers[cdepth] += itr->data();
     }
 
-    for(uintmax_t i = 2; i < max_depth; ++i)
+    for(uint64_t i = 2; i < max_depth; ++i)
         _missing_timer += (depth_timers[i - 1] - depth_timers[i]);
 
     return _missing_timer;
@@ -743,13 +743,13 @@ manager::write_json_mpi(ostream_t& ofss)
     string_t fss_str = fss.str();
     // limit the iteration loop. Occasionally it seems that this will create
     // an infinite loop even though it shouldn't...
-    const uintmax_t itr_limit = fss_str.length();
+    const uint64_t itr_limit = fss_str.length();
     // compact the JSON
     for(auto citr : { "\n", "\t", "  " })
     {
         string_t            itr(citr);
         string_t::size_type fpos = 0;
-        uintmax_t           nitr = 0;
+        uint64_t            nitr = 0;
         do
         {
             fpos = fss_str.find(itr, fpos);

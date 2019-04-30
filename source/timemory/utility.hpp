@@ -142,7 +142,7 @@ typedef std::unique_lock<mutex_t> auto_lock_t;
 
 template <typename _Tp>
 mutex_t&
-type_mutex(const uintmax_t& _n = 0)
+type_mutex(const uint64_t& _n = 0)
 {
     static mutex_t* _mutex = new mutex_t();
     if(_n == 0)
@@ -519,12 +519,12 @@ public:
 
 public:
     // return number of existing objects:
-    static intmax_t           live() { return count().load(); }
-    static constexpr intmax_t zero() { return static_cast<intmax_t>(0); }
-    static intmax_t           max_depth() { return fmax_depth; }
+    static int64_t           live() { return count().load(); }
+    static constexpr int64_t zero() { return static_cast<int64_t>(0); }
+    static int64_t           max_depth() { return fmax_depth; }
 
     static void enable(const bool& val) { fenabled = val; }
-    static void set_max_depth(const intmax_t& val) { fmax_depth = val; }
+    static void set_max_depth(const int64_t& val) { fmax_depth = val; }
     static bool is_enabled() { return fenabled; }
     static bool is_master() { return thread_number() == 0; }
 
@@ -559,54 +559,54 @@ protected:
     this_type& operator=(this_type&& rhs) = default;
 
 protected:
-    intmax_t m_count;
+    int64_t m_count;
 
 private:
     // number of existing objects
-    static intmax_t&             thread_number();
-    static std::atomic_intmax_t& master_count();
-    static std::atomic_intmax_t& count();
-    static intmax_t              fmax_depth;
-    static bool                  fenabled;
+    static int64_t&             thread_number();
+    static std::atomic_int64_t& master_count();
+    static std::atomic_int64_t& count();
+    static int64_t              fmax_depth;
+    static bool                 fenabled;
 };
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-intmax_t&
+int64_t&
 counted_object<CountedType>::thread_number()
 {
-    static std::atomic<intmax_t> _all_instance;
-    static thread_local intmax_t _instance = _all_instance++;
+    static std::atomic<int64_t> _all_instance;
+    static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-std::atomic_intmax_t&
+std::atomic_int64_t&
 counted_object<CountedType>::master_count()
 {
-    static std::atomic_intmax_t _instance(0);
+    static std::atomic_int64_t _instance(0);
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-std::atomic_intmax_t&
+std::atomic_int64_t&
 counted_object<CountedType>::count()
 {
     if(thread_number() == 0)
         return master_count();
-    static thread_local std::atomic_intmax_t _instance(master_count().load());
+    static thread_local std::atomic_int64_t _instance(master_count().load());
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename CountedType>
-intmax_t counted_object<CountedType>::fmax_depth = std::numeric_limits<intmax_t>::max();
+int64_t counted_object<CountedType>::fmax_depth = std::numeric_limits<int64_t>::max();
 
 //--------------------------------------------------------------------------------------//
 
@@ -627,8 +627,8 @@ public:
 
 public:
     // return running hash of existing objects
-    static intmax_t           live() { return hash(); }
-    static constexpr intmax_t zero() { return static_cast<intmax_t>(0); }
+    static int64_t           live() { return hash(); }
+    static constexpr int64_t zero() { return static_cast<int64_t>(0); }
 
 protected:
     // default constructor
@@ -651,47 +651,47 @@ protected:
     ~hashed_object() { hash() -= m_hash; }
     hashed_object(const this_type&)     = default;
     explicit hashed_object(this_type&&) = default;
-    static intmax_t& hash();
+    static int64_t& hash();
 
 protected:
-    intmax_t m_hash;
+    int64_t m_hash;
 
 private:
     // number of existing objects
-    static intmax_t& thread_number();
-    static intmax_t& master_hash();
+    static int64_t& thread_number();
+    static int64_t& master_hash();
 };
 
 //--------------------------------------------------------------------------------------//
 
 template <typename HashedType>
-intmax_t&
+int64_t&
 hashed_object<HashedType>::thread_number()
 {
-    static std::atomic<intmax_t> _all_instance;
-    static thread_local intmax_t _instance = _all_instance++;
+    static std::atomic<int64_t> _all_instance;
+    static thread_local int64_t _instance = _all_instance++;
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename HashedType>
-intmax_t&
+int64_t&
 hashed_object<HashedType>::master_hash()
 {
-    static intmax_t _instance = 0;
+    static int64_t _instance = 0;
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename HashedType>
-intmax_t&
+int64_t&
 hashed_object<HashedType>::hash()
 {
     if(thread_number() == 0)
         return master_hash();
-    static thread_local intmax_t _instance = master_hash();
+    static thread_local int64_t _instance = master_hash();
     return _instance;
 }
 

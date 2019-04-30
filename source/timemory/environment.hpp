@@ -230,7 +230,7 @@ tim::env::process()
         if(_unit.length() == 0)
             return return_type("MB", tim::units::megabyte);
 
-        using inner            = std::tuple<string_t, string_t, string_t, intmax_t>;
+        using inner            = std::tuple<string_t, string_t, string_t, int64_t>;
         using pair_vector_t    = std::vector<inner>;
         pair_vector_t matching = { inner("byte", "B", "Bi", tim::units::byte),
                                    inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
@@ -256,7 +256,7 @@ tim::env::process()
         if(_unit.length() == 0)
             return return_type("sec", tim::units::sec);
 
-        using inner            = std::tuple<string_t, string_t, intmax_t>;
+        using inner            = std::tuple<string_t, string_t, int64_t>;
         using pair_vector_t    = std::vector<inner>;
         pair_vector_t matching = { inner("ps", "picosecond", tim::units::psec),
                                    inner("ns", "nanosecond", tim::units::nsec),

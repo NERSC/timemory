@@ -46,7 +46,7 @@ typedef tim::manager manager_t;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
-intmax_t
+int64_t
 fibonacci(int32_t n)
 {
     if(n > 34)
@@ -60,7 +60,7 @@ fibonacci(int32_t n)
 //--------------------------------------------------------------------------------------//
 // time fibonacci with return type and arguments
 // e.g. std::function < int32_t ( int32_t ) >
-intmax_t
+int64_t
 time_fibonacci(int32_t n)
 {
     TIMEMORY_BASIC_AUTO_TIMER("(" + std::to_string(n) + ")");
@@ -71,9 +71,9 @@ time_fibonacci(int32_t n)
 void
 print_info(const std::string&);
 void
-print_size(const std::string&, intmax_t, bool = true);
+print_size(const std::string&, int64_t, bool = true);
 void
-print_depth(const std::string&, intmax_t, bool = true);
+print_depth(const std::string&, int64_t, bool = true);
 void
 test_1_serialize();
 void
@@ -165,7 +165,7 @@ print_info(const std::string& func)
 //======================================================================================//
 
 void
-print_size(const std::string& func, intmax_t line, bool extra_endl)
+print_size(const std::string& func, int64_t line, bool extra_endl)
 {
     if(tim::mpi_rank() == 0)
     {
@@ -191,7 +191,7 @@ print_string(const std::string& str)
 //======================================================================================//
 
 void
-print_depth(const std::string& func, intmax_t line, bool extra_endl)
+print_depth(const std::string& func, int64_t line, bool extra_endl)
 {
     if(tim::mpi_rank() == 0)
     {
@@ -219,7 +219,7 @@ test_2_rss_usage()
 {
     print_info(__FUNCTION__);
 
-    typedef std::vector<uintmax_t> vector_t;
+    typedef std::vector<uint64_t> vector_t;
 
     tim::format::rss _format("", ": RSS [current = %c %A] [peak = %m %A]",
                              tim::units::kilobyte, false);
@@ -238,29 +238,29 @@ test_2_rss_usage()
     rt.start();
     ct.start();
 
-    uintmax_t nsize = 262144;
+    uint64_t  nsize = 262144;
     vector_t* v     = new vector_t();
 
     _rss_init.record();
     v->resize(nsize, 0);
-    memset(v->data(), 1, nsize * sizeof(uintmax_t));
+    memset(v->data(), 1, nsize * sizeof(uint64_t));
     _rss_calc.record();
 
     v->clear();
     delete v;
 
     // current usage
-    intmax_t _c_usage = _rss_calc.current<intmax_t>(tim::units::kilobyte) -
-                        _rss_init.current<intmax_t>(tim::units::kilobyte);
+    int64_t _c_usage = _rss_calc.current<int64_t>(tim::units::kilobyte) -
+                       _rss_init.current<int64_t>(tim::units::kilobyte);
     // peak usage
-    intmax_t _p_usage = _rss_calc.peak<intmax_t>(tim::units::kilobyte) -
-                        _rss_init.peak<intmax_t>(tim::units::kilobyte);
+    int64_t _p_usage = _rss_calc.peak<int64_t>(tim::units::kilobyte) -
+                       _rss_init.peak<int64_t>(tim::units::kilobyte);
 
     // expected usage
-    intmax_t _e_usage = 2048;
+    int64_t _e_usage = 2048;
     // actual difference
-    intmax_t _c_diff = std::abs(_c_usage - _e_usage);
-    intmax_t _p_diff = std::abs(_p_usage - _e_usage);
+    int64_t _c_diff = std::abs(_c_usage - _e_usage);
+    int64_t _p_diff = std::abs(_p_usage - _e_usage);
 
     std::cout << _rss_init << std::endl;
     std::cout << _rss_calc << std::endl;

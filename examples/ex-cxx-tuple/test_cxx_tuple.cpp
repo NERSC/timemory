@@ -54,7 +54,7 @@ using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
-intmax_t
+int64_t
 fibonacci(int32_t n)
 {
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
@@ -62,7 +62,7 @@ fibonacci(int32_t n)
 //--------------------------------------------------------------------------------------//
 // time fibonacci with return type and arguments
 // e.g. std::function < int32_t ( int32_t ) >
-intmax_t
+int64_t
 time_fibonacci(int32_t n)
 {
     TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
@@ -200,8 +200,8 @@ test_1_usage()
     auto n = 5000000;
     _use_beg.record();
     _use_delta.start();
-    std::vector<intmax_t> v(n, 30);
-    long                  nfib = random_entry(v);
+    std::vector<int64_t> v(n, 30);
+    long                 nfib = random_entry(v);
     time_fibonacci(nfib);
     _use_delta.stop();
     _use_end.record();
@@ -288,12 +288,12 @@ test_2_timing()
 
     using pair_t = std::pair<std::string, measurement_t>;
 
-    static std::mutex    mtx;
-    std::deque<pair_t>   measurements;
-    measurement_t        runtime;
-    printed_t            runtime_printed;
-    std::atomic_intmax_t ret;
-    std::stringstream    lambda_ss;
+    static std::mutex   mtx;
+    std::deque<pair_t>  measurements;
+    measurement_t       runtime;
+    printed_t           runtime_printed;
+    std::atomic_int64_t ret;
+    std::stringstream   lambda_ss;
 
     {
         TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
@@ -354,7 +354,7 @@ test_3_auto_tuple()
     using small_set_t =
         tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
 
-    std::atomic_intmax_t ret;
+    std::atomic_int64_t ret;
     {
         // accumulate metrics on full run
         TIMEMORY_BASIC_AUTO_TUPLE(full_set_t, "[total]");
@@ -397,9 +397,9 @@ test_4_measure()
         TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", current_rss, peak_rss);
         prss.start();
         // do something, where you want delta peak rss
-        auto                  n = 10000000;
-        std::vector<intmax_t> v(n, 10);
-        long                  nfib = random_entry(v);
+        auto                 n = 10000000;
+        std::vector<int64_t> v(n, 10);
+        long                 nfib = random_entry(v);
         fibonacci(nfib);
         prss.stop();
         std::cout << "Change in rss: " << prss << std::endl;

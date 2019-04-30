@@ -44,7 +44,7 @@ check_rusage_call(int ret, const char* _func)
 // memory use) measured in bytes, or zero if the value cannot be
 // determined on this OS.
 //
-inline intmax_t
+inline int64_t
 tim::get_peak_rss()
 {
 #if defined(_UNIX)
@@ -53,12 +53,12 @@ tim::get_peak_rss()
 
 // Darwin reports in bytes, Linux reports in kilobytes
 #    if defined(_MACOS)
-    intmax_t _units = 1;
+    int64_t _units = 1;
 #    else
-    intmax_t _units = units::kilobyte;
+    int64_t _units = units::kilobyte;
 #    endif
 
-    return static_cast<intmax_t>(_units * _usage.ru_maxrss);
+    return static_cast<int64_t>(_units * _usage.ru_maxrss);
 
 #elif defined(_WINDOWS)
     DWORD                   processID = GetCurrentProcessId();
@@ -70,17 +70,17 @@ tim::get_peak_rss()
     // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE, processID);
     if(NULL == hProcess)
-        return static_cast<intmax_t>(0);
+        return static_cast<int64_t>(0);
 
-    intmax_t nsize = 0;
+    int64_t nsize = 0;
     if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = static_cast<intmax_t>(pmc.PeakWorkingSetSize);
+        nsize = static_cast<int64_t>(pmc.PeakWorkingSetSize);
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
@@ -88,7 +88,7 @@ tim::get_peak_rss()
 // Returns the current resident set size (physical memory use) measured
 // in bytes, or zero if the value cannot be determined on this OS.
 //
-inline intmax_t
+inline int64_t
 tim::get_current_rss()
 {
 #if defined(_UNIX)
@@ -98,24 +98,24 @@ tim::get_current_rss()
     mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
                  &infoCount) != KERN_SUCCESS)
-        return static_cast<intmax_t>(0); /* Can't access? */
+        return static_cast<int64_t>(0); /* Can't access? */
     // Darwin reports in bytes
-    return static_cast<intmax_t>(info.resident_size);
+    return static_cast<int64_t>(info.resident_size);
 
 #    else  // Linux
 
-    intmax_t rss = 0;
-    FILE*    fp  = fopen("/proc/self/statm", "r");
+    int64_t rss = 0;
+    FILE*   fp  = fopen("/proc/self/statm", "r");
     if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
     {
         fclose(fp);
-        return static_cast<intmax_t>(rss * units::page_size);
+        return static_cast<int64_t>(rss * units::page_size);
     }
 
     if(fp)
         fclose(fp);
 
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 
 #    endif
 #elif defined(_WINDOWS)
@@ -128,199 +128,199 @@ tim::get_current_rss()
     // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
     if(NULL == hProcess)
-        return static_cast<intmax_t>(0);
+        return static_cast<int64_t>(0);
 
-    intmax_t nsize = 0;
+    int64_t nsize = 0;
     if(GetProcessMemoryInfo(hProcess, &pmc, sizeof(pmc)))
-        nsize = static_cast<intmax_t>(pmc.WorkingSetSize);
+        nsize = static_cast<int64_t>(pmc.WorkingSetSize);
 
     CloseHandle(hProcess);
 
     return nsize;
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_stack_rss()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<intmax_t>(_units * _usage.ru_isrss);
+    const int64_t _units = units::kilobyte * units::clocks_per_sec;
+    return static_cast<int64_t>(_units * _usage.ru_isrss);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_data_rss()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    const intmax_t _units = units::kilobyte * units::clocks_per_sec;
-    return static_cast<intmax_t>(_units * _usage.ru_idrss);
+    const int64_t _units = units::kilobyte * units::clocks_per_sec;
+    return static_cast<int64_t>(_units * _usage.ru_idrss);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_swap()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_nswap);
+    return static_cast<int64_t>(_usage.ru_nswap);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_io_in()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_inblock);
+    return static_cast<int64_t>(_usage.ru_inblock);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_io_out()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_oublock);
+    return static_cast<int64_t>(_usage.ru_oublock);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_minor_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_minflt);
+    return static_cast<int64_t>(_usage.ru_minflt);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_major_page_faults()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_majflt);
+    return static_cast<int64_t>(_usage.ru_majflt);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_messages_sent()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_msgsnd);
+    return static_cast<int64_t>(_usage.ru_msgsnd);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_messages_received()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_msgrcv);
+    return static_cast<int64_t>(_usage.ru_msgrcv);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_signals()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_nsignals);
+    return static_cast<int64_t>(_usage.ru_nsignals);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_voluntary_context_switch()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_nvcsw);
+    return static_cast<int64_t>(_usage.ru_nvcsw);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 
 //======================================================================================//
 
-inline intmax_t
+inline int64_t
 tim::get_num_priority_context_switch()
 {
 #if defined(_UNIX)
     struct rusage _usage;
     check_rusage_call(getrusage(get_rusage_type(), &_usage), __FUNCTION__);
 
-    return static_cast<intmax_t>(_usage.ru_nivcsw);
+    return static_cast<int64_t>(_usage.ru_nivcsw);
 #else
-    return static_cast<intmax_t>(0);
+    return static_cast<int64_t>(0);
 #endif
 }
 

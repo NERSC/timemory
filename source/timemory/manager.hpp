@@ -83,13 +83,13 @@ public:
     typedef std::ofstream                 ofstream_t;
     typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
     typedef std::mutex                    mutex_t;
-    typedef uomap<uintmax_t, mutex_t>     mutex_map_t;
+    typedef uomap<uint64_t, mutex_t>      mutex_map_t;
     typedef std::lock_guard<mutex_t>      auto_lock_t;
     typedef singleton_t::pointer          pointer;
     typedef singleton_t::smart_pointer    smart_pointer;
     typedef std::set<this_type*>          daughter_list_t;
-    typedef std::function<intmax_t()>     get_num_threads_func_t;
-    typedef std::atomic<uintmax_t>        counter_t;
+    typedef std::function<int64_t()>      get_num_threads_func_t;
+    typedef std::atomic<uint64_t>         counter_t;
 
 public:
     // Constructor and Destructors
@@ -155,8 +155,8 @@ public:
     void                   set_merge(bool val) { m_merge.store(val); }
     bool                   is_reporting_to_file() const;
     ostream_t*             get_output_stream() const { return m_report; }
-    uintmax_t              laps() const { return compute_total_laps(); }
-    uintmax_t              total_laps() const;
+    uint64_t               laps() const { return compute_total_laps(); }
+    uint64_t               total_laps() const;
     void                   update_total_timer_format();
     int32_t                instance_count() const { return m_instance_count; }
     void                   self_cost(bool) {}
@@ -182,11 +182,11 @@ protected:
 
 protected:
     // protected functions
-    inline uintmax_t string_hash(const string_t&) const;
-    string_t         get_prefix() const;
-    uintmax_t        compute_total_laps() const;
-    void             insert_global_timer();
-    void             compute_self();
+    inline uint64_t string_hash(const string_t&) const;
+    string_t        get_prefix() const;
+    uint64_t        compute_total_laps() const;
+    void            insert_global_timer();
+    void            compute_self();
 
 protected:
     // protected static variables
@@ -269,13 +269,13 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     // ar(serializer::make_nvp("memory", list_convert(memory_data)));
 }
 //--------------------------------------------------------------------------------------//
-inline uintmax_t
+inline uint64_t
 manager::string_hash(const string_t& str) const
 {
     return std::hash<string_t>()(str);
 }
 //--------------------------------------------------------------------------------------//
-inline uintmax_t
+inline uint64_t
 manager::total_laps() const
 {
     return m_laps + compute_total_laps();
@@ -388,7 +388,7 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     // storage_t& _data = std::get<index_of<storage_t,
     // tuple_data_t>::value>(m_tuple_data);
     // compute the hash
-    uintmax_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
+    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
     consume_parameters(std::move(ref));
 
     // if already exists, return it
@@ -437,7 +437,7 @@ manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t n
     ss << get_prefix() << "[" << tag << "] ";
 
     // indent
-    for(intmax_t i = 0; i < ncount; ++i)
+    for(int64_t i = 0; i < ncount; ++i)
     {
         if(i + 1 == ncount)
             ss << "|_";

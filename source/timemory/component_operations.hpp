@@ -61,7 +61,7 @@ struct insert_node
     using base_type  = base<Type, value_type>;
 
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
-                const intmax_t& id)
+                const int64_t& id)
     {
         obj.insert_node(exists[_N], id);
     }
@@ -198,7 +198,7 @@ struct minus
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    minus(base_type& obj, const intmax_t& rhs) { obj -= rhs; }
+    minus(base_type& obj, const int64_t& rhs) { obj -= rhs; }
     minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
 };
 
@@ -223,7 +223,7 @@ struct plus
         obj += rhs;
     }
 
-    plus(base_type& obj, const intmax_t& rhs) { obj += rhs; }
+    plus(base_type& obj, const int64_t& rhs) { obj += rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -235,7 +235,7 @@ struct multiply
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    multiply(base_type& obj, const intmax_t& rhs) { obj *= rhs; }
+    multiply(base_type& obj, const int64_t& rhs) { obj *= rhs; }
     multiply(base_type& obj, const base_type& rhs) { obj *= rhs; }
 };
 
@@ -248,7 +248,7 @@ struct divide
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    divide(base_type& obj, const intmax_t& rhs) { obj /= rhs; }
+    divide(base_type& obj, const int64_t& rhs) { obj /= rhs; }
     divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
 };
 
@@ -281,7 +281,7 @@ struct print
     }
 
     print(const base_type& _obj, std::ostream& _os, const string_t& _prefix,
-          intmax_t _laps, intmax_t _output_width, bool _endline)
+          int64_t _laps, int64_t _output_width, bool _endline)
     {
         std::stringstream ss_prefix;
         std::stringstream ss;
@@ -295,8 +295,8 @@ struct print
     }
 
     // fix for exact match issue on Windows
-    print(const Type& _obj, std::ostream& _os, const string_t& _prefix, intmax_t _laps,
-          intmax_t _output_width, bool _endline)
+    print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
+          int64_t _output_width, bool _endline)
     {
         print(static_cast<const base_type&>(_obj), _os, _prefix, _laps, _output_width,
               _endline);

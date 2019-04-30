@@ -255,7 +255,7 @@ struct time_units<std::ratio<3600 * 24, 1>>
 //--------------------------------------------------------------------------------------//
 
 template <typename Precision>
-intmax_t
+int64_t
 clock_tick()
 {
     auto _get_sys_tick = []() {
@@ -266,7 +266,7 @@ clock_tick()
 #endif
     };
 
-    static intmax_t result = 0;
+    static int64_t result = 0;
     if(result == 0)
     {
         result = _get_sys_tick();

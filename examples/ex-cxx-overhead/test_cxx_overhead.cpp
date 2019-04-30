@@ -44,9 +44,9 @@ using global_tuple_t =
                     process_cpu_clock, process_cpu_util, peak_rss, current_rss,
                     papi_tuple_t>;
 
-static intmax_t nlaps = 0;
+static int64_t nlaps = 0;
 
-template <intmax_t _N, intmax_t _Nt, typename... T,
+template <int64_t _N, int64_t _Nt, typename... T,
           typename std::enable_if<(_N == _Nt), int>::type = 0>
 void
 _test_print(std::tuple<T...>&& a)
@@ -54,7 +54,7 @@ _test_print(std::tuple<T...>&& a)
     std::cout << std::get<_N>(a) << std::endl;
 }
 
-template <intmax_t _N, intmax_t _Nt, typename... T,
+template <int64_t _N, int64_t _Nt, typename... T,
           typename std::enable_if<(_N < _Nt), int>::type = 0>
 void
 _test_print(std::tuple<T...>&& a)
@@ -67,24 +67,24 @@ template <typename... T, typename... U>
 void
 test_print(std::tuple<T...>&& a, std::tuple<U...>&& b)
 {
-    constexpr intmax_t Ts = sizeof...(T);
-    constexpr intmax_t Us = sizeof...(U);
+    constexpr int64_t Ts = sizeof...(T);
+    constexpr int64_t Us = sizeof...(U);
     _test_print<0, Ts - 1, T...>(std::forward<std::tuple<T...>>(a));
     _test_print<0, Us - 1, U...>(std::forward<std::tuple<U...>>(b));
 }
 
 //======================================================================================//
 
-intmax_t
-fibonacci(intmax_t n)
+int64_t
+fibonacci(int64_t n)
 {
     return (n < 2) ? n : (fibonacci(n - 2) + fibonacci(n - 1));
 }
 
 //======================================================================================//
 
-intmax_t
-fibonacci(intmax_t n, intmax_t cutoff)
+int64_t
+fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
@@ -98,7 +98,7 @@ fibonacci(intmax_t n, intmax_t cutoff)
 //======================================================================================//
 
 void
-print_result(const std::string& prefix, intmax_t result)
+print_result(const std::string& prefix, int64_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
 }
@@ -106,7 +106,7 @@ print_result(const std::string& prefix, intmax_t result)
 //======================================================================================//
 
 timer_tuple_t
-run(intmax_t n, bool with_timing, intmax_t cutoff)
+run(int64_t n, bool with_timing, int64_t cutoff)
 {
     auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
                                         with_timing, "]");

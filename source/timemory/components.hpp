@@ -82,7 +82,7 @@ struct impl_available : std::true_type
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename value_type = intmax_t>
+template <typename _Tp, typename value_type = int64_t>
 struct base
 {
     using Type         = _Tp;
@@ -93,8 +93,8 @@ struct base
     bool                            is_transient = false;
     value_type                      value        = value_type();
     value_type                      accum        = value_type();
-    intmax_t                        hashid       = 0;
-    intmax_t                        laps         = 0;
+    int64_t                         hashid       = 0;
+    int64_t                         laps         = 0;
     typename storage_type::iterator itr;
 
     base()                          = default;
@@ -128,7 +128,7 @@ struct base
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    void insert_node(bool& exists, const intmax_t& _hashid)
+    void insert_node(bool& exists, const int64_t& _hashid)
     {
         hashid    = _hashid;
         Type& obj = static_cast<Type&>(*this);
@@ -267,7 +267,7 @@ struct base
     CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
     CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
                                     format_flags)
-    CREATE_STATIC_FUNCTION_ACCESSOR(intmax_t, get_unit, unit)
+    CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, descript)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
@@ -395,7 +395,6 @@ struct base
         return base<Type>(lhs) -= rhs;
     }
 
-#if defined(_WINDOWS)
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         auto obj_value = static_cast<const Type&>(obj).compute_display();
@@ -417,40 +416,6 @@ struct base
 
         return os;
     }
-
-#else
-
-    template <typename U = Type, enable_if_t<(impl_available<U>::value)> = 0>
-    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
-    {
-        auto obj_value = static_cast<const Type&>(obj).compute_display();
-        auto label     = get_label();
-        auto disp      = get_display_unit();
-        auto prec      = get_precision();
-        auto width     = get_width();
-        auto flags     = get_format_flags();
-
-        std::stringstream ss_value;
-        std::stringstream ss_extra;
-        ss_value.setf(flags);
-        ss_value << std::setw(width) << std::setprecision(prec) << obj_value;
-        if(!disp.empty())
-            ss_extra << " " << disp;
-        if(!label.empty())
-            ss_extra << " " << label;
-        os << ss_value.str() << ss_extra.str();
-
-        return os;
-    }
-
-    template <typename U = Type, enable_if_t<(!impl_available<U>::value)> = 0>
-    friend std::ostream& operator<<(std::ostream& os, const this_type&)
-    {
-        os << " ?";
-        return os;
-    }
-    
-#endif
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
@@ -487,7 +452,7 @@ struct base
 struct real_clock : public base<real_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<real_clock, value_type>;
 
     static const short                   precision = 3;
@@ -495,11 +460,11 @@ struct real_clock : public base<real_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "real"; }
     static std::string descript() { return "wall time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record() { return tim::get_clock_real_now<intmax_t, ratio_t>(); }
+    static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
     double compute_display() const
     {
@@ -536,7 +501,7 @@ using wall_clock = real_clock;
 struct system_clock : public base<system_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<system_clock, value_type>;
 
     static const short                   precision = 3;
@@ -544,11 +509,11 @@ struct system_clock : public base<system_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "sys"; }
     static std::string descript() { return "system time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record() { return tim::get_clock_system_now<intmax_t, ratio_t>(); }
+    static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -578,7 +543,7 @@ struct system_clock : public base<system_clock>
 struct user_clock : public base<user_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<user_clock, value_type>;
 
     static const short                   precision = 3;
@@ -586,11 +551,11 @@ struct user_clock : public base<user_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "user"; }
     static std::string descript() { return "user time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record() { return tim::get_clock_user_now<intmax_t, ratio_t>(); }
+    static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -620,7 +585,7 @@ struct user_clock : public base<user_clock>
 struct cpu_clock : public base<cpu_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<cpu_clock, value_type>;
 
     static const short                   precision = 3;
@@ -628,11 +593,11 @@ struct cpu_clock : public base<cpu_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "cpu"; }
     static std::string descript() { return "cpu time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record() { return tim::get_clock_cpu_now<intmax_t, ratio_t>(); }
+    static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
     double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -659,7 +624,7 @@ struct cpu_clock : public base<cpu_clock>
 struct monotonic_clock : public base<monotonic_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<monotonic_clock, value_type>;
 
     static const short                   precision = 3;
@@ -667,13 +632,13 @@ struct monotonic_clock : public base<monotonic_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "mono"; }
     static std::string descript() { return "monotonic time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
-        return tim::get_clock_monotonic_now<intmax_t, ratio_t>();
+        return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
     double compute_display() const
     {
@@ -702,7 +667,7 @@ struct monotonic_clock : public base<monotonic_clock>
 struct monotonic_raw_clock : public base<monotonic_raw_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<monotonic_raw_clock, value_type>;
 
     static const short                   precision = 3;
@@ -710,13 +675,13 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "raw_mono"; }
     static std::string descript() { return "monotonic raw time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
-        return tim::get_clock_monotonic_raw_now<intmax_t, ratio_t>();
+        return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
     }
     double compute_display() const
     {
@@ -746,7 +711,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
 struct thread_cpu_clock : public base<thread_cpu_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
     static const short                   precision = 3;
@@ -754,11 +719,11 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "thread_cpu"; }
     static std::string descript() { return "thread cpu time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type  record() { return tim::get_clock_thread_now<intmax_t, ratio_t>(); }
+    static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -786,7 +751,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 struct process_cpu_clock : public base<process_cpu_clock>
 {
     using ratio_t    = std::nano;
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
     static const short                   precision = 3;
@@ -794,12 +759,12 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "process_cpu"; }
     static std::string descript() { return "process cpu time"; }
     static std::string display_unit() { return "sec"; }
-    static value_type record() { return tim::get_clock_process_now<intmax_t, ratio_t>(); }
-    double            compute_display() const
+    static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
+    double             compute_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
@@ -827,10 +792,10 @@ struct process_cpu_clock : public base<process_cpu_clock>
 //
 // this struct extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
-struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
+struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;
-    using value_type = std::pair<intmax_t, intmax_t>;
+    using value_type = std::pair<int64_t, int64_t>;
     using base_type  = base<cpu_util, value_type>;
     using this_type  = cpu_util;
 
@@ -839,7 +804,7 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_util"; }
     static std::string descript() { return "cpu utilization"; }
     static std::string display_unit() { return "%"; }
@@ -925,10 +890,10 @@ struct cpu_util : public base<cpu_util, std::pair<intmax_t, intmax_t>>
 //
 // this struct extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
-struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intmax_t>>
+struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;
-    using value_type = std::pair<intmax_t, intmax_t>;
+    using value_type = std::pair<int64_t, int64_t>;
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
 
@@ -937,7 +902,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "proc_cpu_util"; }
     static std::string descript() { return "process cpu utilization"; }
     static std::string display_unit() { return "%"; }
@@ -1023,10 +988,10 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<intmax_t, intm
 //
 // this struct extracts only the CPU time spent in both user- and kernel- mode
 // and divides by wall clock time
-struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax_t>>
+struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t>>
 {
     using ratio_t    = std::nano;
-    using value_type = std::pair<intmax_t, intmax_t>;
+    using value_type = std::pair<int64_t, int64_t>;
     using base_type  = base<thread_cpu_util, value_type>;
     using this_type  = thread_cpu_util;
 
@@ -1035,7 +1000,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "thread_cpu_util"; }
     static std::string descript() { return "thread cpu utilization"; }
     static std::string display_unit() { return "%"; }
@@ -1127,7 +1092,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<intmax_t, intmax
 // on an HPC system.
 struct peak_rss : public base<peak_rss>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<peak_rss, value_type>;
 
     static const short                   precision = 1;
@@ -1135,7 +1100,7 @@ struct peak_rss : public base<peak_rss>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::megabyte; }
+    static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "peak_rss"; }
     static std::string descript() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
@@ -1173,7 +1138,7 @@ struct record_max<peak_rss> : std::true_type
 // allocated
 struct current_rss : public base<current_rss>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<current_rss, value_type>;
 
     static const short                   precision = 1;
@@ -1181,7 +1146,7 @@ struct current_rss : public base<current_rss>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::megabyte; }
+    static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "current_rss"; }
     static std::string descript() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
@@ -1220,7 +1185,7 @@ struct record_max<current_rss> : std::true_type
 // of a process
 struct stack_rss : public base<stack_rss>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<stack_rss, value_type>;
 
     static const short                   precision = 1;
@@ -1228,7 +1193,7 @@ struct stack_rss : public base<stack_rss>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::kilobyte; }
+    static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "stack_rss"; }
     static std::string descript() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
@@ -1265,7 +1230,7 @@ struct record_max<stack_rss> : std::true_type
 // a process
 struct data_rss : public base<data_rss>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<data_rss, value_type>;
 
     static const short                   precision = 1;
@@ -1273,7 +1238,7 @@ struct data_rss : public base<data_rss>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::kilobyte; }
+    static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "data_rss"; }
     static std::string descript() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
@@ -1309,14 +1274,14 @@ struct record_max<data_rss> : std::true_type
 // the number of times a process was swapped out of main memory.
 struct num_swap : public base<num_swap>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_swap>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "num_swap"; }
     static std::string descript() { return "swaps out of main memory"; }
     static std::string display_unit() { return ""; }
@@ -1344,14 +1309,14 @@ struct num_swap : public base<num_swap>
 // the number of times the file system had to perform input.
 struct num_io_in : public base<num_io_in>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_io_in>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "io_in"; }
     static std::string descript() { return "block input operations"; }
     static std::string display_unit() { return ""; }
@@ -1379,14 +1344,14 @@ struct num_io_in : public base<num_io_in>
 // the number of times the file system had to perform output.
 struct num_io_out : public base<num_io_out>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_io_out>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "io_out"; }
     static std::string descript() { return "block output operations"; }
     static std::string display_unit() { return ""; }
@@ -1415,14 +1380,14 @@ struct num_io_out : public base<num_io_out>
 // avoided by reclaiming a page frame from the list of pages awaiting reallocation.
 struct num_minor_page_faults : public base<num_minor_page_faults>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_minor_page_faults>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "minor_page_flts"; }
     static std::string descript() { return "page reclaims"; }
     static std::string display_unit() { return ""; }
@@ -1450,14 +1415,14 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
 // the number of page faults serviced that required I/O activity.
 struct num_major_page_faults : public base<num_major_page_faults>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_major_page_faults>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "major_page_flts"; }
     static std::string descript() { return "page faults"; }
     static std::string display_unit() { return ""; }
@@ -1485,14 +1450,14 @@ struct num_major_page_faults : public base<num_major_page_faults>
 // the number of IPC messages sent.
 struct num_msg_sent : public base<num_msg_sent>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_msg_sent>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_sent"; }
     static std::string descript() { return "messages sent"; }
     static std::string display_unit() { return ""; }
@@ -1520,14 +1485,14 @@ struct num_msg_sent : public base<num_msg_sent>
 // the number of IPC messages received.
 struct num_msg_recv : public base<num_msg_recv>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_msg_recv>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_recv"; }
     static std::string descript() { return "messages received"; }
     static std::string display_unit() { return ""; }
@@ -1555,14 +1520,14 @@ struct num_msg_recv : public base<num_msg_recv>
 // the number of signals delivered
 struct num_signals : public base<num_signals>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<num_signals>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "num_signals"; }
     static std::string descript() { return "signals delievered"; }
     static std::string display_unit() { return ""; }
@@ -1592,14 +1557,14 @@ struct num_signals : public base<num_signals>
 // resource).
 struct voluntary_context_switch : public base<voluntary_context_switch>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<voluntary_context_switch>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "vol_cxt_swch"; }
     static std::string descript() { return "voluntary context switches"; }
     static std::string display_unit() { return ""; }
@@ -1629,14 +1594,14 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
 // resource).
 struct priority_context_switch : public base<priority_context_switch>
 {
-    using value_type = intmax_t;
+    using value_type = int64_t;
     using base_type  = base<priority_context_switch>;
 
     static const short                   precision    = 0;
     static const short                   width        = 3;
     static const std::ios_base::fmtflags format_flags = {};
 
-    static intmax_t    unit() { return 1; }
+    static int64_t     unit() { return 1; }
     static std::string label() { return "prio_cxt_swch"; }
     static std::string descript() { return "priority context switches"; }
     static std::string display_unit() { return ""; }
@@ -1725,7 +1690,7 @@ struct papi_event
         return evt_info;
     }
 
-    static intmax_t unit() { return 1; }
+    static int64_t unit() { return 1; }
     // leave these empty
     static std::string label() { return "papi" + std::to_string(EventSet); }
     static std::string descript() { return ""; }
@@ -1898,7 +1863,7 @@ struct cuda_event : public base<cuda_event, float>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
-    static intmax_t    unit() { return units::sec; }
+    static int64_t     unit() { return units::sec; }
     static std::string label() { return "evt"; }
     static std::string descript() { return "event time"; }
     static std::string display_unit() { return "sec"; }
