@@ -97,7 +97,7 @@ install:
 build_script:
 - mkdir build-timemory
 - cd build-timemory
-- ls "C:\Program Files (x86)\Microsoft SDKs\MPI"
+- ls "C:\Program Files (x86)\Microsoft SDKs"
 - ls "C:\Program Files\Microsoft MPI"
 - cmake
     -DCMAKE_BUILD_TYPE="%CONFIG%"
