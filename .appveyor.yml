@@ -75,8 +75,9 @@ install:
         $env:TIMEMORY_USE_MPI = "OFF"
       }
       conda update -y -q -n base conda
+      conda config --add channels jrmadsen
       conda config --add channels conda-forge
-      conda install -y -q pip setuptools scikit-build numpy matplotlib pillow
+      conda install -y -q pip setuptools scikit-build numpy matplotlib pillow pyctest
     }
     # pip installation
     $env:TIMEMORY_DEBUG = 4
