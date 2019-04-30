@@ -45,6 +45,11 @@
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 
+#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#    include <cuda.h>
+#    include <cuda_runtime_api.h>
+#endif
+
 //======================================================================================//
 
 namespace tim
@@ -1849,6 +1854,84 @@ struct impl_available<papi_event<EventSet, EventTypes...>> : std::false_type
 
 #endif
 //--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+//--------------------------------------------------------------------------------------//
+//
+//
+// this struct extracts only the CPU time spent in kernel-mode
+struct cuda_event : public base<cuda_event, float>
+{
+    using ratio_t    = std::milli;
+    using value_type = float;
+    using base_type  = base<cuda_event, value_type>;
+
+    static const short                   precision = 3;
+    static const short                   width     = 6;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec;
+
+    static intmax_t    unit() { return units::sec; }
+    static std::string label() { return "evt"; }
+    static std::string descript() { return "event time"; }
+    static std::string display_unit() { return "sec"; }
+    static value_type  record() { return 0.0f; }
+
+    cuda_event(cudaStream_t _stream = 0)
+    : m_stream(_stream)
+    {
+        cudaEventCreate(&m_start);
+        cudaEventCreate(&m_stop);
+    }
+
+    ~cuda_event()
+    {
+        sync();
+        cudaEventDestroy(m_start);
+        cudaEventDestroy(m_stop);
+    }
+
+    float compute_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
+                                  base_type::get_unit());
+    }
+
+    void start()
+    {
+        set_started();
+        cudaStreamAddCallback(m_stream, &cuda_event::callback, static_cast<void*>(this),
+                              0);
+        cudaEventRecord(m_start, m_stream);
+    }
+
+    void stop()
+    {
+        cudaEventRecord(m_stop, m_stream);
+        set_stopped();
+    }
+
+    void set_stream(cudaStream_t _stream = 0) { m_stream = _stream; }
+
+    static void callback(cudaStream_t _stream, cudaError_t _status, void* user_data)
+    {
+        cuda_event* _this = static_cast<cuda_event*>(user_data);
+        float       tmp   = 0.0f;
+        cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
+        _this->accum += tmp;
+        _this->value = std::move(tmp);
+    }
+
+    void sync() { cudaEventSynchronize(m_stop); }
+
+private:
+    cudaStream_t m_stream = 0;
+    cudaEvent_t  m_start;
+    cudaEvent_t  m_stop;
+};
+
+#endif
 
 }  // namespace component
 

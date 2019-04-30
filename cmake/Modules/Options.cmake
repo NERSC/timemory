@@ -6,6 +6,7 @@
 ################################################################################
 
 include(MacroUtilities)
+include(CheckLanguage)
 
 set(_FEATURE )
 if(NOT ${PROJECT_NAME}_MASTER_PROJECT)
@@ -23,6 +24,21 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
 endif()
 
+# Check if CUDA can be enabled
+set(_USE_CUDA ON)
+find_package(CUDA QUIET)
+if(CUDA_FOUND)
+    check_language(CUDA)
+    if(CMAKE_CUDA_COMPILER)
+        enable_language(CUDA)
+    else()
+        message(STATUS "No CUDA support")
+        set(_USE_CUDA OFF)
+    endif()
+else()
+    set(_USE_CUDA OFF)
+endif()
+
 # CMake options
 add_option(CMAKE_C_STANDARD_REQUIRED "Require C standard" ON)
 add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
@@ -33,7 +49,6 @@ add_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 # Build settings
 add_option(TIMEMORY_DEVELOPER_INSTALL "Python developer installation from setup.py" OFF ${_FEATURE})
 add_option(TIMEMORY_DOXYGEN_DOCS "Make a `doc` make target" OFF ${_FEATURE})
-add_option(TIMEMORY_BUILD_TESTING "Build testing for dashboard" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES "Build the examples" ${TIMEMORY_BUILD_TESTING} ${_FEATURE})
 add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON ${_FEATURE})
 add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON ${_FEATURE})
@@ -60,10 +75,15 @@ add_option(TIMEMORY_USE_FILTERING "Enable filtering out types not implemented" O
 add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE})
 add_option(TIMEMORY_USE_GPERF "Enable gperf-tools" OFF)
+add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_USE_CUDA})
+
+if(TIMEMORY_USE_CUDA)
+    add_feature(CMAKE_CUDA_STANDARD "CUDA STL standard")
+endif()
 
 if(TIMEMORY_USE_MPI)
     add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON ${_FEATURE})
-endif(TIMEMORY_USE_MPI)
+endif()
 
 # cereal options
 add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
@@ -74,23 +94,6 @@ add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 if(TIMEMORY_DOXYGEN_DOCS)
     add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF NO_FEATURE)
     mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
-endif()
-
-set(CTEST_SITE "${HOSTNAME}" CACHE STRING "CDash submission site")
-set(CTEST_MODEL "Continuous" CACHE STRING "CDash submission track")
-
-if(TIMEMORY_BUILD_TESTING)
-    # if this is directory we are running CDash (don't set to ON)
-    add_option(TIMEMORY_DASHBOARD_MODE
-        "Internally used to skip generation of CDash files" OFF NO_FEATURE)
-    mark_as_advanced(TIMEMORY_DASHBOARD_MODE)
-    add_feature(CTEST_MODEL "CDash submission track")
-    add_feature(CTEST_SITE "CDash submission site")
-
-    if(NOT TIMEMORY_DASHBOARD_MODE)
-        add_option(CTEST_LOCAL_CHECKOUT
-            "Use the local source tree for CTest/CDash" OFF NO_FEATURE)
-    endif()
 endif()
 
 if(TIMEMORY_BUILD_PYTHON)

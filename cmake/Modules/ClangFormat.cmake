@@ -27,7 +27,9 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/examples/*.h
         ${PROJECT_SOURCE_DIR}/examples/*.c
         ${PROJECT_SOURCE_DIR}/examples/*.hpp
-        ${PROJECT_SOURCE_DIR}/examples/*.cpp)
+        ${PROJECT_SOURCE_DIR}/examples/*.cpp
+        ${PROJECT_SOURCE_DIR}/examples/*.cuh
+        ${PROJECT_SOURCE_DIR}/examples/*.cu)
 
     set(FORMAT_NAME format)
     if(TARGET format)

@@ -33,10 +33,17 @@ endif()
 #   Add the examples
 #
 add_subdirectory(ex-c)
-#add_subdirectory(ex-cxx)
-add_subdirectory(ex-tuple)
+add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-graph)
 add_subdirectory(ex-cxx-overhead)
-if(TIMEMORY_USE_MPI AND MPI_FOUND)
-#    add_subdirectory(ex-cxx-mpi)
+
+get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+find_package(CUDA QUIET)
+if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
+    add_subdirectory(ex-cuda-event)
 endif()
+
+#add_subdirectory(ex-cxx)
+#if(TIMEMORY_USE_MPI AND MPI_FOUND)
+#    add_subdirectory(ex-cxx-mpi)
+#endif()

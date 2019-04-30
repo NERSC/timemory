@@ -11,10 +11,14 @@ include(Compilers)
 # ---------------------------------------------------------------------------- #
 #
 set(CMAKE_INSTALL_MESSAGE LAZY)
+# standard
 set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
 set(CMAKE_CXX_STANDARD 11 CACHE STRING "CXX language standard")
+set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
+# standard required
 set(CMAKE_C_STANDARD_REQUIRED ON CACHE BOOL "Require the C language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the CXX language standard")
+set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "Require the CUDA language standard")
 
 
 # ---------------------------------------------------------------------------- #

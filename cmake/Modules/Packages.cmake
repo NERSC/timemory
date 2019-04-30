@@ -235,6 +235,49 @@ endif()
 
 ################################################################################
 #
+#        CUDA
+#
+################################################################################
+
+if(TIMEMORY_USE_CUDA)
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    find_package(CUDA)
+
+    if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_CUDA)
+        add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags")
+        add_feature(CUDA_ARCH "CUDA architecture (e.g. '35' means '-arch=sm_35')")
+
+        #   30, 32      + Kepler support
+        #               + Unified memory programming
+        #   35          + Dynamic parallelism support
+        #   50, 52, 53  + Maxwell support
+        #   60, 61, 62  + Pascal support
+        #   70, 72      + Volta support
+        #   75          + Turing support
+        if(NOT DEFINED CUDA_ARCH)
+            set(CUDA_ARCH "35")
+        endif()
+
+        list(APPEND ${PROJECT_NAME}_CUDA_FLAGS
+            -arch=sm_${CUDA_ARCH}
+            --default-stream per-thread)
+
+        if(NOT WIN32)
+            list(APPEND ${PROJECT_NAME}_CUDA_FLAGS}
+                --compiler-bindir=${CMAKE_CXX_COMPILER})
+        endif()
+
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS}
+            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+    else()
+        set(TIMEMORY_USE_CUDA OFF)
+    endif()
+endif()
+
+
+################################################################################
+#
 #        Checkout Cereal if not checked out
 #
 ################################################################################
