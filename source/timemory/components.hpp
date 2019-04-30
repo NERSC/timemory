@@ -45,7 +45,7 @@
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
 #    include <cuda_runtime_api.h>
 #endif
@@ -1847,7 +1847,7 @@ struct impl_available<papi_event<EventSet, EventTypes...>> : std::false_type
 #endif
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
+#if defined(TIMEMORY_USE_CUDA)
 //--------------------------------------------------------------------------------------//
 //
 //
@@ -1937,6 +1937,65 @@ private:
     cudaStream_t m_stream    = 0;
     cudaEvent_t  m_start;
     cudaEvent_t  m_stop;
+};
+
+#else
+//--------------------------------------------------------------------------------------//
+//
+//
+using cudaStream_t = int;
+using cudaError_t = int;
+// this struct extracts only the CPU time spent in kernel-mode
+struct cuda_event : public base<cuda_event, float>
+{
+    using ratio_t = std::micro;
+    using value_type = float;
+    using base_type = base<cuda_event, value_type>;
+
+    static const short precision = 3;
+    static const short width = 6;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec;
+
+    static int64_t unit() { return units::sec; }
+    static std::string label() { return "evt"; }
+    static std::string descript() { return "event time"; }
+    static std::string display_unit() { return "sec"; }
+    static value_type record() { return 0.0f; }
+
+    cuda_event(cudaStream_t _stream = 0)
+    : m_stream(_stream)
+    {
+    }
+
+    ~cuda_event() {}
+
+    float compute_display() const { return 0.0f; }
+
+    void start() {}
+
+    void stop() {}
+
+    void set_stream(cudaStream_t _stream = 0) { m_stream = _stream; }
+
+    static void callback(cudaStream_t, cudaError_t, void*) {}
+
+    void sync() {}
+
+private:
+    bool m_is_synced = false;
+    cudaStream_t m_stream = 0;
+};
+
+#endif
+
+#if !defined(TIMEMORY_USE_CUDA)
+//--------------------------------------------------------------------------------------//
+//  disable cuda_event if not enabled via environment
+//
+template <>
+struct impl_available<cuda_event> : std::false_type
+{
 };
 
 #endif

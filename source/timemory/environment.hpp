@@ -308,6 +308,7 @@ tim::env::process()
         cpu_util::get_width()            = timing_width();
         thread_cpu_util::get_width()     = timing_width();
         process_cpu_util::get_width()    = timing_width();
+        cuda_event::get_width()          = timing_width();
     }
 
     if(memory_scientific())
@@ -341,6 +342,7 @@ tim::env::process()
         cpu_util::get_format_flags()            = std::ios_base::scientific;
         thread_cpu_util::get_format_flags()     = std::ios_base::scientific;
         process_cpu_util::get_format_flags()    = std::ios_base::scientific;
+        cuda_event::get_format_flags()          = std::ios_base::scientific;
     }
 
     if(!(memory_precision() < 0))
@@ -374,6 +376,7 @@ tim::env::process()
         cpu_util::get_precision()            = timing_precision();
         thread_cpu_util::get_precision()     = timing_precision();
         process_cpu_util::get_precision()    = timing_precision();
+        cuda_event::get_precision()          = timing_precision();
     }
 
     if(memory_units().length() > 0)
@@ -412,6 +415,7 @@ tim::env::process()
         monotonic_raw_clock::get_unit() = std::get<1>(_timing_unit);
         thread_cpu_clock::get_unit()    = std::get<1>(_timing_unit);
         process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
+        cuda_event::get_unit()          = std::get<1>(_timing_unit);
     }
 }
 
