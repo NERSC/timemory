@@ -219,7 +219,7 @@ struct _apply_impl
     //----------------------------------------------------------------------------------//
 
     template <typename _Sep, typename _Arg,
-              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
     {
         _ss << _sep << std::forward<_Arg>(_arg);
@@ -227,7 +227,7 @@ struct _apply_impl
     }
 
     template <typename _Sep, typename _Arg, typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
                      _Args&&... __args)
     {
@@ -254,7 +254,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
-              enable_if_t<(_N == _Nt), int> = 0>
+              enable_if_t<(_N == _Nt), char> = 0>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
         // assign argument
@@ -262,7 +262,7 @@ struct _apply_impl<void>
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
-              enable_if_t<(_N < _Nt), int> = 0>
+              enable_if_t<(_N < _Nt), char> = 0>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
         // call operator()
@@ -275,7 +275,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename... _Args,
-              enable_if_t<(_N == _Nt), int> = 0>
+              enable_if_t<(_N == _Nt), char> = 0>
     static void loop(_Tuple&& __t, _Args&&... __args)
     {
         // call operator()
@@ -283,7 +283,7 @@ struct _apply_impl<void>
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename... _Args,
-              enable_if_t<(_N < _Nt), int> = 0>
+              enable_if_t<(_N < _Nt), char> = 0>
     static void loop(_Tuple&& __t, _Args&&... __args)
     {
         // call operator()
@@ -296,7 +296,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
-              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void apply_access(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
@@ -306,7 +306,7 @@ struct _apply_impl<void>
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
-              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void apply_access(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
@@ -321,7 +321,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
-              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void apply_access_with_indices(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
@@ -332,7 +332,7 @@ struct _apply_impl<void>
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _Tuple,
-              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void apply_access_with_indices(_Tuple&& __t, _Args&&... __args)
     {
         // call constructor
@@ -348,7 +348,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _TupleA,
-              typename _TupleB, typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename _TupleB, typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void apply_access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
     {
         // call constructor
@@ -361,7 +361,7 @@ struct _apply_impl<void>
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Access, typename _TupleA,
-              typename _TupleB, typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename _TupleB, typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void apply_access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
     {
         // call constructor
@@ -380,7 +380,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <typename _Tp, typename _Funct, typename... _Args,
-              enable_if_t<std::is_pointer<_Tp>::value, int> = 0>
+              enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     static void apply_function(_Tp&& __t, _Funct&& __f, _Args&&... __args)
     {
         (__t)->*(__f)(std::forward<_Args>(__args)...);
@@ -389,7 +389,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <typename _Tp, typename _Funct, typename... _Args,
-              enable_if_t<!std::is_pointer<_Tp>::value, int> = 0>
+              enable_if_t<!std::is_pointer<_Tp>::value, char> = 0>
     static void apply_function(_Tp&& __t, _Funct&& __f, _Args&&... __args)
     {
         (__t).*(__f)(std::forward<_Args>(__args)...);
@@ -398,7 +398,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void functions(_Tuple&& __t, _Funct&& __f, _Args&&... __args)
     {
         // call member function at index _N
@@ -409,7 +409,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void functions(_Tuple&& __t, _Funct&& __f, _Args&&... __args)
     {
         // call member function at index _N
@@ -424,7 +424,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Funct, typename... _Args,
-              enable_if_t<(_N == _Nt), int> = 0>
+              enable_if_t<(_N == _Nt), char> = 0>
     static void unroll(_Funct&& __f, _Args&&... __args)
     {
         (__f)(std::forward<_Args>(__args)...);
@@ -433,7 +433,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Funct, typename... _Args,
-              enable_if_t<(_N < _Nt), int> = 0>
+              enable_if_t<(_N < _Nt), char> = 0>
     static void unroll(_Funct&& __f, _Args&&... __args)
     {
         (__f)(std::forward<_Args>(__args)...);
@@ -444,7 +444,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void unroll_indices(_Tuple&& __t, _Funct&& __f, _Args&&... args)
     {
         using Type = decltype(std::get<_N>(__t));
@@ -454,7 +454,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void unroll_indices(_Tuple&& __t, _Funct&& __f, _Args&&... args)
     {
         using Type = decltype(std::get<_N>(__t));
@@ -467,7 +467,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N == _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N == _Nt), char> = 0>
     static void unroll_members(_Tuple&& __t, _Funct&& __f, _Args&&... __args)
     {
         (std::get<_N>(__t)).*(std::get<_N>(__f))(std::forward<_Args>(__args)...);
@@ -476,7 +476,7 @@ struct _apply_impl<void>
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Funct,
-              typename... _Args, enable_if_t<(_N < _Nt), int> = 0>
+              typename... _Args, enable_if_t<(_N < _Nt), char> = 0>
     static void unroll_members(_Tuple&& __t, _Funct&& __f, _Args&&... __args)
     {
         (std::get<_N>(__t)).*(std::get<_N>(__f))(std::forward<_Args>(__args)...);
@@ -507,7 +507,7 @@ struct apply
     //----------------------------------------------------------------------------------//
 
     template <typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, int> = 0>
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join(const std::string& separator, _Args&&... __args)
     {
         std::stringstream ss;
