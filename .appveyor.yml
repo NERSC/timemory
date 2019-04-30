@@ -103,6 +103,7 @@ build_script:
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=ON
+    -DTIMEMORY_BUILD_PYTHON=OFF
     -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DTIMEMORY_BUILD_EXAMPLES=ON
     -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"

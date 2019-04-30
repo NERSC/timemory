@@ -395,6 +395,31 @@ struct base
         return base<Type>(lhs) -= rhs;
     }
 
+#if defined(_WINDOWS)
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        auto obj_value = static_cast<const Type&>(obj).compute_display();
+        auto label     = get_label();
+        auto disp      = get_display_unit();
+        auto prec      = get_precision();
+        auto width     = get_width();
+        auto flags     = get_format_flags();
+
+        std::stringstream ss_value;
+        std::stringstream ss_extra;
+        ss_value.setf(flags);
+        ss_value << std::setw(width) << std::setprecision(prec) << obj_value;
+        if(!disp.empty())
+            ss_extra << " " << disp;
+        if(!label.empty())
+            ss_extra << " " << label;
+        os << ss_value.str() << ss_extra.str();
+
+        return os;
+    }
+
+#else
+
     template <typename U = Type, enable_if_t<(impl_available<U>::value)> = 0>
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -424,6 +449,8 @@ struct base
         os << " ?";
         return os;
     }
+    
+#endif
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
