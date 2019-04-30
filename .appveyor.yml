@@ -15,11 +15,8 @@ platform:
 environment:
   matrix:
   - PYTHON: 36
-    CPP: 14
-    CONFIG: Release
-  - PYTHON: 27
-    CPP: 14
-    CONFIG: Release
+    CPP: 17
+    CONFIG: Debug
   - CONDA: 36
     CPP: 17
     CONFIG: Release
@@ -78,6 +75,7 @@ install:
         $env:TIMEMORY_USE_MPI = "OFF"
       }
       conda update -y -q -n base conda
+      conda config --add channels conda-forge
       conda install -y -q pip setuptools scikit-build numpy matplotlib pillow
     }
     # pip installation
@@ -93,28 +91,27 @@ install:
 - ps: ./msmpisdk.msi /passive
 - ps: |
     $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
-    $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:/Program Files (x86)/Microsoft SDKs/MPI;$env:CMAKE_PREFIX_PATH"
+    $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:\Program Files (x86)\Microsoft SDKs\MPI;$env:CMAKE_PREFIX_PATH"
 
 build_script:
 - mkdir build-timemory
 - cd build-timemory
+- ls "C:\Program Files (x86)\Microsoft SDKs\MPI"
+- ls "C:\Program Files\Microsoft MPI"
 - cmake
     -DCMAKE_BUILD_TYPE="%CONFIG%"
-    -DCMAKE_INSTALL_PREFIX=../install-timemory
-    -DCTEST_LOCAL_CHECKOUT=ON
-    -DCTEST_SITE=AppVeyor
-    -DCTEST_MODEL=Continuous
+    -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_BUILD_TESTING=ON
     -DTIMEMORY_USE_MPI=ON
     -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DTIMEMORY_BUILD_EXAMPLES=ON
-    -DMPIEXEC="C:/Program Files/Microsoft MPI/Bin/mpiexec.exe"
-    -DMPI_CXX_INCLUDE_PATH="C:/Program Files (x86)/Microsoft SDKs/MPI/Include"
-    -DMS_MPI_ARCH_DIR="%CMAKE_ARCH%"
+    -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
+    -DMPI_CXX_INCLUDE_PATH="C:\Program Files (x86)\Microsoft SDKs\MPI\Include"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+- cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
+- ls
 - ./test_c_timing
 - ./test_cxx_overhead
 - ./test_cxx_tuple
