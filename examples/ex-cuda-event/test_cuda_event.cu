@@ -82,7 +82,7 @@ saxpy(int64_t n, float a, float* x, float* y)
     {
         if(i < n)
         {
-            atomicAdd(&y[i], (a * x[i]) - y[i]);
+            atomicAdd(&y[i], y[i] - (a * x[i]));
         }
         // if(i < 8)
         //    printf("i = %li, y = %8.4e, x = %8.4e, y = %8.4e\n", i, y[i], x[i], y[i]);
@@ -216,13 +216,12 @@ test_1_saxpy()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 512;
+    int         block        = 2048;
     int         ngrid        = (N + block - 1) / block;
     float       milliseconds = 0.0f;
     float       maxError     = 0.0f;
     float       sumError     = 0.0f;
-    cudaEvent_t start, stop;
-    cuda_event* evt = nullptr;
+    cuda_event* evt          = nullptr;
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
@@ -247,8 +246,6 @@ test_1_saxpy()
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create_event]");
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
         evt = new cuda_event();
     }
 
@@ -262,18 +259,12 @@ test_1_saxpy()
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
         evt->start();
-        cudaEventRecord(start);
 
         // Perform SAXPY on 1M elements
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
-        cudaEventRecord(stop);
         evt->stop();
-
-        cudaEventSynchronize(stop);
-        float tmp = 0.0f;
-        cudaEventElapsedTime(&tmp, start, stop);
-        milliseconds += tmp;
+        milliseconds += evt->value;
     }
 
     {
@@ -321,14 +312,13 @@ test_2_saxpy_async()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 512;
+    int           block        = 2048;
     int           ngrid        = (Nsub + block - 1) / block;
     float         milliseconds = 0.0f;
     float         maxError     = 0.0f;
     float         sumError     = 0.0f;
-    cudaEvent_t   start[nitr], stop[nitr];
-    cuda_event**  evt    = new cuda_event*[nitr];
-    cudaStream_t* stream = new cudaStream_t[nitr];
+    cuda_event**  evt          = new cuda_event*[nitr];
+    cudaStream_t* stream       = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
@@ -360,8 +350,6 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            cudaEventCreate(&start[i]);
-            cudaEventCreate(&stop[i]);
             cudaStreamCreate(&stream[i]);
             evt[i] = new cuda_event(stream[i]);
         }
@@ -392,20 +380,12 @@ test_2_saxpy_async()
         float* _dy    = d_y + offset;
 
         evt[i]->start();
-        cudaEventRecord(start[i], stream[i]);
 
         // Perform SAXPY on 1M elements
         saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, _dx, _dy);
 
-        cudaEventRecord(stop[i], stream[i]);
         evt[i]->stop();
-
-        cudaEventSynchronize(stop[i]);
-        cudaStreamSynchronize(stream[0]);
-        float tmp = 0.0f;
-        cudaEventElapsedTime(&tmp, start[i], stop[i]);
-
-        milliseconds += tmp;
+        milliseconds += evt[i]->value;
     }
 
     _sync();
@@ -467,13 +447,12 @@ test_3_saxpy_pinned()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 512;
+    int         block        = 2048;
     int         ngrid        = (N + block - 1) / block;
     float       milliseconds = 0.0f;
     float       maxError     = 0.0f;
     float       sumError     = 0.0f;
-    cudaEvent_t start, stop;
-    cuda_event* evt = nullptr;
+    cuda_event* evt          = nullptr;
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
@@ -498,8 +477,6 @@ test_3_saxpy_pinned()
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create_event]");
-        cudaEventCreate(&start);
-        cudaEventCreate(&stop);
         evt = new cuda_event();
     }
 
@@ -513,18 +490,12 @@ test_3_saxpy_pinned()
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
         evt->start();
-        cudaEventRecord(start);
 
         // Perform SAXPY on 1M elements
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
-        cudaEventRecord(stop);
         evt->stop();
-
-        cudaEventSynchronize(stop);
-        float tmp = 0.0f;
-        cudaEventElapsedTime(&tmp, start, stop);
-        milliseconds += tmp;
+        milliseconds += evt->value;
     }
 
     {
@@ -572,14 +543,13 @@ test_4_saxpy_async_pinned()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 512;
+    int           block        = 2048;
     int           ngrid        = (Nsub + block - 1) / block;
     float         milliseconds = 0.0f;
     float         maxError     = 0.0f;
     float         sumError     = 0.0f;
-    cudaEvent_t   start[nitr], stop[nitr];
-    cuda_event**  evt    = new cuda_event*[nitr];
-    cudaStream_t* stream = new cudaStream_t[nitr];
+    cuda_event**  evt          = new cuda_event*[nitr];
+    cudaStream_t* stream       = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
@@ -611,8 +581,6 @@ test_4_saxpy_async_pinned()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            cudaEventCreate(&start[i]);
-            cudaEventCreate(&stop[i]);
             cudaStreamCreate(&stream[i]);
             evt[i] = new cuda_event(stream[i]);
         }
@@ -637,19 +605,12 @@ test_4_saxpy_async_pinned()
         auto offset = Nsub * i;
 
         evt[i]->start();
-        cudaEventRecord(start[i], stream[i]);
 
         // Perform SAXPY on 1M elements
         saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, d_x + offset, d_y + offset);
 
-        cudaEventRecord(stop[i], stream[i]);
         evt[i]->stop();
-
-        cudaEventSynchronize(stop[i]);
-        float tmp = 0.0f;
-        cudaEventElapsedTime(&tmp, start[i], stop[i]);
-
-        milliseconds += tmp;
+        milliseconds += evt[i]->value;
     }
 
     {
@@ -716,7 +677,7 @@ test_5_mt_saxpy_async()
         float*     y;
         float*     d_x;
         float*     d_y;
-        int        block        = 512;
+        int        block        = 2048;
         int        ngrid        = (Nsub + block - 1) / block;
         float      milliseconds = 0.0f;
         float      maxError     = 0.0f;
@@ -837,7 +798,7 @@ test_6_mt_saxpy_async_pinned()
         float*      y;
         float*      d_x;
         float*      d_y;
-        int         block        = 512;
+        int         block        = 2048;
         int         ngrid        = (Nsub + block - 1) / block;
         float       milliseconds = 0.0f;
         float       maxError     = 0.0f;

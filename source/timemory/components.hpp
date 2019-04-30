@@ -1879,8 +1879,7 @@ struct cuda_event : public base<cuda_event, float>
     ~cuda_event()
     {
         sync();
-        cudaEventDestroy(m_start);
-        cudaEventDestroy(m_stop);
+        destroy();
     }
 
     float compute_display() const
@@ -1913,7 +1912,7 @@ struct cuda_event : public base<cuda_event, float>
                          void* user_data)
     {
         cuda_event* _this = static_cast<cuda_event*>(user_data);
-        if(!_this->m_is_synced)
+        if(!_this->m_is_synced && _this->is_valid())
         {
             cudaEventSynchronize(_this->m_stop);
             float tmp = 0.0f;
@@ -1926,7 +1925,7 @@ struct cuda_event : public base<cuda_event, float>
 
     void sync()
     {
-        if(!m_is_synced)
+        if(!m_is_synced && is_valid())
         {
             cudaEventSynchronize(m_stop);
             float tmp = 0.0f;
@@ -1935,6 +1934,21 @@ struct cuda_event : public base<cuda_event, float>
             value       = std::move(tmp);
             m_is_synced = true;
         }
+    }
+
+    void destroy()
+    {
+        if(is_valid())
+        {
+            cudaEventDestroy(m_start);
+            cudaEventDestroy(m_stop);
+        }
+    }
+
+    bool is_valid() const
+    {
+        auto ret = cudaEventQuery(m_stop);
+        return (ret == cudaSuccess && ret == cudaErrorNotReady);
     }
 
 private:
