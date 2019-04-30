@@ -69,6 +69,7 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, file_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, text_output, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, false)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, cout_output, true)
 
 // general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
@@ -165,6 +166,7 @@ tim::env::parse()
     file_output() = get_env_bool("TIMEMORY_FILE_OUTPUT", file_output());
     text_output() = get_env_bool("TIMEMORY_TEXT_OUTPUT", text_output());
     json_output() = get_env_bool("TIMEMORY_JSON_OUTPUT", json_output());
+    cout_output() = get_env_bool("TIMEMORY_COUT_OUTPUT", !file_output());
 
     // settings
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());

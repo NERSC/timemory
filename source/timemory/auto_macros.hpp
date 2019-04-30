@@ -22,8 +22,7 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
-#ifndef auto_macros_hpp_
-#define auto_macros_hpp_
+#pragma once
 
 #include <cstdint>
 #include <string>
@@ -42,6 +41,12 @@
 namespace priv
 {
 using apply = tim::apply<std::string>;
+}
+
+namespace tim
+{
+// e.g. tim::str::join(...)
+using str = tim::apply<std::string>;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -216,5 +221,3 @@ using apply = tim::apply<std::string>;
 #endif
 
 //--------------------------------------------------------------------------------------//
-
-#endif

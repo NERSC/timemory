@@ -1864,7 +1864,7 @@ struct cuda_event : public base<cuda_event, float>
         std::ios_base::fixed | std::ios_base::dec;
 
     static int64_t     unit() { return units::sec; }
-    static std::string label() { return "evt"; }
+    static std::string label() { return "cuda_event"; }
     static std::string descript() { return "event time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
@@ -1895,9 +1895,8 @@ struct cuda_event : public base<cuda_event, float>
     {
         set_started();
         m_is_synced = false;
-        // cudaStreamAddCallback(m_stream, &cuda_event::callback,
-        // static_cast<void*>(this),
-        //                     0);
+        // cuda_event* _this = static_cast<cuda_event*>(this);
+        // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
         cudaEventRecord(m_start, m_stream);
     }
 
@@ -1910,13 +1909,19 @@ struct cuda_event : public base<cuda_event, float>
 
     void set_stream(cudaStream_t _stream = 0) { m_stream = _stream; }
 
-    static void callback(cudaStream_t _stream, cudaError_t _status, void* user_data)
+    static void callback(cudaStream_t /*_stream*/, cudaError_t /*_status*/,
+                         void* user_data)
     {
         cuda_event* _this = static_cast<cuda_event*>(user_data);
-        float       tmp   = 0.0f;
-        cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
-        _this->accum += tmp;
-        _this->value = std::move(tmp);
+        if(!_this->m_is_synced)
+        {
+            cudaEventSynchronize(_this->m_stop);
+            float tmp = 0.0f;
+            cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
+            _this->accum += tmp;
+            _this->value       = std::move(tmp);
+            _this->m_is_synced = true;
+        }
     }
 
     void sync()
@@ -1958,7 +1963,7 @@ struct cuda_event : public base<cuda_event, float>
         std::ios_base::fixed | std::ios_base::dec;
 
     static int64_t unit() { return units::sec; }
-    static std::string label() { return "evt"; }
+    static std::string label() { return "cuda_event"; }
     static std::string descript() { return "event time"; }
     static std::string display_unit() { return "sec"; }
     static value_type record() { return 0.0f; }

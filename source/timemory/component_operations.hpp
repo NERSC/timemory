@@ -261,6 +261,11 @@ struct print
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
     print(std::size_t _N, std::size_t _Ntot, const base_type& _obj, std::ostream& _os,
           bool _endline)
     {
@@ -273,13 +278,8 @@ struct print
         _os << ss.str();
     }
 
-    // fix for exact match issue on Windows
-    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
-          bool _endline)
-    {
-        print(_N, _Ntot, static_cast<const base_type&>(_obj), _os, _endline);
-    }
-
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
     print(const base_type& _obj, std::ostream& _os, const string_t& _prefix,
           int64_t _laps, int64_t _output_width, bool _endline)
     {
@@ -294,12 +294,35 @@ struct print
         _os << ss.str();
     }
 
-    // fix for exact match issue on Windows
+    //----------------------------------------------------------------------------------//
+    // fixes for exact match issue on Windows
+    //
+    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
+          bool _endline)
+    {
+        print(_N, _Ntot, static_cast<const base_type&>(_obj), _os, _endline);
+    }
+
     print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _output_width, bool _endline)
     {
         print(static_cast<const base_type&>(_obj), _os, _prefix, _laps, _output_width,
               _endline);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(std::size_t, std::size_t, const base_type&, std::ostream&, bool)
+    {
+    }
+
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(const base_type&, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    {
     }
 };
 

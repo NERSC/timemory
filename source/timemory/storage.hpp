@@ -559,7 +559,7 @@ tim::graph_storage<ObjectType>::print()
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
         }
 
-        if(env::file_output())
+        if(env::file_output() && _oss.str().length() > 0)
         {
             auto label = ObjectType::label();
             //--------------------------------------------------------------------------//
@@ -600,7 +600,8 @@ tim::graph_storage<ObjectType>::print()
                 serialize_storage(jname, ObjectType::label(), *this);
             }
         }
-        else
+
+        if(env::cout_output() && _oss.str().length() > 0)
         {
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str() << std::endl;

@@ -47,8 +47,10 @@
 
 using namespace tim::component;
 
-using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, cuda_event>;
 using comp_tuple_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>;
+using cuda_tuple_t = tim::auto_tuple<cuda_event>;
 
 //======================================================================================//
 
@@ -115,8 +117,10 @@ main(int argc, char** argv)
         throw std::runtime_error("Error N is not a multiple of nitr");
     }
 
-    cuda_event::get_precision()    = 12;
     cuda_event::get_format_flags() = std::ios_base::scientific;
+
+    int ndevices = 0;
+    cudaGetDeviceCount(&ndevices);
 
     {
         int     block = 16 * 512;
@@ -139,6 +143,15 @@ main(int argc, char** argv)
 
     int num_fail = 0;
     int num_test = 0;
+
+    if(ndevices == 0)
+    {
+        for(auto i : { 3, 4, 6 })
+        {
+            if(tests.count(i) > 0)
+                tests.erase(tests.find(i));
+        }
+    }
 
     std::cout << "# tests: " << tests.size() << std::endl;
     try
@@ -252,7 +265,7 @@ test_1_saxpy()
         cudaEventRecord(start);
 
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block>>>(N, 2.0f, d_x, d_y);
+        saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
         cudaEventRecord(stop);
         evt->stop();
@@ -272,8 +285,8 @@ test_1_saxpy()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
         for(int64_t i = 0; i < N; i++)
         {
-            maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-            sumError += std::abs(y[i] - 4.0f);
+            maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+            sumError += std::abs(y[i] - 2.0f);
         }
     }
 
@@ -358,13 +371,11 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
         for(int i = 0; i < nitr; ++i)
         {
-            auto offset = Nsub * i;
-            std::cout << "offset [" << i << "] = " << offset << " (out of " << N << ")"
-                      << std::endl;
-            float* _x  = x + offset;
-            float* _dx = d_x + offset;
-            float* _y  = y + offset;
-            float* _dy = d_y + offset;
+            auto   offset = Nsub * i;
+            float* _x     = x + offset;
+            float* _dx    = d_x + offset;
+            float* _y     = y + offset;
+            float* _dy    = d_y + offset;
             cudaMemcpyAsync(_dx, _x, Nsub * sizeof(float), cudaMemcpyHostToDevice,
                             stream[i]);
             cudaMemcpyAsync(_dy, _y, Nsub * sizeof(float), cudaMemcpyHostToDevice,
@@ -384,7 +395,7 @@ test_2_saxpy_async()
         cudaEventRecord(start[i], stream[i]);
 
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 2.0f, _dx, _dy);
+        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, _dx, _dy);
 
         cudaEventRecord(stop[i], stream[i]);
         evt[i]->stop();
@@ -415,8 +426,8 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
         for(int64_t i = 0; i < N; i++)
         {
-            maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-            sumError += std::abs(y[i] - 4.0f);
+            maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+            sumError += std::abs(y[i] - 2.0f);
         }
     }
 
@@ -505,7 +516,7 @@ test_3_saxpy_pinned()
         cudaEventRecord(start);
 
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block>>>(N, 2.0f, d_x, d_y);
+        saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
         cudaEventRecord(stop);
         evt->stop();
@@ -525,8 +536,8 @@ test_3_saxpy_pinned()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
         for(int64_t i = 0; i < N; i++)
         {
-            maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-            sumError += std::abs(y[i] - 4.0f);
+            maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+            sumError += std::abs(y[i] - 2.0f);
         }
     }
 
@@ -629,7 +640,7 @@ test_4_saxpy_async_pinned()
         cudaEventRecord(start[i], stream[i]);
 
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 2.0f, d_x + offset, d_y + offset);
+        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, d_x + offset, d_y + offset);
 
         cudaEventRecord(stop[i], stream[i]);
         evt[i]->stop();
@@ -657,8 +668,8 @@ test_4_saxpy_async_pinned()
         _sync();
         for(int64_t i = 0; i < N; i++)
         {
-            maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-            sumError += std::abs(y[i] - 4.0f);
+            maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+            sumError += std::abs(y[i] - 2.0f);
         }
     }
 
@@ -690,6 +701,7 @@ test_5_mt_saxpy_async()
 {
     print_info(__FUNCTION__);
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();
@@ -712,19 +724,19 @@ test_5_mt_saxpy_async()
         cuda_event evt;
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");
             x = (float*) malloc(Nsub * sizeof(float));
             y = (float*) malloc(Nsub * sizeof(float));
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cudaMalloc]");
             cudaMalloc(&d_x, Nsub * sizeof(float));
             cudaMalloc(&d_y, Nsub * sizeof(float));
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[assign]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[assign]");
             for(int i = 0; i < Nsub; i++)
             {
                 x[i] = 1.0f;
@@ -733,34 +745,34 @@ test_5_mt_saxpy_async()
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[H2D]");
             cudaMemcpy(d_x, x, Nsub * sizeof(float), cudaMemcpyHostToDevice);
             cudaMemcpy(d_y, y, Nsub * sizeof(float), cudaMemcpyHostToDevice);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[", i, "]");
 
             evt.start();
 
             // Perform SAXPY on 1M elements
-            saxpy<<<ngrid, block>>>(Nsub, 2.0f, d_x, d_y);
+            saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
 
             evt.stop();
             milliseconds += evt.value;
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[D2H]");
             cudaMemcpy(y, d_y, Nsub * sizeof(float), cudaMemcpyDeviceToHost);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[check]");
             for(int64_t i = 0; i < Nsub; i++)
             {
-                maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-                sumError += std::abs(y[i] - 4.0f);
+                maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+                sumError += std::abs(y[i] - 2.0f);
             }
         }
 
@@ -810,6 +822,7 @@ test_6_mt_saxpy_async_pinned()
 {
     print_info(__FUNCTION__);
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+    auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
 
     comp_tuple_t _clock("Runtime");
     _clock.start();
@@ -832,19 +845,19 @@ test_6_mt_saxpy_async_pinned()
         cuda_event* evt          = new cuda_event();
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");
             cudaMallocHost(&x, Nsub * sizeof(float));
             cudaMallocHost(&y, Nsub * sizeof(float));
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cudaMalloc]");
             cudaMalloc(&d_x, Nsub * sizeof(float));
             cudaMalloc(&d_y, Nsub * sizeof(float));
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[assign]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[assign]");
             for(int i = 0; i < Nsub; i++)
             {
                 x[i] = 1.0f;
@@ -853,33 +866,33 @@ test_6_mt_saxpy_async_pinned()
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[H2D]");
             cudaMemcpy(d_x, x, Nsub * sizeof(float), cudaMemcpyHostToDevice);
             cudaMemcpy(d_y, y, Nsub * sizeof(float), cudaMemcpyHostToDevice);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[", i, "]");
             evt->start();
 
             // Perform SAXPY on 1M elements
-            saxpy<<<ngrid, block>>>(Nsub, 2.0f, d_x, d_y);
+            saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
 
             evt->stop();
             milliseconds += evt->value;
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[D2H]");
             cudaMemcpy(y, d_y, Nsub * sizeof(float), cudaMemcpyDeviceToHost);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[check]");
             for(int64_t i = 0; i < Nsub; i++)
             {
-                maxError = std::max(maxError, std::abs(y[i] - 4.0f));
-                sumError += std::abs(y[i] - 4.0f);
+                maxError = std::max(maxError, std::abs(y[i] - 2.0f));
+                sumError += std::abs(y[i] - 2.0f);
             }
         }
 
