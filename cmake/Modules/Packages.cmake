@@ -261,7 +261,8 @@ if(TIMEMORY_USE_CUDA)
 
         list(APPEND ${PROJECT_NAME}_CUDA_FLAGS
             -arch=sm_${CUDA_ARCH}
-            --default-stream per-thread)
+            --default-stream per-thread
+        )
 
         if(NOT WIN32)
             list(APPEND ${PROJECT_NAME}_CUDA_FLAGS}

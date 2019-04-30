@@ -1921,9 +1921,9 @@ struct cuda_event : public base<cuda_event, float>
 
     void sync()
     {
-        cudaEventSynchronize(m_stop);
         if(!m_is_synced)
         {
+            cudaEventSynchronize(m_stop);
             float tmp = 0.0f;
             cudaEventElapsedTime(&tmp, m_start, m_stop);
             accum += tmp;
