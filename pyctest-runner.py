@@ -21,7 +21,7 @@ def configure():
                                         os.getcwd(), "build-timemory"),
                                     build_type="Release",
                                     vcs_type="git",
-                                    use_launchers=True)
+                                    use_launchers=False)
 
     parser.add_argument("--arch", help="TIMEMORY_USE_ARCH=ON",
                         default=False, action='store_true')
