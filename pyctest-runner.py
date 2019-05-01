@@ -31,7 +31,7 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--coverage", help="TIMEMORY_USE_COVERAGE=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-static-analysis", help="TIMEMORY_USE_CLANG_TIDY=OFF",
+    parser.add_argument("--static-analysis", help="TIMEMORY_USE_CLANG_TIDY=ON",
                         default=False, action='store_true')
     parser.add_argument("--no-papi", help="TIMEMORY_USE_PAPI=OFF",
                         default=False, action='store_true')
@@ -107,15 +107,15 @@ def run_pyctest():
     #   build specifications
     #
     build_opts = {
-        "TIMEMORY_BUILD_C": "ON",
         "TIMEMORY_BUILD_PYTHON": "ON",
-        "TIMEMORY_USE_ARCH": "OFF",
+        "TIMEMORY_BUILD_C": "ON",
         "TIMEMORY_USE_MPI": "ON",
-        "TIMEMORY_USE_GPERF": "OFF",
         "TIMEMORY_USE_PAPI": "ON",
+        "TIMEMORY_USE_ARCH": "OFF",
+        "TIMEMORY_USE_GPERF": "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
-        "TIMEMORY_USE_CLANG_TIDY": "ON",
         "TIMEMORY_USE_COVERAGE" : "OFF",
+        "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
 
     if args.no_c:
@@ -146,8 +146,8 @@ def run_pyctest():
     if args.sanitizer:
         pyctest.BUILD_NAME = "{} asan".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
-    if args.no_static_analysis:
-        build_opts["TIMEMORY_USE_CLANG_TIDY"] = "OFF"
+    if args.static_analysis:
+        build_opts["TIMEMORY_USE_CLANG_TIDY"] = "ON"
     if args.coverage:
         gcov_exe = helpers.FindExePath("gcov")
         if gcov_exe is not None:
