@@ -74,18 +74,13 @@ __global__ void
 saxpy(int64_t n, float a, float* x, float* y)
 {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    // int i0      = blockIdx.x * blockDim.x + threadIdx.x;
-    // int istride = blockDim.x * gridDim.x;
 
-    // for(int i = i0; i < n; i += istride)
+    if(i < n)
     {
-        if(i < n)
-        {
-            atomicAdd(&y[i], y[i] - (a * x[i]));
-        }
-        // if(i < 8)
-        //    printf("i = %li, y = %8.4e, x = %8.4e, y = %8.4e\n", i, y[i], x[i], y[i]);
+        atomicAdd(&y[i], y[i] - (a * x[i]));
     }
+    // if(i < 8)
+    //    printf("i = %li, y = %8.4e, x = %8.4e, y = %8.4e\n", i, y[i], x[i], y[i]);
 }
 //--------------------------------------------------------------------------------------//
 
