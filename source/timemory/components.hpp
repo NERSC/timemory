@@ -1908,24 +1908,9 @@ struct cuda_event : public base<cuda_event, float>
 
     void set_stream(cudaStream_t _stream = 0) { m_stream = _stream; }
 
-    static void callback(cudaStream_t /*_stream*/, cudaError_t /*_status*/,
-                         void* user_data)
-    {
-        cuda_event* _this = static_cast<cuda_event*>(user_data);
-        if(!_this->m_is_synced && _this->is_valid())
-        {
-            cudaEventSynchronize(_this->m_stop);
-            float tmp = 0.0f;
-            cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
-            _this->accum += tmp;
-            _this->value       = std::move(tmp);
-            _this->m_is_synced = true;
-        }
-    }
-
     void sync()
     {
-        if(!m_is_synced && is_valid())
+        if(!m_is_synced)
         {
             cudaEventSynchronize(m_stop);
             float tmp = 0.0f;
@@ -1949,6 +1934,22 @@ struct cuda_event : public base<cuda_event, float>
     {
         auto ret = cudaEventQuery(m_stop);
         return (ret == cudaSuccess && ret == cudaErrorNotReady);
+    }
+
+protected:
+    static void callback(cudaStream_t /*_stream*/, cudaError_t /*_status*/,
+                         void* user_data)
+    {
+        cuda_event* _this = static_cast<cuda_event*>(user_data);
+        if(!_this->m_is_synced && _this->is_valid())
+        {
+            cudaEventSynchronize(_this->m_stop);
+            float tmp = 0.0f;
+            cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
+            _this->accum += tmp;
+            _this->value       = std::move(tmp);
+            _this->m_is_synced = true;
+        }
     }
 
 private:

@@ -47,8 +47,7 @@
 
 using namespace tim::component;
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, cuda_event>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util>;
 using comp_tuple_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>;
 using cuda_tuple_t = tim::auto_tuple<cuda_event>;
 
@@ -216,7 +215,7 @@ test_1_saxpy()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 2048;
+    int         block        = 512;
     int         ngrid        = (N + block - 1) / block;
     float       milliseconds = 0.0f;
     float       maxError     = 0.0f;
@@ -312,7 +311,7 @@ test_2_saxpy_async()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 2048;
+    int           block        = 512;
     int           ngrid        = (Nsub + block - 1) / block;
     float         milliseconds = 0.0f;
     float         maxError     = 0.0f;
@@ -447,7 +446,7 @@ test_3_saxpy_pinned()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 2048;
+    int         block        = 512;
     int         ngrid        = (N + block - 1) / block;
     float       milliseconds = 0.0f;
     float       maxError     = 0.0f;
@@ -543,7 +542,7 @@ test_4_saxpy_async_pinned()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 2048;
+    int           block        = 512;
     int           ngrid        = (Nsub + block - 1) / block;
     float         milliseconds = 0.0f;
     float         maxError     = 0.0f;
@@ -677,7 +676,7 @@ test_5_mt_saxpy_async()
         float*     y;
         float*     d_x;
         float*     d_y;
-        int        block        = 2048;
+        int        block        = 512;
         int        ngrid        = (Nsub + block - 1) / block;
         float      milliseconds = 0.0f;
         float      maxError     = 0.0f;
@@ -798,7 +797,7 @@ test_6_mt_saxpy_async_pinned()
         float*      y;
         float*      d_x;
         float*      d_y;
-        int         block        = 2048;
+        int         block        = 512;
         int         ngrid        = (Nsub + block - 1) / block;
         float       milliseconds = 0.0f;
         float       maxError     = 0.0f;
