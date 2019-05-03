@@ -496,9 +496,6 @@ public:
 
 //======================================================================================//
 
-#include "timemory/component_operations.hpp"
-#include "timemory/environment.hpp"
-
 #include <cereal/types/deque.hpp>
 #include <cereal/types/tuple.hpp>
 #include <cereal/types/vector.hpp>
@@ -520,93 +517,6 @@ serialize_storage(const std::string& fname, const std::string& title, const _Tp&
     }
     std::ofstream ofs(fname.c_str());
     ofs << ss.str() << std::endl;
-}
-
-//======================================================================================//
-
-template <typename ObjectType>
-void
-tim::graph_storage<ObjectType>::print()
-{
-    if(!singleton_t::is_master(this))
-    {
-        singleton_t::master_instance()->merge(this);
-    }
-    else if(env::auto_output())
-    {
-        merge();
-
-        typedef decltype(graph().begin()) predicate_type;
-        auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-        auto _this_beg = graph().begin();
-        auto _this_end = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
-
-        m_data.current() = m_data.head();
-        int64_t _width   = ObjectType::get_width();
-        for(const auto& itr : m_data.graph())
-        {
-            int64_t _len = itr.prefix().length();
-            _width       = std::max(_len, _width);
-        }
-
-        std::stringstream _oss;
-        for(const auto& itr : m_data.graph())
-        {
-            auto _obj    = itr.obj();
-            auto _prefix = itr.prefix();  // + std::to_string(itr.id());
-            auto _laps   = _obj.laps;
-            component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
-        }
-
-        if(env::file_output() && _oss.str().length() > 0)
-        {
-            auto label = ObjectType::label();
-            //--------------------------------------------------------------------------//
-            // output to text
-            //
-            if(env::text_output())
-            {
-                auto          fname = tim::env::compose_output_filename(label, ".txt");
-                std::ofstream ofs(fname.c_str());
-                if(ofs)
-                {
-                    auto_lock_t l(type_mutex<std::ofstream>());
-                    printf("[graph_storage<%s>]> Outputting '%s'...\n",
-                           ObjectType::label().c_str(), fname.c_str());
-                    ofs << _oss.str();
-                    ofs.close();
-                }
-                else
-                {
-                    auto_lock_t l(type_mutex<decltype(std::cout)>());
-                    fprintf(stderr,
-                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
-                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
-                            fname.c_str());
-                    std::cout << _oss.str();
-                }
-            }
-
-            //--------------------------------------------------------------------------//
-            // output to json
-            //
-            if(env::json_output())
-            {
-                auto_lock_t l(type_mutex<std::ofstream>());
-                auto        jname = tim::env::compose_output_filename(label, ".json");
-                printf("[graph_storage<%s>]> Outputting '%s'...\n",
-                       ObjectType::label().c_str(), jname.c_str());
-                serialize_storage(jname, ObjectType::label(), *this);
-            }
-        }
-
-        if(env::cout_output() && _oss.str().length() > 0)
-        {
-            auto_lock_t l(type_mutex<decltype(std::cout)>());
-            std::cout << _oss.str() << std::endl;
-        }
-    }
 }
 
 //======================================================================================//

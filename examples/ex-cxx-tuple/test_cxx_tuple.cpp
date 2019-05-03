@@ -411,3 +411,35 @@ test_4_measure()
 }
 
 //======================================================================================//
+/*
+#define ENABLE_ROOFLINE
+int main()
+{
+#if defined(ENABLE_ROOFLINE)
+    tim::component::roofline global_roofline();
+    global_roofline.start();
+    using auto_roofline_t = tim::auto_tuple<tim::component::roofline>;
+#else
+    // does nothing
+    using auto_roofline_t = tim::auto_tuple<>;
+#endif
+
+    {
+        // uses C++ scoping for start/stop
+        TIMEMORY_AUTO_TUPLE(auto_roofline_t, "roofline_for_A");
+        func_A();
+    }
+
+    {
+        TIMEMORY_AUTO_TUPLE(auto_roofline_t, "roofline_for_B");
+        func_B();
+    }
+
+#if defined(ENABLE_ROOFLINE)
+    global_roofline.stop();
+    // serializes the graph of all roofline instances
+    tim::serialize("roofline.json", *tim::storage<tim::component::roofline>::instance());
+#endif
+}
+*/
+//======================================================================================//

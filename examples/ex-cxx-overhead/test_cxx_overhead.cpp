@@ -46,6 +46,8 @@ using global_tuple_t =
 
 static int64_t nlaps = 0;
 
+//======================================================================================//
+
 template <int64_t _N, int64_t _Nt, typename... T,
           typename std::enable_if<(_N == _Nt), int>::type = 0>
 void
@@ -53,6 +55,8 @@ _test_print(std::tuple<T...>&& a)
 {
     std::cout << std::get<_N>(a) << std::endl;
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <int64_t _N, int64_t _Nt, typename... T,
           typename std::enable_if<(_N < _Nt), int>::type = 0>
@@ -62,6 +66,8 @@ _test_print(std::tuple<T...>&& a)
     std::cout << std::get<_N>(a) << ", ";
     _test_print<_N + 1, _Nt, T...>(std::forward<std::tuple<T...>>(a));
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename... T, typename... U>
 void
@@ -89,7 +95,7 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[", cutoff, "]");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", cutoff, "]");
         return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
@@ -137,6 +143,7 @@ main(int argc, char** argv)
         cutoff = atoi(argv[2]);
 
     tim::consume_parameters(tim::manager::instance());
+    tim::auto_tuple<> test("test");
 
     TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
     std::vector<timer_tuple_t> timer_list;

@@ -545,6 +545,134 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
+// empty component tuple overload -- required because of std::array operations
+//
+template <>
+class component_tuple<>
+{
+    static const std::size_t num_elements = 0;
+
+public:
+    using size_type   = int64_t;
+    using this_type   = component_tuple<>;
+    using data_t      = std::tuple<>;
+    using string_hash = std::hash<string_t>;
+
+public:
+    explicit component_tuple()              = default;
+    ~component_tuple()                      = default;
+    component_tuple(const component_tuple&) = default;
+    component_tuple(component_tuple&&)      = default;
+
+    component_tuple(const string_t&, const string_t& = "", const int32_t& = 0,
+                    const int32_t& = 0, bool = true)
+    {
+    }
+    explicit component_tuple(const string_t&, const bool&, const string_t& = "",
+                             const int32_t& = 0, const int32_t& = 0)
+    {
+    }
+
+    component_tuple& operator=(const component_tuple&) = default;
+    component_tuple& operator=(component_tuple&&) = default;
+
+public:
+    static constexpr std::size_t size() { return num_elements; }
+    inline void                  push() {}
+    inline void                  pop() {}
+    void                         measure() {}
+    void                         start() {}
+    void                         stop() {}
+    void                         conditional_start() {}
+    void                         conditional_stop() {}
+    void                         pause() {}
+    void                         resume() {}
+    void                         reset() {}
+    this_type&                   record() { return *this; }
+    this_type&                   record(const this_type&) { return *this; }
+    this_type                    record() const { return this_type(*this); }
+    this_type  record(const this_type&) const { return this_type(*this); }
+    this_type& operator-=(const this_type&) { return *this; }
+    this_type& operator-=(this_type&) { return *this; }
+    this_type& operator+=(const this_type&) { return *this; }
+    this_type& operator+=(this_type&) { return *this; }
+
+    template <typename _Op>
+    this_type& operator-=(_Op&&)
+    {
+        return *this;
+    }
+    template <typename _Op>
+    this_type& operator+=(_Op&&)
+    {
+        return *this;
+    }
+    template <typename _Op>
+    this_type& operator*=(_Op&&)
+    {
+        return *this;
+    }
+    template <typename _Op>
+    this_type& operator/=(_Op&&)
+    {
+        return *this;
+    }
+    friend this_type operator+(const this_type& lhs, const this_type&)
+    {
+        return this_type(lhs);
+    }
+    friend this_type operator-(const this_type& lhs, const this_type&)
+    {
+        return this_type(lhs);
+    }
+    template <typename _Op>
+    friend this_type operator*(const this_type& lhs, _Op&&)
+    {
+        return this_type(lhs);
+    }
+
+    template <typename _Op>
+    friend this_type operator/(const this_type& lhs, _Op&&)
+    {
+        return this_type(lhs);
+    }
+    friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
+    template <typename Archive>
+    void serialize(Archive&, const unsigned int)
+    {
+    }
+    inline void report(std::ostream&, bool, bool) const {}
+
+public:
+    inline data_t&       data() { return m_data; }
+    inline const data_t& data() const { return m_data; }
+    inline int64_t       laps() const { return m_laps; }
+
+protected:
+    // protected member functions
+    data_t&       get_data() { return m_data; }
+    const data_t& get_data() const { return m_data; }
+
+protected:
+    // objects
+    bool     m_store      = false;
+    bool     m_is_pushed  = false;
+    int64_t  m_laps       = 0;
+    int64_t  m_count      = 0;
+    int64_t  m_hash       = 0;
+    data_t   m_data       = data_t();
+    string_t m_identifier = "";
+
+protected:
+    string_t       get_prefix() { return ""; }
+    void           compute_identifier(const string_t&, const string_t&) {}
+    static int64_t output_width(int64_t width = 0) { return width; }
+
+private:
+    void init_manager();
+};
+
+//--------------------------------------------------------------------------------------//
 
 namespace details
 {

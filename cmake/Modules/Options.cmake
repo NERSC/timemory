@@ -81,10 +81,6 @@ if(TIMEMORY_USE_CUDA)
     add_feature(CMAKE_CUDA_STANDARD "CUDA STL standard")
 endif()
 
-if(TIMEMORY_USE_MPI)
-    add_option(TIMEMORY_TEST_MPI "Enable MPI tests" ON ${_FEATURE})
-endif()
-
 # cereal options
 add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
 add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)

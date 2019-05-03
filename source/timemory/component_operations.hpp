@@ -266,6 +266,17 @@ struct print
     //
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
+    print(const base_type& _obj, std::ostream& _os, bool _endline = false)
+    {
+        std::stringstream ss;
+        ss << static_cast<base_type>(_obj);
+        if(_endline)
+            ss << std::endl;
+        _os << ss.str();
+    }
+
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
     print(std::size_t _N, std::size_t _Ntot, const base_type& _obj, std::ostream& _os,
           bool _endline)
     {
@@ -313,6 +324,12 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(const base_type&, std::ostream&, bool = false)
+    {
+    }
+
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
     print(std::size_t, std::size_t, const base_type&, std::ostream&, bool)

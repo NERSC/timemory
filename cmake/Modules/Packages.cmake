@@ -82,7 +82,6 @@ if(TIMEMORY_USE_MPI)
     else()
 
         set(TIMEMORY_USE_MPI OFF)
-        set(TIMEMORY_TEST_MPI OFF)
         message(WARNING "MPI not found. Proceeding without MPI")
 
     endif()

@@ -41,7 +41,6 @@
 #include "timemory/auto_macros.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
 #include "timemory/utility.hpp"
 
 TIM_NAMESPACE_BEGIN

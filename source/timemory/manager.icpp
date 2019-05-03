@@ -40,6 +40,7 @@
 #include <algorithm>
 #include <cstdint>
 #include <functional>
+#include <mutex>
 #include <sstream>
 #include <thread>
 
@@ -141,13 +142,29 @@ inline manager::manager()
         errss << "manager singleton has already been created";
         throw std::runtime_error(errss.str().c_str());
     }
+
+    /*
+    static std::atomic<short> _once;
+    short                     _once_num = _once++;
+    if(_once_num > 0 && !singleton_t::is_master(this))
+    {
+        m_data           = graph_data(*master_instance()->current());
+        m_data.head()    = master_instance()->data().current();
+        m_data.current() = master_instance()->data().current();
+        m_data.depth()   = master_instance()->data().depth();
+    }
+    */
 }
 
 //======================================================================================//
 
 inline manager::~manager()
 {
-    if(m_instance_count == 0)
+    // DEBUG_PRINT_HERE("graph_storage");
+    // if(!singleton_t::is_master(this))
+    //    singleton_t::master_instance()->merge(this);
+
+    if(m_instance_count < 2)
     {
         printf("\n############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
                static_cast<void*>(this), m_instance_count);
@@ -376,9 +393,9 @@ manager::add(pointer ptr)
 
 //======================================================================================//
 
-inline void
-manager::remove(pointer ptr)
+inline void manager::remove(pointer /*ptr*/)
 {
+    /*
     if(ptr == this)
         return;
 
@@ -393,6 +410,28 @@ manager::remove(pointer ptr)
     merge(ptr);
     if(m_daughters.find(ptr) != m_daughters.end())
         m_daughters.erase(m_daughters.find(ptr));
+    */
+
+    if(!singleton_t::is_master(this))
+        return;
+
+    auto m_children = singleton_t::children();
+    if(m_children.size() == 0)
+        return;
+
+    // for(auto& itr : m_children)
+    //    merge(itr);
+
+    // create lock but don't immediately lock
+    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+    // lock if not already owned
+    if(!l.owns_lock())
+        l.lock();
+
+    for(auto& itr : m_children)
+        if(itr != this)
+            itr->data().reset();
 }
 
 //======================================================================================//
@@ -400,6 +439,7 @@ manager::remove(pointer ptr)
 inline void
 manager::merge(pointer itr)
 {
+    /*
     if(itr == this)
         return;
 
@@ -416,6 +456,7 @@ manager::merge(pointer itr)
         std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr << "..."
                   << std::endl;
 #endif
+    */
 
     /*
     auto _this_beg = this->get_timer_data().graph().begin();
@@ -441,6 +482,48 @@ manager::merge(pointer itr)
                                           _reduce);
     compute_self();
     */
+
+    if(itr == this)
+        return;
+
+    // create lock but don't immediately lock
+    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+    // lock if not already owned
+    if(!l.owns_lock())
+        l.lock();
+
+    auto _this_beg = graph().begin();
+    auto _this_end = graph().end();
+
+    bool _merged = false;
+    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
+    {
+        if(_this_itr == itr->data().head())
+        {
+            auto _iter_beg = itr->graph().begin();
+            auto _iter_end = itr->graph().end();
+            graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
+            _merged = true;
+            break;
+        }
+    }
+
+    if(_merged)
+    {
+        typedef decltype(_this_beg) predicate_type;
+        auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+        _this_beg    = graph().begin();
+        _this_end    = graph().end();
+        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+    }
+    else
+    {
+        auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
+        std::cerr << "Failure to merge graphs!" << std::endl;
+        auto g = graph();
+        graph().insert_subgraph_after(m_data.current(), itr->data().head());
+    }
 }
 
 //======================================================================================//
@@ -508,6 +591,54 @@ manager::compute_self()
         }
     }*/
 }
+
+//======================================================================================//
+/*
+template <typename _Tp>
+inline void
+manager::report(ostream_t* os, graph_storage<_Tp>* data, bool ign_cutoff, bool endline)
+const
+{
+    const_cast<this_type*>(this)->merge();
+
+    auto check_stream = [&](ostream_t*& _os, const string_t& id) {
+        if(_os == &std::cout || _os == &std::cerr)
+            return;
+        ofstream_t* fos = get_ofstream(_os);
+        if(fos && !(fos->is_open() && fos->good()))
+        {
+            _os = &std::cout;
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+            std::cerr << "Output stream for " << id << " is not open/valid. "
+                      << "Redirecting to stdout..." << std::endl;
+        }
+    };
+
+    if(os == m_report)
+        check_stream(os, "total timing report");
+
+    for(const auto& itr : data)
+        if(!itr.data().is_valid())
+            itr.obj.stop();
+
+    if(mpi_is_initialized())
+        *os << "> rank " << mpi_rank() << std::endl;
+
+    auto format = [&](const data_tuple<tim::timer>& node) {
+        std::stringstream ss;
+        node.data().report(ss, false, true);
+        return ss.str();
+    };
+
+    tim::print_graph(timer_data.graph(), apply_format<tim::timer>, *os);
+    if(endline)
+        *os << std::endl;
+    tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
+    if(endline)
+        *os << std::endl;
+
+    os->flush();
+}*/
 
 //======================================================================================//
 /*
@@ -900,5 +1031,100 @@ manager::get_communicator_group()
 //======================================================================================//
 
 }  // namespace tim
+
+//======================================================================================//
+
+#include <timemory/environment.hpp>
+
+inline void
+tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
+{
+    // this->report(ign_cutoff, endline);
+    if(!singleton_t::is_master(this))
+    {
+        // singleton_t::master_instance()->merge(this);
+    }
+    else if(env::auto_output())
+    {
+        m_data.current() = m_data.head();
+        int64_t _width   = 10;
+        for(const auto& itr : m_data.graph())
+        {
+            int64_t _len = itr.prefix().length();
+            _width       = std::max(_len, _width);
+        }
+
+        std::stringstream _oss;
+        for(const auto& itr : m_data.graph())
+        {
+            auto              _prefix = itr.prefix();
+            auto              _data   = itr.data();
+            auto              _laps   = 0;
+            std::stringstream ss_prefix;
+            std::stringstream ss_data;
+            ss_prefix << std::setw(_width) << std::left << _prefix;
+            auto ntot = _data.size();
+            for(const auto& ditr : _data)
+            {
+                ss_data << ditr;
+                if(ntot-- > 1)
+                {
+                    ss_data << ", ";
+                }
+            }
+            _oss << ss_prefix.str() << ss_data.str();
+            if(_laps > 0)
+                _oss << ", " << _laps << " laps";
+            _oss << std::endl;
+        }
+
+        if(env::file_output() && _oss.str().length() > 0)
+        {
+            std::string label = "combined";
+            //--------------------------------------------------------------------------//
+            // output to text
+            //
+            if(env::text_output())
+            {
+                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                std::ofstream ofs(fname.c_str());
+                if(ofs)
+                {
+                    auto_lock_t l(type_mutex<std::ofstream>());
+                    printf("[graph_storage<%s>]> Outputting '%s'...\n", label.c_str(),
+                           fname.c_str());
+                    ofs << _oss.str();
+                    ofs.close();
+                }
+                else
+                {
+                    auto_lock_t l(type_mutex<decltype(std::cout)>());
+                    fprintf(stderr,
+                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                            label.c_str(), __FUNCTION__, __LINE__, fname.c_str());
+                    std::cout << _oss.str();
+                }
+            }
+
+            //--------------------------------------------------------------------------//
+            // output to json
+            //
+            if(env::json_output())
+            {
+                // auto_lock_t l(type_mutex<std::ofstream>());
+                // auto        jname = tim::env::compose_output_filename(label, ".json");
+                // printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                //       label.c_str(), jname.c_str());
+                // serialize_storage(jname, label, *this);
+            }
+        }
+
+        if(env::cout_output() && _oss.str().length() > 0)
+        {
+            auto_lock_t l(type_mutex<decltype(std::cout)>());
+            std::cout << _oss.str() << std::endl;
+        }
+    }
+}
 
 //======================================================================================//

@@ -33,7 +33,6 @@
 //--------------------------------------------------------------------------------------//
 
 #include <timemory/macros.hpp>
-#include <timemory/utility.hpp>
 
 #include <cstdint>
 #include <cstring>
@@ -117,12 +116,6 @@ compose_output_filename(const std::string& _tag, std::string _ext);
 
 }  // namespace tim
 
-#include "timemory/components.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/units.hpp"
-#include <timemory/mpi.hpp>
-#include <timemory/utility.hpp>
-
 //======================================================================================//
 
 inline std::string
@@ -142,6 +135,14 @@ tim::env::toupper(std::string str)
         itr = ::toupper(itr);
     return str;
 }
+
+//======================================================================================//
+
+#include <timemory/component_operations.hpp>
+#include <timemory/components.hpp>
+#include <timemory/mpi.hpp>
+#include <timemory/units.hpp>
+#include <timemory/utility.hpp>
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
@@ -451,5 +452,9 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
         fpath.replace(fpath.find("//"), 2, "/");
     return std::move(fpath);
 }
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/storage.icpp"
 
 //--------------------------------------------------------------------------------------//

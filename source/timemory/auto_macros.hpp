@@ -29,7 +29,6 @@
 
 #include "timemory/apply.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
 #include "timemory/utility.hpp"
 
 //======================================================================================//

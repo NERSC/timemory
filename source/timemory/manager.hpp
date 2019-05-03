@@ -75,21 +75,150 @@ public:
     template <typename _Key, typename _Mapped>
     using uomap = std::unordered_map<_Key, _Mapped>;
 
-    using this_type   = manager;
-    using pointer_t   = std::unique_ptr<this_type, details::manager_deleter>;
-    using singleton_t = singleton<this_type, pointer_t>;
-    typedef std::size_t                   size_type;
-    typedef std::ostream                  ostream_t;
-    typedef std::ofstream                 ofstream_t;
-    typedef std::tuple<MPI_Comm, int32_t> comm_group_t;
-    typedef std::mutex                    mutex_t;
-    typedef uomap<uint64_t, mutex_t>      mutex_map_t;
-    typedef std::lock_guard<mutex_t>      auto_lock_t;
-    typedef singleton_t::pointer          pointer;
-    typedef singleton_t::smart_pointer    smart_pointer;
-    typedef std::set<this_type*>          daughter_list_t;
-    typedef std::function<int64_t()>      get_num_threads_func_t;
-    typedef std::atomic<uint64_t>         counter_t;
+    using this_type              = manager;
+    using pointer_t              = std::unique_ptr<this_type, details::manager_deleter>;
+    using singleton_t            = singleton<this_type, pointer_t>;
+    using size_type              = std::size_t;
+    using string_t               = std::string;
+    using ostream_t              = std::ostream;
+    using ofstream_t             = std::ofstream;
+    using comm_group_t           = std::tuple<MPI_Comm, int32_t>;
+    using mutex_t                = std::mutex;
+    using mutex_map_t            = uomap<uint64_t, mutex_t>;
+    using auto_lock_t            = std::unique_lock<mutex_t>;
+    using pointer                = singleton_t::pointer;
+    using smart_pointer          = singleton_t::smart_pointer;
+    using daughter_list_t        = std::set<this_type*>;
+    using get_num_threads_func_t = std::function<int64_t()>;
+    using counter_t              = std::atomic<uint64_t>;
+    using string_list_t          = std::deque<string_t>;
+
+    //----------------------------------------------------------------------------------//
+    //
+    //  the node type
+    //
+    //----------------------------------------------------------------------------------//
+    class graph_node : public std::tuple<int64_t, string_t, string_list_t>
+    {
+    public:
+        using this_type = graph_node;
+        using base_type = std::tuple<int64_t, string_t, string_list_t>;
+
+        int64_t&       id() { return std::get<0>(*this); }
+        string_t&      prefix() { return std::get<1>(*this); }
+        string_list_t& data() { return std::get<2>(*this); }
+
+        const int64_t&       id() const { return std::get<0>(*this); }
+        const string_t&      prefix() const { return std::get<1>(*this); }
+        const string_list_t& data() const { return std::get<2>(*this); }
+
+        graph_node()
+        : base_type(0, "", {})
+        {
+        }
+
+        explicit graph_node(base_type&& _base)
+        : base_type(std::forward<base_type>(_base))
+        {
+        }
+
+        graph_node(const int64_t& _id, const string_t& _prefix, const string_list_t& _l)
+        : base_type(_id, _prefix, _l)
+        {
+        }
+
+        ~graph_node() {}
+        // explicit graph_node(const this_type&) = default;
+        // explicit graph_node(this_type&&)      = default;
+        // graph_node& operator=(const this_type&) = default;
+        // graph_node& operator=(this_type&&) = default;
+
+        bool operator==(const graph_node& rhs) const { return (id() == rhs.id()); }
+        bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
+
+        graph_node& operator+=(const graph_node& rhs)
+        {
+            DEBUG_PRINT_HERE("");
+            for(const auto& itr : rhs.data())
+                data().push_back(itr);
+            return *this;
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
+
+    using graph_t        = tim::graph<graph_node>;
+    using iterator       = typename graph_t::iterator;
+    using const_iterator = typename graph_t::const_iterator;
+
+    //----------------------------------------------------------------------------------//
+    //
+    //  graph instance + current node + head node
+    //
+    //----------------------------------------------------------------------------------//
+    struct graph_data
+    {
+        using this_type  = graph_data;
+        int64_t  m_depth = -1;
+        graph_t  m_graph;
+        iterator m_current;
+        iterator m_head;
+
+        graph_data()
+        : m_depth(-1)
+        {
+            DEBUG_PRINT_HERE("default");
+        }
+
+        ~graph_data() { m_graph.clear(); }
+
+        graph_data(const this_type&) = default;
+        graph_data& operator=(const this_type&) = delete;
+        graph_data& operator=(this_type&&) = default;
+
+        int64_t&  depth() { return m_depth; }
+        graph_t&  graph() { return m_graph; }
+        iterator& current() { return m_current; }
+        iterator& head() { return m_head; }
+
+        const graph_t& graph() const { return m_graph; }
+
+        iterator       begin() { return m_graph.begin(); }
+        iterator       end() { return m_graph.end(); }
+        const_iterator begin() const { return m_graph.cbegin(); }
+        const_iterator end() const { return m_graph.cend(); }
+        const_iterator cbegin() const { return m_graph.cbegin(); }
+        const_iterator cend() const { return m_graph.cend(); }
+
+        inline void reset()
+        {
+            m_graph.erase_children(m_head);
+            m_depth   = 0;
+            m_current = m_head;
+        }
+
+        inline iterator pop_graph()
+        {
+            DEBUG_PRINT_HERE("");
+            if(m_depth > 0 && !m_graph.is_head(m_current))
+            {
+                --m_depth;
+                m_current = graph_t::parent(m_current);
+            }
+            else if(m_depth == 0)
+            {
+                m_current = m_head;
+            }
+            return m_current;
+        }
+
+        inline iterator append_child(const graph_node& node)
+        {
+            DEBUG_PRINT_HERE("");
+            ++m_depth;
+            return (m_current = m_graph.append_child(m_current, node));
+        }
+    };
 
 public:
     // Constructor and Destructors
@@ -174,7 +303,13 @@ public:
     }
 
 public:
-    // serialization function
+    //
+    const graph_data& data() const { return m_data; }
+    const graph_t&    graph() const { return m_data.graph(); }
+
+    graph_data& data() { return m_data; }
+    iterator&   current() { return m_data.current(); }
+    graph_t&    graph() { return m_data.graph(); }
 
 protected:
     // protected static functions
@@ -220,40 +355,115 @@ private:
     daughter_list_t m_daughters;
     /// output stream for total timing report
     ostream_t* m_report;
+    /// data represented as string
+    graph_data m_data;
+    /// list of node ids
+    std::unordered_map<int64_t, iterator> m_node_ids;
 
 public:
-    // typedef data_storage<tim::timer>                timer_data_t;
-    // typedef data_storage<tim::usage>                memory_data_t;
-    // typedef std::tuple<timer_data_t, memory_data_t> tuple_data_t;
+    //----------------------------------------------------------------------------------//
+    //
+    void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data)
+    {
+        using sibling_itr = typename graph_t::sibling_iterator;
+        graph_node node(_hash_id, _prefix, string_list_t({ _data }));
 
-private:
-    // tuple_data_t   m_tuple_data;
-    // timer_data_t&  timer_data  = std::get<0>(m_tuple_data);
-    // memory_data_t& memory_data = std::get<1>(m_tuple_data);
+        auto _update = [&](iterator itr) {
+            m_data.current() = itr;
+            *m_data.current() += node;
+        };
 
-public:
-    // tuple_data_t&        get_data() { return m_tuple_data; }
-    // timer_data_t&        get_timer_data() { return timer_data; }
-    // memory_data_t&       get_memory_data() { return memory_data; }
-    // const tuple_data_t&  get_data() const { return m_tuple_data; }
-    // const timer_data_t&  get_timer_data() const { return timer_data; }
-    // const memory_data_t& get_memory_data() const { return memory_data; }
+        // lambda for inserting child
+        auto _insert_child = [&]() {
+            auto itr = m_data.append_child(node);
+            m_node_ids.insert(std::make_pair(_hash_id, itr));
+        };
 
-private:
-    // static pointer f_instance;
+        if(m_node_ids.find(_hash_id) != m_node_ids.end())
+        {
+            _update(m_node_ids.find(_hash_id)->second);
+        }
+
+        // if first instance
+        if(m_data.depth() < 0)
+        {
+            if(this == master_instance())
+            {
+                DEBUG_PRINT_HERE("insert first in master");
+                m_data.depth()   = 0;
+                m_data.head()    = m_data.graph().set_head(node);
+                m_data.current() = m_data.head();
+            }
+            else
+            {
+                return;
+            }
+        }
+        else
+        {
+            auto current = m_data.current();
+
+            if(_hash_id == current->id())
+            {
+                return;
+            }
+            else if(m_data.graph().is_valid(current))
+            {
+                // check parent if not head
+                if(!m_data.graph().is_head(current))
+                {
+                    auto parent = graph_t::parent(current);
+                    for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
+                    {
+                        // check hash id's
+                        if(_hash_id == itr->id())
+                        {
+                            _update(itr);
+                        }
+                    }
+                }
+
+                // check siblings
+                for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+                {
+                    // skip if current
+                    if(itr == current)
+                        continue;
+                    // check hash id's
+                    if(_hash_id == itr->id())
+                    {
+                        _update(itr);
+                    }
+                }
+
+                // check children
+                auto nchildren = graph_t::number_of_children(current);
+                if(nchildren == 0)
+                {
+                    _insert_child();
+                }
+                else
+                {
+                    bool exists = false;
+                    auto fchild = graph_t::child(current, 0);
+                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+                    {
+                        if(_hash_id == itr->id())
+                        {
+                            exists = true;
+                            _update(itr);
+                            break;
+                        }
+                    }
+                    if(!exists)
+                        _insert_child();
+                }
+            }
+        }
+        return _insert_child();
+    }
 };
 
-//--------------------------------------------------------------------------------------//
-/*
-template <typename _Tp>
-std::deque<data_tuple<_Tp>>
-list_convert(const data_storage<_Tp>& _storage)
-{
-    std::deque<data_tuple<_Tp>> _list;
-    for(const auto& itr : _storage)
-        _list.push_back(itr);
-    return _list;
-}*/
 //--------------------------------------------------------------------------------------//
 template <typename Archive>
 inline void
@@ -265,8 +475,6 @@ manager::serialize(Archive& ar, const unsigned int /*version*/)
     bool _self_cost = this->self_cost();
     ar(serializer::make_nvp("concurrency", _nthreads));
     ar(serializer::make_nvp("self_cost", _self_cost));
-    // ar(serializer::make_nvp("timers", list_convert(timer_data)));
-    // ar(serializer::make_nvp("memory", list_convert(memory_data)));
 }
 //--------------------------------------------------------------------------------------//
 inline uint64_t
@@ -281,73 +489,11 @@ manager::total_laps() const
     return m_laps + compute_total_laps();
 }
 //--------------------------------------------------------------------------------------//
-/*
-template <typename _Tp>
-std::string
-apply_format(const graph_storage<_Tp>& node)
-{
-    std::stringstream ss;
-    node.data().report(ss, false, true);
-    return ss.str();
-}
-//--------------------------------------------------------------------------------------//
-template <typename _Tp>
-inline void
-manager::report(ostream_t* os, graph_storage<_Tp>* data, bool ign_cutoff, bool endline)
-const
-{
-    const_cast<this_type*>(this)->merge();
-
-    auto check_stream = [&](ostream_t*& _os, const string_t& id) {
-        if(_os == &std::cout || _os == &std::cerr)
-            return;
-        ofstream_t* fos = get_ofstream(_os);
-        if(fos && !(fos->is_open() && fos->good()))
-        {
-            _os = &std::cout;
-            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-            std::cerr << "Output stream for " << id << " is not open/valid. "
-                      << "Redirecting to stdout..." << std::endl;
-        }
-    };
-
-    if(os == m_report)
-        check_stream(os, "total timing report");
-
-    for(const auto& itr : data)
-        if(!itr.data().is_valid())
-            itr.obj.stop();
-
-    if(mpi_is_initialized())
-        *os << "> rank " << mpi_rank() << std::endl;
-
-    auto format = [&](const data_tuple<tim::timer>& node) {
-        std::stringstream ss;
-        node.data().report(ss, false, true);
-        return ss.str();
-    };
-
-    tim::print_graph(timer_data.graph(), apply_format<tim::timer>, *os);
-    if(endline)
-        *os << std::endl;
-    tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
-    if(endline)
-        *os << std::endl;
-
-    os->flush();
-}*/
-//--------------------------------------------------------------------------------------//
 inline manager::ofstream_t*
 manager::get_ofstream(ostream_t* m_os) const
 {
     return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
                                                       : nullptr;
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::print(bool ign_cutoff, bool endline)
-{
-    this->report(ign_cutoff, endline);
 }
 //--------------------------------------------------------------------------------------//
 inline void
@@ -375,96 +521,6 @@ manager::size() const
     return 0UL;
 }
 //--------------------------------------------------------------------------------------//
-template <typename _Tp>
-inline _Tp&
-manager::get(const string_t& key, const string_t& tag, int32_t ncount, int32_t nhash)
-{
-    // typedef data_tuple<_Tp>             tuple_t;
-    // typedef data_storage<_Tp>           storage_t;
-    // typedef typename storage_t::graph_t graph_t;
-    // typedef _Tp                         value_t;
-
-    // get a reference to the storage_t object in tuple_data
-    // storage_t& _data = std::get<index_of<storage_t,
-    // tuple_data_t>::value>(m_tuple_data);
-    // compute the hash
-    uint64_t ref = (string_hash(key) + string_hash(tag)) * (ncount + 2) * (nhash + 2);
-    consume_parameters(std::move(ref));
-
-    // if already exists, return it
-    /*if(_data.map().find(ref) != _data.map().end())
-    {
-        auto& m_graph_itr = _data.current();
-        auto  _orig       = m_graph_itr;
-        for(typename graph_t::sibling_iterator itr = m_graph_itr.begin();
-            itr != m_graph_itr.end(); ++itr)
-            if(std::get<0>(*itr) == ref)
-            {
-                m_graph_itr = itr;
-                break;
-            }
-
-        if(_orig == m_graph_itr)
-            for(auto itr = _data.begin(); itr != _data.end(); ++itr)
-                if(std::get<0>(*itr) == ref)
-                {
-                    m_graph_itr = itr;
-                    break;
-                }
-
-        if(_orig == m_graph_itr)
-        {
-            std::stringstream ss;
-            ss << _orig->tag() << " did not find key = " << ref << " in :\n";
-            for(typename graph_t::sibling_iterator itr = m_graph_itr.begin();
-                itr != m_graph_itr.end(); ++itr)
-            {
-                ss << itr->key();
-                if(std::distance(itr, m_graph_itr.end()) < 1)
-                    ss << ", ";
-            }
-            ss << std::endl;
-            std::cerr << ss.str();
-        }
-        return *(_data.map()[ref].get());
-    }*/
-
-    // synchronize format with level 1 and make sure MPI prefix is up-to-date
-    update_total_timer_format();
-
-    std::stringstream ss;
-    // designated as [cxx], [pyc], etc.
-    ss << get_prefix() << "[" << tag << "] ";
-
-    // indent
-    for(int64_t i = 0; i < ncount; ++i)
-    {
-        if(i + 1 == ncount)
-            ss << "|_";
-        else
-            ss << "  ";
-    }
-
-    ss << std::left << key;
-    // format_t::propose_default_width(ss.str().length());
-
-    //_data.map()[ref] = pointer_t(new value_t(
-    //    format_t(ss.str(), format_t::default_format(), format_t::default_unit(),
-    //    true)));
-
-    // if(m_instance_count > 0)
-    //    _data.map()[ref]->thread_timing(true);
-
-    std::stringstream tag_ss;
-    tag_ss << tag << "_" << std::left << key;
-    // tuple_t _tuple(ref, ncount, graph_t::depth(_data.current()) + 1, tag_ss.str(),
-    //               _data.map()[ref]);
-    //_data.current() = _data.graph().append_child(_data.current(), _tuple);
-
-    // return *(_data.map()[ref].get());
-}
-
-//--------------------------------------------------------------------------------------//
 
 // tim::manager::pointer tim::manager::f_instance = tim::manager::instance();
 
@@ -476,27 +532,46 @@ namespace details
 
 struct manager_deleter
 {
-    using type        = tim::manager;
-    using pointer_t   = std::unique_ptr<type, manager_deleter>;
-    using singleton_t = singleton<type, pointer_t>;
+    using Type        = tim::manager;
+    using pointer_t   = std::unique_ptr<Type, manager_deleter>;
+    using singleton_t = singleton<Type, pointer_t>;
 
-    void operator()(type* ptr)
+    void operator()(Type* ptr)
     {
-        type*           master     = singleton_t::master_instance_ptr();
+        Type*           master     = singleton_t::master_instance_ptr();
         std::thread::id master_tid = singleton_t::master_thread_id();
+        std::thread::id this_tid   = std::this_thread::get_id();
 
-        DEBUG_PRINT_HERE("manager_deleter");
-        if(std::this_thread::get_id() == master_tid)
+        if(ptr && master && ptr != master)
         {
             DEBUG_PRINT_HERE("manager_deleter");
-            // delete ptr;
+        }
+        else
+        {
+            DEBUG_PRINT_HERE("manager_deleter");
+            if(ptr)
+            {
+                DEBUG_PRINT_HERE("manager_deleter");
+                // ptr->print();
+            }
+            else if(master)
+            {
+                DEBUG_PRINT_HERE("manager_deleter");
+                // master->print();
+            }
+        }
+
+        DEBUG_PRINT_HERE("manager_deleter");
+        if(this_tid == master_tid)
+        {
+            delete ptr;
         }
         else
         {
             if(master && ptr != master)
             {
                 DEBUG_PRINT_HERE("manager_deleter");
-                master->remove(ptr);
+                singleton_t::remove(ptr);
             }
             DEBUG_PRINT_HERE("manager_deleter");
             delete ptr;

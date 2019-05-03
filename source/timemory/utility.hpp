@@ -106,7 +106,7 @@ namespace tim
 // use this function to get rid of "unused parameter" warnings
 template <typename... _Args>
 void
-consume_parameters(_Args...)
+consume_parameters(_Args&&...)
 {
 }
 
