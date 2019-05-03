@@ -10,7 +10,7 @@ set_property(GLOBAL APPEND PROPERTY
 return()
 
 file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/*.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/*.icpp)
+    ${CMAKE_CURRENT_LIST_DIR}/impl/*.icpp)
 
 set(cxx_sources)
 foreach(_SOURCE ${cxx_headers})

@@ -38,7 +38,7 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 file(GLOB c_sources ctimemory.c ctimemory.cpp)
 file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/timemory/*.icpp)
+    ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
 file(GLOB cxx_sources manager.cpp)
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)

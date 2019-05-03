@@ -108,4 +108,4 @@ get_num_priority_context_switch();
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/rusage.icpp"
+#include "timemory/impl/rusage.icpp"

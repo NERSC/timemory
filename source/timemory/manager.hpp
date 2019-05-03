@@ -598,4 +598,4 @@ manager_singleton()
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/manager.icpp"
+#include "timemory/impl/manager.icpp"

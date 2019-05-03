@@ -455,6 +455,6 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/storage.icpp"
+#include "timemory/impl/storage.icpp"
 
 //--------------------------------------------------------------------------------------//

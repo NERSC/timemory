@@ -579,4 +579,4 @@ stack_backtrace(std::ostream& os)
 
 #endif
 
-#include "timemory/signal_detection.icpp"
+#include "timemory/impl/signal_detection.icpp"
