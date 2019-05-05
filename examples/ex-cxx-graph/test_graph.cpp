@@ -25,11 +25,7 @@
 
 #include <cstdint>
 
-#include "timemory/auto_tuple.hpp"
-#include "timemory/components.hpp"
-#include "timemory/graph.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
+#include <timemory/timemory.hpp>
 
 using graph_t          = tim::graph<std::string>;
 using graph_iterator_t = typename graph_t::iterator;
@@ -70,6 +66,7 @@ print_result(const std::string& prefix, int64_t result)
 int
 main(int argc, char** argv)
 {
+    tim::timemory_init(argc, argv);
     // default calc: fibonacci(40)
     int nfib = 40;
     if(argc > 1)

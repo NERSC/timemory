@@ -160,7 +160,6 @@ inline manager::manager()
 
 inline manager::~manager()
 {
-    // DEBUG_PRINT_HERE("graph_storage");
     // if(!singleton_t::is_master(this))
     //    singleton_t::master_instance()->merge(this);
 

@@ -53,20 +53,21 @@ class auto_tuple
 , public tim::hashed_object<auto_tuple<Types...>>
 {
 public:
-    using object_type  = implemented_component_tuple<Types...>;
-    using this_type    = auto_tuple<Types...>;
-    using counter_type = tim::counted_object<this_type>;
-    using counter_void = tim::counted_object<void>;
-    using hashed_type  = tim::hashed_object<this_type>;
-    using string_t     = std::string;
-    using string_hash  = std::hash<string_t>;
+    using component_type = implemented_component_tuple<Types...>;
+    using this_type      = auto_tuple<Types...>;
+    using counter_type   = tim::counted_object<this_type>;
+    using counter_void   = tim::counted_object<void>;
+    using hashed_type    = tim::hashed_object<this_type>;
+    using string_t       = std::string;
+    using string_hash    = std::hash<string_t>;
+    using base_type      = implemented_component_tuple<Types...>;
 
 public:
-    // standard constructor
     auto_tuple(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
                bool report_at_exit = false);
-    // destructor
-    virtual ~auto_tuple();
+    auto_tuple(component_type& tmp, const int32_t& lineno = 0,
+               bool report_at_exit = false);
+    ~auto_tuple();
 
     // copy and move
     auto_tuple(const this_type&) = default;
@@ -76,30 +77,30 @@ public:
 
 public:
     // public member functions
-    object_type&       local_object() { return m_temp_object; }
-    const object_type& local_object() const { return m_temp_object; }
+    component_type&       component_tuple() { return m_temporary_object; }
+    const component_type& component_tuple() const { return m_temporary_object; }
 
     // partial interface to underlying component_tuple
-    void record() { m_temp_object.record(); }
-    void pause() { m_temp_object.pause(); }
-    void resume() { m_temp_object.resume(); }
-    void start() { m_temp_object.start(); }
-    void stop() { m_temp_object.stop(); }
-    void push() { m_temp_object.push(); }
-    void pop() { m_temp_object.pop(); }
+    void record() { m_temporary_object.record(); }
+    void pause() { m_temporary_object.pause(); }
+    void resume() { m_temporary_object.resume(); }
+    void start() { m_temporary_object.start(); }
+    void stop() { m_temporary_object.stop(); }
+    void push() { m_temporary_object.push(); }
+    void pop() { m_temporary_object.pop(); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        os << obj.m_temp_object;
+        os << obj.m_temporary_object;
         return os;
     }
 
 private:
-    bool        m_enabled;
-    bool        m_report_at_exit;
-    uint64_t    m_hash;
-    object_type m_temp_object;
+    bool            m_enabled        = true;
+    bool            m_report_at_exit = false;
+    component_type  m_temporary_object;
+    component_type* m_reference_object = nullptr;
 };
 
 //======================================================================================//
@@ -109,16 +110,41 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& line
                                  const string_t& lang_tag, bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
-                  ? (string_hash()(lang_tag + object_tag) *
+                  ? (string_hash()(object_tag) + string_hash()(lang_tag) +
                      (counter_type::live() + hashed_type::live() + lineno))
                   : 0)
 , m_enabled(counter_type::enable())
 , m_report_at_exit(report_at_exit)
-, m_temp_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash, true)
+, m_temporary_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash,
+                     true)
 {
     if(m_enabled)
     {
-        m_temp_object.start();
+        m_temporary_object.start();
+    }
+}
+
+//======================================================================================//
+
+template <typename... Types>
+auto_tuple<Types...>::auto_tuple(component_type& tmp, const int32_t& lineno,
+                                 bool report_at_exit)
+: counter_type()
+, hashed_type((counter_type::enable())
+                  ? (string_hash()(tmp.key()) + string_hash()(tmp.tag()) +
+                     (counter_type::live() + hashed_type::live() + lineno))
+                  : 0)
+, m_enabled(counter_type::enable())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(tmp)
+, m_reference_object(&tmp)
+{
+    if(m_enabled)
+    {
+        m_temporary_object.hash()  = hashed_type::m_hash;
+        m_temporary_object.store() = true;
+        m_temporary_object.push();
+        m_temporary_object.start();
     }
 }
 
@@ -130,14 +156,20 @@ auto_tuple<Types...>::~auto_tuple()
     if(m_enabled)
     {
         // stop the timer
-        m_temp_object.stop();
+        m_temporary_object.stop();
+        m_temporary_object.pop();
 
         // report timer at exit
         if(m_report_at_exit)
         {
             std::stringstream ss;
-            ss << m_temp_object;
+            ss << m_temporary_object;
             std::cout << ss.str() << std::endl;
+        }
+
+        if(m_reference_object)
+        {
+            *m_reference_object += m_temporary_object;
         }
     }
 }

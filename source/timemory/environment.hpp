@@ -47,6 +47,10 @@
 
 namespace tim
 {
+// initialization (creates manager and configures output path)
+void
+timemory_init(int argc, char** argv);
+
 namespace env
 {
 //--------------------------------------------------------------------------------------//
@@ -451,6 +455,34 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
     while(fpath.find("//") != std::string::npos)
         fpath.replace(fpath.find("//"), 2, "/");
     return std::move(fpath);
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+tim::timemory_init(int argc, char** argv)
+{
+    consume_parameters(argc);
+    std::string exe_name = argv[0];
+    if(exe_name.find('/'))
+    {
+        exe_name.erase(0, exe_name.find_last_of('/') + 1);
+    }
+    if(exe_name.find('\\'))
+    {
+        exe_name.erase(0, exe_name.find_last_of('\\') + 1);
+    }
+
+    exe_name = "timemory-" + exe_name + "-output";
+    for(auto& itr : exe_name)
+    {
+        if(itr == '_')
+            itr = '-';
+    }
+
+    tim::env::output_path() = exe_name;
+    // allow environment overrides
+    tim::env::parse();
 }
 
 //--------------------------------------------------------------------------------------//

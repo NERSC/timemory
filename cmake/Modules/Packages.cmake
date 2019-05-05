@@ -234,6 +234,28 @@ endif()
 
 ################################################################################
 #
+#        Coverage
+#
+################################################################################
+
+if(TIMEMORY_USE_COVERAGE)
+
+    find_library(GCOV_LIBRARY gcov QUIET)
+
+    if(GCOV_LIBRARY)
+        list(APPEND EXTERNAL_LIBRARIES ${COVERAGE_LIBRARY})
+    elseif(CMAKE_CXX_COMPILER_IS_GNU)
+        list(APPEND EXTERNAL_LIBRARIES gcov)
+    else()
+        message(STATUS "GCov library not found. Disabling coverage...")
+        set(TIMEMORY_USE_COVERAGE OFF)
+    endif()
+
+endif()
+
+
+################################################################################
+#
 #        CUDA
 #
 ################################################################################

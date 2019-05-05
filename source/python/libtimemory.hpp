@@ -56,6 +56,7 @@ namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 
+#include "timemory/auto_timer.hpp"
 #include "timemory/auto_tuple.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
@@ -291,6 +292,34 @@ timer(std::string prefix = "")
 //--------------------------------------------------------------------------------------//
 
 auto_timer_t*
+auto_timer(const std::string& key, bool report_at_exit, int nback, bool added_args,
+           py::args args, py::kwargs kwargs)
+{
+    tim::consume_parameters(args, kwargs);
+    std::stringstream keyss;
+    keyss << get_func(nback);
+
+    if(added_args)
+        keyss << key;
+    else if(key != "" && key[0] != '@' && !added_args)
+        keyss << "@";
+
+    if(key != "" && !added_args)
+        keyss << key;
+    else
+    {
+        keyss << "@";
+        keyss << get_file(nback + 1);
+        keyss << ":";
+        keyss << get_line(nback);
+    }
+    auto op_line = get_line(1);
+    return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
+}
+
+//--------------------------------------------------------------------------------------//
+/*
+auto_timer_t*
 auto_timer(const std::string& key = "", bool report_at_exit = false, int nback = 1,
            bool added_args = false)
 {
@@ -314,7 +343,7 @@ auto_timer(const std::string& key = "", bool report_at_exit = false, int nback =
     auto op_line = get_line(1);
     return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 rss_usage_t*
@@ -714,6 +743,174 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fname = "")
 //--------------------------------------------------------------------------------------//
 
 }  // namespace opt
+
+//======================================================================================//
+
+namespace decorators
+{
+class base_decorator
+{
+public:
+    base_decorator() {}
+
+    base_decorator(std::string key, bool add_args, bool is_class)
+    : m_add_args(add_args)
+    , m_is_class(is_class)
+    , m_key(key)
+    {
+    }
+
+    void parse_wrapped(py::function func, py::args args, py::kwargs kwargs)
+    {
+        auto locals = py::dict("func"_a = func, "args"_a = args, "kwargs"_a = kwargs);
+        py::exec(R"(
+                 is_class = False
+                 if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
+                     is_class = True
+                 )",
+                 py::globals(), locals);
+        m_is_class = locals["is_class"].cast<bool>();
+    }
+
+    std::string class_string(py::args args, py::kwargs kwargs)
+    {
+        auto locals = py::dict("args"_a = args, "kwargs"_a = kwargs, "_key"_a = m_key,
+                               "_is_class"_a = m_is_class);
+        py::exec(R"(
+                 _str = ''
+                 if _is_class and len(args) > 0 and args[0] is not None:
+                     _str = '[{}]'.format(type(args[0]).__name__)
+
+                     # this check guards against class methods calling class methods
+                     if _str in _key:
+                         _str = ''
+                 )",
+                 py::globals(), locals);
+        return locals["_str"].cast<std::string>();
+    }
+
+    std::string arg_string(py::args args, py::kwargs kwargs)
+    {
+        auto _str   = class_string(args, kwargs);
+        auto locals = py::dict("_str"_a = _str, "args"_a = args, "kwargs"_a = kwargs,
+                               "_key"_a = m_key, "_is_class"_a = m_is_class,
+                               "_add_args"_a = m_add_args);
+        py::exec(R"(
+                 if _add_args:
+                     _str = '{}('.format(_str)
+                     for i in range(0, len(args)):
+                         if i == 0:
+                             _str = '{}{}'.format(_str, args[i])
+                         else:
+                             _str = '{}, {}'.format(_str, args[i])
+
+                     for key, val in kwargs:
+                         _str = '{}, {}={}'.format(_str, key, val)
+
+                     _str = '{})'.format(_str)
+                 )",
+                 py::globals(), locals);
+        return locals["_str"].cast<std::string>();
+    }
+
+protected:
+    bool        m_add_args = false;
+    bool        m_is_class = false;
+    std::string m_key      = "";
+};
+
+//======================================================================================//
+
+class auto_timer : public base_decorator
+{
+public:
+    auto_timer() {}
+
+    auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
+    : base_decorator(key, add_args, is_class)
+    , m_report_at_exit(report_at_exit)
+    {
+        auto _n = 2;
+        m_file  = get_file(_n);
+        m_line  = get_line(_n - 1);
+    }
+
+    py::object call(py::function func)
+    {
+        PRINT_HERE("");
+
+        auto locals =
+            py::dict("_func"_a = func, "_key"_a = m_key, "_file"_a = m_file,
+                     "_line"_a = m_line, "_is_class"_a = m_is_class,
+                     "_add_args"_a = m_add_args, "_report_at_exit"_a = m_report_at_exit);
+        py::exec(R"(
+                 import inspect
+                 import timemory
+                 from functools import wraps
+
+
+                 @wraps(_func)
+                 def _function_wrapper(func = _func, _key = _key, _is_class = _is_class,
+                                       _add_args = _add_args, _file = _file, _line = _line,
+                                       _report_at_exit = _report_at_exit,
+                                       *args, **kwargs):
+
+                     if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
+                         _is_class = True
+                     else:
+                         _is_class = False
+
+                     _str = ''
+                     if _is_class and len(args) > 0 and args[0] is not None:
+                         _str = '[{}]'.format(type(args[0]).__name__)
+                         # this check guards against class methods calling class methods
+                         if _str in _key:
+                             _str = ''
+
+                     if _add_args:
+                         _str = '{}('.format(_str)
+                         for i in range(0, len(args)):
+                             if i == 0:
+                                 _str = '{}{}'.format(_str, args[i])
+                             else:
+                                 _str = '{}, {}'.format(_str, args[i])
+
+                         for key, val in kwargs:
+                             _str = '{}, {}={}'.format(_str, key, val)
+
+                         _str = '{})'.format(_str)
+
+
+                     _key = '{}{}'.format(_key, _str)
+
+                     t = timemory.timer_decorator(func.__name__, _file, _line,
+                         _key, _add_args or _is_class, _report_at_exit)
+
+                     results = func(*args, **kwargs)
+                     del t
+                     return results
+                 )",
+                 py::globals(), locals);
+
+        return locals["_function_wrapper"].cast<py::function>();
+    }
+
+private:
+    bool        m_report_at_exit = false;
+    int         m_line           = 0;
+    std::string m_file           = "";
+};
+
+namespace init
+{
+static ::pytim::decorators::auto_timer*
+auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
+{
+    return new ::pytim::decorators::auto_timer(key, add_args, is_class, report_at_exit);
+}
+
+}
+}
 
 //======================================================================================//
 

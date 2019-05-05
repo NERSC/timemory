@@ -138,7 +138,6 @@ public:
 
         graph_node& operator+=(const graph_node& rhs)
         {
-            DEBUG_PRINT_HERE("");
             for(const auto& itr : rhs.data())
                 data().push_back(itr);
             return *this;
@@ -167,7 +166,6 @@ public:
         graph_data()
         : m_depth(-1)
         {
-            DEBUG_PRINT_HERE("default");
         }
 
         ~graph_data() { m_graph.clear(); }
@@ -199,7 +197,6 @@ public:
 
         inline iterator pop_graph()
         {
-            DEBUG_PRINT_HERE("");
             if(m_depth > 0 && !m_graph.is_head(m_current))
             {
                 --m_depth;
@@ -214,7 +211,6 @@ public:
 
         inline iterator append_child(const graph_node& node)
         {
-            DEBUG_PRINT_HERE("");
             ++m_depth;
             return (m_current = m_graph.append_child(m_current, node));
         }
@@ -223,7 +219,7 @@ public:
 public:
     // Constructor and Destructors
     manager();
-    virtual ~manager();
+    ~manager();
 
 public:
     // Public static functions
@@ -389,7 +385,6 @@ public:
         {
             if(this == master_instance())
             {
-                DEBUG_PRINT_HERE("insert first in master");
                 m_data.depth()   = 0;
                 m_data.head()    = m_data.graph().set_head(node);
                 m_data.current() = m_data.head();
@@ -564,7 +559,8 @@ struct manager_deleter
         DEBUG_PRINT_HERE("manager_deleter");
         if(this_tid == master_tid)
         {
-            delete ptr;
+            DEBUG_PRINT_HERE("manager_deleter");
+            // delete ptr;
         }
         else
         {

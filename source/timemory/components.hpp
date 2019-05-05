@@ -83,7 +83,7 @@ struct impl_available : std::true_type
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename value_type = int64_t>
-struct base
+struct base : public tim::counted_object<_Tp>
 {
     using Type         = _Tp;
     using this_type    = base<_Tp, value_type>;
@@ -291,6 +291,8 @@ struct base
         value += rhs.value;
         accum += rhs.accum;
         laps += rhs.laps;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return static_cast<Type&>(*this);
     }
 
@@ -300,6 +302,8 @@ struct base
         value -= rhs.value;
         accum -= rhs.accum;
         laps -= rhs.laps;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return static_cast<Type&>(*this);
     }
 
@@ -417,29 +421,17 @@ struct base
         return os;
     }
 
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
         auto _disp = static_cast<const Type&>(*this).compute_display();
-        ar(serializer::make_nvp(Type::label() + ".is_transient", is_transient),
-           serializer::make_nvp(Type::label() + ".laps", laps),
-           serializer::make_nvp(Type::label() + ".value", value),
-           serializer::make_nvp(Type::label() + ".accum", accum),
-           serializer::make_nvp(Type::label() + ".display", _disp),
-           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
-           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
+        ar(serializer::make_nvp("is_transient", is_transient),
+           serializer::make_nvp("laps", laps), serializer::make_nvp("value", value),
+           serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
     }
-
-    /*
-    template <typename Archive, typename U = value_type,
-              enable_if_t<(std::is_class<U>::value)> = 0>
-    void serialize(Archive& ar, const unsigned int)
-    {
-        auto obj_value = static_cast<Type&>(*this).serial();
-        ar(serializer::make_nvp(Type::label() + ".value", value),
-           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
-           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
-    }*/
 };
 
 //--------------------------------------------------------------------------------------//
@@ -835,42 +827,14 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         set_stopped();
     }
 
-    this_type& operator+=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first += rhs.first;
-            accum.second += rhs.second;
-        }
-        else
-        {
-            value.first += rhs.first;
-            value.second += rhs.second;
-        }
-        return *this;
-    }
-
-    this_type& operator-=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first -= rhs.first;
-            accum.second -= rhs.second;
-        }
-        else
-        {
-            value.first -= rhs.first;
-            value.second -= rhs.second;
-        }
-        return *this;
-    }
-
     this_type& operator+=(const this_type& rhs)
     {
         accum.first += rhs.accum.first;
         accum.second += rhs.accum.second;
         value.first += rhs.value.first;
         value.second += rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -880,6 +844,8 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         accum.second -= rhs.accum.second;
         value.first -= rhs.value.first;
         value.second -= rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 };
@@ -933,42 +899,14 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         set_stopped();
     }
 
-    this_type& operator+=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first += rhs.first;
-            accum.second += rhs.second;
-        }
-        else
-        {
-            value.first += rhs.first;
-            value.second += rhs.second;
-        }
-        return *this;
-    }
-
-    this_type& operator-=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first -= rhs.first;
-            accum.second -= rhs.second;
-        }
-        else
-        {
-            value.first -= rhs.first;
-            value.second -= rhs.second;
-        }
-        return *this;
-    }
-
     this_type& operator+=(const this_type& rhs)
     {
         accum.first += rhs.accum.first;
         accum.second += rhs.accum.second;
         value.first += rhs.value.first;
         value.second += rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -978,6 +916,8 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         accum.second -= rhs.accum.second;
         value.first -= rhs.value.first;
         value.second -= rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 };
@@ -1031,42 +971,14 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         set_stopped();
     }
 
-    this_type& operator+=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first += rhs.first;
-            accum.second += rhs.second;
-        }
-        else
-        {
-            value.first += rhs.first;
-            value.second += rhs.second;
-        }
-        return *this;
-    }
-
-    this_type& operator-=(const value_type& rhs)
-    {
-        if(is_transient)
-        {
-            accum.first -= rhs.first;
-            accum.second -= rhs.second;
-        }
-        else
-        {
-            value.first -= rhs.first;
-            value.second -= rhs.second;
-        }
-        return *this;
-    }
-
     this_type& operator+=(const this_type& rhs)
     {
         accum.first += rhs.accum.first;
         accum.second += rhs.accum.second;
         value.first += rhs.value.first;
         value.second += rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -1076,6 +988,8 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         accum.second -= rhs.accum.second;
         value.first -= rhs.value.first;
         value.second -= rhs.value.second;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 };
@@ -1762,6 +1676,8 @@ struct papi_event
             accum[i] += rhs.accum[i];
         for(size_type i = 0; i < num_events; ++i)
             value[i] += rhs.value[i];
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -1771,6 +1687,8 @@ struct papi_event
             accum[i] -= rhs.accum[i];
         for(size_type i = 0; i < num_events; ++i)
             value[i] -= rhs.value[i];
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
         return *this;
     }
 
@@ -1793,7 +1711,6 @@ private:
     {
         if(!event_type_added() && m_count == 0 && event_count::is_master())
         {
-            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             int evt_types[] = { EventTypes... };
             tim::papi::add_events(EventSet, evt_types, num_events);
             event_type_added() = true;
@@ -1804,7 +1721,6 @@ private:
     {
         if(event_type_added() && m_count == 0 && event_count::is_master())
         {
-            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             int evt_types[] = { EventTypes... };
             for(size_type i = 0; i < num_events; ++i)
                 tim::papi::remove_event(EventSet, evt_types[i]);
@@ -1816,7 +1732,6 @@ private:
     {
         if(!event_set_started() && m_count == 0 && event_count::is_master())
         {
-            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             tim::papi::start(EventSet);
             event_set_started() = true;
         }
@@ -1826,7 +1741,6 @@ private:
     {
         if(event_set_started() && m_count == 0 && event_count::is_master())
         {
-            // DEBUG_PRINT_HERE(std::to_string(event_count::live()).c_str());
             long long* tmp = new long long(0);
             tim::papi::stop(EventSet, tmp);
             tim::papi::destroy_event_set(EventSet);

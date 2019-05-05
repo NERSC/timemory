@@ -25,15 +25,7 @@
 
 #include <cstdint>
 
-#include <timemory/auto_tuple.hpp>
-#include <timemory/component_tuple.hpp>
-#include <timemory/environment.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpi.hpp>
-#include <timemory/papi.hpp>
-#include <timemory/rusage.hpp>
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
+#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 using auto_tuple_t  = tim::auto_tuple<real_clock>;
@@ -95,10 +87,10 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", cutoff, "]");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
-    return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
+    return fibonacci(n);
 }
 
 //======================================================================================//
@@ -117,9 +109,11 @@ run(int64_t n, bool with_timing, int64_t cutoff)
     auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
                                         with_timing, "]");
     timer_tuple_t timer(signature);
-    timer.start();
-    auto result = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
-    timer.stop();
+    int64_t       result = 0;
+    {
+        auto auto_timer = timer_tuple_t::auto_type(timer, __LINE__);
+        result          = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
+    }
     print_result(signature, result);
     return timer;
 }
@@ -130,7 +124,7 @@ int
 main(int argc, char** argv)
 {
     tim::env::timing_scientific() = true;
-    tim::env::parse();
+    tim::timemory_init(argc, argv);
 
     // default calc: fibonacci(40)
     int nfib = 43;
@@ -138,7 +132,7 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 25;
+    int cutoff = nfib - 20;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
@@ -148,10 +142,13 @@ main(int argc, char** argv)
     TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
     std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
+
     // run without timing first so overhead is not started yet
     timer_list.push_back(run(nfib, false, nfib));  // without timing
+
     nlaps = 0;
     timer_list.push_back(run(nfib, true, cutoff));  // with timing
+
     std::cout << std::endl;
     timer_list.push_back(timer_list.at(1) - timer_list.at(0));
     timer_list.push_back(timer_list.back() / nlaps);
@@ -163,7 +160,6 @@ main(int argc, char** argv)
     }
 
     std::cout << std::endl;
-
     test_print(std::make_tuple(1.0, "abc", 1), std::make_tuple("def", 6UL));
 
     return 0;

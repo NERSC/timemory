@@ -54,7 +54,14 @@
 namespace tim
 {
 //======================================================================================//
+// forward declaration
+//
+template <typename... Types>
+class auto_tuple;
 
+//======================================================================================//
+// variadic list of components
+//
 template <typename... Types>
 class component_tuple
 {
@@ -66,6 +73,7 @@ public:
     using data_t      = std::tuple<Types...>;
     using string_hash = std::hash<string_t>;
     using bool_array  = std::array<bool, num_elements>;
+    using auto_type   = auto_tuple<Types...>;
 
 public:
     explicit component_tuple()
@@ -86,6 +94,8 @@ public:
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)
+    , m_key(key)
+    , m_tag(tag)
     , m_identifier("")
     {
         compute_identifier(key, tag);
@@ -95,11 +105,13 @@ public:
 
     component_tuple(const string_t& key, const string_t& tag = "cxx",
                     const int32_t& ncount = 0, const int32_t& nhash = 0,
-                    bool store = true)
+                    bool store = false)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)
+    , m_key(key)
+    , m_tag(tag)
     , m_identifier("")
     {
         compute_identifier(key, tag);
@@ -118,6 +130,8 @@ public:
     , m_count(rhs.m_count)
     , m_hash(rhs.m_hash)
     , m_data(rhs.m_data)
+    , m_key(rhs.m_key)
+    , m_tag(rhs.m_tag)
     , m_identifier(rhs.m_identifier)
     {
     }
@@ -131,6 +145,8 @@ public:
         m_count      = rhs.m_count;
         m_hash       = rhs.m_hash;
         m_data       = rhs.m_data;
+        m_key        = rhs.m_key;
+        m_tag        = rhs.m_identifier;
         m_identifier = rhs.m_identifier;
         return *this;
     }
@@ -418,6 +434,7 @@ public:
             apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
                                                           false);
         }
+        obj.update_identifier();
         ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
         os << ss_prefix.str() << ss_data.str() << " [laps: " << obj.m_laps << "]";
         return os;
@@ -457,6 +474,19 @@ public:
     inline const data_t& data() const { return m_data; }
     inline int64_t       laps() const { return m_laps; }
 
+    int64_t&  hash() { return m_hash; }
+    string_t& key() { return m_key; }
+    string_t& tag() { return m_tag; }
+    string_t& identifier() { return m_identifier; }
+
+    const int64_t&  hash() const { return m_hash; }
+    const string_t& key() const { return m_key; }
+    const string_t& tag() const { return m_tag; }
+    const string_t& identifier() const { return m_identifier; }
+
+    bool&       store() { return m_store; }
+    const bool& store() const { return m_store; }
+
 protected:
     // protected member functions
     data_t&       get_data() { return m_data; }
@@ -471,6 +501,8 @@ protected:
     int64_t        m_count = 0;
     int64_t        m_hash  = 0;
     mutable data_t m_data;
+    string_t       m_key        = "";
+    string_t       m_tag        = "";
     string_t       m_identifier = "";
     bool_array     m_exists;
 
@@ -513,6 +545,11 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
+    }
+
+    void update_identifier() const
+    {
+        const_cast<this_type&>(*this).compute_identifier(m_key, m_tag);
     }
 
     static int64_t output_width(int64_t width = 0)

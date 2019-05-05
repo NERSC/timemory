@@ -104,11 +104,12 @@ PYBIND11_MODULE(libtimemory, tim)
     //------------------------------------------------------------------------//
     //  Class declarations
     //------------------------------------------------------------------------//
-    py::class_<manager_wrapper>      man(tim, "manager");
-    py::class_<tim_timer_t>          timer(tim, "timer");
-    py::class_<auto_timer_t>         auto_timer(tim, "auto_timer");
-    py::class_<auto_timer_decorator> timer_decorator(tim, "timer_decorator");
-    py::class_<rss_usage_t>          rss_usage(tim, "rss_usage");
+    py::class_<manager_wrapper>               man(tim, "manager");
+    py::class_<tim_timer_t>                   timer(tim, "timer");
+    py::class_<auto_timer_t>                  auto_timer(tim, "auto_timer");
+    py::class_<auto_timer_decorator>          timer_decorator(tim, "timer_decorator");
+    py::class_<rss_usage_t>                   rss_usage(tim, "rss_usage");
+    py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim, "decorate_timer");
 
     //========================================================================//
     //
@@ -268,13 +269,27 @@ PYBIND11_MODULE(libtimemory, tim)
                    [=](py::object _pyauto_timer) {
                        std::stringstream _ss;
                        auto_timer_t* _auto_timer = _pyauto_timer.cast<auto_timer_t*>();
-                       _ss << _auto_timer->local_object();
+                       _ss << _auto_timer->component_tuple();
                        return _ss.str();
                    },
                    "Print the auto timer");
     //------------------------------------------------------------------------//
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
+    //------------------------------------------------------------------------//
+
+    //========================================================================//
+    //
+    //                      AUTO TIMER DECORATOR
+    //
+    //========================================================================//
+    decorate_auto_timer.def(
+        py::init(&pytim::decorators::init::auto_timer), "Initialization",
+        py::arg("key") = "", py::arg("add_args") = false, py::arg("is_class") = false,
+        py::arg("report_at_exit") = false, py::return_value_policy::take_ownership);
+    decorate_auto_timer.def("__call__", &pytim::decorators::auto_timer::call,
+                            "Call operator");
+
     //------------------------------------------------------------------------//
 
     //========================================================================//

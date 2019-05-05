@@ -52,14 +52,8 @@ if __name__ == "__main__":
                             required=False)
         parser.add_argument('-e', '--echo-dart', help="echo Dart measurement for CDash",
                             required=False, action='store_true')
-        parser.add_argument('--timing-percent', required=False, type=float,
-            help="Exclude plotting times below this percentage of maximum")
-        parser.add_argument('--memory-percent', required=False, type=float,
-            help="Exclude plotting RSS values below this percentage of maximum")
-        parser.add_argument('--timing-fields', required=False, nargs='*',
-            help='Timing types to plot {}'.format(plot_parameters.timing_fields))
-        parser.add_argument('--memory-fields', required=False, nargs='*',
-            help='Memory types to plot {}'.format(plot_parameters.memory_fields))
+        parser.add_argument('--min-percent', required=False, type=float,
+            help="Exclude plotting below this percentage of maximum")
         parser.add_argument('--img-dpi', help="Image dots per sq inch",
             required=False, type=int)
         parser.add_argument('--img-size', help="Image dimensions", nargs=2,
@@ -74,10 +68,7 @@ if __name__ == "__main__":
         parser.set_defaults(combine=False)
         parser.set_defaults(output_dir=".")
         parser.set_defaults(echo_dart=False)
-        parser.set_defaults(timing_percent=plot_parameters.timing_min_percent)
-        parser.set_defaults(memory_percent=plot_parameters.memory_min_percent)
-        parser.set_defaults(timing_fields=plot_parameters.timing_fields)
-        parser.set_defaults(memory_fields=plot_parameters.memory_fields)
+        parser.set_defaults(min_percent=plot_parameters.min_percent)
         parser.set_defaults(img_dpi=plot_parameters.img_dpi)
         parser.set_defaults(img_size=[plot_parameters.img_size['w'],
                                       plot_parameters.img_size['h']])
@@ -91,13 +82,10 @@ if __name__ == "__main__":
         print('Files: {}'.format(args.files))
         print('Titles: {}'.format(args.titles))
 
-        params = _plotting.plot_parameters(timing_min_percent = args.timing_percent,
-                                           timing_fields = args.timing_fields,
-                                           memory_min_percent = args.memory_percent,
-                                           memory_fields = args.memory_fields,
+        params = _plotting.plot_parameters(min_percent = args.min_percent,
                                            img_dpi = args.img_dpi,
                                            img_size={'w' : args.img_size[0],
-                                                      'h' : args.img_size[1]},
+                                                     'h' : args.img_size[1]},
                                            img_type = args.img_type)
 
         if do_plot_max:

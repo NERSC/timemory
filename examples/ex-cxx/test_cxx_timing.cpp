@@ -23,6 +23,7 @@
 // SOFTWARE.
 //
 
+#include <cassert>
 #include <chrono>
 #include <cmath>
 #include <fstream>
@@ -32,14 +33,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <cassert>
-
-#include <timemory/auto_tuple.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpi.hpp>
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
-#include <timemory/usage.hpp>
+#include <timemory/timemory.hpp>
 
 using graph_t          = tim::graph<std::string>;
 using graph_iterator_t = typename graph_t::iterator;
@@ -105,6 +99,7 @@ test_8_format();
 int
 main(int argc, char** argv)
 {
+    tim::timemory_init(argc, argv);
     // tim::mpi_initialize(argc, argv);
 
     tim::enable_signal_detection({ tim::sys_signal::sHangup, tim::sys_signal::sInterrupt,

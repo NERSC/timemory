@@ -22,11 +22,9 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/auto_tuple.hpp"
-#include "timemory/environment.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
+#include <timemory/timemory.hpp>
 
+// C includes
 #include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,6 +36,7 @@
 #    include <unistd.h>
 #endif
 
+// C++ includes
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
@@ -46,12 +45,14 @@
 #include <thread>
 #include <vector>
 
+//--------------------------------------------------------------------------------------//
+
 using vector_t = std::vector<uint64_t>;
 using namespace tim::component;
+// using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
 using comp_tuple_t = tim::details::custom_component_tuple<
-    real_clock, system_clock, cpu_clock, cpu_util, peak_rss, data_rss, stack_rss,
-    num_minor_page_faults, num_major_page_faults, voluntary_context_switch,
-    priority_context_switch>;
+    real_clock, system_clock, cpu_clock, cpu_util, peak_rss, num_minor_page_faults,
+    num_major_page_faults, voluntary_context_switch, priority_context_switch>;
 
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
@@ -156,7 +157,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
             {
                 auto jname = tim::env::compose_output_filename(label, ".json");
                 printf("[timem]> Outputting '%s'...\n", jname.c_str());
-                serialize_storage(jname, label, measure);
+                serialize_storage(jname, measure);
             }
         }
         else

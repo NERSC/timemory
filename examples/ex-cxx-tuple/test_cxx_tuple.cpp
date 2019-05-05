@@ -34,16 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/auto_macros.hpp>
-#include <timemory/auto_tuple.hpp>
-#include <timemory/component_tuple.hpp>
-#include <timemory/environment.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpi.hpp>
-#include <timemory/papi.hpp>
-#include <timemory/rusage.hpp>
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
+#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 
@@ -88,7 +79,7 @@ test_4_measure();
 int
 main(int argc, char** argv)
 {
-    tim::env::parse();
+    tim::timemory_init(argc, argv);
     auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 

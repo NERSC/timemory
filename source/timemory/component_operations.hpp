@@ -355,13 +355,13 @@ struct serial
     serial(base_type& obj, Archive& ar, const unsigned int version)
     {
         auto _disp = static_cast<const Type&>(obj).compute_display();
-        ar(serializer::make_nvp(Type::label() + ".is_transient", obj.is_transient),
-           serializer::make_nvp(Type::label() + ".laps", obj.laps),
-           serializer::make_nvp(Type::label() + ".value", obj.value),
-           serializer::make_nvp(Type::label() + ".accum", obj.accum),
-           serializer::make_nvp(Type::label() + ".display", _disp),
-           serializer::make_nvp(Type::label() + ".unit.value", Type::unit()),
-           serializer::make_nvp(Type::label() + ".unit.repr", Type::display_unit()));
+        ar(serializer::make_nvp("is_transient", obj.is_transient),
+           serializer::make_nvp("laps", obj.laps),
+           serializer::make_nvp("value", obj.value),
+           serializer::make_nvp("accum", obj.accum),
+           serializer::make_nvp("display", _disp),
+           serializer::make_nvp("unit.value", Type::unit()),
+           serializer::make_nvp("unit.repr", Type::display_unit()));
         consume_parameters(version);
     }
 };

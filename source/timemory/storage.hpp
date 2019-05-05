@@ -61,6 +61,69 @@ struct storage_deleter;
 }  // namespace details
 
 //======================================================================================//
+// static functions that return a string identifying the data type (used in Python plot)
+//
+template <typename _Tp>
+struct type_id
+{
+    template <typename Type = _Tp, enable_if_t<(std::is_integral<Type>::value), int> = 0>
+    static std::string value(const Type&)
+    {
+        return "int";
+    }
+
+    template <typename Type                                           = _Tp,
+              enable_if_t<(std::is_floating_point<Type>::value), int> = 0>
+    static std::string value(const Type&)
+    {
+        return "float";
+    }
+
+    template <typename SubType, enable_if_t<(std::is_integral<SubType>::value), int> = 0>
+    static std::string value(const std::pair<SubType, SubType>&)
+    {
+        return "int_pair";
+    }
+
+    template <typename SubType,
+              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
+    static std::string value(const std::pair<SubType, SubType>&)
+    {
+        return "float_pair";
+    }
+
+    template <typename SubType, std::size_t SubTypeSize,
+              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
+    static std::string value(const std::array<SubType, SubTypeSize>&)
+    {
+        return "int_array";
+    }
+
+    template <typename SubType, std::size_t SubTypeSize,
+              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
+    static std::string value(const std::array<SubType, SubTypeSize>&)
+    {
+        return "float_array";
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+/*
+template <typename SubType, std::size_t TypeSize>
+struct type_id<std::array<SubType, TypeSize>, SubType, TypeSize>
+{
+    static std::string value() { return "array"; }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename SubType, std::size_t TypeSize>
+struct type_id<std::pair<SubType, SubType>, SubType, TypeSize>
+{
+    static std::string value() { return "pair"; }
+};
+*/
+//======================================================================================//
 
 template <typename ObjectType>
 class graph_storage
@@ -75,30 +138,33 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using graph_node_tuple = std::tuple<int64_t, ObjectType, string_t, int64_t>;
 
     //----------------------------------------------------------------------------------//
     //
     //  the node type
     //
     //----------------------------------------------------------------------------------//
-    class graph_node : public std::tuple<int64_t, ObjectType, string_t>
+    class graph_node : public graph_node_tuple
     {
     public:
         using this_type      = graph_node;
-        using base_type      = std::tuple<int64_t, ObjectType, string_t>;
+        using base_type      = graph_node_tuple;
         using obj_value_type = typename ObjectType::value_type;
         using obj_base_type  = typename ObjectType::base_type;
 
         int64_t&    id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
         string_t&   prefix() { return std::get<2>(*this); }
+        int64_t&    depth() { return std::get<3>(*this); }
 
         const int64_t&    id() const { return std::get<0>(*this); }
         const ObjectType& obj() const { return std::get<1>(*this); }
         const string_t&   prefix() const { return std::get<2>(*this); }
+        const int64_t&    depth() const { return std::get<3>(*this); }
 
         graph_node()
-        : base_type(0, ObjectType(), "")
+        : base_type(0, ObjectType(), "", 0)
         {
         }
 
@@ -107,8 +173,8 @@ public:
         {
         }
 
-        graph_node(const int64_t& _id, const ObjectType& _obj)
-        : base_type(_id, _obj, "")
+        graph_node(const int64_t& _id, const ObjectType& _obj, int64_t _depth)
+        : base_type(_id, _obj, "", _depth)
         {
         }
 
@@ -123,7 +189,6 @@ public:
 
         graph_node& operator+=(const graph_node& rhs)
         {
-            DEBUG_PRINT_HERE("");
             auto&       _obj = obj();
             const auto& _rhs = rhs.obj();
             static_cast<obj_base_type&>(_obj) += static_cast<const obj_base_type&>(_rhs);
@@ -152,13 +217,11 @@ public:
         graph_data()
         : m_depth(-1)
         {
-            DEBUG_PRINT_HERE("default");
         }
 
         graph_data(const graph_node& rhs)
         : m_depth(0)
         {
-            DEBUG_PRINT_HERE("explicit");
             m_head    = m_graph.set_head(rhs);
             m_current = m_head;
         }
@@ -190,7 +253,6 @@ public:
 
         inline iterator pop_graph()
         {
-            DEBUG_PRINT_HERE("");
             if(m_depth > 0 && !m_graph.is_head(m_current))
             {
                 --m_depth;
@@ -219,9 +281,8 @@ public:
             return m_current;
         }
 
-        inline iterator append_child(const graph_node& node)
+        inline iterator append_child(graph_node& node)
         {
-            DEBUG_PRINT_HERE("");
             ++m_depth;
             return (m_current = m_graph.append_child(m_current, node));
         }
@@ -236,6 +297,7 @@ public:
 
     graph_storage()
     {
+        instance_count()++;
         static std::atomic<short> _once;
         short                     _once_num = _once++;
         if(_once_num > 0 && !singleton_t::is_master(this))
@@ -253,10 +315,6 @@ public:
         DEBUG_PRINT_HERE("graph_storage");
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
-        /*else
-        {
-            print();
-        }*/
     }
     explicit graph_storage(const this_type&) = delete;
     graph_storage(this_type&&)               = default;
@@ -285,7 +343,11 @@ public:
     iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
     {
         using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node node(hash_id, obj);
+        int64_t min_depth = 0;
+        int64_t live_depth =
+            tim::counted_object<ObjectType>::live() - m_data.graph().size() - 1;
+        int64_t    node_depth = std::max(min_depth, live_depth);
+        graph_node node(hash_id, obj, node_depth);
 
         // lambda for updating settings
         auto _update = [&](iterator itr) {
@@ -311,14 +373,12 @@ public:
         {
             if(this == master_instance())
             {
-                DEBUG_PRINT_HERE("insert first in master");
                 m_data = graph_data(node);
                 exists = false;
                 return m_data.current();
             }
             else
             {
-                DEBUG_PRINT_HERE("insert first in worker");
                 m_data = graph_data(*master_instance()->current());
                 return _insert_child();
             }
@@ -473,19 +533,34 @@ private:
         return _instance;
     }
 
+    static std::atomic<int64_t>& instance_count()
+    {
+        static std::atomic<int64_t> _counter;
+        return _counter;
+    }
+
 public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int /*version*/)
     {
         auto convert_graph = [&]() {
-            std::deque<std::tuple<int64_t, ObjectType, string_t>> _list;
+            using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+            std::deque<tuple_type> _list;
             for(const auto& itr : m_data.graph())
                 _list.push_back(itr);
             return _list;
         };
+        using ValueType = typename ObjectType::value_type;
+
         auto graph_list = convert_graph();
+        auto data_type  = type_id<ValueType>::value(m_data.head()->obj().value);
+        auto unit_value = ObjectType::unit();
+        auto unit_repr  = ObjectType::display_unit();
         ar(serializer::make_nvp("type", m_label),
            serializer::make_nvp("descript", m_descript),
+           serializer::make_nvp("dtype", data_type),
+           serializer::make_nvp("unit_value", unit_value),
+           serializer::make_nvp("unit_repr", unit_repr),
            serializer::make_nvp("graph", graph_list));
     }
 };
@@ -496,15 +571,9 @@ public:
 
 //======================================================================================//
 
-#include <cereal/types/deque.hpp>
-#include <cereal/types/tuple.hpp>
-#include <cereal/types/vector.hpp>
-
-//======================================================================================//
-
 template <typename _Tp>
 void
-serialize_storage(const std::string& fname, const std::string& title, const _Tp& obj)
+serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency = 1)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::stringstream     ss;
@@ -513,7 +582,13 @@ serialize_storage(const std::string& fname, const std::string& title, const _Tp&
         //                                  args: precision, spacing, indent size
         cereal::JSONOutputArchive::Options opts(12, spacing, 4);
         cereal::JSONOutputArchive          oa(ss, opts);
-        oa(cereal::make_nvp(title, obj));
+        oa.setNextName("rank");
+        oa.startNode();
+        auto rank = tim::mpi_rank();
+        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("concurrency", concurrency));
+        oa(cereal::make_nvp("data", obj));
+        oa.finishNode();
     }
     std::ofstream ofs(fname.c_str());
     ofs << ss.str() << std::endl;

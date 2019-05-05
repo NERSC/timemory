@@ -50,8 +50,7 @@ from .plotting import *
 __all__ = ['plotting',
            'plot',
            'plot_maximums',
-           'plot_timing',
-           'plot_memory',
+           'plot_all',
            'plot_generic',
            'read',
            'plot_data',
@@ -61,5 +60,4 @@ __all__ = ['plotting',
            'make_output_directory',
            'nested_dict',
            'plot_parameters',
-           'plotted_files',
-           'timemory_types']
+           'plotted_files']

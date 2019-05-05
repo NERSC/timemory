@@ -34,16 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/auto_macros.hpp>
-#include <timemory/auto_tuple.hpp>
-#include <timemory/component_tuple.hpp>
-#include <timemory/environment.hpp>
-#include <timemory/manager.hpp>
-#include <timemory/mpi.hpp>
-#include <timemory/papi.hpp>
-#include <timemory/rusage.hpp>
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
+#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 
@@ -106,6 +97,8 @@ test_6_mt_saxpy_async_pinned();
 int
 main(int argc, char** argv)
 {
+    tim::timemory_init(argc, argv);
+
     if(N % nitr != 0)
     {
         throw std::runtime_error("Error N is not a multiple of nitr");
