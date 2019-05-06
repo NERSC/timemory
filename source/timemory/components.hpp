@@ -1596,8 +1596,8 @@ struct papi_event
     {
         if(m_count == 0 && event_count::is_master())
         {
-            // stop_event_set();
-            // remove_event_types();
+            stop_event_set();
+            remove_event_types();
         }
     }
 
@@ -1789,13 +1789,13 @@ struct papi_event
 private:
     static bool& event_type_added()
     {
-        static thread_local bool instance = false;
+        static bool instance = false;
         return instance;
     }
 
     static bool& event_set_started()
     {
-        static thread_local bool instance = false;
+        static bool instance = false;
         return instance;
     }
 
@@ -1803,9 +1803,11 @@ private:
     {
         if(!event_type_added() && m_count == 0 && event_count::is_master())
         {
+            PRINT_HERE("");
             int evt_types[] = { EventTypes... };
             tim::papi::add_events(EventSet, evt_types, num_events);
             event_type_added() = true;
+            PRINT_HERE("");
         }
     }
 
@@ -1813,10 +1815,11 @@ private:
     {
         if(event_type_added() && m_count == 0 && event_count::is_master())
         {
+            PRINT_HERE("");
             int evt_types[] = { EventTypes... };
-            for(size_type i = 0; i < num_events; ++i)
-                tim::papi::remove_event(EventSet, evt_types[i]);
+            tim::papi::remove_events(EventSet, evt_types, num_events);
             event_type_added() = false;
+            PRINT_HERE("");
         }
     }
 
@@ -1824,8 +1827,10 @@ private:
     {
         if(!event_set_started() && m_count == 0 && event_count::is_master())
         {
+            PRINT_HERE("");
             tim::papi::start(EventSet);
             event_set_started() = true;
+            PRINT_HERE("");
         }
     }
 
@@ -1833,11 +1838,12 @@ private:
     {
         if(event_set_started() && m_count == 0 && event_count::is_master())
         {
-            long long* tmp = new long long(0);
-            tim::papi::stop(EventSet, tmp);
+            PRINT_HERE("");
+            value_type read_value;
+            tim::papi::stop(EventSet, read_value.data());
             tim::papi::destroy_event_set(EventSet);
-            delete tmp;
             event_set_started() = false;
+            PRINT_HERE("");
         }
     }
 };

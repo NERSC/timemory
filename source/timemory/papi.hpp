@@ -339,7 +339,7 @@ remove_event(int event_set, int event)
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_remove_event(event_set, event);
-    check(retval, "Warning!! Failure to remove event to event set");
+    check(retval, "Warning!! Failure to remove event from event set");
 #else
     consume_parameters(event_set, event);
 #endif
@@ -355,6 +355,21 @@ add_events(int event_set, int* events, int number)
     init();
     int retval = PAPI_add_events(event_set, events, number);
     check(retval, "Warning!! Failure to add events to event set");
+#else
+    consume_parameters(event_set, events, number);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+remove_events(int event_set, int* events, int number)
+{
+    // add array of PAPI preset or native hardware events to an event set
+#if defined(TIMEMORY_USE_PAPI)
+    init();
+    int retval = PAPI_remove_events(event_set, events, number);
+    check(retval, "Warning!! Failure to remove events from event set");
 #else
     consume_parameters(event_set, events, number);
 #endif
