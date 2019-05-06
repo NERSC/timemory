@@ -125,6 +125,7 @@ main(int argc, char** argv)
 {
     tim::env::timing_scientific() = true;
     tim::timemory_init(argc, argv);
+    tim::env::json_output() = true;
 
     // default calc: fibonacci(40)
     int nfib = 43;

@@ -64,17 +64,26 @@ template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 //--------------------------------------------------------------------------------------//
-
 // trait that signifies that updating w.r.t. another instance should
 // be a max of the two instances
+//
 template <typename _Tp>
 struct record_max : std::false_type
 {
 };
 
 //--------------------------------------------------------------------------------------//
+// trait that signifies that data is an array type
+//
+template <typename _Tp>
+struct array_serialization
+{
+    using type = std::false_type;
+};
 
+//--------------------------------------------------------------------------------------//
 // trait that signifies that an implementation (e.g. PAPI) is available
+//
 template <typename _Tp>
 struct impl_available : std::true_type
 {
@@ -1553,6 +1562,7 @@ struct papi_event
 {
     using size_type   = std::size_t;
     using value_type  = std::array<long long, sizeof...(EventTypes)>;
+    using entry_type  = typename value_type::value_type;
     using base_type   = base<papi_event<EventSet, EventTypes...>, value_type>;
     using this_type   = papi_event<EventSet, EventTypes...>;
     using event_count = counted_object<papi_event<EventSet>>;
@@ -1570,6 +1580,9 @@ struct papi_event
     using base_type::set_stopped;
     using base_type::value;
     using event_count::m_count;
+
+    template <typename _Tp>
+    using array_t = std::array<_Tp, num_events>;
 
     papi_event()
     {
@@ -1592,6 +1605,20 @@ struct papi_event
     this_type& operator=(const this_type& rhs) = default;
     papi_event(papi_event&& rhs)               = default;
     this_type& operator=(this_type&&) = default;
+
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        array_t<entry_type> _disp;
+        for(int i = 0; i < num_events; ++i)
+            _disp[i] = compute_display(i);
+        ar(serializer::make_nvp("is_transient", is_transient),
+           serializer::make_nvp("laps", laps), serializer::make_nvp("value", value),
+           serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
+    }
 
     static PAPI_event_info_t info(int evt_type)
     {
@@ -1622,18 +1649,24 @@ struct papi_event
         return read_value;
     }
 
+    entry_type compute_display(int evt_type) const
+    {
+        auto val = (is_transient) ? accum[evt_type] : value[evt_type];
+        return val;
+    }
+
     string_t compute_display() const
     {
         auto val              = (is_transient) ? accum : value;
         int  evt_types[]      = { EventTypes... };
         auto _compute_display = [&](std::ostream& os, size_type idx) {
-            double _obj_value = val[idx];
-            auto   _evt_type  = evt_types[idx];
-            auto   _label     = label(_evt_type);
-            auto   _disp      = display_unit(_evt_type);
-            auto   _prec      = base_type::get_precision();
-            auto   _width     = base_type::get_width();
-            auto   _flags     = base_type::get_format_flags();
+            auto _obj_value = val[idx];
+            auto _evt_type  = evt_types[idx];
+            auto _label     = label(_evt_type);
+            auto _disp      = display_unit(_evt_type);
+            auto _prec      = base_type::get_precision();
+            auto _width     = base_type::get_width();
+            auto _flags     = base_type::get_format_flags();
 
             std::stringstream ss, ssv, ssi;
             ssv.setf(_flags);
@@ -1655,6 +1688,56 @@ struct papi_event
         return ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
+    // array of descriptions
+    //
+    static array_t<std::string> label_array()
+    {
+        array_t<std::string> arr;
+        int                  evt_types[] = { EventTypes... };
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = label(evt_types[i]);
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // array of labels
+    //
+    static array_t<std::string> descript_array()
+    {
+        array_t<std::string> arr;
+        int                  evt_types[] = { EventTypes... };
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = descript(evt_types[i]);
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // array of unit
+    //
+    static array_t<std::string> display_unit_array()
+    {
+        array_t<std::string> arr;
+        int                  evt_types[] = { EventTypes... };
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = display_unit(evt_types[i]);
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // array of unit values
+    //
+    static array_t<int64_t> unit_array()
+    {
+        array_t<int64_t> arr;
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = 1;
+        return arr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // start
+    //
     void start()
     {
         set_started();
@@ -1750,15 +1833,23 @@ private:
     }
 };
 
-#if !defined(TIMEMORY_USE_PAPI)
 //--------------------------------------------------------------------------------------//
 //
+template <int EventSet, int... EventTypes>
+struct array_serialization<papi_event<EventSet, EventTypes...>>
+{
+    using type = std::true_type;
+};
+
+//--------------------------------------------------------------------------------------//
+//
+#if !defined(TIMEMORY_USE_PAPI)
 template <int EventSet, int... EventTypes>
 struct impl_available<papi_event<EventSet, EventTypes...>> : std::false_type
 {
 };
-
 #endif
+
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_USE_CUDA)

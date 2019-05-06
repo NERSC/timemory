@@ -76,6 +76,18 @@ saxpy(int64_t n, float a, float* x, float* y)
 //--------------------------------------------------------------------------------------//
 
 void
+warmup()
+{
+    int     block = 16 * 512;
+    int     ngrid = 512;
+    int64_t val   = 256;
+    warmup<<<ngrid, block>>>(val);
+    cudaDeviceSynchronize();
+}
+
+//======================================================================================//
+
+void
 print_info(const std::string&);
 void
 print_string(const std::string& str);
@@ -97,28 +109,18 @@ test_6_mt_saxpy_async_pinned();
 int
 main(int argc, char** argv)
 {
-    tim::timemory_init(argc, argv);
-
     if(N % nitr != 0)
     {
         throw std::runtime_error("Error N is not a multiple of nitr");
     }
 
     cuda_event::get_format_flags() = std::ios_base::scientific;
+    tim::timemory_init(argc, argv);
+    tim::env::json_output() = true;
 
     int ndevices = 0;
     cudaGetDeviceCount(&ndevices);
-
-    {
-        int     block = 16 * 512;
-        int     ngrid = 512;
-        int64_t val   = 256;
-        warmup<<<ngrid, block>>>(val);
-        cudaDeviceSynchronize();
-        cudaDeviceReset();
-    }
-
-    tim::env::parse();
+    warmup();
 
     auto* timing =
         new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>(
@@ -194,6 +196,7 @@ void
 test_1_saxpy()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
 
     comp_tuple_t _clock("Runtime");
@@ -290,6 +293,7 @@ void
 test_2_saxpy_async()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
 
     comp_tuple_t _clock("Runtime");
@@ -425,6 +429,7 @@ void
 test_3_saxpy_pinned()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
 
     comp_tuple_t _clock("Runtime");
@@ -521,6 +526,7 @@ void
 test_4_saxpy_async_pinned()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
 
     comp_tuple_t _clock("Runtime");
@@ -648,6 +654,7 @@ void
 test_5_mt_saxpy_async()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
     auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
 
@@ -769,6 +776,7 @@ void
 test_6_mt_saxpy_async_pinned()
 {
     print_info(__FUNCTION__);
+    warmup();
     TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
     auto lambda_op = tim::str::join("", "::", __TIMEMORY_FUNCTION__);
 

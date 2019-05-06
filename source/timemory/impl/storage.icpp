@@ -138,3 +138,77 @@ tim::graph_storage<ObjectType>::print()
 }
 
 //======================================================================================//
+
+template <typename ObjectType>
+template <typename Archive>
+void
+tim::graph_storage<ObjectType>::serialize(std::false_type, Archive& ar,
+                                          const unsigned int /*version*/)
+{
+    using value_type = typename ObjectType::value_type;
+    using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using array_type = std::deque<tuple_type>;
+
+    // convert graph to a deque
+    auto convert_graph = [&]() {
+        array_type _list;
+        for(const auto& itr : m_data.graph())
+            _list.push_back(itr);
+        return _list;
+    };
+
+    auto graph_list = convert_graph();
+    auto data_type  = type_id<value_type>::value(m_data.head()->obj().value);
+    ar(serializer::make_nvp("type", ObjectType::label()),
+       serializer::make_nvp("descript", ObjectType::descript()),
+       serializer::make_nvp("unit_value", ObjectType::unit()),
+       serializer::make_nvp("unit_repr", ObjectType::display_unit()),
+       serializer::make_nvp("dtype", data_type),
+       serializer::make_nvp("graph", graph_list));
+}
+
+//======================================================================================//
+
+template <typename ObjectType>
+template <typename Archive>
+void
+tim::graph_storage<ObjectType>::serialize(std::true_type, Archive& ar,
+                                          const unsigned int /*version*/)
+{
+    using value_type = typename ObjectType::value_type;
+    using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using array_type = std::deque<tuple_type>;
+
+    // convert graph to a deque
+    auto convert_graph = [&]() {
+        array_type _list;
+        for(const auto& itr : m_data.graph())
+            _list.push_back(itr);
+        return _list;
+    };
+
+    auto graph_list    = convert_graph();
+    auto data_type     = type_id<value_type>::value(m_data.head()->obj().value);
+    auto labels        = ObjectType::label_array();
+    auto descripts     = ObjectType::descript_array();
+    auto units         = ObjectType::unit_array();
+    auto display_units = ObjectType::display_unit_array();
+    ar(serializer::make_nvp("type", labels), serializer::make_nvp("descript", descripts),
+       serializer::make_nvp("unit_value", units),
+       serializer::make_nvp("unit_repr", display_units),
+       serializer::make_nvp("dtype", data_type),
+       serializer::make_nvp("graph", graph_list));
+}
+
+//======================================================================================//
+
+template <typename ObjectType>
+template <typename Archive>
+void
+tim::graph_storage<ObjectType>::serialize(Archive& ar, const unsigned int version)
+{
+    typename tim::component::array_serialization<ObjectType>::type type;
+    serialize<Archive>(type, ar, version);
+}
+
+//======================================================================================//

@@ -523,8 +523,6 @@ protected:
 protected:
     graph_data                            m_data;
     std::unordered_map<int64_t, iterator> m_node_ids;
-    string_t                              m_label    = ObjectType::label();
-    string_t                              m_descript = ObjectType::descript();
 
 private:
     static singleton_t& get_singleton()
@@ -541,28 +539,15 @@ private:
 
 public:
     template <typename Archive>
-    void serialize(Archive& ar, const unsigned int /*version*/)
-    {
-        auto convert_graph = [&]() {
-            using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-            std::deque<tuple_type> _list;
-            for(const auto& itr : m_data.graph())
-                _list.push_back(itr);
-            return _list;
-        };
-        using ValueType = typename ObjectType::value_type;
+    void serialize(Archive&, const unsigned int);
 
-        auto graph_list = convert_graph();
-        auto data_type  = type_id<ValueType>::value(m_data.head()->obj().value);
-        auto unit_value = ObjectType::unit();
-        auto unit_repr  = ObjectType::display_unit();
-        ar(serializer::make_nvp("type", m_label),
-           serializer::make_nvp("descript", m_descript),
-           serializer::make_nvp("dtype", data_type),
-           serializer::make_nvp("unit_value", unit_value),
-           serializer::make_nvp("unit_repr", unit_repr),
-           serializer::make_nvp("graph", graph_list));
-    }
+    // tim::component::array_serialization<ObjectType>::type == TRUE
+    template <typename Archive>
+    void serialize(std::true_type, Archive&, const unsigned int);
+
+    // tim::component::array_serialization<ObjectType>::type == FALSE
+    template <typename Archive>
+    void serialize(std::false_type, Archive&, const unsigned int);
 };
 
 //--------------------------------------------------------------------------------------//

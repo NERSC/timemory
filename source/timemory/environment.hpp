@@ -464,14 +464,12 @@ tim::timemory_init(int argc, char** argv)
 {
     consume_parameters(argc);
     std::string exe_name = argv[0];
-    if(exe_name.find('/'))
-    {
-        exe_name.erase(0, exe_name.find_last_of('/') + 1);
-    }
-    if(exe_name.find('\\'))
-    {
-        exe_name.erase(0, exe_name.find_last_of('\\') + 1);
-    }
+
+    while(exe_name.find("\\") != std::string::npos)
+        exe_name = exe_name.substr(exe_name.find_last_of('\\') + 1);
+
+    while(exe_name.find("/") != std::string::npos)
+        exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
     exe_name = "timemory-" + exe_name + "-output";
     for(auto& itr : exe_name)

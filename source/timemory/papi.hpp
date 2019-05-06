@@ -161,16 +161,17 @@ init()
             int events       = PAPI_L1_TCM;
             int num_events   = 1;
             int retval       = PAPI_start_counters(&events, num_events);
-            working()        = check(retval, "Warning!! Failure starting counters");
+            working()        = (retval == PAPI_OK);
             long long values = 0;
             retval           = PAPI_stop_counters(&values, num_events);
-            working()        = check(retval, "Warning!! Failure stopping counters");
+            working()        = (retval == PAPI_OK);
         }
         if(!working())
         {
             int retval = PAPI_library_init(PAPI_VER_CURRENT);
             working()  = check(retval, "Warning!! Failure initializing PAPI");
         }
+        if(working())
         {
             int retval = PAPI_thread_init(pthread_self);
             working()  = check(retval, "Warning!! Failure thread init");

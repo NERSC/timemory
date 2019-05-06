@@ -229,14 +229,27 @@ class timemory_data():
         """
         self.func = func
         self.is_transient = obj['is_transient']
-        self.laps = int(obj['laps'])
-        self.display = float(obj['display'])
-        if dtype == "int":
-            self.value = int(obj['value'])
-            self.accum = int(obj['accum'])
+        self.laps = obj['laps']
+        if isinstance(obj['display'], dict):
+            self.display = []
+            for key, item in obj['display'].items():
+                self.display.append(item)
         else:
-            self.value = 0
-            self.accum = 0
+            self.display = obj['display']
+
+        if isinstance(obj['value'], dict):
+            self.value = []
+            for key, item in obj['value'].items():
+                self.value.append(item)
+        else:
+            self.value = obj['value']
+
+        if isinstance(obj['accum'], dict):
+            self.accum = []
+            for key, item in obj['accum'].items():
+                self.accum.append(item)
+        else:
+            self.accum = obj['accum']
 
     # ------------------------------------------------------------------------ #
     def plottable(self, params):
@@ -334,30 +347,50 @@ class plot_data():
                  concurrency = 1, mpi_size = 1,
                  timemory_functions = [],
                  title = "",
+                 units = "",
+                 ctype = "",
+                 dtype = "",
+                 description = "",
                  plot_params = plot_parameters(),
                  output_name = None):
 
-        self.filename = filename
+        def _convert(_obj):
+            if isinstance(_obj, dict):
+                _ret = []
+                for key, item in _obj.items():
+                    _ret.append(item)
+                return _ret
+            else:
+                return _obj
+
+        self.units = _convert(units)
+        self.ctype = _convert(ctype)
+        self.dtype = _convert(dtype)
+        self.description = _convert(description)
+
+        self.nitems = 1
+        if "array" in self.dtype and isinstance(self.ctype, list):
+            self.nitems = len(self.ctype)
+
+        self.timemory_functions = timemory_functions
         self.concurrency = concurrency
         self.mpi_size = mpi_size
-        self.timemory_functions = timemory_functions
         self.title = title
         self.plot_params = plot_params
-        self.output_name = output_name
-        if self.output_name is None:
-            self.output_name = self.filename
-        # calc max values
-        for key, obj in self.timemory_functions.items():
-            #print("key: {}, obj: {}".format(key, obj))
-            if obj is None:
-                print("Warning! key '{}' has None object!".format(key))
-                #del self.timemory_functions[key]
-            else:
-                _max = self.plot_params.max_value
-                _val = obj.value
-                if obj.is_transient:
-                    _val = obj.accum
-                self.plot_params.max_value = max([_max, _val])
+
+        outname = output_name if output_name is not None else filename
+        if self.nitems == 1:
+            self.filename = filename
+            self.output_name = outname
+        else:
+            self.filename = []
+            self.output_name = []
+            for n in range(0, self.nitems):
+                tag = "_".join(self.ctype[n].lower().split())
+                self.filename.append("_".join([filename, tag]))
+                self.output_name.append("_".join([outname, tag]))
+            print("plot filenames: {}".format(self.filename))
+            print("plot output name: {}".format(self.output_name))
 
     # ------------------------------------------------------------------------ #
     def update_parameters(self, params = None):
@@ -373,7 +406,10 @@ class plot_data():
             _val = obj.value
             if obj.is_transient:
                 _val = obj.accum
-            self.plot_params.max_value = max([_max, _val])
+            if isinstance(_val, list):
+                self.plot_params.max_value = max([_max] + _val)
+            else:
+                self.plot_params.max_value = max([_max, _val])
 
     # ------------------------------------------------------------------------ #
     def __len__(self):
@@ -439,26 +475,26 @@ def read(json_obj, plot_params=plot_parameters()):
         #print('key: {}'.format(itr))
 
     data1 = data0['rank']
-    nrank = data1['rank_id']        # rank number
+    # nrank = data1['rank_id']        # rank number
     nthrd = data1['concurrency']    # concurrency
     rdata = data1['data']           # rank data
     ctype = rdata['type']           # collection type
     cdesc = rdata['descript']       # collection description
     dtype = rdata['dtype']          # collection data type
-    unitv = rdata['unit_value']     # collection unit value
+    # unitv = rdata['unit_value']     # collection unit value
     unitr = rdata['unit_repr']      # collection unit display repr
     gdata = rdata['graph']          # graph data
-    ndata = len(gdata)              # number of graph entries
+    ngraph = len(gdata)              # number of graph entries
 
     concurrency_sum += nthrd
 
     #print("Rank #{}: type = {}, descript = \"{}\", data type = {}, unit value = {}, "
     #      "unit repr = {}, # entries = {}, num threads = {}".format(
-    #        nrank, ctype, cdesc, dtype, unitv, unitr, ndata, nthrd))
+    #        nrank, ctype, cdesc, dtype, unitv, unitr, ngraph, nthrd))
 
     # ------------------------------------------------------------------------ #
     # loop over ranks
-    for i in range(0, ndata):
+    for i in range(0, ngraph):
         _data = gdata[i]
         tag = _data['tuple_element2']
         def _replace(_tag, _a, _b, _n = 0):
@@ -489,14 +525,18 @@ def read(json_obj, plot_params=plot_parameters()):
 
     # ------------------------------------------------------------------------ #
     # return a plot_data object
-    return plot_data(concurrency = concurrency_sum / nranks,
-                     mpi_size = nranks,
-                     timemory_functions = timemory_functions,
-                     plot_params = plot_params)
+    return plot_data(concurrency=(concurrency_sum / nranks),
+                     mpi_size=nranks,
+                     description=cdesc,
+                     ctype=ctype,
+                     dtype=dtype,
+                     units=unitr,
+                     timemory_functions=timemory_functions,
+                     plot_params=plot_params)
 
 
 #==============================================================================#
-def plot_generic(_plot_data, _type_min, _type_unit):
+def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     if _matplotlib_backend is None:
         try:
@@ -510,29 +550,33 @@ def plot_generic(_plot_data, _type_min, _type_unit):
     import matplotlib
     import matplotlib.pyplot as plt
 
-    filename = _plot_data.filename
+    def get_obj_idx(_obj, _idx):
+        if isinstance(_obj, list):
+            return _obj[_idx]
+        else:
+            return _obj
+
+    filename = [get_obj_idx(_plot_data.filename, idx)]
     plot_params = _plot_data.plot_params
     nitem = len(_plot_data)
     ntics = len(_plot_data)
     ytics = []
-    _types = ["real"]
+    types = [get_obj_idx(_plot_data.ctype, idx)]
+
+    print("Plot types: {}".format(types))
 
     if ntics == 0:
         print ('{} had no data less than the minimum time ({} {})'.format(
                filename, _type_min, _type_unit))
         return False
 
-    avgs = nested_dict()
-    stds = nested_dict()
-    for key in _types:
-        avgs[key] = []
-        stds[key] = []
+    avgs = []
+    stds = []
 
-    for key in _types:
-        for func, obj in _plot_data.items():
-            ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-            avgs[key].append(obj.display)
-            stds[key].append(0.0)
+    for func, obj in _plot_data.items():
+        ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
+        avgs.append(get_obj_idx(obj.display, idx))
+        stds.append(0.0)
 
     # the x locations for the groups
     ind = np.arange(ntics)
@@ -548,68 +592,37 @@ def plot_generic(_plot_data, _type_min, _type_unit):
 
     # put largest at top
     ytics.reverse()
-    for key in _types:
-        avgs[key].reverse()
-        stds[key].reverse()
+    avgs.reverse()
+    stds.reverse()
 
     # construct the plots
-    plots = []
-    for key in _types:
-        _colors=None
-        if len(_types) == 1:
-            _colors = ['darkred', 'green']
-        p = plt.barh(ind, avgs[key], thickness, xerr=stds[key],
-                     alpha=1.0, antialiased=False,
-                     color=_colors)
-        plots.append(p)
-
-    if len(plots) == 0:
-        return
+    _colors=None
+    if len(types) == 1:
+        _colors = ['darkred', 'green']
+    _plot = plt.barh(ind, avgs, thickness, xerr=stds,
+                     alpha=1.0, antialiased=False, color=_colors)
 
     grid_lines = []
     for i in range(0, ntics):
         if i % nitem == 0:
             grid_lines.append(i)
 
-    #plt.minorticks_on()
     plt.yticks(ind, ytics, ha='left')
-    #plt.setp(ax.get_yticklabels(), fontsize='small')
     plt.setp(ax.get_yticklabels())
-    #plt.legend(plots, _types, loc='lower left', bbox_to_anchor=(0.0, 0.0))
+    #plt.setp(ax.get_yticklabels(), fontsize='small')
+
     # Shrink current axis's height by 10% on the bottom
     box = ax.get_position()
-    ax.set_position([box.x0, box.y0 + box.height * 0.1,
-                     box.width * 0.95, box.height * 0.9])
+    ax.set_position([box.x0, box.y0, box.width * 0.95, box.height])
 
-    # Put a legend below current axis
-    ax.legend(plots, _types, loc='upper center', bbox_to_anchor=(0.5, -0.05),
-              fancybox=True, shadow=True, ncol=nitem)
-
-    #ax.xaxis.set_major_locator(plt.IndexLocator(1, 0))
-    #ax.yaxis.set_major_locator(plt.IndexLocator(1, 0))
+    # Add grid
     ax.xaxis.grid()
-    #ax.yaxis.grid(markevery=nitem)
     ax.yaxis.grid()
-
-    #for xmaj in ax.xaxis.get_majorticklocs():
-    #    ax.axvline(x=xmaj, ls='--')
-    #for xmin in ax.xaxis.get_minorticklocs():
-    #    ax.axvline(x=xmin, ls='--')
-
-    #for ymaj in ax.yaxis.get_majorticklocs():
-    #    print('y major: {}'.format(ymaj))
-    #    ax.axhline(y=ymaj, ls='--')
-    #for ymin in ax.yaxis.get_minorticklocs():
-    #    print('y minor: {}'.format(ymin))
-    #    ax.axhline(y=ymin, ls='--')
-    #plt.gca().grid(b=True, which='major', axis='y', markevery=nitem)
-    #plt.gca().set_markevery()
     return True
 
 
 #==============================================================================#
-def plot_all(_plot_data,
-              disp=False, output_dir=".", echo_dart=False):
+def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
 
     #
     if _matplotlib_backend is None:
@@ -623,41 +636,56 @@ def plot_all(_plot_data,
     import matplotlib
     import matplotlib.pyplot as plt
 
-    filename = _plot_data.filename
-    title = _plot_data.get_title()
-    params = _plot_data.plot_params
+    def get_obj_idx(_obj, _idx):
+        if isinstance(_obj, list):
+            return _obj[_idx]
+        else:
+            return _obj
 
-    _plot_min = (params.max_value *
-                 (0.01 * params.min_percent))
+    for idx in range(0, _plot_data.nitems):
+        title = _plot_data.get_title()
+        params = _plot_data.plot_params
 
-    _do_plot = plot_generic(_plot_data, _plot_min, 's')
-    if not _do_plot:
-        return
+        _fname = get_obj_idx(_plot_data.filename, idx)
+        _ctype = get_obj_idx(_plot_data.ctype, idx)
+        if _plot_data.nitems > 1:
+            _fname = "{}_{}".format(_fname, "_".join(_ctype.lower().split()))
+        _units = get_obj_idx(_plot_data.units, idx)
+        _desc = get_obj_idx(_plot_data.description, idx)
+        _plot_min = (params.max_value * (0.01 * params.min_percent))
 
-    plt.xlabel('Time [seconds]')
-    plt.title('Timing report for {}'.format(title))
-    if disp:
-        print('Displaying plot...')
-        plt.show()
-    else:
-        make_output_directory(output_dir)
-        imgfname = os.path.basename(filename)
-        imgfname = imgfname.replace('.', '_{}.'.format(_ext))
-        if not '_{}.'.format(_ext) in imgfname:
-            imgfname += '_{}.'.format(_ext)
-        imgfname = imgfname.replace('.json', '.{}'.format(params.img_type))
-        imgfname = imgfname.replace('.py', '.{}'.format(params.img_type))
-        if not '.{}'.format(params.img_type) in imgfname:
-            imgfname += '.{}'.format(params.img_type)
-        while '..' in imgfname:
-            imgfname = imgfname.replace('..', '.')
+        print("Filename: {}".format(_fname))
 
-        add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
+        _do_plot = plot_generic(_plot_data, _plot_min, _units, idx)
 
-        imgfname = os.path.join(output_dir, imgfname)
-        print('Saving plot: "{}"...'.format(imgfname))
-        plt.savefig(imgfname, dpi=params.img_dpi)
-        plt.close()
+        if not _do_plot:
+            return
+
+        _xlabel = '{}'.format(_desc.title())
+        if _units:
+            _xlabel = '{} [{}]'.format(_xlabel, _units)
+
+        plt.xlabel(_xlabel)
+        plt.title('"{}" Report for {}'.format(_desc.title(), title))
+        if disp:
+            print('Displaying plot...')
+            plt.show()
+        else:
+            make_output_directory(output_dir)
+            imgfname = os.path.basename(_fname)
+            imgfname = imgfname.replace('.json', '.{}'.format(params.img_type))
+            imgfname = imgfname.replace('.py', '.{}'.format(params.img_type))
+            if not '.{}'.format(params.img_type) in imgfname:
+                imgfname += '.{}'.format(params.img_type)
+            while '..' in imgfname:
+                imgfname = imgfname.replace('..', '.')
+
+            add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
+
+            imgfname = os.path.join(output_dir, imgfname)
+            print('Saving plot: "{}"...'.format(imgfname))
+            plt.savefig(imgfname, dpi=params.img_dpi)
+            plt.close()
 
 
 #==============================================================================#
