@@ -111,21 +111,23 @@ inline manager::manager()
 , m_instance_count(f_manager_instance_count()++)
 , m_laps(0)
 , m_report(&std::cout)
-//, m_tuple_data(
-//      std::make_tuple(timer_data_t(m_instance_count), memory_data_t(m_instance_count)))
 {
     if(m_instance_count == 0)
     {
         printf("############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
                static_cast<void*>(this), m_instance_count);
+        tim::papi::init();
     }
-
-    tim::papi::init();
+    else
+    {
+        tim::papi::register_thread();
+    }
 
     if(!singleton_t::master_instance_ptr())
     {
         m_merge = true;
         tim::env::parse();
+        insert_global_timer();
     }
     else
     {
@@ -134,52 +136,34 @@ inline manager::manager()
         master->add(this);
     }
 
-    if(!singleton_t::master_instance_ptr())
-        insert_global_timer();
-    else if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())
+    if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())
     {
         std::ostringstream errss;
         errss << "manager singleton has already been created";
         throw std::runtime_error(errss.str().c_str());
     }
-
-    /*
-    static std::atomic<short> _once;
-    short                     _once_num = _once++;
-    if(_once_num > 0 && !singleton_t::is_master(this))
-    {
-        m_data           = graph_data(*master_instance()->current());
-        m_data.head()    = master_instance()->data().current();
-        m_data.current() = master_instance()->data().current();
-        m_data.depth()   = master_instance()->data().depth();
-    }
-    */
 }
 
 //======================================================================================//
 
 inline manager::~manager()
 {
-    // if(!singleton_t::is_master(this))
-    //    singleton_t::master_instance()->merge(this);
-
-    if(m_instance_count < 2)
+    if(m_instance_count == 0)
     {
         printf("\n############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
                static_cast<void*>(this), m_instance_count);
     }
 
-#if defined(DEBUG)
-    if(tim::env::verbose() > 2)
-        std::cout << "tim::manager::" << __FUNCTION__
-                  << " deleting thread-local instance of manager..."
-                  << "\nglobal instance: \t" << singleton_t::master_instance_ptr()
-                  << "\nlocal instance:  \t" << singleton_t::instance_ptr() << std::endl;
-#endif
+    if(m_instance_count == 0)
+    {
+        tim::papi::shutdown();
+    }
+    else
+    {
+        tim::papi::unregister_thread();
+    }
 
-    // if(m_instance_count == 0)
-    tim::papi::shutdown();
-    // details::manager_singleton().destroy();
+    --f_manager_instance_count();
 }
 
 //======================================================================================//

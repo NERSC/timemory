@@ -177,8 +177,7 @@ init()
             working()  = check(retval, "Warning!! Failure thread init");
         }
     }
-    if(working())
-        register_thread();
+    register_thread();
 #endif
 }
 

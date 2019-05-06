@@ -356,7 +356,6 @@ test_3_auto_tuple()
 
         // run a fibonacci calculation and accumulate metric
         auto run_fibonacci = [&](long n) {
-            tim::manager::instance();
             TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
             ret += time_fibonacci(n);
         };

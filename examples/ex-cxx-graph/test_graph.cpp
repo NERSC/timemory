@@ -85,8 +85,6 @@ main(int argc, char** argv)
     mgraph.append_child(itr2, "four");
     mgraph.append_child(itr2, "five");
 
-    // tim::manager* manager = tim::manager::instance();
-
     std::vector<timer_tuple_t> timer_list;
     std::cout << std::endl;
     fibonacci(nfib, cutoff, mgraph, itr1);
