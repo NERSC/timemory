@@ -139,7 +139,7 @@ main(int argc, char** argv)
         cutoff = atoi(argv[2]);
 
     tim::consume_parameters(tim::manager::instance());
-    tim::auto_tuple<> test("test");
+    tim::auto_tuple<>          test("test");
     std::vector<timer_tuple_t> timer_list;
 
     std::cout << std::endl;
@@ -151,7 +151,6 @@ main(int argc, char** argv)
         timer_list.push_back(run(nfib, true, cutoff));  // with timing
         timer_list.push_back(timer_list.at(1) - timer_list.at(0));
         timer_list.push_back(timer_list.back() / nlaps);
-
     }
     std::cout << std::endl;
     std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;

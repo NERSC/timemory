@@ -1754,7 +1754,10 @@ struct papi_event
     {
         auto tmp = record();
         for(size_type i = 0; i < num_events; ++i)
-            accum[i] += (tmp[i] - value[i]);
+        {
+            auto diff = (tmp[i] - value[i]);
+            accum[i] += (diff > 0) ? diff : 0;
+        }
         value = std::move(tmp);
         set_stopped();
     }
