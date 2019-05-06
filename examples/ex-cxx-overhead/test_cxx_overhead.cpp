@@ -28,6 +28,7 @@
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;
+
 using auto_tuple_t  = tim::auto_tuple<real_clock>;
 using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
 using papi_tuple_t  = papi_event<0, PAPI_RES_STL, PAPI_TOT_CYC, PAPI_BR_MSP, PAPI_BR_PRC>;
@@ -139,26 +140,24 @@ main(int argc, char** argv)
 
     tim::consume_parameters(tim::manager::instance());
     tim::auto_tuple<> test("test");
-
-    TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
     std::vector<timer_tuple_t> timer_list;
-    std::cout << std::endl;
-
-    // run without timing first so overhead is not started yet
-    timer_list.push_back(run(nfib, false, nfib));  // without timing
-
-    nlaps = 0;
-    timer_list.push_back(run(nfib, true, cutoff));  // with timing
 
     std::cout << std::endl;
-    timer_list.push_back(timer_list.at(1) - timer_list.at(0));
-    timer_list.push_back(timer_list.back() / nlaps);
-
-    std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;
-    for(auto& itr : timer_list)
     {
-        std::cout << "\t" << itr << std::endl;
+        TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
+        // run without timing first so overhead is not started yet
+        timer_list.push_back(run(nfib, false, nfib));  // without timing
+        nlaps = 0;
+        timer_list.push_back(run(nfib, true, cutoff));  // with timing
+        timer_list.push_back(timer_list.at(1) - timer_list.at(0));
+        timer_list.push_back(timer_list.back() / nlaps);
+
     }
+    std::cout << std::endl;
+    std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;
+
+    for(auto& itr : timer_list)
+        std::cout << "\t" << itr << std::endl;
 
     std::cout << std::endl;
     test_print(std::make_tuple(1.0, "abc", 1), std::make_tuple("def", 6UL));

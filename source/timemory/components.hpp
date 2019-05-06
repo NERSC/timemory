@@ -1612,12 +1612,18 @@ struct papi_event
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        array_t<entry_type> _disp;
+        array_t<double> _disp;
+        array_t<double> _value;
+        array_t<double> _accum;
         for(int i = 0; i < num_events; ++i)
-            _disp[i] = compute_display(i);
+        {
+            _disp[i]  = compute_display(i);
+            _value[i] = value[i];
+            _accum[i] = accum[i];
+        }
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("value", value),
-           serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("value", _value),
+           serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
     }
 
     static PAPI_event_info_t info(int evt_type)
