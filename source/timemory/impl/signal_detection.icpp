@@ -111,7 +111,7 @@ signal_settings::disable(const sys_signal& _type)
 inline void
 signal_settings::check_environment()
 {
-    typedef std::pair<std::string, sys_signal> match_t;
+    using match_t = std::pair<std::string, sys_signal>;
 
     auto _list = {
         match_t("HANGUP", sys_signal::sHangup),
@@ -164,7 +164,7 @@ signal_settings::check_environment()
 inline std::string
 signal_settings::str(const sys_signal& _type)
 {
-    typedef std::tuple<std::string, int, std::string> descript_tuple_t;
+    using descript_tuple_t = std::tuple<std::string, int, std::string>;
 
     std::stringstream ss;
     auto              descript = [&](const descript_tuple_t& _data) {

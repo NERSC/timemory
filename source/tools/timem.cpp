@@ -133,12 +133,12 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
         std::stringstream _oss;
         _oss << "\n" << measure << std::endl;
 
-        if(tim::env::file_output())
+        if(tim::settings::file_output())
         {
             std::string label = "timem";
-            if(tim::env::text_output())
+            if(tim::settings::text_output())
             {
-                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                auto fname = tim::settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -153,9 +153,9 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
                 }
             }
 
-            if(tim::env::json_output())
+            if(tim::settings::json_output())
             {
-                auto jname = tim::env::compose_output_filename(label, ".json");
+                auto jname = tim::settings::compose_output_filename(label, ".json");
                 printf("[timem]> Outputting '%s'...\n", jname.c_str());
                 serialize_storage(jname, measure);
             }
@@ -220,21 +220,21 @@ int
 main(int argc, char** argv)
 {
     // set some defaults
-    tim::env::file_output() = false;
-    tim::env::scientific()  = true;
-    tim::env::width()       = 12;
-    tim::env::precision()   = 3;
+    tim::settings::file_output() = false;
+    tim::settings::scientific()  = true;
+    tim::settings::width()       = 12;
+    tim::settings::precision()   = 3;
 
     // parse for settings configurations
-    tim::env::parse();
+    tim::settings::parse();
 
     // override a some settings
-    tim::env::suppress_parsing() = true;
-    tim::env::auto_output()      = false;
-    tim::env::output_prefix()    = "";
+    tim::settings::suppress_parsing() = true;
+    tim::settings::auto_output()      = false;
+    tim::settings::output_prefix()    = "";
 
     // update values to reflect modifications
-    tim::env::process();
+    tim::settings::process();
 
     if(argc > 1)
     {

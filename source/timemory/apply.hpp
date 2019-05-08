@@ -85,7 +85,7 @@ struct _Build_index_tuple
 template <>
 struct _Build_index_tuple<1>
 {
-    typedef _Index_tuple<0> __type;
+    using __type = _Index_tuple<0>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -93,7 +93,7 @@ struct _Build_index_tuple<1>
 template <>
 struct _Build_index_tuple<0>
 {
-    typedef _Index_tuple<> __type;
+    using __type = _Index_tuple<>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -102,7 +102,7 @@ struct _Build_index_tuple<0>
 template <typename _Tp, _Tp... _Idx>
 struct integer_sequence
 {
-    typedef _Tp             value_type;
+    using value_type = _Tp;
     static constexpr size_t size() noexcept { return sizeof...(_Idx); }
 };
 
@@ -119,7 +119,7 @@ struct _Make_integer_sequence<_Tp, _Num, _Index_tuple<_Idx...>>
 {
     static_assert(_Num >= 0, "Cannot make integer sequence of negative length");
 
-    typedef integer_sequence<_Tp, static_cast<_Tp>(_Idx)...> __type;
+    using __type = integer_sequence<_Tp, static_cast<_Tp>(_Idx)...>;
 };
 
 //--------------------------------------------------------------------------------------//

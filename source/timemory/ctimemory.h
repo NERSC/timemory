@@ -107,20 +107,16 @@
 //
 //======================================================================================//
 
+tim_api int
+c_timemory_enabled(void);
 tim_api void*
 c_timemory_create_auto_timer(const char*, int);
-tim_api void
-c_timemory_report(const char*);
-tim_api void
-c_timemory_print(void);
 tim_api void
 c_timemory_delete_auto_timer(void*);
 tim_api const char*
 c_timemory_string_combine(const char*, const char*);
 tim_api const char*
 c_timemory_auto_timer_str(const char*, const char*, const char*, int);
-tim_api void
-c_timemory_record_memory(int);
 
 //======================================================================================//
 //
@@ -206,24 +202,6 @@ c_timemory_record_memory(int);
  */
 #if !defined(FREE_TIMEMORY_AUTO_TIMER)
 #    define FREE_TIMEMORY_AUTO_TIMER(ctimer) c_timemory_delete_auto_timer((void*) ctimer);
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_PRINT)
-#    define TIMEMORY_PRINT() c_timemory_print()
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_REPORT)
-#    define TIMEMORY_REPORT(fname) c_timemory_report(fname)
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if !defined(TIMEMORY_RECORD_MEMORY)
-#    define TIMEMORY_RECORD_MEMORY(code) c_timemory_record_memory(code)
 #endif
 
 //--------------------------------------------------------------------------------------//

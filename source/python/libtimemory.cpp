@@ -179,76 +179,12 @@ PYBIND11_MODULE(libtimemory, tim)
     man.def(py::init<>(&pytim::init::manager), "Initialization",
             py::return_value_policy::take_ownership);
     //------------------------------------------------------------------------//
-    man.def("report", &pytim::manager::report, "Report timing manager",
-            py::arg("ign_cutoff") = false, py::arg("serialize") = false,
-            py::arg("serial_filename") = "");
-    //------------------------------------------------------------------------//
-    man.def("__str__",
-            [=](py::object man) {
-                manager_t*        _man = man.cast<manager_wrapper*>()->get();
-                std::stringstream ss;
-                bool              ign_cutoff = true;
-                bool              endline    = false;
-                _man->report(ss, ign_cutoff, endline);
-                return ss.str();
-            },
-            "Stringify the timing manager report");
-    //------------------------------------------------------------------------//
-    man.def("set_output_file",
-            [=](py::object man, std::string fname) {
-                manager_t* _man   = man.cast<manager_wrapper*>()->get();
-                auto       locals = py::dict("fname"_a = fname);
-                py::exec(R"(
-                          import timemory as tim
-                          tim.options.set_report(fname)
-                          )",
-                         py::globals(), locals);
-                _man->set_output_stream(fname.c_str());
-            },
-            "Set the output stream file");
-    //------------------------------------------------------------------------//
-    man.def("size",
-            [=](py::object man) { return man.cast<manager_wrapper*>()->get()->size(); },
-            "Size of timing manager");
-    //------------------------------------------------------------------------//
-    man.def("clear",
-            [=](py::object man) { man.cast<manager_wrapper*>()->get()->clear(); },
-            "Clear the timing manager");
-    //------------------------------------------------------------------------//
-    man.def("write_missing",
-            [=](py::object /*man*/, std::string fname) {
-                auto locals = py::dict("fname"_a = fname);
-                py::exec(R"(
-                         import timemory.options as options
-                         options.ensure_directory_exists(fname)
-                         )",
-                         py::globals(), locals);
-                // man.cast<manager_wrapper*>()->get()->write_missing(fname.c_str());
-            },
-            "Write TiMemory missing to file");
-    //------------------------------------------------------------------------//
-    man.def("serialize", &pytim::manager::serialize,
-            "Serialize the timing manager to JSON", py::arg("fname") = "");
-    //------------------------------------------------------------------------//
     man.def("set_max_depth",
             [=](py::object, int depth) { manager_t::set_max_depth(depth); },
             "Set the max depth of the timers");
     //------------------------------------------------------------------------//
     man.def("get_max_depth", [=](py::object) { return manager_t::get_max_depth(); },
             "Get the max depth of the timers");
-    //------------------------------------------------------------------------//
-    man.def("merge",
-            [=](py::object man) { man.cast<manager_wrapper*>()->get()->merge(); },
-            "Merge the thread-local timers");
-    //------------------------------------------------------------------------//
-    man.def("json",
-            [=](py::object man) {
-                std::stringstream ss;
-                man.cast<manager_wrapper*>()->get()->write_json(ss);
-                py::module _json = py::module::import("json");
-                return _json.attr("loads")(ss.str());
-            },
-            "Get JSON serialization of timing manager");
     //------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
@@ -362,35 +298,16 @@ PYBIND11_MODULE(libtimemory, tim)
     //                      MAIN libtimemory MODULE (part 2)
     //
     //========================================================================//
-    tim.attr("timing_manager") = man;
-    //------------------------------------------------------------------------//
-    tim.def("report",
-            [=](bool ign_cutoff, bool endline) {
-                manager_t::instance()->report(ign_cutoff, endline);
-            },
-            "Report the timing manager (default: ign_cutoff = True, endline = "
-            "True)",
-            py::arg("ign_cutoff") = true, py::arg("endline") = true);
-    //------------------------------------------------------------------------//
-    tim.def("clear", [=]() { manager_t::instance()->clear(); },
-            "Clear the timing manager");
-    //------------------------------------------------------------------------//
-    tim.def("size", [=]() { return manager_t::instance()->size(); },
-            "Size of the timing manager");
-    //------------------------------------------------------------------------//
     tim.def("set_exit_action",
             [=](py::function func) {
-                auto _func = [=](int errcode) -> void { func(errcode); };
-                // typedef tim::signal_settings::signal_function_t
-                // signal_function_t;
-                typedef std::function<void(int)> signal_function_t;
+                auto _func              = [=](int errcode) -> void { func(errcode); };
+                using signal_function_t = std::function<void(int)>;
                 using std::placeholders::_1;
                 signal_function_t _f = std::bind<void>(_func, _1);
                 tim::signal_settings::set_exit_action(_f);
             },
             "Set the exit action when a signal is raised -- function must accept "
             "integer");
-    //------------------------------------------------------------------------//
 
     //========================================================================//
     //
@@ -436,40 +353,28 @@ PYBIND11_MODULE(libtimemory, tim)
     opts.attr("serial_file")        = true;
     opts.attr("use_timers")         = true;
     opts.attr("max_timer_depth")    = std::numeric_limits<uint16_t>::max();
-    opts.attr("report_filename")    = "timing_report.out";
-    opts.attr("serial_filename")    = "timing_report.json";
-    opts.attr("output_dir")         = ".";
+    opts.attr("output_path")        = tim::settings::output_path();
+    opts.attr("output_prefix")      = tim::settings::output_prefix();
     opts.attr("echo_dart")          = false;
     opts.attr("ctest_notes")        = false;
     opts.attr("matplotlib_backend") = std::string("default");
 
     using pytim::string_t;
 
-    auto set_report = [=](string_t fname) {
-        std::stringstream ss;
-        std::string       output_dir = opts.attr("output_dir").cast<std::string>();
-        if(fname.find(output_dir) != 0)
-            ss << output_dir;
-        if(ss.str().length() > 0 && ss.str()[ss.str().length() - 1] != '/')
-            ss << "/";
-        ss << fname;
-        opts.attr("report_filename") = ss.str();
-        opts.attr("report_file")     = true;
-        return ss.str();
+    auto set_output = [=](string_t fname) {
+        tim::settings::output_path() = opts.attr("output_path").cast<std::string>();
+        if(fname.find('/') < fname.length() - 1)
+        {
+            auto last_slash              = fname.find_last_of('/');
+            auto dname                   = fname.substr(0, last_slash + 1);
+            fname                        = fname.substr(last_slash + 1);
+            tim::settings::output_path() = dname;
+        }
+        tim::settings::output_prefix() = fname;
+        opts.attr("output_path")       = tim::settings::output_path();
+        opts.attr("output_prefix")     = tim::settings::output_prefix();
     };
 
-    auto set_serial = [=](string_t fname) {
-        std::stringstream ss;
-        std::string       output_dir = opts.attr("output_dir").cast<std::string>();
-        if(fname.find(output_dir) != 0)
-            ss << output_dir;
-        if(ss.str().length() > 0 && ss.str()[ss.str().length() - 1] != '/')
-            ss << "/";
-        ss << fname;
-        opts.attr("serial_filename") = ss.str();
-        opts.attr("serial_file")     = true;
-        return ss.str();
-    };
     // ---------------------------------------------------------------------- //
     opts.def("default_max_depth", [=]() { return std::numeric_limits<uint16_t>::max(); },
              "Return the default max depth");
@@ -480,9 +385,8 @@ PYBIND11_MODULE(libtimemory, tim)
     opts.def("ensure_directory_exists", &pytim::opt::ensure_directory_exists,
              "mkdir -p $(basename file_path)");
     // ---------------------------------------------------------------------- //
-    opts.def("set_report", set_report, "Set the ASCII report filename");
-    // ---------------------------------------------------------------------- //
-    opts.def("set_serial", set_serial, "Set the JSON serialization filename");
+    opts.def("set_output", set_output,
+             "Set the output prefix that extensions are addded to");
     // ---------------------------------------------------------------------- //
     opts.def("add_arguments", &pytim::opt::add_arguments,
              "Function to add default output arguments", py::arg("parser") = py::none(),

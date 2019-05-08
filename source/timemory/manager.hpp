@@ -72,26 +72,17 @@ struct manager_deleter;
 tim_api class manager
 {
 public:
-    template <typename _Key, typename _Mapped>
-    using uomap = std::unordered_map<_Key, _Mapped>;
-
-    using this_type              = manager;
-    using pointer_t              = std::unique_ptr<this_type, details::manager_deleter>;
-    using singleton_t            = singleton<this_type, pointer_t>;
-    using size_type              = std::size_t;
-    using string_t               = std::string;
-    using ostream_t              = std::ostream;
-    using ofstream_t             = std::ofstream;
-    using comm_group_t           = std::tuple<MPI_Comm, int32_t>;
-    using mutex_t                = std::mutex;
-    using mutex_map_t            = uomap<uint64_t, mutex_t>;
-    using auto_lock_t            = std::unique_lock<mutex_t>;
-    using pointer                = singleton_t::pointer;
-    using smart_pointer          = singleton_t::smart_pointer;
-    using daughter_list_t        = std::set<this_type*>;
-    using get_num_threads_func_t = std::function<int64_t()>;
-    using counter_t              = std::atomic<uint64_t>;
-    using string_list_t          = std::deque<string_t>;
+    using this_type     = manager;
+    using pointer_t     = std::unique_ptr<this_type, details::manager_deleter>;
+    using singleton_t   = singleton<this_type, pointer_t>;
+    using size_type     = std::size_t;
+    using string_t      = std::string;
+    using comm_group_t  = std::tuple<MPI_Comm, int32_t>;
+    using auto_lock_t   = std::unique_lock<mutex_t>;
+    using pointer       = singleton_t::pointer;
+    using smart_pointer = singleton_t::smart_pointer;
+    using string_list_t = std::deque<string_t>;
+    using void_counter  = counted_object<void>;
 
     //----------------------------------------------------------------------------------//
     //
@@ -125,6 +116,12 @@ public:
         graph_node(const int64_t& _id, const string_t& _prefix, const string_list_t& _l)
         : base_type(_id, _prefix, _l)
         {
+        }
+
+        graph_node(const int64_t& _id, const string_t& _prefix, const string_t& _l)
+        : base_type(_id, _prefix, string_list_t())
+        {
+            data().push_back(_l);
         }
 
         ~graph_node() {}
@@ -223,80 +220,25 @@ public:
 
 public:
     // Public static functions
-    static pointer                  instance();
-    static pointer                  master_instance();
-    static pointer                  noninit_instance();
-    static pointer                  noninit_master_instance();
-    static void                     write_json(path_t _fname);
-    static std::pair<int32_t, bool> write_json(ostream_t& os);
-    static int  get_instance_count() { return f_manager_instance_count().load(); }
-    static void set_get_num_threads_func(get_num_threads_func_t f)
-    {
-        f_get_num_threads() = std::bind(f);
-    }
-
-    static void    enable(bool val = true) { counted_object<void>::enable(val); }
-    static bool    is_enabled() { return counted_object<void>::enable(); }
-    static int32_t max_depth() { return counted_object<void>::max_depth(); }
+    static pointer instance();
+    static pointer master_instance();
+    static pointer noninit_instance();
+    static pointer noninit_master_instance();
+    static void    enable(bool val = true) { void_counter::enable(val); }
+    static bool    is_enabled() { return void_counter::enable(); }
     static void    max_depth(const int32_t& val) { set_max_depth(val); }
+    static void    set_max_depth(const int32_t& val) { void_counter::set_max_depth(val); }
+    static int32_t max_depth() { return void_counter::max_depth(); }
     static int32_t get_max_depth() { return max_depth(); }
-    static void    set_max_depth(const int32_t& val)
-    {
-        counted_object<void>::set_max_depth(val);
-    }
+    static int32_t get_instance_count() { return f_manager_instance_count().load(); }
 
-protected:
-    static void                     write_json_no_mpi(path_t _fname);
-    static void                     write_json_no_mpi(ostream_t& os);
-    static void                     write_json_mpi(path_t _fname);
-    static std::pair<int32_t, bool> write_json_mpi(ostream_t& os);
+    void merge(pointer);
+    void print(bool ign_cutoff, bool endline);
+    void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
 public:
     // Public member functions
-    template <typename _Tp>
-    _Tp& get(const string_t& key, const string_t& tag = "cxx", int32_t ncount = 0,
-             int32_t nhash = 0);
-
-    void set_output_stream(const path_t&);
-    void set_output_stream(ostream_t& = std::cout);
-    void write_report(path_t _fname, bool ign_cutoff = false);
-    void write_report(ostream_t& os = std::cout, bool ign_cutoff = false,
-                      bool endline = true);
-    void write_serialization(const path_t& _fname) const { write_json(_fname); }
-    void write_serialization(ostream_t& os = std::cout) const { write_json(os); }
-    void report(bool ign_cutoff = false, bool endline = true) const;
-    void report(ostream_t& os, bool ign_cutoff = false, bool endline = true) const;
-
-    void                   merge();
-    void                   merge(pointer);
-    void                   clear();
-    size_type              size() const;
-    void                   print(bool ign_cutoff = false, bool endline = true);
-    void                   sync_hierarchy();
-    daughter_list_t&       daughters() { return m_daughters; }
-    const daughter_list_t& daughters() const { return m_daughters; }
-    void                   add(pointer ptr);
-    void                   remove(pointer ptr);
-    void                   set_merge(bool val) { m_merge.store(val); }
-    bool                   is_reporting_to_file() const;
-    ostream_t*             get_output_stream() const { return m_report; }
-    uint64_t               laps() const { return compute_total_laps(); }
-    uint64_t               total_laps() const;
-    void                   update_total_timer_format();
-    int32_t                instance_count() const { return m_instance_count; }
-    void                   self_cost(bool) {}
-    bool                   self_cost() const { return false; }
-
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version);
-
-    friend std::ostream& operator<<(std::ostream& os, const manager& man)
-    {
-        std::stringstream ss;
-        man.report(ss, true, false);
-        os << ss.str();
-        return os;
-    }
+    int32_t instance_count() const { return m_instance_count; }
 
 public:
     //
@@ -313,211 +255,26 @@ protected:
 
 protected:
     // protected functions
-    inline uint64_t string_hash(const string_t&) const;
-    string_t        get_prefix() const;
-    uint64_t        compute_total_laps() const;
-    void            insert_global_timer();
-    void            compute_self();
-
-protected:
-    // protected static variables
-    static get_num_threads_func_t& f_get_num_threads();
-
-private:
-    // private functions
-    void        report(ostream_t*, bool = false, bool = true) const {}
-    ofstream_t* get_ofstream(ostream_t* m_os) const;
+    string_t get_prefix() const;
 
 private:
     // private static variables
     /// for temporary enabling/disabling
     // static bool f_enabled();
     /// number of timing manager instances
-    static std::atomic_int& f_manager_instance_count();
+    static std::atomic<int32_t>& f_manager_instance_count();
 
 private:
     // private variables
-    /// merge checking
-    std::atomic<bool> m_merge;
-    /// self format
-    bool m_self_format;
     /// instance id
     int32_t m_instance_count;
-    /// total laps
-    counter_t m_laps;
     /// mutex
     mutex_t m_mutex;
-    /// daughter list
-    daughter_list_t m_daughters;
-    /// output stream for total timing report
-    ostream_t* m_report;
     /// data represented as string
     graph_data m_data;
     /// list of node ids
     std::unordered_map<int64_t, iterator> m_node_ids;
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data)
-    {
-        using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node node(_hash_id, _prefix, string_list_t({ _data }));
-
-        auto _update = [&](iterator itr) {
-            m_data.current() = itr;
-            *m_data.current() += node;
-        };
-
-        // lambda for inserting child
-        auto _insert_child = [&]() {
-            auto itr = m_data.append_child(node);
-            m_node_ids.insert(std::make_pair(_hash_id, itr));
-        };
-
-        if(m_node_ids.find(_hash_id) != m_node_ids.end())
-        {
-            _update(m_node_ids.find(_hash_id)->second);
-        }
-
-        // if first instance
-        if(m_data.depth() < 0)
-        {
-            if(this == master_instance())
-            {
-                m_data.depth()   = 0;
-                m_data.head()    = m_data.graph().set_head(node);
-                m_data.current() = m_data.head();
-            }
-            else
-            {
-                return;
-            }
-        }
-        else
-        {
-            auto current = m_data.current();
-
-            if(_hash_id == current->id())
-            {
-                return;
-            }
-            else if(m_data.graph().is_valid(current))
-            {
-                // check parent if not head
-                if(!m_data.graph().is_head(current))
-                {
-                    auto parent = graph_t::parent(current);
-                    for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
-                    {
-                        // check hash id's
-                        if(_hash_id == itr->id())
-                        {
-                            _update(itr);
-                        }
-                    }
-                }
-
-                // check siblings
-                for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-                {
-                    // skip if current
-                    if(itr == current)
-                        continue;
-                    // check hash id's
-                    if(_hash_id == itr->id())
-                    {
-                        _update(itr);
-                    }
-                }
-
-                // check children
-                auto nchildren = graph_t::number_of_children(current);
-                if(nchildren == 0)
-                {
-                    _insert_child();
-                }
-                else
-                {
-                    bool exists = false;
-                    auto fchild = graph_t::child(current, 0);
-                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                    {
-                        if(_hash_id == itr->id())
-                        {
-                            exists = true;
-                            _update(itr);
-                            break;
-                        }
-                    }
-                    if(!exists)
-                        _insert_child();
-                }
-            }
-        }
-        return _insert_child();
-    }
 };
-
-//--------------------------------------------------------------------------------------//
-template <typename Archive>
-inline void
-manager::serialize(Archive& ar, const unsigned int /*version*/)
-{
-    auto _nthreads = (f_get_num_threads())();
-    if(_nthreads == 1)
-        _nthreads = f_manager_instance_count();
-    bool _self_cost = this->self_cost();
-    ar(serializer::make_nvp("concurrency", _nthreads));
-    ar(serializer::make_nvp("self_cost", _self_cost));
-}
-//--------------------------------------------------------------------------------------//
-inline uint64_t
-manager::string_hash(const string_t& str) const
-{
-    return std::hash<string_t>()(str);
-}
-//--------------------------------------------------------------------------------------//
-inline uint64_t
-manager::total_laps() const
-{
-    return m_laps + compute_total_laps();
-}
-//--------------------------------------------------------------------------------------//
-inline manager::ofstream_t*
-manager::get_ofstream(ostream_t* m_os) const
-{
-    return (m_os != &std::cout && m_os != &std::cerr) ? static_cast<ofstream_t*>(m_os)
-                                                      : nullptr;
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::write_report(ostream_t& os, bool ign_cutoff, bool endline)
-{
-    report(os, ign_cutoff, endline);
-}
-//--------------------------------------------------------------------------------------//
-inline void
-manager::report(ostream_t& os, bool ign_cutoff, bool endline) const
-{
-    report(&os, ign_cutoff, endline);
-}
-//--------------------------------------------------------------------------------------//
-inline bool
-manager::is_reporting_to_file() const
-{
-    return (m_report != &std::cout) && (m_report != &std::cerr);
-}
-//--------------------------------------------------------------------------------------//
-inline manager::size_type
-manager::size() const
-{
-    // return timer_data.graph().size();
-    return 0UL;
-}
-//--------------------------------------------------------------------------------------//
-
-// tim::manager::pointer tim::manager::f_instance = tim::manager::instance();
 
 //======================================================================================//
 

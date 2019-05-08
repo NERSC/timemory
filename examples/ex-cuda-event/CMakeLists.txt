@@ -8,18 +8,16 @@ message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cuda_event)
 find_package(TiMemory REQUIRED)
-find_package(Threads REQUIRED)
-list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 
-target_link_libraries(${EXE_NAME} PUBLIC
-    ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_link_libraries(${EXE_NAME} PRIVATE
+    ${TiMemory_LIBRARIES})
 
-target_include_directories(${EXE_NAME} SYSTEM PUBLIC
+target_include_directories(${EXE_NAME} SYSTEM PRIVATE
     ${TiMemory_INCLUDE_DIRS})
 
-target_compile_options(${EXE_NAME} PUBLIC
+target_compile_options(${EXE_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_FLAGS} ${${PROJECT_NAME}_C_FLAGS}>
     $<$<COMPILE_LANGUAGE:CXX>:${TiMemory_CXX_FLAGS} ${${PROJECT_NAME}_CXX_FLAGS}>
     $<$<COMPILE_LANGUAGE:CUDA>:${TiMemory_CUDA_FLAGS} ${${PROJECT_NAME}_CUDA_FLAGS}>)

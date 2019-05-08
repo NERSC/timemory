@@ -205,11 +205,11 @@ TIM_NAMESPACE_END
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    typedef tim::auto_tuple<__VA_ARGS__> AUTO_TYPEDEF(__LINE__);                         \
+    using AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                         \
     TIMEMORY_BASIC_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    typedef tim::auto_tuple<__VA_ARGS__> AUTO_TYPEDEF(__LINE__);                         \
+    using AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                         \
     TIMEMORY_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

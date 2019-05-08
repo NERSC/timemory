@@ -65,22 +65,20 @@ using namespace py::literals;
 #include "timemory/signal_detection.hpp"
 
 using namespace tim::component;
-using tim_timer_t  = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
+using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
                                          cpu_util, thread_cpu_clock, thread_cpu_util,
                                          process_cpu_clock, process_cpu_util>;
-using auto_timer_t = tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock,
-                                     cpu_util, thread_cpu_clock, thread_cpu_util,
-                                     process_cpu_clock, process_cpu_util>;
-using rss_usage_t  = tim::component_tuple<current_rss, peak_rss, num_minor_page_faults,
+using rss_usage_t = tim::component_tuple<current_rss, peak_rss, num_minor_page_faults,
                                          num_major_page_faults, voluntary_context_switch,
                                          priority_context_switch>;
 
-typedef tim::manager                    manager_t;
-typedef tim::sys_signal                 sys_signal_t;
-typedef tim::signal_settings            signal_settings_t;
-typedef signal_settings_t::signal_set_t signal_set_t;
-
-typedef py::array_t<double, py::array::c_style | py::array::forcecast> farray_t;
+using auto_timer_t      = typename tim_timer_t::auto_type;
+using auto_usage_t      = typename rss_usage_t::auto_type;
+using manager_t         = tim::manager;
+using sys_signal_t      = tim::sys_signal;
+using signal_settings_t = tim::signal_settings;
+using signal_set_t      = signal_settings_t::signal_set_t;
+using farray_t          = py::array_t<double, py::array::c_style | py::array::forcecast>;
 
 //======================================================================================//
 
@@ -141,7 +139,7 @@ namespace pytim
 {
 //======================================================================================//
 
-typedef std::string string_t;
+using string_t = std::string;
 
 //======================================================================================//
 //
@@ -318,33 +316,6 @@ auto_timer(const std::string& key, bool report_at_exit, int nback, bool added_ar
 }
 
 //--------------------------------------------------------------------------------------//
-/*
-auto_timer_t*
-auto_timer(const std::string& key = "", bool report_at_exit = false, int nback = 1,
-           bool added_args = false)
-{
-    std::stringstream keyss;
-    keyss << get_func(nback);
-
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << get_file(nback + 1);
-        keyss << ":";
-        keyss << get_line(nback);
-    }
-    auto op_line = get_line(1);
-    return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
-}
-*/
-//--------------------------------------------------------------------------------------//
 
 rss_usage_t*
 rss_usage(std::string prefix = "", bool record = false)
@@ -405,107 +376,6 @@ timer_decorator(const std::string& func, const std::string& file, int line,
 
 namespace manager
 {
-void
-report(py::object man, bool ign_cutoff = false, bool serialize = false,
-       std::string serial_filename = "")
-{
-    auto locals = py::dict();
-    py::exec(R"(
-             import os
-             import timemory.options as options
-
-             repfnm = options.report_filename
-             serfnm = options.serial_filename
-             do_ret = options.report_file
-             do_ser = options.serial_file
-             outdir = options.output_dir
-             options.ensure_directory_exists('{}/test.txt'.format(outdir))
-
-             # absolute paths
-             absdir = os.path.abspath(outdir)
-
-             if outdir in repfnm:
-                 repabs = os.path.abspath(repfnm)
-             else:
-                 repabs = os.path.join(absdir, repfnm)
-
-             if outdir in serfnm:
-                 serabs = os.path.abspath(serfnm)
-             else:
-                 serabs = os.path.join(absdir, serfnm)
-             )",
-             py::globals(), locals);
-
-    auto outdir = locals["outdir"].cast<std::string>();
-    auto repfnm = locals["repfnm"].cast<std::string>();
-    auto serfnm = locals["serfnm"].cast<std::string>();
-    auto do_rep = locals["do_ret"].cast<bool>();
-    auto do_ser = locals["do_ser"].cast<bool>();
-    auto repabs = locals["repabs"].cast<std::string>();
-    auto serabs = locals["serabs"].cast<std::string>();
-
-    if(repfnm.find(outdir) != 0)
-        repfnm = outdir + "/" + repfnm;
-
-    if(serfnm.find(outdir) != 0)
-        serfnm = outdir + "/" + serfnm;
-
-    manager_t* _man = man.cast<manager_wrapper*>()->get();
-
-    // set the output stream
-    if(do_rep)
-    {
-        std::cout << "Outputting manager to '" << repfnm << "'..." << std::endl;
-        _man->set_output_stream(repfnm.c_str());
-
-        man.attr("reported_files").cast<py::list>().append(repabs);
-    }
-
-    // report ASCII output
-    _man->report(ign_cutoff);
-
-    // handle the serialization
-    if(!do_ser && serialize)
-    {
-        do_ser = true;
-        if(!serial_filename.empty())
-            serfnm = serial_filename;
-        else if(serfnm.empty())
-            serfnm = "output.json";
-    }
-
-    if(do_ser && manager_t::instance()->size() > 0)
-    {
-        std::cout << "Serializing manager to '" << serfnm << "'..." << std::endl;
-        _man->write_serialization(serfnm.c_str());
-        man.attr("serialized_files").cast<py::list>().append(serabs);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-string_t
-serialize(py::object man, std::string fname = "")
-{
-    if(fname.empty())
-    {
-        auto locals = py::dict();
-        py::exec(R"(
-                 import timemory.options as options
-                 import os
-
-                 result = options.serial_filename
-                 if not options.output_dir in result:
-                     result = os.path.join(options.output_dir, result)
-                 options.ensure_directory_exists(result)
-                 )",
-                 py::globals(), locals);
-        fname = locals["result"].cast<std::string>();
-    }
-    man.cast<manager_wrapper*>()->get()->write_serialization(fname.c_str());
-    return fname;
-}
-
 //--------------------------------------------------------------------------------------//
 
 string_t
@@ -693,8 +563,7 @@ parse_args(py::object args)
              timemory.options.ctest_notes = args.write_ctest_notes
 
              if args.filename:
-                 timemory.options.set_report("{}.{}".format(args.filename, "out"))
-                 timemory.options.set_serial("{}.{}".format(args.filename, "json"))
+                 timemory.options.set_output("{}".format(args.filename))
 
              timemory.toggle(timemory.options.use_timers)
              timemory.set_max_depth(timemory.options.max_timer_depth)

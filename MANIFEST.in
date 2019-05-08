@@ -4,8 +4,6 @@
 include CMakeLists.txt
 include VERSION
 include LICENSE
-include .license.c
-include .license.py
 include README.md
 include CHANGES.md
 include meta.yaml
@@ -20,6 +18,7 @@ recursive-include examples *
 recursive-include pybind11 *
 recursive-include source *
 recursive-include timemory *.py*
+recursive-include .licenses *
 
 # global exclude
 

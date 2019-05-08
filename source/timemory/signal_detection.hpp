@@ -189,8 +189,8 @@ enum class sys_signal : int
 tim_api class signal_settings
 {
 public:
-    typedef std::set<sys_signal>     signal_set_t;
-    typedef std::function<void(int)> signal_function_t;
+    using signal_set_t      = std::set<sys_signal>;
+    using signal_function_t = std::function<void(int)>;
 
 public:
     static bool        is_active();
@@ -273,7 +273,7 @@ disable_signal_detection();
 inline void
 stack_backtrace(std::ostream& ss)
 {
-    typedef std::string::size_type size_type;
+    using size_type = std::string::size_type;
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
 #    define BSIZE 50

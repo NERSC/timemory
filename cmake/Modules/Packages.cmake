@@ -33,50 +33,53 @@ if(TIMEMORY_USE_MPI)
     endif()
 
     # MPI C++ compiler from environment
-    set(_ENV MPICC)
+    set(_ENV MPICXX)
     if(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
         message(STATUS "Setting MPI C++ compiler to: $ENV{${_ENV}}")
         set(MPI_CXX_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C++ compiler")
     endif()
-
     unset(_ENV)
 
     find_package(MPI)
 
-    set(MPI_LIBRARIES )
     if(MPI_FOUND)
+        set(_MPI_LIBRARIES )
+        foreach(_LANG C CXX)
+            # include directories
+            list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_${_LANG}_INCLUDE_PATH})
 
-        # Add the MPI-specific compiler and linker flags
-        to_list(_FLAGS "${MPI_C_COMPILE_FLAGS}")
-        foreach(_FLAG ${_FLAGS})
-            add_c_flag_if_avail("${_FLAG}")
-        endforeach()
-        unset(_FLAGS)
-        to_list(_FLAGS "${MPI_CXX_COMPILE_FLAGS}")
-        foreach(_FLAG ${_FLAGS})
-            add_cxx_flag_if_avail("${_FLAG}")
-            message(STATUS "checking ${_FLAG}")
-        endforeach()
-        unset(_FLAGS)
-        add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
-        list(APPEND EXTERNAL_INCLUDE_DIRS
-            ${MPI_INCLUDE_PATH} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
-
-        foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-            set(_TYPE MPI_${_TYPE})
-            if(${_TYPE})
-                list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
+            # link targets
+            if(TARGET MPI::MPI_${_LANG})
+                list(APPEND EXTERNAL_LIBRARIES MPI::MPI_${_LANG})
+            else()
+                set(_TYPE MPI_${_LANG}_LIBRARIES)
+                if(${_TYPE})
+                    list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
+                endif()
             endif()
         endforeach()
+
+        if(NOT TARGET MPI::MPI_C OR NOT TARGET MPI::MPI_CXX AND MPI_EXTRA_LIBRARY)
+            # compile flags
+            to_list(_FLAGS "${MPI_${_LANG}_COMPILE_FLAGS}")
+            foreach(_FLAG ${_FLAGS})
+                add_c_flag_if_avail("${_FLAG}")
+            endforeach()
+            unset(_FLAGS)
+
+            list(APPEND PRIVATE_EXTERNAL_LIBRARIES ${MPI_EXTRA_LIBRARY})
+            add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
+            list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_INCLUDE_PATH})
+        endif()
 
         list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_MPI)
 
         if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
-          set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
+            set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
         endif()
 
         if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
-          set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
+            set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
         endif()
 
     else()
@@ -101,8 +104,8 @@ endif()
 
 find_package(Threads)
 
-if(THREADS_FOUND AND (WIN32 OR CMAKE_CXX_COMPILER_IS_INTEL))
-    list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
+if(THREADS_FOUND AND (WIN32 OR CMAKE_CXX_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_CLANG))
+    list(APPEND PRIVATE_EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
@@ -318,8 +321,13 @@ checkout_git_submodule(RECURSIVE
 # including the directories
 safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
+safe_remove_duplicates(PRIVATE_EXTERNAL_INCLUDE_DIRS ${PRIVATE_EXTERNAL_INCLUDE_DIRS})
+safe_remove_duplicates(PRIVATE_EXTERNAL_LIBRARIES ${PRIVATE_EXTERNAL_LIBRARIES})
 
+list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
+list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES ${EXTERNAL_LIBRARIES})
+
+set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} PRIVATE ${PRIVATE_EXTERNAL_LIBRARIES})
 
 ################################################################################
 #

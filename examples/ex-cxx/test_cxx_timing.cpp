@@ -225,7 +225,7 @@ test_2_rss_usage()
 {
     print_info(__FUNCTION__);
 
-    typedef std::vector<uint64_t> vector_t;
+    using vector_t = std::vector<uint64_t>;
 
     tim::format::rss _format("", ": RSS [current = %c %A] [peak = %m %A]",
                              tim::units::kilobyte, false);
@@ -453,7 +453,7 @@ test_6_timing_depth()
 
 //======================================================================================//
 
-typedef std::vector<std::thread*> thread_list_t;
+using thread_list_t = std::vector<std::thread*>;
 
 //======================================================================================//
 

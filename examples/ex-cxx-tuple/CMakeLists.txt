@@ -9,17 +9,16 @@ message(STATUS "Project: ${PROJECT_NAME}")
 set(EXE_NAME test_cxx_tuple)
 find_package(TiMemory REQUIRED)
 find_package(Threads REQUIRED)
-list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 
-target_link_libraries(${EXE_NAME} PUBLIC
-    ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_link_libraries(${EXE_NAME} PRIVATE
+    ${TiMemory_LIBRARIES} ${CMAKE_THREAD_LIBS_INIT})
 
-target_include_directories(${EXE_NAME} SYSTEM PUBLIC
+target_include_directories(${EXE_NAME} SYSTEM PRIVATE
     ${TiMemory_INCLUDE_DIRS})
 
-target_compile_options(${EXE_NAME} PUBLIC
+target_compile_options(${EXE_NAME} PRIVATE
     ${TiMemory_CXX_COMPILE_OPTIONS})
 
 set_target_properties(${EXE_NAME} PROPERTIES

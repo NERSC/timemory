@@ -41,8 +41,7 @@
 #include <timemory/testing.hpp>
 #include <timemory/usage.hpp>
 
-typedef tim::timer   tim_timer_t;
-typedef tim::manager manager_t;
+using manager_t = tim::manager;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation

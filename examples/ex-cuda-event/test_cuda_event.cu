@@ -118,7 +118,7 @@ main(int argc, char** argv)
 
     cuda_event::get_format_flags() = std::ios_base::scientific;
     tim::timemory_init(argc, argv);
-    tim::env::json_output() = true;
+    tim::settings::json_output() = true;
 
     int ndevices = 0;
     cudaGetDeviceCount(&ndevices);

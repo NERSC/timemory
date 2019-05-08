@@ -80,7 +80,7 @@ int
 main(int argc, char** argv)
 {
     tim::timemory_init(argc, argv);
-    tim::env::json_output() = true;
+    tim::settings::json_output() = true;
 
     auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
