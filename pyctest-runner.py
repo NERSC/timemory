@@ -33,6 +33,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--static-analysis", help="TIMEMORY_USE_CLANG_TIDY=ON",
                         default=False, action='store_true')
+    parser.add_argument("--cuda", help="TIMEMORY_USE_CUDA=ON",
+                        default=False, action='store_true')
     parser.add_argument("--no-papi", help="TIMEMORY_USE_PAPI=OFF",
                         default=False, action='store_true')
     parser.add_argument("--no-mpi", help="TIMEMORY_USE_MPI=OFF",
@@ -112,6 +114,7 @@ def run_pyctest():
         "TIMEMORY_USE_MPI": "ON",
         "TIMEMORY_USE_PAPI": "ON",
         "TIMEMORY_USE_ARCH": "OFF",
+        "TIMEMORY_USE_CUDA": "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_COVERAGE" : "OFF",
@@ -122,32 +125,46 @@ def run_pyctest():
         build_opts["TIMEMORY_BUILD_C"] = "OFF"
     else:
         pyctest.BUILD_NAME = "{} C".format(pyctest.BUILD_NAME)
+
     if args.no_py:
         build_opts["TIMEMORY_BUILD_PYTHON"] = "OFF"
     else:
         pyctest.BUILD_NAME = "{} PY".format(pyctest.BUILD_NAME)
+
     if args.no_mpi:
         build_opts["TIMEMORY_USE_MPI"] = "OFF"
     else:
         pyctest.BUILD_NAME = "{} MPI".format(pyctest.BUILD_NAME)
+
     if args.no_papi:
         build_opts["TIMEMORY_USE_PAPI"] = "OFF"
     else:
         pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
+
     if args.arch:
         pyctest.BUILD_NAME = "{} arch".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
+
+    if args.cuda:
+        pyctest.BUILD_NAME = "{} CUDA".format(pyctest.BUILD_NAME)
+        build_opts["TIMEMORY_USE_CUDA"] = "ON"
+    else:
+        build_opts["TIMEMORY_USE_CUDA"] = "OFF"
+
     if args.gperf:
         pyctest.BUILD_NAME = "{} gperf".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
         warnings.warn(
             "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
         pyctest.BUILD_TYPE = "RelWithDebInfo"
+
     if args.sanitizer:
         pyctest.BUILD_NAME = "{} asan".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
+
     if args.static_analysis:
         build_opts["TIMEMORY_USE_CLANG_TIDY"] = "ON"
+
     if args.coverage:
         gcov_exe = helpers.FindExePath("gcov")
         if gcov_exe is not None:
@@ -156,6 +173,8 @@ def run_pyctest():
             warnings.warn(
                 "Forcing build type to 'Debug' when coverage is enabled")
             pyctest.BUILD_TYPE = "Debug"
+            pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
+                        "source/cereal/*;source/python/pybind11/*")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
