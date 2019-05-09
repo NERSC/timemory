@@ -31,6 +31,11 @@
 #include <cstdint>
 #include <thread>
 
+#if defined(_UNIX)
+#    include <pthread.h>
+#    include <unistd.h>
+#endif
+
 #if defined(TIMEMORY_USE_PAPI)
 #    include <papi.h>
 #    include <papiStdEventDefs.h>
@@ -132,7 +137,11 @@ register_thread()
 {
     // inform PAPI of the existence of a new thread
 #if defined(TIMEMORY_USE_PAPI)
-    PAPI_register_thread();
+    // std::stringstream ss;
+    // ss << std::this_thread::get_id();
+    // PRINT_HERE(ss.str().c_str());
+    int retval = PAPI_register_thread();
+    working()  = check(retval, "Warning!! Failure registering thread");
 #endif
 }
 
@@ -143,7 +152,23 @@ unregister_thread()
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)
-    PAPI_unregister_thread();
+    int retval = PAPI_unregister_thread();
+    working()  = check(retval, "Warning!! Failure unregistering thread");
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+attach(int event_set)
+{
+    // inform PAPI that a previously registered thread is disappearing
+#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
+    // int retval = PAPI_attach(event_set, getpid());
+    int retval = PAPI_attach(event_set, pthread_self());
+    working()  = check(retval, "Warning!! Failure attaching to event set");
+#else
+    consume_parameters(event_set);
 #endif
 }
 
@@ -171,7 +196,7 @@ init()
             int retval = PAPI_library_init(PAPI_VER_CURRENT);
             working()  = check(retval, "Warning!! Failure initializing PAPI");
         }
-        if(working())
+        // if(working())
         {
             int retval = PAPI_thread_init(pthread_self);
             working()  = check(retval, "Warning!! Failure thread init");
@@ -213,6 +238,20 @@ start(int event_set)
 //--------------------------------------------------------------------------------------//
 
 inline void
+start_counters(int* events, int num_events)
+{
+    // start counting hardware events in an event set
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_start_counters(events, num_events);
+    check(retval, "Warning!! Failure to start event counters");
+#else
+    consume_parameters(events, num_events);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 stop(int event_set, long long* values)
 {
     // stop counting hardware events in an event set and return current events
@@ -227,6 +266,20 @@ stop(int event_set, long long* values)
 //--------------------------------------------------------------------------------------//
 
 inline void
+stop_counters(long long* values, int num_events)
+{
+    // stop counting hardware events in an event set and return current events
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_stop_counters(values, num_events);
+    check(retval, "Warning!! Failure to stop counters");
+#else
+    consume_parameters(values, num_events);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 read(int event_set, long long* values)
 {
     // read hardware events from an event set with no reset
@@ -235,6 +288,20 @@ read(int event_set, long long* values)
     check(retval, "Warning!! Failure to read event set");
 #else
     consume_parameters(event_set, values);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+read_counters(long long* values, int num_events)
+{
+    // read hardware events from an event set with no reset
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_read_counters(values, num_events);
+    check(retval, "Warning!! Failure to read event set");
+#else
+    consume_parameters(values, num_events);
 #endif
 }
 

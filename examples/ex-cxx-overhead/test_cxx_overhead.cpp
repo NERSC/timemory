@@ -88,7 +88,7 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
         return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     return fibonacci(n);

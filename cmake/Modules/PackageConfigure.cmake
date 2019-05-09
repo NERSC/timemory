@@ -10,6 +10,13 @@ include(CMakePackageConfigHelpers)
 set(PYTHON_INSTALL_DIR      ${TIMEMORY_CONFIG_PYTHONDIR})
 set(INCLUDE_INSTALL_DIR     ${CMAKE_INSTALL_INCLUDEDIR})
 set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
+foreach(_LANG C CXX CUDA)
+    foreach(_TYPE COMPILE LINK)
+        set(PROJECT_${_LANG}_${_TYPE}_OPTIONS
+            ${${PROJECT_NAME}_${_LANG}_${_TYPE}_OPTIONS}
+            ${EXTERNAL_${_LANG}_${_TYPE}_OPTIONS})
+    endforeach()
+endforeach()
 
 set(_INSTALL_PREFIX ${TIMEMORY_INSTALL_PREFIX})
 if(TIMEMORY_BUILD_PYTHON)

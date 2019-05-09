@@ -213,8 +213,8 @@ struct base : public tim::counted_object<_Tp>
     void start()
     {
         ++laps;
-        set_started();
         static_cast<Type&>(*this).start();
+        set_started();
     }
 
     //----------------------------------------------------------------------------------//
@@ -1558,14 +1558,14 @@ template <int EventSet, int... EventTypes>
 struct papi_event
 : public base<papi_event<EventSet, EventTypes...>,
               std::array<long long, sizeof...(EventTypes)>>
-, public counted_object<papi_event<EventSet>>
+, public static_counted_object<papi_event<EventSet>>
 {
     using size_type   = std::size_t;
     using value_type  = std::array<long long, sizeof...(EventTypes)>;
     using entry_type  = typename value_type::value_type;
     using base_type   = base<papi_event<EventSet, EventTypes...>, value_type>;
     using this_type   = papi_event<EventSet, EventTypes...>;
-    using event_count = counted_object<papi_event<EventSet>>;
+    using event_count = static_counted_object<papi_event<EventSet>>;
 
     static const size_type               num_events = sizeof...(EventTypes);
     static const short                   precision  = 6;
@@ -1574,6 +1574,7 @@ struct papi_event
         std::ios_base::scientific | std::ios_base::dec;
 
     using base_type::accum;
+    using base_type::is_running;
     using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
@@ -1586,18 +1587,21 @@ struct papi_event
 
     papi_event()
     {
-        if(m_count == 0 && event_count::is_master())
+        if(event_count::is_master())
         {
-            add_event_types();
+            // add_event_types();
             start_event_set();
         }
+        apply<void>::set_value(value, 0);
+        apply<void>::set_value(accum, 0);
     }
+
     ~papi_event()
     {
-        if(m_count == 0 && event_count::is_master())
+        if(event_count::live() < 1 && event_count::is_master())
         {
             stop_event_set();
-            remove_event_types();
+            // remove_event_types();
         }
     }
 
@@ -1651,7 +1655,8 @@ struct papi_event
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        tim::papi::read(EventSet, read_value.data());
+        if(event_count::is_master())
+            tim::papi::read(EventSet, read_value.data());
         return read_value;
     }
 
@@ -1788,63 +1793,79 @@ struct papi_event
     value_type serial() { return accum; }
 
 private:
-    static bool& event_type_added()
+    inline bool acquire_claim(std::atomic<bool>& m_check)
     {
-        static bool instance = false;
+        bool is_set = m_check.load(std::memory_order_relaxed);
+        if(is_set)
+            return false;
+        return m_check.compare_exchange_strong(is_set, true, std::memory_order_relaxed);
+    }
+
+    inline bool release_claim(std::atomic<bool>& m_check)
+    {
+        bool is_set = m_check.load(std::memory_order_relaxed);
+        if(!is_set)
+            return false;
+        return m_check.compare_exchange_strong(is_set, false, std::memory_order_relaxed);
+    }
+
+    static std::atomic<bool>& event_type_added()
+    {
+        static std::atomic<bool> instance(false);
         return instance;
     }
 
-    static bool& event_set_started()
+    static std::atomic<bool>& event_set_started()
     {
-        static bool instance = false;
+        static std::atomic<bool> instance(false);
         return instance;
     }
 
     void add_event_types()
     {
-        if(!event_type_added() && m_count == 0 && event_count::is_master())
+        if(acquire_claim(event_type_added()))
         {
-            PRINT_HERE("");
+            // PRINT_HERE("");
             int evt_types[] = { EventTypes... };
             tim::papi::add_events(EventSet, evt_types, num_events);
-            event_type_added() = true;
-            PRINT_HERE("");
+            // PRINT_HERE("");
         }
     }
 
     void remove_event_types()
     {
-        if(event_type_added() && m_count == 0 && event_count::is_master())
+        if(release_claim(event_type_added()))
         {
-            PRINT_HERE("");
+            // PRINT_HERE("");
             int evt_types[] = { EventTypes... };
             tim::papi::remove_events(EventSet, evt_types, num_events);
-            event_type_added() = false;
-            PRINT_HERE("");
+            // PRINT_HERE("");
         }
     }
 
     void start_event_set()
     {
-        if(!event_set_started() && m_count == 0 && event_count::is_master())
+        if(acquire_claim(event_set_started()))
         {
-            PRINT_HERE("");
-            tim::papi::start(EventSet);
-            event_set_started() = true;
-            PRINT_HERE("");
+            // PRINT_HERE("");
+            // tim::papi::start(EventSet);
+            int events[] = { EventTypes... };
+            tim::papi::start_counters(events, num_events);
+            // PRINT_HERE("");
         }
     }
 
     void stop_event_set()
     {
-        if(event_set_started() && m_count == 0 && event_count::is_master())
+        if(release_claim(event_set_started()))
         {
-            PRINT_HERE("");
-            value_type read_value;
-            tim::papi::stop(EventSet, read_value.data());
-            tim::papi::destroy_event_set(EventSet);
-            event_set_started() = false;
-            PRINT_HERE("");
+            // PRINT_HERE("");
+            value_type events;
+            apply<void>::set_value(events, 0);
+            tim::papi::stop_counters(events.data(), num_events);
+            // tim::papi::stop(EventSet, read_value.data());
+            // tim::papi::destroy_event_set(EventSet);
+            // PRINT_HERE("");
         }
     }
 };
