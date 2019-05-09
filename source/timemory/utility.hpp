@@ -129,10 +129,10 @@ isfinite(const _Tp& arg)
 
 //--------------------------------------------------------------------------------------//
 
-typedef std::string               string_t;
-typedef std::deque<string_t>      str_list_t;
-typedef std::mutex                mutex_t;
-typedef std::unique_lock<mutex_t> auto_lock_t;
+using string_t    = std::string;
+using str_list_t  = std::deque<string_t>;
+using mutex_t     = std::mutex;
+using auto_lock_t = std::unique_lock<mutex_t>;
 
 //======================================================================================//
 //
@@ -251,10 +251,10 @@ dummy_str_return(std::string str)
 class env_settings
 {
 public:
-    typedef std::mutex                        mutex_t;
-    typedef std::string                       string_t;
-    typedef std::multimap<string_t, string_t> env_map_t;
-    typedef std::pair<string_t, string_t>     env_pair_t;
+    using mutex_t    = std::mutex;
+    using string_t   = std::string;
+    using env_map_t  = std::multimap<string_t, string_t>;
+    using env_pair_t = std::pair<string_t, string_t>;
 
 public:
     static env_settings* GetInstance()
@@ -423,9 +423,9 @@ delimit(const std::string& _str, const std::string& _delims,
 class path_t : public std::string
 {
 public:
-    typedef std::string             string_t;
-    typedef string_t::size_type     size_type;
-    typedef std::basic_string<char> stl_string;
+    using string_t   = std::string;
+    using size_type  = string_t::size_type;
+    using stl_string = std::basic_string<char>;
 
 public:
     path_t(const std::string& _path)
@@ -619,8 +619,8 @@ template <typename CountedType>
 class counted_object
 {
 public:
-    typedef counted_object<CountedType> this_type;
-    typedef counted_object<void>        void_type;
+    using this_type = counted_object<CountedType>;
+    using void_type = counted_object<void>;
 
 public:
     // return number of existing objects:
@@ -655,11 +655,11 @@ protected:
     {
     }
     ~counted_object() { --count(); }
-    counted_object(const this_type&)
+    explicit counted_object(const this_type&)
     : m_count(count()++)
     {
     }
-    counted_object(this_type&&) = default;
+    explicit counted_object(this_type&&) = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&& rhs) = default;
 
@@ -728,7 +728,7 @@ template <typename HashedType>
 class hashed_object
 {
 public:
-    typedef hashed_object<HashedType> this_type;
+    using this_type = hashed_object<HashedType>;
 
 public:
     // return running hash of existing objects
@@ -754,8 +754,8 @@ protected:
     }
 
     ~hashed_object() { hash() -= m_hash; }
-    hashed_object(const this_type&)     = default;
-    explicit hashed_object(this_type&&) = default;
+    explicit hashed_object(const this_type&) = default;
+    explicit hashed_object(this_type&&)      = default;
     static int64_t& hash();
 
 protected:

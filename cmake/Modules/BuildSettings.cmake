@@ -19,7 +19,10 @@ set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standa
 set(CMAKE_C_STANDARD_REQUIRED ON CACHE BOOL "Require the C language standard")
 set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the CXX language standard")
 set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "Require the CUDA language standard")
-
+# extensions
+set(CMAKE_C_EXTENSIONS OFF CACHE BOOL "C language extensions")
+set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "CXX language extensions")
+set(CMAKE_CUDA_EXTENSIONS OFF CACHE BOOL "CUDA language extensions")
 
 # ---------------------------------------------------------------------------- #
 # set the output directory (critical on Windows)
@@ -82,7 +85,6 @@ add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-c++17-extensions")
 add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
 add_cxx_flag_if_avail("-Wno-deprecated-declarations")
-add_cxx_flag_if_avail("-faligned-new")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
@@ -90,15 +92,6 @@ if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     add_cxx_flag_if_avail("-Wno-reserved-id-macro")
     add_cxx_flag_if_avail("-Wno-unused-private-field")
 endif()
-
-if(TIMEMORY_BUILD_LTO)
-    add_c_flag_if_avail("-flto")
-    add_cxx_flag_if_avail("-flto")
-endif()
-
-# Intel floating-point model
-add_c_flag_if_avail("-fp-model=precise")
-add_cxx_flag_if_avail("-fp-model=precise")
 
 # ---------------------------------------------------------------------------- #
 # non-debug optimizations
@@ -113,6 +106,23 @@ if(NOT DEBUG)
     add_cxx_flag_if_avail("-ftree-vectorize")
     add_cxx_flag_if_avail("-finline-functions")
     # add_cxx_flag_if_avail("-fira-loop-pressure")
+endif()
+
+# ---------------------------------------------------------------------------- #
+# Intel floating-point model (implies -fprotect-parens)
+#
+add_c_flag_if_avail("-fp-model=precise")
+add_cxx_flag_if_avail("-fp-model=precise")
+
+# ---------------------------------------------------------------------------- #
+# debug-safe optimizations
+#
+add_cxx_flag_if_avail("-faligned-new")
+add_cxx_flag_if_avail("-ftls-model=initial-exec")
+
+if(TIMEMORY_BUILD_LTO)
+    add_c_flag_if_avail("-flto")
+    add_cxx_flag_if_avail("-flto")
 endif()
 
 # ---------------------------------------------------------------------------- #

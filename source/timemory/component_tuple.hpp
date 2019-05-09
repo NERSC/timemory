@@ -715,10 +715,6 @@ namespace details
 {
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_FILTERING)
-
-//--------------------------------------------------------------------------------------//
-
 template <typename...>
 struct component_concat
 {
@@ -773,15 +769,9 @@ struct component_filter_if<Predicate, component_tuple<Ts...>>
 
 //--------------------------------------------------------------------------------------//
 
-#endif
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace details
 
 //--------------------------------------------------------------------------------------//
-
-#if defined(TIMEMORY_USE_FILTERING)
 
 template <template <typename> class Predicate, typename Sequence>
 using type_filter = typename details::component_filter_if<Predicate, Sequence>::type;
@@ -789,13 +779,6 @@ using type_filter = typename details::component_filter_if<Predicate, Sequence>::
 template <typename... Types>
 using implemented_component_tuple =
     type_filter<component::impl_available, component_tuple<Types...>>;
-
-#else
-
-template <typename... Types>
-using implemented_component_tuple = component_tuple<Types...>;
-
-#endif
 
 //======================================================================================//
 

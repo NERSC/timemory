@@ -42,20 +42,6 @@ using auto_timer_t =
 //
 //======================================================================================//
 
-extern "C" tim_api void
-cxx_timemory_initialization(void)
-{
-}
-
-//======================================================================================//
-
-extern "C" tim_api void
-cxx_timemory_finalization(void)
-{
-}
-
-//======================================================================================//
-
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
@@ -74,7 +60,6 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
     free(_timer_tag);
     return (void*) new auto_timer_t(cxx_timer_tag, lineno, lang_tag,
                                     (report > 0) ? true : false);
-    return nullptr;
 }
 
 //======================================================================================//
@@ -107,39 +92,6 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
     char*       buff = (char*) malloc(sizeof(char) * 256);
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
-}
-
-//======================================================================================//
-
-extern "C" tim_api void
-cxx_timemory_report(const char* fname)
-{
-    std::string _fname(fname);
-    for(auto itr : { ".txt", ".out", ".json" })
-    {
-        if(_fname.find(itr) != std::string::npos)
-            _fname = _fname.substr(0, _fname.find(itr));
-    }
-    _fname = _fname.substr(0, _fname.find_last_of('.'));
-
-    tim::path_t _fpath_report = _fname + std::string(".out");
-    tim::path_t _fpath_serial = _fname + std::string(".json");
-    tim::manager::master_instance()->set_output_stream(_fpath_report);
-    tim::makedir(tim::dirname(_fpath_report));
-    std::ofstream ofs_report(_fpath_report);
-    std::ofstream ofs_serial(_fpath_serial);
-    if(ofs_report)
-        tim::manager::master_instance()->report(ofs_report);
-    if(ofs_serial)
-        tim::manager::master_instance()->write_json(ofs_serial);
-}
-
-//======================================================================================//
-
-extern "C" tim_api void
-cxx_timemory_print(void)
-{
-    tim::manager::master_instance()->report(std::cout, true);
 }
 
 //======================================================================================//

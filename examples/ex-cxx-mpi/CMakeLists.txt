@@ -24,11 +24,14 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require C++ library standard")
 # Add the executable, and link it to the TiMemory libraries
 #
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-target_link_libraries(${EXE_NAME} ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_link_libraries(${EXE_NAME} ${TiMemory_LIBRARIES})
+
 target_include_directories(${EXE_NAME} SYSTEM
-    PUBLIC ${TiMemory_INCLUDE_DIRS} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+    PRIVATE ${TiMemory_INCLUDE_DIRS} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+
 target_compile_options(${EXE_NAME}
-    PUBLIC ${TiMemory_CXX_COMPILE_OPTIONS} ${MPI_CXX_COMPILE_FLAGS})
+    PRIVATE ${TiMemory_CXX_COMPILE_OPTIONS} ${MPI_CXX_COMPILE_FLAGS})
+    
 set_target_properties(${EXE_NAME} PROPERTIES
     LINK_FLAGS "${MPI_CXX_LINK_FLAGS}"
     CXX_STANDARD 11

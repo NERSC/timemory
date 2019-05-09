@@ -49,6 +49,7 @@ endif()
 include(CMakeDependentOption)
 include(CMakeParseArguments)
 
+
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
 #-----------------------------------------------------------------------
@@ -61,6 +62,7 @@ MACRO(set_ifnot _var _value)
     endif()
 ENDMACRO()
 
+
 #-----------------------------------------------------------------------
 # macro safe_remove_duplicates(<list>)
 #       ensures remove_duplicates is only called if list has values
@@ -70,6 +72,7 @@ MACRO(safe_remove_duplicates _list)
         list(REMOVE_DUPLICATES ${_list})
     endif(NOT "${${_list}}" STREQUAL "")
 ENDMACRO()
+
 
 #-----------------------------------------------------------------------
 # function - capitalize - make a string capitalized (first letter is capital)
@@ -87,6 +90,7 @@ FUNCTION(capitalize str var)
     set(${var} "${str}" PARENT_SCOPE)
 ENDFUNCTION()
 
+
 #-----------------------------------------------------------------------
 # macro set_ifnot_match(<var> <value>)
 #       If variable var is not set, set its value to that provided
@@ -100,6 +104,7 @@ MACRO(SET_IFNOT_MATCH VAR APPEND)
     endif()
 ENDMACRO()
 
+
 #-----------------------------------------------------------------------
 # macro cache_ifnot(<var> <value>)
 #       If variable var is not set, set its value to that provided and cache it
@@ -109,69 +114,6 @@ MACRO(cache_ifnot _var _value _type _doc)
     set(${_var} ${_value} CACHE ${_type} "${_doc}")
   endif()
 ENDMACRO()
-
-#-----------------------------------------------------------------------
-# function enum_option(<option>
-#                      VALUES <value1> ... <valueN>
-#                      TYPE   <valuetype>
-#                      DOC    <docstring>
-#                      [DEFAULT <elem>]
-#                      [CASE_INSENSITIVE])
-#          Declare a cache variable <option> that can only take values
-#          listed in VALUES. TYPE may be FILEPATH, PATH or STRING.
-#          <docstring> should describe that option, and will appear in
-#          the interactive CMake interfaces. If DEFAULT is provided,
-#          <elem> will be taken as the zero-indexed element in VALUES
-#          to which the value of <option> should default to if not
-#          provided. Otherwise, the default is taken as the first
-#          entry in VALUES. If CASE_INSENSITIVE is present, then
-#          checks of the value of <option> against the allowed values
-#          will ignore the case when performing string comparison.
-#
-FUNCTION(enum_option _var)
-    set(options CASE_INSENSITIVE)
-    set(oneValueArgs DOC TYPE DEFAULT)
-    set(multiValueArgs VALUES)
-    cmake_parse_arguments(_ENUMOP "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
-
-    # - Validation as needed arguments
-    if(NOT _ENUMOP_VALUES)
-        message(FATAL_ERROR "enum_option must be called with non-empty VALUES\n(Called for enum_option '${_var}')")
-    endif()
-
-    # - Set argument defaults as needed
-    if(_ENUMOP_CASE_INSENSITIVE)
-        set(_ci_values )
-        foreach(_elem ${_ENUMOP_VALUES})
-        string(TOLOWER "${_elem}" _ci_elem)
-        list(APPEND _ci_values "${_ci_elem}")
-        endforeach()
-        set(_ENUMOP_VALUES ${_ci_values})
-    endif()
-
-    set_ifnot(_ENUMOP_TYPE STRING)
-    set_ifnot(_ENUMOP_DEFAULT 0)
-    list(GET _ENUMOP_VALUES ${_ENUMOP_DEFAULT} _default)
-
-    if(NOT DEFINED ${_var})
-        set(${_var} ${_default} CACHE ${_ENUMOP_TYPE} "${_ENUMOP_DOC} (${_ENUMOP_VALUES})")
-    else()
-        set(_var_tmp ${${_var}})
-        if(_ENUMOP_CASE_INSENSITIVE)
-        string(TOLOWER ${_var_tmp} _var_tmp)
-        endif()
-
-        list(FIND _ENUMOP_VALUES ${_var_tmp} _elem)
-        if(_elem LESS 0)
-        message(FATAL_ERROR "Value '${${_var}}' for variable ${_var} is not allowed\nIt must be selected from the set: ${_ENUMOP_VALUES} (DEFAULT: ${_default})\n")
-        else()
-        # - convert to lowercase
-        if(_ENUMOP_CASE_INSENSITIVE)
-            set(${_var} ${_var_tmp} CACHE ${_ENUMOP_TYPE} "${_ENUMOP_DOC} (${_ENUMOP_VALUES})" FORCE)
-        endif()
-        endif()
-    endif()
-ENDFUNCTION()
 
 
 #-----------------------------------------------------------------------
@@ -199,26 +141,6 @@ ENDFUNCTION()
 
 
 #------------------------------------------------------------------------------#
-# function add_subfeature(<ROOT_OPTION> <NAME> <DOCSTRING>)
-#          Add a subfeature, whose activation is specified by the
-#          existence of the variable <NAME>, to the list of enabled/disabled
-#          features, plus a docstring describing the feature
-#
-FUNCTION(ADD_SUBFEATURE _root _var _description)
-    set(EXTRA_DESC "")
-    foreach(currentArg ${ARGN})
-        if(NOT "${currentArg}" STREQUAL "${_var}" AND
-           NOT "${currentArg}" STREQUAL "${_description}")
-            set(EXTRA_DESC "${EXTA_DESC}${currentArg}")
-        endif()
-    endforeach()
-
-    set_property(GLOBAL APPEND PROPERTY ${_root}_FEATURES ${_var})
-    set_property(GLOBAL PROPERTY ${_root}_${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
-ENDFUNCTION()
-
-
-#------------------------------------------------------------------------------#
 # function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
 #          Add an option and add as a feature if NO_FEATURE is not provided
 #
@@ -231,29 +153,6 @@ FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
         MARK_AS_ADVANCED(${_NAME})
     ENDIF()
 ENDFUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
-
-
-#------------------------------------------------------------------------------#
-# function add_dependent_option(<OPTION_NAME> <DOCSRING>
-#                               <CONDITION_TRUE_SETTING> <CONDITION>
-#                               <DEFAULT_SETTING> [NO_FEATURE])
-#          Add an option and add as a feature if NO_FEATURE is not provided
-#
-FUNCTION(ADD_DEPENDENT_OPTION _NAME _MESSAGE _COND_SETTING _COND _DEFAULT)
-    SET(_FEATURE ${ARGN})
-    IF(DEFINED ${_NAME} AND NOT ${_COND})
-        OPTION(${_NAME} "${_MESSAGE}" ${_DEFAULT})
-    ELSE(DEFINED ${_NAME} AND NOT ${_COND})
-        CMAKE_DEPENDENT_OPTION(${_NAME} "${_MESSAGE}" ${_COND_SETTING}
-            "${_COND}" ${_DEFAULT})
-    ENDIF(DEFINED ${_NAME} AND NOT ${_COND})
-
-    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
-        ADD_FEATURE(${_NAME} "${_MESSAGE}")
-    ELSE()
-        MARK_AS_ADVANCED(${_NAME})
-    ENDIF()
-ENDFUNCTION(ADD_DEPENDENT_OPTION _NAME _MESSAGE _DEFAULT _COND _COND_SETTING)
 
 
 #------------------------------------------------------------------------------#
@@ -328,6 +227,74 @@ ENDMACRO()
 
 
 #------------------------------------------------------------------------------#
+# macro to build a library of type: shared, static, object
+#
+macro(BUILD_LIBRARY)
+
+    # options
+    set(_options    PIC)
+    # single-value
+    set(_onevalue   TYPE
+                    OUTPUT_NAME
+                    TARGET_NAME
+                    OUTPUT_DIR
+                    LANGUAGE
+                    LINKER_LANGUAGE)
+    # multi-value
+    set(_multival   SOURCES
+                    LINK_LIBRARIES
+                    COMPILE_DEFINITIONS
+                    INCLUDE_DIRECTORIES
+                    EXTRA_PROPERTIES)
+
+    cmake_parse_arguments(
+        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    if(NOT WIN32 AND NOT XCODE)
+        list(APPEND LIBRARY_EXTRA_PROPERTIES
+            VERSION                     ${PROJECT_VERSION}
+            SOVERSION                   ${PROJECT_VERSION_MAJOR})
+    endif()
+
+    if(NOT WIN32)
+        set(LIB_PREFIX )
+        list(APPEND LIBRARY_EXTRA_PROPERTIES
+            LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR})
+    else()
+        set(LIB_PREFIX lib)
+    endif()
+
+    add_library(${LIBRARY_TARGET_NAME}
+        ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    target_include_directories(${LIBRARY_TARGET_NAME}
+        PUBLIC ${EXTERNAL_INCLUDE_DIRS}
+        PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+    target_compile_definitions(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
+    target_compile_options(${LIBRARY_TARGET_NAME}
+        PRIVATE
+            $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
+            $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+
+    if(NOT LIBRARY_TYPE STREQUAL OBJECT)
+        target_link_libraries(${LIBRARY_TARGET_NAME}
+            PUBLIC ${LIBRARY_LINK_LIBRARIES})
+    endif()
+    
+    set_target_properties(
+        ${LIBRARY_TARGET_NAME}          PROPERTIES
+        OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
+        LANGUAGE                        ${LIBRARY_LANGUAGE}
+        LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
+        POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
+        ${LIBRARY_EXTRA_PROPERTIES})
+
+    list(APPEND INSTALL_LIBRARIES ${LIBRARY_TARGET_NAME})
+
+endmacro(BUILD_LIBRARY)
+
+
+#------------------------------------------------------------------------------#
 # function print_enabled_features()
 #          Print enabled  features plus their docstrings.
 #
@@ -365,60 +332,9 @@ FUNCTION(print_enabled_features)
                     set(_currentFeatureText "${_currentFeatureText}: ${_desc}")
                 endif()
                 set(_desc NOTFOUND)
-            endif(_desc)
-            # check for subfeatures
-            get_property(_subfeatures GLOBAL PROPERTY ${_feature}_FEATURES)
-            # remove duplicates and sort if subfeatures exist
-            if(NOT "${_subfeatures}" STREQUAL "")
-                list(REMOVE_DUPLICATES _subfeatures)
-                list(SORT _subfeatures)
             endif()
-
-            # sort enabled and disabled features into lists
-            set(_enabled_subfeatures )
-            set(_disabled_subfeatures )
-            foreach(_subfeature ${_subfeatures})
-                if(${_subfeature})
-                    list(APPEND _enabled_subfeatures ${_subfeature})
-                else()
-                    list(APPEND _disabled_subfeatures ${_subfeature})
-                endif()
-            endforeach()
-
-            # loop over enabled subfeatures
-            foreach(_subfeature ${_enabled_subfeatures})
-                # add subfeature to text
-                set(_currentFeatureText "${_currentFeatureText}\n       + ${_subfeature}")
-                # get subfeature description
-                get_property(_subdesc GLOBAL PROPERTY ${_feature}_${_subfeature}_DESCRIPTION)
-                # print subfeature description. If not standard ON/OFF, print
-                # what is set to
-                if(_subdesc)
-                    if(NOT "${${_subfeature}}" STREQUAL "ON" AND
-                       NOT "${${_subfeature}}" STREQUAL "TRUE")
-                        set(_currentFeatureText "${_currentFeatureText}: ${_subdesc} -- [\"${${_subfeature}}\"]")
-                    else()
-                        set(_currentFeatureText "${_currentFeatureText}: ${_subdesc}")
-                    endif()
-                    set(_subdesc NOTFOUND)
-                endif(_subdesc)
-            endforeach(_subfeature)
-
-            # loop over disabled subfeatures
-            foreach(_subfeature ${_disabled_subfeatures})
-                # add subfeature to text
-                set(_currentFeatureText "${_currentFeatureText}\n       - ${_subfeature}")
-                # get subfeature description
-                get_property(_subdesc GLOBAL PROPERTY ${_feature}_${_subfeature}_DESCRIPTION)
-                # print subfeature description.
-                if(_subdesc)
-                    set(_currentFeatureText "${_currentFeatureText}: ${_subdesc}")
-                    set(_subdesc NOTFOUND)
-                endif(_subdesc)
-            endforeach(_subfeature)
-
-        endif(${_feature})
-    endforeach(_feature)
+        endif()
+    endforeach()
 
     if(NOT "${_currentFeatureText}" STREQUAL "${_basemsg}")
         message(STATUS "${_currentFeatureText}\n")

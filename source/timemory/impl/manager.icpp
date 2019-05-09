@@ -28,11 +28,11 @@
  *
  */
 
-#include "timemory/environment.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/papi.hpp"
 #include "timemory/serializer.hpp"
+#include "timemory/settings.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/utility.hpp"
@@ -54,10 +54,10 @@ namespace tim
 {
 //======================================================================================//
 
-inline std::atomic_int&
+inline std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
-    static std::atomic_int instance;
+    static std::atomic<int32_t> instance;
     return instance;
 }
 
@@ -97,25 +97,14 @@ manager::noninit_master_instance()
 
 //======================================================================================//
 
-inline manager::get_num_threads_func_t&
-manager::f_get_num_threads()
-{
-    static manager::get_num_threads_func_t instance = std::bind(&get_max_threads);
-    return instance;
-}
-
-//======================================================================================//
-
 inline manager::manager()
-: m_merge(false)
-, m_instance_count(f_manager_instance_count()++)
-, m_laps(0)
-, m_report(&std::cout)
+: m_instance_count(f_manager_instance_count()++)
 {
     if(m_instance_count == 0)
     {
         printf("############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
                static_cast<void*>(this), m_instance_count);
+        tim::settings::parse();
         tim::papi::init();
     }
     else
@@ -125,15 +114,6 @@ inline manager::manager()
 
     if(!singleton_t::master_instance_ptr())
     {
-        m_merge = true;
-        tim::env::parse();
-        insert_global_timer();
-    }
-    else
-    {
-        manager* master = singleton_t::master_instance_ptr();
-        master->set_merge(true);
-        master->add(this);
     }
 
     if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())
@@ -169,37 +149,112 @@ inline manager::~manager()
 //======================================================================================//
 
 inline void
-manager::update_total_timer_format()
+manager::insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data)
 {
-    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
+    using sibling_itr = typename graph_t::sibling_iterator;
+    graph_node node(_hash_id, _prefix, _data);
+
+    auto _update = [&](iterator itr) {
+        m_data.current() = itr;
+        *m_data.current() += node;
+    };
+
+    // lambda for inserting child
+    auto _insert_child = [&]() {
+        auto itr = m_data.append_child(node);
+        m_node_ids.insert(std::make_pair(_hash_id, itr));
+    };
+
+    if(m_node_ids.find(_hash_id) != m_node_ids.end())
     {
+        _update(m_node_ids.find(_hash_id)->second);
     }
+
+    // if first instance
+    if(m_data.depth() < 0)
+    {
+        if(this == master_instance())
+        {
+            m_data.depth()   = 0;
+            m_data.head()    = m_data.graph().set_head(node);
+            m_data.current() = m_data.head();
+        }
+        else
+        {
+            return;
+        }
+    }
+    else
+    {
+        auto current = m_data.current();
+
+        if(_hash_id == current->id())
+        {
+            return;
+        }
+        else if(m_data.graph().is_valid(current))
+        {
+            // check parent if not head
+            if(!m_data.graph().is_head(current))
+            {
+                auto parent = graph_t::parent(current);
+                for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
+                {
+                    // check hash id's
+                    if(_hash_id == itr->id())
+                    {
+                        _update(itr);
+                    }
+                }
+            }
+
+            // check siblings
+            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+            {
+                // skip if current
+                if(itr == current)
+                    continue;
+                // check hash id's
+                if(_hash_id == itr->id())
+                {
+                    _update(itr);
+                }
+            }
+
+            // check children
+            auto nchildren = graph_t::number_of_children(current);
+            if(nchildren == 0)
+            {
+                _insert_child();
+            }
+            else
+            {
+                bool exists = false;
+                auto fchild = graph_t::child(current, 0);
+                for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+                {
+                    if(_hash_id == itr->id())
+                    {
+                        exists = true;
+                        _update(itr);
+                        break;
+                    }
+                }
+                if(!exists)
+                    _insert_child();
+            }
+        }
+    }
+    return _insert_child();
 }
 
 //======================================================================================//
-
-inline void
-manager::insert_global_timer()
-{
-    if((this == singleton_t::master_instance_ptr() || m_instance_count == 0))
-    {
-        update_total_timer_format();
-        // timer_data.map()[0]           = timer_data.total();
-        // timer_data_t::tuple_t _global = { 0, 0, 0, "exe_global_time",
-        //                                  timer_data.total() };
-        // timer_data.current()          = timer_data.graph().set_head(_global);
-        // if(!timer_data.total()->is_running())
-        //    timer_data.total()->start();
-    }
-}
-
-//======================================================================================//
-
+/*
 inline void
 manager::clear()
 {
 #if defined(DEBUG)
-    if(tim::env::verbose() > 1)
+    if(tim::settings::verbose() > 1)
         std::cout << "tim::manager::" << __FUNCTION__ << " Clearing " << instance()
                   << "..." << std::endl;
 #endif
@@ -245,34 +300,11 @@ manager::clear()
 
     m_report = &std::cout;
 
-    insert_global_timer();
 }
+*/
 
 //======================================================================================//
-
-inline std::string
-manager::get_prefix() const
-{
-    if(!mpi_is_initialized())
-        return "> ";
-
-    static string_t* _prefix = nullptr;
-    if(!_prefix)
-    {
-        // prefix spacing
-        static uint16_t width = 1;
-        if(mpi_size() > 9)
-            width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
-        std::stringstream ss;
-        ss.fill('0');
-        ss << "|" << std::setw(width) << mpi_rank() << "> ";
-        _prefix = new string_t(ss.str());
-    }
-    return *_prefix;
-}
-
-//======================================================================================//
-
+/*
 inline void
 manager::report(bool ign_cutoff, bool endline) const
 {
@@ -304,17 +336,10 @@ manager::report(bool ign_cutoff, bool endline) const
         report(m_report, ign_cutoff, endline);
     }
 }
+*/
 
 //======================================================================================//
-
-inline void
-manager::set_output_stream(ostream_t& _os)
-{
-    m_report = &_os;
-}
-
-//======================================================================================//
-
+/*
 inline void
 manager::set_output_stream(const path_t& fname)
 {
@@ -343,7 +368,7 @@ manager::set_output_stream(const path_t& fname)
         else
         {
 #if defined(DEBUG)
-            if(tim::env::verbose() > 2)
+            if(tim::settings::verbose() > 2)
             {
                 tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
                 std::cerr << "Warning! Unable to open file " << _fname << ". "
@@ -358,114 +383,13 @@ manager::set_output_stream(const path_t& fname)
 
     ostreamop(m_report, fname);
 }
-
-//======================================================================================//
-
-inline void
-manager::add(pointer ptr)
-{
-    auto_lock_t lock(m_mutex);
-#if defined(DEBUG)
-    if(tim::env::verbose() > 2)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Adding " << ptr << " to "
-                  << this << "..." << std::endl;
-#endif
-    m_merge = true;
-    m_daughters.insert(ptr);
-}
-
-//======================================================================================//
-
-inline void manager::remove(pointer /*ptr*/)
-{
-    /*
-    if(ptr == this)
-        return;
-
-    auto_lock_t lock(m_mutex);
-
-#if defined(DEBUG)
-    if(tim::env::verbose() > 2)
-        std::cout << "tim::manager::" << __FUNCTION__ << " - Removing " << ptr << " from "
-                  << this << "..." << std::endl;
-#endif
-
-    merge(ptr);
-    if(m_daughters.find(ptr) != m_daughters.end())
-        m_daughters.erase(m_daughters.find(ptr));
-    */
-
-    if(!singleton_t::is_master(this))
-        return;
-
-    auto m_children = singleton_t::children();
-    if(m_children.size() == 0)
-        return;
-
-    // for(auto& itr : m_children)
-    //    merge(itr);
-
-    // create lock but don't immediately lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
-    if(!l.owns_lock())
-        l.lock();
-
-    for(auto& itr : m_children)
-        if(itr != this)
-            itr->data().reset();
-}
+*/
 
 //======================================================================================//
 
 inline void
 manager::merge(pointer itr)
 {
-    /*
-    if(itr == this)
-        return;
-
-#if defined(DEBUG)
-    if(tim::env::verbose() > 2)
-    {
-        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
-        std::cout << "\tinstance " << m_instance_count << " merging "
-                  << itr->instance_count() << " with size: " << itr->size() << "..."
-                  << std::endl;
-    }
-
-    if(tim::env::verbose() > 1)
-        std::cout << "tim::manager::" << __FUNCTION__ << " Merging " << itr << "..."
-                  << std::endl;
-#endif
-    */
-
-    /*
-    auto _this_beg = this->get_timer_data().graph().begin();
-    auto _this_end = this->get_timer_data().graph().end();
-
-    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
-    {
-        if(_this_itr == itr->get_timer_data().head())
-        {
-            auto _iter_beg = itr->get_timer_data().graph().begin();
-            auto _iter_end = itr->get_timer_data().graph().end();
-            this->get_timer_data().graph().merge(_this_itr, _this_end, _iter_beg,
-                                                 _iter_end, false, true);
-            break;
-        }
-    }
-
-    typedef decltype(_this_beg) predicate_type;
-    auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-    _this_beg    = this->get_timer_data().graph().begin();
-    _this_end    = this->get_timer_data().graph().end();
-    this->get_timer_data().graph().reduce(_this_beg, _this_end, _this_beg, _this_end,
-                                          _reduce);
-    compute_self();
-    */
-
     if(itr == this)
         return;
 
@@ -494,7 +418,7 @@ manager::merge(pointer itr)
 
     if(_merged)
     {
-        typedef decltype(_this_beg) predicate_type;
+        using predicate_type = decltype(_this_beg);
         auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
         _this_beg    = graph().begin();
         _this_end    = graph().end();
@@ -507,72 +431,6 @@ manager::merge(pointer itr)
         auto g = graph();
         graph().insert_subgraph_after(m_data.current(), itr->data().head());
     }
-}
-
-//======================================================================================//
-
-inline void
-manager::merge()
-{
-    compute_self();
-    if(!m_merge.load())
-        return;
-    if(m_daughters.size() == 0)
-        return;
-    m_merge.store(false);
-
-    auto_lock_t lock(m_mutex);
-    for(auto& itr : m_daughters)
-        merge(itr);
-    for(auto& itr : m_daughters)
-        if(itr != this)
-            itr->clear();
-}
-
-//======================================================================================//
-
-inline void
-manager::sync_hierarchy()
-{
-}
-
-//======================================================================================//
-
-inline void
-manager::compute_self()
-{
-    if(this != singleton_t::master_instance_ptr())
-        return;
-
-    // m_timer_list_self.clear();
-
-    // typedef std::unique_ptr<tim_timer_t> _timer_ptr_t;
-    // using std::get;
-
-    /*for(const auto& itr : m_timer_list_norm)
-    {
-        timer_tuple_t _ref = itr;
-        timer_tuple_t _dup =
-            std::make_tuple(_ref.key(), _ref.level(), _ref.offset(), _ref.tag(),
-                            _timer_ptr_t(new tim_timer_t(_ref.timer())));
-        _dup.timer().grab_metadata(_ref.timer());
-        m_timer_list_self.push_back(_dup);
-    }*/
-
-    /*auto itr1 = m_timer_list_self.begin();
-    ++itr1;  // skip global timer
-    for(; itr1 != m_timer_list_self.end(); ++itr1)
-    {
-        uint64_t _depth1 = itr1->level();
-        for(auto itr2 = itr1; itr2 != m_timer_list_self.end(); ++itr2)
-        {
-            uint64_t _depth2 = itr2->level();
-            if(_depth2 == _depth1 + 1)
-                itr1->timer() -= itr2->timer();
-            if(itr2 != itr1 && _depth1 == _depth2)
-                break;  // same level move onto next
-        }
-    }*/
 }
 
 //======================================================================================//
@@ -624,116 +482,11 @@ const
 }*/
 
 //======================================================================================//
-/*
-manager::tim_timer_t
-manager::compute_missing(tim_timer_t* timer_ref)
-{
-    // typedef std::set<uint64_t> key_set_t;
-
-    tim_timer_t* _ref    = (timer_ref) ? timer_ref : &timer_data.missing();
-    bool         restart = _ref->is_running();
-    if(restart)
-        _ref->stop();
-
-    this->merge();
-
-    if(_ref->is_running())
-        _ref->stop();
-
-    tim_timer_t _missing_timer(_ref, _f_prefix, true);
-
-    if(restart)
-        _ref->start();
-
-    auto max_depth = timer_data.graph().depth(timer_data.graph().end());
-    if(max_depth < 1)
-        return tim_timer_t(_f_prefix);
-
-    decltype(max_depth)      current_depth = 0;
-    std::vector<tim_timer_t> depth_timers(max_depth);
-    for(auto itr = timer_data.begin(); itr != timer_data.end(); ++itr)
-    {
-        auto cdepth = timer_data.graph().depth(itr);
-        depth_timers[cdepth] += itr->data();
-    }
-
-    for(uint64_t i = 2; i < max_depth; ++i)
-        _missing_timer += (depth_timers[i - 1] - depth_timers[i]);
-
-    return _missing_timer;
-
-    return *timer_ref;
-}
-//======================================================================================//
-
-void
-manager::write_missing(const path_t& _fname, tim_timer_t* timer_ref,
-                       tim_timer_t* _missing_p, bool rank_zero_only)
-{
-    if(rank_zero_only && tim::mpi_rank() != 0)
-        return;
-
-    std::ofstream _os(_fname.c_str());
-    if(_os)
-        write_missing(_os, timer_ref, _missing_p);
-    else
-    {
-        std::cerr << "Warning! Unable to open \"" << _fname << "\" [" << __FUNCTION__
-                  << "@'" << __FILE__ << "'..." << std::endl;
-        write_missing(std::cout);
-    }
-}
-
-//======================================================================================//
-
-void
-manager::write_missing(ostream_t& _os, tim_timer_t* timer_ref, tim_timer_t* _missing_p,
-                       bool rank_zero_only)
-{
-    if(rank_zero_only && tim::mpi_rank() != 0)
-        return;
-
-    tim_timer_t _missing;
-    if(!_missing_p)
-        _missing = compute_missing(timer_ref);
-    else
-    {
-        _missing = *_missing_p;
-        if(timer_ref)
-            _missing -= *timer_ref;
-    }
-
-    std::stringstream   _ss;
-    string_t::size_type _w  = 10;
-    string_t            _p1 = "TiMemory auto-timer laps since last reset ";
-    string_t            _p2 = "Total TiMemory auto-timer laps ";
-    // find max of strings
-    // use ternary because of std::max issues on Windows
-    string_t::size_type _smax =
-        4 + ((_p1.length() > _p2.length()) ? _p1.length() : _p2.length());
-    // find max width
-    // use ternary because of std::max issues on Windows
-    _w = (_w > _smax) ? _w : _smax;
-
-    std::stringstream _sp1, _sp2;
-    _sp1 << std::setw(_w + 1) << std::left << _p1 << " : ";
-    _sp2 << std::setw(_w + 1) << std::left << _p2 << " : ";
-    _ss << _sp1.str() << laps() << std::endl;
-    _ss << _sp2.str() << total_laps() << std::endl;
-
-    //_missing.format()->width(_w);
-    //_missing.format()->align_width(false);
-
-    _ss << _missing.as_string() << std::endl;
-    _os << "\n" << _ss.str();
-}
-*/
-//======================================================================================//
 //
 //  Static functions for writing JSON output
 //
 //======================================================================================//
-
+/*
 // static function
 inline void
 manager::write_report(path_t _fname, bool ign_cutoff)
@@ -966,7 +719,7 @@ manager::write_json_mpi(path_t _fname)
         ofs.close();
     }
 }
-
+*/
 //======================================================================================//
 // static function
 inline manager::comm_group_t
@@ -974,7 +727,7 @@ manager::get_communicator_group()
 {
     int32_t max_concurrency = std::thread::hardware_concurrency();
     // We want on-node communication only
-    int32_t nthreads = tim::env::num_threads();
+    int32_t nthreads = tim::settings::num_threads();
     if(nthreads == 0)
         nthreads = 1;
     int32_t max_processes    = max_concurrency / nthreads;
@@ -991,7 +744,7 @@ manager::get_communicator_group()
     MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    if(tim::env::verbose() > 1)
+    if(tim::settings::verbose() > 1)
     {
         int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
         int32_t local_mpi_size = mpi_size(local_mpi_comm);
@@ -1017,7 +770,7 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-#include <timemory/environment.hpp>
+#include <timemory/settings.hpp>
 
 inline void
 tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
@@ -1027,7 +780,7 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
     {
         // singleton_t::master_instance()->merge(this);
     }
-    else if(env::auto_output())
+    else if(settings::auto_output())
     {
         m_data.current() = m_data.head();
         int64_t _width   = 10;
@@ -1061,15 +814,15 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
             _oss << std::endl;
         }
 
-        if(env::file_output() && _oss.str().length() > 0)
+        if(settings::file_output() && _oss.str().length() > 0)
         {
             std::string label = "combined";
             //--------------------------------------------------------------------------//
             // output to text
             //
-            if(env::text_output())
+            if(settings::text_output())
             {
-                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                auto fname = tim::settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -1092,17 +845,17 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
             //--------------------------------------------------------------------------//
             // output to json
             //
-            if(env::json_output())
+            if(settings::json_output())
             {
                 // auto_lock_t l(type_mutex<std::ofstream>());
-                // auto        jname = tim::env::compose_output_filename(label, ".json");
-                // printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                // auto        jname = tim::settings::compose_output_filename(label,
+                // ".json"); printf("[graph_storage<%s>]> Outputting '%s'...\n",
                 //       label.c_str(), jname.c_str());
                 // serialize_storage(jname, label, *this);
             }
         }
 
-        if(env::cout_output() && _oss.str().length() > 0)
+        if(settings::cout_output() && _oss.str().length() > 0)
         {
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str() << std::endl;

@@ -22,8 +22,8 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file environment.hpp
- * \headerfile environment.hpp "timemory/environment.hpp"
+/** \file settings.hpp
+ * \headerfile settings.hpp "timemory/settings.hpp"
  * Handles TiMemory settings via environment
  *
  */
@@ -51,11 +51,11 @@ namespace tim
 void
 timemory_init(int argc, char** argv);
 
-namespace env
+namespace settings
 {
 //--------------------------------------------------------------------------------------//
 
-typedef std::string string_t;
+using string_t = std::string;
 
 #define DEFINE_STATIC_ACCESSOR_FUNCTION(TYPE, FUNC, INIT)                                \
     inline TYPE& FUNC()                                                                  \
@@ -103,11 +103,11 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
 
 //--------------------------------------------------------------------------------------//
 
-string_t tolower(string_t);
-string_t toupper(string_t);
-void
+inline string_t tolower(string_t);
+inline string_t toupper(string_t);
+inline void
 process();
-void
+inline void
 parse();
 inline string_t
 get_output_prefix();
@@ -116,14 +116,14 @@ compose_output_filename(const std::string& _tag, std::string _ext);
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace env
+}  // namespace settings
 
 }  // namespace tim
 
 //======================================================================================//
 
 inline std::string
-tim::env::tolower(std::string str)
+tim::settings::tolower(std::string str)
 {
     for(auto& itr : str)
         itr = ::tolower(itr);
@@ -133,7 +133,7 @@ tim::env::tolower(std::string str)
 //======================================================================================//
 
 inline std::string
-tim::env::toupper(std::string str)
+tim::settings::toupper(std::string str)
 {
     for(auto& itr : str)
         itr = ::toupper(itr);
@@ -152,7 +152,7 @@ tim::env::toupper(std::string str)
 // function to parse the environment for settings
 //
 inline void
-tim::env::parse()
+tim::settings::parse()
 {
     if(suppress_parsing())
     {
@@ -207,7 +207,7 @@ tim::env::parse()
 // is suppressed
 //
 inline void
-tim::env::process()
+tim::settings::process()
 {
     using namespace tim::component;
 
@@ -428,8 +428,8 @@ tim::env::process()
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::env::string_t
-tim::env::get_output_prefix()
+inline tim::settings::string_t
+tim::settings::get_output_prefix()
 {
     auto dir = output_path();
     auto ret = makedir(dir);
@@ -439,8 +439,8 @@ tim::env::get_output_prefix()
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::env::string_t
-tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
+inline tim::settings::string_t
+tim::settings::compose_output_filename(const std::string& _tag, std::string _ext)
 {
     auto _prefix      = get_output_prefix();
     auto _rank_suffix = (!mpi_is_initialized())
@@ -459,7 +459,7 @@ tim::env::compose_output_filename(const std::string& _tag, std::string _ext)
 
 //--------------------------------------------------------------------------------------//
 
-void
+inline void
 tim::timemory_init(int argc, char** argv)
 {
     consume_parameters(argc);
@@ -478,9 +478,9 @@ tim::timemory_init(int argc, char** argv)
             itr = '-';
     }
 
-    tim::env::output_path() = exe_name;
+    tim::settings::output_path() = exe_name;
     // allow environment overrides
-    tim::env::parse();
+    tim::settings::parse();
 }
 
 //--------------------------------------------------------------------------------------//

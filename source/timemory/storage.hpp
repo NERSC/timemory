@@ -504,7 +504,7 @@ protected:
 
         if(_merged)
         {
-            typedef decltype(_this_beg) predicate_type;
+            using predicate_type = decltype(_this_beg);
             auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
             _this_beg    = graph().begin();
             _this_end    = graph().end();

@@ -24,8 +24,8 @@
 
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
-#include "timemory/environment.hpp"
 #include "timemory/manager.hpp"
+#include "timemory/settings.hpp"
 
 //======================================================================================//
 
@@ -39,13 +39,13 @@ tim::graph_storage<ObjectType>::print()
     {
         singleton_t::master_instance()->merge(this);
     }
-    else if(env::auto_output())
+    else if(settings::auto_output())
     {
         merge();
 
         auto _manager = tim::manager::master_instance();
 
-        typedef decltype(graph().begin()) predicate_type;
+        using predicate_type = decltype(graph().begin());
         auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
         auto _this_beg = graph().begin();
         auto _this_end = graph().end();
@@ -76,15 +76,15 @@ tim::graph_storage<ObjectType>::print()
             }
         }
 
-        if(env::file_output() && _oss.str().length() > 0)
+        if(settings::file_output() && _oss.str().length() > 0)
         {
             auto label = ObjectType::label();
             //--------------------------------------------------------------------------//
             // output to text
             //
-            if(env::text_output())
+            if(settings::text_output())
             {
-                auto          fname = tim::env::compose_output_filename(label, ".txt");
+                auto fname = tim::settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -108,17 +108,17 @@ tim::graph_storage<ObjectType>::print()
             //--------------------------------------------------------------------------//
             // output to json
             //
-            if(env::json_output())
+            if(settings::json_output())
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
-                auto        jname = tim::env::compose_output_filename(label, ".json");
+                auto jname = tim::settings::compose_output_filename(label, ".json");
                 printf("[graph_storage<%s>]> Outputting '%s'...\n",
                        ObjectType::label().c_str(), jname.c_str());
                 serialize_storage(jname, *this, num_instances);
             }
         }
 
-        if(env::cout_output() && _oss.str().length() > 0)
+        if(settings::cout_output() && _oss.str().length() > 0)
         {
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str() << std::endl;

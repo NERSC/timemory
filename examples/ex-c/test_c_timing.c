@@ -35,14 +35,6 @@ main()
     printf("... \"%s\" : %s @ %i --> n = %lli\n", __FILE__, __FUNCTION__, __LINE__,
            (long long int) n);
 
-    TIMEMORY_PRINT();
-
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-
-    TIMEMORY_REPORT("test_output/c_timing_report");
-
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-
     return 0;
 }
 

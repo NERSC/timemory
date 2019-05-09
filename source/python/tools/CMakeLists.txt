@@ -1,9 +1,13 @@
 
 ################################################################################
 #
-#        timem tool
+#        pytimem tool
 #
 ################################################################################
+
+if(NOT TIMEMORY_BUILD_TOOLS)
+    return()
+endif()
 
 # copy over the python file
 configure_file(${CMAKE_CURRENT_LIST_DIR}/timem.py

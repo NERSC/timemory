@@ -5,10 +5,15 @@
 #
 ################################################################################
 
-if(WIN32)
-    # no support for Windows yet
+# disabled
+if(NOT TIMEMORY_BUILD_TOOLS)
     return()
-endif(WIN32)
+endif()
+
+# Windows not supported
+if(WIN32)
+    return()
+endif()
 
 set(TIMEM_NAME timem)
 

@@ -110,11 +110,11 @@ template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
 class graph
 {
 protected:
-    typedef tgraph_node<T> graph_node;
+    using graph_node = tgraph_node<T>;
 
 public:
     /// Value of the data stored at a node.
-    typedef T value_type;
+    using value_type = T;
 
     class iterator_base;
     class pre_order_iterator;

@@ -47,72 +47,6 @@ file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 # libraries to install
 set(INSTALL_LIBRARIES )
 
-
-#------------------------------------------------------------------------------#
-# macro to build a library of type: shared, static, object
-#
-macro(BUILD_LIBRARY)
-
-    # options
-    set(_options    PIC)
-    # single-value
-    set(_onevalue   TYPE
-                    OUTPUT_NAME
-                    TARGET_NAME
-                    OUTPUT_DIR
-                    LANGUAGE
-                    LINKER_LANGUAGE)
-    # multi-value
-    set(_multival   SOURCES
-                    LINK_LIBRARIES
-                    COMPILE_DEFINITIONS
-                    INCLUDE_DIRECTORIES
-                    EXTRA_PROPERTIES)
-
-    cmake_parse_arguments(
-        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
-
-    if(NOT WIN32 AND NOT XCODE)
-        list(APPEND LIBRARY_EXTRA_PROPERTIES
-            VERSION                     ${PROJECT_VERSION}
-            SOVERSION                   ${PROJECT_VERSION_MAJOR})
-    endif()
-
-    if(NOT WIN32)
-        set(LIB_PREFIX )
-        list(APPEND LIBRARY_EXTRA_PROPERTIES
-            LIBRARY_OUTPUT_DIRECTORY    ${LIBRARY_OUTPUT_DIR})
-    else()
-        set(LIB_PREFIX lib)
-    endif()
-
-    add_library(${LIBRARY_TARGET_NAME}
-        ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
-    target_include_directories(${LIBRARY_TARGET_NAME}
-        PUBLIC ${EXTERNAL_INCLUDE_DIRS}
-        PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-    target_link_libraries(${LIBRARY_TARGET_NAME}
-        PUBLIC ${LIBRARY_LINK_LIBRARIES})
-    target_compile_definitions(${LIBRARY_TARGET_NAME}
-        PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
-    target_compile_options(${LIBRARY_TARGET_NAME}
-        PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
-            $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
-
-    set_target_properties(
-        ${LIBRARY_TARGET_NAME}          PROPERTIES
-        OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
-        LANGUAGE                        ${LIBRARY_LANGUAGE}
-        LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
-        POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
-        ${LIBRARY_EXTRA_PROPERTIES})
-
-    list(APPEND INSTALL_LIBRARIES ${LIBRARY_TARGET_NAME})
-
-endmacro(BUILD_LIBRARY)
-
-
 #------------------------------------------------------------------------------#
 # this includes compile definitions for headers
 #
@@ -147,12 +81,21 @@ endif()
 
 
 #------------------------------------------------------------------------------#
-# build the libraries
+# build the C++ libraries
 #
-set(_TYPE SHARED) # default
-if(NOT BUILD_SHARED_LIBS)
-    set(_TYPE STATIC)
-endif()
+
+build_library(
+    PIC
+    TYPE                OBJECT
+    TARGET_NAME         ${LIBNAME}-cxx-library-object
+    OUTPUT_NAME         ${LIBNAME}
+    LANGUAGE            CXX
+    LINKER_LANGUAGE     CXX
+    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+    SOURCES             ${CXX_LIBRARY_SOURCES}
+    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
 build_library(
     PIC
@@ -163,32 +106,32 @@ build_library(
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
     COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-    SOURCES             ${CXX_LIBRARY_SOURCES}
+    SOURCES             $<TARGET_OBJECTS:${LIBNAME}-cxx-library-object>
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
-if(BUILD_SHARED_LIBS)
-    build_library(
-        PIC
-        TYPE                STATIC
-        TARGET_NAME         ${LIBNAME}-cxx-library-static
-        OUTPUT_NAME         ${LIBNAME}
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-        SOURCES             ${CXX_LIBRARY_SOURCES}
-        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
-        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-else()
-    add_library(${LIBNAME}-cxx-library-static ALIAS ${LIBNAME}-cxx-library)
-endif()
+build_library(
+    PIC
+    TYPE                STATIC
+    TARGET_NAME         ${LIBNAME}-cxx-library-static
+    OUTPUT_NAME         ${LIBNAME}
+    LANGUAGE            CXX
+    LINKER_LANGUAGE     CXX
+    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+    SOURCES             $<TARGET_OBJECTS:${LIBNAME}-cxx-library-object>
+    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
+
+#------------------------------------------------------------------------------#
+# build the C libraries
+#
 if(TIMEMORY_BUILD_C)
     build_library(
         PIC
-        TYPE                ${_TYPE}
-        TARGET_NAME         ${LIBNAME}-c-library
+        TYPE                OBJECT
+        TARGET_NAME         ${LIBNAME}-c-library-object
         OUTPUT_NAME         c${LIBNAME}
         LANGUAGE            C
         LINKER_LANGUAGE     CXX
@@ -197,7 +140,35 @@ if(TIMEMORY_BUILD_C)
         SOURCES             ${C_LIBRARY_SOURCES}
         LINK_LIBRARIES      ${LIBNAME}-cxx-library
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+
+    build_library(
+        PIC
+        TYPE                SHARED
+        TARGET_NAME         ${LIBNAME}-c-library
+        OUTPUT_NAME         c${LIBNAME}
+        LANGUAGE            C
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             $<TARGET_OBJECTS:${LIBNAME}-c-library-object>
+        LINK_LIBRARIES      ${LIBNAME}-cxx-library
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+    build_library(
+        PIC
+        TYPE                STATIC
+        TARGET_NAME         ${LIBNAME}-c-library-static
+        OUTPUT_NAME         c${LIBNAME}
+        LANGUAGE            C
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             $<TARGET_OBJECTS:${LIBNAME}-c-library-object>
+        LINK_LIBRARIES      ${LIBNAME}-cxx-library-static
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 endif()
+
 
 #------------------------------------------------------------------------------#
 # Install the targets and export
