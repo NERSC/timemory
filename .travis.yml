@@ -351,15 +351,10 @@ install:
     - conda install pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
-    - if [ -n "${COVERAGE}" ]; then
-        ARGS="${ARGS} --coverage --pyctest-build-type=${BUILD_TYPE}";
-      else
-        ARGS="${ARGS} --pyctest-build-type=RelWithDebInfo";
-      fi
-    - if [ -z "${USE_MPI}" ]; then
-        ARGS="${ARGS} --no-mpi";
-      fi
-    - python ./pyctest-runner.py ${ARGS};
+    - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
+    - python ./pyctest-runner.py ${ARGS} --coverage --pyctest-build-type=Debug
+    - rm -rf build-timemory
+    - python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE}
 
 script:
     #
