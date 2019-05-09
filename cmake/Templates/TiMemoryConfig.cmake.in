@@ -12,6 +12,16 @@ if(NOT DEFINED @PROJECT_NAME@_DIR)
 endif(NOT DEFINED @PROJECT_NAME@_DIR)
 set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
 
+# compile options
+set(@PROJECT_NAME@_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
+set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @PROJECT_CXX_COMPILE_OPTIONS@)
+set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
+
+# link options
+set(@PROJECT_NAME@_C_LINK_OPTIONS @PROJECT_C_LINK_OPTIONS@)
+set(@PROJECT_NAME@_CXX_LINK_OPTIONS @PROJECT_CXX_LINK_OPTIONS@)
+set(@PROJECT_NAME@_CUDA_LINK_OPTIONS @PROJECT_CUDA_LINK_OPTIONS@)
+
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
 #------------------------------------------------------------------------------#

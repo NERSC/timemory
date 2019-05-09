@@ -20,6 +20,9 @@ target_include_directories(${EXE_NAME} SYSTEM
 target_compile_options(${EXE_NAME}
     PRIVATE ${TiMemory_C_COMPILE_OPTIONS})
 
+target_compile_options(${EXE_NAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS} ${${PROJECT_NAME}_C_FLAGS}>)
+
 set_target_properties(${EXE_NAME} PROPERTIES
     CXX_STANDARD 11
     LANGUAGE C

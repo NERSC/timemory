@@ -49,26 +49,36 @@ if(TIMEMORY_USE_MPI)
             list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_${_LANG}_INCLUDE_PATH})
 
             # link targets
-            if(TARGET MPI::MPI_${_LANG})
-                list(APPEND EXTERNAL_LIBRARIES MPI::MPI_${_LANG})
-            else()
-                set(_TYPE MPI_${_LANG}_LIBRARIES)
-                if(${_TYPE})
-                    list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
-                endif()
+            set(_TYPE MPI_${_LANG}_LIBRARIES)
+            if(${_TYPE})
+                list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
             endif()
-        endforeach()
 
-        if(NOT TARGET MPI::MPI_C OR NOT TARGET MPI::MPI_CXX AND MPI_EXTRA_LIBRARY)
             # compile flags
             to_list(_FLAGS "${MPI_${_LANG}_COMPILE_FLAGS}")
             foreach(_FLAG ${_FLAGS})
-                add_c_flag_if_avail("${_FLAG}")
+                if("${_LANG}" STREQUAL "CXX")
+                    add_cxx_flag_if_avail("${_FLAG}")
+                else()
+                    add_c_flag_if_avail("${_FLAG}")
+                endif()
             endforeach()
             unset(_FLAGS)
 
+            # compile flags
+            to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
+            foreach(_FLAG ${_FLAGS})
+                list(APPEND EXTERNAL_${_LANG}_LINK_OPTIONS ${_FLAG})
+            endforeach()
+            unset(_FLAGS)
+
+        endforeach()
+
+        if(MPI_EXTRA_LIBRARY)
             list(APPEND PRIVATE_EXTERNAL_LIBRARIES ${MPI_EXTRA_LIBRARY})
-            add(CMAKE_EXE_LINKER_FLAGS "${MPI_CXX_LINK_FLAGS}")
+        endif()
+
+        if(MPI_INCLUDE_PATH)
             list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_INCLUDE_PATH})
         endif()
 
