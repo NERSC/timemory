@@ -1861,7 +1861,12 @@ private:
         {
             // PRINT_HERE("");
             value_type events;
+#if defined(_WINDOWS)
+            for(std::size_t i = 0; i < num_events; ++i)
+                events[i] = 0;
+#else
             apply<void>::set_value(events, 0);
+#endif
             tim::papi::stop_counters(events.data(), num_events);
             // tim::papi::stop(EventSet, read_value.data());
             // tim::papi::destroy_event_set(EventSet);

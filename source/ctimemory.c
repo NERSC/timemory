@@ -41,7 +41,7 @@ cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
 
 //======================================================================================//
 
-int
+tim_api int
 c_timemory_enabled(void)
 {
     return cxx_timemory_enabled();
@@ -49,7 +49,7 @@ c_timemory_enabled(void)
 
 //======================================================================================//
 
-void*
+tim_api void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
 {
     return (cxx_timemory_enabled())
@@ -59,7 +59,7 @@ c_timemory_create_auto_timer(const char* tag, int lineno)
 
 //======================================================================================//
 
-void
+tim_api void
 c_timemory_delete_auto_timer(void* ctimer)
 {
     ctimer = cxx_timemory_delete_auto_timer(ctimer);
@@ -68,7 +68,7 @@ c_timemory_delete_auto_timer(void* ctimer)
 
 //======================================================================================//
 
-const char*
+tim_api const char*
 c_timemory_string_combine(const char* _a, const char* _b)
 {
     return cxx_timemory_string_combine(_a, _b);
@@ -76,7 +76,7 @@ c_timemory_string_combine(const char* _a, const char* _b)
 
 //======================================================================================//
 
-const char*
+tim_api const char*
 c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);

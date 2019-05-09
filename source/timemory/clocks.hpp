@@ -115,7 +115,7 @@ EXTERN_C clock_t
     return __buffer->tms_utime;
 }
 
-using suseconds_t long long;
+using suseconds_t = long long;
 
 enum clockid_t
 {

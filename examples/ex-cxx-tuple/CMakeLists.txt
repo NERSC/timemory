@@ -12,6 +12,10 @@ set(CMAKE_THREAD_PREFER_PTHREAD ON)
 find_package(TiMemory REQUIRED)
 find_package(Threads REQUIRED)
 
+if(WIN32)
+	list(APPEND ${PROJECT_NAME}_CXX_FLAGS /bigobj)
+endif()
+
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 
 target_link_libraries(${EXE_NAME} PRIVATE

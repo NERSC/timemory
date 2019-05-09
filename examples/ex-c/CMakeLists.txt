@@ -11,8 +11,9 @@ set(EXE_NAME test_c_timing)
 find_package(TiMemory REQUIRED)
 
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
+
 target_link_libraries(${EXE_NAME}
-    PRIVATE ${TiMemory_LIBRARIES} ${TiMemory_C_LIBRARIES})
+    PRIVATE ${TiMemory_LIBRARIES} timemory-c-library)
 
 target_include_directories(${EXE_NAME} SYSTEM
     PRIVATE ${TiMemory_INCLUDE_DIRS})
