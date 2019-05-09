@@ -679,6 +679,7 @@ test_5_mt_saxpy_async()
         float      maxError     = 0.0f;
         float      sumError     = 0.0f;
         cuda_event evt;
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[run_thread]");
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");
@@ -801,6 +802,7 @@ test_6_mt_saxpy_async_pinned()
         float       maxError     = 0.0f;
         float       sumError     = 0.0f;
         cuda_event* evt          = new cuda_event();
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[run_thread]");
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");

@@ -292,7 +292,7 @@ test_2_timing()
         TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
 
         auto run_fib = [&](long n) {
-            TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+            TIMEMORY_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
             measurement_t _tm;
             _tm.start();
             ret += time_fibonacci(n);

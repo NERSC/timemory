@@ -342,18 +342,23 @@ public:
     //
     iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
     {
+        // lambda for updating settings
+        auto _update = [&](iterator itr) {
+            exists = true;
+            return (m_data.current() = itr);
+        };
+
+        if(m_node_ids.find(hash_id) != m_node_ids.end())
+        {
+            _update(m_node_ids.find(hash_id)->second);
+        }
+
         using sibling_itr = typename graph_t::sibling_iterator;
         int64_t min_depth = 0;
         int64_t live_depth =
             tim::counted_object<ObjectType>::live() - m_data.graph().size() - 1;
         int64_t    node_depth = std::max(min_depth, live_depth);
         graph_node node(hash_id, obj, node_depth);
-
-        // lambda for updating settings
-        auto _update = [&](iterator itr) {
-            exists = true;
-            return (m_data.current() = itr);
-        };
 
         // lambda for inserting child
         auto _insert_child = [&]() {
@@ -362,11 +367,6 @@ public:
             m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
         };
-
-        if(m_node_ids.find(hash_id) != m_node_ids.end())
-        {
-            _update(m_node_ids.find(hash_id)->second);
-        }
 
         // if first instance
         if(m_data.depth() < 0)

@@ -511,6 +511,111 @@ public:
 //======================================================================================//
 
 template <typename CountedType>
+class static_counted_object
+{
+public:
+    typedef static_counted_object<CountedType> this_type;
+
+public:
+    // return number of existing objects:
+    static int64_t live() { return count().load(); }
+    static bool    is_master() { return thread_number() == 0; }
+
+protected:
+    // default constructor
+    static_counted_object()
+    : m_thread(thread_number())
+    , m_count(count()++)
+    {
+        // PRINT_HERE(std::to_string(m_count).c_str());
+    }
+
+    ~static_counted_object()
+    {
+        if(m_decrement)
+        {
+            --count();
+            // int64_t c = --count();
+            // PRINT_HERE(std::to_string(c).c_str());
+        }
+    }
+
+    static_counted_object(const this_type& rhs)
+    : m_decrement(false)
+    , m_count(rhs.m_count)
+    {
+        // std::stringstream ss;
+        // ss << "copy_constructor " << m_count;
+        // PRINT_HERE(ss.str().c_str());
+    }
+
+    this_type& operator=(const this_type& rhs)
+    {
+        if(this != &rhs)
+        {
+            m_decrement = false;
+            m_count     = rhs.m_count;
+        }
+        // PRINT_HERE("copy_assignment");
+        return *this;
+    }
+
+    static_counted_object(this_type&& rhs)
+    : m_decrement(false)
+    , m_count(std::move(rhs.m_count))
+    {
+        // std::stringstream ss;
+        // ss << "move_constructor " << m_count;
+        // PRINT_HERE(ss.str().c_str());
+    }
+
+    /*this_type& operator=(this_type&& rhs)
+    {
+        // PRINT_HERE("move_assignment");
+        m_decrement     = std::move(rhs.m_decrement);
+        m_count         = std::move(rhs.m_count);
+        rhs.m_decrement = true;
+    }*/
+
+protected:
+    bool    m_decrement = true;
+    int64_t m_thread;
+    int64_t m_count;
+
+private:
+    // number of existing objects
+    static std::atomic<int64_t>& count();
+    static int64_t&              thread_number();
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+int64_t&
+static_counted_object<CountedType>::thread_number()
+{
+    static std::atomic<int64_t> _all_instance;
+    static thread_local int64_t _instance = _all_instance++;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename CountedType>
+std::atomic<int64_t>&
+static_counted_object<CountedType>::count()
+{
+    static thread_local std::atomic<int64_t> _instance;
+    return _instance;
+}
+
+//======================================================================================//
+//
+//
+//
+//======================================================================================//
+
+template <typename CountedType>
 class counted_object
 {
 public:
