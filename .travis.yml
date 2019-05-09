@@ -86,8 +86,8 @@ matrix:
             - clang++-4.0
             - build-essential
             - cmake
-            - libopenmpi-dev
-            - openmpi-bin
+            - libmpich-dev
+            - mpich
             - libpapi-dev
             - papi-tools
       env:
@@ -107,8 +107,8 @@ matrix:
             - clang++-5.0
             - build-essential
             - cmake
-            - libopenmpi-dev
-            - openmpi-bin
+            - libmpich-dev
+            - mpich
             - libpapi-dev
             - papi-tools
       env:
@@ -346,6 +346,7 @@ before_install:
     - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
 
 install:
+    - eval "${MATRIX_EVAL}"
     - env
     - conda install pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"

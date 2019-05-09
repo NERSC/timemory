@@ -316,8 +316,10 @@ public:
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
     }
+
     explicit graph_storage(const this_type&) = delete;
-    graph_storage(this_type&&)               = default;
+    explicit graph_storage(this_type&&)      = default;
+
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = default;
 
@@ -325,6 +327,7 @@ public:
     static pointer master_instance() { return get_singleton().master_instance(); }
 
     void print();
+    bool empty() const { return (m_node_ids.size() == 0); }
 
     const graph_data& data() const { return m_data; }
     const graph_t&    graph() const { return m_data.graph(); }

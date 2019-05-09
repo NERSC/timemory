@@ -186,9 +186,9 @@ test_1_usage()
         num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv,
         num_signals, voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
-    measurement_t _use_beg;
-    measurement_t _use_delta;
-    measurement_t _use_end;
+    measurement_t _use_beg("");
+    measurement_t _use_delta("");
+    measurement_t _use_end("");
 
     auto n = 5000000;
     _use_beg.record();
@@ -283,8 +283,8 @@ test_2_timing()
 
     static std::mutex    mtx;
     std::deque<pair_t>   measurements;
-    measurement_t        runtime;
-    printed_t            runtime_printed;
+    measurement_t        runtime("");
+    printed_t            runtime_printed("");
     std::atomic<int64_t> ret;
     std::stringstream    lambda_ss;
 
@@ -293,7 +293,7 @@ test_2_timing()
 
         auto run_fib = [&](long n) {
             TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
-            measurement_t _tm;
+            measurement_t _tm("");
             _tm.start();
             ret += time_fibonacci(n);
             _tm.stop();

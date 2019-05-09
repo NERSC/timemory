@@ -2055,7 +2055,7 @@ class component_tuple;
 //--------------------------------------------------------------------------------------//
 //  all configurations
 //
-using usage_components_t = component_tuple<
+using rusage_components_t = component_tuple<
     component::current_rss, component::peak_rss, component::stack_rss,
     component::data_rss, component::num_swap, component::num_io_in, component::num_io_out,
     component::num_minor_page_faults, component::num_major_page_faults,

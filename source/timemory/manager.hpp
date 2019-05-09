@@ -60,7 +60,8 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-class manager;
+template <typename... Types>
+class component_tuple;
 
 namespace details
 {
@@ -236,6 +237,17 @@ public:
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
+    static void print(const tim::component_tuple<>&) {}
+
+    template <typename Head, typename... Tail>
+    static void print(const tim::component_tuple<Head, Tail...>&);
+
+    template <typename ComponentTuple_t>
+    static void print()
+    {
+        print(ComponentTuple_t());
+    }
+
 public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }
@@ -256,6 +268,19 @@ protected:
 protected:
     // protected functions
     string_t get_prefix() const;
+
+protected:
+    template <typename List>
+    struct PopFront_t;
+
+    template <typename Head, typename... Tail>
+    struct PopFront_t<tim::component_tuple<Head, Tail...>>
+    {
+        using type = tim::component_tuple<Tail...>;
+    };
+
+    template <typename List>
+    using PopFront = typename PopFront_t<List>::type;
 
 private:
     // private static variables

@@ -67,6 +67,11 @@ class component_tuple
 {
     static const std::size_t num_elements = sizeof...(Types);
 
+    // empty init for friends
+    explicit component_tuple() {}
+    // manager is friend so can use above
+    friend class manager;
+
 public:
     using size_type   = int64_t;
     using this_type   = component_tuple<Types...>;
@@ -76,17 +81,6 @@ public:
     using auto_type   = auto_tuple<Types...>;
 
 public:
-    explicit component_tuple()
-    : m_store(false)
-    , m_laps(0)
-    , m_count(0)
-    , m_hash(0)
-    , m_identifier(get_prefix())
-    {
-        init_manager();
-        push();
-    }
-
     explicit component_tuple(const string_t& key, const bool& store,
                              const string_t& tag = "cxx", const int32_t& ncount = 0,
                              const int32_t& nhash = 0)

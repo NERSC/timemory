@@ -381,7 +381,7 @@ namespace manager
 string_t
 write_ctest_notes(py::object man, std::string directory, bool append)
 {
-    py::list filenames = man.attr("reported_files").cast<py::list>();
+    py::list filenames = man.attr("text_files").cast<py::list>();
 
     std::stringstream ss;
     ss << std::endl;

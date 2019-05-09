@@ -770,7 +770,24 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
+#include <timemory/component_tuple.hpp>
 #include <timemory/settings.hpp>
+#include <timemory/storage.hpp>
+
+//======================================================================================//
+
+template <typename Head, typename... Tail>
+inline void
+tim::manager::print(const tim::component_tuple<Head, Tail...>&)
+{
+    auto storage = tim::graph_storage<Head>::instance();
+    if(storage && !storage->empty())
+        storage->print();
+    using tail_obj_t = PopFront<tim::component_tuple<Head, Tail...>>;
+    print(tail_obj_t());
+}
+
+//--------------------------------------------------------------------------------------//
 
 inline void
 tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
@@ -780,6 +797,10 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
     {
         // singleton_t::master_instance()->merge(this);
     }
+    else
+    {
+    }
+    /*
     else if(settings::auto_output())
     {
         m_data.current() = m_data.head();
@@ -860,7 +881,8 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str() << std::endl;
         }
-    }
+
+    }*/
 }
 
 //======================================================================================//
