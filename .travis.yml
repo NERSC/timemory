@@ -348,13 +348,16 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda install pyctest
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest
+    - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
     - python ./pyctest-runner.py ${ARGS} --coverage --pyctest-build-type=Debug
     - rm -rf build-timemory
     - python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE}
+    - rm -rf build-timemory
+    - python setup.py install
 
 script:
     #

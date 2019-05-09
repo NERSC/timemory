@@ -129,7 +129,9 @@ def run_pyctest():
     if args.no_py:
         build_opts["TIMEMORY_BUILD_PYTHON"] = "OFF"
     else:
-        pyctest.BUILD_NAME = "{} PY".format(pyctest.BUILD_NAME)
+        pyver = "{}.{}.{}".format(
+            sys.version_info[0], sys.version_info[1], sys.version_info[2])
+        pyctest.BUILD_NAME = "{} PY-{}".format(pyctest.BUILD_NAME, pyver)
 
     if args.no_mpi:
         build_opts["TIMEMORY_USE_MPI"] = "OFF"
