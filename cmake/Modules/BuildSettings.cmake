@@ -38,6 +38,8 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
         # on Windows, separate types into different directories
         string(TOLOWER "${_TYPE}" _LTYPE)
         set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE})
+    elseif(XCODE)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
     else()
         # on UNIX, just set to same directory
         set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR})
@@ -85,6 +87,7 @@ add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-c++17-extensions")
 add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
 add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)

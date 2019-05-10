@@ -170,10 +170,10 @@ PYBIND11_MODULE(libtimemory, tim)
             py::arg("nback") = 2, py::arg("basename_only") = true,
             py::arg("use_dirname") = false, py::arg("noquotes") = false);
     //----------------------------------------------------------------------------------//
-    tim.def("set_max_depth", [=](int32_t ndepth) { manager_t::set_max_depth(ndepth); },
+    tim.def("set_max_depth", [=](int32_t ndepth) { manager_t::max_depth(ndepth); },
             "Max depth of auto-timers");
     //----------------------------------------------------------------------------------//
-    tim.def("get_max_depth", [=]() { return manager_t::get_max_depth(); },
+    tim.def("get_max_depth", [=]() { return manager_t::max_depth(); },
             "Max depth of auto-timers");
     //----------------------------------------------------------------------------------//
     tim.def("toggle", [=](bool timers_on) { manager_t::enable(timers_on); },
@@ -269,11 +269,10 @@ PYBIND11_MODULE(libtimemory, tim)
     man.def(py::init<>(&pytim::init::manager), "Initialization",
             py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
-    man.def("set_max_depth",
-            [=](py::object, int depth) { manager_t::set_max_depth(depth); },
+    man.def("set_max_depth", [=](py::object, int depth) { manager_t::max_depth(depth); },
             "Set the max depth of the timers");
     //----------------------------------------------------------------------------------//
-    man.def("get_max_depth", [=](py::object) { return manager_t::get_max_depth(); },
+    man.def("get_max_depth", [=](py::object) { return manager_t::max_depth(); },
             "Get the max depth of the timers");
     //----------------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,

@@ -22,7 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <timemory/timemory.hpp>
+#include "timemory/timemory.hpp"
 
 // C includes
 #include <errno.h>

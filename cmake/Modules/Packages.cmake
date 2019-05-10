@@ -9,6 +9,28 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
 ################################################################################
 #
+#                               Threading
+#
+################################################################################
+
+find_library(PTHREADS_LIBRARY pthread)
+if(PTHREADS_LIBRARY)
+    list(APPEND EXTERNAL_LIBRARIES ${PTHREADS_LIBRARY})
+else()
+    if(NOT WIN32)
+        set(CMAKE_THREAD_PREFER_PTHREAD ON)
+    endif()
+
+    find_package(Threads)
+
+    if(Threads_FOUND)
+        list(APPEND PRIVATE_EXTERNAL_LIBRARIES Threads::Threads)
+    endif()
+endif()
+
+
+################################################################################
+#
 #                               MPI
 #
 ################################################################################
@@ -75,7 +97,7 @@ if(TIMEMORY_USE_MPI)
         endforeach()
 
         if(MPI_EXTRA_LIBRARY)
-            list(APPEND PRIVATE_EXTERNAL_LIBRARIES ${MPI_EXTRA_LIBRARY})
+            list(APPEND EXTERNAL_LIBRARIES ${MPI_EXTRA_LIBRARY})
         endif()
 
         if(MPI_INCLUDE_PATH)
@@ -99,23 +121,6 @@ if(TIMEMORY_USE_MPI)
 
     endif()
 
-endif()
-
-
-################################################################################
-#
-#                               Threading
-#
-################################################################################
-
-if(NOT WIN32)
-    set(CMAKE_THREAD_PREFER_PTHREAD ON)
-endif()
-
-find_package(Threads)
-
-if(THREADS_FOUND AND (WIN32 OR CMAKE_CXX_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_CLANG))
-    list(APPEND PRIVATE_EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 
@@ -229,24 +234,6 @@ endif()
 
 ################################################################################
 #
-#        Google PerfTools
-#
-################################################################################
-
-if(TIMEMORY_USE_GPERF)
-    find_package(GPerfTools COMPONENTS profiler)
-
-    if(GPerfTools_FOUND)
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${GPerfTools_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LIBRARIES ${GPerfTools_LIBRARIES})
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_GPERF)
-    endif()
-
-endif()
-
-
-################################################################################
-#
 #        Coverage
 #
 ################################################################################
@@ -313,6 +300,27 @@ endif()
 
 ################################################################################
 #
+#        Google PerfTools
+#
+################################################################################
+
+if(TIMEMORY_USE_GPERF)
+    find_package(GPerfTools COMPONENTS profiler)
+
+    if(GPerfTools_FOUND)
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${GPerfTools_INCLUDE_DIRS})
+        list(APPEND EXTERNAL_LIBRARIES ${GPerfTools_LIBRARIES})
+        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_GPERF)
+    else()
+        set(TIMEMORY_USE_GPERF OFF)
+        message(WARNING "GPerfTools package not found!")
+    endif()
+
+endif()
+
+
+################################################################################
+#
 #        Checkout Cereal if not checked out
 #
 ################################################################################
@@ -334,10 +342,11 @@ safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
 safe_remove_duplicates(PRIVATE_EXTERNAL_INCLUDE_DIRS ${PRIVATE_EXTERNAL_INCLUDE_DIRS})
 safe_remove_duplicates(PRIVATE_EXTERNAL_LIBRARIES ${PRIVATE_EXTERNAL_LIBRARIES})
 
+set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} PRIVATE ${PRIVATE_EXTERNAL_LIBRARIES})
+
 list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES ${EXTERNAL_LIBRARIES})
 
-set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} PRIVATE ${PRIVATE_EXTERNAL_LIBRARIES})
 
 ################################################################################
 #

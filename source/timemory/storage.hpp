@@ -139,6 +139,7 @@ public:
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
     using graph_node_tuple = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using count_type       = counted_object<ObjectType>;
 
     //----------------------------------------------------------------------------------//
     //
@@ -356,12 +357,12 @@ public:
             _update(m_node_ids.find(hash_id)->second);
         }
 
-        using sibling_itr = typename graph_t::sibling_iterator;
-        int64_t min_depth = 0;
-        int64_t live_depth =
-            tim::counted_object<ObjectType>::live() - m_data.graph().size() - 1;
-        int64_t    node_depth = std::max(min_depth, live_depth);
-        graph_node node(hash_id, obj, node_depth);
+        using sibling_itr       = typename graph_t::sibling_iterator;
+        const int64_t min_depth = 0;
+        int64_t       now_depth = count_type::live() - m_node_ids.size() - 1;
+        if(m_node_ids.size() > 0)
+            now_depth -= graph().number_of_siblings(m_data.current());
+        graph_node node(hash_id, obj, std::max(min_depth, now_depth));
 
         // lambda for inserting child
         auto _insert_child = [&]() {
@@ -378,6 +379,7 @@ public:
             {
                 m_data = graph_data(node);
                 exists = false;
+                m_node_ids.insert(std::make_pair(hash_id, m_data.current()));
                 return m_data.current();
             }
             else
@@ -388,17 +390,22 @@ public:
         }
         else
         {
-            auto current = m_data.current();
+            auto current   = m_data.current();
+            auto nchildren = graph_t::number_of_children(current);
 
             if(hash_id == current->id())
             {
                 exists = true;
                 return current;
             }
+            else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            {
+                return _insert_child();
+            }
             else if(m_data.graph().is_valid(current))
             {
                 // check parent if not head
-                if(!m_data.graph().is_head(current))
+                /*if(!m_data.graph().is_head(current))
                 {
                     auto parent = graph_t::parent(current);
                     for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
@@ -409,7 +416,7 @@ public:
                             return _update(itr);
                         }
                     }
-                }
+                }*/
 
                 // check siblings
                 for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
@@ -425,7 +432,6 @@ public:
                 }
 
                 // check children
-                auto nchildren = graph_t::number_of_children(current);
                 if(nchildren == 0)
                 {
                     return _insert_child();
@@ -440,14 +446,25 @@ public:
                             return _update(itr);
                         }
                     }
-                    if(!exists)
-                        return _insert_child();
                 }
             }
         }
         return _insert_child();
     }
 
+    //----------------------------------------------------------------------------------//
+    //
+    iterator insert(const int64_t& hash_id, const ObjectType& obj, const string_t& prefix)
+    {
+        bool exists = false;
+        auto itr    = insert(hash_id, obj, exists);
+        if(!exists)
+            itr->prefix() = prefix;
+        return itr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     void set_prefix(const string_t& _prefix) { m_data.current()->prefix() = _prefix; }
 
 protected:

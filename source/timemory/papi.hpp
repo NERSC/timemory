@@ -43,7 +43,7 @@
 #        include <pthread.h>
 #    endif
 #else
-#    include <timemory/impl/papi_defs.icpp>
+#    include "timemory/impl/papi_defs.icpp"
 #endif
 
 //--------------------------------------------------------------------------------------//

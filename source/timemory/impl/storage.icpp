@@ -27,6 +27,23 @@
 #include "timemory/manager.hpp"
 #include "timemory/settings.hpp"
 
+#include <thread>
+
+//======================================================================================//
+
+namespace tim
+{
+namespace details
+{
+inline std::once_flag&
+storage_once_flag()
+{
+    static std::once_flag _instance;
+    return _instance;
+}
+}
+}
+
 //======================================================================================//
 
 template <typename ObjectType>
@@ -43,7 +60,10 @@ tim::graph_storage<ObjectType>::print()
     {
         merge();
 
-        auto _manager = tim::manager::master_instance();
+        // disable gperf if profiling
+        std::call_once(details::storage_once_flag(), &gperf::profiler_stop);
+
+        // auto _manager = tim::manager::master_instance();
 
         using predicate_type = decltype(graph().begin());
         auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
@@ -63,17 +83,17 @@ tim::graph_storage<ObjectType>::print()
         std::stringstream _mss;
         for(const auto& itr : m_data.graph())
         {
-            auto _id     = itr.id();
             auto _obj    = itr.obj();
             auto _prefix = itr.prefix();  // + std::to_string(itr.id());
             auto _laps   = _obj.laps;
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
             component::print<ObjectType>(_obj, _mss, false);
-            if(_manager)
+            /*if(_manager)
             {
+                auto _id     = itr.id();
                 if(_mss.str().length() > 0)
                     _manager->insert(_id, _prefix, _mss.str());
-            }
+            }*/
         }
 
         if(settings::file_output() && _oss.str().length() > 0)
@@ -89,9 +109,10 @@ tim::graph_storage<ObjectType>::print()
                 if(ofs)
                 {
                     auto_lock_t l(type_mutex<std::ofstream>());
-                    printf("[graph_storage<%s>]> Outputting '%s'...\n",
-                           ObjectType::label().c_str(), fname.c_str());
+                    std::cout << "[graph_storage<" << ObjectType::label()
+                              << ">]> Outputting '" << fname << "'... " << std::flush;
                     ofs << _oss.str();
+                    std::cout << "Done" << std::endl;
                     ofs.close();
                 }
                 else

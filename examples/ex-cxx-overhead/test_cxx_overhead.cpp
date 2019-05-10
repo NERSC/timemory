@@ -29,13 +29,11 @@
 
 using namespace tim::component;
 
-using auto_tuple_t  = tim::auto_tuple<real_clock>;
-using timer_tuple_t = tim::component_tuple<real_clock, system_clock, process_cpu_clock>;
-using papi_tuple_t  = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
-using global_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, thread_cpu_clock, thread_cpu_util,
-                    process_cpu_clock, process_cpu_util, peak_rss, current_rss,
-                    papi_tuple_t>;
+using auto_tuple_t   = tim::auto_tuple<real_clock>;
+using timer_tuple_t  = tim::component_tuple<real_clock, system_clock, user_clock>;
+using papi_tuple_t   = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using global_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                       peak_rss, current_rss, papi_tuple_t>;
 
 static int64_t nlaps = 0;
 
@@ -88,7 +86,8 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
     return fibonacci(n);
@@ -134,7 +133,7 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 20;
+    int cutoff = nfib - 27;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 

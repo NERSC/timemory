@@ -32,7 +32,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include <timemory/macros.hpp>
+#include "timemory/macros.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -142,11 +142,11 @@ tim::settings::toupper(std::string str)
 
 //======================================================================================//
 
-#include <timemory/component_operations.hpp>
-#include <timemory/components.hpp>
-#include <timemory/mpi.hpp>
-#include <timemory/units.hpp>
-#include <timemory/utility.hpp>
+#include "timemory/component_operations.hpp"
+#include "timemory/components.hpp"
+#include "timemory/mpi.hpp"
+#include "timemory/units.hpp"
+#include "timemory/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
@@ -160,18 +160,13 @@ tim::settings::parse()
         return;
     }
 
-    auto get_env_bool = [](const std::string& _env_var, const bool& _default) {
-        return (tim::get_env<int>(_env_var, static_cast<int>(_default)) > 0) ? true
-                                                                             : false;
-    };
-
     // logic
-    enabled()     = get_env_bool("TIMEMORY_ENABLE", enabled());
-    auto_output() = get_env_bool("TIMEMORY_AUTO_OUTPUT", auto_output());
-    file_output() = get_env_bool("TIMEMORY_FILE_OUTPUT", file_output());
-    text_output() = get_env_bool("TIMEMORY_TEXT_OUTPUT", text_output());
-    json_output() = get_env_bool("TIMEMORY_JSON_OUTPUT", json_output());
-    cout_output() = get_env_bool("TIMEMORY_COUT_OUTPUT", !file_output());
+    enabled()     = tim::get_env("TIMEMORY_ENABLE", enabled());
+    auto_output() = tim::get_env("TIMEMORY_AUTO_OUTPUT", auto_output());
+    file_output() = tim::get_env("TIMEMORY_FILE_OUTPUT", file_output());
+    text_output() = tim::get_env("TIMEMORY_TEXT_OUTPUT", text_output());
+    json_output() = tim::get_env("TIMEMORY_JSON_OUTPUT", json_output());
+    cout_output() = tim::get_env("TIMEMORY_COUT_OUTPUT", !file_output());
 
     // settings
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
@@ -187,13 +182,13 @@ tim::settings::parse()
     timing_precision()  = tim::get_env("TIMEMORY_TIMING_PRECISION", timing_precision());
     timing_width()      = tim::get_env("TIMEMORY_TIMING_WIDTH", timing_width());
     timing_units()      = tim::get_env("TIMEMORY_TIMING_UNITS", timing_units());
-    timing_scientific() = get_env_bool("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific());
+    timing_scientific() = tim::get_env("TIMEMORY_TIMING_SCIENTIFIC", timing_scientific());
 
     // memory formatting
     memory_precision()  = tim::get_env("TIMEMORY_MEMORY_PRECISION", memory_precision());
     memory_width()      = tim::get_env("TIMEMORY_MEMORY_WIDTH", memory_width());
     memory_units()      = tim::get_env("TIMEMORY_MEMORY_UNITS", memory_units());
-    memory_scientific() = get_env_bool("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific());
+    memory_scientific() = tim::get_env("TIMEMORY_MEMORY_SCIENTIFIC", memory_scientific());
 
     // file settings
     output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
@@ -470,6 +465,8 @@ tim::timemory_init(int argc, char** argv)
 
     while(exe_name.find("/") != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
+
+    gperf::profiler_start(exe_name);
 
     exe_name = "timemory-" + exe_name + "-output";
     for(auto& itr : exe_name)
