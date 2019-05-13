@@ -112,14 +112,6 @@ build_script:
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 - ls
-- "./outputs/runtime/%CONFIG%/test_c_timing.exe"
-- "./outputs/runtime/%CONFIG%/test_cxx_overhead.exe"
-- "./outputs/runtime/%CONFIG%/test_cxx_tuple.exe"
-#
-#- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
-#
-#- ctest --build . --config "%CONFIG%" -S cdash/Test.cmake -VV --output-on-failure & exit 0
-#- cd ..
-#- python -m pip install -v -v -v --no-cache-dir .
-#- cd ..
-#- python -c "import timemory ; timemory.tests.run()"
+- ./outputs/runtime/%CONFIG%/test_c_timing.exe
+- ./outputs/runtime/%CONFIG%/test_cxx_overhead.exe
+- ./outputs/runtime/%CONFIG%/test_cxx_tuple.exe
