@@ -112,9 +112,9 @@ build_script:
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 - ls
-- ./test_c_timing
-- ./test_cxx_overhead
-- ./test_cxx_tuple
+- "./outputs/runtime/%CONFIG%/test_c_timing.exe"
+- "./outputs/runtime/%CONFIG%/test_cxx_overhead.exe"
+- "./outputs/runtime/%CONFIG%/test_cxx_tuple.exe"
 #
 #- cmake --build . --config "%CONFIG%" --target INSTALL & exit 0
 #
