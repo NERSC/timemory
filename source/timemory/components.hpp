@@ -94,37 +94,30 @@ struct impl_available : std::true_type
 template <typename _Tp, typename value_type = int64_t>
 struct base : public tim::counted_object<_Tp>
 {
-    using Type         = _Tp;
-    using this_type    = base<_Tp, value_type>;
-    using storage_type = graph_storage<Type>;
+    using Type           = _Tp;
+    using this_type      = base<_Tp, value_type>;
+    using storage_type   = graph_storage<Type>;
+    using graph_iterator = typename storage_type::iterator;
 
-    bool                            is_running   = false;
-    bool                            is_transient = false;
-    value_type                      value        = value_type();
-    value_type                      accum        = value_type();
-    int64_t                         hashid       = 0;
-    int64_t                         laps         = 0;
-    typename storage_type::iterator itr;
+    bool           is_running   = false;
+    bool           is_transient = false;
+    value_type     value        = value_type();
+    value_type     accum        = value_type();
+    int64_t        hashid       = 0;
+    int64_t        laps         = 0;
+    graph_iterator itr;
 
     base()                          = default;
-    virtual ~base()                 = default;
+    ~base()                         = default;
     explicit base(const this_type&) = default;
     explicit base(this_type&&)      = default;
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
     //----------------------------------------------------------------------------------//
-    //
-    value_type get_measurement() const { return Type::record(); }
-
-    //----------------------------------------------------------------------------------//
     // function operator
     //
-    value_type& operator()()
-    {
-        value = Type::record();
-        return value;
-    }
+    value_type operator()() { return Type::record(); }
 
     //----------------------------------------------------------------------------------//
     // set the graph node prefix
@@ -142,6 +135,13 @@ struct base : public tim::counted_object<_Tp>
         hashid    = _hashid;
         Type& obj = static_cast<Type&>(*this);
         itr       = storage_type::instance()->insert(hashid, obj, exists);
+    }
+
+    void insert_node(const string_t& _prefix, const int64_t& _hashid)
+    {
+        hashid    = _hashid;
+        Type& obj = static_cast<Type&>(*this);
+        itr       = storage_type::instance()->insert(hashid, obj, _prefix);
     }
 
     //----------------------------------------------------------------------------------//
@@ -442,6 +442,53 @@ struct base : public tim::counted_object<_Tp>
            serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
     }
 };
+
+//======================================================================================//
+// component initialization
+//
+/*
+class init
+{
+public:
+    using string_t  = std::string;
+    bool     store  = false;
+    int32_t  ncount = 0;
+    int32_t  nhash  = 0;
+    string_t key    = "";
+    string_t tag    = "";
+};
+*/
+//======================================================================================//
+// construction tuple for a component
+//
+template <typename Type, typename... Args>
+class constructor : public std::tuple<Args...>
+{
+public:
+    using base_type                    = std::tuple<Args...>;
+    static constexpr std::size_t nargs = std::tuple_size<decay_t<base_type>>::value;
+
+    explicit constructor(Args&&... _args)
+    : base_type(std::forward<Args>(_args)...)
+    {
+    }
+
+    template <typename _Tuple, size_t... _Idx>
+    Type operator()(_Tuple&& __t, index_sequence<_Idx...>)
+    {
+        return Type(std::get<_Idx>(std::forward<_Tuple>(__t))...);
+    }
+
+    Type operator()()
+    {
+        return (*this)(static_cast<base_type>(*this), make_index_sequence<nargs>{});
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+//  component_tuple initialization
+//
+using init = constructor<void, std::string, std::string, int32_t, int32_t, bool>;
 
 //--------------------------------------------------------------------------------------//
 //

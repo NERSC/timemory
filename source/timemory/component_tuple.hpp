@@ -77,10 +77,30 @@ public:
     using this_type   = component_tuple<Types...>;
     using data_t      = std::tuple<Types...>;
     using string_hash = std::hash<string_t>;
-    using bool_array  = std::array<bool, num_elements>;
     using auto_type   = auto_tuple<Types...>;
 
 public:
+    /*
+    using construct_types = std::tuple<component::construct<Types>...>;
+    template <typename... Constructors>
+    explicit component_tuple(std::tuple<Constructors...>&& _ctors, const string_t& key,
+                             const bool& store, const string_t& tag = "cxx",
+                             const int32_t& ncount = 0, const int32_t& nhash = 0)
+    : m_store(store)
+    , m_laps(0)
+    , m_count(ncount)
+    , m_hash(nhash)
+    , m_key(key)
+    , m_tag(tag)
+    , m_identifier("")
+    , m_data(apply<data_t>::template all<construct_types>(component::create,
+                                                          _ctors))
+    {
+        compute_identifier(key, tag);
+        init_manager();
+        push();
+    }*/
+
     explicit component_tuple(const string_t& key, const bool& store,
                              const string_t& tag = "cxx", const int32_t& ncount = 0,
                              const int32_t& nhash = 0)
@@ -123,10 +143,10 @@ public:
     , m_laps(rhs.m_laps)
     , m_count(rhs.m_count)
     , m_hash(rhs.m_hash)
-    , m_data(rhs.m_data)
     , m_key(rhs.m_key)
     , m_tag(rhs.m_tag)
     , m_identifier(rhs.m_identifier)
+    , m_data(rhs.m_data)
     {
     }
 
@@ -138,10 +158,10 @@ public:
         m_laps       = rhs.m_laps;
         m_count      = rhs.m_count;
         m_hash       = rhs.m_hash;
-        m_data       = rhs.m_data;
         m_key        = rhs.m_key;
-        m_tag        = rhs.m_identifier;
+        m_tag        = rhs.m_tag;
         m_identifier = rhs.m_identifier;
+        m_data       = rhs.m_data;
         return *this;
     }
 
@@ -161,16 +181,10 @@ public:
         if(m_store && !m_is_pushed)
         {
             using insert_types = std::tuple<component::insert_node<Types>...>;
-            using prefix_types = std::tuple<component::set_prefix<Types>...>;
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
-            // set m_exists array to false
-            apply<void>::set_value(m_exists, false);
             // insert node or find existing node
-            apply<void>::access_with_indices<insert_types>(m_data, m_exists.data(),
-                                                           m_hash);
-            // set the prefix is node was inserted
-            apply<void>::access2<prefix_types>(m_data, m_exists, m_identifier);
+            apply<void>::access<insert_types>(m_data, m_identifier, m_hash);
         }
     }
 
@@ -203,8 +217,6 @@ public:
         using apply_types = std::tuple<component::start<Types>...>;
         // increment laps
         ++m_laps;
-        // insert into graph
-        // push();
         // start components
         apply<void>::access<apply_types>(m_data);
     }
@@ -214,8 +226,6 @@ public:
         using apply_types = std::tuple<component::stop<Types>...>;
         // stop components
         apply<void>::access<apply_types>(m_data);
-        // set the current node to parent node
-        // pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -491,14 +501,13 @@ protected:
     bool           m_store     = false;
     bool           m_is_pushed = false;
     mutex_t        m_mutex;
-    int64_t        m_laps  = 0;
-    int64_t        m_count = 0;
-    int64_t        m_hash  = 0;
-    mutable data_t m_data;
+    int64_t        m_laps       = 0;
+    int64_t        m_count      = 0;
+    int64_t        m_hash       = 0;
     string_t       m_key        = "";
     string_t       m_tag        = "";
     string_t       m_identifier = "";
-    bool_array     m_exists;
+    mutable data_t m_data;
 
 protected:
     string_t get_prefix()

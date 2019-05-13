@@ -81,6 +81,7 @@ main(int argc, char** argv)
 {
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
+    tim::enable_signal_detection();
 
     auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
@@ -218,7 +219,7 @@ ReturnType
 get_measurment(tim::component_tuple<Types...>& comp)
 {
     Type& _data = std::get<tim::index_of<Type, std::tuple<Types...>>::value>(comp.data());
-    return _data.get_measurement();
+    return _data();
 }
 
 //======================================================================================//

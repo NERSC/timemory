@@ -266,11 +266,14 @@ macro(BUILD_LIBRARY)
 
     add_library(${LIBRARY_TARGET_NAME}
         ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+
     target_include_directories(${LIBRARY_TARGET_NAME}
         PUBLIC ${EXTERNAL_INCLUDE_DIRS}
         PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
     target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
+
     target_compile_options(${LIBRARY_TARGET_NAME}
         PRIVATE
             $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>

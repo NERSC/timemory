@@ -226,16 +226,28 @@ public:
     static pointer noninit_instance();
     static pointer noninit_master_instance();
     static void    enable(bool val = true) { void_counter::enable(val); }
+    static void    disable(bool val = true) { void_counter::enable(!val); }
     static bool    is_enabled() { return void_counter::enable(); }
-    static void    max_depth(const int32_t& val) { set_max_depth(val); }
-    static void    set_max_depth(const int32_t& val) { void_counter::set_max_depth(val); }
+    static void    max_depth(const int32_t& val) { void_counter::set_max_depth(val); }
     static int32_t max_depth() { return void_counter::max_depth(); }
-    static int32_t get_max_depth() { return max_depth(); }
-    static int32_t get_instance_count() { return f_manager_instance_count().load(); }
+    static int32_t total_instance_count() { return f_manager_instance_count().load(); }
 
     void merge(pointer);
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
+
+    static void exit_print()
+    {
+        auto*   ptr   = noninit_master_instance();
+        void*   vptr  = static_cast<void*>(ptr);
+        int32_t count = -1;
+        if(ptr)
+        {
+            ptr->print(false, false);
+            count = ptr->instance_count();
+        }
+        printf("############## tim::~manager [%p, %i] ##############\n", vptr, count);
+    }
 
     static void print(const tim::component_tuple<>&) {}
 

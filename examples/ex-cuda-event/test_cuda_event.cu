@@ -119,6 +119,7 @@ main(int argc, char** argv)
     cuda_event::get_format_flags() = std::ios_base::scientific;
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
+    tim::enable_signal_detection();
 
     int ndevices = 0;
     cudaGetDeviceCount(&ndevices);

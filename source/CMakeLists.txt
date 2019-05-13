@@ -74,6 +74,8 @@ if(WIN32)
     set_source_files_properties(
         ${c_sources} ${CXX_LIBRARY_SOURCES}
         PROPERTIES COMPILE_DEFINITIONS ${PRIVATE_COMPILE_DEFINITIONS})
+elseif(XCODE)
+    set(_OUTPUT_DIR ${PROJECT_BINARY_DIR})
 else()
     set(_OUTPUT_DIR ${PROJECT_BINARY_DIR}/timemory/lib)
 endif()
@@ -84,18 +86,23 @@ endif()
 # build the C++ libraries
 #
 
-build_library(
-    PIC
-    TYPE                OBJECT
-    TARGET_NAME         ${LIBNAME}-cxx-library-object
-    OUTPUT_NAME         ${LIBNAME}
-    LANGUAGE            CXX
-    LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-    COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-    SOURCES             ${CXX_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
-    INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+if(XCODE)
+    set(CXX_OBJECT_SOURCES ${CXX_LIBRARY_SOURCES})
+else()
+    build_library(
+        PIC
+        TYPE                OBJECT
+        TARGET_NAME         ${LIBNAME}-cxx-library-object
+        OUTPUT_NAME         ${LIBNAME}
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             ${CXX_LIBRARY_SOURCES}
+        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+    set(CXX_OBJECT_SOURCES $<TARGET_OBJECTS:${LIBNAME}-cxx-library-object>)
+endif()
 
 build_library(
     PIC
@@ -106,7 +113,7 @@ build_library(
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
     COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-    SOURCES             $<TARGET_OBJECTS:${LIBNAME}-cxx-library-object>
+    SOURCES             ${CXX_OBJECT_SOURCES}
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
@@ -119,7 +126,7 @@ build_library(
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
     COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-    SOURCES             $<TARGET_OBJECTS:${LIBNAME}-cxx-library-object>
+    SOURCES             ${CXX_OBJECT_SOURCES}
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
@@ -128,19 +135,25 @@ build_library(
 # build the C libraries
 #
 if(TIMEMORY_BUILD_C)
-    build_library(
-        PIC
-        TYPE                OBJECT
-        TARGET_NAME         ${LIBNAME}-c-library-object
-        OUTPUT_NAME         c${LIBNAME}
-        LANGUAGE            C
-        LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-        SOURCES             ${C_LIBRARY_SOURCES}
-        LINK_LIBRARIES      ${LIBNAME}-cxx-library
-        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
+    if(XCODE)
+        set(C_OBJECT_SOURCES ${C_LIBRARY_SOURCES})
+    else()
+        build_library(
+            PIC
+            TYPE                OBJECT
+            TARGET_NAME         ${LIBNAME}-c-library-object
+            OUTPUT_NAME         c${LIBNAME}
+            LANGUAGE            C
+            LINKER_LANGUAGE     CXX
+            OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+            COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+            SOURCES             ${C_LIBRARY_SOURCES}
+            LINK_LIBRARIES      ${LIBNAME}-cxx-library
+            INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+        set(C_OBJECT_SOURCES   $<TARGET_OBJECTS:${LIBNAME}-c-library-object>)
+    endif()
 
     build_library(
         PIC
@@ -151,7 +164,7 @@ if(TIMEMORY_BUILD_C)
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-        SOURCES             $<TARGET_OBJECTS:${LIBNAME}-c-library-object>
+        SOURCES             ${C_OBJECT_SOURCES}
         LINK_LIBRARIES      ${LIBNAME}-cxx-library
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
@@ -164,7 +177,7 @@ if(TIMEMORY_BUILD_C)
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
-        SOURCES             $<TARGET_OBJECTS:${LIBNAME}-c-library-object>
+        SOURCES             ${C_OBJECT_SOURCES}
         LINK_LIBRARIES      ${LIBNAME}-cxx-library-static
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 endif()

@@ -106,6 +106,7 @@ inline manager::manager()
                static_cast<void*>(this), m_instance_count);
         tim::settings::parse();
         tim::papi::init();
+        std::atexit(&exit_print);
     }
     else
     {
@@ -770,9 +771,9 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-#include <timemory/component_tuple.hpp>
-#include <timemory/settings.hpp>
-#include <timemory/storage.hpp>
+#include "timemory/component_tuple.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/storage.hpp"
 
 //======================================================================================//
 

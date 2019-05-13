@@ -503,3 +503,47 @@
             printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #    endif
 #endif
+
+//======================================================================================//
+//
+//      GOOGLE PERF-TOOLS
+//
+//======================================================================================//
+
+#if defined(TIMEMORY_USE_GPERF)
+#    include <gperftools/heap-profiler.h>
+#    include <gperftools/profiler.h>
+#    include <iostream>
+
+namespace gperf
+{
+inline void
+profiler_start(const std::string& name)
+{
+    int ret = ProfilerStart(name.c_str());
+    if(ret != 0)
+    {
+        std::cerr << "Profiler failed to start for \"" << name << "\"..." << std::endl;
+    }
+}
+
+inline void
+profiler_stop()
+{
+    ProfilerStop();
+}
+
+}  // namespace gperf
+#else
+namespace gperf
+{
+inline void
+profiler_start(const std::string&)
+{
+}
+inline void
+profiler_stop()
+{
+}
+}  // namespace gperf
+#endif
