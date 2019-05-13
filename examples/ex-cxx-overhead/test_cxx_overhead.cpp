@@ -137,6 +137,8 @@ main(int argc, char** argv)
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
+    std::cout << "Running fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")..."
+              << std::endl;
     tim::consume_parameters(tim::manager::instance());
     tim::auto_tuple<>          test("test");
     std::vector<timer_tuple_t> timer_list;
@@ -149,7 +151,9 @@ main(int argc, char** argv)
         nlaps = 0;
         timer_list.push_back(run(nfib, true, cutoff));  // with timing
         timer_list.push_back(timer_list.at(1) - timer_list.at(0));
+        timer_list.back().key() = "timing difference";
         timer_list.push_back(timer_list.back() / nlaps);
+        timer_list.back().key() = "average overhead per timer";
     }
     std::cout << std::endl;
     std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;
@@ -160,5 +164,6 @@ main(int argc, char** argv)
     std::cout << std::endl;
     test_print(std::make_tuple(1.0, "abc", 1), std::make_tuple("def", 6UL));
 
+    tim::print_env();
     return 0;
 }
