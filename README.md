@@ -1,5 +1,5 @@
 # TiMemory
-### C / C++ / Python Timing + Memory + Hardware Counter Utilities
+### C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities
 
 [![Build Status](https://travis-ci.org/jrmadsen/TiMemory.svg?branch=master)](https://travis-ci.org/jrmadsen/TiMemory)
 [![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory)
@@ -14,7 +14,34 @@
 
 [TiMemory Release Notes](https://jrmadsen.github.io/TiMemory/ReleaseNotes.html)
 
-### Supported Components
+### TiMemory is easy-to-use
+
+In C++ and Python, TiMemory can be added in a single line of code:
+
+```c++
+void some_function()
+{
+    TIMEMORY_AUTO_TUPLE(tim::auto_tuple<real_clock, cpu_clock, peak_rss>, "");
+    // ...
+}
+```
+
+```python
+@timemory.util.auto_timer()
+def some_function():
+    # ...
+```
+
+In C, TiMemory requires only two lines of code
+```c
+void* timer = TIMEMORY_AUTO_TIMER("");
+// ...
+FREE_TIMEMORY_AUTO_TIMER(timer);
+```
+
+When the application terminates, output to text and JSON is automated.
+
+### TiMemory supports a variety of Components
 
 - `cpu_clock`
   - records the CPU clock time (user + kernel time)
