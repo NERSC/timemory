@@ -348,7 +348,7 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
