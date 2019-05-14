@@ -35,7 +35,7 @@ cxx_timemory_enabled(void);
 extern void*
 cxx_timemory_create_auto_timer(const char*, int, const char*, int);
 extern void*
-cxx_timemory_create_auto_tuple(const char*, int, int, int*);
+cxx_timemory_create_auto_tuple(const char*, int, int, const int*);
 extern void*
 cxx_timemory_delete_auto_timer(void*);
 extern void*

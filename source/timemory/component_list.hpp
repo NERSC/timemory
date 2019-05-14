@@ -66,6 +66,8 @@ namespace tim
 //
 template <typename... Types>
 class component_list
+: public tim::counted_object<component_list<Types...>>
+, public tim::hashed_object<component_list<Types...>>
 {
     static const std::size_t num_elements = sizeof...(Types);
 
@@ -75,10 +77,15 @@ class component_list
     friend class manager;
 
 public:
-    using size_type   = int64_t;
-    using this_type   = component_list<Types...>;
-    using data_type   = std::tuple<Types*...>;
-    using string_hash = std::hash<string_t>;
+    using size_type    = int64_t;
+    using this_type    = component_list<Types...>;
+    using data_type    = std::tuple<Types*...>;
+    using string_hash  = std::hash<string_t>;
+    using counter_type = tim::counted_object<this_type>;
+    using counter_void = tim::counted_object<void>;
+    using hashed_type  = tim::hashed_object<this_type>;
+
+public:
     // using auto_type   = auto_list<Types...>;
 
 public:
@@ -106,7 +113,10 @@ public:
     explicit component_list(const string_t& key, const bool& store,
                             const string_t& tag = "cxx", const int32_t& ncount = 0,
                             const int32_t& nhash = 0)
-    : m_store(store)
+    : counter_type()
+    , hashed_type((string_hash()(key) + string_hash()(tag) +
+                   (counter_type::live() + hashed_type::live() + ncount + nhash)))
+    , m_store(store)
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)
@@ -122,7 +132,10 @@ public:
     component_list(const string_t& key, const string_t& tag = "cxx",
                    const int32_t& ncount = 0, const int32_t& nhash = 0,
                    bool store = false)
-    : m_store(store)
+    : counter_type()
+    , hashed_type((string_hash()(key) + string_hash()(tag) +
+                   (counter_type::live() + hashed_type::live() + ncount + nhash)))
+    , m_store(store)
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)

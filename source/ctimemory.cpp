@@ -49,7 +49,7 @@ using namespace tim::component;
 using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
-using auto_tuple_t = tim::component_list<
+using comp_list_t = tim::component_list<
     real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
     thread_cpu_clock, process_cpu_clock, cpu_util, thread_cpu_util, process_cpu_util,
     current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
@@ -75,10 +75,10 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
                                int report)
 {
     using namespace tim::component;
-    std::string cxx_timer_tag(timer_tag);
+    std::string key_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    return (void*) new auto_timer_t(cxx_timer_tag, lineno, lang_tag,
+    return (void*) new auto_timer_t(key_tag, lineno, lang_tag,
                                     (report > 0) ? true : false);
 }
 
@@ -86,13 +86,13 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
 
 extern "C" tim_api void*
 cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
-                               int* components)
+                               const int* components)
 {
     using namespace tim::component;
-    using data_type = typename auto_tuple_t::data_type;
-    std::string cxx_timer_tag(timer_tag);
+    using data_type = typename comp_list_t::data_type;
+    std::string key_tag(timer_tag);
     auto        lang_tag = "_c_";
-    auto        obj      = new auto_tuple_t(cxx_timer_tag, lineno, lang_tag, false);
+    auto        obj      = new comp_list_t(key_tag, true, lang_tag, lineno);
     for(int i = 0; i < num_components; ++i)
     {
         COMPONENT component = static_cast<COMPONENT>(components[i]);
@@ -214,7 +214,7 @@ cxx_timemory_delete_auto_timer(void* ctimer)
 extern "C" tim_api void*
 cxx_timemory_delete_auto_tuple(void* ctuple)
 {
-    auto_tuple_t* obj = static_cast<auto_tuple_t*>(ctuple);
+    comp_list_t* obj = static_cast<comp_list_t*>(ctuple);
     obj->stop();
     delete obj;
     ctuple = nullptr;
