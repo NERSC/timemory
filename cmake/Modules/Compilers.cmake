@@ -91,6 +91,7 @@ endmacro(set_no_duplicates _VAR)
 ################################################################################
 macro(ADD_C_FLAG_IF_AVAIL FLAG)
     if(NOT "${FLAG}" STREQUAL "")
+        string(REGEX REPLACE "^/" "c_" FLAG_NAME "${FLAG}")
         string(REGEX REPLACE "^-" "c_" FLAG_NAME "${FLAG}")
         string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
@@ -109,6 +110,7 @@ endmacro()
 ################################################################################
 macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
     if(NOT "${FLAG}" STREQUAL "")
+        string(REGEX REPLACE "^/" "cxx_" FLAG_NAME "${FLAG}")
         string(REGEX REPLACE "^-" "cxx_" FLAG_NAME "${FLAG}")
         string(REPLACE "-" "_" FLAG_NAME "${FLAG_NAME}")
         string(REPLACE " " "_" FLAG_NAME "${FLAG_NAME}")
@@ -119,6 +121,15 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
             list(APPEND ${PROJECT_NAME}_CXX_COMPILE_OPTIONS "${FLAG}")
         endif()
     endif()
+endmacro()
+
+
+################################################################################
+# check C and CXX flag
+################################################################################
+macro(ADD_FLAG_IF_AVAIL FLAG)
+    ADD_C_FLAG_IF_AVAIL("${FLAG}")
+    ADD_CXX_FLAG_IF_AVAIL("${FLAG}")
 endmacro()
 
 
