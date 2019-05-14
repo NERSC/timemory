@@ -1,46 +1,42 @@
 
-#include <stdlib.h>
-#include <stdio.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <timemory/ctimemory.h>
 
-//============================================================================//
+//======================================================================================//
 
-int64_t fibonacci(int64_t n)
+intmax_t
+fibonacci(intmax_t n)
 {
     void* timer = NULL;
-    if (n > 34)
+    if(n > 34)
     {
-        int length = snprintf( NULL, 0, "%lli", (long long int) n );
-        char* str = malloc( length + 1 );
-        snprintf( str, length + 3, "[%lli]", (long long int) n );
-        timer = TIMEMORY_AUTO_TIMER(str);
-        free(str);
+        timer = TIMEMORY_BASIC_AUTO_TIMER("");
     }
-    int64_t _n = (n < 2) ? 1L : (fibonacci(n-2) + fibonacci(n-1));
+    intmax_t _n = (n < 2) ? 1L : (fibonacci(n - 2) + fibonacci(n - 1));
     FREE_TIMEMORY_AUTO_TIMER(timer);
     return _n;
 }
 
-//============================================================================//
+//======================================================================================//
 
-int main(int argc, char** argv)
+int
+main()
 {
     printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
 
-    // modify recording memory
-    if(argc > 1)
-        TIMEMORY_RECORD_MEMORY(atoi(argv[1]));
+    void* timer = c_timemory_create_auto_tuple(
+        __FUNCTION__, __LINE__, 8, WALL_CLOCK, SYS_CLOCK, CPU_CLOCK, CPU_UTIL,
+        CURRENT_RSS, PEAK_RSS, PRIORITY_CONTEXT_SWITCH, VOLUNTARY_CONTEXT_SWITCH);
+    intmax_t n = fibonacci(44);
 
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-    int64_t n = fibonacci(44);
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-    TIMEMORY_PRINT();
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
-    TIMEMORY_REPORT("test_output/c_timing_report");
-    printf("... \"%s\" : %s @ %i\n", __FILE__, __FUNCTION__, __LINE__);
+    c_timemory_delete_auto_tuple(timer);
+
+    printf("... \"%s\" : %s @ %i --> n = %lli\n", __FILE__, __FUNCTION__, __LINE__,
+           (long long int) n);
 
     return 0;
 }
 
-//============================================================================//
+//======================================================================================//

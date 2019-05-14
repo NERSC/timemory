@@ -1,51 +1,38 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
-
-if(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE OFF)
-else(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE ON)
-    cmake_policy(SET CMP0048 NEW)
-endif(CMAKE_VERSION VERSION_LESS 3.1.3)
+cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-CXX-MPI-Example C CXX)
+project(TiMemory-CXX-MPI-Example LANGUAGES C CXX)
+message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cxx_mpi_timing)
 
 find_package(MPI REQUIRED)
 find_package(TiMemory REQUIRED)
-foreach(_DIR ${TiMemory_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
-
-# Add the MPI-specific compiler and linker flags
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${MPI_CXX_COMPILE_FLAGS}")
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${MPI_CXX_LINK_FLAGS}")
-include_directories(${MPI_INCLUDE_PATH}
-    ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+find_package(Threads REQUIRED)
+list(APPEND EXTERNAL_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
 
 foreach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
-    set(_TYPE MPI_${_TYPE})
-    if(${_TYPE})
-        list(APPEND MPI_LIBRARIES ${${_TYPE}})
-    endif(${_TYPE})
+    list(APPEND EXTERNAL_LIBRARIES ${MPI_${_TYPE}})
 endforeach(_TYPE C_LIBRARIES CXX_LIBRARIES EXTRA_LIBRARY)
 
-list(APPEND EXTERNAL_LIBRARIES ${MPI_LIBRARIES})
-
-if(NOT DEFINED CMAKE_CXX_STANDARD)
-    set(CMAKE_CXX_STANDARD 11)
-endif(NOT DEFINED CMAKE_CXX_STANDARD)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TiMemory_CXX_FLAGS}")
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ library standard")
+set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require C++ library standard")
 
 #------------------------------------------------------------------------------#
 # Add the executable, and link it to the TiMemory libraries
 #
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+target_include_directories(${EXE_NAME} SYSTEM
+    PUBLIC ${TiMemory_INCLUDE_DIRS} ${MPI_C_INCLUDE_PATH} ${MPI_CXX_INCLUDE_PATH})
+target_compile_options(${EXE_NAME}
+    PUBLIC ${TiMemory_CXX_COMPILE_OPTIONS} ${MPI_CXX_COMPILE_FLAGS})
+set_target_properties(${EXE_NAME} PROPERTIES
+    LINK_FLAGS "${MPI_CXX_LINK_FLAGS}"
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON)
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})

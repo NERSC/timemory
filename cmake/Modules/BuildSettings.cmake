@@ -5,171 +5,236 @@
 ################################################################################
 
 include(GNUInstallDirs)
-
-if(NOT SUBPROJECT)
-
-    # Special Intel compiler flags for NERSC Cori
-    foreach(_LANG C CXX)
-        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-            add_option(TIMEMORY_INTEL_${_LANG}_AVX512 "Enable -axMIC-AVX512 flags ${_LANG} compiler" ON)
-            if(TIMEMORY_INTEL_${_LANG}_AVX512)
-                set(INTEL_${_LANG}_COMPILER_FLAGS "-xHOST -axMIC-AVX512")
-            else(TIMEMORY_INTEL_${_LANG}_AVX512)
-                set(INTEL_${_LANG}_COMPILER_FLAGS "-xHOST")
-            endif(TIMEMORY_INTEL_${_LANG}_AVX512)
-            add_feature(INTEL_${_LANG}_COMPILER_FLAGS "Intel ${_LANG} compiler flags")
-        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-    endforeach(_LANG C CXX)
-
-    set(SANITIZE_TYPE leak CACHE STRING "-fsantitize=<TYPE>")
-    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-
-    if(WIN32)
-        set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ STL standard")
-    else(WIN32)
-        set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard")
-    endif(WIN32)
-
-    if(GOOD_CMAKE)
-        set(CMAKE_INSTALL_MESSAGE LAZY)
-    endif(GOOD_CMAKE)
-
-    # ensure only C++11, C++14, or C++17
-    if(NOT "${CMAKE_CXX_STANDARD}" STREQUAL "11" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "14" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "17" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "1y" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "1z")
-
-        if(WIN32)
-            set(CMAKE_CXX_STANDARD 14 CACHE STRING "C++ STL standard" FORCE)
-        else(WIN32)
-            set(CMAKE_CXX_STANDARD 11 CACHE STRING "C++ STL standard" FORCE)
-        endif(WIN32)
-
-    endif(NOT "${CMAKE_CXX_STANDARD}" STREQUAL "11" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "14" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "17" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "1y" AND
-        NOT "${CMAKE_CXX_STANDARD}" STREQUAL "1z")
-
-    if(CMAKE_CXX_COMPILER_IS_GNU)
-        add(CMAKE_CXX_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
-    elseif(CMAKE_CXX_COMPILER_IS_CLANG)
-        add(CMAKE_CXX_FLAGS "-std=c++${CMAKE_CXX_STANDARD} -stdlib=libc++")
-    elseif(CMAKE_CXX_COMPILER_IS_INTEL)
-        add(CMAKE_CXX_FLAGS "-std=c++${CMAKE_CXX_STANDARD}")
-    elseif(CMAKE_CXX_COMPILER_IS_PGI)
-        add(CMAKE_CXX_FLAGS "--c++${CMAKE_CXX_STANDARD} -A")
-    elseif(CMAKE_CXX_COMPILER_IS_XLC)
-        if(CMAKE_CXX_STANDARD GREATER 11)
-            add(CMAKE_CXX_FLAGS "-std=c++1y")
-        else(CMAKE_CXX_STANDARD GREATER 11)
-            add(CMAKE_CXX_FLAGS "-std=c++11")
-        endif(CMAKE_CXX_STANDARD GREATER 11)
-    elseif(CMAKE_CXX_COMPILER_IS_MSVC)
-        add(CMAKE_CXX_FLAGS "-std:c++${CMAKE_CXX_STANDARD}")
-    endif(CMAKE_CXX_COMPILER_IS_GNU)
-
-endif(NOT SUBPROJECT)
+include(Compilers)
 
 
-# set the output directory (critical on Windows
+# ---------------------------------------------------------------------------- #
+#
+set(CMAKE_INSTALL_MESSAGE LAZY)
+# standard
+set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
+set(CMAKE_CXX_STANDARD 11 CACHE STRING "CXX language standard")
+set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
+# standard required
+set(CMAKE_C_STANDARD_REQUIRED ON CACHE BOOL "Require the C language standard")
+set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the CXX language standard")
+set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "Require the CUDA language standard")
+# extensions
+set(CMAKE_C_EXTENSIONS OFF CACHE BOOL "C language extensions")
+set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "CXX language extensions")
+set(CMAKE_CUDA_EXTENSIONS OFF CACHE BOOL "CUDA language extensions")
+
+# ---------------------------------------------------------------------------- #
+# set the output directory (critical on Windows)
+#
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-    # if TIMEMORY_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
-    if(NOT DEFINED TIMEMORY_OUTPUT_DIR OR "${TIMEMORY_OUTPUT_DIR}" STREQUAL "")
-        set(TIMEMORY_OUTPUT_DIR ${CMAKE_BINARY_DIR})
-    endif(NOT DEFINED TIMEMORY_OUTPUT_DIR OR "${TIMEMORY_OUTPUT_DIR}" STREQUAL "")
+    # if ${PROJECT_NAME}_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
+    if(NOT DEFINED ${PROJECT_NAME}_OUTPUT_DIR OR "${${PROJECT_NAME}_OUTPUT_DIR}" STREQUAL "")
+        set(${PROJECT_NAME}_OUTPUT_DIR ${CMAKE_BINARY_DIR})
+    endif()
+
     # set the CMAKE_{ARCHIVE,LIBRARY,RUNTIME}_OUTPUT_DIRECTORY variables
     if(WIN32)
         # on Windows, separate types into different directories
         string(TOLOWER "${_TYPE}" _LTYPE)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${TIMEMORY_OUTPUT_DIR}/outputs/${_LTYPE})
-    else(WIN32)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE})
+    elseif(XCODE)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    else()
         # on UNIX, just set to same directory
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${TIMEMORY_OUTPUT_DIR})
-    endif(WIN32)
-endforeach(_TYPE ARCHIVE LIBRARY RUNTIME)
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR})
+    endif()
+endforeach()
 
+
+# ---------------------------------------------------------------------------- #
+#  debug macro
+#
+set(DEBUG OFF)
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(DEBUG ON)
+    list(APPEND ${PROJECT_NAME}_DEFINITIONS DEBUG)
+else()
+    list(APPEND ${PROJECT_NAME}_DEFINITIONS NDEBUG)
+endif()
+
+
+# ---------------------------------------------------------------------------- #
 # used by configure_package_*
 set(LIBNAME timemory)
 
-# set the compiler flags if not on Windows
-if(NOT SUBPROJECT AND NOT WIN32)
+# ---------------------------------------------------------------------------- #
+# set the compiler flags
+add_c_flag_if_avail("-W")
+if(NOT WIN32)
+    add_c_flag_if_avail("-Wall")
+else()
+    add_c_flag_if_avail("/bigobj")
+endif()
+add_c_flag_if_avail("-Wextra")
+add_c_flag_if_avail("-Wshadow")
+add_c_flag_if_avail("-Wno-unused-value")
+add_c_flag_if_avail("-Wno-unknown-pragmas")
+add_c_flag_if_avail("-Wno-reserved-id-macro")
+add_c_flag_if_avail("-Wno-deprecated-declarations")
 
-    ############
-    #    CXX   #
-    ############
-    add(CMAKE_CXX_FLAGS "-W -Wall -Wextra ${CXXFLAGS} $ENV{CXXFLAGS}")
-    add(CMAKE_CXX_FLAGS "-Wno-unused-parameter -Wno-unknown-pragmas")
-    add(CMAKE_CXX_FLAGS "-Wunused-but-set-parameter -Wno-unused-variable")
+add_cxx_flag_if_avail("-W")
+if(NOT WIN32)
+    add_cxx_flag_if_avail("-Wall")
+else()
+    add_cxx_flag_if_avail("/bigobj")
+endif()
+add_cxx_flag_if_avail("-Wextra")
+add_cxx_flag_if_avail("-Wshadow")
+add_cxx_flag_if_avail("-Wno-unused-value")
+add_cxx_flag_if_avail("-Wno-class-memaccess")
+add_cxx_flag_if_avail("-Wno-unknown-pragmas")
+add_cxx_flag_if_avail("-Wno-c++17-extensions")
+add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
+add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 
-    if(NOT CMAKE_CXX_COMPILER_IS_INTEL)
-        add(CMAKE_CXX_FLAGS "-faligned-new")
-        add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
-        add(CMAKE_CXX_FLAGS "-Wno-implicit-fallthrough")
-        add(CMAKE_CXX_FLAGS "-Wno-shadow-field-in-constructor-modified")
-        add(CMAKE_CXX_FLAGS "-Wno-exceptions")
-        add(CMAKE_CXX_FLAGS "-Wno-unknown-warning-option")
-        add(CMAKE_CXX_FLAGS "-Wno-unused-private-field")
-    else(NOT CMAKE_CXX_COMPILER_IS_INTEL)
-        # Intel compiler 18.0 sets -fno-protect-parens by default
-        add(CMAKE_CXX_FLAGS "-fprotect-parens")
-    endif(NOT CMAKE_CXX_COMPILER_IS_INTEL)
+if(NOT CMAKE_CXX_COMPILER_IS_GNU)
+    # these flags succeed with GNU compiler but are unknown (clang flags)
+    add_cxx_flag_if_avail("-Wno-exceptions")
+    add_cxx_flag_if_avail("-Wno-reserved-id-macro")
+    add_cxx_flag_if_avail("-Wno-unused-private-field")
+endif()
 
-    ############
-    #     C    #
-    ############
-    add(CMAKE_C_FLAGS "-W -Wall -Wextra ${CFLAGS} $ENV{CFLAGS}")
-    add(CMAKE_C_FLAGS "-Wno-unused-parameter")
-    add(CMAKE_C_FLAGS "-Wunused-but-set-parameter")
-    add(CMAKE_C_FLAGS "-Wno-unused-variable")
+# ---------------------------------------------------------------------------- #
+# non-debug optimizations
+#
+if(NOT DEBUG)
+    add_c_flag_if_avail("-funroll-loops")
+    add_c_flag_if_avail("-ftree-vectorize")
+    add_c_flag_if_avail("-finline-functions")
+    # add_c_flag_if_avail("-fira-loop-pressure")
 
-    if(NOT CMAKE_C_COMPILER_IS_INTEL)
-        add(CMAKE_C_FLAGS "-Wno-implicit-fallthrough")
-    else(NOT CMAKE_C_COMPILER_IS_INTEL)
-        # Intel compiler 18.0 sets -fno-protect-parens by default
-        add(CMAKE_C_FLAGS "-fprotect-parens")
-    endif(NOT CMAKE_C_COMPILER_IS_INTEL)
+    add_cxx_flag_if_avail("-funroll-loops")
+    add_cxx_flag_if_avail("-ftree-vectorize")
+    add_cxx_flag_if_avail("-finline-functions")
+    # add_cxx_flag_if_avail("-fira-loop-pressure")
+endif()
 
-    ############
-    #   other
-    ############
-    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        add_definitions(-DDEBUG)
-    else("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-        add_definitions(-DNDEBUG)
-    endif("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+# ---------------------------------------------------------------------------- #
+# Intel floating-point model (implies -fprotect-parens)
+#
+add_c_flag_if_avail("-fp-model=precise")
+add_cxx_flag_if_avail("-fp-model=precise")
 
-    if(UNIX)
-        add(CMAKE_C_FLAGS   "-pthread")
-        add(CMAKE_CXX_FLAGS "-pthread")
-    endif(UNIX)
+# ---------------------------------------------------------------------------- #
+# debug-safe optimizations
+#
+add_cxx_flag_if_avail("-faligned-new")
+add_cxx_flag_if_avail("-ftls-model=initial-exec")
 
-    if(TIMEMORY_USE_SANITIZE)
-        add_subfeature(TIMEMORY_USE_SANITIZE SANITIZE_TYPE "Sanitizer type")
-        add(CMAKE_C_FLAGS   "-fsanitize=${SANITIZE_TYPE}")
-        add(CMAKE_CXX_FLAGS "-fsanitize=${SANITIZE_TYPE}")
-    endif(TIMEMORY_USE_SANITIZE)
+if(TIMEMORY_BUILD_LTO)
+    add_c_flag_if_avail("-flto")
+    add_cxx_flag_if_avail("-flto")
+endif()
 
-    foreach(_LANG C CXX)
-        if(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-            add(CMAKE_${_LANG}_FLAGS "${INTEL_${_LANG}_COMPILER_FLAGS}")
-        endif(CMAKE_${_LANG}_COMPILER_IS_INTEL)
-    endforeach(_LANG C CXX)
+# ---------------------------------------------------------------------------- #
+# architecture optimizations
+#
+if(TIMEMORY_USE_ARCH)
+    if(CMAKE_C_COMPILER_IS_INTEL)
+        add_c_flag_if_avail("-xHOST")
+        if(TIMEMORY_USE_AVX512)
+            add_c_flag_if_avail("-axMIC-AVX512")
+        endif()
+    else()
+        add_c_flag_if_avail("-march=native")
+        add_c_flag_if_avail("-msse2")
+        add_c_flag_if_avail("-msse3")
+        add_c_flag_if_avail("-msse4")
+        add_c_flag_if_avail("-mavx")
+        add_c_flag_if_avail("-mavx2")
+        if(TIMEMORY_USE_AVX512)
+            add_c_flag_if_avail("-mavx512f")
+            add_c_flag_if_avail("-mavx512pf")
+            add_c_flag_if_avail("-mavx512er")
+            add_c_flag_if_avail("-mavx512cd")
+        endif()
+    endif()
 
-    add_c_flags(CMAKE_C_FLAGS       "${CMAKE_C_FLAGS}")
-    add_cxx_flags(CMAKE_CXX_FLAGS   "${CMAKE_CXX_FLAGS}")
+    if(CMAKE_CXX_COMPILER_IS_INTEL)
+        add_cxx_flag_if_avail("-xHOST")
+        if(TIMEMORY_USE_AVX512)
+            add_cxx_flag_if_avail("-axMIC-AVX512")
+        endif()
+    else()
+        add_cxx_flag_if_avail("-march=native")
+        add_cxx_flag_if_avail("-msse2")
+        add_cxx_flag_if_avail("-msse3")
+        add_cxx_flag_if_avail("-msse4")
+        add_cxx_flag_if_avail("-mavx")
+        add_cxx_flag_if_avail("-mavx2")
+        if(TIMEMORY_USE_AVX512)
+            add_cxx_flag_if_avail("-mavx512f")
+            add_cxx_flag_if_avail("-mavx512pf")
+            add_cxx_flag_if_avail("-mavx512er")
+            add_cxx_flag_if_avail("-mavx512cd")
+        endif()
+    endif()
+endif()
 
-elseif(NOT WIN32)
+# ---------------------------------------------------------------------------- #
+# sanitizer
+#
+if(TIMEMORY_USE_SANITIZER)
+    add_c_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
+    add_cxx_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
 
-    #add_c_flags(CMAKE_C_FLAGS "${CFLAGS} $ENV{CFLAGS}")
-    #add_cxx_flags(CMAKE_CXX_FLAGS "${CXXFLAGS} $ENV{CXXFLAGS}")
+    if(c_fsanitize_${SANITIZER_TYPE} AND cxx_fsanitize_${SANITIZER_TYPE})
+        if("${SANITIZER_TYPE}" STREQUAL "address")
+            set(SANITIZER_LIBNAME asan)
+        elseif("${SANITIZER_TYPE}" STREQUAL "memory")
+            set(SANITIZER_LIBNAME msan)
+        elseif("${SANITIZER_TYPE}" STREQUAL "thread")
+            set(SANITIZER_LIBNAME tsan)
+        elseif("${SANITIZER_TYPE}" STREQUAL "leak")
+            set(SANITIZER_LIBNAME lsan)
+        endif()
+        find_library(SANITIZER_LIBRARY NAMES ${SANITIZER_LIBNAME})
+        if(SANITIZER_LIBRARY)
+            list(APPEND EXTERNAL_LIBRARIES ${SANITIZER_LIBRARY})
+        else()
+            message(STATUS "TIMEMORY_USE_SANITIZER disabled. Unable to find sanitizer library \"${SANITIZER_LIBNAME}\"")
+            unset(SANITIZER_TYPE CACHE)
+            set(TIMEMORY_USE_SANITIZER OFF)
+        endif()
+        unset(SANITIZER_LIBNAME)
+    else()
+        unset(SANITIZER_TYPE CACHE)
+        set(TIMEMORY_USE_SANITIZER OFF)
+    endif()
+endif()
 
-endif(NOT SUBPROJECT AND NOT WIN32)
+# ---------------------------------------------------------------------------- #
+# code coverage
+#
+if(TIMEMORY_USE_COVERAGE AND CMAKE_CXX_COMPILER_IS_GNU)
+    add_c_flag_if_avail("-ftest-coverage")
+    if(c_ftest_coverage)
+        list(APPEND ${PROJECT_NAME}_C_FLAGS "-fprofile-arcs")
+    endif()
+    add_cxx_flag_if_avail("-ftest-coverage")
+    if(cxx_ftest_coverage)
+        list(APPEND ${PROJECT_NAME}_CXX_FLAGS "-fprofile-arcs")
+        add(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs")
+        add_feature(CMAKE_EXE_LINKER_FLAGS "Linker flags")
+    endif()
+elseif(TIMEMORY_USE_COVERAGE)
+    message(STATUS "Coverage only available for GNU compilers...")
+    set(TIMEMORY_USE_COVERAGE OFF)
+endif()
 
-set(CMAKE_C_FLAGS "-std=c99 ${CMAKE_C_FLAGS}")
-
-if(TIMEMORY_EXCEPTIONS)
-    add_definitions(-DTIMEMORY_EXCEPTIONS)
-endif(TIMEMORY_EXCEPTIONS)
+# ---------------------------------------------------------------------------- #
+# user customization
+#
+set(_CFLAGS ${CFLAGS} $ENV{CFLAGS})
+set(_CXXFLAGS ${CXXFLAGS} $ENV{CXXFLAGS})
+string(REPLACE " " ";" _CFLAGS "${_CFLAGS}")
+string(REPLACE " " ";" _CXXFLAGS "${_CXXFLAGS}")
+list(APPEND ${PROJECT_NAME}_C_FLAGS ${_CFLAGS})
+list(APPEND ${PROJECT_NAME}_CXX_FLAGS ${_CXXFLAGS})

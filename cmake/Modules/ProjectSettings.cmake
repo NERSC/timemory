@@ -17,7 +17,7 @@ else(WIN32)
 endif(WIN32)
 
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
-set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "TiMemory installation prefix")
+set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 
 add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
 add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
@@ -49,7 +49,7 @@ if(TIMEMORY_DEVELOPER_INSTALL)
     set(TIMEMORY_INSTALL_DOCDIR ${TIMEMORY_INSTALL_DATAROOTDIR}/doc
         CACHE PATH "Installation for executables" FORCE)
 
-else(TIMEMORY_DEVELOPER_INSTALL)
+else()
 
     # cmake installation folder
     set(TIMEMORY_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
@@ -59,7 +59,7 @@ else(TIMEMORY_DEVELOPER_INSTALL)
         set(TIMEMORY_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${_TYPE}DIR})
     endforeach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
 
-endif(TIMEMORY_DEVELOPER_INSTALL)
+endif()
 
 # create the full path version and generic path versions
 foreach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
@@ -74,4 +74,4 @@ foreach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
     set(PROJECT_INSTALL_${_TYPE}DIR ${TIMEMORY_INSTALL_${TYPE}DIR})
     set(PROJECT_INSTALL_FULL_${_TYPE}DIR ${TIMEMORY_INSTALL_FULL_${TYPE}DIR})
 
-endforeach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)
+endforeach()

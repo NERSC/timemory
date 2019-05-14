@@ -1,101 +1,85 @@
-// C program to illustrate  use of fork() &
-// exec() system call for process creation
+// MIT License
+//
+// Copyright (c) 2019, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
-#include "timemory/macros.hpp"
+#include "timemory/timemory.hpp"
 
+// C includes
+#include <errno.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <errno.h>
 #include <string.h>
-#include <sys/wait.h>
 #include <sys/types.h>
+#include <sys/wait.h>
 
 #if defined(_UNIX)
-#   include <unistd.h>
+#    include <unistd.h>
 #endif
 
-#include "timemory/manager.hpp"
-#include "timemory/rss.hpp"
-#include "timemory/timer.hpp"
-
-#include <iostream>
-#include <cstdint>
-#include <vector>
+// C++ includes
 #include <chrono>
-#include <thread>
-
+#include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
+#include <thread>
+#include <vector>
 
-typedef std::vector<uint64_t> vector_t;
-typedef tim::rss::usage rss_usage_t;
+//--------------------------------------------------------------------------------------//
+
+using vector_t = std::vector<uint64_t>;
+using namespace tim::component;
+// using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using comp_tuple_t = tim::details::custom_component_tuple<
+    real_clock, system_clock, cpu_clock, cpu_util, peak_rss, num_minor_page_faults,
+    num_major_page_faults, voluntary_context_switch, priority_context_switch>;
 
 #if defined(__GNUC__) || defined(__clang__)
-#   define declare_attribute(attr) __attribute__(( attr ))
+#    define declare_attribute(attr) __attribute__((attr))
 #elif defined(_WIN32)
-#   define declare_attribute(attr) __declspec( attr )
+#    define declare_attribute(attr) __declspec(attr)
 #endif
-//----------------------------------------------------------------------------//
 
-rss_usage_t& rss_init()
+//--------------------------------------------------------------------------------------//
+
+std::string&
+command()
 {
-    static std::shared_ptr<rss_usage_t> _instance(nullptr);
-    if(!_instance.get())
-    {
-        _instance.reset(new rss_usage_t);
-    }
-    return *(_instance.get());
-}
-
-//----------------------------------------------------------------------------//
-
-tim::string& tim_format()
-{
-    static tim::string _instance
-            = ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]";
+    static std::string _instance;
     return _instance;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-tim::string& command()
-{
-    static tim::string _instance = "";
-    return _instance;
-}
-
-//----------------------------------------------------------------------------//
-
-declare_attribute(noreturn)
-void failed_fork()
+declare_attribute(noreturn) void failed_fork()
 {
     printf("failure forking, error occured\n");
     exit(EXIT_FAILURE);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-declare_attribute(noreturn)
-void report()
-{
-    tim::manager::instance()->stop_total_timer();
-    std::stringstream _ss_report;
-
-    (*tim::manager::instance()) -= rss_init();
-    _ss_report << (*tim::manager::instance());
-    tim::string _report = _ss_report.str();
-    if(command().length() > 0)
-        _report.replace(_report.find("[exe]")+1, 3, command().c_str());
-
-    std::cout << "\n" << _report << std::endl;
-
-    exit(0);
-}
-
-//----------------------------------------------------------------------------//
-
-declare_attribute(noreturn)
-void parent_process(pid_t pid)
+declare_attribute(noreturn) void parent_process(pid_t pid)
 {
     // a positive number is returned for the pid of parent process
     // getppid() returns process id of parent of calling process
@@ -108,11 +92,15 @@ void parent_process(pid_t pid)
     // used here
 
     int status;
-    int ret = 0;
+    int ret                = 0;
+    tim::get_rusage_type() = RUSAGE_CHILDREN;
+    comp_tuple_t measure("total execution time", command());
+    if(getpid() != getppid() + 1)
+        measure.start();
 
-    if (waitpid(pid, &status, 0) > 0)
+    if(waitpid(pid, &status, 0) > 0)
     {
-        if (WIFEXITED(status) && !WEXITSTATUS(status))
+        if(WIFEXITED(status) && !WEXITSTATUS(status))
         {
             ret = 0;
         }
@@ -120,9 +108,13 @@ void parent_process(pid_t pid)
         {
             ret = WEXITSTATUS(status);
             if(ret == 127)
+            {
                 printf("execv failed\n");
+            }
             else
+            {
                 printf("program terminated with a non-zero status\n");
+            }
         }
         else
         {
@@ -136,31 +128,58 @@ void parent_process(pid_t pid)
     }
 
     if(getpid() != getppid() + 1)
-        report();
+    {
+        measure.stop();
+        std::stringstream _oss;
+        _oss << "\n" << measure << std::endl;
+
+        if(tim::settings::file_output())
+        {
+            std::string label = "timem";
+            if(tim::settings::text_output())
+            {
+                auto fname = tim::settings::compose_output_filename(label, ".txt");
+                std::ofstream ofs(fname.c_str());
+                if(ofs)
+                {
+                    printf("[timem]> Outputting '%s'...\n", fname.c_str());
+                    ofs << _oss.str();
+                    ofs.close();
+                }
+                else
+                {
+                    std::cout << "[timem]>  opening output file '" << fname << "'...\n";
+                    std::cout << _oss.str();
+                }
+            }
+
+            if(tim::settings::json_output())
+            {
+                auto jname = tim::settings::compose_output_filename(label, ".json");
+                printf("[timem]> Outputting '%s'...\n", jname.c_str());
+                serialize_storage(jname, measure);
+            }
+        }
+        else
+        {
+            std::cout << _oss.str();
+        }
+    }
 
     exit(ret);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-void print_command(int argc, char** argv)
-{
-    for(int i = 0; i < argc; ++i)
-        printf("%s ", argv[i]);
-    printf("\n");
-}
-
-//----------------------------------------------------------------------------//
-
-char* getcharptr(const tim::string& str)
+char*
+getcharptr(const std::string& str)
 {
     return const_cast<char*>(str.c_str());
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-declare_attribute(noreturn)
-void child_process(uint64_t argc, char** argv)
+declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 {
     if(argc < 2)
         exit(0);
@@ -171,55 +190,80 @@ void child_process(uint64_t argc, char** argv)
 
     char** argv_list = static_cast<char**>(malloc(sizeof(char*) * argc));
     for(uint64_t i = 0; i < argc - 1; i++)
-        argv_list[i] = argv[i+1];
-    argv_list[argc-1] = nullptr;
+        argv_list[i] = argv[i + 1];
+    argv_list[argc - 1] = nullptr;
 
     // launch the child
     int ret = execvp(argv_list[0], argv_list);
     if(ret < 0)
     {
-        uint64_t argc_shell = argc + 2;
+        uint64_t argc_shell    = argc + 2;
         char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
-        char* _shell = getusershell();
+        char*  _shell          = getusershell();
         if(_shell)
         {
             argv_shell_list[0] = _shell;
-            argv_shell_list[1] = getcharptr("-lc");
-            for(uint64_t i = 0; i < argc-1; ++i)
-                argv_shell_list[i+2] = argv_list[i];
-            argv_shell_list[argc_shell-1] = nullptr;
-            ret = execvp(argv_shell_list[0], argv_shell_list);
+            argv_shell_list[1] = getcharptr("-c");
+            for(uint64_t i = 0; i < argc - 1; ++i)
+                argv_shell_list[i + 2] = argv_list[i];
+            argv_shell_list[argc_shell - 1] = nullptr;
+            ret                             = execvp(argv_shell_list[0], argv_shell_list);
         }
     }
 
     exit(0);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-int main(int argc, char** argv)
+int
+main(int argc, char** argv)
 {
-    tim::format::timer::set_default_format(tim_format());
-    tim::manager::instance()->update_total_timer_format();
-    rss_init().record();
+    // set some defaults
+    tim::settings::file_output() = false;
+    tim::settings::scientific()  = true;
+    tim::settings::width()       = 12;
+    tim::settings::precision()   = 3;
+
+    // parse for settings configurations
+    tim::settings::parse();
+
+    // override a some settings
+    tim::settings::suppress_parsing() = true;
+    tim::settings::auto_output()      = false;
+    tim::settings::output_prefix()    = "";
+
+    // update values to reflect modifications
+    tim::settings::process();
 
     if(argc > 1)
-        command() = tim::string(const_cast<const char*>(argv[1]));
+    {
+        command() = std::string(const_cast<const char*>(argv[1]));
+    }
     else
     {
-        tim::manager::instance()->reset_total_timer();
-        report();
+        command()              = std::string(const_cast<const char*>(argv[0]));
+        tim::get_rusage_type() = RUSAGE_CHILDREN;
+        comp_tuple_t measure("total execution time", command());
+        measure.start();
+        measure.stop();
+        std::cout << "\n" << measure << std::endl;
+        exit(EXIT_SUCCESS);
     }
 
     pid_t pid = fork();
-    tim::manager::instance()->reset_total_timer();
 
     uint64_t nargs = static_cast<uint64_t>(argc);
-    if(pid == -1) // pid == -1 means error occured
+    if(pid == -1)  // pid == -1 means error occured
+    {
         failed_fork();
-    else if(pid == 0) // pid == 0 means child process created
+    }
+    else if(pid == 0)  // pid == 0 means child process created
+    {
         child_process(nargs, argv);
+    }
     else
-        parent_process(pid); // means parent process
-
+    {
+        parent_process(pid);  // means parent process
+    }
 }

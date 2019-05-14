@@ -225,13 +225,11 @@ def dummy():
 
 
 # ---------------------------------------------------------------------------- #
-def measure(name, _time = 1, _rss = None):
+def measure(name, _time = 1):
     t = timemory.timer(name)
     t.start()
     time.sleep(_time)
     t.stop()
-    if _rss is not None:
-        t -= _rss
     print('\n{}\n'.format(t))
 
 
@@ -244,7 +242,7 @@ def run_test():
     rss.record()
     print('\nRSS at initialization: {}\n'.format(rss))
 
-    measure('begin', _rss = rss)
+    measure('begin')
 
     main()
     main()
@@ -252,15 +250,12 @@ def run_test():
     dummy()
 
     manager = timemory.manager()
-    manager -= rss
     print('\nTiming report:\n{}'.format(manager))
-    freport = options.set_report("timing_array_test.out")
-    fserial = options.set_serial("timing_array_test.json")
-    manager.report(ign_cutoff = True)
-    plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
+    options.set_output("timing_array_test/")
+    #manager.report(ign_cutoff = True)
+    #plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 
-    measure('end', _rss = rss)
-    print("{}".format(timemory.get_missing_report()))
+    measure('end')
 
     timemory.disable_signal_detection()
     print('"{}" testing finished'.format(__file__))
@@ -271,7 +266,15 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         args = options.add_args_and_parse_known(parser)
 
-        run_test()
+        components = []
+        for c in ["wall_clock", "cpu_clock", "num_io_in", "num_io_out",
+                  "num_minor_page_faults", "num_major_page_faults",
+                  "num_msg_sent", "num_msg_recv", "num_signals",
+                  "voluntary_context_switch", "priority_context_switch"]:
+            components.append(getattr(timemory.component, c))
+
+        with timemory.util.auto_tuple(components):
+            run_test()
 
         if options.ctest_notes:
             manager = timemory.manager()

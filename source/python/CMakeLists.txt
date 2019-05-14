@@ -5,6 +5,10 @@
 #
 ################################################################################
 
+unset(CMAKE_CXX_CLANG_TIDY)
+
+set(PYLIBNAME lib${LIBNAME})
+
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
     OUTPUT_VARIABLE PYTHON_MAJOR_VERSION
@@ -14,42 +18,75 @@ add_definitions(-D_PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
 file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 
 if(NOT BUILD_SHARED_LIBS AND WIN32)
-    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
+    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
         PROPERTIES COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
 endif(NOT BUILD_SHARED_LIBS AND WIN32)
 
 #----------------------------------------------------------------------------
 # PyBind11
 #
-pybind11_add_module(${LIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${LIBNAME}.cpp
-    py${LIBNAME}.hpp ${pybind_headers})
-# link cxx library and external libraries
-target_link_libraries(${LIBNAME} PUBLIC ${LIBNAME}-cxx-library ${EXTERNAL_LIBRARIES})
-add_dependencies(${LIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
+pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
 
-set_target_properties(${LIBNAME} PROPERTIES
+target_link_libraries(${PYLIBNAME}
+    PRIVATE ${LIBNAME}-cxx-library)
+
+target_compile_definitions(${PYLIBNAME}
+    PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
+
+target_compile_options(${PYLIBNAME}
+    PRIVATE
+        $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
+        $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+
+get_target_property(PYTARGET_INCLUDE_DIRS ${PYLIBNAME} INCLUDE_DIRECTORIES)
+
+target_include_directories(${PYLIBNAME} PUBLIC
+    ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+target_include_directories(${PYLIBNAME} SYSTEM
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+
+add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
+
+set_target_properties(${PYLIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
-foreach(_FILE plotting mpi_support util)
-    set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_FILE})
-    set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_FILE})
+foreach(_SUBMODULE plotting mpi_support util)
+    set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
+    set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_SUBMODULE})
 
     # copy over the python file
-    configure_file(${SOURCE_DIR}/${_FILE}.py
-        ${BINARY_DIR}/${_FILE}.py @ONLY)
+    if(EXISTS ${SOURCE_DIR}/${_SUBMODULE}.py)
+        configure_file(${SOURCE_DIR}/${_SUBMODULE}.py
+            ${BINARY_DIR}/${_SUBMODULE}.py @ONLY)
+        install(FILES ${BINARY_DIR}/${_SUBMODULE}.py
+            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/
+            COMPONENT python)
+    endif()
 
     # copy over the init file
-    configure_file(${SOURCE_DIR}/__init__.py
-        ${BINARY_DIR}/__init__.py @ONLY)
+    if(EXISTS ${SOURCE_DIR}/__init__.py)
+        configure_file(${SOURCE_DIR}/__init__.py
+            ${BINARY_DIR}/__init__.py @ONLY)
+        install(FILES ${BINARY_DIR}/__init__.py
+            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/
+            COMPONENT python)
+    endif()
 
-    # install the folder
-    install(DIRECTORY ${BINARY_DIR}/
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_FILE}
-        COMPONENT python)
-endforeach(_FILE plotting mpi_support util)
+    # copy over the main file
+    if(EXISTS ${SOURCE_DIR}/__main__.py)
+        configure_file(${SOURCE_DIR}/__main__.py
+            ${BINARY_DIR}/__main__.py @ONLY)
+        install(FILES ${BINARY_DIR}/__main__.py
+            DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/${_SUBMODULE}/
+            COMPONENT python)
+    endif()
+
+endforeach()
 
 #----------------------------------------------------------------------------
 # MPI info
@@ -97,7 +134,7 @@ if(BUILD_SHARED_LIBS)
             -DOUTPUT=${TIMEMORY_INFO_FILE}
             -DLENGTH=2
             -DNAMES="timemory_shared_library\;timemory_dynamic_library"
-            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-library>\;$<TARGET_FILE:${LIBNAME}>"
+            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-library>\;$<TARGET_FILE:${PYLIBNAME}>"
             -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
         COMMENT "Generating timemory_pathinfo.txt..."
     VERBATIM)
@@ -109,21 +146,22 @@ endif(BUILD_SHARED_LIBS)
 #----------------------------------------------------------------------------
 # Install the python stuff
 #
-configure_file(${PROJECT_SOURCE_DIR}/timemory/timemory.py
-    ${PROJECT_BINARY_DIR}/timemory/timemory.py @ONLY)
-configure_file(${PROJECT_SOURCE_DIR}/cmake/Templates/__init__.py.in
+configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
     ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
+install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
+    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
+    COMPONENT python)
+
+foreach(PYLIB_SUBMODULE options units signals)
+    configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
+        ${PROJECT_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
+    install(FILES ${PROJECT_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
+        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
+        COMPONENT python)
+endforeach()
 
 # Python library target (linked to static target)
-install(TARGETS ${LIBNAME}
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
-    COMPONENT python)
-
-install(FILES ${PROJECT_BINARY_DIR}/timemory/timemory.py
-    DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
-    COMPONENT python)
-
-install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
+install(TARGETS ${PYLIBNAME}
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
     COMPONENT python)
 
@@ -134,6 +172,7 @@ export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake
 #
 set(TEST_FILES
     __init__.py
+    __main__.py
     tests.py
     timemory_test.py
     simple_test.py

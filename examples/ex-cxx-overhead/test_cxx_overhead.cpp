@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2019, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -25,99 +25,145 @@
 
 #include <cstdint>
 
-#include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/auto_timer.hpp"
-#include "timemory/timer.hpp"
+#include <timemory/timemory.hpp>
 
-//===========================================================================//
-int64_t fibonacci(int64_t n, int64_t cutoff)
+using namespace tim::component;
+
+using auto_tuple_t   = tim::auto_tuple<real_clock>;
+using timer_tuple_t  = tim::component_tuple<real_clock, system_clock, user_clock>;
+using papi_tuple_t   = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using global_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                       peak_rss, current_rss, papi_tuple_t>;
+
+static int64_t nlaps = 0;
+
+//======================================================================================//
+
+template <int64_t _N, int64_t _Nt, typename... T,
+          typename std::enable_if<(_N == _Nt), int>::type = 0>
+void
+_test_print(std::tuple<T...>&& a)
+{
+    std::cout << std::get<_N>(a) << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <int64_t _N, int64_t _Nt, typename... T,
+          typename std::enable_if<(_N < _Nt), int>::type = 0>
+void
+_test_print(std::tuple<T...>&& a)
+{
+    std::cout << std::get<_N>(a) << ", ";
+    _test_print<_N + 1, _Nt, T...>(std::forward<std::tuple<T...>>(a));
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... T, typename... U>
+void
+test_print(std::tuple<T...>&& a, std::tuple<U...>&& b)
+{
+    constexpr int64_t Ts = sizeof...(T);
+    constexpr int64_t Us = sizeof...(U);
+    _test_print<0, Ts - 1, T...>(std::forward<std::tuple<T...>>(a));
+    _test_print<0, Us - 1, U...>(std::forward<std::tuple<U...>>(b));
+}
+
+//======================================================================================//
+
+int64_t
+fibonacci(int64_t n)
+{
+    return (n < 2) ? n : (fibonacci(n - 2) + fibonacci(n - 1));
+}
+
+//======================================================================================//
+
+int64_t
+fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        //std::stringstream ss; ss << "[" << n << "]";
-        //TIMEMORY_AUTO_TIMER(ss.str());
-        TIMEMORY_AUTO_TIMER();
-        return (n < 2) ? 1L : (fibonacci(n-2, cutoff) +
-                               fibonacci(n-1, cutoff));
+        ++nlaps;
+        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
     }
-    else
-    {
-        return (n < 2) ? 1L : (fibonacci(n-2, cutoff) +
-                               fibonacci(n-1, cutoff));
-    }
+    return fibonacci(n);
 }
 
-//===========================================================================//
-void print_result(std::string prefix, int64_t result)
+//======================================================================================//
+
+void
+print_result(const std::string& prefix, int64_t result)
 {
     std::cout << std::setw(20) << prefix << " answer : " << result << std::endl;
 }
 
-//===========================================================================//
-tim::timer run(int64_t n, bool with_timing, int64_t cutoff)
-{
-    std::stringstream ss;
-    ss << __FUNCTION__ << " [with timing = "
-       << std::boolalpha << with_timing << "]";
+//======================================================================================//
 
-    tim::timer timer(ss.str());
-    timer.start();
-    auto result = (with_timing) ? fibonacci(n, cutoff)
-                                : fibonacci(n, n);
-    timer.stop();
-    print_result(ss.str(), result);
+timer_tuple_t
+run(int64_t n, bool with_timing, int64_t cutoff)
+{
+    auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
+                                        with_timing, "]");
+    timer_tuple_t timer(signature);
+    int64_t       result = 0;
+    {
+        auto auto_timer = timer_tuple_t::auto_type(timer, __LINE__);
+        result          = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n, n);
+    }
+    print_result(signature, result);
     return timer;
 }
 
-//===========================================================================//
-int main(int argc, char** argv)
+//======================================================================================//
+
+int
+main(int argc, char** argv)
 {
+    tim::settings::timing_scientific() = true;
+    tim::timemory_init(argc, argv);
+    tim::settings::json_output() = true;
+
     // default calc: fibonacci(40)
-    int nfib = 40;
+    int nfib = 43;
     if(argc > 1)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 25;
+    int cutoff = nfib - 27;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    tim::format::timer::default_unit(tim::units::msec);
-    tim::format::timer::default_scientific(false);
+    std::cout << "Running fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")..."
+              << std::endl;
+    tim::consume_parameters(tim::manager::instance());
+    tim::auto_tuple<>          test("test");
+    std::vector<timer_tuple_t> timer_list;
 
-    tim::manager* manager = tim::manager::instance();
-
-    std::vector<tim::timer> timer_list;
     std::cout << std::endl;
-    // run without timing first so overhead is not started yet
-    timer_list.push_back(run(nfib, false, nfib)); // without timing
-    timer_list.push_back(run(nfib, true, cutoff)); // with timing
-    std::cout << std::endl;
-    timer_list.push_back(timer_list.at(1) - timer_list.at(0));
-    timer_list.back().format()->prefix("Timer difference");
-    manager->missing_timer()->stop();
-    timer_list.push_back(tim::timer(timer_list.back()));
-    timer_list.back().accum() /= manager->total_laps();
-    timer_list.back().format()->prefix("TiMemory avg. overhead");
-    timer_list.back().record_memory(false);
-    timer_list.back().format()->format(": %w %T (wall), %u %T (user), %s %T (sys), %t %T (cpu)");
-    timer_list.back().format()->unit(tim::units::usec);
-
-    manager->write_report("test_output/cxx_timing_overhead.out");
-    manager->write_json("test_output/cxx_timing_overhead.json");
-    manager->report(true);
-
-    std::cout << "\nReports: " << std::endl;
-    for(auto& itr : timer_list)
     {
-        itr.format()->default_width(40);
-        itr.format()->align_width(true);
-        std::cout << "\t" << itr.as_string() << std::endl;
+        TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
+        // run without timing first so overhead is not started yet
+        timer_list.push_back(run(nfib, false, nfib));  // without timing
+        nlaps = 0;
+        timer_list.push_back(run(nfib, true, cutoff));  // with timing
+        timer_list.push_back(timer_list.at(1) - timer_list.at(0));
+        timer_list.back().key() = "timing difference";
+        timer_list.push_back(timer_list.back() / nlaps);
+        timer_list.back().key() = "average overhead per timer";
     }
+    std::cout << std::endl;
+    std::cout << "\nReports from " << nlaps << " total laps: " << std::endl;
+
+    for(auto& itr : timer_list)
+        std::cout << "\t" << itr << std::endl;
 
     std::cout << std::endl;
-    manager->write_missing(std::cout);
+    test_print(std::make_tuple(1.0, "abc", 1), std::make_tuple("def", 6UL));
 
+    tim::print_env();
     return 0;
 }

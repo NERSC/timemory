@@ -1,7 +1,7 @@
 // MIT License
 //
-// Copyright (c) 2018, The Regents of the University of California, 
-// through Lawrence Berkeley National Laboratory (subject to receipt of any 
+// Copyright (c) 2019, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
 // required approvals from the U.S. Dept. of Energy).  All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -11,8 +11,8 @@
 // copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
 //
-// The above copyright notice and this permission notice shall be included in all
-// copies or substantial portions of the Software.
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
 //
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
@@ -29,113 +29,110 @@
  *
  */
 
-//============================================================================//
+//======================================================================================//
 /// This global method should be used on LINUX or MacOSX platforms with gcc,
 /// clang, or intel compilers for activating signal detection and forcing
 /// exception being thrown that can be handled when detected.
-//============================================================================//
+//======================================================================================//
 
-#ifndef signal_detection_hpp_
-#define signal_detection_hpp_ 1
+#pragma once
 
 #include "timemory/macros.hpp"
-#include "timemory/string.hpp"
 
-#include <iostream>
-#include <cstdlib>
-#include <stdlib.h>  /* abort(), exit() */
-#include <set>
-#include <string>
-#include <sstream>
-#include <iomanip>
-#include <cstring>
-#include <exception>
-#include <stdexcept>
-#include <functional>
-#include <deque>
 #include <cmath>
+#include <cstdlib>
+#include <cstdlib> /* abort(), exit() */
+#include <cstring>
+#include <deque>
+#include <exception>
+#include <functional>
+#include <iomanip>
+#include <iostream>
+#include <set>
+#include <sstream>
+#include <stdexcept>
+#include <string>
 #include <vector>
 
 #include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
 #include "timemory/mpi.hpp"
+#include "timemory/utility.hpp"
 
 #if defined(_UNIX)
-#   include <cfenv>
-#   include <cxxabi.h>
-#   include <execinfo.h> // for StackBacktrace()
+#    include <cfenv>
+#    include <cxxabi.h>
+#    include <execinfo.h>  // for StackBacktrace()
 #endif
 
 // compatible compiler
-#if (defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
-#   if !defined(SIGNAL_COMPAT_COMPILER)
-#       define SIGNAL_COMPAT_COMPILER
-#   endif
+#if(defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
+#    if !defined(SIGNAL_COMPAT_COMPILER)
+#        define SIGNAL_COMPAT_COMPILER
+#    endif
 #endif
 
 // compatible operating system
-#if (defined(__linux__) || defined(__MACH__))
-#   if !defined(SIGNAL_COMPAT_OS)
-#       define SIGNAL_COMPAT_OS
-#   endif
+#if(defined(__linux__) || defined(__MACH__))
+#    if !defined(SIGNAL_COMPAT_OS)
+#        define SIGNAL_COMPAT_OS
+#    endif
 #endif
 
 #if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS)
-#   if !defined(SIGNAL_AVAILABLE)
-#       define SIGNAL_AVAILABLE
-#   endif
+#    if !defined(SIGNAL_AVAILABLE)
+#        define SIGNAL_AVAILABLE
+#    endif
 #endif
 
 #if defined(__linux__)
-#   include <features.h>
-#   include <csignal>
-#elif defined(__MACH__)      /* MacOSX */
-#   include <signal.h>
+#    include <csignal>
+#    include <features.h>
+#elif defined(__MACH__) /* MacOSX */
+#    include <signal.h>
 #endif
 
-//============================================================================//
+//======================================================================================//
 //  these are not in the original POSIX.1-1990 standard so we are defining
 //  them in case the OS hasn't
 //  POSIX-1.2001
 #ifndef SIGTRAP
-#   define SIGTRAP 5
+#    define SIGTRAP 5
 #endif
 //  not specified in POSIX.1-2001, but nevertheless appears on most other
 //  UNIX systems, where its default action is typically to terminate the
 //  process with a core dump.
 #ifndef SIGEMT
-#   define SIGEMT 7
+#    define SIGEMT 7
 #endif
 //  POSIX-1.2001
 #ifndef SIGURG
-#   define SIGURG 16
+#    define SIGURG 16
 #endif
 //  POSIX-1.2001
 #ifndef SIGXCPU
-#   define SIGXCPU 24
+#    define SIGXCPU 24
 #endif
 //  POSIX-1.2001
 #ifndef SIGXFSZ
-#   define SIGXFSZ 25
+#    define SIGXFSZ 25
 #endif
 //  POSIX-1.2001
 #ifndef SIGVTALRM
-#   define SIGVTALRM 26
+#    define SIGVTALRM 26
 #endif
 //  POSIX-1.2001
 #ifndef SIGPROF
-#   define SIGPROF 27
+#    define SIGPROF 27
 #endif
 //  POSIX-1.2001
 #ifndef SIGINFO
-#   define SIGINFO 29
+#    define SIGINFO 29
 #endif
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
-
 // No    Name         Default Action       Description
 // 1     SIGHUP       terminate process    terminal line hangup
 // 2     SIGINT       terminate process    interrupt program
@@ -154,58 +151,57 @@ namespace tim
 // 15    SIGTERM      terminate process    software termination signal
 // 16    SIGURG       discard signal       urgent condition present on socket
 // 18    SIGTSTP      stop process         stop signal generated from keyboard
-// 24    SIGXCPU      terminate process    cpu time limit exceeded (see setrlimit(2))
-// 25    SIGXFSZ      terminate process    file size limit exceeded (see setrlimit(2))
-// 26    SIGVTALRM    terminate process    virtual time alarm (see setitimer(2))
-// 27    SIGPROF      terminate process    profiling timer alarm (see setitimer(2))
+// 24    SIGXCPU      terminate process    cpu time limit exceeded (see
+// setrlimit(2)) 25    SIGXFSZ      terminate process    file size limit
+// exceeded (see setrlimit(2)) 26    SIGVTALRM    terminate process    virtual
+// time alarm (see setitimer(2)) 27    SIGPROF      terminate process profiling
+// timer alarm (see setitimer(2))
 
-
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
 enum class sys_signal : int
 {
-    sHangup = SIGHUP, // 1
-    sInterrupt = SIGINT, // 2
-    sQuit = SIGQUIT, // 3
-    sIllegal = SIGILL,
-    sTrap = SIGTRAP,
-    sAbort = SIGABRT,
-    sEmulate = SIGEMT,
-    sFPE = SIGFPE,
-    sKill = SIGKILL,
-    sBus = SIGBUS,
-    sSegFault = SIGSEGV,
-    sSystem = SIGSYS,
-    sPipe = SIGPIPE,
-    sAlarm = SIGALRM,
-    sTerminate = SIGTERM,
-    sUrgent = SIGURG,
-    sStop = SIGTSTP,
-    sCPUtime = SIGXCPU,
-    sFileSize = SIGXFSZ,
+    sHangup       = SIGHUP,   // 1
+    sInterrupt    = SIGINT,   // 2
+    sQuit         = SIGQUIT,  // 3
+    sIllegal      = SIGILL,
+    sTrap         = SIGTRAP,
+    sAbort        = SIGABRT,
+    sEmulate      = SIGEMT,
+    sFPE          = SIGFPE,
+    sKill         = SIGKILL,
+    sBus          = SIGBUS,
+    sSegFault     = SIGSEGV,
+    sSystem       = SIGSYS,
+    sPipe         = SIGPIPE,
+    sAlarm        = SIGALRM,
+    sTerminate    = SIGTERM,
+    sUrgent       = SIGURG,
+    sStop         = SIGTSTP,
+    sCPUtime      = SIGXCPU,
+    sFileSize     = SIGXFSZ,
     sVirtualAlarm = SIGVTALRM,
     sProfileAlarm = SIGPROF
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-class tim_api signal_settings
+tim_api class signal_settings
 {
 public:
-    typedef std::set<sys_signal> signal_set_t;
-    //typedef void (*signal_function_t)(int errcode);
-    typedef std::function<void(int)> signal_function_t;
+    using signal_set_t      = std::set<sys_signal>;
+    using signal_function_t = std::function<void(int)>;
 
 public:
-    static bool is_active();
-    static void set_active(bool val);
-    static void enable(const sys_signal&);
-    static void disable(const sys_signal&);
-    static tim::string str(const sys_signal&);
-    static tim::string str();
-    static void check_environment();
-    static void set_exit_action(signal_function_t _f);
-    static void exit_action(int errcode);
+    static bool        is_active();
+    static void        set_active(bool val);
+    static void        enable(const sys_signal&);
+    static void        disable(const sys_signal&);
+    static std::string str(const sys_signal&);
+    static std::string str();
+    static void        check_environment();
+    static void        set_exit_action(signal_function_t _f);
+    static void        exit_action(int errcode);
 
     static const signal_set_t& enabled();
     static const signal_set_t& disabled();
@@ -217,73 +213,96 @@ protected:
     struct signals_data_t
     {
         signals_data_t();
-        bool                 signals_active;
-        signal_set_t         signals_default;
-        signal_set_t         signals_enabled;
-        signal_set_t         signals_disabled;
-        signal_function_t    signals_exit_func;
+        bool              signals_active;
+        signal_set_t      signals_default;
+        signal_set_t      signals_enabled;
+        signal_set_t      signals_disabled;
+        signal_function_t signals_exit_func;
     };
 
-    static signals_data_t f_signals;
+    static signals_data_t& f_signals()
+    {
+        static signal_settings::signals_data_t instance;
+        return instance;
+    }
 };
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-} // namespace tim
+}  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 #if defined(SIGNAL_AVAILABLE)
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
 
-//----------------------------------------------------------------------------//
+inline struct sigaction&
+tim_signal_termaction()
+{
+    static struct sigaction instance;
+    return instance;
+}
 
-static struct sigaction tim_signal_termaction, tim_signal_oldaction;
+//--------------------------------------------------------------------------------------//
+
+inline struct sigaction&
+tim_signal_oldaction()
+{
+    static struct sigaction instance;
+    return instance;
+}
+
+//--------------------------------------------------------------------------------------//
 
 // declarations
-inline bool enable_signal_detection(signal_settings::signal_set_t ops
-                                    = signal_settings::signal_set_t());
-inline void disable_signal_detection();
+inline bool enable_signal_detection(
+    signal_settings::signal_set_t = signal_settings::signal_set_t());
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-inline void stack_backtrace(std::ostream& ss)
+inline void
+disable_signal_detection();
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+stack_backtrace(std::ostream& ss)
 {
-    typedef tim::string::size_type          size_type;
+    using size_type = std::string::size_type;
 
     //   from http://linux.die.net/man/3/backtrace_symbols_fd
-#   define BSIZE 50
-    void* buffer[ BSIZE ];
-    size_type nptrs = backtrace( buffer, BSIZE );
-    char** strings = backtrace_symbols( buffer, nptrs );
+#    define BSIZE 50
+    void*     buffer[BSIZE];
+    size_type nptrs   = backtrace(buffer, BSIZE);
+    char**    strings = backtrace_symbols(buffer, nptrs);
     if(strings == NULL)
     {
-        perror( "backtrace_symbols" );
+        perror("backtrace_symbols");
         return;
     }
 
-    std::deque<std::deque<tim::string>>     dmang_buf;
-    std::deque<size_type>                   dmang_len;
+    std::deque<std::deque<std::string>> dmang_buf;
+    std::deque<size_type>               dmang_len;
 
     // lambda for demangling a string when delimiting
-    auto _transform = [] (tim::string _str)
-    {
-        int _ret = 0;
+    auto _transform = [](std::string _str) {
+        int   _ret    = 0;
         char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
         if(_demang && _ret == 0)
-            return tim::string(const_cast<const char*>(_demang));
+            return std::string(const_cast<const char*>(_demang));
         else
             return _str;
     };
 
     for(size_type j = 0; j < nptrs; ++j)
     {
-        tim::string str = strings[j];
-        if(str.find("+") != tim::string::npos)
+        std::string str = strings[j];
+        if(str.find("+") != std::string::npos)
             str.replace(str.find_last_of("+"), 1, " +");
 
         auto _delim = delimit(str, " \t\n\r()");
@@ -303,11 +322,10 @@ inline void stack_backtrace(std::ostream& ss)
 
         // get rid of hex strings if not last param
         for(itr = _delim.begin(); itr != _delim.end(); ++itr)
-            if(itr->substr(0, 2) == "0x"  ||
-               itr->substr(0, 3) == "[0x" ||
-               itr->substr(0, 3) == "+0x" )
+            if(itr->substr(0, 2) == "0x" || itr->substr(0, 3) == "[0x" ||
+               itr->substr(0, 3) == "+0x")
             {
-                if(itr+1 == _delim.end())
+                if(itr + 1 == _delim.end())
                     continue;
                 _delim.erase(itr);
                 --itr;
@@ -327,22 +345,21 @@ inline void stack_backtrace(std::ostream& ss)
     free(strings);
 
     ss << std::endl << "Call Stack:" << std::endl;
-    int nwidth = std::max(2, static_cast<int32_t>(std::log10(nptrs))+1);
+    int nwidth = std::max(2, static_cast<int32_t>(std::log10(nptrs)) + 1);
     for(size_type j = 0; j < nptrs; ++j)
     {
         // print the back-trace numver
-        ss << "["<< std::setw(nwidth) << nptrs-j-1 << "/"
-           << std::setw(nwidth) << nptrs << "] : ";
+        ss << "[" << std::setw(nwidth) << nptrs - j - 1 << "/" << std::setw(nwidth)
+           << nptrs << "] : ";
         // loop over fields
         for(size_type i = 0; i < dmang_len.size(); ++i)
         {
             std::stringstream _ss;
             // if last param, don't set width
-            int mwidth = (i+1 < dmang_len.size()) ? dmang_len.at(i) : 0;
+            int mwidth = (i + 1 < dmang_len.size()) ? dmang_len.at(i) : 0;
             _ss << std::setw(mwidth) << std::left
-                << ((i < dmang_buf.at(j).size())
-                    ? dmang_buf.at(j).at(i)
-                    : tim::string(" "));
+                << ((i < dmang_buf.at(j).size()) ? dmang_buf.at(j).at(i)
+                                                 : std::string(" "));
             ss << _ss.str() << "  ";
         }
         ss << std::endl;
@@ -352,14 +369,15 @@ inline void stack_backtrace(std::ostream& ss)
     // http://gcc.gnu.org/onlinedocs/libstdc++/manual/ext_demangling.html
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-inline void termination_signal_message(int sig, siginfo_t* sinfo,
-                                       std::ostream& message)
+inline void
+termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
 {
-    sys_signal _sig = (sys_signal) (sig);
+    sys_signal _sig = (sys_signal)(sig);
 
-    message << "\n" << "### ERROR ### ";
+    message << "\n"
+            << "### ERROR ### ";
     if(mpi_is_initialized())
         message << " [ MPI rank : " << mpi_rank() << " ] ";
     message << "Error code : " << sig;
@@ -370,17 +388,15 @@ inline void termination_signal_message(int sig, siginfo_t* sinfo,
     if(sig == SIGSEGV)
     {
         if(sinfo)
-            switch (sinfo->si_code)
+            switch(sinfo->si_code)
             {
-                case SEGV_MAPERR:
-                    message << "Address not mapped to object.";
-                    break;
+                case SEGV_MAPERR: message << "Address not mapped to object."; break;
                 case SEGV_ACCERR:
                     message << "Invalid permissions for mapped object.";
                     break;
                 default:
-                    message << "Unknown segmentation fault error: "
-                            << sinfo->si_code << ".";
+                    message << "Unknown segmentation fault error: " << sinfo->si_code
+                            << ".";
                     break;
             }
         else
@@ -389,28 +405,17 @@ inline void termination_signal_message(int sig, siginfo_t* sinfo,
     else if(sig == SIGFPE)
     {
         if(sinfo)
-            switch (sinfo->si_code)
+            switch(sinfo->si_code)
             {
-                case FE_DIVBYZERO:
-                    message << "Floating point divide by zero.";
-                    break;
-                case FE_OVERFLOW:
-                    message << "Floating point overflow.";
-                    break;
-                case FE_UNDERFLOW:
-                    message << "Floating point underflow.";
-                    break;
-                case FE_INEXACT:
-                    message << "Floating point inexact result.";
-                    break;
-                case FE_INVALID:
-                    message << "Floating point invalid operation.";
-                    break;
+                case FE_DIVBYZERO: message << "Floating point divide by zero."; break;
+                case FE_OVERFLOW: message << "Floating point overflow."; break;
+                case FE_UNDERFLOW: message << "Floating point underflow."; break;
+                case FE_INEXACT: message << "Floating point inexact result."; break;
+                case FE_INVALID: message << "Floating point invalid operation."; break;
                 default:
                     message << "Unknown floating point exception error: "
                             << sinfo->si_code << ".";
                     break;
-
             }
         else
             message << "Unknown error: " << sinfo->si_code << ".";
@@ -424,23 +429,22 @@ inline void termination_signal_message(int sig, siginfo_t* sinfo,
     }
     catch(std::exception& e)
     {
-        std::cerr << "signal_settings::exit_action(" << sig
-                  << ") threw an exception" << std::endl;
+        std::cerr << "signal_settings::exit_action(" << sig << ") threw an exception"
+                  << std::endl;
         std::cerr << e.what() << std::endl;
     }
 
     stack_backtrace(message);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-inline void termination_signal_handler(int sig, siginfo_t* sinfo,
-                                       void* /* context */)
+inline void
+termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
-    sys_signal _sig = (sys_signal) (sig);
+    sys_signal _sig = (sys_signal)(sig);
 
-    if(signal_settings::get_enabled().find(_sig) ==
-       signal_settings::get_enabled().end())
+    if(signal_settings::get_enabled().find(_sig) == signal_settings::get_enabled().end())
         return;
 
     std::stringstream message;
@@ -458,17 +462,18 @@ inline void termination_signal_handler(int sig, siginfo_t* sinfo,
 
     // throw an exception instead of ::abort() so it can be caught
     // if the error can be ignored if desired
-#if defined(TIMEMORY_EXCEPTIONS)
+#    if defined(TIMEMORY_EXCEPTIONS)
     throw std::runtime_error(message.str());
-#else
+#    else
     std::cerr << message.str() << std::endl;
     exit(sig);
-#endif
+#    endif
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-inline bool enable_signal_detection(signal_settings::signal_set_t operations)
+inline bool
+enable_signal_detection(signal_settings::signal_set_t operations)
 {
     // don't re-enable
     if(signal_settings::is_active())
@@ -489,13 +494,13 @@ inline bool enable_signal_detection(signal_settings::signal_set_t operations)
     for(auto itr = operations.cbegin(); itr != operations.cend(); ++itr)
         _signals.insert(static_cast<int>(*itr));
 
-    sigfillset(&tim_signal_termaction.sa_mask);
+    sigfillset(&tim_signal_termaction().sa_mask);
     for(auto& itr : _signals)
-        sigdelset(&tim_signal_termaction.sa_mask, itr);
-    tim_signal_termaction.sa_sigaction = termination_signal_handler;
-    tim_signal_termaction.sa_flags = SA_SIGINFO;
+        sigdelset(&tim_signal_termaction().sa_mask, itr);
+    tim_signal_termaction().sa_sigaction = termination_signal_handler;
+    tim_signal_termaction().sa_flags     = SA_SIGINFO;
     for(auto& itr : _signals)
-        sigaction(itr, &tim_signal_termaction, &tim_signal_oldaction);
+        sigaction(itr, &tim_signal_termaction(), &tim_signal_oldaction());
 
     signal_settings::set_active(true);
 
@@ -505,23 +510,23 @@ inline bool enable_signal_detection(signal_settings::signal_set_t operations)
     return true;
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-inline void disable_signal_detection()
+inline void
+disable_signal_detection()
 {
     // don't re-disable
     if(!signal_settings::is_active())
         return;
 
-    sigemptyset(&tim_signal_termaction.sa_mask);
-    tim_signal_termaction.sa_handler = SIG_DFL;
+    sigemptyset(&tim_signal_termaction().sa_mask);
+    tim_signal_termaction().sa_handler = SIG_DFL;
 
-    auto _disable = [] (const signal_settings::signal_set_t& _set)
-    {
+    auto _disable = [](const signal_settings::signal_set_t& _set) {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);
-            sigaction(_itr, &tim_signal_termaction, 0);
+            sigaction(_itr, &tim_signal_termaction(), 0);
         }
     };
 
@@ -531,31 +536,47 @@ inline void disable_signal_detection()
     signal_settings::set_active(false);
 }
 
-//----------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
 
-} // namespace tim
+}  // namespace tim
 
-//============================================================================//
+//======================================================================================//
 
 #else /* Not a supported architecture */
 
-//============================================================================//
+//======================================================================================//
 
 namespace tim
 {
-inline bool enable_signal_detection(signal_settings::signal_set_t
-                                    = signal_settings::signal_set_t())
-{ return false; }
-inline void disable_signal_detection() { }
-inline void stack_backtrace(std::ostream& os)
+//--------------------------------------------------------------------------------------//
+
+inline bool enable_signal_detection(
+    signal_settings::signal_set_t = signal_settings::signal_set_t())
+{
+    return false;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+disable_signal_detection()
+{
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+stack_backtrace(std::ostream& os)
 {
     os << "stack_backtrace() not available." << std::endl;
 }
 
-} // namespace tim
+//--------------------------------------------------------------------------------------//
 
-//============================================================================//
+}  // namespace tim
+
+//======================================================================================//
 
 #endif
 
-#endif /* signal_detection_hpp_ */
+#include "timemory/impl/signal_detection.icpp"

@@ -148,16 +148,14 @@ def run_test():
 
     try:
         main(args.nfib)
-        print ('Timing manager size: {}'.format(timemory.size()))
-        tman = timemory.manager()
-        tman -= rss
-        tman.report()
-        _jsonf = os.path.join(options.output_dir, 'nested_output.json')
-        _fname = tman.serialize(_jsonf)
-        _data = timemory.plotting.read(tman.json())
-        _data.title = timemory.FILE(noquotes=True)
-        _data.filename = _fname
-        plotting.plot(data = [_data], files = [_jsonf], output_dir=options.output_dir)
+        #print ('Timing manager size: {}'.format(timemory.size()))
+        #tman = timemory.manager()
+        #_jsonf = os.path.join(options.output_dir, 'nested_output.json')
+        #_fname = tman.serialize(_jsonf)
+        #_data = timemory.plotting.read(tman.json())
+        #_data.title = timemory.FILE(noquotes=True)
+        #_data.filename = _fname
+        #plotting.plot(data = [_data], files = [_jsonf], output_dir=options.output_dir)
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
@@ -165,10 +163,7 @@ def run_test():
 
     t.stop()
     print("RSS usage at initialization: {}".format(rss))
-    #t -= rss
-    t.report()
     print("{}\n".format(timemory.rss_usage(record=True, prefix="RSS usage at finalization")))
-    print("{}".format(timemory.get_missing_report()))
 
     timemory.disable_signal_detection()
     print('"{}" testing finished'.format(__file__))

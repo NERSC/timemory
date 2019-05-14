@@ -30,10 +30,23 @@
 ##
 
 from __future__ import absolute_import
-
 import os
 import sys
 import inspect
+
+__author__ = "Jonathan Madsen"
+__copyright__ = "Copyright 2018, The Regents of the University of California"
+__credits__ = ["Jonathan Madsen"]
+__license__ = "MIT"
+__version__ = "@PROJECT_VERSION@"
+__maintainer__ = "Jonathan Madsen"
+__email__ = "jonrobm.programming@gmail.com"
+__status__ = "Development"
+__all__ = ['base_decorator',
+           'auto_timer',
+           'timer',
+           'rss_usage',
+           'auto_tuple']
 
 #------------------------------------------------------------------------------#
 class base_decorator(object):
@@ -258,6 +271,7 @@ class rss_usage(base_decorator):
     def __init__(self, key="", add_args=False, is_class=False):
         super(rss_usage, self).__init__(key, add_args, is_class)
         self._self_obj = None
+        self._self_dif = None
 
 
     # ------------------------------------------------------------------------ #
@@ -280,11 +294,14 @@ class rss_usage(base_decorator):
             else:
                 _key = '{}{}'.format(self.key, _args)
 
-            self._self_obj = timemory.rss_delta(_key)
+            self._self_obj = timemory.rss_usage(_key)
+            self._self_dif = timemory.rss_usage(_key)
+            self._self_dif.record()
             # run function
             ret = func(*args, **kwargs)
             # record
             self._self_obj.record()
+            self._self_obj -= self._self_dif
             print('{}'.format(self._self_obj))
 
             return ret
@@ -309,7 +326,9 @@ class rss_usage(base_decorator):
         else:
             _key = '{}{}'.format(self.key, _args)
 
-        self._self_obj = timemory.rss_delta(_key)
+        self._self_obj = timemory.rss_usage(_key)
+        self._self_dif = timemory.rss_usage(_key)
+        self._self_dif.record()
 
 
     # ------------------------------------------------------------------------ #
@@ -318,7 +337,83 @@ class rss_usage(base_decorator):
         Context manager exit
         """
         self._self_obj.record()
+        self._self_obj -= self._self_dif
         print('{}'.format(self._self_obj))
+
+        if exc_type is not None and exc_value is not None and exc_traceback is not None:
+            import traceback
+            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
+
+
+#------------------------------------------------------------------------------#
+class auto_tuple(base_decorator):
+    """ A decorator or context-manager for the auto-tuple, e.g.:
+        @timemory.util.auto_tuple(components=(timemory.components.wall_clock,
+                                              timemory.components.priority_context_switch)
+        def main(n=5):
+            for i in range(2):
+                fibonacci(n * (i+1))
+        # ...
+        # output :
+        # > [pyc] main(5)@'example.py':10 ...
+    """
+    # ------------------------------------------------------------------------ #
+    def __init__(self, components=[], key="", add_args=False, is_class=False,
+                 report_at_exit=False):
+        super(auto_tuple, self).__init__(key, add_args, is_class)
+        self.components = components
+        self.report_at_exit = report_at_exit
+        self._self_obj = None
+
+
+    # ------------------------------------------------------------------------ #
+    def __call__(self, func):
+
+        import timemory
+        from functools import wraps
+        _file = timemory.FILE(3)
+        _line = timemory.LINE(2)
+
+        @wraps(func)
+        def function_wrapper(*args, **kwargs):
+            self.parse_wrapped(func, args, kwargs)
+
+            _key = '{}{}'.format(self.key, self.arg_string(args, kwargs))
+
+            t = timemory.component_decorator(self.components, func.__name__, _file, _line,
+                _key, self.add_args or self.is_class, self.report_at_exit)
+            ret = func(*args, **kwargs)
+            del t
+            return ret
+
+        return function_wrapper
+
+
+    #
+    # ------------------------------------------------------------------------ #
+    def __enter__(self, *args, **kwargs):
+        """
+        Context manager
+        """
+        import timemory
+        _file = timemory.FILE(3)
+        _line = timemory.LINE(2)
+        _func = timemory.FUNC(2)
+
+        _key = ''
+        _args = self.arg_string(args, kwargs)
+        if self.key == "":
+            _key = '{}{}@{}:{}'.format(_func, _args, _file, _line)
+        else:
+            _key = '{}{}'.format(self.key, _args)
+
+        self._self_obj = timemory.component_decorator(self.components, _func, _file,
+             _line, _key, self.add_args or self.is_class, self.report_at_exit)
+
+
+    # ------------------------------------------------------------------------ #
+    def __exit__(self, exc_type, exc_value, exc_traceback):
+        del self._self_obj
 
         if exc_type is not None and exc_value is not None and exc_traceback is not None:
             import traceback

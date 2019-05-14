@@ -1,0 +1,890 @@
+// MIT License
+//
+// Copyright (c) 2019, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in
+// all copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
+/** \file manager.icpp
+ * \headerfile manager.icpp "timemory/impl/manager.icpp"
+ * Provides inline implementation of manager functions
+ *
+ */
+
+#include "timemory/macros.hpp"
+#include "timemory/manager.hpp"
+#include "timemory/papi.hpp"
+#include "timemory/serializer.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/signal_detection.hpp"
+#include "timemory/singleton.hpp"
+#include "timemory/utility.hpp"
+
+#include <algorithm>
+#include <cstdint>
+#include <functional>
+#include <mutex>
+#include <sstream>
+#include <thread>
+
+#if !defined(TIMEMORY_DEFAULT_ENABLED)
+#    define TIMEMORY_DEFAULT_ENABLED true
+#endif
+
+//======================================================================================//
+
+namespace tim
+{
+//======================================================================================//
+
+inline std::atomic<int32_t>&
+manager::f_manager_instance_count()
+{
+    static std::atomic<int32_t> instance;
+    return instance;
+}
+
+//======================================================================================//
+// get either master or thread-local instance
+//
+inline manager::pointer
+manager::instance()
+{
+    return details::manager_singleton().instance();
+}
+
+//======================================================================================//
+// get master instance
+//
+inline manager::pointer
+manager::master_instance()
+{
+    return details::manager_singleton().master_instance();
+}
+
+//======================================================================================//
+// static function
+inline manager::pointer
+manager::noninit_instance()
+{
+    return details::manager_singleton().instance_ptr();
+}
+
+//======================================================================================//
+// static function
+inline manager::pointer
+manager::noninit_master_instance()
+{
+    return details::manager_singleton().master_instance_ptr();
+}
+
+//======================================================================================//
+
+inline manager::manager()
+: m_instance_count(f_manager_instance_count()++)
+{
+    if(m_instance_count == 0)
+    {
+        printf("############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
+               static_cast<void*>(this), m_instance_count);
+        tim::settings::parse();
+        tim::papi::init();
+        std::atexit(&exit_print);
+    }
+    else
+    {
+        tim::papi::register_thread();
+    }
+
+    if(!singleton_t::master_instance_ptr())
+    {
+    }
+
+    if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())
+    {
+        std::ostringstream errss;
+        errss << "manager singleton has already been created";
+        throw std::runtime_error(errss.str().c_str());
+    }
+}
+
+//======================================================================================//
+
+inline manager::~manager()
+{
+    if(m_instance_count == 0)
+    {
+        printf("\n############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
+               static_cast<void*>(this), m_instance_count);
+    }
+
+    if(m_instance_count == 0)
+    {
+        tim::papi::shutdown();
+    }
+    else
+    {
+        tim::papi::unregister_thread();
+    }
+
+    --f_manager_instance_count();
+}
+
+//======================================================================================//
+
+inline void
+manager::insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data)
+{
+    using sibling_itr = typename graph_t::sibling_iterator;
+    graph_node node(_hash_id, _prefix, _data);
+
+    auto _update = [&](iterator itr) {
+        m_data.current() = itr;
+        *m_data.current() += node;
+    };
+
+    // lambda for inserting child
+    auto _insert_child = [&]() {
+        auto itr = m_data.append_child(node);
+        m_node_ids.insert(std::make_pair(_hash_id, itr));
+    };
+
+    if(m_node_ids.find(_hash_id) != m_node_ids.end())
+    {
+        _update(m_node_ids.find(_hash_id)->second);
+    }
+
+    // if first instance
+    if(m_data.depth() < 0)
+    {
+        if(this == master_instance())
+        {
+            m_data.depth()   = 0;
+            m_data.head()    = m_data.graph().set_head(node);
+            m_data.current() = m_data.head();
+        }
+        else
+        {
+            return;
+        }
+    }
+    else
+    {
+        auto current = m_data.current();
+
+        if(_hash_id == current->id())
+        {
+            return;
+        }
+        else if(m_data.graph().is_valid(current))
+        {
+            // check parent if not head
+            if(!m_data.graph().is_head(current))
+            {
+                auto parent = graph_t::parent(current);
+                for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
+                {
+                    // check hash id's
+                    if(_hash_id == itr->id())
+                    {
+                        _update(itr);
+                    }
+                }
+            }
+
+            // check siblings
+            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+            {
+                // skip if current
+                if(itr == current)
+                    continue;
+                // check hash id's
+                if(_hash_id == itr->id())
+                {
+                    _update(itr);
+                }
+            }
+
+            // check children
+            auto nchildren = graph_t::number_of_children(current);
+            if(nchildren == 0)
+            {
+                _insert_child();
+            }
+            else
+            {
+                bool exists = false;
+                auto fchild = graph_t::child(current, 0);
+                for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+                {
+                    if(_hash_id == itr->id())
+                    {
+                        exists = true;
+                        _update(itr);
+                        break;
+                    }
+                }
+                if(!exists)
+                    _insert_child();
+            }
+        }
+    }
+    return _insert_child();
+}
+
+//======================================================================================//
+/*
+inline void
+manager::clear()
+{
+#if defined(DEBUG)
+    if(tim::settings::verbose() > 1)
+        std::cout << "tim::manager::" << __FUNCTION__ << " Clearing " << instance()
+                  << "..." << std::endl;
+#endif
+
+    // if(this == singleton_t::master_instance_ptr())
+    // tim::format::timer::default_width(8);
+
+    // m_laps += compute_total_laps();
+    // timer_data.graph().clear();
+    // timer_data.current() = nullptr;
+    // timer_data.map().clear();
+    for(auto& itr : m_daughters)
+        if(itr != this && itr)
+            itr->clear();
+
+    ofstream_t* m_fos = get_ofstream(m_report);
+
+    if(m_fos)
+    {
+        for(int32_t i = 0; i < mpi_size(); ++i)
+        {
+            mpi_barrier(MPI_COMM_WORLD);
+            if(mpi_rank() != i)
+                continue;
+
+            if(m_fos->good() && m_fos->is_open())
+            {
+                if(mpi_rank() + 1 >= mpi_size())
+                {
+                    m_fos->flush();
+                    m_fos->close();
+                    delete m_fos;
+                }
+                else
+                {
+                    m_fos->flush();
+                    m_fos->close();
+                    delete m_fos;
+                }
+            }
+        }
+    }
+
+    m_report = &std::cout;
+
+}
+*/
+
+//======================================================================================//
+/*
+inline void
+manager::report(bool ign_cutoff, bool endline) const
+{
+    const_cast<this_type*>(this)->merge();
+
+    int32_t _default = (mpi_is_initialized()) ? 1 : 0;
+    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
+
+    if(mpi_rank() == 0 && _verbose > 0)
+    {
+        std::stringstream _info;
+        if(mpi_is_initialized())
+            _info << "[" << mpi_rank() << "] ";
+        _info << "Reporting timing output..." << std::endl;
+        std::cout << _info.str();
+    }
+
+    int nitr = std::max(mpi_size(), 1);
+    for(int32_t i = 0; i < nitr; ++i)
+    {
+        // MPI blocking
+        if(mpi_is_initialized())
+        {
+            mpi_barrier(MPI_COMM_WORLD);
+            // only 1 at a time
+            if(i != mpi_rank())
+                continue;
+        }
+        report(m_report, ign_cutoff, endline);
+    }
+}
+*/
+
+//======================================================================================//
+/*
+inline void
+manager::set_output_stream(const path_t& fname)
+{
+    if(fname.find(fname.os()) != std::string::npos)
+        tim::makedir(fname.substr(0, fname.find_last_of(fname.os())));
+
+    auto ostreamop = [&](ostream_t*& m_os, const string_t& _fname) {
+        if(m_os != &std::cout)
+            delete(ofstream_t*) m_os;
+
+        ofstream_t* _fos = new ofstream_t;
+        for(int32_t i = 0; i < mpi_size(); ++i)
+        {
+            mpi_barrier(MPI_COMM_WORLD);
+            if(mpi_rank() != i)
+                continue;
+
+            if(mpi_rank() == 0)
+                _fos->open(_fname);
+            else
+                _fos->open(_fname, std::ios_base::out | std::ios_base::app);
+        }
+
+        if(_fos->is_open() && _fos->good())
+            m_os = _fos;
+        else
+        {
+#if defined(DEBUG)
+            if(tim::settings::verbose() > 2)
+            {
+                tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+                std::cerr << "Warning! Unable to open file " << _fname << ". "
+                          << "Redirecting to stdout..." << std::endl;
+            }
+#endif
+            _fos->close();
+            delete _fos;
+            m_os = &std::cout;
+        }
+    };
+
+    ostreamop(m_report, fname);
+}
+*/
+
+//======================================================================================//
+
+inline void
+manager::merge(pointer itr)
+{
+    if(itr == this)
+        return;
+
+    // create lock but don't immediately lock
+    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+    // lock if not already owned
+    if(!l.owns_lock())
+        l.lock();
+
+    auto _this_beg = graph().begin();
+    auto _this_end = graph().end();
+
+    bool _merged = false;
+    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
+    {
+        if(_this_itr == itr->data().head())
+        {
+            auto _iter_beg = itr->graph().begin();
+            auto _iter_end = itr->graph().end();
+            graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
+            _merged = true;
+            break;
+        }
+    }
+
+    if(_merged)
+    {
+        using predicate_type = decltype(_this_beg);
+        auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+        _this_beg    = graph().begin();
+        _this_end    = graph().end();
+        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+    }
+    else
+    {
+        auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
+        std::cerr << "Failure to merge graphs!" << std::endl;
+        auto g = graph();
+        graph().insert_subgraph_after(m_data.current(), itr->data().head());
+    }
+}
+
+//======================================================================================//
+/*
+template <typename _Tp>
+inline void
+manager::report(ostream_t* os, graph_storage<_Tp>* data, bool ign_cutoff, bool endline)
+const
+{
+    const_cast<this_type*>(this)->merge();
+
+    auto check_stream = [&](ostream_t*& _os, const string_t& id) {
+        if(_os == &std::cout || _os == &std::cerr)
+            return;
+        ofstream_t* fos = get_ofstream(_os);
+        if(fos && !(fos->is_open() && fos->good()))
+        {
+            _os = &std::cout;
+            tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+            std::cerr << "Output stream for " << id << " is not open/valid. "
+                      << "Redirecting to stdout..." << std::endl;
+        }
+    };
+
+    if(os == m_report)
+        check_stream(os, "total timing report");
+
+    for(const auto& itr : data)
+        if(!itr.data().is_valid())
+            itr.obj.stop();
+
+    if(mpi_is_initialized())
+        *os << "> rank " << mpi_rank() << std::endl;
+
+    auto format = [&](const data_tuple<tim::timer>& node) {
+        std::stringstream ss;
+        node.data().report(ss, false, true);
+        return ss.str();
+    };
+
+    tim::print_graph(timer_data.graph(), apply_format<tim::timer>, *os);
+    if(endline)
+        *os << std::endl;
+    tim::print_graph(memory_data.graph(), apply_format<tim::usage>, *os);
+    if(endline)
+        *os << std::endl;
+
+    os->flush();
+}*/
+
+//======================================================================================//
+//
+//  Static functions for writing JSON output
+//
+//======================================================================================//
+/*
+// static function
+inline void
+manager::write_report(path_t _fname, bool ign_cutoff)
+{
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
+    ofstream_t ofs(_fname.c_str());
+    if(ofs)
+        manager::master_instance()->report(ofs, ign_cutoff);
+    else
+        manager::master_instance()->report(ign_cutoff);
+    ofs.close();
+}
+
+//======================================================================================//
+// static function
+inline void
+manager::write_json(path_t _fname)
+{
+    if(_fname.find(_fname.os()) != std::string::npos)
+        tim::makedir(_fname.substr(0, _fname.find_last_of(_fname.os())));
+
+    (mpi_is_initialized()) ? write_json_mpi(_fname) : write_json_no_mpi(_fname);
+}
+
+//======================================================================================//
+// static function
+inline std::pair<int32_t, bool>
+manager::write_json(ostream_t& ofss)
+{
+    if(mpi_is_initialized())
+        return write_json_mpi(ofss);
+    else
+    {
+        write_json_no_mpi(ofss);
+        return std::pair<int32_t, bool>(0, true);
+    }
+}
+
+//======================================================================================//
+// static function
+inline void
+manager::write_json_no_mpi(ostream_t& fss)
+{
+    fss << "{\n\"ranks\": [" << std::endl;
+
+    // ensure json write final block during destruction before the file
+    // is closed
+    {
+        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+        // precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(fss, opts);
+
+        // oa(cereal::make_nvp("manager", *manager::instance()));
+    }
+
+    fss << "]"
+        << "\n}" << std::endl;
+}
+
+//======================================================================================//
+// static function
+inline void
+manager::write_json_no_mpi(path_t _fname)
+{
+    int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", 0);
+
+    if(mpi_rank() == 0 && _verbose > 0)
+    {
+        // notify so if it takes too long, user knows why
+        std::stringstream _info;
+        _info << "Writing serialization file: " << _fname << std::endl;
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << _info.str();
+    }
+
+    std::stringstream fss;
+    write_json_no_mpi(fss);
+
+    // write to file
+    std::ofstream ofs(_fname.c_str());
+    if(ofs)
+        ofs << fss.str() << std::endl;
+    else
+        std::cerr << "Warning! Unable to write JSON output to \"" << _fname << "\""
+                  << std::endl;
+    ofs.close();
+}
+
+//======================================================================================//
+// static function
+inline std::pair<int32_t, bool>
+manager::write_json_mpi(ostream_t& ofss)
+{
+    const int32_t mpi_root       = 0;
+    comm_group_t  mpi_comm_group = get_communicator_group();
+    MPI_Comm&     local_mpi_comm = std::get<0>(mpi_comm_group);
+    int32_t       local_mpi_file = std::get<1>(mpi_comm_group);
+
+    // output stream
+    std::stringstream fss;
+
+    // ensure json write final block during destruction before the file
+    // is closed
+    {
+        auto spacing = cereal::JSONOutputArchive::Options::IndentChar::tab;
+        // precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 1);
+        cereal::JSONOutputArchive          oa(fss, opts);
+
+        // oa(cereal::make_nvp("manager", *manager::instance()));
+    }
+
+    // if another entry follows
+    if(mpi_rank(local_mpi_comm) + 1 < mpi_size(local_mpi_comm))
+        fss << ",";
+
+    // the JSON output as a string
+    string_t fss_str = fss.str();
+    // limit the iteration loop. Occasionally it seems that this will create
+    // an infinite loop even though it shouldn't...
+    const uint64_t itr_limit = fss_str.length();
+    // compact the JSON
+    for(auto citr : { "\n", "\t", "  " })
+    {
+        string_t            itr(citr);
+        string_t::size_type fpos = 0;
+        uint64_t            nitr = 0;
+        do
+        {
+            fpos = fss_str.find(itr, fpos);
+            if(fpos != string_t::npos)
+                fss_str.replace(fpos, itr.length(), " ");
+            ++nitr;
+        } while(nitr < itr_limit && fpos != string_t::npos);
+    }
+
+    // now we need to gather the lengths of each serialization string
+    int  fss_len    = fss_str.length();
+    int* recvcounts = nullptr;
+
+    // Only root has the received data
+    if(mpi_rank(local_mpi_comm) == mpi_root)
+        recvcounts = (int*) malloc(mpi_size(local_mpi_comm) * sizeof(int));
+
+    MPI_Gather(&fss_len, 1, MPI_INT, recvcounts, 1, MPI_INT, mpi_root, local_mpi_comm);
+
+    // Figure out the total length of string, and displacements for each rank
+    int*  fss_tot     = nullptr;
+    char* totalstring = nullptr;
+
+    if(mpi_rank(local_mpi_comm) == mpi_root)
+    {
+        int fss_tot_len = 0;
+        fss_tot         = (int*) malloc(mpi_size(local_mpi_comm) * sizeof(int));
+
+        fss_tot[0] = 0;
+        fss_tot_len += recvcounts[0] + 1;
+
+        for(int32_t i = 1; i < mpi_size(local_mpi_comm); ++i)
+        {
+            // plus one for space or \0 after words
+            fss_tot_len += recvcounts[i] + 1;
+            fss_tot[i] = fss_tot[i - 1] + recvcounts[i - 1] + 1;
+        }
+
+        // allocate string, pre-fill with spaces and null terminator
+        totalstring = (char*) malloc(fss_tot_len * sizeof(char));
+        for(int32_t i = 0; i < fss_tot_len - 1; ++i)
+            totalstring[i] = ' ';
+        totalstring[fss_tot_len - 1] = '\0';
+    }
+
+    // Now we have the receive buffer, counts, and displacements, and
+    // can gather the strings
+
+    char* cfss = (char*) fss_str.c_str();
+    MPI_Gatherv(cfss, fss_len, MPI_CHAR, totalstring, recvcounts, fss_tot, MPI_CHAR,
+                mpi_root, local_mpi_comm);
+
+    if(mpi_rank(local_mpi_comm) == mpi_root)
+    {
+        ofss << "{\n\"ranks\": [" << std::endl;
+        ofss << totalstring << std::endl;
+        ofss << "]"
+             << "\n}" << std::endl;
+        free(totalstring);
+        free(fss_tot);
+        free(recvcounts);
+    }
+
+    bool write_rank = mpi_rank(local_mpi_comm) == mpi_root;
+
+    MPI_Comm_free(&local_mpi_comm);
+
+    return std::pair<int32_t, bool>(local_mpi_file, write_rank);
+}
+
+//======================================================================================//
+// static function
+inline void
+manager::write_json_mpi(path_t _fname)
+{
+    {
+        // notify so if it takes too long, user knows why
+        std::stringstream _info;
+        _info << "[" << mpi_rank() << "] Writing serialization file: " << _fname
+              << std::endl;
+        tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
+        std::cout << _info.str();
+    }
+
+    std::stringstream ofss;
+    auto              ret            = write_json_mpi(ofss);
+    int32_t           local_mpi_file = ret.first;
+    bool              write_rank     = ret.second;
+
+    if(write_rank)
+    {
+        std::stringstream _rss;
+        _rss << "_" << local_mpi_file;
+        _fname.insert(_fname.find_last_of("."), _rss.str());
+
+        ofstream_t ofs;
+        ofs.open(_fname);
+        if(ofs)
+            ofs << ofss.str();
+        ofs.close();
+    }
+}
+*/
+//======================================================================================//
+// static function
+inline manager::comm_group_t
+manager::get_communicator_group()
+{
+    int32_t max_concurrency = std::thread::hardware_concurrency();
+    // We want on-node communication only
+    int32_t nthreads = tim::settings::num_threads();
+    if(nthreads == 0)
+        nthreads = 1;
+    int32_t max_processes    = max_concurrency / nthreads;
+    int32_t mpi_node_default = mpi_size() / max_processes;
+    if(mpi_node_default < 1)
+        mpi_node_default = 1;
+    int32_t mpi_node_count =
+        tim::get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
+    int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
+
+    // Split the communicator based on the number of nodes and use the
+    // original rank for ordering
+    MPI_Comm local_mpi_comm;
+    MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
+
+#if defined(DEBUG)
+    if(tim::settings::verbose() > 1)
+    {
+        int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
+        int32_t local_mpi_size = mpi_size(local_mpi_comm);
+        int32_t local_mpi_file = mpi_rank() / local_mpi_size;
+
+        std::stringstream _info;
+        _info << "\t" << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
+        _info << "\t" << mpi_rank() << " Size      : " << mpi_size() << std::endl;
+        _info << "\t" << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
+        _info << "\t" << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
+        _info << "\t" << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
+        _info << "\t" << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
+        std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
+    }
+#endif
+
+    return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));
+}
+
+//======================================================================================//
+
+}  // namespace tim
+
+//======================================================================================//
+
+#include "timemory/component_tuple.hpp"
+#include "timemory/settings.hpp"
+#include "timemory/storage.hpp"
+
+//======================================================================================//
+
+template <typename Head, typename... Tail>
+inline void
+tim::manager::print(const tim::component_tuple<Head, Tail...>&)
+{
+    auto storage = tim::graph_storage<Head>::instance();
+    if(storage && !storage->empty())
+        storage->print();
+    using tail_obj_t = PopFront<tim::component_tuple<Head, Tail...>>;
+    print(tail_obj_t());
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
+{
+    // this->report(ign_cutoff, endline);
+    if(!singleton_t::is_master(this))
+    {
+        // singleton_t::master_instance()->merge(this);
+    }
+    else
+    {
+    }
+    /*
+    else if(settings::auto_output())
+    {
+        m_data.current() = m_data.head();
+        int64_t _width   = 10;
+        for(const auto& itr : m_data.graph())
+        {
+            int64_t _len = itr.prefix().length();
+            _width       = std::max(_len, _width);
+        }
+
+        std::stringstream _oss;
+        for(const auto& itr : m_data.graph())
+        {
+            auto              _prefix = itr.prefix();
+            auto              _data   = itr.data();
+            auto              _laps   = 0;
+            std::stringstream ss_prefix;
+            std::stringstream ss_data;
+            ss_prefix << std::setw(_width) << std::left << _prefix;
+            auto ntot = _data.size();
+            for(const auto& ditr : _data)
+            {
+                ss_data << ditr;
+                if(ntot-- > 1)
+                {
+                    ss_data << ", ";
+                }
+            }
+            _oss << ss_prefix.str() << ss_data.str();
+            if(_laps > 0)
+                _oss << ", " << _laps << " laps";
+            _oss << std::endl;
+        }
+
+        if(settings::file_output() && _oss.str().length() > 0)
+        {
+            std::string label = "combined";
+            //--------------------------------------------------------------------------//
+            // output to text
+            //
+            if(settings::text_output())
+            {
+                auto fname = tim::settings::compose_output_filename(label, ".txt");
+                std::ofstream ofs(fname.c_str());
+                if(ofs)
+                {
+                    auto_lock_t l(type_mutex<std::ofstream>());
+                    printf("[graph_storage<%s>]> Outputting '%s'...\n", label.c_str(),
+                           fname.c_str());
+                    ofs << _oss.str();
+                    ofs.close();
+                }
+                else
+                {
+                    auto_lock_t l(type_mutex<decltype(std::cout)>());
+                    fprintf(stderr,
+                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                            label.c_str(), __FUNCTION__, __LINE__, fname.c_str());
+                    std::cout << _oss.str();
+                }
+            }
+
+            //--------------------------------------------------------------------------//
+            // output to json
+            //
+            if(settings::json_output())
+            {
+                // auto_lock_t l(type_mutex<std::ofstream>());
+                // auto        jname = tim::settings::compose_output_filename(label,
+                // ".json"); printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                //       label.c_str(), jname.c_str());
+                // serialize_storage(jname, label, *this);
+            }
+        }
+
+        if(settings::cout_output() && _oss.str().length() > 0)
+        {
+            auto_lock_t l(type_mutex<decltype(std::cout)>());
+            std::cout << _oss.str() << std::endl;
+        }
+
+    }*/
+}
+
+//======================================================================================//

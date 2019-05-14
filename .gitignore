@@ -1,8 +1,7 @@
 
-# QtCreator config file
+# IDE files
 /CMakeLists.txt.user*
-
-# Ninja-IDE project files
+/.vscode
 /*.nja
 settings.json
 
@@ -12,6 +11,7 @@ settings.json
 # build directories
 /build-*
 /build
+/_skbuild
 
 # setup.py files
 /dist*
@@ -23,6 +23,7 @@ __pycache__
 # miscellaneous
 timing_report*
 /test_output*
+*timemory_output*
 
 # macOS Finder files
 .DS_Store
@@ -41,5 +42,3 @@ timing_report*
 # documentation
 /html
 /docs
-
-/source/alloc

@@ -1,30 +1,34 @@
-cmake_minimum_required(VERSION 2.8.12 FATAL_ERROR)
-
-if(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE OFF)
-else(CMAKE_VERSION VERSION_LESS 3.1.3)
-    set(GOOD_CMAKE ON)
-    cmake_policy(SET CMP0048 NEW)
-endif(CMAKE_VERSION VERSION_LESS 3.1.3)
+cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
+cmake_policy(SET CMP0048 NEW)
 
 #------------------------------------------------------------------------------#
-project(TiMemory-CXX-Overhead-Example C)
+project(TiMemory-CXX-Overhead-Example LANGUAGES C CXX)
+message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cxx_overhead)
 
 find_package(TiMemory REQUIRED)
-foreach(_DIR ${TiMemory_INCLUDE_DIRS})
-    include_directories(SYSTEM ${_DIR})
-endforeach(_DIR ${TiMemory_INCLUDE_DIRS})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${TiMemory_C_FLAGS}")
-
-#------------------------------------------------------------------------------#
-# Add the executable, and link it to the TiMemory libraries
-#
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-target_link_libraries(${EXE_NAME} ${TiMemory_C_LIBRARIES})
+
+target_link_libraries(${EXE_NAME}
+    PUBLIC ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+
+target_include_directories(${EXE_NAME} SYSTEM
+    PUBLIC ${TiMemory_INCLUDE_DIRS})
+
+target_compile_options(${EXE_NAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS} ${${PROJECT_NAME}_C_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CXX>:${TiMemory_CXX_COMPILE_OPTIONS} ${${PROJECT_NAME}_CXX_FLAGS}>)
+
+set_target_properties(${EXE_NAME} PROPERTIES
+    CXX_STANDARD 11
+    CXX_STANDARD_REQUIRED ON)
+
+foreach(_OPT ${TiMemory_CXX_LINK_OPTIONS})
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_OPT}")
+endforeach()
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})

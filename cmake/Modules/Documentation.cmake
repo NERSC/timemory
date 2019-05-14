@@ -204,7 +204,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
     IF( DOXYGEN_FOUND )
         IF( DOXYFILE_FOUND )
             # Add target
-            if(TIMEMORY_BUILD_DOXYGEN_DOCS)
+            if(TIMEMORY_BUILD_DOXYGEN)
                 ADD_CUSTOM_TARGET(doc ALL ${DOXYGEN_EXECUTABLE}
                                   "${PROJECT_BINARY_DIR}/doc/${DOXYGEN_CONFIG_FILE}" )
             else()
