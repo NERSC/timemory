@@ -13,7 +13,7 @@ find_package(TiMemory REQUIRED)
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
 
 target_link_libraries(${EXE_NAME}
-    PRIVATE ${TiMemory_LIBRARIES} timemory-c-library)
+    PRIVATE timemory-c-library)
 
 target_include_directories(${EXE_NAME} SYSTEM
     PRIVATE ${TiMemory_INCLUDE_DIRS})
@@ -25,10 +25,9 @@ target_compile_options(${EXE_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS} ${${PROJECT_NAME}_C_FLAGS}>)
 
 set_target_properties(${EXE_NAME} PROPERTIES
-    CXX_STANDARD 11
     LANGUAGE C
-    LINKER_LANGUAGE CXX
-    CXX_STANDARD_REQUIRED ON)
+    C_STANDARD 11
+    C_STANDARD_REQUIRED ON)
 
 if(DEFINED PROJECT_DEPENDS)
     add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})

@@ -36,10 +36,10 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB c_sources ctimemory.c ctimemory.cpp)
+file(GLOB c_sources ctimemory.c)
 file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp
     ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
-file(GLOB cxx_sources manager.cpp)
+file(GLOB cxx_sources ctimemory.cpp)
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)

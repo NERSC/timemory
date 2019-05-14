@@ -59,6 +59,40 @@ PYBIND11_MODULE(libtimemory, tim)
 
     //==================================================================================//
     //
+    //      Components submodule
+    //
+    //==================================================================================//
+    py::enum_<COMPONENT> components_enum(tim, "component", py::arithmetic(),
+                                         "Components for TiMemory module");
+    //----------------------------------------------------------------------------------//
+    components_enum.value("wall_clock", WALL_CLOCK)
+        .value("sys_clock", SYS_CLOCK)
+        .value("user_clock", USER_CLOCK)
+        .value("cpu_clock", CPU_CLOCK)
+        .value("monotonic_clock", MONOTONIC_CLOCK)
+        .value("monotonic_raw_clock", MONOTONIC_RAW_CLOCK)
+        .value("thread_cpu_clock", THREAD_CPU_CLOCK)
+        .value("process_cpu_clock", PROCESS_CPU_CLOCK)
+        .value("cpu_util", CPU_UTIL)
+        .value("thread_cpu_util", THREAD_CPU_UTIL)
+        .value("process_cpu_util", PROCESS_CPU_UTIL)
+        .value("current_rss", CURRENT_RSS)
+        .value("peak_rss", PEAK_RSS)
+        .value("stack_rss", STACK_RSS)
+        .value("data_rss", DATA_RSS)
+        .value("num_swap", NUM_SWAP)
+        .value("num_io_in", NUM_IO_IN)
+        .value("num_io_out", NUM_IO_OUT)
+        .value("num_minor_page_faults", NUM_MINOR_PAGE_FAULTS)
+        .value("num_major_page_faults", NUM_MAJOR_PAGE_FAULTS)
+        .value("num_msg_sent", NUM_MSG_SENT)
+        .value("num_msg_recv", NUM_MSG_RECV)
+        .value("num_signals", NUM_SIGNALS)
+        .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
+        .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH);
+
+    //==================================================================================//
+    //
     //      Signals submodule
     //
     //==================================================================================//
@@ -114,7 +148,9 @@ PYBIND11_MODULE(libtimemory, tim)
     py::class_<manager_wrapper>               man(tim, "manager");
     py::class_<tim_timer_t>                   timer(tim, "timer");
     py::class_<auto_timer_t>                  auto_timer(tim, "auto_timer");
+    py::class_<component_list_t>              comp_list(tim, "component_tuple");
     py::class_<auto_timer_decorator>          timer_decorator(tim, "timer_decorator");
+    py::class_<component_list_decorator>      comp_decorator(tim, "component_decorator");
     py::class_<rss_usage_t>                   rss_usage(tim, "rss_usage");
     py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim, "decorate_timer");
 
@@ -130,6 +166,13 @@ PYBIND11_MODULE(libtimemory, tim)
             auto last_slash              = fname.find_last_of('/');
             auto dname                   = fname.substr(0, last_slash + 1);
             fname                        = fname.substr(last_slash + 1);
+            tim::settings::output_path() = dname;
+        }
+        else if(fname.find_last_of('/') == fname.length() - 1)
+        {
+            auto last_slash              = fname.find_last_of('/');
+            auto dname                   = fname.substr(0, last_slash + 1);
+            fname                        = "";
             tim::settings::output_path() = dname;
         }
         tim::settings::output_prefix() = fname;
@@ -199,6 +242,18 @@ PYBIND11_MODULE(libtimemory, tim)
             "Return if the TiMemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
+    //----------------------------------------------------------------------------------//
+    tim.def("set_rusage_children",
+            [&] ()
+    {
+        tim::get_rusage_type() = RUSAGE_CHILDREN;
+    }, "Set the rusage to record child processes");
+    //----------------------------------------------------------------------------------//
+    tim.def("set_rusage_self",
+            [&] ()
+    {
+        tim::get_rusage_type() = RUSAGE_SELF;
+    }, "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//
@@ -301,6 +356,56 @@ PYBIND11_MODULE(libtimemory, tim)
     //----------------------------------------------------------------------------------//
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
+    //----------------------------------------------------------------------------------//
+
+    //==================================================================================//
+    //
+    //                      COMPONENT TUPLE
+    //
+    //==================================================================================//
+    comp_list.def(py::init(&pytim::init::component_list), "Initialization",
+                  py::arg("components") = py::list(), py::arg("key") = "",
+                  py::arg("report_at_exit") = false, py::arg("nback") = 1,
+                  py::arg("added_args") = false, py::return_value_policy::take_ownership);
+    //----------------------------------------------------------------------------------//
+    comp_list.def("start",
+                  [=](py::object timer) { timer.cast<component_list_t*>()->start(); },
+                  "Start component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("stop",
+                  [=](py::object timer) { timer.cast<component_list_t*>()->stop(); },
+                  "Stop component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("report",
+                  [=](py::object timer) {
+                      std::cout << *(timer.cast<component_list_t*>()) << std::endl;
+                  },
+                  "Report component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("__str__",
+                  [=](py::object timer) {
+                      std::stringstream ss;
+                      ss << *(timer.cast<component_list_t*>());
+                      return ss.str();
+                  },
+                  "Stringify component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("reset",
+                  [=](py::object self) { self.cast<component_list_t*>()->reset(); },
+                  "Reset the component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("__str__",
+                  [=](py::object _pyauto_tuple) {
+                      std::stringstream _ss;
+                      component_list_t* _auto_tuple =
+                          _pyauto_tuple.cast<component_list_t*>();
+                      _ss << *_auto_tuple;
+                      return _ss.str();
+                  },
+                  "Print the component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_decorator.def(py::init(&pytim::init::component_decorator), "Initialization",
+                       py::return_value_policy::automatic);
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//

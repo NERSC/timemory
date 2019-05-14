@@ -25,7 +25,7 @@
 
 /** \file auto_tuple.hpp
  * \headerfile auto_tuple.hpp "timemory/auto_tuple.hpp"
- * Automatic timers
+ * Automatic timers. Exist for backwards compatibility. In C++, use auto_tuple.
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER("")

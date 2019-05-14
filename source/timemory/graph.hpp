@@ -24,7 +24,7 @@
 
 /** \file graph.hpp
  * \headerfile graph.hpp "timemory/graph.hpp"
- * Arbitrary Graph
+ * Arbitrary Graph / Tree (i.e. binary-tree but not binary)
  */
 
 #pragma once

@@ -22,6 +22,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file papi.hpp
+ * \headerfile papi.hpp "timemory/papi.hpp"
+ * Provides implementation of PAPI routines.
+ *
+ */
+
 #pragma once
 
 #include "timemory/macros.hpp"

@@ -23,10 +23,11 @@
 // SOFTWARE.
 //
 
-/** \file component_tuple.hpp
- * \headerfile component_tuple.hpp "timemory/component_tuple.hpp"
- * This is the C++ class that bundles together components and enables
- * operation on the components as a single entity
+/** \file component_list.hpp
+ * \headerfile component_list.hpp "timemory/component_list.hpp"
+ * This is similar to component_tuple but not as optimized.
+ * This exists so that Python and C, which do not support templates,
+ * can implement a subset of the tools
  *
  */
 
@@ -57,34 +58,34 @@ namespace tim
 //======================================================================================//
 // forward declaration
 //
-template <typename... Types>
-class auto_tuple;
+// template <typename... Types>
+// class auto_list;
 
 //======================================================================================//
 // variadic list of components
 //
 template <typename... Types>
-class component_tuple
+class component_list
 {
     static const std::size_t num_elements = sizeof...(Types);
 
     // empty init for friends
-    explicit component_tuple() {}
+    explicit component_list() {}
     // manager is friend so can use above
     friend class manager;
 
 public:
     using size_type   = int64_t;
-    using this_type   = component_tuple<Types...>;
-    using data_t      = std::tuple<Types...>;
+    using this_type   = component_list<Types...>;
+    using data_type   = std::tuple<Types*...>;
     using string_hash = std::hash<string_t>;
-    using auto_type   = auto_tuple<Types...>;
+    // using auto_type   = auto_list<Types...>;
 
 public:
     /*
     using construct_types = std::tuple<component::construct<Types>...>;
     template <typename... Constructors>
-    explicit component_tuple(std::tuple<Constructors...>&& _ctors, const string_t& key,
+    explicit component_list(std::tuple<Constructors...>&& _ctors, const string_t& key,
                              const bool& store, const string_t& tag = "cxx",
                              const int32_t& ncount = 0, const int32_t& nhash = 0)
     : m_store(store)
@@ -94,7 +95,7 @@ public:
     , m_key(key)
     , m_tag(tag)
     , m_identifier("")
-    , m_data(apply<data_t>::template all<construct_types>(component::create,
+    , m_data(apply<data_type>::template all<construct_types>(component::create,
                                                           _ctors))
     {
         compute_identifier(key, tag);
@@ -102,9 +103,9 @@ public:
         push();
     }*/
 
-    explicit component_tuple(const string_t& key, const bool& store,
-                             const string_t& tag = "cxx", const int32_t& ncount = 0,
-                             const int32_t& nhash = 0)
+    explicit component_list(const string_t& key, const bool& store,
+                            const string_t& tag = "cxx", const int32_t& ncount = 0,
+                            const int32_t& nhash = 0)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -113,14 +114,14 @@ public:
     , m_tag(tag)
     , m_identifier("")
     {
+        apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, tag);
         init_manager();
-        push();
     }
 
-    component_tuple(const string_t& key, const string_t& tag = "cxx",
-                    const int32_t& ncount = 0, const int32_t& nhash = 0,
-                    bool store = false)
+    component_list(const string_t& key, const string_t& tag = "cxx",
+                   const int32_t& ncount = 0, const int32_t& nhash = 0,
+                   bool store = false)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -129,45 +130,25 @@ public:
     , m_tag(tag)
     , m_identifier("")
     {
+        apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, tag);
         init_manager();
-        push();
     }
 
-    ~component_tuple() { pop(); }
+    ~component_list()
+    {
+        pop();
+        using deleter_types = std::tuple<component::pointer_deleter<Types>...>;
+        apply<void>::access<deleter_types>(m_data);
+    }
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_tuple(const component_tuple& rhs)
-    : m_store(rhs.m_store)
-    , m_laps(rhs.m_laps)
-    , m_count(rhs.m_count)
-    , m_hash(rhs.m_hash)
-    , m_key(rhs.m_key)
-    , m_tag(rhs.m_tag)
-    , m_identifier(rhs.m_identifier)
-    , m_data(rhs.m_data)
-    {
-    }
-
-    component_tuple& operator=(const component_tuple& rhs)
-    {
-        if(this == &rhs)
-            return *this;
-        m_store      = rhs.m_store;
-        m_laps       = rhs.m_laps;
-        m_count      = rhs.m_count;
-        m_hash       = rhs.m_hash;
-        m_key        = rhs.m_key;
-        m_tag        = rhs.m_tag;
-        m_identifier = rhs.m_identifier;
-        m_data       = rhs.m_data;
-        return *this;
-    }
-
-    component_tuple(component_tuple&&) = default;
-    component_tuple& operator=(component_tuple&&) = default;
+    component_list(const component_list&) = delete;
+    component_list& operator=(const component_list&) = delete;
+    component_list(component_list&&)                 = default;
+    component_list& operator=(component_list&&) = default;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -181,7 +162,8 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
-            using insert_types = std::tuple<component::insert_node<Types>...>;
+            using insert_types = std::tuple<
+                component::pointer_operator<Types, component::insert_node<Types>>...>;
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
@@ -195,7 +177,8 @@ public:
     {
         if(m_store && m_is_pushed)
         {
-            using apply_types = std::tuple<component::pop_node<Types>...>;
+            using apply_types = std::tuple<
+                component::pointer_operator<Types, component::pop_node<Types>>...>;
             // set the current node to the parent node
             apply<void>::access<apply_types>(m_data);
             // avoid pushing/popping when already pushed/popped
@@ -207,7 +190,8 @@ public:
     // measure functions
     void measure()
     {
-        using apply_types = std::tuple<component::measure<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::measure<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -215,7 +199,8 @@ public:
     // start/stop functions
     void start()
     {
-        using apply_types = std::tuple<component::start<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::start<Types>>...>;
         // increment laps
         ++m_laps;
         // start components
@@ -224,7 +209,8 @@ public:
 
     void stop()
     {
-        using apply_types = std::tuple<component::stop<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::stop<Types>>...>;
         // stop components
         apply<void>::access<apply_types>(m_data);
     }
@@ -237,13 +223,15 @@ public:
             if(did_start)
                 ++m_laps;
         };
-        using apply_types = std::tuple<component::conditional_start<Types>...>;
+        using apply_types = std::tuple<
+            component::pointer_operator<Types, component::conditional_start<Types>>...>;
         apply<void>::access<apply_types>(m_data, increment);
     }
 
     void conditional_stop()
     {
-        using apply_types = std::tuple<component::conditional_stop<Types>...>;
+        using apply_types = std::tuple<
+            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -255,7 +243,8 @@ public:
             if(did_start)
                 ++m_laps;
         };
-        using apply_types = std::tuple<component::conditional_start<Types>...>;
+        using apply_types = std::tuple<
+            component::pointer_operator<Types, component::conditional_start<Types>>...>;
         apply<void>::access<apply_types>(m_data, increment);
     }
 
@@ -265,7 +254,8 @@ public:
             if(did_stop)
                 --m_laps;
         };
-        using apply_types = std::tuple<component::conditional_stop<Types>...>;
+        using apply_types = std::tuple<
+            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data, decrement);
     }
 
@@ -276,7 +266,8 @@ public:
     {
         ++m_laps;
         {
-            using apply_types = std::tuple<component::record<Types>...>;
+            using apply_types = std::tuple<
+                component::pointer_operator<Types, component::record<Types>>...>;
             apply<void>::access<apply_types>(m_data);
         }
         return *this;
@@ -288,11 +279,13 @@ public:
             ++m_laps;
         auto c_data = std::move(rhs.m_data);
         {
-            using apply_types = std::tuple<component::record<Types>...>;
+            using apply_types = std::tuple<
+                component::pointer_operator<Types, component::record<Types>>...>;
             apply<void>::access<apply_types>(m_data);
         }
         {
-            using apply_types = std::tuple<component::minus<Types>...>;
+            using apply_types = std::tuple<
+                component::pointer_operator<Types, component::minus<Types>>...>;
             apply<void>::access2<apply_types>(m_data, c_data);
         }
         return *this;
@@ -314,7 +307,8 @@ public:
     //----------------------------------------------------------------------------------//
     void reset()
     {
-        using apply_types = std::tuple<component::reset<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::reset<Types>>...>;
         apply<void>::access<apply_types>(m_data);
         m_laps = 0;
     }
@@ -324,7 +318,8 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -332,7 +327,8 @@ public:
 
     this_type& operator-=(this_type& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -340,7 +336,8 @@ public:
 
     this_type& operator+=(const this_type& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -348,7 +345,8 @@ public:
 
     this_type& operator+=(this_type& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -360,7 +358,8 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -368,7 +367,8 @@ public:
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -376,7 +376,8 @@ public:
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::multiply<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::multiply<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -384,7 +385,8 @@ public:
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::divide<Types>...>;
+        using apply_types =
+            std::tuple<component::pointer_operator<Types, component::divide<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -423,7 +425,8 @@ public:
     {
         {
             // stop, if not already stopped
-            using apply_types = std::tuple<component::conditional_stop<Types>...>;
+            using apply_types = std::tuple<component::pointer_operator<
+                Types, component::conditional_stop<Types>>...>;
             apply<void>::access<apply_types>(obj.m_data);
         }
         std::stringstream ss_prefix;
@@ -443,7 +446,8 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<component::serial<Types, Archive>...>;
+        using apply_types = std::tuple<
+            component::pointer_operator<Types, component::serial<Types, Archive>>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
@@ -469,9 +473,9 @@ public:
     }
 
 public:
-    inline data_t&       data() { return m_data; }
-    inline const data_t& data() const { return m_data; }
-    inline int64_t       laps() const { return m_laps; }
+    inline data_type&       data() { return m_data; }
+    inline const data_type& data() const { return m_data; }
+    inline int64_t          laps() const { return m_laps; }
 
     int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
@@ -486,23 +490,35 @@ public:
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
 
+    template <std::size_t _N>
+    typename std::tuple_element<_N, data_type>::type& get()
+    {
+        return std::get<_N>(m_data);
+    }
+
+    template <std::size_t _N>
+    const typename std::tuple_element<_N, data_type>::type& get() const
+    {
+        return std::get<_N>(m_data);
+    }
+
 protected:
     // protected member functions
-    data_t&       get_data() { return m_data; }
-    const data_t& get_data() const { return m_data; }
+    data_type&       get_data() { return m_data; }
+    const data_type& get_data() const { return m_data; }
 
 protected:
     // objects
-    bool           m_store     = false;
-    bool           m_is_pushed = false;
-    mutex_t        m_mutex;
-    int64_t        m_laps       = 0;
-    int64_t        m_count      = 0;
-    int64_t        m_hash       = 0;
-    string_t       m_key        = "";
-    string_t       m_tag        = "";
-    string_t       m_identifier = "";
-    mutable data_t m_data;
+    bool              m_store     = false;
+    bool              m_is_pushed = false;
+    mutex_t           m_mutex;
+    int64_t           m_laps       = 0;
+    int64_t           m_count      = 0;
+    int64_t           m_hash       = 0;
+    string_t          m_key        = "";
+    string_t          m_tag        = "";
+    string_t          m_identifier = "";
+    mutable data_type m_data;
 
 protected:
     string_t get_prefix()
@@ -583,33 +599,33 @@ private:
 // empty component tuple overload -- required because of std::array operations
 //
 template <>
-class component_tuple<>
+class component_list<>
 {
     static const std::size_t num_elements = 0;
 
 public:
     using size_type   = int64_t;
-    using this_type   = component_tuple<>;
-    using data_t      = std::tuple<>;
+    using this_type   = component_list<>;
+    using data_type   = std::tuple<>;
     using string_hash = std::hash<string_t>;
 
 public:
-    explicit component_tuple()              = default;
-    ~component_tuple()                      = default;
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
+    explicit component_list()             = default;
+    ~component_list()                     = default;
+    component_list(const component_list&) = default;
+    component_list(component_list&&)      = default;
 
-    component_tuple(const string_t&, const string_t& = "", const int32_t& = 0,
-                    const int32_t& = 0, bool = true)
+    component_list(const string_t&, const string_t& = "", const int32_t& = 0,
+                   const int32_t& = 0, bool = true)
     {
     }
-    explicit component_tuple(const string_t&, const bool&, const string_t& = "",
-                             const int32_t& = 0, const int32_t& = 0)
+    explicit component_list(const string_t&, const bool&, const string_t& = "",
+                            const int32_t& = 0, const int32_t& = 0)
     {
     }
 
-    component_tuple& operator=(const component_tuple&) = default;
-    component_tuple& operator=(component_tuple&&) = default;
+    component_list& operator=(const component_list&) = default;
+    component_list& operator=(component_list&&) = default;
 
 public:
     static constexpr std::size_t size() { return num_elements; }
@@ -679,24 +695,24 @@ public:
     inline void report(std::ostream&, bool, bool) const {}
 
 public:
-    inline data_t&       data() { return m_data; }
-    inline const data_t& data() const { return m_data; }
-    inline int64_t       laps() const { return m_laps; }
+    inline data_type&       data() { return m_data; }
+    inline const data_type& data() const { return m_data; }
+    inline int64_t          laps() const { return m_laps; }
 
 protected:
     // protected member functions
-    data_t&       get_data() { return m_data; }
-    const data_t& get_data() const { return m_data; }
+    data_type&       get_data() { return m_data; }
+    const data_type& get_data() const { return m_data; }
 
 protected:
     // objects
-    bool     m_store      = false;
-    bool     m_is_pushed  = false;
-    int64_t  m_laps       = 0;
-    int64_t  m_count      = 0;
-    int64_t  m_hash       = 0;
-    data_t   m_data       = data_t();
-    string_t m_identifier = "";
+    bool      m_store      = false;
+    bool      m_is_pushed  = false;
+    int64_t   m_laps       = 0;
+    int64_t   m_count      = 0;
+    int64_t   m_hash       = 0;
+    data_type m_data       = data_type();
+    string_t  m_identifier = "";
 
 protected:
     string_t       get_prefix() { return ""; }
@@ -706,136 +722,6 @@ protected:
 private:
     void init_manager();
 };
-
-//--------------------------------------------------------------------------------------//
-
-namespace details
-{
-//--------------------------------------------------------------------------------------//
-
-template <typename...>
-struct component_concat
-{
-};
-
-template <>
-struct component_concat<>
-{
-    using type = component_tuple<>;
-};
-
-template <typename... Ts>
-struct component_concat<component_tuple<Ts...>>
-{
-    using type = component_tuple<Ts...>;
-};
-
-template <typename... Ts0, typename... Ts1, typename... Rest>
-struct component_concat<component_tuple<Ts0...>, component_tuple<Ts1...>, Rest...>
-: component_concat<component_tuple<Ts0..., Ts1...>, Rest...>
-{
-};
-
-template <typename... Ts>
-using component_concat_t = typename component_concat<Ts...>::type;
-
-//--------------------------------------------------------------------------------------//
-
-template <bool>
-struct component_filter_if_result
-{
-    template <typename T>
-    using type = component_tuple<T>;
-};
-
-template <>
-struct component_filter_if_result<false>
-{
-    template <typename T>
-    using type = component_tuple<>;
-};
-
-template <template <typename> class Predicate, typename Sequence>
-struct component_filter_if;
-
-template <template <typename> class Predicate, typename... Ts>
-struct component_filter_if<Predicate, component_tuple<Ts...>>
-{
-    using type = component_concat_t<
-        typename component_filter_if_result<Predicate<Ts>::value>::template type<Ts>...>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace details
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename> class Predicate, typename Sequence>
-using type_filter = typename details::component_filter_if<Predicate, Sequence>::type;
-
-template <typename... Types>
-using implemented_component_tuple =
-    type_filter<component::impl_available, component_tuple<Types...>>;
-
-//======================================================================================//
-
-namespace details
-{
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-class custom_component_tuple : public implemented_component_tuple<Types...>
-{
-public:
-    custom_component_tuple(const string_t& key, const string_t& tag)
-    : component_tuple<Types...>(key, tag, 0, 0)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream&                           os,
-                                    const custom_component_tuple<Types...>& obj)
-    {
-        {
-            // stop, if not already stopped
-            using apply_types = std::tuple<component::conditional_stop<Types>...>;
-            apply<void>::access<apply_types>(obj.m_data);
-        }
-        std::stringstream ss_prefix;
-        std::stringstream ss_data;
-        {
-            using apply_types = std::tuple<custom_print<Types>...>;
-            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                          false);
-        }
-        ss_prefix << std::setw(obj.output_width()) << std::left << obj.m_identifier
-                  << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        return os;
-    }
-
-protected:
-    //----------------------------------------------------------------------------------//
-    template <typename _Tp>
-    struct custom_print
-    {
-        using value_type = typename _Tp::value_type;
-        using base_type  = tim::component::base<_Tp, value_type>;
-
-        custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj,
-                     std::ostream& os, bool /*endline*/)
-        {
-            std::stringstream ss;
-            if(_N == 0)
-                ss << std::endl;
-            ss << "    " << obj << std::endl;
-            os << ss.str();
-        }
-    };
-};
-
-}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
@@ -849,7 +735,7 @@ protected:
 
 template <typename... Types>
 void
-tim::component_tuple<Types...>::init_manager()
+tim::component_list<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -864,7 +750,7 @@ namespace std
 
 template <std::size_t N, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::component_tuple<Types...>& obj)
+get(tim::component_list<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -873,7 +759,7 @@ get(tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::component_tuple<Types...>& obj)
+get(const tim::component_list<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -882,10 +768,10 @@ get(const tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 auto
-get(tim::component_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::component_tuple<Types...>>(obj).data()))
+get(tim::component_list<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::component_list<Types...>>(obj).data()))
 {
-    using obj_type = tim::component_tuple<Types...>;
+    using obj_type = tim::component_list<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 

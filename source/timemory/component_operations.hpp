@@ -22,6 +22,13 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file component_operations.hpp
+ * \headerfile component_operations.hpp "timemory/component_operations.hpp"
+ * These are structs and functions that provide the operations on the
+ * components
+ *
+ */
+
 #pragma once
 
 #include "timemory/components.hpp"
@@ -228,8 +235,7 @@ struct conditional_start
     template <typename _Func>
     conditional_start(base_type& obj, _Func&& func)
     {
-        bool did_start = obj.conditional_start();
-        std::forward<_Func>(func)(did_start);
+        std::forward<_Func>(func)(obj.conditional_start());
     }
 };
 
@@ -247,8 +253,7 @@ struct conditional_stop
     template <typename _Func>
     conditional_stop(base_type& obj, _Func&& func)
     {
-        bool did_stop = obj.conditional_stop();
-        std::forward<_Func>(func)(did_stop);
+        std::forward<_Func>(func)(obj.conditional_stop());
     }
 };
 
@@ -369,6 +374,35 @@ struct print
     }
 
     //----------------------------------------------------------------------------------//
+    // only if components are available -- pointers
+    //
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
+    print(const base_type* _obj, std::ostream& _os, bool _endline = false)
+    {
+        if(_obj)
+            print(*_obj, _os, _endline);
+    }
+
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
+    print(std::size_t _N, std::size_t _Ntot, const base_type* _obj, std::ostream& _os,
+          bool _endline)
+    {
+        if(_obj)
+            print(_N, _Ntot, *_obj, _os, _endline);
+    }
+
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
+    print(const base_type* _obj, std::ostream& _os, const string_t& _prefix,
+          int64_t _laps, int64_t _output_width, bool _endline)
+    {
+        if(_obj)
+            print(*_obj, _os, _prefix, _laps, _output_width, _endline);
+    }
+
+    //----------------------------------------------------------------------------------//
     // fixes for exact match issue on Windows
     //
     print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
@@ -382,6 +416,24 @@ struct print
     {
         print(static_cast<const base_type&>(_obj), _os, _prefix, _laps, _output_width,
               _endline);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // fixes for exact match issue on Windows -- pointers
+    //
+    print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
+          bool _endline)
+    {
+        if(_obj)
+            print(_N, _Ntot, static_cast<const base_type&>(*_obj), _os, _endline);
+    }
+
+    print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
+          int64_t _output_width, bool _endline)
+    {
+        if(_obj)
+            print(static_cast<const base_type&>(*_obj), _os, _prefix, _laps,
+                  _output_width, _endline);
     }
 
     //----------------------------------------------------------------------------------//
@@ -402,6 +454,27 @@ struct print
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
     print(const base_type&, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available -- pointers
+    //
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(const base_type*, std::ostream&, bool = false)
+    {
+    }
+
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(std::size_t, std::size_t, const base_type*, std::ostream&, bool)
+    {
+    }
+
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print(const base_type*, std::ostream&, const string_t&, int64_t, int64_t, bool)
     {
     }
 };
@@ -427,6 +500,47 @@ struct serial
            serializer::make_nvp("unit.repr", Type::display_unit()));
         consume_parameters(version);
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Op>
+struct pointer_operator
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = base<Type, value_type>;
+
+    template <typename... _Args>
+    explicit pointer_operator(base_type* obj, _Args&&... _args)
+    {
+        if(obj)
+        {
+            _Op(*obj, std::forward<_Args>(_args)...);
+        }
+    }
+
+    template <typename... _Args>
+    explicit pointer_operator(Type* obj, _Args&&... _args)
+    {
+        if(obj)
+        {
+            _Op(*obj, std::forward<_Args>(_args)...);
+        }
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct pointer_deleter
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = base<Type, value_type>;
+
+    explicit pointer_deleter(Type*& obj) { delete obj; }
+    explicit pointer_deleter(base_type*& obj) { delete static_cast<Type*&>(obj); }
 };
 
 //--------------------------------------------------------------------------------------//

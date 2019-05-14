@@ -22,6 +22,14 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
+/** \file singleton.hpp
+ * \headerfile singleton.hpp "timemory/singleton.hpp"
+ * This is the C++ class provides thread-local singleton functionality with
+ * the ability to overload the destruction of the singleton (critical to automatic
+ * output at the end of the application)
+ *
+ */
+
 #pragma once
 
 #include "timemory/macros.hpp"

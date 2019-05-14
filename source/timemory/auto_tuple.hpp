@@ -25,7 +25,10 @@
 
 /** \file auto_tuple.hpp
  * \headerfile auto_tuple.hpp "timemory/auto_tuple.hpp"
- * Automatic timers
+ * Automatic starting and stopping of components. Accept unlimited number of
+ * parameters. The constructor starts the components, the destructor stops the
+ * components
+ *
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TUPLE()
  *    \param TIMEMORY_BASIC_AUTO_TUPLE()

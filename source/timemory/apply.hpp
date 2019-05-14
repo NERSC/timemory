@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory.hpp
- * \headerfile timemory.hpp "timemory/timemory.hpp"
- * All-inclusive timemory header + extern declarations
+/** \file apply.hpp
+ * \headerfile apply.hpp "timemory/apply.hpp"
+ * Provides the template meta-programming expansions heavily utilized by TiMemory
  *
  */
 

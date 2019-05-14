@@ -34,6 +34,7 @@
 #include "timemory/auto_macros.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/clocks.hpp"
+#include "timemory/component_list.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/components.hpp"
 #include "timemory/graph.hpp"

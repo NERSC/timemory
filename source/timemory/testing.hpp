@@ -22,6 +22,12 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
+/** \file testing.hpp
+ * \headerfile testing.hpp "timemory/testing.hpp"
+ * This is used for C++ testing of the TiMemory package
+ *
+ */
+
 #pragma once
 
 // C headers

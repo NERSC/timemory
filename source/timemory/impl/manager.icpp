@@ -23,10 +23,12 @@
 // SOFTWARE.
 //
 
-/** \file manager.cpp
- * Static singleton handler of auto-timers
+/** \file manager.icpp
+ * \headerfile manager.icpp "timemory/impl/manager.icpp"
+ * Provides inline implementation of manager functions
  *
  */
+
 
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"

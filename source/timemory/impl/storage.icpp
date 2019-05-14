@@ -22,6 +22,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file storage.icpp
+ * \headerfile storage.icpp "timemory/impl/storage.icpp"
+ * Provides inline implementation of graph_storage member functions
+ *
+ */
+
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"

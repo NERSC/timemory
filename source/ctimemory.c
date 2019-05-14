@@ -24,6 +24,8 @@
 
 #include "timemory/ctimemory.h"
 #include "assert.h"
+#include <stdarg.h>
+#include <stdlib.h>
 
 //======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
@@ -33,7 +35,11 @@ cxx_timemory_enabled(void);
 extern void*
 cxx_timemory_create_auto_timer(const char*, int, const char*, int);
 extern void*
+cxx_timemory_create_auto_tuple(const char*, int, int, int*);
+extern void*
 cxx_timemory_delete_auto_timer(void*);
+extern void*
+cxx_timemory_delete_auto_tuple(void*);
 extern const char*
 cxx_timemory_string_combine(const char*, const char*);
 extern const char*
@@ -59,11 +65,36 @@ c_timemory_create_auto_timer(const char* tag, int lineno)
 
 //======================================================================================//
 
+tim_api void*
+c_timemory_create_auto_tuple(const char* tag, int lineno, int num_components, ...)
+{
+    if(!cxx_timemory_enabled())
+        return NULL;
+    int     components[num_components];
+    va_list args;
+    va_start(args, num_components);
+    for(int i = 0; i < num_components; ++i)
+        components[i] = va_arg(args, int);
+    va_end(args);
+    return cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
+}
+
+//======================================================================================//
+
 tim_api void
 c_timemory_delete_auto_timer(void* ctimer)
 {
     ctimer = cxx_timemory_delete_auto_timer(ctimer);
     assert(ctimer == NULL);
+}
+
+//======================================================================================//
+
+tim_api void
+c_timemory_delete_auto_tuple(void* ctuple)
+{
+    ctuple = cxx_timemory_delete_auto_tuple(ctuple);
+    assert(ctuple == NULL);
 }
 
 //======================================================================================//

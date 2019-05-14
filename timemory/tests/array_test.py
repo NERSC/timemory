@@ -251,8 +251,7 @@ def run_test():
 
     manager = timemory.manager()
     print('\nTiming report:\n{}'.format(manager))
-    freport = options.set_report("timing_array_test.out")
-    fserial = options.set_serial("timing_array_test.json")
+    options.set_output("timing_array_test/")
     #manager.report(ign_cutoff = True)
     #plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 
@@ -267,7 +266,15 @@ if __name__ == '__main__':
         parser = argparse.ArgumentParser()
         args = options.add_args_and_parse_known(parser)
 
-        run_test()
+        components = []
+        for c in ["wall_clock", "cpu_clock", "num_io_in", "num_io_out",
+                  "num_minor_page_faults", "num_major_page_faults",
+                  "num_msg_sent", "num_msg_recv", "num_signals",
+                  "voluntary_context_switch", "priority_context_switch"]:
+            components.append(getattr(timemory.component, c))
+
+        with timemory.util.auto_tuple(components):
+            run_test()
 
         if options.ctest_notes:
             manager = timemory.manager()

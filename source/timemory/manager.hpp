@@ -25,7 +25,9 @@
 
 /** \file manager.hpp
  * \headerfile manager.hpp "timemory/manager.hpp"
- * Static singleton handler of auto-timers
+ * Static singleton handler that is not templated. In general, this is the
+ * first object created and last object destroy. It should be utilized to
+ * store type-independent data
  *
  */
 

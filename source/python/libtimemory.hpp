@@ -52,17 +52,23 @@
 #include <pybind11/functional.h>
 #include <pybind11/iostream.h>
 
-namespace py = pybind11;
-using namespace std::placeholders;  // for _1, _2, _3...
-using namespace py::literals;
-
 #include "timemory/auto_timer.hpp"
 #include "timemory/auto_tuple.hpp"
+#include "timemory/component_list.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/signal_detection.hpp"
+
+extern "C"
+{
+#include "timemory/ctimemory.h"
+}
+
+namespace py = pybind11;
+using namespace std::placeholders;  // for _1, _2, _3...
+using namespace py::literals;
 
 using namespace tim::component;
 using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
@@ -71,6 +77,13 @@ using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, c
 using rss_usage_t = tim::component_tuple<current_rss, peak_rss, num_minor_page_faults,
                                          num_major_page_faults, voluntary_context_switch,
                                          priority_context_switch>;
+using component_enum_vec = std::vector<COMPONENT>;
+using component_list_t   = tim::component_list<
+    real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
+    thread_cpu_clock, process_cpu_clock, cpu_util, thread_cpu_util, process_cpu_util,
+    current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
+    num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
+    voluntary_context_switch, priority_context_switch>;
 
 using auto_timer_t      = typename tim_timer_t::auto_type;
 using auto_usage_t      = typename rss_usage_t::auto_type;
@@ -121,6 +134,46 @@ public:
 
 private:
     auto_timer_t* m_ptr;
+};
+
+//======================================================================================//
+
+class component_list_decorator
+{
+public:
+    component_list_decorator(component_list_t* _ptr = nullptr)
+    : m_ptr(_ptr)
+    {
+        if(m_ptr)
+        {
+            m_ptr->push();
+            m_ptr->start();
+        }
+    }
+
+    ~component_list_decorator()
+    {
+        if(m_ptr)
+            m_ptr->stop();
+        delete m_ptr;
+    }
+
+    component_list_decorator& operator=(component_list_t* _ptr)
+    {
+        if(m_ptr)
+            m_ptr->stop();
+        delete m_ptr;
+        m_ptr = _ptr;
+        if(m_ptr)
+        {
+            m_ptr->push();
+            m_ptr->start();
+        }
+        return *this;
+    }
+
+private:
+    component_list_t* m_ptr;
 };
 
 //======================================================================================//
@@ -214,6 +267,128 @@ get_file(int nback = 2, bool only_basename = true, bool use_dirname = false,
              py::globals(), locals);
     auto ret = locals["result"].cast<std::string>();
     return ret;
+}
+
+//--------------------------------------------------------------------------------------//
+
+component_enum_vec
+components_enum_to_vec(py::list enum_list)
+{
+    component_enum_vec vec;
+    for(auto itr : enum_list)
+        vec.push_back(itr.cast<COMPONENT>());
+    return vec;
+}
+
+//--------------------------------------------------------------------------------------//
+
+component_list_t*
+create_component_list(std::string obj_tag, int lineno, std::string lang_tag, bool report,
+                      const component_enum_vec& components)
+{
+    using data_type = typename component_list_t::data_type;
+    auto obj        = new component_list_t(obj_tag, lineno, lang_tag, report);
+    for(std::size_t i = 0; i < components.size(); ++i)
+    {
+        COMPONENT component = static_cast<COMPONENT>(components[i]);
+        switch(component)
+        {
+            case WALL_CLOCK:
+                obj->get<tim::index_of<real_clock*, data_type>::value>() =
+                    new real_clock();
+                break;
+            case SYS_CLOCK:
+                obj->get<tim::index_of<system_clock*, data_type>::value>() =
+                    new system_clock();
+                break;
+            case USER_CLOCK:
+                obj->get<tim::index_of<user_clock*, data_type>::value>() =
+                    new user_clock();
+                break;
+            case CPU_CLOCK:
+                obj->get<tim::index_of<cpu_clock*, data_type>::value>() = new cpu_clock();
+                break;
+            case MONOTONIC_CLOCK:
+                obj->get<tim::index_of<monotonic_clock*, data_type>::value>() =
+                    new monotonic_clock();
+                break;
+            case MONOTONIC_RAW_CLOCK:
+                obj->get<tim::index_of<monotonic_raw_clock*, data_type>::value>() =
+                    new monotonic_raw_clock();
+                break;
+            case THREAD_CPU_CLOCK:
+                obj->get<tim::index_of<thread_cpu_clock*, data_type>::value>() =
+                    new thread_cpu_clock();
+                break;
+            case PROCESS_CPU_CLOCK:
+                obj->get<tim::index_of<process_cpu_clock*, data_type>::value>() =
+                    new process_cpu_clock();
+                break;
+            case CPU_UTIL:
+                obj->get<tim::index_of<cpu_util*, data_type>::value>() = new cpu_util();
+                break;
+            case THREAD_CPU_UTIL:
+                obj->get<tim::index_of<thread_cpu_util*, data_type>::value>() =
+                    new thread_cpu_util();
+                break;
+            case PROCESS_CPU_UTIL:
+                obj->get<tim::index_of<process_cpu_util*, data_type>::value>() =
+                    new process_cpu_util();
+                break;
+            case CURRENT_RSS:
+                obj->get<tim::index_of<current_rss*, data_type>::value>() =
+                    new current_rss();
+                break;
+            case PEAK_RSS:
+                obj->get<tim::index_of<peak_rss*, data_type>::value>() = new peak_rss();
+                break;
+            case STACK_RSS:
+                obj->get<tim::index_of<stack_rss*, data_type>::value>() = new stack_rss();
+                break;
+            case DATA_RSS:
+                obj->get<tim::index_of<data_rss*, data_type>::value>() = new data_rss();
+                break;
+            case NUM_SWAP:
+                obj->get<tim::index_of<num_swap*, data_type>::value>() = new num_swap();
+                break;
+            case NUM_IO_IN:
+                obj->get<tim::index_of<num_io_in*, data_type>::value>() = new num_io_in();
+                break;
+            case NUM_IO_OUT:
+                obj->get<tim::index_of<num_io_out*, data_type>::value>() =
+                    new num_io_out();
+                break;
+            case NUM_MINOR_PAGE_FAULTS:
+                obj->get<tim::index_of<num_minor_page_faults*, data_type>::value>() =
+                    new num_minor_page_faults();
+                break;
+            case NUM_MAJOR_PAGE_FAULTS:
+                obj->get<tim::index_of<num_major_page_faults*, data_type>::value>() =
+                    new num_major_page_faults();
+                break;
+            case NUM_MSG_SENT:
+                obj->get<tim::index_of<num_msg_sent*, data_type>::value>() =
+                    new num_msg_sent();
+                break;
+            case NUM_MSG_RECV:
+                obj->get<tim::index_of<num_msg_recv*, data_type>::value>() =
+                    new num_msg_recv();
+                break;
+            case NUM_SIGNALS:
+                obj->get<tim::index_of<num_signals*, data_type>::value>() =
+                    new num_signals();
+                break;
+            case VOLUNTARY_CONTEXT_SWITCH:
+                obj->get<tim::index_of<voluntary_context_switch*, data_type>::value>() =
+                    new voluntary_context_switch();
+                break;
+            case PRIORITY_CONTEXT_SWITCH:
+                obj->get<tim::index_of<priority_context_switch*, data_type>::value>() =
+                    new priority_context_switch();
+                break;
+        }
+    }
+    return obj;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -333,6 +508,35 @@ rss_usage(std::string prefix = "", bool record = false)
     return _rss;
 }
 
+//--------------------------------------------------------------------------------------//
+
+component_list_t*
+component_list(py::list components, const std::string& key, bool report_at_exit,
+               int nback, bool added_args, py::args args, py::kwargs kwargs)
+{
+    tim::consume_parameters(args, kwargs);
+    std::stringstream keyss;
+    keyss << get_func(nback);
+
+    if(added_args)
+        keyss << key;
+    else if(key != "" && key[0] != '@' && !added_args)
+        keyss << "@";
+
+    if(key != "" && !added_args)
+        keyss << key;
+    else
+    {
+        keyss << "@";
+        keyss << get_file(nback + 1);
+        keyss << ":";
+        keyss << get_line(nback);
+    }
+    auto op_line = get_line(1);
+    return create_component_list(keyss.str(), op_line, "pyc", report_at_exit,
+                                 components_enum_to_vec(components));
+}
+
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
@@ -362,6 +566,39 @@ timer_decorator(const std::string& func, const std::string& file, int line,
         keyss << line;
     }
     return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
+}
+
+//----------------------------------------------------------------------------//
+
+component_list_decorator*
+component_decorator(py::list components, const std::string& func,
+                    const std::string& file, int line, const std::string& key,
+                    bool added_args, bool report_at_exit)
+{
+    component_list_decorator* _ptr = new component_list_decorator();
+    if(!manager_t::is_enabled())
+        return _ptr;
+
+    std::stringstream keyss;
+    keyss << func;
+
+    // add arguments to end of function
+    if(added_args)
+        keyss << key;
+    else if(key != "" && key[0] != '@' && !added_args)
+        keyss << "@";
+
+    if(key != "" && !added_args)
+        keyss << key;
+    else
+    {
+        keyss << "@";
+        keyss << file;
+        keyss << ":";
+        keyss << line;
+    }
+    return &(*_ptr = create_component_list(keyss.str(), line, "pyc", report_at_exit,
+                                           components_enum_to_vec(components)));
 }
 
 //--------------------------------------------------------------------------------------//

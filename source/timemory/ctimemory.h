@@ -22,6 +22,13 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
+/** \file ctimemory.h
+ * \headerfile ctimemory.h "timemory/ctimemory.h"
+ * This header file provides the C interface to TiMemory and generally just
+ * redirects to functions implemented in ctimemory.cpp
+ *
+ */
+
 #pragma once
 
 #include <stdbool.h>
@@ -103,6 +110,41 @@
 
 //======================================================================================//
 //
+//      C component enum
+//
+//======================================================================================//
+
+enum COMPONENT
+{
+    WALL_CLOCK,
+    SYS_CLOCK,
+    USER_CLOCK,
+    CPU_CLOCK,
+    MONOTONIC_CLOCK,
+    MONOTONIC_RAW_CLOCK,
+    THREAD_CPU_CLOCK,
+    PROCESS_CPU_CLOCK,
+    CPU_UTIL,
+    THREAD_CPU_UTIL,
+    PROCESS_CPU_UTIL,
+    CURRENT_RSS,
+    PEAK_RSS,
+    STACK_RSS,
+    DATA_RSS,
+    NUM_SWAP,
+    NUM_IO_IN,
+    NUM_IO_OUT,
+    NUM_MINOR_PAGE_FAULTS,
+    NUM_MAJOR_PAGE_FAULTS,
+    NUM_MSG_SENT,
+    NUM_MSG_RECV,
+    NUM_SIGNALS,
+    VOLUNTARY_CONTEXT_SWITCH,
+    PRIORITY_CONTEXT_SWITCH
+};
+
+//======================================================================================//
+//
 //      C function declaration
 //
 //======================================================================================//
@@ -113,6 +155,10 @@ tim_api void*
 c_timemory_create_auto_timer(const char*, int);
 tim_api void
 c_timemory_delete_auto_timer(void*);
+tim_api void*
+c_timemory_create_auto_tuple(const char*, int, int, ...);
+tim_api void
+c_timemory_delete_auto_tuple(void*);
 tim_api const char*
 c_timemory_string_combine(const char*, const char*);
 tim_api const char*

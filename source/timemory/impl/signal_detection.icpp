@@ -23,8 +23,9 @@
 // SOFTWARE.
 //
 
-/** \file signal_detection.cpp
- * Handles signals emitted by application
+/** \file signal_detection.icpp
+ * \headerfile signal_detection.icpp "timemory/impl/signal_detection.icpp"
+ * Provides inline implementation of signal_detection functions
  *
  */
 

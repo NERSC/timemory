@@ -25,8 +25,7 @@
 
 /** \file clocks.hpp
  * \headerfile clocks.hpp "timemory/clocks.hpp"
- * Base class for timing clocks
- * Not directly used
+ * Implementation of the timing functions/utilities
  */
 
 #pragma once

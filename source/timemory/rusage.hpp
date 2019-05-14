@@ -22,6 +22,13 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file rusage.hpp
+ * \headerfile rusage.hpp "timemory/rusage.hpp"
+ * This headerfile provides the implementation for reading resource usage (rusage)
+ * metrics
+ *
+ */
+
 #pragma once
 
 #include <algorithm>

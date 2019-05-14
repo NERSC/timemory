@@ -25,7 +25,10 @@
 
 /** \file storage.hpp
  * \headerfile storage.hpp "timemory/storage.hpp"
- * Storage class for manager
+ * Storage of the call-graph for each component. Each component has a thread-local
+ * singleton that hold the call-graph. When a worker thread is deleted, it merges
+ * itself back into the master thread storage. When the master thread is deleted,
+ * it handles I/O (i.e. text file output, JSON output, stdout output).
  *
  */
 

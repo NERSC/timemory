@@ -22,6 +22,12 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file rusage.icpp
+ * \headerfile rusage.icpp "timemory/impl/rusage.icpp"
+ * Provides inline implementation of rusage functions
+ *
+ */
+
 #include "timemory/macros.hpp"
 #include "timemory/rusage.hpp"
 #include "timemory/units.hpp"

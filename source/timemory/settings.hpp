@@ -24,7 +24,7 @@
 
 /** \file settings.hpp
  * \headerfile settings.hpp "timemory/settings.hpp"
- * Handles TiMemory settings via environment
+ * Handles TiMemory settings, parses environment, provides initializer function
  *
  */
 

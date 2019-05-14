@@ -22,6 +22,13 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file auto_macros.hpp
+ * \headerfile auto_macros.hpp "timemory/auto_macros.hpp"
+ * Generic macros that are intended to be building-blocks for other macros, e.g.
+ * TIMEMORY_AUTO_TUPLE and TIMEMORY_AUTO_TIMER
+ *
+ */
+
 #pragma once
 
 #include <cstdint>

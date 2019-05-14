@@ -71,44 +71,31 @@ if __name__ == "__main__":
         # grab a manager handle
         timemory_manager = timemory.manager()
 
-        # record python overhead memory
-        rss_init = timemory.rss_usage(record=True)
+        # rusage records child processes
+        timemory.set_rusage_children()
 
-        # reset total timer to zero
-        timemory_manager.reset_total_timer()
+        components = []
+        for c in ["wall_clock", "sys_clock", "cpu_clock", "cpu_util", "peak_rss",
+                  "num_minor_page_faults", "num_major_page_faults",
+                  "voluntary_context_switch", "priority_context_switch"]:
+            components.append(getattr(timemory.component, c))
 
         # run the command
+        exe_name = "[pytimem]"
+        if len(sys.argv) > 1:
+            exe_name = "[{}]".format(sys.argv[1])
+
+        comp = timemory.component_tuple(components, exe_name)
+        comp.start()
         if len(sys.argv) > 1:
             p = sp.Popen(sys.argv[1:])
             ret = p.wait()
+        comp.stop()
 
-        # stop the total timer to ensure no extra timer gets added
-        timemory_manager.stop_total_timer()
+        print("{}".format(comp))
 
-        # subtract out python overhead memory
-        timemory_manager -= rss_init
-
-        #----------------------------------------------------------------------#
-        #   reporting to stdout
-        #
-        if not args.quiet:
-
-            fmt = ": %w wall, %u user + %s system = %t cpu (%p%) [%T], %M peak rss [%A]"
-            # fix the format
-            if sys.version_info[0] > 2:
-                timemory.format.timer.set_default_format(fmt)
-            else:
-                timer_format = timemory.format.timer()
-                timer_format.set_default_format(fmt)
-
-            # update the format
-            timemory_manager.update_total_timer_format()
-
-            # generate report
-            report = "{}".format(timemory_manager)
-            if len(sys.argv) > 1:
-                report = report.replace("[exe]", "[{}]".format(sys.argv[1]))
-            print("\n{}".format(report))
+        # generate report
+        timemory.report();
 
         #----------------------------------------------------------------------#
         #   handler
