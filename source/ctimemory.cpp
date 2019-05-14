@@ -85,14 +85,14 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
+cxx_timemory_create_auto_tuple(const char* timer_tag, int, int num_components,
                                const int* components)
 {
     using namespace tim::component;
     using data_type = typename comp_list_t::data_type;
     std::string key_tag(timer_tag);
     auto        lang_tag = "_c_";
-    auto        obj      = new comp_list_t(key_tag, true, lang_tag, lineno);
+    auto        obj      = new comp_list_t(key_tag, true, lang_tag);
     for(int i = 0; i < num_components; ++i)
     {
         COMPONENT component = static_cast<COMPONENT>(components[i]);

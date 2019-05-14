@@ -70,13 +70,13 @@ tim::graph_storage<ObjectType>::print()
         std::call_once(details::storage_once_flag(), &gperf::profiler_stop);
 
         // auto _manager = tim::manager::master_instance();
-
+        /*
         using predicate_type = decltype(graph().begin());
         auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
         auto _this_beg = graph().begin();
         auto _this_end = graph().end();
         graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
-
+        */
         m_data.current() = m_data.head();
         int64_t _width   = ObjectType::get_width();
         for(const auto& itr : m_data.graph())

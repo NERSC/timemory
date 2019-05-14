@@ -188,7 +188,10 @@ public:
         // graph_node& operator=(const this_type&) = default;
         // graph_node& operator=(this_type&&) = default;
 
-        bool operator==(const graph_node& rhs) const { return (id() == rhs.id()); }
+        bool operator==(const graph_node& rhs) const
+        {
+            return (id() == rhs.id() && depth() == rhs.depth());
+        }
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
         graph_node& operator+=(const graph_node& rhs)
@@ -351,25 +354,34 @@ public:
     {
         // lambda for updating settings
         auto _update = [&](iterator itr) {
-            exists = true;
+            exists         = true;
+            m_data.depth() = itr->depth();
+#if defined(DEBUG)
+            printf("hash_id = %li, depth = %li\n", static_cast<long_int>(hash_id),
+                   static_cast<long_int>(m_data.depth()));
+#endif
             return (m_data.current() = itr);
         };
 
-        if(m_node_ids.find(hash_id) != m_node_ids.end())
+        if(m_node_ids.find(hash_id) != m_node_ids.end() &&
+           m_node_ids.find(hash_id)->second->depth() == m_data.depth())
         {
             _update(m_node_ids.find(hash_id)->second);
         }
 
-        using sibling_itr       = typename graph_t::sibling_iterator;
-        const int64_t min_depth = 0;
-        int64_t       now_depth = count_type::live() - m_node_ids.size() - 1;
-        if(m_node_ids.size() > 0)
-            now_depth -= graph().number_of_siblings(m_data.current());
-        graph_node node(hash_id, obj, std::max(min_depth, now_depth));
+        using sibling_itr = typename graph_t::sibling_iterator;
+        graph_node node(hash_id, obj, m_data.depth());
 
         // lambda for inserting child
         auto _insert_child = [&]() {
-            exists   = false;
+            exists       = false;
+            node.depth() = m_data.depth() + 1;
+
+#if defined(DEBUG)
+            printf("hash_id = %li, depth = %li\n", static_cast<long_int>(hash_id),
+                   static_cast<long_int>(node.depth()));
+#endif
+
             auto itr = m_data.append_child(node);
             m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
@@ -380,14 +392,18 @@ public:
         {
             if(this == master_instance())
             {
-                m_data = graph_data(node);
-                exists = false;
+                DEBUG_PRINT_HERE("master");
+                m_data         = graph_data(node);
+                exists         = false;
+                m_data.depth() = 0;
                 m_node_ids.insert(std::make_pair(hash_id, m_data.current()));
                 return m_data.current();
             }
             else
             {
-                m_data = graph_data(*master_instance()->current());
+                DEBUG_PRINT_HERE("worker");
+                m_data         = graph_data(*master_instance()->current());
+                m_data.depth() = master_instance()->data().depth();
                 return _insert_child();
             }
         }
@@ -398,29 +414,17 @@ public:
 
             if(hash_id == current->id())
             {
+                DEBUG_PRINT_HERE("exists");
                 exists = true;
                 return current;
             }
             else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
             {
+                DEBUG_PRINT_HERE("no children or siblings");
                 return _insert_child();
             }
             else if(m_data.graph().is_valid(current))
             {
-                // check parent if not head
-                /*if(!m_data.graph().is_head(current))
-                {
-                    auto parent = graph_t::parent(current);
-                    for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
-                    {
-                        // check hash id's
-                        if(hash_id == itr->id())
-                        {
-                            return _update(itr);
-                        }
-                    }
-                }*/
-
                 // check siblings
                 for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
                 {
@@ -430,6 +434,7 @@ public:
                     // check hash id's
                     if(hash_id == itr->id())
                     {
+                        DEBUG_PRINT_HERE("found sibling");
                         return _update(itr);
                     }
                 }
@@ -437,6 +442,7 @@ public:
                 // check children
                 if(nchildren == 0)
                 {
+                    DEBUG_PRINT_HERE("no children");
                     return _insert_child();
                 }
                 else
@@ -446,6 +452,7 @@ public:
                     {
                         if(hash_id == itr->id())
                         {
+                            DEBUG_PRINT_HERE("found child");
                             return _update(itr);
                         }
                     }
@@ -457,12 +464,24 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    iterator insert(const int64_t& hash_id, const ObjectType& obj, const string_t& prefix)
+    iterator insert(int64_t hash_id, const ObjectType& obj, const string_t& prefix)
     {
+        hash_id *= (m_data.depth() > 0) ? m_data.depth() : 1;
+
+#if defined(DEBUG)
+        printf("hash_id = %li, prefix = %s\n", static_cast<long_int>(hash_id),
+               prefix.c_str());
+#endif
+
         bool exists = false;
         auto itr    = insert(hash_id, obj, exists);
         if(!exists)
             itr->prefix() = prefix;
+
+#if defined(DEBUG)
+        printf("\n");
+#endif
+
         return itr;
     }
 
