@@ -5,6 +5,8 @@
 #
 ################################################################################
 
+unset(CMAKE_CXX_CLANG_TIDY)
+
 set(PYLIBNAME lib${LIBNAME})
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}

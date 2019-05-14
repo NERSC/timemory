@@ -571,9 +571,9 @@ timer_decorator(const std::string& func, const std::string& file, int line,
 //----------------------------------------------------------------------------//
 
 component_list_decorator*
-component_decorator(py::list components, const std::string& func,
-                    const std::string& file, int line, const std::string& key,
-                    bool added_args, bool report_at_exit)
+component_decorator(py::list components, const std::string& func, const std::string& file,
+                    int line, const std::string& key, bool added_args,
+                    bool report_at_exit)
 {
     component_list_decorator* _ptr = new component_list_decorator();
     if(!manager_t::is_enabled())

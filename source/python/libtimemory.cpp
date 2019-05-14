@@ -243,17 +243,11 @@ PYBIND11_MODULE(libtimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_children",
-            [&] ()
-    {
-        tim::get_rusage_type() = RUSAGE_CHILDREN;
-    }, "Set the rusage to record child processes");
+    tim.def("set_rusage_children", [&]() { tim::get_rusage_type() = RUSAGE_CHILDREN; },
+            "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_self",
-            [&] ()
-    {
-        tim::get_rusage_type() = RUSAGE_SELF;
-    }, "Set the rusage to record child processes");
+    tim.def("set_rusage_self", [&]() { tim::get_rusage_type() = RUSAGE_SELF; },
+            "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
 
     //==================================================================================//
