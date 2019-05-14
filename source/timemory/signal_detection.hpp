@@ -301,11 +301,11 @@ stack_backtrace(std::ostream& ss)
 
     for(size_type j = 0; j < nptrs; ++j)
     {
-        std::string str = strings[j];
-        if(str.find("+") != std::string::npos)
-            str.replace(str.find_last_of("+"), 1, " +");
+        std::string _str = strings[j];
+        if(_str.find("+") != std::string::npos)
+            _str.replace(_str.find_last_of("+"), 1, " +");
 
-        auto _delim = delimit(str, " \t\n\r()");
+        auto _delim = delimit(_str, " \t\n\r()");
         // found a GCC compiler bug when passing _transform to delimit
         for(auto& itr : _delim)
             itr = _transform(itr);
