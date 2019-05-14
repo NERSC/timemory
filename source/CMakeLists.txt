@@ -37,8 +37,8 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 # - headers are included so they will show up in IDEs
 file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 file(GLOB c_sources ctimemory.c)
-file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp
-    ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
+file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_impl ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
 file(GLOB cxx_sources ctimemory.cpp)
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
@@ -59,7 +59,7 @@ add_subdirectory(timemory)
 set(_OUTPUT_DIR )
 # directly compile sources
 set(C_LIBRARY_SOURCES   ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cereal_headers})
+set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cxx_headers_impl} ${cereal_headers})
 
 # if Windows, set _COMPILE_DEFS and possibly _ARCHIVE_SUFFIX
 if(WIN32)
@@ -196,6 +196,10 @@ install(TARGETS ${INSTALL_LIBRARIES}
 # C/C++ development headers
 install(FILES ${cxx_headers} ${c_headers}
     DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory
+    COMPONENT development)
+
+install(FILES ${cxx_headers_impl}
+    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/impl
     COMPONENT development)
 
 # Install the export set for use with the install-tree
