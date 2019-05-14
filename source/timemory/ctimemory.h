@@ -149,19 +149,19 @@ enum COMPONENT
 //
 //======================================================================================//
 
-tim_api int
+tim_api extern int
 c_timemory_enabled(void);
-tim_api void*
+tim_api extern void*
 c_timemory_create_auto_timer(const char*, int);
-tim_api void
+tim_api extern void
 c_timemory_delete_auto_timer(void*);
-tim_api void*
+tim_api extern void*
 c_timemory_create_auto_tuple(const char*, int, int, ...);
-tim_api void
+tim_api extern void
 c_timemory_delete_auto_tuple(void*);
-tim_api const char*
+tim_api extern const char*
 c_timemory_string_combine(const char*, const char*);
-tim_api const char*
+tim_api extern const char*
 c_timemory_auto_timer_str(const char*, const char*, const char*, int);
 
 //======================================================================================//

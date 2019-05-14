@@ -47,7 +47,7 @@ cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
 
 //======================================================================================//
 
-tim_api int
+int
 c_timemory_enabled(void)
 {
     return cxx_timemory_enabled();
@@ -55,7 +55,7 @@ c_timemory_enabled(void)
 
 //======================================================================================//
 
-tim_api void*
+void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
 {
     return (cxx_timemory_enabled())
@@ -65,12 +65,12 @@ c_timemory_create_auto_timer(const char* tag, int lineno)
 
 //======================================================================================//
 
-tim_api void*
+void*
 c_timemory_create_auto_tuple(const char* tag, int lineno, int num_components, ...)
 {
     if(!cxx_timemory_enabled() || num_components == 0)
         return NULL;
-    int* components = (int*) malloc(num_components * sizeof(int));
+    int*    components = (int*) malloc(num_components * sizeof(int));
     va_list args;
     va_start(args, num_components);
     for(int i = 0; i < num_components; ++i)
@@ -83,7 +83,7 @@ c_timemory_create_auto_tuple(const char* tag, int lineno, int num_components, ..
 
 //======================================================================================//
 
-tim_api void
+void
 c_timemory_delete_auto_timer(void* ctimer)
 {
     ctimer = cxx_timemory_delete_auto_timer(ctimer);
@@ -92,7 +92,7 @@ c_timemory_delete_auto_timer(void* ctimer)
 
 //======================================================================================//
 
-tim_api void
+void
 c_timemory_delete_auto_tuple(void* ctuple)
 {
     ctuple = cxx_timemory_delete_auto_tuple(ctuple);
@@ -101,7 +101,7 @@ c_timemory_delete_auto_tuple(void* ctuple)
 
 //======================================================================================//
 
-tim_api const char*
+const char*
 c_timemory_string_combine(const char* _a, const char* _b)
 {
     return cxx_timemory_string_combine(_a, _b);
@@ -109,7 +109,7 @@ c_timemory_string_combine(const char* _a, const char* _b)
 
 //======================================================================================//
 
-tim_api const char*
+const char*
 c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
