@@ -197,6 +197,19 @@ PYBIND11_MODULE(libtimemory, tim)
             tim::settings::output_prefix() = _prefix;
         }
     };
+    //----------------------------------------------------------------------------------//
+    auto set_rusage_child = [&]() {
+#if !defined(_WINDOWS)
+        tim::get_rusage_type() = RUSAGE_CHILDREN;
+#endif
+    };
+    //----------------------------------------------------------------------------------//
+    auto set_rusage_self = [&]() {
+#if !defined(_WINDOWS)
+        tim::get_rusage_type() = RUSAGE_SELF;
+#endif
+    };
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -243,10 +256,10 @@ PYBIND11_MODULE(libtimemory, tim)
     //----------------------------------------------------------------------------------//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_children", [&]() { tim::get_rusage_type() = RUSAGE_CHILDREN; },
+    tim.def("set_rusage_children", set_rusage_child,
             "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
-    tim.def("set_rusage_self", [&]() { tim::get_rusage_type() = RUSAGE_SELF; },
+    tim.def("set_rusage_self", set_rusage_self,
             "Set the rusage to record child processes");
     //----------------------------------------------------------------------------------//
 
