@@ -68,15 +68,17 @@ c_timemory_create_auto_timer(const char* tag, int lineno)
 tim_api void*
 c_timemory_create_auto_tuple(const char* tag, int lineno, int num_components, ...)
 {
-    if(!cxx_timemory_enabled())
+    if(!cxx_timemory_enabled() || num_components == 0)
         return NULL;
-    int     components[num_components];
+    int* components = (int*) malloc(num_components * sizeof(int));
     va_list args;
     va_start(args, num_components);
     for(int i = 0; i < num_components; ++i)
         components[i] = va_arg(args, int);
     va_end(args);
-    return cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
+    void* ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
+    free(components);
+    return ptr;
 }
 
 //======================================================================================//
