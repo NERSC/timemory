@@ -15,11 +15,13 @@ add_executable(${EXE_NAME} ${EXE_NAME}.c)
 target_link_libraries(${EXE_NAME}
     PRIVATE timemory-c-library)
 
+if(WIN32)
+    target_link_libraries(${EXE_NAME}
+        PRIVATE timemory-cxx-library)
+endif()
+
 target_include_directories(${EXE_NAME} SYSTEM
     PRIVATE ${TiMemory_INCLUDE_DIRS})
-
-target_compile_options(${EXE_NAME}
-    PRIVATE ${TiMemory_C_COMPILE_OPTIONS})
 
 target_compile_options(${EXE_NAME} PRIVATE
     $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS} ${${PROJECT_NAME}_C_FLAGS}>)
@@ -29,8 +31,13 @@ set_target_properties(${EXE_NAME} PROPERTIES
     C_STANDARD 11
     C_STANDARD_REQUIRED ON)
 
+if(WIN32)
+    set_target_properties(${EXE_NAME} PROPERTIES
+        LINKER_LANGUAGE CXX)
+endif()
+
 if(DEFINED PROJECT_DEPENDS)
-    add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})
+    add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS} timemory-c-library)
 endif(DEFINED PROJECT_DEPENDS)
 
 if(NOT DEFINED TIMEMORY_SETUP_PY OR NOT TIMEMORY_SETUP_PY)
