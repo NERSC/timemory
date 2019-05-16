@@ -266,7 +266,6 @@ if(TIMEMORY_USE_CUDA)
 
     if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
         list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_CUDA)
-        add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags")
         add_feature(CUDA_ARCH "CUDA architecture (e.g. '35' means '-arch=sm_35')")
 
         #   30, 32      + Kepler support

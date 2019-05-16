@@ -2240,7 +2240,6 @@ struct cuda_event : public base<cuda_event, float>
     void sync() {}
 
 private:
-    bool m_is_synced = false;
     cudaStream_t m_stream = 0;
 };
 

@@ -117,6 +117,8 @@ build_library(
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
+add_library(${LIBNAME}-cxx-library-shared ALIAS ${LIBNAME}-cxx-library)
+
 build_library(
     PIC
     TYPE                STATIC
@@ -167,6 +169,8 @@ if(TIMEMORY_BUILD_C)
         SOURCES             ${C_OBJECT_SOURCES}
         LINK_LIBRARIES      ${LIBNAME}-cxx-library
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+    add_library(${LIBNAME}-c-library-shared ALIAS ${LIBNAME}-c-library)
 
     build_library(
         PIC
