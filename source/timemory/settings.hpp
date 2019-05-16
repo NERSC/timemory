@@ -166,7 +166,7 @@ tim::settings::parse()
     file_output() = tim::get_env("TIMEMORY_FILE_OUTPUT", file_output());
     text_output() = tim::get_env("TIMEMORY_TEXT_OUTPUT", text_output());
     json_output() = tim::get_env("TIMEMORY_JSON_OUTPUT", json_output());
-    cout_output() = tim::get_env("TIMEMORY_COUT_OUTPUT", !file_output());
+    cout_output() = tim::get_env("TIMEMORY_COUT_OUTPUT", cout_output());
 
     // settings
     verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
