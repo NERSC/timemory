@@ -60,10 +60,10 @@ add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
 add_feature(CMAKE_INSTALL_PREFIX "Installation prefix")
-add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags" ${_FEATURE})
-add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags" ${_FEATURE})
 add_feature(${PROJECT_NAME}_DEFINITIONS "${PROJECT_NAME} compile definitions")
 if(${PROJECT_NAME}_MASTER_PROJECT)
+    add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
+    add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
     add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
 endif()
 
@@ -77,9 +77,9 @@ add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE} ${_FEAT
 add_option(TIMEMORY_USE_GPERF "Enable gperf-tools" OFF)
 add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_USE_CUDA})
 
-if(TIMEMORY_USE_CUDA)
+if(TIMEMORY_USE_CUDA AND ${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(CMAKE_CUDA_STANDARD "CUDA STL standard")
-    add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags" ${_FEATURE})
+    add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags")
 endif()
 
 # cereal options
