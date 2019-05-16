@@ -103,6 +103,7 @@ build_script:
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=ON
+    -DTIMEMORY_BUILD_C=OFF
     -DTIMEMORY_BUILD_PYTHON=OFF
     -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
     -DTIMEMORY_BUILD_EXAMPLES=ON
@@ -112,6 +113,5 @@ build_script:
 - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
 - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
 - ls
-- ./outputs/runtime/%CONFIG%/test_c_timing.exe
 - ./outputs/runtime/%CONFIG%/test_cxx_overhead.exe
 - ./outputs/runtime/%CONFIG%/test_cxx_tuple.exe

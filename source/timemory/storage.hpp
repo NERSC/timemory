@@ -357,8 +357,8 @@ public:
             exists         = true;
             m_data.depth() = itr->depth();
 #if defined(DEBUG)
-            printf("hash_id = %li, depth = %li\n", static_cast<long_int>(hash_id),
-                   static_cast<long_int>(m_data.depth()));
+            printf("hash_id = %li, depth = %li\n", static_cast<long>(hash_id),
+                   static_cast<long>(m_data.depth()));
 #endif
             return (m_data.current() = itr);
         };
@@ -378,8 +378,8 @@ public:
             node.depth() = m_data.depth() + 1;
 
 #if defined(DEBUG)
-            printf("hash_id = %li, depth = %li\n", static_cast<long_int>(hash_id),
-                   static_cast<long_int>(node.depth()));
+            printf("hash_id = %li, depth = %li\n", static_cast<long>(hash_id),
+                   static_cast<long>(node.depth()));
 #endif
 
             auto itr = m_data.append_child(node);
@@ -469,7 +469,7 @@ public:
         hash_id *= (m_data.depth() >= 0) ? (m_data.depth() + 1) : 1;
 
 #if defined(DEBUG)
-        printf("hash_id = %li, prefix = %s\n", static_cast<long_int>(hash_id),
+        printf("hash_id = %li, prefix = %s\n", static_cast<long>(hash_id),
                prefix.c_str());
 #endif
 
