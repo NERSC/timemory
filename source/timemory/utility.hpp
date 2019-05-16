@@ -654,37 +654,16 @@ protected:
     : m_count(count()++)
     {
     }
-
-    ~counted_object()
-    {
-        if(m_decrement)
-            --count();
-    }
-
-    explicit counted_object(const this_type& rhs)
-    : m_decrement(false)
-    , m_count(rhs.m_count)
+    ~counted_object() { --count(); }
+    explicit counted_object(const this_type&)
+    : m_count(count()++)
     {
     }
-
-    this_type& operator=(const this_type& rhs)
-    {
-        if(this != &rhs)
-        {
-            m_decrement = false;
-            m_count     = rhs.m_count;
-        }
-        return *this;
-    }
-
-    explicit counted_object(this_type&& rhs)
-    : m_decrement(false)
-    , m_count(std::move(rhs.m_count))
-    {
-    }
+    explicit counted_object(this_type&&) = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&& rhs) = default;
 
 protected:
-    bool    m_decrement = true;
     int64_t m_count;
 
 private:

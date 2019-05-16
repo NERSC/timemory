@@ -466,7 +466,7 @@ public:
     //
     iterator insert(int64_t hash_id, const ObjectType& obj, const string_t& prefix)
     {
-        hash_id *= (m_data.depth() > 0) ? m_data.depth() : 1;
+        hash_id *= (m_data.depth() >= 0) ? (m_data.depth() + 1) : 1;
 
 #if defined(DEBUG)
         printf("hash_id = %li, prefix = %s\n", static_cast<long_int>(hash_id),
