@@ -254,7 +254,11 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
 #if defined(TIMEMORY_DEMANGLE)
     // lambda for demangling a string when delimiting
     auto _demangle = [](string_t _str) {
-        auto _to_str = [](char* cstr) { return string_t(const_cast<const char*>(cstr)); };
+        auto _to_str = [](char* cstr) {
+            std::stringstream ss;
+            ss << cstr;
+            return ss.str();
+        };
 
         const int _max_len = 256;
         int       _ret     = 0;
