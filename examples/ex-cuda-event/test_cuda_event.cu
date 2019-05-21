@@ -934,8 +934,7 @@ template <typename T>
 void
 call_kernel(T* arg, int size)
 {
-    PRINT_HERE("");
-    kernel<<<32, 1>>>(arg, size);
+    kernel<<<1, 100>>>(arg, size);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -943,8 +942,7 @@ template <typename T>
 void
 call_kernel2(T* arg, int size)
 {
-    PRINT_HERE("");
-    kernel2<<<1, 32>>>(arg, size);
+    kernel2<<<1, 50>>>(arg, size);
 }
 
 //======================================================================================//
@@ -1017,7 +1015,7 @@ test_7_cupti_available()
     RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
-    for(int i = 0; i < 10; ++i)
+    for(int i = 0; i < N; ++i)
     {
         printf("%.2lf ", cpu_data[i]);
     }
@@ -1088,7 +1086,7 @@ test_8_cupti_subset()
     RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
-    for(int i = 0; i < 10; ++i)
+    for(int i = 0; i < N; ++i)
     {
         printf("%.2lf ", cpu_data[i]);
     }
