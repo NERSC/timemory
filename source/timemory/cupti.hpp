@@ -47,12 +47,6 @@
 #    include <cupti.h>
 #endif
 
-#if defined(_UNIX)
-#    include <cxxabi.h>
-#    include <execinfo.h>
-#    define TIMEMORY_DEMANGLE
-#endif
-
 //--------------------------------------------------------------------------------------//
 
 #define DRIVER_API_CALL(apiFuncCall)                                                     \
@@ -61,9 +55,8 @@
         CUresult _status = apiFuncCall;                                                  \
         if(_status != CUDA_SUCCESS)                                                      \
         {                                                                                \
-            fprintf(stderr, "%s:%d: error: function %s failed with error %d.\n",         \
+            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %d.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, _status);                          \
-            exit(-1);                                                                    \
         }                                                                                \
     } while(0)
 
@@ -75,9 +68,8 @@
         cudaError_t _status = apiFuncCall;                                               \
         if(_status != cudaSuccess)                                                       \
         {                                                                                \
-            fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n",         \
+            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));      \
-            exit(-1);                                                                    \
         }                                                                                \
     } while(0)
 
@@ -91,9 +83,8 @@
         {                                                                                \
             const char* errstr;                                                          \
             cuptiGetResultString(_status, &errstr);                                      \
-            fprintf(stderr, "%s:%d: error: function %s failed with error %s.\n",         \
+            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
                     __FILE__, __LINE__, #call, errstr);                                  \
-            exit(-1);                                                                    \
         }                                                                                \
     } while(0)
 
@@ -238,7 +229,7 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
        (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000))
     {
         fprintf(stderr, "%s:%d: Unexpected cbid %d\n", __FILE__, __LINE__, cbid);
-        exit(-1);
+        return;
     }
 
     const char* _current_kernel_name = cbInfo->symbolName;
@@ -392,10 +383,6 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
             {
                 CUPTI_CALL(cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
                                                     eventIds[j], &valuesSize, values));
-                /*if (metric_data->eventIdx >= metric_data->numEvents) {
-                  fprintf(stderr, "[error]: Too many events collected, metric expects only
-                %d\n", (int)metric_data->numEvents); exit(-1);
-                }*/
 
                 // sum collect event values from all instances
                 sum = 0;
@@ -465,7 +452,7 @@ print_metric(CUpti_MetricID& id, CUpti_MetricValue& value, std::ostream& s)
         case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL:
             s << value.metricValueUtilizationLevel;
             break;
-        default: std::cerr << "[error]: unknown value kind\n"; exit(-1);
+        default: std::cerr << "[error]: unknown value kind\n"; break;
     }
 }
 
@@ -506,7 +493,7 @@ struct profiler
         if(device_count == 0)
         {
             fprintf(stderr, "There is no device supporting CUDA.\n");
-            exit(1);
+            return;
         }
 
         m_metric_ids.resize(m_num_metrics);
@@ -658,7 +645,7 @@ struct profiler
                 {
                     fprintf(stderr, "Metric value retrieval failed for metric %s\n",
                             m_metric_names[i].c_str());
-                    exit(-1);
+                    return;
                 }
                 k.second.m_metric_values.push_back(metric_value);
             }
@@ -876,7 +863,7 @@ available_metrics(CUdevice device)
     if(NULL == metricIdArray)
     {
         printf("Memory could not be allocated for metric array");
-        exit(-1);
+        return metric_names;
     }
 
     CUPTI_CALL(cuptiDeviceEnumMetrics(device, &size, metricIdArray));
@@ -927,7 +914,7 @@ available_events(CUdevice device)
     if(NULL == domainIdArray)
     {
         printf("Memory could not be allocated for domain array");
-        exit(-1);
+        return event_names;
     }
     CUPTI_CALL(cuptiDeviceEnumEventDomains(device, &size, domainIdArray));
 

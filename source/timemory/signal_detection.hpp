@@ -40,6 +40,7 @@
 #include "timemory/macros.hpp"
 
 #include <cmath>
+#include <csignal>
 #include <cstdlib>
 #include <cstdlib> /* abort(), exit() */
 #include <cstring>
@@ -53,6 +54,8 @@
 #include <stdexcept>
 #include <string>
 #include <vector>
+
+#include <features.h>
 
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
@@ -69,6 +72,10 @@
 #    if !defined(SIGNAL_COMPAT_COMPILER)
 #        define SIGNAL_COMPAT_COMPILER
 #    endif
+#endif
+
+#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
+#    define PSIGINFO_AVAILABLE
 #endif
 
 // compatible operating system
@@ -229,49 +236,41 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
+// declarations
+static bool enable_signal_detection(
+    signal_settings::signal_set_t = signal_settings::get_default());
+
+//--------------------------------------------------------------------------------------//
+
+static void
+disable_signal_detection();
+
+//--------------------------------------------------------------------------------------//
+
+static void
+update_signal_detection(signal_settings::signal_set_t _signals)
+{
+    disable_signal_detection();
+    enable_signal_detection(_signals);
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace tim
 
 //======================================================================================//
 
 #if defined(SIGNAL_AVAILABLE)
 
-//======================================================================================//
-
-namespace tim
-{
 //--------------------------------------------------------------------------------------//
 
-inline struct sigaction&
-tim_signal_termaction()
-{
-    static struct sigaction instance;
-    return instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline struct sigaction&
-tim_signal_oldaction()
-{
-    static struct sigaction instance;
-    return instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-// declarations
-inline bool enable_signal_detection(
-    signal_settings::signal_set_t = signal_settings::signal_set_t());
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-disable_signal_detection();
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-stack_backtrace(std::ostream& ss)
+static void
+timemory_stack_backtrace(std::ostream& ss)
 {
     using size_type = std::string::size_type;
 
@@ -302,34 +301,34 @@ stack_backtrace(std::ostream& ss)
     for(size_type j = 0; j < nptrs; ++j)
     {
         std::string _str = strings[j];
-        if(_str.find("+") != std::string::npos)
-            _str.replace(_str.find_last_of("+"), 1, " +");
+        // if(_str.find("+") != std::string::npos)
+        //    _str.replace(_str.find_last_of("+"), 1, " +");
 
-        auto _delim = delimit(_str, " \t\n\r()");
+        auto _delim = tim::delimit(_str, " \t\n\r()");
         // found a GCC compiler bug when passing _transform to delimit
         for(auto& itr : _delim)
             itr = _transform(itr);
 
         // find trailing " + ([0-9]+)"
-        auto itr = _delim.begin();
-        for(; itr != _delim.end(); ++itr)
-            if(*itr == "+")
-                break;
+        // auto itr = _delim.begin();
+        // for(; itr != _delim.end(); ++itr)
+        //    if(*itr == "+")
+        //        break;
 
         // get rid of trailing " + ([0-9]+)"
-        if(itr != _delim.end())
-            _delim.erase(itr, _delim.end());
+        // if(itr != _delim.end())
+        //    _delim.erase(itr, _delim.end());
 
         // get rid of hex strings if not last param
-        for(itr = _delim.begin(); itr != _delim.end(); ++itr)
-            if(itr->substr(0, 2) == "0x" || itr->substr(0, 3) == "[0x" ||
-               itr->substr(0, 3) == "+0x")
-            {
-                if(itr + 1 == _delim.end())
-                    continue;
-                _delim.erase(itr);
-                --itr;
-            }
+        // for(itr = _delim.begin(); itr != _delim.end(); ++itr)
+        //    if(itr->substr(0, 2) == "0x" || itr->substr(0, 3) == "[0x" ||
+        //       itr->substr(0, 3) == "+0x")
+        //    {
+        //        if(itr + 1 == _delim.end())
+        //            continue;
+        //        _delim.erase(itr);
+        //        --itr;
+        //    }
 
         // accumulate the max lengths of the strings
         for(size_type i = 0; i < _delim.size(); ++i)
@@ -371,13 +370,88 @@ stack_backtrace(std::ostream& ss)
 
 //--------------------------------------------------------------------------------------//
 
-inline void
-termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
+static void
+timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
 {
-    sys_signal _sig = (sys_signal)(sig);
+    tim::sys_signal _sig = (tim::sys_signal)(sig);
 
-    message << "\n"
-            << "### ERROR ### ";
+    if(tim::signal_settings::get_enabled().find(_sig) ==
+       tim::signal_settings::get_enabled().end())
+    {
+        printf("signal %i not caught\n", sig);
+        return;
+    }
+    std::stringstream message;
+    tim::termination_signal_message(sig, sinfo, message);
+
+#    if !defined(TIMEMORY_EXCEPTIONS)
+    if(tim::signal_settings::enabled().find(tim::sys_signal::sAbort) !=
+       tim::signal_settings::enabled().end())
+    {
+        tim::signal_settings::disable(tim::sys_signal::sAbort);
+    }
+#    endif
+
+    tim::signal_settings::disable(_sig);
+    tim::update_signal_detection(tim::signal_settings::enabled());
+
+    message << "\n\n";
+
+#    if defined(TIMEMORY_EXCEPTIONS)
+    // throw an exception instead of ::abort() so it can be caught
+    // if the error can be ignored if desired
+    throw std::runtime_error(message.str());
+#    else
+#        if defined(PSIGINFO_AVAILABLE)
+    if(sinfo)
+    {
+        psiginfo(sinfo, message.str().c_str());
+    }
+    else
+    {
+        // std::cerr << message.str() << std::endl;
+        fprintf(stderr, "%s\n", message.str().c_str());
+    }
+#        else
+    // std::cerr << message.str() << std::endl;
+    fprintf(stderr, "%s\n", message.str().c_str());
+#        endif
+    std::raise(sig);
+    // exit(sig);
+#    endif
+}
+
+//======================================================================================//
+
+namespace tim
+{
+//--------------------------------------------------------------------------------------//
+
+static struct sigaction&
+tim_signal_termaction()
+{
+    static struct sigaction timemory_sigaction_instance_new;
+    return timemory_sigaction_instance_new;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static struct sigaction&
+tim_signal_oldaction()
+{
+    static struct sigaction timemory_sigaction_instance_old;
+    return timemory_sigaction_instance_old;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void
+termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
+{
+    std::stringstream message;
+    sys_signal        _sig = (sys_signal)(sig);
+
+    message << "\n### ERROR ### ";
     if(mpi_is_initialized())
         message << " [ MPI rank : " << mpi_rank() << " ] ";
     message << "Error code : " << sig;
@@ -388,6 +462,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
     if(sig == SIGSEGV)
     {
         if(sinfo)
+        {
             switch(sinfo->si_code)
             {
                 case SEGV_MAPERR: message << "Address not mapped to object."; break;
@@ -399,12 +474,16 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
                             << ".";
                     break;
             }
+        }
         else
+        {
             message << "Segmentation fault (unknown).";
+        }
     }
     else if(sig == SIGFPE)
     {
         if(sinfo)
+        {
             switch(sinfo->si_code)
             {
                 case FE_DIVBYZERO: message << "Floating point divide by zero."; break;
@@ -417,8 +496,11 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
                             << sinfo->si_code << ".";
                     break;
             }
+        }
         else
+        {
             message << "Unknown error: " << sinfo->si_code << ".";
+        }
     }
 
     message << std::endl;
@@ -434,45 +516,13 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message)
         std::cerr << e.what() << std::endl;
     }
 
-    stack_backtrace(message);
+    timemory_stack_backtrace(message);
+    os << message.str();
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
-termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context */)
-{
-    sys_signal _sig = (sys_signal)(sig);
-
-    if(signal_settings::get_enabled().find(_sig) == signal_settings::get_enabled().end())
-        return;
-
-    std::stringstream message;
-    termination_signal_message(sig, sinfo, message);
-
-    if(signal_settings::enabled().find(sys_signal::sAbort) !=
-       signal_settings::enabled().end())
-    {
-        signal_settings::disable(sys_signal::sAbort);
-        signal_settings::disable(_sig);
-        disable_signal_detection();
-        enable_signal_detection(signal_settings::enabled());
-        std::cerr << message.str() << std::endl;
-    }
-
-    // throw an exception instead of ::abort() so it can be caught
-    // if the error can be ignored if desired
-#    if defined(TIMEMORY_EXCEPTIONS)
-    throw std::runtime_error(message.str());
-#    else
-    std::cerr << message.str() << std::endl;
-    exit(sig);
-#    endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline bool
+static bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
     // don't re-enable
@@ -497,11 +547,12 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     sigfillset(&tim_signal_termaction().sa_mask);
     for(auto& itr : _signals)
         sigdelset(&tim_signal_termaction().sa_mask, itr);
-    tim_signal_termaction().sa_sigaction = termination_signal_handler;
+    tim_signal_termaction().sa_sigaction = timemory_termination_signal_handler;
     tim_signal_termaction().sa_flags     = SA_SIGINFO;
     for(auto& itr : _signals)
+    {
         sigaction(itr, &tim_signal_termaction(), &tim_signal_oldaction());
-
+    }
     signal_settings::set_active(true);
 
     if(get_env<int32_t>("TIMEMORY_VERBOSE", 0) > 1)
@@ -512,7 +563,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+static void
 disable_signal_detection()
 {
     // don't re-disable
@@ -550,7 +601,7 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-inline bool enable_signal_detection(
+static bool enable_signal_detection(
     signal_settings::signal_set_t = signal_settings::signal_set_t())
 {
     return false;
@@ -558,14 +609,14 @@ inline bool enable_signal_detection(
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+static void
 disable_signal_detection()
 {
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+static void
 stack_backtrace(std::ostream& os)
 {
     os << "stack_backtrace() not available." << std::endl;
