@@ -28,6 +28,7 @@
 #include <cmath>
 #include <fstream>
 #include <future>
+#include <iomanip>
 #include <iterator>
 #include <random>
 #include <thread>
@@ -45,6 +46,28 @@ using comp_tuple_t = typename auto_tuple_t::component_type;
 using cuda_tuple_t = tim::auto_tuple<cuda_event>;
 
 //======================================================================================//
+
+template <typename _Tp>
+std::string
+array_to_string(const _Tp& arr, const std::string& delimiter = ", ",
+                const int& _width = 16, const int& _break = 8,
+                const std::string& _break_delim = "\t")
+{
+    auto size      = std::distance(arr.begin(), arr.end());
+    using int_type = decltype(size);
+    std::stringstream ss;
+    for(int_type i = 0; i < size; ++i)
+    {
+        ss << std::setw(_width) << arr.at(i);
+        if(i + 1 < size)
+            ss << delimiter;
+        if((i + 1) % _break == 0 && (i + 1) < size)
+            ss << "\n" << _break_delim;
+    }
+    return ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
 
 static const int nitr = 4;
 static int64_t   N    = 50 * (1 << 23);
@@ -956,20 +979,31 @@ test_7_cupti_available()
     DRIVER_API_CALL(cuInit(0));
     DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
-    const auto event_names  = tim::cupti::available_events(device);
-    const auto metric_names = tim::cupti::available_metrics(device);
+    auto reduce_size = [](std::vector<std::string>& arr)
+    {
+        constexpr std::size_t max_size = 64;
+        std::sort(arr.begin(), arr.end());
+        if(arr.size() > max_size)
+            arr.resize(max_size);
+    };
 
-    std::cout << "Event names:" << std::endl;
+    auto event_names  = tim::cupti::available_events(device);
+    auto metric_names = tim::cupti::available_metrics(device);
+    reduce_size(event_names);
+    reduce_size(metric_names);
+
+    using size_type = decltype(event_names.size());
+    size_type wevt  = 30;
+    size_type wmet  = 30;
     for(const auto& itr : event_names)
-    {
-        std::cout << "    " << itr << std::endl;
-    }
-
-    std::cout << "Metric names:" << std::endl;
+        wevt = std::max(itr.size(), wevt);
     for(const auto& itr : metric_names)
-    {
-        std::cout << "    " << itr << std::endl;
-    }
+        wmet = std::max(itr.size(), wmet);
+
+    std::cout << "Event names: \n\t"
+              << array_to_string(event_names, ", ", wevt, 180 / wevt) << std::endl;
+    std::cout << "Metric names: \n\t"
+              << array_to_string(metric_names, ", ", wmet, 180 / wmet) << std::endl;
 
     constexpr int      N = 100;
     std::vector<float> cpu_data(N, 0);
@@ -999,26 +1033,22 @@ test_7_cupti_available()
     }
     profiler.stop();
 
-    printf("Event Trace\n");
-    profiler.print_event_values(std::cout);
-    printf("Metric Trace\n");
-    profiler.print_metric_values(std::cout);
+    //printf("Event Trace\n");
+    //profiler.print_event_values(std::cout);
+    //printf("Metric Trace\n");
+    //profiler.print_metric_values(std::cout);
 
     auto names = profiler.get_kernel_names();
-    for(auto name : names)
-    {
-        printf("%s\n", name.c_str());
-    }
+    std::cout << "Kernel names: \n\t"
+              << array_to_string(names, "\n\t", 16, names.size()) << std::endl;
 
     RUNTIME_API_CALL(
         cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
     RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
-    for(int i = 0; i < N; ++i)
-    {
-        printf("%.2lf ", cpu_data[i]);
-    }
+    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
+              << std::endl;
     printf("\n");
 }
 
@@ -1076,19 +1106,15 @@ test_8_cupti_subset()
     profiler.print_metric_values(std::cout);
 
     auto names = profiler.get_kernel_names();
-    for(auto name : names)
-    {
-        printf("%s\n", name.c_str());
-    }
+    std::cout << "Kernel names: \n\t"
+              << array_to_string(names, "\n\t", 16, names.size()) << std::endl;
 
     RUNTIME_API_CALL(
         cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
     RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
-    for(int i = 0; i < N; ++i)
-    {
-        printf("%.2lf ", cpu_data[i]);
-    }
+    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
+              << std::endl;
     printf("\n");
 }

@@ -397,11 +397,10 @@ print_env(std::ostream& os = std::cout)
 //--------------------------------------------------------------------------------------//
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
 inline str_list_t
-delimit(const std::string& _str, const std::string& _delims,
-        std::string (*strop)(std::string) = internal::dummy_str_return)
+delimit(std::string _str, const std::string& _delims)
 {
     str_list_t _list;
-    while(true)
+    while(_str.length() > 0)
     {
         size_t _end = 0;
         size_t _beg = _str.find_first_not_of(_delims, _end);
@@ -409,7 +408,35 @@ delimit(const std::string& _str, const std::string& _delims,
             break;
         _end = _str.find_first_of(_delims, _beg);
         if(_beg < _end)
+        {
+            _list.push_back(_str.substr(_beg, _end - _beg));
+            _str.erase(_beg, _end - _beg);
+        }
+    }
+    return _list;
+}
+
+//--------------------------------------------------------------------------------------//
+//  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
+template <typename _Func>
+inline str_list_t
+delimit(std::string _str, const std::string& _delims,
+        const _Func& strop = [](const std::string& s) { return s; })
+{
+    str_list_t  _list;
+    std::size_t _n = 0;
+    while(_str.length() > 0)
+    {
+        size_t _end = 0;
+        size_t _beg = _str.find_first_not_of(_delims, _end);
+        if(_beg == std::string::npos)
+            break;
+        _end = _str.find_first_of(_delims, _beg);
+        if(_beg < _end)
+        {
             _list.push_back(strop(_str.substr(_beg, _end - _beg)));
+            _str.erase(_beg, _end - _beg);
+        }
     }
     return _list;
 }
