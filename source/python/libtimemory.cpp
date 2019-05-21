@@ -272,45 +272,45 @@ PYBIND11_MODULE(libtimemory, tim)
               py::return_value_policy::take_ownership, py::arg("prefix") = "");
     //----------------------------------------------------------------------------------//
     timer.def("real_elapsed",
-              [=](py::object timer) {
-                  tim_timer_t& _timer = *(timer.cast<tim_timer_t*>());
+              [=](py::object pytimer) {
+                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
                   auto&        obj    = std::get<0>(_timer);
                   return obj.compute_display();
               },
               "Elapsed wall clock");
     //----------------------------------------------------------------------------------//
     timer.def("sys_elapsed",
-              [=](py::object timer) {
-                  tim_timer_t& _timer = *(timer.cast<tim_timer_t*>());
+              [=](py::object pytimer) {
+                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
                   auto&        obj    = std::get<1>(_timer);
                   return obj.compute_display();
               },
               "Elapsed system clock");
     //----------------------------------------------------------------------------------//
     timer.def("user_elapsed",
-              [=](py::object timer) {
-                  tim_timer_t& _timer = *(timer.cast<tim_timer_t*>());
+              [=](py::object pytimer) {
+                  tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
                   auto&        obj    = std::get<2>(_timer);
                   return obj.compute_display();
               },
               "Elapsed user time");
     //----------------------------------------------------------------------------------//
-    timer.def("start", [=](py::object timer) { timer.cast<tim_timer_t*>()->start(); },
+    timer.def("start", [=](py::object pytimer) { pytimer.cast<tim_timer_t*>()->start(); },
               "Start timer");
     //----------------------------------------------------------------------------------//
-    timer.def("stop", [=](py::object timer) { timer.cast<tim_timer_t*>()->stop(); },
+    timer.def("stop", [=](py::object pytimer) { pytimer.cast<tim_timer_t*>()->stop(); },
               "Stop timer");
     //----------------------------------------------------------------------------------//
     timer.def("report",
-              [=](py::object timer) {
-                  std::cout << *(timer.cast<tim_timer_t*>()) << std::endl;
+              [=](py::object pytimer) {
+                  std::cout << *(pytimer.cast<tim_timer_t*>()) << std::endl;
               },
               "Report timer");
     //----------------------------------------------------------------------------------//
     timer.def("__str__",
-              [=](py::object timer) {
+              [=](py::object pytimer) {
                   std::stringstream ss;
-                  ss << *(timer.cast<tim_timer_t*>());
+                  ss << *(pytimer.cast<tim_timer_t*>());
                   return ss.str();
               },
               "Stringify timer");
@@ -376,23 +376,23 @@ PYBIND11_MODULE(libtimemory, tim)
                   py::arg("added_args") = false, py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_list.def("start",
-                  [=](py::object timer) { timer.cast<component_list_t*>()->start(); },
+                  [=](py::object pytimer) { pytimer.cast<component_list_t*>()->start(); },
                   "Start component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("stop",
-                  [=](py::object timer) { timer.cast<component_list_t*>()->stop(); },
+                  [=](py::object pytimer) { pytimer.cast<component_list_t*>()->stop(); },
                   "Stop component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("report",
-                  [=](py::object timer) {
-                      std::cout << *(timer.cast<component_list_t*>()) << std::endl;
+                  [=](py::object pytimer) {
+                      std::cout << *(pytimer.cast<component_list_t*>()) << std::endl;
                   },
                   "Report component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("__str__",
-                  [=](py::object timer) {
+                  [=](py::object pytimer) {
                       std::stringstream ss;
-                      ss << *(timer.cast<component_list_t*>());
+                      ss << *(pytimer.cast<component_list_t*>());
                       return ss.str();
                   },
                   "Stringify component tuple");
