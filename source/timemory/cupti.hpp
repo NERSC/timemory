@@ -237,6 +237,14 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
 
     const char* current_kernel_name = cbInfo->symbolName;
 
+    // Skip execution if kernel name is NULL string
+    // TODO: Make sure this is fine
+    if(!current_kernel_name)
+    {
+        _LOG("Empty kernel name string. Skipping...");
+        return;
+    }
+
 #if defined(TIMEMORY_DEMANGLE)
     // lambda for demangling a string when delimiting
     auto _demangle = [](const string_t& _str) {
@@ -249,14 +257,6 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
     };
     current_kernel_name = _demangle(current_kernel_name).c_str();
 #endif
-
-    // Skip execution if kernel name is NULL string
-    // TODO: Make sure this is fine
-    if(!current_kernel_name)
-    {
-        _LOG("Empty kernel name string. Skipping...");
-        return;
-    }
 
     using uomap_type  = uomap<string_t, kernel_data_t>;
     auto* kernel_data = static_cast<uomap_type*>(userdata);
