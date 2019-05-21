@@ -467,7 +467,11 @@ struct profiler
         init();
     }
 
-    ~profiler() {}
+    ~profiler()
+    {
+        DRIVER_API_CALL(cuCtxDestroy(m_context));
+        CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
+    }
 
     void init()
     {
@@ -638,7 +642,7 @@ struct profiler
             delete[] event_ids;
             delete[] event_values;
 
-            std::map<CUpti_EventID, uint64_t> event_map;
+            uomap<CUpti_EventID, uint64_t> event_map;
             for(int i = m_metric_passes; i < (m_metric_passes + m_event_passes); ++i)
             {
                 for(uint32_t j = 0; j < data[i].num_events; ++j)
