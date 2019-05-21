@@ -124,7 +124,7 @@ int
 main(int argc, char** argv)
 {
     tim::settings::timing_scientific() = true;
-    tim::settings::cout_output() = false;
+    tim::settings::cout_output()       = false;
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
 
