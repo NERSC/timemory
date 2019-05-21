@@ -338,21 +338,21 @@ if(TIMEMORY_USE_CUDA)
             PATHS           ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${_CUDA_PATHS}
             PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include)
 
-        # try to find cupti header
-        find_library(CUDA_stubs_LIBRARY
+        # try to find cuda driver library
+        find_library(CUDA_cuda_LIBRARY
             NAMES           cuda
             HINTS           ${_CUDA_PATHS}
             PATHS           ${_CUDA_PATHS}
-            PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+            PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia lib/stubs lib64/stubs stubs)
 
         # if header and library found
-        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_stubs_LIBRARY)
+        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_cuda_LIBRARY)
             target_include_directories(timemory-cuda INTERFACE ${CUDA_cupti_INCLUDE_DIR})
-            target_link_libraries(timemory-cuda INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_stubs_LIBRARY})
+            target_link_libraries(timemory-cuda INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
             target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUPTI)
         else()
             set(_MSG "Warning! Unable to find CUPTI. Missing variables:")
-            foreach(_VAR CUDA_cupti_INCLUDE_DIR CUDA_cupti_LIBRARY)
+            foreach(_VAR CUDA_cupti_INCLUDE_DIR CUDA_cupti_LIBRARY CUDA_cuda_LIBRARY)
                 if(NOT ${_VAR})
                     add(_MSG ${_VAR})
                 endif()

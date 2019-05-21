@@ -910,7 +910,7 @@ test_6_mt_saxpy_async_pinned()
 
 template <typename T>
 __global__ void
-kernel(T begin, int size)
+kernel(T* begin, int size)
 {
     const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if(thread_id < size)
@@ -921,7 +921,7 @@ kernel(T begin, int size)
 
 template <typename T>
 __global__ void
-kernel2(T begin, int size)
+kernel2(T* begin, int size)
 {
     const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if(thread_id < size)
@@ -932,17 +932,19 @@ kernel2(T begin, int size)
 
 template <typename T>
 void
-call_kernel(T& arg)
+call_kernel(T* arg, int size)
 {
-    kernel<<<1, 100>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+    PRINT_HERE("");
+    kernel<<<32, 1>>>(arg, size);
 }
 
 //--------------------------------------------------------------------------------------//
 template <typename T>
 void
-call_kernel2(T& arg)
+call_kernel2(T* arg, int size)
 {
-    kernel2<<<1, 50>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+    PRINT_HERE("");
+    kernel2<<<1, 32>>>(arg, size);
 }
 
 //======================================================================================//
@@ -950,6 +952,8 @@ call_kernel2(T& arg)
 void
 test_7_cupti_available()
 {
+    print_info(__FUNCTION__);
+
     CUdevice device;
     DRIVER_API_CALL(cuInit(0));
     DRIVER_API_CALL(cuDeviceGet(&device, 0));
@@ -957,8 +961,24 @@ test_7_cupti_available()
     const auto event_names  = tim::cupti::available_events(device);
     const auto metric_names = tim::cupti::available_metrics(device);
 
-    constexpr int                N = 100;
-    thrust::device_vector<float> data(N, 0);
+    std::cout << "Event names:" << std::endl;
+    for(const auto& itr : event_names)
+    {
+        std::cout << "    " << itr << std::endl;
+    }
+
+    std::cout << "Metric names:" << std::endl;
+    for(const auto& itr : metric_names)
+    {
+        std::cout << "    " << itr << std::endl;
+    }
+
+    constexpr int      N = 100;
+    std::vector<float> cpu_data(N, 0);
+    float*             data;
+    RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
+    RUNTIME_API_CALL(
+        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
 
     // tim::cupti::profiler profiler(vector<string>{}, metric_names);
 
@@ -974,9 +994,9 @@ test_7_cupti_available()
     profiler.start();
     for(int i = 0; i < 50; ++i)
     {
-        call_kernel(data);
+        call_kernel(data, N);
         cudaDeviceSynchronize();
-        call_kernel2(data);
+        call_kernel2(data, N);
         cudaDeviceSynchronize();
     }
     profiler.stop();
@@ -992,12 +1012,14 @@ test_7_cupti_available()
         printf("%s\n", name.c_str());
     }
 
-    thrust::host_vector<float> h_data(data);
+    RUNTIME_API_CALL(
+        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
     for(int i = 0; i < 10; ++i)
     {
-        printf("%.2lf ", h_data[i]);
+        printf("%.2lf ", cpu_data[i]);
     }
     printf("\n");
 }
@@ -1007,6 +1029,8 @@ test_7_cupti_available()
 void
 test_8_cupti_subset()
 {
+    print_info(__FUNCTION__);
+
     DRIVER_API_CALL(cuInit(0));
     std::vector<std::string> event_names{
         "active_warps",
@@ -1020,8 +1044,12 @@ test_8_cupti_subset()
         "inst_replay_overhead",
     };
 
-    constexpr int                N = 100;
-    thrust::device_vector<float> data(N, 0);
+    constexpr int      N = 100;
+    std::vector<float> cpu_data(N, 0);
+    float*             data;
+    RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
+    RUNTIME_API_CALL(
+        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
 
     // tim::cupti::profiler profiler(vector<string>{}, metric_names);
 
@@ -1037,9 +1065,9 @@ test_8_cupti_subset()
     profiler.start();
     for(int i = 0; i < 50; ++i)
     {
-        call_kernel(data);
+        call_kernel(data, N);
         cudaDeviceSynchronize();
-        call_kernel2(data);
+        call_kernel2(data, N);
         cudaDeviceSynchronize();
     }
     profiler.stop();
@@ -1055,12 +1083,14 @@ test_8_cupti_subset()
         printf("%s\n", name.c_str());
     }
 
-    thrust::host_vector<float> h_data(data);
+    RUNTIME_API_CALL(
+        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
     for(int i = 0; i < 10; ++i)
     {
-        printf("%.2lf ", h_data[i]);
+        printf("%.2lf ", cpu_data[i]);
     }
     printf("\n");
 }
