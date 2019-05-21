@@ -951,7 +951,6 @@ void
 test_7_cupti_available()
 {
     CUdevice device;
-
     DRIVER_API_CALL(cuInit(0));
     DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
@@ -1008,11 +1007,7 @@ test_7_cupti_available()
 void
 test_8_cupti_subset()
 {
-    CUdevice device;
-
     DRIVER_API_CALL(cuInit(0));
-    DRIVER_API_CALL(cuDeviceGet(&device, 0));
-
     std::vector<std::string> event_names{
         "active_warps",
         "active_cycles",
