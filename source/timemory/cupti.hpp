@@ -245,13 +245,26 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
         return;
     }
 
+
 #if defined(TIMEMORY_DEMANGLE)
     // lambda for demangling a string when delimiting
-    auto _demangle = [](const string_t& _str) {
+    auto _demangle = [](string_t _str) {
         int   _ret    = 0;
-        char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
+        char* _buf    = (char*)malloc(_str.length() * sizeof(char));
+        size_t _len = 0;
+        char* _demang = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
         if(_demang && _ret == 0)
-            return string_t(const_cast<const char*>(_demang));
+        {
+            if(_len > 0)
+            {
+                _buf[_len] = '\0';
+                return string_t(const_cast<const char*>(_buf));
+            }
+            else {
+                return string_t(const_cast<const char*>(_demang));
+            }
+            }
+        }
         else
             return _str;
     };
