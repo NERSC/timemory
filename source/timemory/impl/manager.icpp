@@ -39,12 +39,12 @@
 #include "timemory/utility.hpp"
 
 #if defined(TIMEMORY_USE_CUDA)
-#include <cuda.h>
-#include <cuda_runtime.h>
+#    include <cuda.h>
+#    include <cuda_runtime.h>
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
-#include "timemory/cupti.hpp"
+#    include "timemory/cupti.hpp"
 #endif
 
 #include <algorithm>

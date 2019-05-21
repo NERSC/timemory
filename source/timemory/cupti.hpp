@@ -35,6 +35,8 @@
 
 #include <cassert>
 #include <cstdint>
+#include <cstdio>
+#include <cstring>
 #include <thread>
 #include <unordered_map>
 #include <vector>
@@ -132,8 +134,12 @@ _DBG(const char* msg)
     fprintf(stderr, "%s", msg);
 }
 #else
-#    define _LOG(...)
-#    define _DBG(...)
+#    define _LOG(...)                                                                    \
+        {                                                                                \
+        }
+#    define _DBG(...)                                                                    \
+        {                                                                                \
+        }
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -235,40 +241,39 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
         exit(-1);
     }
 
-    const char* current_kernel_name = cbInfo->symbolName;
+    const char* _current_kernel_name = cbInfo->symbolName;
 
     // Skip execution if kernel name is NULL string
     // TODO: Make sure this is fine
-    if(!current_kernel_name)
+    if(!_current_kernel_name)
     {
         _LOG("Empty kernel name string. Skipping...");
         return;
     }
 
-
 #if defined(TIMEMORY_DEMANGLE)
     // lambda for demangling a string when delimiting
     auto _demangle = [](string_t _str) {
-        int   _ret    = 0;
-        char* _buf    = (char*)malloc(_str.length() * sizeof(char));
-        size_t _len = 0;
-        char* _demang = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
-        if(_demang && _ret == 0)
-        {
-            if(_len > 0)
-            {
-                _buf[_len] = '\0';
-                return string_t(const_cast<const char*>(_buf));
-            }
-            else {
-                return string_t(const_cast<const char*>(_demang));
-            }
-            }
-        }
-        else
-            return _str;
+        auto _to_str = [](char* cstr) { return string_t(const_cast<const char*>(cstr)); };
+
+        int    _ret    = 0;
+        size_t _len    = 0;
+        char*  _buf    = new char[_str.length()];
+        char*  _demang = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
+
+        if(_len > 0 && _len < _str.length())
+            _buf[_len] = '\0';
+
+        if(_ret == 0 && (_len > 0 || _demang))
+            _str = _to_str((_len > 0) ? _buf : _demang);
+
+        delete[] _buf;
+        return _str;
     };
-    current_kernel_name = _demangle(current_kernel_name).c_str();
+    auto _demangled_name     = _demangle(_current_kernel_name);
+    auto current_kernel_name = _demangled_name.c_str();
+#else
+    auto current_kernel_name = _current_kernel_name;
 #endif
 
     using uomap_type  = uomap<string_t, kernel_data_t>;
