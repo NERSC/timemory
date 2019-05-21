@@ -300,17 +300,31 @@ if(TIMEMORY_USE_CUDA)
             PATHS           ${_CUDA_DIRS} ${_CUDA_PATHS}
             PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include)
 
-        # try to find cupti header
+        # try to find cuda driver library
+        find_library(CUDA_driver_LIBRARY
+            NAMES           cuda
+            HINTS           ${_CUDA_PATHS}
+            PATHS           ${_CUDA_PATHS})
+          
+        # try to find cuda stubs library
         find_library(CUDA_stubs_LIBRARY
             NAMES           cuda
             HINTS           ${_CUDA_PATHS}
             PATHS           ${_CUDA_PATHS}
             PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
 
-        # if header and library found
-        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_stubs_LIBRARY)
+        # the CUDA driver library
+        set(_CUDA_DRIVER_LIB )
+        if(CUDA_driver_LIBRARY)
+            set(_CUDA_DRIVER_LIB ${CUDA_driver_LIBRARY})
+        elseif(CUDA_stubs_LIBRARY)
+            set(_CUDA_DRIVER_LIB ${CUDA_stubs_LIBRARY})
+        endif()
+          
+        # if header and libraries found
+        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND _CUDA_DRIVER_LIB)
             list(APPEND _CUDA_DIRS ${CUDA_cupti_INCLUDE_DIR})
-            list(APPEND _CUDA_LIBS ${CUDA_cupti_LIBRARY} ${CUDA_stubs_LIBRARY})
+            list(APPEND _CUDA_LIBS ${CUDA_cupti_LIBRARY} ${_CUDA_DRIVER_LIB})
             list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_CUPTI)
         else()
             set(_MSG "Warning! Unable to find CUPTI. Missing variables:")
@@ -334,6 +348,7 @@ if(TIMEMORY_USE_CUDA)
         unset(_CUDA_DIRS)
         unset(_CUDA_LIBS)
         unset(_CUDA_PATHS)
+        unset(_CUDA_DRIVER_LIB)
 
     else()
         set(TIMEMORY_USE_CUPTI OFF)
