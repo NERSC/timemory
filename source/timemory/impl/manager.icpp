@@ -38,6 +38,15 @@
 #include "timemory/singleton.hpp"
 #include "timemory/utility.hpp"
 
+#if defined(TIMEMORY_USE_CUDA)
+#include <cuda.h>
+#include <cuda_runtime.h>
+#endif
+
+#if defined(TIMEMORY_USE_CUPTI)
+#include "timemory/cupti.hpp"
+#endif
+
 #include <algorithm>
 #include <cstdint>
 #include <functional>
@@ -108,6 +117,14 @@ inline manager::manager()
         tim::settings::parse();
         tim::papi::init();
         std::atexit(&exit_print);
+#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_CUPTI)
+        /*int ndevices = 0;
+        cuGetDeviceCount(&ndevices);
+        for(int i = 0; i < ndevices; ++i)
+        {
+            DRIVER_API_CALL(cuInit(i));
+        }*/
+#endif
     }
     else
     {
