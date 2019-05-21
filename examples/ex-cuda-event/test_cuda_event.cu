@@ -105,6 +105,10 @@ void
 test_5_mt_saxpy_async();
 void
 test_6_mt_saxpy_async_pinned();
+void
+test_7_cupti_available();
+void
+test_8_cupti_subset();
 
 //======================================================================================//
 
@@ -131,7 +135,7 @@ main(int argc, char** argv)
 
     timing->start();
 
-    CONFIGURE_TEST_SELECTOR(6);
+    CONFIGURE_TEST_SELECTOR(8);
 
     int num_fail = 0;
     int num_test = 0;
@@ -154,6 +158,8 @@ main(int argc, char** argv)
         RUN_TEST(4, test_4_saxpy_async_pinned, num_test, num_fail);
         RUN_TEST(5, test_5_mt_saxpy_async, num_test, num_fail);
         RUN_TEST(6, test_6_mt_saxpy_async_pinned, num_test, num_fail);
+        RUN_TEST(7, test_7_cupti_available, num_test, num_fail);
+        RUN_TEST(8, test_8_cupti_subset, num_test, num_fail);
     }
     catch(std::exception& e)
     {
@@ -897,3 +903,169 @@ test_6_mt_saxpy_async_pinned()
 }
 
 //======================================================================================//
+
+#include <thrust/device_vector.h>
+
+//======================================================================================//
+
+template <typename T>
+__global__ void
+kernel(T begin, int size)
+{
+    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    if(thread_id < size)
+        *(begin + thread_id) += 1;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+__global__ void
+kernel2(T begin, int size)
+{
+    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
+    if(thread_id < size)
+        *(begin + thread_id) += 2;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T>
+void
+call_kernel(T& arg)
+{
+    kernel<<<1, 100>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+}
+
+//--------------------------------------------------------------------------------------//
+template <typename T>
+void
+call_kernel2(T& arg)
+{
+    kernel2<<<1, 50>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+}
+
+//======================================================================================//
+
+void
+test_7_cupti_available()
+{
+    CUdevice device;
+
+    DRIVER_API_CALL(cuInit(0));
+    DRIVER_API_CALL(cuDeviceGet(&device, 0));
+
+    const auto event_names  = tim::cupti::available_events(device);
+    const auto metric_names = tim::cupti::available_metrics(device);
+
+    constexpr int                N = 100;
+    thrust::device_vector<float> data(N, 0);
+
+    // tim::cupti::profiler profiler(vector<string>{}, metric_names);
+
+    // XXX: Disabling all metrics seems to change the values
+    // of some events. Not sure if this is correct behavior.
+    // tim::cupti::profiler profiler(event_names, vector<string>{});
+
+    tim::cupti::profiler profiler(event_names, metric_names);
+    // Get #passes required to compute all metrics and events
+    const int passes = profiler.laps();
+    printf("Passes: %d\n", passes);
+
+    profiler.start();
+    for(int i = 0; i < 50; ++i)
+    {
+        call_kernel(data);
+        cudaDeviceSynchronize();
+        call_kernel2(data);
+        cudaDeviceSynchronize();
+    }
+    profiler.stop();
+
+    printf("Event Trace\n");
+    profiler.print_event_values(std::cout);
+    printf("Metric Trace\n");
+    profiler.print_metric_values(std::cout);
+
+    auto names = profiler.get_kernel_names();
+    for(auto name : names)
+    {
+        printf("%s\n", name.c_str());
+    }
+
+    thrust::host_vector<float> h_data(data);
+
+    printf("\n");
+    for(int i = 0; i < 10; ++i)
+    {
+        printf("%.2lf ", h_data[i]);
+    }
+    printf("\n");
+}
+
+//======================================================================================//
+
+void
+test_8_cupti_subset()
+{
+    CUdevice device;
+
+    DRIVER_API_CALL(cuInit(0));
+    DRIVER_API_CALL(cuDeviceGet(&device, 0));
+
+    std::vector<std::string> event_names{
+        "active_warps",
+        "active_cycles",
+    };
+    std::vector<std::string> metric_names{
+        "inst_per_warp",
+        "branch_efficiency",
+        "warp_execution_efficiency",
+        "warp_nonpred_execution_efficiency",
+        "inst_replay_overhead",
+    };
+
+    constexpr int                N = 100;
+    thrust::device_vector<float> data(N, 0);
+
+    // tim::cupti::profiler profiler(vector<string>{}, metric_names);
+
+    // XXX: Disabling all metrics seems to change the values
+    // of some events. Not sure if this is correct behavior.
+    // tim::cupti::profiler profiler(event_names, vector<string>{});
+
+    tim::cupti::profiler profiler(event_names, metric_names);
+    // Get #passes required to compute all metrics and events
+    const int passes = profiler.laps();
+    printf("Passes: %d\n", passes);
+
+    profiler.start();
+    for(int i = 0; i < 50; ++i)
+    {
+        call_kernel(data);
+        cudaDeviceSynchronize();
+        call_kernel2(data);
+        cudaDeviceSynchronize();
+    }
+    profiler.stop();
+
+    printf("Event Trace\n");
+    profiler.print_event_values(std::cout);
+    printf("Metric Trace\n");
+    profiler.print_metric_values(std::cout);
+
+    auto names = profiler.get_kernel_names();
+    for(auto name : names)
+    {
+        printf("%s\n", name.c_str());
+    }
+
+    thrust::host_vector<float> h_data(data);
+
+    printf("\n");
+    for(int i = 0; i < 10; ++i)
+    {
+        printf("%.2lf ", h_data[i]);
+    }
+    printf("\n");
+}

@@ -321,21 +321,60 @@ if(TIMEMORY_USE_CUDA)
         target_compile_options(timemory-cuda INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${CUDA_ARCH} --default-stream per-thread>)
 
-        #target_compile_options(timemory-cuda INTERFACE
-        #    $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${CUDA_ARCH}>)
-        #target_compile_options(timemory-cuda INTERFACE
-        #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
-
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE
                 $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
         endif()
 
+        target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
+            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
+        set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
+
+        # try to find cupti header
+        find_path(CUDA_cupti_INCLUDE_DIR
+            NAMES           cupti.h
+            HINTS           ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${_CUDA_PATHS}
+            PATHS           ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES} ${_CUDA_PATHS}
+            PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include)
+
+        # try to find cupti header
+        find_library(CUDA_stubs_LIBRARY
+            NAMES           cuda
+            HINTS           ${_CUDA_PATHS}
+            PATHS           ${_CUDA_PATHS}
+            PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+
+        # if header and library found
+        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_stubs_LIBRARY)
+            target_include_directories(timemory-cuda INTERFACE ${CUDA_cupti_INCLUDE_DIR})
+            target_link_libraries(timemory-cuda INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_stubs_LIBRARY})
+            target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUPTI)
+        else()
+            set(_MSG "Warning! Unable to find CUPTI. Missing variables:")
+            foreach(_VAR CUDA_cupti_INCLUDE_DIR CUDA_cupti_LIBRARY)
+                if(NOT ${_VAR})
+                    add(_MSG ${_VAR})
+                endif()
+            endforeach()
+            set(_MSG "${_MSG}. Disabling TIMEMORY_USE_CUPTI...")
+            message(STATUS "${_MSG}")
+            set(TIMEMORY_USE_CUPTI OFF)
+            unset(_MSG)
+        endif()
+
+        # clean-up
+        unset(_CUDA_PATHS)
+
+        # timemory-headers provides timemory-cuda
         target_link_libraries(timemory-headers INTERFACE timemory-cuda)
 
     else()
+        set(TIMEMORY_USE_CUPTI OFF)
         set(TIMEMORY_USE_CUDA OFF)
     endif()
+else()
+    set(TIMEMORY_USE_CUPTI OFF)
 endif()
 
 

@@ -51,6 +51,13 @@
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 
+// CUPTI does not have a dummy API
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/cupti.hpp"
+#endif
+
+//======================================================================================//
+
 #if defined(TIMEMORY_EXTERN_TEMPLATES)
 
 namespace tim
@@ -189,4 +196,6 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock,
                               tim::component::thread_cpu_clock,
                               tim::component::process_cpu_util, tim::details::papi1_t)
 
-#endif
+#endif  // defined(TIMEMORY_EXTERN_TEMPLATES)
+
+//======================================================================================//

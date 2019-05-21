@@ -77,7 +77,7 @@ add_option(TIMEMORY_USE_CLANG_TIDY "Enable running clang-tidy" OFF)
 add_option(TIMEMORY_USE_COVERAGE "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF "Enable gperf-tools" OFF)
 add_option(TIMEMORY_USE_CUDA "Enable CUDA option for GPU measurements" ${_USE_CUDA})
-
+add_option(TIMEMORY_USE_CUPTI "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA})
 if(TIMEMORY_USE_CUDA AND ${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(CMAKE_CUDA_STANDARD "CUDA STL standard")
     add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags")
