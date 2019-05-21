@@ -270,7 +270,8 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
         delete[] _buf;
         return _str;
     };
-    auto _demangled_name     = _demangle(_current_kernel_name);
+    auto _demangled_name = _demangle(_current_kernel_name);
+    _LOG("  Demangled name: %s", _demangled_name.c_str());
     auto current_kernel_name = _demangled_name.c_str();
 #else
     auto current_kernel_name = _current_kernel_name;
