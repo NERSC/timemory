@@ -50,3 +50,8 @@
 #include "timemory/testing.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
+
+// CUPTI does not have a dummy API
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/cupti.hpp"
+#endif

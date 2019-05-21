@@ -289,11 +289,58 @@ if(TIMEMORY_USE_CUDA)
                 --compiler-bindir=${CMAKE_CXX_COMPILER})
         endif()
 
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS}
-            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+        set(_CUDA_DIRS ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+        set(_CUDA_LIBS )
+        set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
+
+        # try to find cupti header
+        find_path(CUDA_cupti_INCLUDE_DIR
+            NAMES           cupti.h
+            HINTS           ${_CUDA_DIRS} ${_CUDA_PATHS}
+            PATHS           ${_CUDA_DIRS} ${_CUDA_PATHS}
+            PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include)
+
+        # try to find cupti header
+        find_library(CUDA_stubs_LIBRARY
+            NAMES           cuda
+            HINTS           ${_CUDA_PATHS}
+            PATHS           ${_CUDA_PATHS}
+            PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+
+        # if header and library found
+        if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_stubs_LIBRARY)
+            list(APPEND _CUDA_DIRS ${CUDA_cupti_INCLUDE_DIR})
+            list(APPEND _CUDA_LIBS ${CUDA_cupti_LIBRARY} ${CUDA_stubs_LIBRARY})
+            list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_CUPTI)
+        else()
+            set(_MSG "Warning! Unable to find CUPTI. Missing variables:")
+            foreach(_VAR CUDA_cupti_INCLUDE_DIR CUDA_cupti_LIBRARY)
+                if(NOT ${_VAR})
+                    add(_MSG ${_VAR})
+                endif()
+            endforeach()
+            set(_MSG "${_MSG}. Disabling TIMEMORY_USE_CUPTI...")
+            message(STATUS "${_MSG}")
+            set(TIMEMORY_USE_CUPTI OFF)
+            unset(_MSG)
+        endif()
+
+        safe_remove_duplicates(_CUDA_DIRS ${_CUDA_DIRS})
+        safe_remove_duplicates(_CUDA_LIBS ${_CUDA_LIBS})
+        list(APPEND EXTERNAL_INCLUDE_DIRS ${_CUDA_DIRS})
+        list(APPEND EXTERNAL_LIBRARIES ${_CUDA_LIBS})
+
+        # clean-up
+        unset(_CUDA_DIRS)
+        unset(_CUDA_LIBS)
+        unset(_CUDA_PATHS)
+
     else()
+        set(TIMEMORY_USE_CUPTI OFF)
         set(TIMEMORY_USE_CUDA OFF)
     endif()
+else()
+    set(TIMEMORY_USE_CUPTI OFF)
 endif()
 
 
