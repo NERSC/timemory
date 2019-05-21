@@ -256,12 +256,13 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
     auto _demangle = [](string_t _str) {
         auto _to_str = [](char* cstr) { return string_t(const_cast<const char*>(cstr)); };
 
-        int    _ret    = 0;
-        size_t _len    = 0;
-        char*  _buf    = new char[_str.length()];
-        char*  _demang = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
+        const int _max_len = 256;
+        int       _ret     = 0;
+        size_t    _len     = 0;
+        char*     _buf     = new char[_max_len];
+        char*     _demang  = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
 
-        if(_len > 0 && _len < _str.length())
+        if(_len > 0 && _len < _max_len)
             _buf[_len] = '\0';
 
         if(_ret == 0 && (_len > 0 || _demang))
