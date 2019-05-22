@@ -2191,7 +2191,7 @@ private:
 
 #else
 //--------------------------------------------------------------------------------------//
-//
+// dummy for cuda_event when CUDA is not available
 //
 using cudaStream_t = int;
 using cudaError_t = int;
@@ -2240,7 +2240,7 @@ private:
 
 #if !defined(TIMEMORY_USE_CUDA)
 //--------------------------------------------------------------------------------------//
-//  disable cuda_event if not enabled via environment
+//  disable cuda_event if not enabled via preprocessor
 //
 template <>
 struct impl_available<cuda_event> : std::false_type
@@ -2286,9 +2286,9 @@ using standard_usage_components_t =
                     component::num_major_page_faults, component::priority_context_switch>;
 
 using standard_timing_components_t =
-    component_tuple<component::real_clock, component::thread_cpu_clock,
-                    component::thread_cpu_util, component::process_cpu_clock,
-                    component::process_cpu_util>;
+    component_tuple<component::real_clock, component::cpu_clock, component::cpu_util,
+                    component::thread_cpu_clock, component::thread_cpu_util,
+                    component::process_cpu_clock, component::process_cpu_util>;
 
 //--------------------------------------------------------------------------------------//
 
