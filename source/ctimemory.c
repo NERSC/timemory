@@ -110,7 +110,7 @@ c_timemory_string_combine(const char* _a, const char* _b)
 //======================================================================================//
 
 const char*
-c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
+c_timemory_auto_str(const char* _a, const char* _b, const char* _c, int _d)
 {
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }

@@ -423,8 +423,7 @@ inline str_list_t
 delimit(std::string _str, const std::string& _delims,
         const _Func& strop = [](const std::string& s) { return s; })
 {
-    str_list_t  _list;
-    std::size_t _n = 0;
+    str_list_t _list;
     while(_str.length() > 0)
     {
         size_t _end = 0;

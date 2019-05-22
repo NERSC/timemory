@@ -40,17 +40,16 @@
 #include <thread>
 #include <vector>
 
-#include <pybind11/numpy.h>
-#include <pybind11/pybind11.h>
-#include <pybind11/pytypes.h>
-#include <pybind11/stl.h>
-
-#include <pybind11/cast.h>
-#include <pybind11/chrono.h>
-#include <pybind11/embed.h>
-#include <pybind11/eval.h>
-#include <pybind11/functional.h>
-#include <pybind11/iostream.h>
+#include "pybind11/cast.h"
+#include "pybind11/chrono.h"
+#include "pybind11/embed.h"
+#include "pybind11/eval.h"
+#include "pybind11/functional.h"
+#include "pybind11/iostream.h"
+#include "pybind11/numpy.h"
+#include "pybind11/pybind11.h"
+#include "pybind11/pytypes.h"
+#include "pybind11/stl.h"
 
 #include "timemory/auto_timer.hpp"
 #include "timemory/auto_tuple.hpp"
@@ -60,6 +59,8 @@
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/signal_detection.hpp"
+
+//======================================================================================//
 
 extern "C"
 {

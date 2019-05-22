@@ -2000,13 +2000,6 @@ struct cpu_roofline
         return value_type(papi_type::record(), real_clock::record());
     }
 
-    long long accumulate(const array_type& arr)
-    {
-        long long _sum = 0;
-        for(const auto& itr : arr)
-            _sum += itr;
-        return _sum;
-    }
     double compute_display() const
     {
         auto& obj = (accum.second > 0) ? accum : value;

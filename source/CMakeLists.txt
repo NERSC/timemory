@@ -1,7 +1,8 @@
 
 include(CMakeParseArguments)
-list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/cereal/include)
+set(${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/cereal/include
+    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
 ################################################################################
 #
