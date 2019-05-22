@@ -150,30 +150,6 @@ using uomap = std::unordered_map<_Key, _Mapped>;
 
 //--------------------------------------------------------------------------------------//
 
-inline tid_t
-get_tid()
-{
-    return std::this_thread::get_id();
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline tid_t
-get_master_tid()
-{
-    static tid_t _instance = get_tid();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline bool&
-working()
-{
-    static thread_local bool _instance = false;
-    return _instance;
-}
-
 namespace impl
 {
 //--------------------------------------------------------------------------------------//
@@ -275,9 +251,11 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
 
     using uomap_type  = uomap<string_t, kernel_data_t>;
     auto* kernel_data = static_cast<uomap_type*>(userdata);
+    _LOG("... begin callback for %s...\n", current_kernel_name);
 
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
     {
+        _LOG("CUPTI_API_ENTER... starting callback for %s...\n", current_kernel_name);
         // If this is kernel name hasn't been seen before
         if(kernel_data->count(current_kernel_name) == 0)
         {
@@ -335,9 +313,11 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
                     pass_data[current_pass].event_groups->eventGroups[i]));
             }
         }
+        _LOG("CUPTI_API_ENTER... ending callback for %s...\n", current_kernel_name);
     }
     else if(cbInfo->callbackSite == CUPTI_API_EXIT)
     {
+        _LOG("CUPTI_API_EXIT... starting callback for %s...\n", current_kernel_name);
         auto& current_kernel = (*kernel_data)[current_kernel_name];
         int   current_pass   = current_kernel.m_current_pass;
 
@@ -430,7 +410,9 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
             CUPTI_CALL(cuptiEventGroupDisable(pass_data.event_groups->eventGroups[i]));
         }
         ++(*kernel_data)[current_kernel_name].m_current_pass;
+        _LOG("CUPTI_API_EXIT... ending callback for %s...\n", current_kernel_name);
     }
+    _LOG("... ending callback for %s...\n", current_kernel_name);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -601,7 +583,7 @@ struct profiler
         free(event_ids);
     }
 
-    int laps() { return m_metric_passes + m_event_passes; }
+    int passes() { return m_metric_passes + m_event_passes; }
 
     void start() {}
 
@@ -717,9 +699,6 @@ struct profiler
             if(k.first == dummy_kernel_name)
                 continue;
 
-            // printf("%s: ",
-            //       m_kernel_data[k.first].m_name.c_str());
-
             for(int i = 0; i < m_num_metrics; ++i)
             {
                 if(print_names)
@@ -751,9 +730,6 @@ struct profiler
         {
             if(k.first == dummy_kernel_name)
                 continue;
-
-            // printf("New kernel: %s \n",
-            //       m_kernel_data[k.first].m_name.c_str());
 
             for(int i = 0; i < m_num_events; ++i)
             {
