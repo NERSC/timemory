@@ -933,7 +933,7 @@ test_6_mt_saxpy_async_pinned()
 
 template <typename T>
 __global__ void
-kernel(T* begin, int size)
+xxx_kernel_1_xxx(T* begin, int size)
 {
     const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if(thread_id < size)
@@ -944,7 +944,7 @@ kernel(T* begin, int size)
 
 template <typename T>
 __global__ void
-kernel2(T* begin, int size)
+xxx_kernel_2_xxx(T* begin, int size)
 {
     const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
     if(thread_id < size)
@@ -957,7 +957,7 @@ template <typename T>
 void
 call_kernel(T* arg, int size)
 {
-    kernel<<<1, 100>>>(arg, size);
+    xxx_kernel_1_xxx<<<1, 128>>>(arg, size);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -965,7 +965,7 @@ template <typename T>
 void
 call_kernel2(T* arg, int size)
 {
-    kernel2<<<1, 50>>>(arg, size);
+    xxx_kernel_2_xxx<<<1, 128>>>(arg, size);
 }
 
 //======================================================================================//
@@ -979,8 +979,7 @@ test_7_cupti_available()
     DRIVER_API_CALL(cuInit(0));
     DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
-    auto reduce_size = [](std::vector<std::string>& arr)
-    {
+    auto reduce_size = [](std::vector<std::string>& arr) {
         constexpr std::size_t max_size = 64;
         std::sort(arr.begin(), arr.end());
         if(arr.size() > max_size)
@@ -1020,27 +1019,32 @@ test_7_cupti_available()
 
     tim::cupti::profiler profiler(event_names, metric_names);
     // Get #passes required to compute all metrics and events
-    const int passes = profiler.laps();
+    const int passes = profiler.passes();
     printf("Passes: %d\n", passes);
 
     profiler.start();
+    warmup();
     for(int i = 0; i < 50; ++i)
     {
+        _LOG("calling kernel...\n");
         call_kernel(data, N);
+        _LOG("calling sync1...\n");
         cudaDeviceSynchronize();
+        _LOG("calling kernel2...\n");
         call_kernel2(data, N);
+        _LOG("calling sync2...\n");
         cudaDeviceSynchronize();
     }
     profiler.stop();
 
-    //printf("Event Trace\n");
-    //profiler.print_event_values(std::cout);
-    //printf("Metric Trace\n");
-    //profiler.print_metric_values(std::cout);
+    printf("Event Trace\n");
+    profiler.print_event_values(std::cout);
+    printf("Metric Trace\n");
+    profiler.print_metric_values(std::cout);
 
     auto names = profiler.get_kernel_names();
-    std::cout << "Kernel names: \n\t"
-              << array_to_string(names, "\n\t", 16, names.size()) << std::endl;
+    std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
+              << std::endl;
 
     RUNTIME_API_CALL(
         cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
@@ -1087,15 +1091,20 @@ test_8_cupti_subset()
 
     tim::cupti::profiler profiler(event_names, metric_names);
     // Get #passes required to compute all metrics and events
-    const int passes = profiler.laps();
+    const int passes = profiler.passes();
     printf("Passes: %d\n", passes);
 
     profiler.start();
+    warmup();
     for(int i = 0; i < 50; ++i)
     {
+        _LOG("calling kernel...\n");
         call_kernel(data, N);
+        _LOG("calling sync1...\n");
         cudaDeviceSynchronize();
+        _LOG("calling kernel2...\n");
         call_kernel2(data, N);
+        _LOG("calling sync2...\n");
         cudaDeviceSynchronize();
     }
     profiler.stop();
@@ -1106,8 +1115,8 @@ test_8_cupti_subset()
     profiler.print_metric_values(std::cout);
 
     auto names = profiler.get_kernel_names();
-    std::cout << "Kernel names: \n\t"
-              << array_to_string(names, "\n\t", 16, names.size()) << std::endl;
+    std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
+              << std::endl;
 
     RUNTIME_API_CALL(
         cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
