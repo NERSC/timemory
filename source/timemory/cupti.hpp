@@ -192,7 +192,7 @@ struct kernel_data_t
 
 //--------------------------------------------------------------------------------------//
 // CUPTI subscriber
-CUPTIAPI void
+static CUPTIAPI void
 get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_CallbackId cbid,
                    const CUpti_CallbackData* cbInfo)
 {
@@ -414,7 +414,7 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
 
 //--------------------------------------------------------------------------------------//
 
-void
+static void
 print_metric(CUpti_MetricID& id, CUpti_MetricValue& value, std::ostream& s)
 {
     CUpti_MetricValueKind value_kind;
@@ -820,7 +820,7 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-std::vector<string_t>
+static std::vector<string_t>
 available_metrics(CUdevice device)
 {
     std::vector<string_t> metric_names;
@@ -868,7 +868,7 @@ available_metrics(CUdevice device)
 
 //--------------------------------------------------------------------------------------//
 
-std::vector<string_t>
+static std::vector<string_t>
 available_events(CUdevice device)
 {
     std::vector<string_t> event_names;

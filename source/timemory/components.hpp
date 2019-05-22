@@ -2079,9 +2079,8 @@ using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
 
 #if defined(TIMEMORY_USE_CUDA)
 //--------------------------------------------------------------------------------------//
+// this component extracts the time spent in GPU kernels
 //
-//
-// this struct extracts only the CPU time spent in kernel-mode
 struct cuda_event : public base<cuda_event, float>
 {
     using ratio_t    = std::micro;

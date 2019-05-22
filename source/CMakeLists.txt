@@ -1,8 +1,11 @@
 
 include(CMakeParseArguments)
+
 set(${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${CMAKE_CURRENT_LIST_DIR}
-    ${CMAKE_CURRENT_LIST_DIR}/cereal/include
     ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+set(${PROJECT_NAME}_SYSTEM_INCLUDE_DIRS
+    ${CMAKE_CURRENT_LIST_DIR}/cereal/include)
 
 ################################################################################
 #
@@ -36,11 +39,13 @@ file(GLOB_RECURSE cereal_headers ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp)
 #------------------------------------------------------------------------------#
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
-file(GLOB c_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB c_sources ctimemory.c)
-file(GLOB cxx_headers ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
-file(GLOB cxx_headers_impl ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
-file(GLOB cxx_sources ctimemory.cpp)
+file(GLOB c_headers         ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
+file(GLOB c_sources         ctimemory.c)
+file(GLOB cxx_headers       ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_impl  ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
+file(GLOB cxx_sources       ctimemory.cpp)
+file(GLOB cuda_sources      ctimemory.cu)
+
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -59,8 +64,9 @@ add_subdirectory(timemory)
 #
 set(_OUTPUT_DIR )
 # directly compile sources
-set(C_LIBRARY_SOURCES   ${c_sources}   ${c_headers})
-set(CXX_LIBRARY_SOURCES ${cxx_sources} ${cxx_headers} ${cxx_headers_impl} ${cereal_headers})
+set(C_LIBRARY_SOURCES    ${c_sources}    ${c_headers})
+set(CXX_LIBRARY_SOURCES  ${cxx_sources}  ${cxx_headers} ${cxx_headers_impl} ${cereal_headers})
+set(CUDA_LIBRARY_SOURCES ${cuda_sources} )
 
 # if Windows, set _COMPILE_DEFS and possibly _ARCHIVE_SUFFIX
 if(WIN32)
@@ -82,11 +88,30 @@ else()
 endif()
 
 
+#------------------------------------------------------------------------------#
+# build the CUDA library
+#
+if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI)
+    build_library(
+        PIC
+        TYPE                STATIC
+        TARGET_NAME         ${LIBNAME}-cuda-library
+        OUTPUT_NAME         cu${LIBNAME}
+        LANGUAGE            CUDA
+        LINKER_LANGUAGE     CUDA
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        SOURCES             ${CUDA_LIBRARY_SOURCES}
+        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+    list(APPEND EXTERNAL_LIBRARIES ${LIBNAME}-cuda-library)
+endif()
+
 
 #------------------------------------------------------------------------------#
 # build the C++ libraries
 #
-
 if(XCODE)
     set(CXX_OBJECT_SOURCES ${CXX_LIBRARY_SOURCES})
 else()
@@ -118,8 +143,6 @@ build_library(
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
-add_library(${LIBNAME}-cxx-library-shared ALIAS ${LIBNAME}-cxx-library)
-
 build_library(
     PIC
     TYPE                STATIC
@@ -132,6 +155,8 @@ build_library(
     SOURCES             ${CXX_OBJECT_SOURCES}
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
     INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+add_library(${LIBNAME}-cxx-library-shared ALIAS ${LIBNAME}-cxx-library)
 
 
 #------------------------------------------------------------------------------#

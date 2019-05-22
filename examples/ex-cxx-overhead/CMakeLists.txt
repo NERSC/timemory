@@ -13,7 +13,7 @@ find_package(TiMemory REQUIRED)
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 
 target_link_libraries(${EXE_NAME}
-    PUBLIC ${TiMemory_LIBRARIES} ${EXTERNAL_LIBRARIES})
+    PUBLIC TiMemory::TiMemory_CXX ${EXTERNAL_LIBRARIES})
 
 target_include_directories(${EXE_NAME} SYSTEM
     PUBLIC ${TiMemory_INCLUDE_DIRS})

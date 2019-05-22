@@ -61,6 +61,20 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
+namespace cupti
+{
+#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_CUPTI)
+extern void
+initialize();
+#else
+static void
+initialize()
+{
+}
+#endif
+}  // namespace cupti
+
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 class component_tuple;

@@ -11,6 +11,10 @@ if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif(NOT DEFINED @PROJECT_NAME@_DIR)
 set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
+set(TIMEMORY_CUDA_LIBRARY OFF)
+if(@TIMEMORY_USE_CUPTI@ AND @TIMEMORY_USE_CUDA@)
+    set(TIMEMORY_CUDA_LIBRARY ON)
+endif()
 
 # compile options
 set(@PROJECT_NAME@_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
@@ -21,6 +25,18 @@ set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_C_LINK_OPTIONS @PROJECT_C_LINK_OPTIONS@)
 set(@PROJECT_NAME@_CXX_LINK_OPTIONS @PROJECT_CXX_LINK_OPTIONS@)
 set(@PROJECT_NAME@_CUDA_LINK_OPTIONS @PROJECT_CUDA_LINK_OPTIONS@)
+
+# languages
+set(TIMEMORY_LANGUAGES )
+if(TIMEMORY_C_LIBRARY)
+    list(APPEND TIMEMORY_LANGUAGES C)
+endif()
+
+list(APPEND TIMEMORY_LANGUAGES CXX)
+
+if(TIMEMORY_CUDA_LIBRARY)
+    list(APPEND TIMEMORY_LANGUAGES CUDA)
+endif()
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -75,13 +91,7 @@ if(_TIMEMORY_INSTALL_TREE)
         IMPORTED_LOCATION_DEBUG
         IMPORTED_LOCATION_MINSIZEREL)
 
-    if(TIMEMORY_C_LIBRARY)
-        set(_LANGUAGES C CXX)
-    else()
-        set(_LANGUAGES C)
-    endif()
-
-    foreach(_LANG ${_LANGUAGES})
+    foreach(_LANG ${TIMEMORY_LANGUAGES})
         string(TOLOWER "${_LANG}" _LANG_LOWER)
         foreach(_LOC ${LOCATIONS})
             if(NOT _${_LANG}_LOCATION)
@@ -103,13 +113,14 @@ else() # build tree
     set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
         "@PROJECT_SOURCE_DIR@/source/cereal/include")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
-        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source/python/pybind11")
+    if(@TIMEMORY_BUILD_PYTHON@)
+        set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source/python/pybind11"
+            ${@PROJECT_NAME@_INCLUDE_DIR})
     endif()
 
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
+    if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif()
 
@@ -124,6 +135,12 @@ else() # build tree
         list(APPEND PROJECT_DEPENDS @LIBNAME@-c-library)
     endif()
 
+    if(TIMEMORY_CUDA_LIBRARY)
+        set_property(TARGET @LIBNAME@-cuda-library
+            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
+    endif()
+
 endif()
 
 set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
@@ -134,12 +151,54 @@ endforeach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
 
 
 #------------------------------------------------------------------------------#
+#   Alias target
+#------------------------------------------------------------------------------#
+if(DYNAMIC_LINK)
+    if(NOT TARGET @LIBNAME@-c-library-shared)
+        add_library(@LIBNAME@-c-library-shared ALIAS @LIBNAME@-c-library)
+    endif()
+    if(NOT TARGET @LIBNAME@-cxx-library-shared)
+        add_library(@LIBNAME@-cxx-library-shared ALIAS @LIBNAME@-cxx-library)
+    endif()
+    if(NOT TARGET @LIBNAME@-cuda-library-static)
+        add_library(@LIBNAME@-cuda-library-static ALIAS @LIBNAME@-cuda-library)
+    endif()
+endif()
+
+
+#------------------------------------------------------------------------------#
+#   Interface
+#------------------------------------------------------------------------------#
+foreach(_LANG ${TIMEMORY_LANGUAGES})
+    string(TOLOWER "${_LANG}" _LANG_LOWER)
+    # timemory-{c,cxx,cuda}-library --> TiMemory::TiMemory_{C,CXX,CUDA}
+    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    if(NOT "${_LANG}" STREQUAL "CUDA")
+        if(DYNAMIC_LINK)
+            # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
+            add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+        endif()
+        # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
+    else()
+        # timemory-cuda-library
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    endif()
+    unset(_LANG_LOWER)
+endforeach()
+
+
+#------------------------------------------------------------------------------#
 #   Definitions
 #------------------------------------------------------------------------------#
 set(DYNAMIC_LINK @BUILD_SHARED_LIBS@)
 if(NOT DYNAMIC_LINK AND WIN32)
-    list(APPEND @PROJECT_NAME@_DEFINITIONS _TIMEMORY_ARCHIVE)
+    target_compile_definitions(@LIBNAME@-cxx-library-static
+        INTERFACE _TIMEMORY_ARCHIVE)
+    target_compile_definitions(@LIBNAME@-c-library-static
+        INTERFACE _TIMEMORY_ARCHIVE)
 endif()
+
 
 #------------------------------------------------------------------------------#
 #   TiMemory link target

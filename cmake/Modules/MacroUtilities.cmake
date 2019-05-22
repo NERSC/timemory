@@ -268,8 +268,13 @@ macro(BUILD_LIBRARY)
         ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
 
     target_include_directories(${LIBRARY_TARGET_NAME}
-        PUBLIC ${EXTERNAL_INCLUDE_DIRS}
         PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+    target_include_directories(${LIBRARY_TARGET_NAME} SYSTEM
+        PRIVATE ${${PROJECT_NAME}_SYSTEM_INCLUDE_DIRS})
+
+    target_include_directories(${LIBRARY_TARGET_NAME} SYSTEM
+        PUBLIC ${EXTERNAL_INCLUDE_DIRS})
 
     target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})

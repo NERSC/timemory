@@ -8,6 +8,8 @@
 unset(CMAKE_CXX_CLANG_TIDY)
 
 set(PYLIBNAME lib${LIBNAME})
+set(TIMEMORY_TLS_MODEL "global-dynamic")
+add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
@@ -28,24 +30,24 @@ endif(NOT BUILD_SHARED_LIBS AND WIN32)
 pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
 
-target_link_libraries(${PYLIBNAME}
-    PRIVATE ${LIBNAME}-cxx-library)
+target_link_libraries(${PYLIBNAME} PRIVATE
+    ${LIBNAME}-cxx-library)
 
-target_compile_definitions(${PYLIBNAME}
-    PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
+target_compile_definitions(${PYLIBNAME} PRIVATE
+    ${${PROJECT_NAME}_DEFINITIONS})
 
-target_compile_options(${PYLIBNAME}
-    PRIVATE
-        $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
-        $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+target_compile_options(${PYLIBNAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
+    $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
 
-get_target_property(PYTARGET_INCLUDE_DIRS ${PYLIBNAME} INCLUDE_DIRECTORIES)
+target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
 
-target_include_directories(${PYLIBNAME} SYSTEM BEFORE
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
+    ${${PROJECT_NAME}_SYSTEM_INCLUDE_DIRS})
 
-target_include_directories(${PYLIBNAME} PUBLIC
-    ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+target_include_directories(${PYLIBNAME} PRIVATE
+    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
 add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
 

@@ -13,7 +13,7 @@ find_package(TiMemory REQUIRED)
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
 
 target_link_libraries(${EXE_NAME}
-    PRIVATE timemory-c-library-static)
+    PRIVATE TiMemory::TiMemory_C::static)
 
 target_include_directories(${EXE_NAME} SYSTEM
     PRIVATE ${TiMemory_INCLUDE_DIRS})

@@ -18,11 +18,11 @@
 # Variables used by this module which can be used to change the default
 # behaviour, and hence need to be set before calling find_package:
 #
-#  PAPI_ROOT (not cached) The preferred installation prefix for searching for
-#  PAPI_ROOT_DIR (cached) PAPI. Set this if the module has problems finding
-#                         the proper PAPI installation.
+#  PAPI_ROOT_DIR
+#       The preferred installation prefix for searching for PAPI
+#       Set this if the module has problems finding the proper PAPI installation.
 #
-# If you don't supply PAPI_ROOT, the module will search on the standard
+# If you don't supply PAPI_ROOT_DIR, the module will search on the standard
 # system paths.
 #
 # ============================================================================
@@ -49,11 +49,11 @@
 
 #------------------------------------------------------------------------------#
 
-find_path(PAPI_ROOT
+find_path(PAPI_ROOT_DIR
           NAMES
               include/papi.h
           HINTS
-              ENV PAPI_ROOT
+              ENV PAPI_ROOT_DIR
           DOC
               "PAPI root installation directory")
 
@@ -63,8 +63,8 @@ find_path(PAPI_INCLUDE_DIR
           NAMES
               papi.h
           HINTS
-              ${PAPI_ROOT}
-              ENV PAPI_ROOT
+              ${PAPI_ROOT_DIR}
+              ENV PAPI_ROOT_DIR
               ENV CPATH
           PATH_SUFFIXES
               include
@@ -77,8 +77,8 @@ find_library(PAPI_LIBRARY
              NAMES
                  papi
              HINTS
-                 ${PAPI_ROOT}
-                 ENV PAPI_ROOT
+                 ${PAPI_ROOT_DIR}
+                 ENV PAPI_ROOT_DIR
                  ENV LD_LIBRARY_PATH
                  ENV LIBRARY_PATH
                  ENV DYLD_LIBRARY_PATH

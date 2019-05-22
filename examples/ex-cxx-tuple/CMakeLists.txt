@@ -21,7 +21,7 @@ endif()
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 
 target_link_libraries(${EXE_NAME} PRIVATE
-    ${TiMemory_LIBRARIES} Threads::Threads)
+    TiMemory::TiMemory_CXX Threads::Threads)
 
 target_include_directories(${EXE_NAME} SYSTEM PRIVATE
     ${TiMemory_INCLUDE_DIRS})
