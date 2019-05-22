@@ -307,11 +307,13 @@ if(TIMEMORY_USE_CUDA)
             PATHS           ${_CUDA_PATHS})
           
         # try to find cuda stubs library
-        find_library(CUDA_stubs_LIBRARY
-            NAMES           cuda
-            HINTS           ${_CUDA_PATHS}
-            PATHS           ${_CUDA_PATHS}
-            PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+        if(NOT CUDA_driver_LIBRARY)
+            find_library(CUDA_stubs_LIBRARY
+                NAMES           cuda
+                HINTS           ${_CUDA_PATHS}
+                PATHS           ${_CUDA_PATHS}
+                PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+        endif()
 
         # the CUDA driver library
         set(_CUDA_DRIVER_LIB )
