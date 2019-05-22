@@ -528,6 +528,24 @@ struct pointer_operator
             _Op(*obj, std::forward<_Args>(_args)...);
         }
     }
+
+    template <typename... _Args>
+    explicit pointer_operator(base_type* obj, base_type* rhs, _Args&&... _args)
+    {
+        if(obj && rhs)
+        {
+            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+        }
+    }
+
+    template <typename... _Args>
+    explicit pointer_operator(Type* obj, Type* rhs, _Args&&... _args)
+    {
+        if(obj && rhs)
+        {
+            _Op(*obj, *rhs, std::forward<_Args>(_args)...);
+        }
+    }
 };
 
 //--------------------------------------------------------------------------------------//

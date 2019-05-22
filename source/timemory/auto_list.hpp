@@ -1,0 +1,232 @@
+// MIT License
+//
+// Copyright (c) 2019, The Regents of the University of California,
+// through Lawrence Berkeley National Laboratory (subject to receipt of any
+// required approvals from the U.S. Dept. of Energy).  All rights reserved.
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+//
+
+/** \file auto_list.hpp
+ * \headerfile auto_list.hpp "timemory/auto_list.hpp"
+ * Automatic starting and stopping of components. Accept unlimited number of
+ * parameters. The constructor starts the components, the destructor stops the
+ * components
+ *
+ * Usage with macros (recommended):
+ *    \param TIMEMORY_AUTO_LIST()
+ *    \param TIMEMORY_BASIC_AUTO_LIST()
+ *    \param auto t = TIMEMORY_AUTO_LIST_OBJ()
+ *    \param auto t = TIMEMORY_BASIC_AUTO_LIST_OBJ()
+ */
+
+#pragma once
+
+#include <cstdint>
+#include <string>
+
+#include "timemory/auto_macros.hpp"
+#include "timemory/component_list.hpp"
+#include "timemory/macros.hpp"
+#include "timemory/utility.hpp"
+
+TIM_NAMESPACE_BEGIN
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+class auto_list
+: public tim::counted_object<auto_list<Types...>>
+, public tim::hashed_object<auto_list<Types...>>
+{
+public:
+    using component_type = implemented_component_list<Types...>;
+    using this_type      = auto_list<Types...>;
+    using data_type      = typename component_type::data_type;
+    using counter_type   = tim::counted_object<this_type>;
+    using counter_void   = tim::counted_object<void>;
+    using hashed_type    = tim::hashed_object<this_type>;
+    using string_t       = std::string;
+    using string_hash    = std::hash<string_t>;
+    using base_type      = implemented_component_list<Types...>;
+
+public:
+    auto_list(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
+              bool report_at_exit = false);
+    auto_list(component_type& tmp, const int32_t& lineno = 0,
+              bool report_at_exit = false);
+    ~auto_list();
+
+    // copy and move
+    auto_list(const this_type&) = default;
+    auto_list(this_type&&)      = default;
+    this_type& operator=(const this_type&) = default;
+    this_type& operator=(this_type&&) = default;
+
+public:
+    // public member functions
+    component_type&       component_list() { return m_temporary_object; }
+    const component_type& component_list() const { return m_temporary_object; }
+
+    // partial interface to underlying component_list
+    void record() { m_temporary_object.record(); }
+    void pause() { m_temporary_object.pause(); }
+    void resume() { m_temporary_object.resume(); }
+    void start() { m_temporary_object.start(); }
+    void stop() { m_temporary_object.stop(); }
+    void push() { m_temporary_object.push(); }
+    void pop() { m_temporary_object.pop(); }
+    void reset() { m_temporary_object.reset(); }
+
+    template <std::size_t _N>
+    typename std::tuple_element<_N, data_type>::type& get()
+    {
+        return m_temporary_object.template get<_N>();
+    }
+
+    template <std::size_t _N>
+    const typename std::tuple_element<_N, data_type>::type& get() const
+    {
+        return m_temporary_object.template get<_N>();
+    }
+
+public:
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        os << obj.m_temporary_object;
+        return os;
+    }
+
+private:
+    bool            m_enabled        = true;
+    bool            m_report_at_exit = false;
+    component_type  m_temporary_object;
+    component_type* m_reference_object = nullptr;
+};
+
+//======================================================================================//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(const string_t& object_tag, const int32_t& lineno,
+                               const string_t& lang_tag, bool report_at_exit)
+: counter_type()
+, hashed_type((counter_type::enable())
+                  ? (string_hash()(object_tag) + string_hash()(lang_tag) +
+                     (counter_type::live() + hashed_type::live() + lineno))
+                  : 0)
+, m_enabled(counter_type::enable())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash,
+                     true)
+{
+    if(m_enabled)
+    {
+        m_temporary_object.start();
+    }
+}
+
+//======================================================================================//
+
+template <typename... Types>
+auto_list<Types...>::auto_list(component_type& tmp, const int32_t& lineno,
+                               bool report_at_exit)
+: counter_type()
+, hashed_type((counter_type::enable())
+                  ? (string_hash()(tmp.key()) + string_hash()(tmp.tag()) +
+                     (counter_type::live() + hashed_type::live() + lineno))
+                  : 0)
+, m_enabled(counter_type::enable())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(tmp)
+, m_reference_object(&tmp)
+{
+    if(m_enabled)
+    {
+        m_temporary_object.hash()  = hashed_type::m_hash;
+        m_temporary_object.store() = true;
+        m_temporary_object.push();
+        m_temporary_object.start();
+    }
+}
+
+//======================================================================================//
+
+template <typename... Types>
+auto_list<Types...>::~auto_list()
+{
+    if(m_enabled)
+    {
+        // stop the timer
+        m_temporary_object.stop();
+        m_temporary_object.pop();
+
+        // report timer at exit
+        if(m_report_at_exit)
+        {
+            std::stringstream ss;
+            ss << m_temporary_object;
+            std::cout << ss.str() << std::endl;
+        }
+
+        if(m_reference_object)
+        {
+            *m_reference_object += m_temporary_object;
+        }
+    }
+}
+
+//======================================================================================//
+
+TIM_NAMESPACE_END
+
+//======================================================================================//
+
+#define TIMEMORY_BLANK_AUTO_LIST(auto_list_type, ...)                                    \
+    TIMEMORY_BLANK_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_LIST(auto_list_type, ...)                                    \
+    TIMEMORY_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_LIST(auto_list_type, ...)                                          \
+    TIMEMORY_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_LIST_OBJ(auto_list_type, ...)                                      \
+    TIMEMORY_AUTO_OBJECT_OBJ(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_LIST_OBJ(auto_list_type, ...)                                \
+    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_DEBUG_BASIC_AUTO_LIST(auto_list_type, ...)                              \
+    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_DEBUG_AUTO_LIST(auto_list_type, ...)                                    \
+    TIMEMORY_DEBUG_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+// variadic versions
+
+#define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
+    using AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                          \
+    TIMEMORY_BASIC_AUTO_LIST(AUTO_TYPEDEF(__LINE__), tag);
+
+#define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
+    using AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                          \
+    TIMEMORY_AUTO_LIST(AUTO_TYPEDEF(__LINE__), tag);
+
+//======================================================================================//

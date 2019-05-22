@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/apply.hpp"
+#include "timemory/auto_list.hpp"
 #include "timemory/auto_macros.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/clocks.hpp"

@@ -969,6 +969,7 @@ call_kernel2(T* arg, int size)
 }
 
 //======================================================================================//
+#if defined(TIMEMORY_USE_CUPTI)
 
 void
 test_7_cupti_available()
@@ -1127,3 +1128,29 @@ test_8_cupti_subset()
               << std::endl;
     printf("\n");
 }
+
+//======================================================================================//
+
+#else  // defined(TIMEMORY_USE_CUPTI)
+
+//======================================================================================//
+
+void
+test_7_cupti_available()
+{
+    print_info(__FUNCTION__);
+    printf("CUPTI is not available...\n");
+}
+
+//======================================================================================//
+
+void
+test_8_cupti_subset()
+{
+    print_info(__FUNCTION__);
+    printf("CUPTI is not available...\n");
+}
+
+//======================================================================================//
+
+#endif  // defined(TIMEMORY_USE_CUPTI)

@@ -41,6 +41,9 @@ target_compile_options(${PYLIBNAME}
 
 get_target_property(PYTARGET_INCLUDE_DIRS ${PYLIBNAME} INCLUDE_DIRECTORIES)
 
+target_include_directories(${PYLIBNAME} SYSTEM BEFORE
+    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+
 target_include_directories(${PYLIBNAME} PUBLIC
     ${PYTARGET_INCLUDE_DIRS} ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 

@@ -58,8 +58,8 @@ namespace tim
 //======================================================================================//
 // forward declaration
 //
-// template <typename... Types>
-// class auto_list;
+template <typename... Types>
+class auto_list;
 
 //======================================================================================//
 // variadic list of components
@@ -86,7 +86,7 @@ public:
     using hashed_type  = tim::hashed_object<this_type>;
 
 public:
-    // using auto_type   = auto_list<Types...>;
+    using auto_type = auto_list<Types...>;
 
 public:
     /*
@@ -735,6 +735,78 @@ protected:
 private:
     void init_manager();
 };
+
+//--------------------------------------------------------------------------------------//
+
+namespace details
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename...>
+struct component_list_concat
+{
+};
+
+template <>
+struct component_list_concat<>
+{
+    using type = component_list<>;
+};
+
+template <typename... Ts>
+struct component_list_concat<component_list<Ts...>>
+{
+    using type = component_list<Ts...>;
+};
+
+template <typename... Ts0, typename... Ts1, typename... Rest>
+struct component_list_concat<component_list<Ts0...>, component_list<Ts1...>, Rest...>
+: component_list_concat<component_list<Ts0..., Ts1...>, Rest...>
+{
+};
+
+template <typename... Ts>
+using component_list_concat_t = typename component_list_concat<Ts...>::type;
+
+//--------------------------------------------------------------------------------------//
+
+template <bool>
+struct component_list_filter_if_result
+{
+    template <typename T>
+    using type = component_list<T>;
+};
+
+template <>
+struct component_list_filter_if_result<false>
+{
+    template <typename T>
+    using type = component_list<>;
+};
+
+template <template <typename> class Predicate, typename Sequence>
+struct component_list_filter_if;
+
+template <template <typename> class Predicate, typename... Ts>
+struct component_list_filter_if<Predicate, component_list<Ts...>>
+{
+    using type = component_list_concat_t<typename component_list_filter_if_result<
+        Predicate<Ts>::value>::template type<Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace details
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class Predicate, typename Sequence>
+using list_type_filter =
+    typename details::component_list_filter_if<Predicate, Sequence>::type;
+
+template <typename... Types>
+using implemented_component_list =
+    list_type_filter<component::impl_available, component_list<Types...>>;
 
 //--------------------------------------------------------------------------------------//
 

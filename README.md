@@ -18,7 +18,7 @@
 
 In C++ and Python, TiMemory can be added in a single line of code:
 
-```c++
+```cpp
 void some_function()
 {
     TIMEMORY_AUTO_TUPLE(tim::auto_tuple<real_clock, cpu_clock, peak_rss>, "");
@@ -124,32 +124,39 @@ fibonacci(int64_t n, int64_t cutoff)
 every single instance is unique and the overhead fibonacci(43, 16) produces 514191 unique timers:
 
 ```shell
-> [cxx] fibonacci[43]                                                     : 2.966e+00 sec real, 1 laps
-> [cxx] |_fibonacci[41]                                                   : 1.124e+00 sec real, 1 laps
-> [cxx]   |_fibonacci[39]                                                 : 4.251e-01 sec real, 1 laps
-> [cxx]     |_fibonacci[37]                                               : 1.614e-01 sec real, 1 laps
-> [cxx]       |_fibonacci[35]                                             : 6.283e-02 sec real, 1 laps
-> [cxx]         |_fibonacci[33]                                           : 2.340e-02 sec real, 1 laps
-> [cxx]           |_fibonacci[31]                                         : 8.878e-03 sec real, 1 laps
-> [cxx]             |_fibonacci[29]                                       : 3.244e-03 sec real, 1 laps
-> [cxx]               |_fibonacci[27]                                     : 1.210e-03 sec real, 1 laps
-> [cxx]                 |_fibonacci[25]                                   : 4.564e-04 sec real, 1 laps
-> [cxx]                   |_fibonacci[23]                                 : 1.697e-04 sec real, 1 laps
-> [cxx]                     |_fibonacci[21]                               : 6.388e-05 sec real, 1 laps
-> [cxx]                       |_fibonacci[19]                             : 2.171e-05 sec real, 1 laps
-> [cxx]                         |_fibonacci[17]                           : 6.402e-06 sec real, 1 laps
-> [cxx]                         |_fibonacci[18]                           : 1.209e-05 sec real, 1 laps
-> [cxx]                           |_fibonacci[17]                         : 6.377e-06 sec real, 1 laps
-> [cxx]                       |_fibonacci[20]                             : 3.918e-05 sec real, 1 laps
-> [cxx]                         |_fibonacci[18]                           : 1.198e-05 sec real, 1 laps
-> [cxx]                           |_fibonacci[17]                         : 6.365e-06 sec real, 1 laps
+> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110             : 1.667e+00 sec real, 1 laps
+> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110             : 2.782e+00 sec real, 1 laps
+> [cxx] fibonacci[43]                                                     : 2.782e+00 sec real, 1 laps
+> [cxx] |_fibonacci[41]                                                   : 1.033e+00 sec real, 1 laps
+> [cxx]   |_fibonacci[39]                                                 : 3.868e-01 sec real, 1 laps
+> [cxx]     |_fibonacci[37]                                               : 1.467e-01 sec real, 1 laps
+> [cxx]       |_fibonacci[35]                                             : 5.519e-02 sec real, 1 laps
+> [cxx]         |_fibonacci[33]                                           : 2.151e-02 sec real, 1 laps
+> [cxx]           |_fibonacci[31]                                         : 8.197e-03 sec real, 1 laps
+> [cxx]             |_fibonacci[29]                                       : 3.063e-03 sec real, 1 laps
+> [cxx]               |_fibonacci[27]                                     : 1.148e-03 sec real, 1 laps
+> [cxx]                 |_fibonacci[25]                                   : 4.421e-04 sec real, 1 laps
+> [cxx]                   |_fibonacci[23]                                 : 1.718e-04 sec real, 1 laps
+> [cxx]                     |_fibonacci[21]                               : 6.159e-05 sec real, 1 laps
+> [cxx]                       |_fibonacci[19]                             : 2.116e-05 sec real, 1 laps
+> [cxx]                         |_fibonacci[17]                           : 6.281e-06 sec real, 1 laps
+> [cxx]                         |_fibonacci[18]                           : 1.172e-05 sec real, 1 laps
+> [cxx]                           |_fibonacci[17]                         : 6.146e-06 sec real, 1 laps
+> [cxx]                       |_fibonacci[20]                             : 3.766e-05 sec real, 1 laps
+> [cxx]                         |_fibonacci[18]                           : 1.156e-05 sec real, 1 laps
+> [cxx]                           |_fibonacci[17]                         : 6.183e-06 sec real, 1 laps
+> [cxx]                         |_fibonacci[19]                           : 2.318e-05 sec real, 1 laps
+> [cxx]                           |_fibonacci[17]                         : 6.166e-06 sec real, 1 laps
+> [cxx]                           |_fibonacci[18]                         : 1.319e-05 sec real, 1 laps
+> [cxx]                             |_fibonacci[17]                       : 6.180e-06 sec real, 1 laps
+> [cxx]                     |_fibonacci[22]                               : 1.072e-04 sec real, 1 laps
 
 ...
 
-> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110 : 1.772e+00 sec real [laps: 1]
-> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110 : 2.966e+00 sec real [laps: 1]
-> [cxx] timing difference                                     : 1.194e+00 sec real
-> [cxx] average overhead per timer                            : 2.321e-06 sec real
+> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110 : 1.667e+00 sec real [laps: 1]
+> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110 : 2.782e+00 sec real [laps: 1]
+> [cxx] timing difference                                     : 1.115e+00 sec real
+> [cxx] average overhead per timer                            : 2.168e-06 sec real
 ```
 
 However, the following produces only 27 unique timers:
@@ -170,38 +177,40 @@ fibonacci(int64_t n, int64_t cutoff)
 and the overhead is much smaller:
 
 ```shell
-> [cxx] fibonacci                                                     : 2.257e+00 sec real, 1 laps
-> [cxx] |_fibonacci                                                   : 2.257e+00 sec real, 2 laps
-> [cxx]   |_fibonacci                                                 : 2.257e+00 sec real, 4 laps
-> [cxx]     |_fibonacci                                               : 2.257e+00 sec real, 8 laps
-> [cxx]       |_fibonacci                                             : 2.257e+00 sec real, 16 laps
-> [cxx]         |_fibonacci                                           : 2.257e+00 sec real, 32 laps
-> [cxx]           |_fibonacci                                         : 2.257e+00 sec real, 64 laps
-> [cxx]             |_fibonacci                                       : 2.257e+00 sec real, 128 laps
-> [cxx]               |_fibonacci                                     : 2.257e+00 sec real, 256 laps
-> [cxx]                 |_fibonacci                                   : 2.256e+00 sec real, 512 laps
-> [cxx]                   |_fibonacci                                 : 2.255e+00 sec real, 1024 laps
-> [cxx]                     |_fibonacci                               : 2.254e+00 sec real, 2048 laps
-> [cxx]                       |_fibonacci                             : 2.250e+00 sec real, 4096 laps
-> [cxx]                         |_fibonacci                           : 2.242e+00 sec real, 8192 laps
-> [cxx]                           |_fibonacci                         : 2.227e+00 sec real, 16369 laps
-> [cxx]                             |_fibonacci                       : 2.194e+00 sec real, 32192 laps
-> [cxx]                               |_fibonacci                     : 2.105e+00 sec real, 58651 laps
-> [cxx]                                 |_fibonacci                   : 1.909e+00 sec real, 89846 laps
-> [cxx]                                   |_fibonacci                 : 1.543e+00 sec real, 106762 laps
-> [cxx]                                     |_fibonacci               : 1.042e+00 sec real, 94184 laps
-> [cxx]                                       |_fibonacci             : 5.567e-01 sec real, 60460 laps
-> [cxx]                                         |_fibonacci           : 2.260e-01 sec real, 27896 laps
-> [cxx]                                           |_fibonacci         : 6.722e-02 sec real, 9109 laps
-> [cxx]                                             |_fibonacci       : 1.419e-02 sec real, 2048 laps
-> [cxx]                                               |_fibonacci     : 1.981e-03 sec real, 301 laps
-> [cxx]                                                 |_fibonacci   : 1.664e-04 sec real, 26 laps
-> [cxx]                                                   |_fibonacci : 6.262e-06 sec real, 1 laps
+> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110         : 2.220e+00 sec real, 1 laps
+> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110         : 2.832e+00 sec real, 1 laps
+> [cxx] fibonacci                                                     : 2.832e+00 sec real, 1 laps
+> [cxx] |_fibonacci                                                   : 2.832e+00 sec real, 2 laps
+> [cxx]   |_fibonacci                                                 : 2.832e+00 sec real, 4 laps
+> [cxx]     |_fibonacci                                               : 2.832e+00 sec real, 8 laps
+> [cxx]       |_fibonacci                                             : 2.832e+00 sec real, 16 laps
+> [cxx]         |_fibonacci                                           : 2.832e+00 sec real, 32 laps
+> [cxx]           |_fibonacci                                         : 2.832e+00 sec real, 64 laps
+> [cxx]             |_fibonacci                                       : 2.832e+00 sec real, 128 laps
+> [cxx]               |_fibonacci                                     : 2.831e+00 sec real, 256 laps
+> [cxx]                 |_fibonacci                                   : 2.831e+00 sec real, 512 laps
+> [cxx]                   |_fibonacci                                 : 2.830e+00 sec real, 1024 laps
+> [cxx]                     |_fibonacci                               : 2.828e+00 sec real, 2048 laps
+> [cxx]                       |_fibonacci                             : 2.824e+00 sec real, 4096 laps
+> [cxx]                         |_fibonacci                           : 2.815e+00 sec real, 8192 laps
+> [cxx]                           |_fibonacci                         : 2.798e+00 sec real, 16369 laps
+> [cxx]                             |_fibonacci                       : 2.761e+00 sec real, 32192 laps
+> [cxx]                               |_fibonacci                     : 2.660e+00 sec real, 58651 laps
+> [cxx]                                 |_fibonacci                   : 2.425e+00 sec real, 89846 laps
+> [cxx]                                   |_fibonacci                 : 1.977e+00 sec real, 106762 laps
+> [cxx]                                     |_fibonacci               : 1.355e+00 sec real, 94184 laps
+> [cxx]                                       |_fibonacci             : 7.419e-01 sec real, 60460 laps
+> [cxx]                                         |_fibonacci           : 3.124e-01 sec real, 27896 laps
+> [cxx]                                           |_fibonacci         : 9.630e-02 sec real, 9109 laps
+> [cxx]                                             |_fibonacci       : 2.064e-02 sec real, 2048 laps
+> [cxx]                                               |_fibonacci     : 2.952e-03 sec real, 301 laps
+> [cxx]                                                 |_fibonacci   : 2.318e-04 sec real, 26 laps
+> [cxx]                                                   |_fibonacci : 8.503e-06 sec real, 1 laps
 
-> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110 : 1.626e+00 sec real [laps: 1]
-> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110 : 2.257e+00 sec real [laps: 1]
-> [cxx] timing difference                                     : 6.310e-01 sec real
-> [cxx] average overhead per timer                            : 1.227e-06 sec real
+> [cxx] run [with timing = false]@'test_cxx_overhead.cpp':110 : 2.220e+00 sec real [laps: 1]
+> [cxx] run [with timing =  true]@'test_cxx_overhead.cpp':110 : 2.832e+00 sec real [laps: 1]
+> [cxx] timing difference                                     : 6.116e-01 sec real
+> [cxx] average overhead per timer                            : 1.189e-06 sec real
 ```
 
 The exact performance is specific to the machine and the overhead for a particular machine can be calculated by running the `test_cxx_overhead` example.

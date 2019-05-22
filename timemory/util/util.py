@@ -35,7 +35,7 @@ import sys
 import inspect
 
 __author__ = "Jonathan Madsen"
-__copyright__ = "Copyright 2018, The Regents of the University of California"
+__copyright__ = "Copyright 2019, The Regents of the University of California"
 __credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"

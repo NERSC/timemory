@@ -38,11 +38,12 @@
 #pragma once
 
 #include "timemory/macros.hpp"
+#include "timemory/mpi.hpp"
+#include "timemory/utility.hpp"
 
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
-#include <cstdlib> /* abort(), exit() */
 #include <cstring>
 #include <deque>
 #include <exception>
@@ -55,16 +56,14 @@
 #include <string>
 #include <vector>
 
-#include <features.h>
-
-#include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
-#include "timemory/utility.hpp"
-
 #if defined(_UNIX)
 #    include <cfenv>
 #    include <cxxabi.h>
 #    include <execinfo.h>  // for StackBacktrace()
+#endif
+
+#if defined(_LINUX)
+#    include <features.h>
 #endif
 
 // compatible compiler

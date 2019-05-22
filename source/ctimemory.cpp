@@ -30,6 +30,7 @@
  *
  */
 
+#include "timemory/auto_list.hpp"
 #include "timemory/auto_tuple.hpp"
 #include "timemory/component_list.hpp"
 #include "timemory/component_tuple.hpp"
@@ -47,12 +48,13 @@ EXTERN_C_END
 
 using namespace tim::component;
 
-using comp_list_t = tim::component_list<
-    real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
-    thread_cpu_clock, process_cpu_clock, cpu_util, thread_cpu_util, process_cpu_util,
-    current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
-    num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-    voluntary_context_switch, priority_context_switch>;
+using auto_list_t =
+    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
+                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
+                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
+                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
+                   voluntary_context_switch, priority_context_switch>;
 
 using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
@@ -239,14 +241,16 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* la
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_tuple(const char* timer_tag, int, int num_components,
+cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
                                const int* components)
 {
     using namespace tim::component;
-    using data_type = typename comp_list_t::data_type;
+    using data_type = typename auto_list_t::component_type::data_type;
     std::string key_tag(timer_tag);
     auto        lang_tag = "_c_";
-    auto        obj      = new comp_list_t(key_tag, true, lang_tag);
+    auto        obj      = new auto_list_t(key_tag, lineno, lang_tag, false);
+    obj->stop();
+    obj->reset();
     for(int i = 0; i < num_components; ++i)
     {
         COMPONENT component = static_cast<COMPONENT>(components[i]);
@@ -368,7 +372,7 @@ cxx_timemory_delete_auto_timer(void* ctimer)
 extern "C" tim_api void*
 cxx_timemory_delete_auto_tuple(void* ctuple)
 {
-    comp_list_t* obj = static_cast<comp_list_t*>(ctuple);
+    auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
     obj->stop();
     delete obj;
     ctuple = nullptr;
