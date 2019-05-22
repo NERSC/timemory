@@ -143,8 +143,8 @@ namespace cupti
 {
 //--------------------------------------------------------------------------------------//
 
-using tid_t    = std::thread::id;
 using string_t = std::string;
+
 template <typename _Key, typename _Mapped>
 using uomap = std::unordered_map<_Key, _Mapped>;
 
@@ -172,21 +172,18 @@ struct pass_data_t
 //
 struct kernel_data_t
 {
-    typedef std::vector<uint64_t>          event_val_t;
-    typedef std::vector<CUpti_MetricValue> metric_val_t;
+    using event_val_t  = std::vector<uint64_t>;
+    using metric_val_t = std::vector<CUpti_MetricValue>;
 
-    kernel_data_t()
-    : m_current_pass(0)
-    {
-    }
+    kernel_data_t() {}
 
     std::vector<pass_data_t> m_pass_data;
     string_t                 m_name;
 
-    int      m_metric_passes;
-    int      m_event_passes;
-    int      m_current_pass;
-    int      m_total_passes;
+    int      m_metric_passes = 0;
+    int      m_event_passes  = 0;
+    int      m_current_pass  = 0;
+    int      m_total_passes  = 0;
     CUdevice m_device;
 
     event_val_t  m_event_values;
