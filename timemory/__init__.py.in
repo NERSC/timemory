@@ -135,6 +135,15 @@ if "@BUILD_SHARED_LIBS@" == "ON":
     # open the shared library for RPATH resolution
     lib = None
     try:
+        _path = os.path.dirname(tim_lib_path)
+        _var = "LD_LIBRARY_PATH"
+        if platform.system() == "Darwin":
+            _var = "DYLD_LIBRARY_PATH"
+        libpath = os.environ.get(_var)
+        if libpath is not None:
+            os.environ[_var] = "{}:{}".format(_path, libpath)
+        else:
+            os.environ[_var] = "{}".format(_path)
         lib = ctypes.CDLL(tim_lib_path, mode=ctypes.RTLD_GLOBAL)
     except Exception as e:
         print('Exception! Error opening TiMemory shared library @ "{}"'.format(tim_lib_path))
@@ -160,9 +169,6 @@ __all__ = ['version_info',
            'tests',
            'util',
            # --------------- classes ---------------#
-           'format',
-           'format.rss',
-           'format.timer',
            'manager',
            'timer',
            'auto_timer',
@@ -192,8 +198,6 @@ __all__ = ['version_info',
            'enabled',
            'enable_signal_detection',   # 15
            'disable_signal_detection',
-           'set_default_format',
-           'get_default_format',
            'has_mpi_support',
            'get_missing_report'         # 20
            ]

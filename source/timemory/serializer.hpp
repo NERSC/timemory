@@ -47,10 +47,11 @@
 #include <unordered_set>
 #include <vector>
 
+// general
 #include <cereal/access.hpp>
 #include <cereal/cereal.hpp>
 #include <cereal/macros.hpp>
-
+// types
 #include <cereal/types/array.hpp>
 #include <cereal/types/atomic.hpp>
 #include <cereal/types/bitset.hpp>
@@ -73,7 +74,7 @@
 #include <cereal/types/unordered_set.hpp>
 #include <cereal/types/utility.hpp>
 #include <cereal/types/vector.hpp>
-
+// archives
 #include <cereal/archives/adapters.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
@@ -115,34 +116,6 @@ inline void
 load(Archive& ar, std::pair<TypeF, TypeS>& p)
 {
     ar(p.first, p.second);
-}
-
-//--------------------------------------------------------------------------------------//
-//  save specialization for pair
-//
-template <typename Archive, typename Type, std::size_t Size,
-          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
-inline void
-save(Archive& ar, const std::array<Type, Size>& arr)
-{
-    std::vector<Type> vec(Size, Type());
-    for(std::size_t i = 0; i < Size; ++i)
-        vec[i] = arr[i];
-    ar(vec);
-}
-
-//--------------------------------------------------------------------------------------//
-//  load specialization for pair
-//
-template <typename Archive, typename Type, std::size_t Size,
-          traits::EnableIf<traits::is_text_archive<Archive>::value> = traits::sfinae>
-inline void
-load(Archive& ar, std::array<Type, Size>& arr)
-{
-    std::vector<Type> vec(Size, Type());
-    ar(vec);
-    for(std::size_t i = 0; i < Size; ++i)
-        arr[i] = vec[i];
 }
 */
 //--------------------------------------------------------------------------------------//

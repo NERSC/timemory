@@ -11,6 +11,10 @@ if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
 endif(NOT DEFINED @PROJECT_NAME@_DIR)
 set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
+set(TIMEMORY_CUDA_LIBRARY OFF)
+if(@TIMEMORY_USE_CUPTI@ AND @TIMEMORY_USE_CUDA@)
+    set(TIMEMORY_CUDA_LIBRARY ON)
+endif()
 
 # compile options
 set(@PROJECT_NAME@_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
@@ -41,6 +45,17 @@ set(CMAKE_CUDA_STANDARD_REQUIRED @CMAKE_CUDA_STANDARD_REQUIRED@ CACHE BOOL "")
 set(CMAKE_C_EXTENSIONS @CMAKE_C_EXTENSIONS@ CACHE BOOL "")
 set(CMAKE_CXX_EXTENSIONS @CMAKE_CXX_EXTENSIONS@ CACHE BOOL "")
 set(CMAKE_CUDA_EXTENSIONS @CMAKE_CUDA_EXTENSIONS@ CACHE BOOL "")
+
+# languages
+set(TIMEMORY_LANGUAGES CXX)
+
+if(TIMEMORY_C_LIBRARY)
+    list(APPEND TIMEMORY_LANGUAGES C)
+endif()
+
+if(TIMEMORY_CUDA_LIBRARY)
+    list(APPEND TIMEMORY_LANGUAGES CUDA)
+endif()
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -94,15 +109,10 @@ if(_TIMEMORY_INSTALL_TREE)
         IMPORTED_LOCATION_DEBUG
         IMPORTED_LOCATION_MINSIZEREL)
 
-    set(_LANGUAGES CXX)
-    if(TIMEMORY_C_LIBRARY)
-        list(APPEND _LANGUAGES C)
-    endif()
-
     # loop over library types
     foreach(_TYPE shared static)
         # loop over languages
-        foreach(_LANG ${_LANGUAGES})
+        foreach(_LANG ${TIMEMORY_LANGUAGES})
             string(TOLOWER "${_LANG}" _LANG_LOWER)
             # try imported locations until one is found
             foreach(_LOC ${LOCATIONS})
@@ -130,13 +140,9 @@ else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
-        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "${RELATIVE_SOURCE_DIR}/source/python/pybind11")
-    endif()
-
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
+    if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif()
 
@@ -162,6 +168,12 @@ else() # build tree
         endif()
     endif()
 
+    if(TIMEMORY_CUDA_LIBRARY)
+        set_property(TARGET @LIBNAME@-cuda-library
+            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
+    endif()
+
 endif()
 
 
@@ -174,6 +186,36 @@ set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS "@EXTERNAL_INCLUDE_DIRS@")
 foreach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
     list(APPEND @PROJECT_NAME@_INCLUDE_DIRS ${_DIR})
 endforeach()
+
+#------------------------------------------------------------------------------#
+#   Interface
+#------------------------------------------------------------------------------#
+foreach(_LANG ${TIMEMORY_LANGUAGES})
+    string(TOLOWER "${_LANG}" _LANG_LOWER)
+    # timemory-{c,cxx,cuda}-library --> TiMemory::TiMemory_{C,CXX,CUDA}
+    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    if(NOT "${_LANG}" STREQUAL "CUDA")
+        # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+        # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
+    else()
+        # timemory-cuda-library
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    endif()
+    unset(_LANG_LOWER)
+endforeach()
+
+
+#------------------------------------------------------------------------------#
+#   Definitions
+#------------------------------------------------------------------------------#
+if(WIN32)
+    target_compile_definitions(@LIBNAME@-cxx-library-static INTERFACE _TIMEMORY_ARCHIVE)
+    if(TIMEMORY_C_LIBRARY)
+        target_compile_definitions(@LIBNAME@-c-library-static INTERFACE _TIMEMORY_ARCHIVE)
+    endif()
+endif()
 
 
 #------------------------------------------------------------------------------#

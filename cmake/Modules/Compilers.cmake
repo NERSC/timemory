@@ -240,6 +240,6 @@ foreach(LANG C CXX)
 
     if(APPLE)
         set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
-    endif(APPLE)
+    endif()
 
 endforeach()

@@ -117,14 +117,7 @@ inline manager::manager()
         tim::settings::parse();
         tim::papi::init();
         std::atexit(&exit_print);
-#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_CUPTI)
-        /*int ndevices = 0;
-        cuGetDeviceCount(&ndevices);
-        for(int i = 0; i < ndevices; ++i)
-        {
-            DRIVER_API_CALL(cuInit(i));
-        }*/
-#endif
+        tim::cupti::initialize();
     }
     else
     {

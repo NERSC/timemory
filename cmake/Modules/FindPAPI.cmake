@@ -18,9 +18,9 @@
 # Variables used by this module which can be used to change the default
 # behaviour, and hence need to be set before calling find_package:
 #
-#  PAPI_ROOT_DIR (not cached) The preferred installation prefix for searching for
-#  PAPI_ROOT_DIR_DIR (cached) PAPI. Set this if the module has problems finding
-#                         the proper PAPI installation.
+#  PAPI_ROOT_DIR
+#       The preferred installation prefix for searching for PAPI
+#       Set this if the module has problems finding the proper PAPI installation.
 #
 # If you don't supply PAPI_ROOT_DIR, the module will search on the standard
 # system paths.

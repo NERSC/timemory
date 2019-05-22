@@ -39,6 +39,9 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
+set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
+set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+
 # CMake options
 add_option(CMAKE_C_STANDARD_REQUIRED "Require C standard" ON)
 add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
@@ -82,6 +85,9 @@ if(TIMEMORY_USE_CUDA AND ${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(CMAKE_CUDA_STANDARD "CUDA STL standard")
     add_feature(${PROJECT_NAME}_CUDA_FLAGS "CUDA NVCC compiler flags")
 endif()
+
+add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
+unset(_TLS_DESCRIPT)
 
 # cereal options
 add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
