@@ -75,7 +75,7 @@ test_print(std::tuple<T...>&& a, std::tuple<U...>&& b)
 int64_t
 fibonacci(int64_t n)
 {
-    return (n < 2) ? n : (fibonacci(n - 2) + fibonacci(n - 1));
+    return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
 //======================================================================================//
@@ -86,9 +86,9 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         ++nlaps;
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
-        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
-        return (n < 2) ? n : (fibonacci(n - 2, cutoff) + fibonacci(n - 1, cutoff));
+        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        return (n < 2) ? n : (fibonacci(n - 1, cutoff) + fibonacci(n - 2, cutoff));
     }
     return fibonacci(n);
 }
