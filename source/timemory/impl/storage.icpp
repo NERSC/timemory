@@ -33,6 +33,7 @@
 #include "timemory/manager.hpp"
 #include "timemory/settings.hpp"
 
+#include <stdexcept>
 #include <thread>
 
 //======================================================================================//
@@ -67,7 +68,17 @@ tim::graph_storage<ObjectType>::print()
         merge();
 
         // disable gperf if profiling
-        std::call_once(details::storage_once_flag(), &gperf::profiler_stop);
+        try
+        {
+            std::call_once(details::storage_once_flag(), &gperf::profiler_stop);
+        }
+        catch(std::exception& e)
+        {
+#if defined(TIMEMORY_USE_GPERF)
+            std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
+                      << ". Continuing..." << std::endl;
+#endif
+        }
 
         // auto _manager = tim::manager::master_instance();
         /*

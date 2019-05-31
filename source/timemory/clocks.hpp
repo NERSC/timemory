@@ -47,7 +47,6 @@
 #include <vector>
 
 #include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
 #include "timemory/utility.hpp"
 
 #if defined(_UNIX)

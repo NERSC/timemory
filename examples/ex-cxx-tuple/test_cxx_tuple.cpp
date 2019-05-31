@@ -42,6 +42,27 @@ using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
                                      peak_rss, current_rss, papi_tuple_t>;
+using full_measurement_t =
+    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+                         num_io_out, num_minor_page_faults, num_major_page_faults,
+                         num_msg_sent, num_msg_recv, num_signals,
+                         voluntary_context_switch, priority_context_switch, papi_tuple_t>;
+
+using measurement_t =
+    tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+                         thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                         process_cpu_util, monotonic_clock, monotonic_raw_clock,
+                         papi_tuple_t>;
+using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                                       thread_cpu_clock, process_cpu_clock>;
+
+// measure multiple clock time + resident set sizes
+using full_set_t =
+    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                    process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
+// measure wall-clock, thread cpu-clock + process cpu-utilization
+using small_set_t =
+    tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -182,14 +203,9 @@ test_1_usage()
     print_info(__FUNCTION__);
     TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
 
-    using measurement_t = tim::component_tuple<
-        peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
-        num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv,
-        num_signals, voluntary_context_switch, priority_context_switch, papi_tuple_t>;
-
-    measurement_t _use_beg("");
-    measurement_t _use_delta("");
-    measurement_t _use_end("");
+    full_measurement_t _use_beg("");
+    full_measurement_t _use_delta("");
+    full_measurement_t _use_end("");
 
     auto n = 5000000;
     _use_beg.record();
@@ -204,7 +220,7 @@ test_1_usage()
     std::cout << "usage (delta): " << _use_delta << std::endl;
     std::cout << "usage (end):   " << _use_end << std::endl;
 
-    std::vector<std::pair<std::string, measurement_t>> measurements = {
+    std::vector<std::pair<std::string, full_measurement_t>> measurements = {
         { "begin", _use_beg }, { "delta", _use_delta }, { "end", _use_end }
     };
     // serialize("rusage.json", "usage", measurements);
@@ -271,15 +287,6 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    using measurement_t =
-        tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
-                             thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                             process_cpu_util, monotonic_clock, monotonic_raw_clock,
-                             papi_tuple_t>;
-    using printed_t =
-        tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                             thread_cpu_clock, process_cpu_clock>;
-
     using pair_t = std::pair<std::string, measurement_t>;
 
     static std::mutex    mtx;
@@ -339,14 +346,6 @@ void
 test_3_auto_tuple()
 {
     print_info(__FUNCTION__);
-
-    // measure multiple clock time + resident set sizes
-    using full_set_t =
-        tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                        process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
-    // measure wall-clock, thread cpu-clock + process cpu-utilization
-    using small_set_t =
-        tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
 
     std::atomic<int64_t> ret;
     {

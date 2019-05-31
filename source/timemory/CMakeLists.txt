@@ -27,9 +27,6 @@ target_include_directories(${LIBNAME}-cxx-library
 target_link_libraries(${LIBNAME}-cxx-library
     INTERFACE ${EXTERNAL_LIBRARIES})
 
-#target_include_directories(${LIBNAME}-cxx-library
-#    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-
 target_compile_definitions(${LIBNAME}-cxx-library
     INTERFACE ${LIBRARY_COMPILE_DEFINITIONS})
 

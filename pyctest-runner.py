@@ -5,7 +5,12 @@
 PyCTest driver for TiMemory
 """
 
-import os, sys, platform, traceback, warnings, shutil
+import os
+import sys
+import shutil
+import platform
+import traceback
+import warnings
 import multiprocessing as mp
 import pyctest.pyctest as pyctest
 import pyctest.helpers as helpers
@@ -64,12 +69,11 @@ def configure():
         else:
             from pyctest.cmake import CMake
             CMake("--build", pyctest.BINARY_DIRECTORY, "--target", "clean")
-        helpers.RemovePath(os.path.join(pyctest.BINARY_DIRECTORY, "CMakeCache.txt"))
+        helpers.RemovePath(os.path.join(
+            pyctest.BINARY_DIRECTORY, "CMakeCache.txt"))
 
-    if args.gperf:
-        pyctest.copy_files(["gperf_cpu_profile.sh", "gperf_heap_profile.sh"],
-                           os.path.join(pyctest.SOURCE_DIRECTORY, ".scripts"),
-                           pyctest.BINARY_DIRECTORY)
+    if platform.system() != "Linux":
+        args.no_papi = True
 
     return args
 
@@ -117,7 +121,7 @@ def run_pyctest():
         "TIMEMORY_USE_CUDA": "OFF",
         "TIMEMORY_USE_GPERF": "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
-        "TIMEMORY_USE_COVERAGE" : "OFF",
+        "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
 
@@ -209,8 +213,8 @@ def run_pyctest():
         pyctest.BUILD_COMMAND = "{} -- -j{} VERBOSE=1".format(
             pyctest.BUILD_COMMAND, mp.cpu_count())
     else:
-        pyctest.BUILD_COMMAND = "{} -- /MP -A x64".format(pyctest.BUILD_COMMAND)
-
+        pyctest.BUILD_COMMAND = "{} -- /MP -A x64".format(
+            pyctest.BUILD_COMMAND)
 
     #--------------------------------------------------------------------------#
     # how to update the code
@@ -271,17 +275,18 @@ def run_pyctest():
     pyctest.test("test_cxx_overhead", construct_command(["./test_cxx_overhead"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
     pyctest.test("test_cxx_tuple", construct_command(["./test_cxx_tuple"], args, clobber=True),
-                 {"WORKING_DIRECTORY" : pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    #pyctest.test("test_cxx_total", construct_command(["./test_cxx_total"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    # pyctest.test("test_cxx_total", construct_command(["./test_cxx_total"], args),
     #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    #pyctest.test("test_cxx_timing", construct_command(["./test_cxx_timing"], args, clobber=True),
+    # pyctest.test("test_cxx_timing", construct_command(["./test_cxx_timing"], args, clobber=True),
     #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    #if args.mpi:
+    # if args.mpi:
     #    pyctest.test("test_cxx_mpi_timing", construct_command(["./test_cxx_mpi_timing"], args, clobber=True),
     #                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
-    pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "examples"))
+    pyctest.generate_test_file(os.path.join(
+        pyctest.BINARY_DIRECTORY, "examples"))
     pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)
 
 

@@ -56,7 +56,7 @@ include(CMakeParseArguments)
 # macro set_ifnot(<var> <value>)
 #       If variable var is not set, set its value to that provided
 #
-MACRO(set_ifnot _var _value)
+MACRO(SET_IFNOT _var _value)
     if(NOT DEFINED ${_var})
         set(${_var} ${_value} ${ARGN})
     endif()
@@ -67,7 +67,7 @@ ENDMACRO()
 # macro safe_remove_duplicates(<list>)
 #       ensures remove_duplicates is only called if list has values
 #
-MACRO(safe_remove_duplicates _list)
+MACRO(SAFE_REMOVE_DUPLICATES _list)
     if(NOT "${${_list}}" STREQUAL "")
         list(REMOVE_DUPLICATES ${_list})
     endif(NOT "${${_list}}" STREQUAL "")
@@ -80,7 +80,7 @@ ENDMACRO()
 #       capitalize("SHARED" CShared)
 #   message(STATUS "-- CShared is \"${CShared}\"")
 #   $ -- CShared is "Shared"
-FUNCTION(capitalize str var)
+FUNCTION(CAPITALIZE str var)
     # make string lower
     string(TOLOWER "${str}" str)
     string(SUBSTRING "${str}" 0 1 _first)
@@ -109,7 +109,7 @@ ENDMACRO()
 # macro cache_ifnot(<var> <value>)
 #       If variable var is not set, set its value to that provided and cache it
 #
-MACRO(cache_ifnot _var _value _type _doc)
+MACRO(CACHE_IFNOT _var _value _type _doc)
   if(NOT ${_var} OR NOT ${CACHE_VARIABLES} MATCHES ${_var})
     set(${_var} ${_value} CACHE ${_type} "${_doc}")
   endif()
@@ -134,8 +134,6 @@ FUNCTION(ADD_FEATURE _var _description)
   endforeach()
 
   set_property(GLOBAL APPEND PROPERTY PROJECT_FEATURES ${_var})
-  #set(${_var} ${${_var}} CACHE INTERNAL "${_description}${EXTRA_DESC}")
-
   set_property(GLOBAL PROPERTY ${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
 ENDFUNCTION()
 
@@ -223,6 +221,27 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
 
     endif()
 
+ENDMACRO()
+
+
+#------------------------------------------------------------------------------#
+# macro to add an interface lib
+#
+MACRO(ADD_INTERFACE_LIBRARY _TARGET)
+    add_library(${_TARGET} INTERFACE)
+    list(APPEND EXTERNAL_LIBRARIES ${_TARGET})
+    list(APPEND INSTALL_LIBRARIES ${_TARGET})
+    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
+ENDMACRO()
+
+
+#------------------------------------------------------------------------------#
+# macro to add an interface lib
+#
+MACRO(ADD_EXPORTED_INTERFACE_LIBRARY _TARGET)
+    add_library(${_TARGET} INTERFACE)
+    list(APPEND INSTALL_LIBRARIES ${_TARGET})
+    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
 ENDMACRO()
 
 
