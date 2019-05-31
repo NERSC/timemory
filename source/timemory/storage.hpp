@@ -269,22 +269,6 @@ public:
             {
                 m_current = m_head;
             }
-            else
-            {
-#if defined(DEBUG)
-                if(m_graph.is_head(m_current))
-                {
-                    m_depth = 0;
-                }
-                else
-                {
-                    std::stringstream ss;
-                    ss << "graph_data[<" << ObjectType::label()
-                       << ">] Should not be here. depth = " << m_depth << "...";
-                    DEBUG_PRINT_HERE(ss.str().c_str());
-                }
-#endif
-            }
             return m_current;
         }
 
@@ -309,7 +293,6 @@ public:
         short                     _once_num = _once++;
         if(_once_num > 0 && !singleton_t::is_master(this))
         {
-            DEBUG_PRINT_HERE(ObjectType::label().c_str());
             m_data           = graph_data(*master_instance()->current());
             m_data.head()    = master_instance()->data().current();
             m_data.current() = master_instance()->data().current();
@@ -319,7 +302,6 @@ public:
 
     ~graph_storage()
     {
-        DEBUG_PRINT_HERE("graph_storage");
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
     }
@@ -392,7 +374,6 @@ public:
         {
             if(this == master_instance())
             {
-                DEBUG_PRINT_HERE("master");
                 m_data         = graph_data(node);
                 exists         = false;
                 m_data.depth() = 0;
@@ -401,7 +382,6 @@ public:
             }
             else
             {
-                DEBUG_PRINT_HERE("worker");
                 m_data         = graph_data(*master_instance()->current());
                 m_data.depth() = master_instance()->data().depth();
                 return _insert_child();
@@ -414,13 +394,11 @@ public:
 
             if(hash_id == current->id())
             {
-                DEBUG_PRINT_HERE("exists");
                 exists = true;
                 return current;
             }
             else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
             {
-                DEBUG_PRINT_HERE("no children or siblings");
                 return _insert_child();
             }
             else if(m_data.graph().is_valid(current))
@@ -434,7 +412,6 @@ public:
                     // check hash id's
                     if(hash_id == itr->id())
                     {
-                        DEBUG_PRINT_HERE("found sibling");
                         return _update(itr);
                     }
                 }
@@ -442,7 +419,6 @@ public:
                 // check children
                 if(nchildren == 0)
                 {
-                    DEBUG_PRINT_HERE("no children");
                     return _insert_child();
                 }
                 else
@@ -452,7 +428,6 @@ public:
                     {
                         if(hash_id == itr->id())
                         {
-                            DEBUG_PRINT_HERE("found child");
                             return _update(itr);
                         }
                     }
