@@ -46,8 +46,6 @@ EXTERN_C_BEGIN
 EXTERN_C_END
 
 using namespace tim::component;
-using auto_timer_t =
-    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
 using comp_list_t = tim::component_list<
     real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
@@ -55,6 +53,162 @@ using comp_list_t = tim::component_list<
     current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
     num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
     voluntary_context_switch, priority_context_switch>;
+
+using auto_timer_t =
+    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
+
+using all_tuple_t =
+    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
+                    monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
+                    thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
+                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
+                    voluntary_context_switch, priority_context_switch>;
+
+//======================================================================================//
+//
+//                      C++ extern template instantiation
+//
+//======================================================================================//
+
+#if defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+
+namespace tim
+{
+namespace details
+{
+using papi0_t = tim::component::papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using papi1_t =
+    tim::component::papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+}
+}
+
+//--------------------------------------------------------------------------------------//
+//  category configurations
+//
+
+// rusage_components_t
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::current_rss, tim::component::peak_rss, tim::component::stack_rss,
+    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
+    tim::component::num_io_out, tim::component::num_minor_page_faults,
+    tim::component::num_major_page_faults, tim::component::num_msg_sent,
+    tim::component::num_msg_recv, tim::component::num_signals,
+    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
+
+// timing_components_t
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
+    tim::component::cpu_clock, tim::component::monotonic_clock,
+    tim::component::monotonic_raw_clock, tim::component::thread_cpu_clock,
+    tim::component::process_cpu_clock, tim::component::cpu_util,
+    tim::component::thread_cpu_util, tim::component::process_cpu_util)
+
+//--------------------------------------------------------------------------------------//
+//  standard configurations
+//
+
+// standard_rusage_components_t
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::current_rss, tim::component::peak_rss,
+                                  tim::component::num_io_in, tim::component::num_io_out,
+                                  tim::component::num_minor_page_faults,
+                                  tim::component::num_major_page_faults,
+                                  tim::component::priority_context_switch)
+
+// standard_timing_components_t
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::thread_cpu_clock,
+                                  tim::component::thread_cpu_util,
+                                  tim::component::process_cpu_clock,
+                                  tim::component::process_cpu_util)
+
+//--------------------------------------------------------------------------------------//
+// auto_timer_t
+//
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock, tim::component::cpu_clock,
+                                  tim::component::cpu_util, tim::component::current_rss,
+                                  tim::component::peak_rss)
+
+//--------------------------------------------------------------------------------------//
+// all_tuple_t
+//
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
+    tim::component::cpu_clock, tim::component::monotonic_clock,
+    tim::component::monotonic_raw_clock, tim::component::thread_cpu_clock,
+    tim::component::process_cpu_clock, tim::component::cpu_util,
+    tim::component::thread_cpu_util, tim::component::process_cpu_util,
+    tim::component::current_rss, tim::component::peak_rss, tim::component::stack_rss,
+    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
+    tim::component::num_io_out, tim::component::num_minor_page_faults,
+    tim::component::num_major_page_faults, tim::component::num_msg_sent,
+    tim::component::num_msg_recv, tim::component::num_signals,
+    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
+
+//--------------------------------------------------------------------------------------//
+// miscellaneous
+//
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock,
+                                  tim::component::cpu_util)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock,
+                                  tim::component::user_clock)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock, tim::component::cpu_clock,
+                                  tim::component::cpu_util, tim::component::peak_rss,
+                                  tim::component::current_rss, tim::details::papi0_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::real_clock, tim::component::system_clock,
+    tim::component::thread_cpu_clock, tim::component::thread_cpu_util,
+    tim::component::process_cpu_clock, tim::component::process_cpu_util,
+    tim::component::peak_rss, tim::component::current_rss, tim::details::papi1_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::peak_rss, tim::component::current_rss, tim::component::stack_rss,
+    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
+    tim::component::num_io_out, tim::component::num_minor_page_faults,
+    tim::component::num_major_page_faults, tim::component::num_msg_sent,
+    tim::component::num_msg_recv, tim::component::num_signals,
+    tim::component::voluntary_context_switch, tim::component::priority_context_switch,
+    tim::details::papi1_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
+    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
+    tim::component::cpu_clock, tim::component::cpu_util, tim::component::thread_cpu_clock,
+    tim::component::thread_cpu_util, tim::component::process_cpu_clock,
+    tim::component::process_cpu_util, tim::component::monotonic_clock,
+    tim::component::monotonic_raw_clock, tim::details::papi1_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock,
+                                  tim::component::user_clock, tim::component::cpu_clock,
+                                  tim::component::thread_cpu_clock,
+                                  tim::component::process_cpu_clock)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::thread_cpu_clock,
+                                  tim::component::thread_cpu_util,
+                                  tim::component::process_cpu_clock,
+                                  tim::component::process_cpu_util,
+                                  tim::component::peak_rss, tim::component::current_rss,
+                                  tim::details::papi1_t)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::thread_cpu_clock,
+                                  tim::component::process_cpu_util, tim::details::papi1_t)
+
+#endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
 
 //======================================================================================//
 //

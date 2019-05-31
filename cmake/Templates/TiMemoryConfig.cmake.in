@@ -16,11 +16,31 @@ set(TIMEMORY_C_LIBRARY @TIMEMORY_BUILD_C@)
 set(@PROJECT_NAME@_C_COMPILE_OPTIONS @PROJECT_C_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @PROJECT_CXX_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
+set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
 # link options
 set(@PROJECT_NAME@_C_LINK_OPTIONS @PROJECT_C_LINK_OPTIONS@)
 set(@PROJECT_NAME@_CXX_LINK_OPTIONS @PROJECT_CXX_LINK_OPTIONS@)
 set(@PROJECT_NAME@_CUDA_LINK_OPTIONS @PROJECT_CUDA_LINK_OPTIONS@)
+
+# installed and interface libraries
+set(@PROJECT_NAME@_INSTALLED_LIBRARIES @INSTALL_LIBRARIES@)
+set(@PROJECT_NAME@_INTERFACE_LIBRARIES @INTERFACE_LIBRARIES@)
+
+# language standards
+set(CMAKE_C_STANDARD @CMAKE_C_STANDARD@ CACHE STRING "")
+set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "")
+set(CMAKE_CUDA_STANDARD @CMAKE_CUDA_STANDARD@ CACHE STRING "")
+
+# language standard required
+set(CMAKE_C_STANDARD_REQUIRED @CMAKE_C_STANDARD_REQUIRED@ CACHE BOOL "")
+set(CMAKE_CXX_STANDARD_REQUIRED @CMAKE_CXX_STANDARD_REQUIRED@ CACHE BOOL "")
+set(CMAKE_CUDA_STANDARD_REQUIRED @CMAKE_CUDA_STANDARD_REQUIRED@ CACHE BOOL "")
+
+# language extensions
+set(CMAKE_C_EXTENSIONS @CMAKE_C_EXTENSIONS@ CACHE BOOL "")
+set(CMAKE_CXX_EXTENSIONS @CMAKE_CXX_EXTENSIONS@ CACHE BOOL "")
+set(CMAKE_CUDA_EXTENSIONS @CMAKE_CUDA_EXTENSIONS@ CACHE BOOL "")
 
 #------------------------------------------------------------------------------#
 #   Determine install tree or build tree
@@ -61,11 +81,10 @@ if(_TIMEMORY_INSTALL_TREE)
     #   try to get imported location
     #--------------------------------------------------------------------------#
 
-    string(TOUPPER "${CMAKE_BUILD_TYPE}" _BUILD_TYPE)
-    if("${CMAKE_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
+    set(IMPORTED_LOCATION_BUILD )
+    string(TOUPPER "${@PROJECT_NAME@_BUILD_TYPE}" _BUILD_TYPE)
+    if("${@PROJECT_NAME@_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
         set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-    else()
-        set(IMPORTED_LOCATION_BUILD )
     endif()
 
     set(LOCATIONS IMPORTED_LOCATION
@@ -75,36 +94,44 @@ if(_TIMEMORY_INSTALL_TREE)
         IMPORTED_LOCATION_DEBUG
         IMPORTED_LOCATION_MINSIZEREL)
 
+    set(_LANGUAGES CXX)
     if(TIMEMORY_C_LIBRARY)
-        set(_LANGUAGES C CXX)
-    else()
-        set(_LANGUAGES C)
+        list(APPEND _LANGUAGES C)
     endif()
 
-    foreach(_LANG ${_LANGUAGES})
-        string(TOLOWER "${_LANG}" _LANG_LOWER)
-        foreach(_LOC ${LOCATIONS})
-            if(NOT _${_LANG}_LOCATION)
-                get_target_property(_${_LANG}_LOCATION @LIBNAME@-${_LANG_LOWER}-library ${_LOC})
+    # loop over library types
+    foreach(_TYPE shared static)
+        # loop over languages
+        foreach(_LANG ${_LANGUAGES})
+            string(TOLOWER "${_LANG}" _LANG_LOWER)
+            # try imported locations until one is found
+            foreach(_LOC ${LOCATIONS})
+                if(NOT _${_LANG}_LOCATION)
+                    get_target_property(_${_LANG}_LOCATION
+                        @LIBNAME@-${_LANG_LOWER}-library-${_TYPE} ${_LOC})
+                endif()
+            endforeach()
+
+            if(_${_LANG}_LOCATION)
+                set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
+                    CACHE INTERNAL "@PROJECT_NAME@ ${_LANG} library")
+            endif()
+
+            unset(_${_LANG}_LOCATION)
+
+            if("${_TYPE}" STREQUAL "static" AND WIN32)
+                target_compile_definitions(@LIBNAME@-${_LANG_LOWER}-library-${_TYPE} PUBLIC
+                    _TIMEMORY_ARCHIVE)
             endif()
         endforeach()
-
-        if(_${_LANG}_LOCATION)
-            set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
-                CACHE INTERNAL "@PROJECT_NAME@ ${_LANG} library")
-        endif()
-
-        unset(_${_LANG}_LOCATION)
     endforeach()
 
 else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
-    set(@PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source"
-        "@PROJECT_SOURCE_DIR@/source/cereal/include")
 
     if(TIMEMORY_PYTHON_BINDINGS)
-        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "@PROJECT_SOURCE_DIR@/source/python/pybind11")
+        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "${RELATIVE_SOURCE_DIR}/source/python/pybind11")
     endif()
 
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
@@ -113,33 +140,41 @@ else() # build tree
         set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif()
 
-    set_property(TARGET @LIBNAME@-cxx-library
-        PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+    MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
+        set_property(TARGET ${_LIB} PROPERTY ${_IMPORT_TYPE}
+            "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+    ENDMACRO()
 
-    set(PROJECT_DEPENDS @LIBNAME@-cxx-library)
+    foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
+        import_lib(${_LIB} INTERFACE_IMPORTED_LOCATION)
+    endforeach()
 
-    if(TIMEMORY_C_LIBRARY)
-        set_property(TARGET @LIBNAME@-c-library
-            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        list(APPEND PROJECT_DEPENDS @LIBNAME@-c-library)
+    list(REMOVE_ITEM @PROJECT_NAME@_INSTALLED_LIBRARIES ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
+
+    foreach(_LIB ${@PROJECT_NAME@_INSTALLED_LIBRARIES})
+        import_lib(${_LIB} IMPORTED_LOCATION)
+    endforeach()
+
+    if(WIN32)
+        target_compile_definitions(@LIBNAME@-cxx-library-static PUBLIC _TIMEMORY_ARCHIVE)
+        if(TIMEMORY_C_LIBRARY)
+            target_compile_definitions(@LIBNAME@-c-library-static PUBLIC _TIMEMORY_ARCHIVE)
+        endif()
     endif()
 
 endif()
 
+
+#------------------------------------------------------------------------------#
+#   include directories
+#------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
 set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS "@EXTERNAL_INCLUDE_DIRS@")
+
 foreach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
     list(APPEND @PROJECT_NAME@_INCLUDE_DIRS ${_DIR})
-endforeach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
+endforeach()
 
-
-#------------------------------------------------------------------------------#
-#   Definitions
-#------------------------------------------------------------------------------#
-set(DYNAMIC_LINK @BUILD_SHARED_LIBS@)
-if(NOT DYNAMIC_LINK AND WIN32)
-    list(APPEND @PROJECT_NAME@_DEFINITIONS _TIMEMORY_ARCHIVE)
-endif()
 
 #------------------------------------------------------------------------------#
 #   TiMemory link target
@@ -160,7 +195,6 @@ include(FindPackageHandleStandardArgs)
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
-    @PROJECT_NAME@_INCLUDE_DIRS
     @PROJECT_NAME@_LIBRARIES)
 
 if(APPLE)

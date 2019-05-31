@@ -32,7 +32,9 @@ endif()
 #------------------------------------------------------------------------------#
 #   Add the examples
 #
-add_subdirectory(ex-c)
+if(TIMEMORY_BUILD_C OR TIMEMORY_C_LIBRARY)
+    add_subdirectory(ex-c)
+endif()
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-overhead)
 

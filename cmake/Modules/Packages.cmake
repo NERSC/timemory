@@ -1,39 +1,62 @@
-################################################################################
+##########################################################################################
 #
-#                               Component
+#                       External Packages are found here
 #
-################################################################################
+##########################################################################################
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
+#
+#                               TiMemory headers
+#
+#----------------------------------------------------------------------------------------#
+add_interface_library(timemory-headers)
+target_include_directories(timemory-headers INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>)
+target_include_directories(timemory-headers SYSTEM INTERFACE
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
+add_exported_interface_library(timemory-extern-templates)
+add_exported_interface_library(timemory-shared-extern-templates)
+add_exported_interface_library(timemory-static-extern-templates)
+
+target_link_libraries(timemory-extern-templates INTERFACE timemory-headers)
+target_link_libraries(timemory-shared-extern-templates INTERFACE timemory-headers)
+target_link_libraries(timemory-static-extern-templates INTERFACE timemory-headers)
+
+#----------------------------------------------------------------------------------------#
 #
 #                               Threading
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
+
+if(NOT WIN32)
+    set(CMAKE_THREAD_PREFER_PTHREAD ON)
+    set(THREADS_PREFER_PTHREAD_FLAG OFF)
+endif()
 
 find_library(PTHREADS_LIBRARY pthread)
-if(PTHREADS_LIBRARY)
-    list(APPEND EXTERNAL_LIBRARIES ${PTHREADS_LIBRARY})
-else()
-    if(NOT WIN32)
-        set(CMAKE_THREAD_PREFER_PTHREAD ON)
-    endif()
+find_package(Threads QUIET)
 
-    find_package(Threads)
+if(Threads_FOUND OR (PTHREADS_LIBRARY AND NOT WIN32))
+    add_interface_library(timemory-threading)
+    target_link_libraries(timemory-headers INTERFACE timemory-threading)
+endif()
 
-    if(Threads_FOUND)
-        list(APPEND PRIVATE_EXTERNAL_LIBRARIES Threads::Threads)
-    endif()
+if(Threads_FOUND)
+    target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+elseif(PTHREADS_LIBRARY AND NOT WIN32)
+    target_link_libraries(timemory-threading INTERFACE ${PTHREADS_LIBRARY})
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
 #                               MPI
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_MPI)
 
@@ -65,24 +88,26 @@ if(TIMEMORY_USE_MPI)
     find_package(MPI)
 
     if(MPI_FOUND)
-        set(_MPI_LIBRARIES )
+        add_interface_library(timemory-mpi)
+        target_link_libraries(timemory-headers INTERFACE timemory-mpi)
+
         foreach(_LANG C CXX)
             # include directories
-            list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_${_LANG}_INCLUDE_PATH})
+            target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
 
             # link targets
-            set(_TYPE MPI_${_LANG}_LIBRARIES)
-            if(${_TYPE})
-                list(APPEND EXTERNAL_LIBRARIES ${${_TYPE}})
+            set(_TYPE )
+            if(MPI_${_LANG}_LIBRARIES)
+                target_link_libraries(timemory-mpi INTERFACE ${MPI_${_LANG}_LIBRARIES})
             endif()
 
             # compile flags
             to_list(_FLAGS "${MPI_${_LANG}_COMPILE_FLAGS}")
             foreach(_FLAG ${_FLAGS})
                 if("${_LANG}" STREQUAL "CXX")
-                    add_cxx_flag_if_avail("${_FLAG}")
+                    add_cxx_flag_if_avail("${_FLAG}" timemory-mpi)
                 else()
-                    add_c_flag_if_avail("${_FLAG}")
+                    add_c_flag_if_avail("${_FLAG}" timemory-mpi)
                 endif()
             endforeach()
             unset(_FLAGS)
@@ -97,19 +122,21 @@ if(TIMEMORY_USE_MPI)
         endforeach()
 
         if(MPI_EXTRA_LIBRARY)
-            list(APPEND EXTERNAL_LIBRARIES ${MPI_EXTRA_LIBRARY})
+            target_link_libraries(timemory-mpi INTERFACE ${MPI_EXTRA_LIBRARY})
         endif()
 
         if(MPI_INCLUDE_PATH)
-            list(APPEND EXTERNAL_INCLUDE_DIRS ${MPI_INCLUDE_PATH})
+            target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_INCLUDE_PATH})
         endif()
 
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_MPI)
+        target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
 
+        # used by python
         if(NOT MPIEXEC_EXECUTABLE AND MPIEXEC)
             set(MPIEXEC_EXECUTABLE ${MPIEXEC} CACHE FILEPATH "MPI executable")
         endif()
 
+        # used by python
         if(NOT MPIEXEC_EXECUTABLE AND MPI_EXECUTABLE)
             set(MPIEXEC_EXECUTABLE ${MPI_EXECUTABLE} CACHE FILEPATH "MPI executable")
         endif()
@@ -124,11 +151,11 @@ if(TIMEMORY_USE_MPI)
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
 #                               PyBind11
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_PYTHON)
 
@@ -211,41 +238,47 @@ else()
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
 #                               PAPI
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_PAPI)
     find_package(PAPI)
 
     if(PAPI_FOUND)
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${PAPI_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LIBRARIES ${PAPI_LIBRARIES})
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_PAPI)
-    else(PAPI_FOUND)
+        add_interface_library(timemory-papi)
+        target_include_directories(timemory-papi SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
+        target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
+        target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
+        target_link_libraries(timemory-headers INTERFACE timemory-papi)
+    else()
         set(TIMEMORY_USE_PAPI OFF)
         message(WARNING "PAPI package not found!")
-    endif(PAPI_FOUND)
+    endif()
 
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
-#        Coverage
+#                               Coverage
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_COVERAGE)
 
     find_library(GCOV_LIBRARY gcov QUIET)
 
+    if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
+        add_interface_library(timemory-coverage)
+    endif()
+
     if(GCOV_LIBRARY)
-        list(APPEND EXTERNAL_LIBRARIES ${COVERAGE_LIBRARY})
+        target_link_libraries(timemory-coverage INTERFACE ${COVERAGE_LIBRARY})
     elseif(CMAKE_CXX_COMPILER_IS_GNU)
-        list(APPEND EXTERNAL_LIBRARIES gcov)
+        target_link_libraries(timemory-coverage INTERFACE gcov)
     else()
         message(STATUS "GCov library not found. Disabling coverage...")
         set(TIMEMORY_USE_COVERAGE OFF)
@@ -254,18 +287,24 @@ if(TIMEMORY_USE_COVERAGE)
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
-#        CUDA
+#                                   CUDA
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_CUDA)
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     find_package(CUDA)
 
     if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_CUDA)
+
+        add_interface_library(timemory-cuda)
+
+        target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUDA)
+        target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
+            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+
         add_feature(CUDA_ARCH "CUDA architecture (e.g. '35' means '-arch=sm_35')")
 
         #   30, 32      + Kepler support
@@ -279,37 +318,42 @@ if(TIMEMORY_USE_CUDA)
             set(CUDA_ARCH "35")
         endif()
 
-        list(APPEND ${PROJECT_NAME}_CUDA_FLAGS
-            -arch=sm_${CUDA_ARCH}
-            --default-stream per-thread
-        )
+        target_compile_options(timemory-cuda INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${CUDA_ARCH} --default-stream per-thread>)
+
+        #target_compile_options(timemory-cuda INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${CUDA_ARCH}>)
+        #target_compile_options(timemory-cuda INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
 
         if(NOT WIN32)
-            list(APPEND ${PROJECT_NAME}_CUDA_FLAGS}
-                --compiler-bindir=${CMAKE_CXX_COMPILER})
+            target_compile_options(timemory-cuda INTERFACE
+                $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
         endif()
 
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${CUDA_INCLUDE_DIRS}
-            ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
+        target_link_libraries(timemory-headers INTERFACE timemory-cuda)
+
     else()
         set(TIMEMORY_USE_CUDA OFF)
     endif()
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
-#        Google PerfTools
+#                               Google PerfTools
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_GPERF)
     find_package(GPerfTools COMPONENTS profiler)
 
     if(GPerfTools_FOUND)
-        list(APPEND EXTERNAL_INCLUDE_DIRS ${GPerfTools_INCLUDE_DIRS})
-        list(APPEND EXTERNAL_LIBRARIES ${GPerfTools_LIBRARIES})
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS TIMEMORY_USE_GPERF)
+        add_interface_library(timemory-gperf)
+        target_compile_definitions(timemory-gperf INTERFACE TIMEMORY_USE_GPERF)
+        target_include_directories(timemory-gperf INTERFACE ${GPerfTools_INCLUDE_DIRS})
+        target_link_libraries(timemory-gperf INTERFACE ${GPerfTools_LIBRARIES})
+        target_link_libraries(timemory-headers INTERFACE timemory-gperf)
     else()
         set(TIMEMORY_USE_GPERF OFF)
         message(WARNING "GPerfTools package not found!")
@@ -318,22 +362,44 @@ if(TIMEMORY_USE_GPERF)
 endif()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #
-#        Checkout Cereal if not checked out
+#                           Cereal (serialization library)
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 checkout_git_submodule(RECURSIVE
     RELATIVE_PATH source/cereal
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
+set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
+# this gets annoying
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
+    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
+    FORCE)
 
-################################################################################
+# add cereal
+if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
+endif()
+
+add_interface_library(timemory-cereal IMPORTED GLOBAL)
+target_include_directories(timemory-cereal SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source/cereal/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
+    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
+    FORCE)
+
+target_link_libraries(timemory-headers INTERFACE timemory-cereal)
+
+
+#----------------------------------------------------------------------------------------#
 #
-#        External variables
+#                               External variables
 #
-################################################################################
+#----------------------------------------------------------------------------------------#
 
 # including the directories
 safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
@@ -345,12 +411,5 @@ set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} PRIVATE ${PRIVATE_EXTERNAL_LIBRARIE
 
 list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES ${EXTERNAL_LIBRARIES})
-
-
-################################################################################
-#
-#                               Component
-#
-################################################################################
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)

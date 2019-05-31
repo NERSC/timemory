@@ -41,7 +41,6 @@
 #include <string>
 
 #include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
 
 //======================================================================================//
 

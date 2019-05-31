@@ -24,7 +24,6 @@ matrix:
             - gcc-5
             - g++-5
             - build-essential
-            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -44,7 +43,6 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -64,7 +62,6 @@ matrix:
             - gcc-7
             - g++-7
             - build-essential
-            - cmake
             - libopenmpi-dev
             - openmpi-bin
             - libpapi-dev
@@ -85,7 +82,6 @@ matrix:
             - clang-4.0
             - clang++-4.0
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -106,7 +102,6 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -131,7 +126,6 @@ matrix:
             - gcc-5
             - g++-5
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -151,7 +145,6 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -171,7 +164,6 @@ matrix:
             - gcc-7
             - g++-7
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -192,7 +184,6 @@ matrix:
             - clang-4.0
             - clang++-4.0
             - build-essential
-            - cmake
             - libpapi-dev
             - papi-tools
       env:
@@ -211,7 +202,6 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -236,7 +226,6 @@ matrix:
             - gcc-5
             - g++-5
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -256,7 +245,6 @@ matrix:
             - gcc-6
             - g++-6
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -276,7 +264,6 @@ matrix:
             - gcc-7
             - g++-7
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -297,7 +284,6 @@ matrix:
             - clang-4.0
             - clang++-4.0
             - build-essential
-            - cmake
             - libpapi-dev
             - papi-tools
       env:
@@ -316,7 +302,6 @@ matrix:
             - clang-5.0
             - clang++-5.0
             - build-essential
-            - cmake
             - libmpich-dev
             - mpich
             - libpapi-dev
@@ -348,7 +333,7 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi

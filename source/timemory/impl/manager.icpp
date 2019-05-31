@@ -103,8 +103,8 @@ inline manager::manager()
 {
     if(m_instance_count == 0)
     {
-        printf("############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
-               static_cast<void*>(this), m_instance_count);
+        printf("############## tim::%s initialized [%i] ##############\n\n", __FUNCTION__,
+               m_instance_count);
         tim::settings::parse();
         tim::papi::init();
         std::atexit(&exit_print);
@@ -132,8 +132,8 @@ inline manager::~manager()
 {
     if(m_instance_count == 0)
     {
-        printf("\n############## tim::%s [%p, %i] ##############\n", __FUNCTION__,
-               static_cast<void*>(this), m_instance_count);
+        printf("\n\n############## tim::%s destroyed [%i] ##############\n", __FUNCTION__,
+               m_instance_count);
     }
 
     if(m_instance_count == 0)

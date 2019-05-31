@@ -29,7 +29,7 @@ pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
 
 target_link_libraries(${PYLIBNAME}
-    PRIVATE ${LIBNAME}-cxx-library)
+    PRIVATE ${LIBNAME}-cxx-library timemory-headers)
 
 target_compile_definitions(${PYLIBNAME}
     PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
@@ -47,7 +47,11 @@ target_include_directories(${PYLIBNAME} PUBLIC
 target_include_directories(${PYLIBNAME} SYSTEM
     PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
 
-add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library ${LIBNAME}-cxx-library)
+add_dependencies(${PYLIBNAME} ${LIBNAME}-cxx-library)
+
+if(TIMEMORY_BUILD_C)
+    add_dependencies(${PYLIBNAME} ${LIBNAME}-c-library)
+endif()
 
 set_target_properties(${PYLIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
@@ -134,7 +138,7 @@ if(BUILD_SHARED_LIBS)
             -DOUTPUT=${TIMEMORY_INFO_FILE}
             -DLENGTH=2
             -DNAMES="timemory_shared_library\;timemory_dynamic_library"
-            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-library>\;$<TARGET_FILE:${PYLIBNAME}>"
+            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-library-shared>\;$<TARGET_FILE:${PYLIBNAME}>"
             -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
         COMMENT "Generating timemory_pathinfo.txt..."
     VERBATIM)

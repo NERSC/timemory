@@ -244,6 +244,20 @@
 
 //======================================================================================//
 //
+//      EXTERN TEMPLATE DECLARE AND INSTANTIATE
+//
+//======================================================================================//
+
+#define TIMEMORY_DECLARE_EXTERN_TUPLE(...)                                               \
+    extern template class tim::auto_tuple<__VA_ARGS__>;                                  \
+    extern template class tim::component_tuple<__VA_ARGS__>;
+
+#define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)                                           \
+    template class tim::auto_tuple<__VA_ARGS__>;                                         \
+    template class tim::component_tuple<__VA_ARGS__>;
+
+//======================================================================================//
+//
 //      THREAD-LOCAL STORAGE
 //
 //======================================================================================//

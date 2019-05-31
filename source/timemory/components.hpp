@@ -1674,7 +1674,7 @@ struct papi_event
         array_t<double> _disp;
         array_t<double> _value;
         array_t<double> _accum;
-        for(int i = 0; i < num_events; ++i)
+        for(size_type i = 0; i < num_events; ++i)
         {
             _disp[i]  = compute_display(i);
             _value[i] = value[i];
@@ -2268,7 +2268,7 @@ template <typename... Types>
 class component_tuple;
 
 //--------------------------------------------------------------------------------------//
-//  all configurations
+//  category configurations
 //
 using rusage_components_t = component_tuple<
     component::current_rss, component::peak_rss, component::stack_rss,
@@ -2287,7 +2287,7 @@ using timing_components_t =
 //--------------------------------------------------------------------------------------//
 //  standard configurations
 //
-using standard_usage_components_t =
+using standard_rusage_components_t =
     component_tuple<component::current_rss, component::peak_rss, component::num_io_in,
                     component::num_io_out, component::num_minor_page_faults,
                     component::num_major_page_faults, component::priority_context_switch>;
