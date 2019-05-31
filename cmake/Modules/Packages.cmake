@@ -272,7 +272,6 @@ if(TIMEMORY_USE_COVERAGE)
     find_library(GCOV_LIBRARY gcov QUIET)
 
     if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
-        add_library(timemory-coverage INTERFACE)
         add_interface_library(timemory-coverage)
     endif()
 
