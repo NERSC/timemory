@@ -1,0 +1,39 @@
+version: "3.3"
+
+# Building:
+#
+# $ docker-compose build --pull <service>
+#
+
+services:
+    #--------------------------------------------------------------------------#
+    # TiMemory development container
+    timemory-dev:
+      image: jrmadsen/timemory:dev
+      stdin_open: true
+      tty: true
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          BASE_IMG: "nvidia/cuda"
+          BASE_TAG: "10.0-devel-ubuntu18.04"
+          COMPILER_TYPE: "gcc"
+          COMPILER_VERSION: "7"
+          REQUIRE_CUDA_VERSION: "10.0"
+
+    #--------------------------------------------------------------------------#
+    # TiMemory development container
+    timemory-dev-edge:
+      image: jrmadsen/timemory:dev-edge
+      stdin_open: true
+      tty: true
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          BASE_IMG: "nvidia/cuda"
+          BASE_TAG: "10.1-devel-ubuntu18.04"
+          COMPILER_TYPE: "gcc"
+          COMPILER_VERSION: "8"
+          REQUIRE_CUDA_VERSION: "10.1"

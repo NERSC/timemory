@@ -1,13 +1,10 @@
 #!/bin/bash -l
 
-set -e
-unset PYTHONPATH
-export PATH=${PATH}:/opt/local/bin
-
+#------------------------------------------------------------------------------#
+#   run command
+#------------------------------------------------------------------------------#
 if [ -z "${1}" ]; then
-    exec /bin/bash
-    return $?
+    exec /bin/bash -l
 fi
 
 eval $@
-return $?

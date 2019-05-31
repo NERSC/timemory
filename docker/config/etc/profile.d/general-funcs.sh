@@ -12,10 +12,36 @@ get-python-version()
 write-timemory-ld-config()
 {
     local _TMP=$(mktemp /tmp/timemory-XXXX.conf)
-    for i in $(find / -type f | grep -i libtimemory)
+    for i in $(find / -type f | egrep -i 'libtimemory|libctimemory')
     do
         echo $(dirname ${i})
     done > ${_TMP}
 
     cat ${_TMP} | sort -u > /etc/ld.so.conf.d/timemory.conf
+}
+
+remove-static-libs()
+{
+    for i in $@
+    do
+        find ${i} -type f -regex ".*\.a$" -exec rm -v {} \;
+    done
+}
+
+remove-broken-links()
+{
+    for i in $@
+    do
+        find ${i} -type l ! -exec test -e {} \; -exec echo "  - Removing {}..." \; -exec rm {} \;
+    done
+}
+
+? ()
+{
+    awk "BEGIN{ print $* }"
+}
+
+calc()
+{
+    awk "BEGIN{ print $* }"
 }
