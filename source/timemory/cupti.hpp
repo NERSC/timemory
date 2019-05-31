@@ -188,6 +188,34 @@ struct kernel_data_t
 
     event_val_t  m_event_values;
     metric_val_t m_metric_values;
+
+    kernel_data_t& operator+=(const kernel_data_t& rhs)
+    {
+        for(uint64_t i = 0; i < m_event_values.size(); ++i)
+        {
+            m_event_values[i] += rhs.m_event_values[i];
+        }
+        return *this;
+    }
+
+    kernel_data_t& operator-=(const kernel_data_t& rhs)
+    {
+        for(uint64_t i = 0; i < m_event_values.size(); ++i)
+        {
+            m_event_values[i] -= rhs.m_event_values[i];
+        }
+        return *this;
+    }
+
+    friend kernel_data_t operator+(const kernel_data_t& lhs, const kernel_data_t& rhs)
+    {
+        return kernel_data_t(lhs) += rhs;
+    }
+
+    friend kernel_data_t operator-(const kernel_data_t& lhs, const kernel_data_t& rhs)
+    {
+        return kernel_data_t(lhs) -= rhs;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -786,6 +814,9 @@ struct profiler
         else
             return metric_val_t{};
     }
+
+    const strvec_t& get_event_names() const { return m_event_names; }
+    const strvec_t& get_metric_names() const { return m_metric_names; }
 
 private:
     int m_device_num;

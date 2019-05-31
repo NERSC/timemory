@@ -56,6 +56,9 @@
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
 #    include <cuda_runtime_api.h>
+#    if defined(TIMEMORY_USE_CUPTI)
+#        include "timemory/cupti.hpp"
+#    endif
 #endif
 
 //======================================================================================//
@@ -113,7 +116,7 @@ struct base : public tim::counted_object<_Tp>
     value_type     accum        = value_type();
     int64_t        hashid       = 0;
     int64_t        laps         = 0;
-    graph_iterator itr;
+    graph_iterator graph_itr;
 
     base()                          = default;
     ~base()                         = default;
@@ -142,14 +145,14 @@ struct base : public tim::counted_object<_Tp>
     {
         hashid    = _hashid;
         Type& obj = static_cast<Type&>(*this);
-        itr       = storage_type::instance()->insert(hashid, obj, exists);
+        graph_itr = storage_type::instance()->insert(hashid, obj, exists);
     }
 
     void insert_node(const string_t& _prefix, const int64_t& _hashid)
     {
         hashid    = _hashid;
         Type& obj = static_cast<Type&>(*this);
-        itr       = storage_type::instance()->insert(hashid, obj, _prefix);
+        graph_itr = storage_type::instance()->insert(hashid, obj, _prefix);
     }
 
     //----------------------------------------------------------------------------------//
@@ -158,13 +161,13 @@ struct base : public tim::counted_object<_Tp>
     template <typename U = value_type, enable_if_t<(!std::is_class<U>::value)> = 0>
     void pop_node()
     {
-        Type& obj = itr->obj();
+        Type& obj = graph_itr->obj();
         obj.accum += accum;
         obj.value += value;
         obj.is_transient = is_transient;
         obj.is_running   = false;
         obj.laps += laps;
-        itr = storage_type::instance()->pop();
+        graph_itr = storage_type::instance()->pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -173,7 +176,7 @@ struct base : public tim::counted_object<_Tp>
     template <typename U = value_type, enable_if_t<(std::is_class<U>::value)> = 0>
     void pop_node()
     {
-        Type& obj = itr->obj();
+        Type& obj = graph_itr->obj();
         Type& rhs = static_cast<Type&>(*this);
         obj += rhs;
         obj.laps += rhs.laps;
@@ -2292,5 +2295,11 @@ using standard_timing_components_t =
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/cupti_event.hpp"
+#endif
 
 //--------------------------------------------------------------------------------------//
