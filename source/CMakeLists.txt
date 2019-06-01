@@ -56,18 +56,39 @@ endif()
 if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI)
     build_library(
         PIC
-        TYPE                STATIC
-        TARGET_NAME         ${LIBNAME}-cuda-library
+        TYPE                SHARED
+        TARGET_NAME         ${LIBNAME}-cupti-shared
         OUTPUT_NAME         cu${LIBNAME}
         LANGUAGE            CUDA
         LINKER_LANGUAGE     CUDA
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS}
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
         SOURCES             ${CUDA_LIBRARY_SOURCES}
-        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES}
+        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES} ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
-    list(APPEND EXTERNAL_LIBRARIES ${LIBNAME}-cuda-library)
+    build_library(
+        PIC
+        TYPE                STATIC
+        TARGET_NAME         ${LIBNAME}-cupti-static
+        OUTPUT_NAME         cu${LIBNAME}
+        LANGUAGE            CUDA
+        LINKER_LANGUAGE     CUDA
+        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
+        SOURCES             ${CUDA_LIBRARY_SOURCES}
+        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES} ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
+        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+
+    target_include_directories(timemory-cupti-shared PUBLIC ${CUDA_cupti_INCLUDE_DIR})
+    target_include_directories(timemory-cupti-static PUBLIC ${CUDA_cupti_INCLUDE_DIR})
+
+    target_link_libraries(timemory-cupti-shared INTERFACE timemory-cuda)
+    target_link_libraries(timemory-cupti-static INTERFACE timemory-cuda)
+
+elseif(TIMEMORY_USE_CUDA)
+    add_exported_interface_library(timemory-cupti-shared)
+    add_exported_interface_library(timemory-cupti-static)
 endif()
 
 
@@ -78,7 +99,7 @@ endif()
 build_library(
     PIC
     TYPE                SHARED
-    TARGET_NAME         ${LIBNAME}-cxx-library-shared
+    TARGET_NAME         ${LIBNAME}-cxx-shared
     OUTPUT_NAME         ${LIBNAME}
     LANGUAGE            CXX
     LINKER_LANGUAGE     CXX
@@ -89,7 +110,7 @@ build_library(
 build_library(
     PIC
     TYPE                STATIC
-    TARGET_NAME         ${LIBNAME}-cxx-library-static
+    TARGET_NAME         ${LIBNAME}-cxx-static
     OUTPUT_NAME         ${LIBNAME}
     LANGUAGE            CXX
     LINKER_LANGUAGE     CXX
@@ -97,20 +118,16 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     LINK_LIBRARIES      ${EXTERNAL_LIBRARIES})
 
-add_library(${LIBNAME}-cxx-library INTERFACE)
-target_link_libraries(${LIBNAME}-cxx-library INTERFACE ${LIBNAME}-cxx-library-shared)
-list(APPEND INSTALL_LIBRARIES ${LIBNAME}-cxx-library)
+add_library(${LIBNAME}-cxx INTERFACE)
+target_link_libraries(${LIBNAME}-cxx INTERFACE ${LIBNAME}-cxx-shared)
+list(APPEND INSTALL_LIBRARIES ${LIBNAME}-cxx)
 
-target_link_libraries(timemory-extern-templates INTERFACE timemory-cxx-library)
-target_link_libraries(timemory-shared-extern-templates INTERFACE timemory-cxx-library-shared)
-target_link_libraries(timemory-static-extern-templates INTERFACE timemory-cxx-library-static)
+target_link_libraries(timemory-extern-templates INTERFACE timemory-cxx)
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(${LIBNAME}-cxx-library-shared    PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(${LIBNAME}-cxx-library-static    PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-extern-templates        INTERFACE   TIMEMORY_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-shared-extern-templates INTERFACE   TIMEMORY_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-static-extern-templates INTERFACE   TIMEMORY_EXTERN_TEMPLATES)
+    target_compile_definitions(${LIBNAME}-cxx-shared        PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    target_compile_definitions(${LIBNAME}-cxx-static        PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    target_compile_definitions(timemory-extern-templates    INTERFACE   TIMEMORY_EXTERN_TEMPLATES)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -124,42 +141,42 @@ if(TIMEMORY_BUILD_C)
         build_library(
             PIC
             TYPE                OBJECT
-            TARGET_NAME         ${LIBNAME}-c-library-object
+            TARGET_NAME         ${LIBNAME}-c-object
             OUTPUT_NAME         c${LIBNAME}
             LANGUAGE            C
             LINKER_LANGUAGE     CXX
             OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
             SOURCES             ${C_LIBRARY_SOURCES}
-            LINK_LIBRARIES      ${LIBNAME}-cxx-library-shared timemory-cereal)
+            LINK_LIBRARIES      ${LIBNAME}-cxx-shared timemory-cereal)
 
-        set(C_OBJECT_SOURCES   $<TARGET_OBJECTS:${LIBNAME}-c-library-object>)
+        set(C_OBJECT_SOURCES   $<TARGET_OBJECTS:${LIBNAME}-c-object>)
     endif()
 
     build_library(
         PIC
         TYPE                SHARED
-        TARGET_NAME         ${LIBNAME}-c-library-shared
+        TARGET_NAME         ${LIBNAME}-c-shared
         OUTPUT_NAME         c${LIBNAME}
         LANGUAGE            C
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         SOURCES             ${C_OBJECT_SOURCES}
-        LINK_LIBRARIES      ${LIBNAME}-cxx-library-shared)
+        LINK_LIBRARIES      ${LIBNAME}-cxx-shared)
 
     build_library(
         PIC
         TYPE                STATIC
-        TARGET_NAME         ${LIBNAME}-c-library-static
+        TARGET_NAME         ${LIBNAME}-c-static
         OUTPUT_NAME         c${LIBNAME}
         LANGUAGE            C
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         SOURCES             ${C_OBJECT_SOURCES}
-        LINK_LIBRARIES      ${LIBNAME}-cxx-library-static)
+        LINK_LIBRARIES      ${LIBNAME}-cxx-static)
 
-    add_library(${LIBNAME}-c-library INTERFACE)
-    target_link_libraries(${LIBNAME}-c-library INTERFACE ${LIBNAME}-c-library-shared)
-    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-c-library)
+    add_library(${LIBNAME}-c INTERFACE)
+    target_link_libraries(${LIBNAME}-c INTERFACE ${LIBNAME}-c-shared)
+    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-c)
 
 endif()
 
@@ -207,7 +224,7 @@ if(TIMEMORY_BUILD_PYTHON)
 
     if(BUILD_SHARED_LIBS)
         set(LINK_TYPE shared)
-        install(TARGETS ${LIBNAME}-cxx-library
+        install(TARGETS ${LIBNAME}-cxx
             DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
             COMPONENT python)
     endif(BUILD_SHARED_LIBS)

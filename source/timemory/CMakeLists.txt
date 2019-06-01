@@ -19,18 +19,18 @@ foreach(_SOURCE ${cxx_headers})
 endforeach()
 message(STATUS "${cxx_sources}")
 
-add_library(${LIBNAME}-cxx-library INTERFACE)
+add_library(${LIBNAME}-cxx INTERFACE)
 
-target_include_directories(${LIBNAME}-cxx-library
+target_include_directories(${LIBNAME}-cxx
     INTERFACE include)
 
-target_link_libraries(${LIBNAME}-cxx-library
+target_link_libraries(${LIBNAME}-cxx
     INTERFACE ${EXTERNAL_LIBRARIES})
 
-target_compile_definitions(${LIBNAME}-cxx-library
+target_compile_definitions(${LIBNAME}-cxx
     INTERFACE ${LIBRARY_COMPILE_DEFINITIONS})
 
-target_sources(${LIBNAME}-cxx-library INTERFACE ${cxx_sources})
+target_sources(${LIBNAME}-cxx INTERFACE ${cxx_sources})
 
 #target_compile_options(${LIBRARY_TARGET_NAME}
 #    PUBLIC

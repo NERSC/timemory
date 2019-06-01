@@ -19,12 +19,7 @@ target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
 add_exported_interface_library(timemory-extern-templates)
-add_exported_interface_library(timemory-shared-extern-templates)
-add_exported_interface_library(timemory-static-extern-templates)
-
 target_link_libraries(timemory-extern-templates INTERFACE timemory-headers)
-target_link_libraries(timemory-shared-extern-templates INTERFACE timemory-headers)
-target_link_libraries(timemory-static-extern-templates INTERFACE timemory-headers)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -346,6 +341,9 @@ if(TIMEMORY_USE_CUDA)
         if(TIMEMORY_USE_CUPTI)
             set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
 
+            add_library(timemory-cupti-shared SHARED)
+            add_library(timemory-cupti-static STATIC)
+
             # try to find cupti header
             find_path(CUDA_cupti_INCLUDE_DIR
                 NAMES           cupti.h
@@ -362,9 +360,6 @@ if(TIMEMORY_USE_CUDA)
 
             # if header and library found
             if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_cuda_LIBRARY)
-                target_include_directories(timemory-cuda INTERFACE ${CUDA_cupti_INCLUDE_DIR})
-                target_link_libraries(timemory-cuda INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
-                target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUPTI)
             else()
                 set(_MSG "Warning! Unable to find CUPTI. Missing variables:")
                 foreach(_VAR CUDA_cupti_INCLUDE_DIR CUDA_cupti_LIBRARY CUDA_cuda_LIBRARY)

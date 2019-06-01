@@ -115,7 +115,7 @@ if(TIMEMORY_INSTALL_TREE)
             foreach(_LOC ${LOCATIONS})
                 if(NOT _${_LANG}_LOCATION)
                     get_target_property(_${_LANG}_LOCATION
-                        @LIBNAME@-${_LANG_LOWER}-library-${_TYPE} ${_LOC})
+                        @LIBNAME@-${_LANG_LOWER}-${_TYPE} ${_LOC})
                 endif()
             endforeach()
 
@@ -127,7 +127,7 @@ if(TIMEMORY_INSTALL_TREE)
             unset(_${_LANG}_LOCATION)
 
             if("${_TYPE}" STREQUAL "static" AND WIN32)
-                target_compile_definitions(@LIBNAME@-${_LANG_LOWER}-library-${_TYPE} PUBLIC
+                target_compile_definitions(@LIBNAME@-${_LANG_LOWER}-${_TYPE} PUBLIC
                     _TIMEMORY_ARCHIVE)
             endif()
         endforeach()
@@ -159,59 +159,34 @@ else() # build tree
     endforeach()
 
     if(WIN32)
-        target_compile_definitions(@LIBNAME@-cxx-library-static PUBLIC _TIMEMORY_ARCHIVE)
+        target_compile_definitions(@LIBNAME@-cxx-static PUBLIC _TIMEMORY_ARCHIVE)
         if(TIMEMORY_C_LIBRARY)
-            target_compile_definitions(@LIBNAME@-c-library-static PUBLIC _TIMEMORY_ARCHIVE)
+            target_compile_definitions(@LIBNAME@-c-static PUBLIC _TIMEMORY_ARCHIVE)
         endif()
     endif()
 
     if(TIMEMORY_CUDA_LIBRARY)
-        set_property(TARGET @LIBNAME@-cuda-library
+        set_property(TARGET @LIBNAME@-cupti-shared
             PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
-    endif()
-
-    if(TIMEMORY_CUDA_LIBRARY)
-        set_property(TARGET @LIBNAME@-cuda-library
+        set_property(TARGET @LIBNAME@-cupti-static
             PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
-        list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
     endif()
 
 endif()
-
-
-#------------------------------------------------------------------------------#
-#   Interface
-#------------------------------------------------------------------------------#
-foreach(_LANG ${TIMEMORY_LANGUAGES})
-    string(TOLOWER "${_LANG}" _LANG_LOWER)
-    # timemory-{c,cxx,cuda}-library --> TiMemory::TiMemory_{C,CXX,CUDA}
-    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER}-library)
-    if(NOT "${_LANG}" STREQUAL "CUDA")
-        # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
-        # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
-    else()
-        # timemory-cuda-library
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library)
-    endif()
-    unset(_LANG_LOWER)
-endforeach()
 
 
 #------------------------------------------------------------------------------#
 #   Alias target
 #------------------------------------------------------------------------------#
 if(DYNAMIC_LINK)
-    if(NOT TARGET @LIBNAME@-c-library-shared)
-        add_library(@LIBNAME@-c-library-shared ALIAS @LIBNAME@-c-library)
+    if(NOT TARGET @LIBNAME@-c-shared)
+        add_library(@LIBNAME@-c-shared ALIAS @LIBNAME@-c)
     endif()
-    if(NOT TARGET @LIBNAME@-cxx-library-shared)
-        add_library(@LIBNAME@-cxx-library-shared ALIAS @LIBNAME@-cxx-library)
+    if(NOT TARGET @LIBNAME@-cxx-shared)
+        add_library(@LIBNAME@-cxx-shared ALIAS @LIBNAME@-cxx)
     endif()
-    if(NOT TARGET @LIBNAME@-cuda-library-static)
-        add_library(@LIBNAME@-cuda-library-static ALIAS @LIBNAME@-cuda-library)
+    if(NOT TARGET @LIBNAME@-cuda-static)
+        add_library(@LIBNAME@-cuda-static ALIAS @LIBNAME@-cuda)
     endif()
 endif()
 
@@ -221,18 +196,18 @@ endif()
 #------------------------------------------------------------------------------#
 foreach(_LANG ${TIMEMORY_LANGUAGES})
     string(TOLOWER "${_LANG}" _LANG_LOWER)
-    # timemory-{c,cxx,cuda}-library --> TiMemory::TiMemory_{C,CXX,CUDA}
-    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    # timemory-{c,cxx,cuda} --> TiMemory::TiMemory_{C,CXX,CUDA}
+    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER})
     if(NOT "${_LANG}" STREQUAL "CUDA")
         if(DYNAMIC_LINK)
-            # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
-            add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+            # timemory-{c,cxx} --> TiMemory::TiMemory_{C,CXX}::shared
+            add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER})
         endif()
-        # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
+        # timemory-{c,cxx}-static --> TiMemory::TiMemory_{C,CXX}::static
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-static)
     else()
-        # timemory-cuda-library
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+        # timemory-cuda
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER})
     endif()
     unset(_LANG_LOWER)
 endforeach()
@@ -242,9 +217,9 @@ endforeach()
 #   Definitions
 #------------------------------------------------------------------------------#
 if(WIN32)
-    target_compile_definitions(@LIBNAME@-cxx-library-static INTERFACE _TIMEMORY_ARCHIVE)
+    target_compile_definitions(@LIBNAME@-cxx-static INTERFACE _TIMEMORY_ARCHIVE)
     if(TIMEMORY_C_LIBRARY)
-        target_compile_definitions(@LIBNAME@-c-library-static INTERFACE _TIMEMORY_ARCHIVE)
+        target_compile_definitions(@LIBNAME@-c-static INTERFACE _TIMEMORY_ARCHIVE)
     endif()
 endif()
 
@@ -252,11 +227,11 @@ endif()
 #------------------------------------------------------------------------------#
 #   TiMemory link target
 #------------------------------------------------------------------------------#
-set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-library)
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-library)
+set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx)
 if(TIMEMORY_C_LIBRARY)
-    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-library)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-library)
+    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
 endif()
 
 
@@ -345,22 +320,30 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
     endmacro()
 
     if("extern-templates" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
-        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LINK}-extern-templates
-            extern-templates ${_LINK}-extern-templates)
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-extern-templates extern-templates)
     endif()
 
     foreach(_LANGUAGE ${_LANGUAGES})
         if("${_LANGUAGE}" STREQUAL "cuda")
             @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
         else()
-            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-library-${_LINK})
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
             @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-compile-options compile-options)
         endif()
     endforeach()
 
+    if("cupti" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cupti-${_LINK} cupti)
+    endif()
+
     foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
         @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
     endforeach()
+
+    if(NOT TIMEMORY_CUDA_LIBRARY)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-cupti-static)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-cupti-shared)
+    endif()
 
     if(NOT "${@PROJECT_NAME@_FOUND_COMPONENTS}" STREQUAL "")
         list(REMOVE_DUPLICATES @PROJECT_NAME@_FOUND_COMPONENTS)

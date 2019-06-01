@@ -19,7 +19,7 @@ set(TIMEM_NAME timem)
 
 add_executable(${TIMEM_NAME} timem.cpp)
 
-target_link_libraries(${TIMEM_NAME} ${LIBNAME}-cxx-library-static timemory-headers)
+target_link_libraries(${TIMEM_NAME} ${LIBNAME}-cxx-static timemory-headers)
 target_compile_definitions(${TIMEM_NAME} PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
 target_compile_options(${TIMEM_NAME} PRIVATE ${${PROJECT_NAME}_CXX_FLAGS})
 target_compile_definitions(${TIMEM_NAME} PRIVATE ${${PROJECT_NAME}_DEFINITIONS})

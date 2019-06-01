@@ -283,8 +283,12 @@ macro(BUILD_LIBRARY)
         set(LIB_PREFIX lib)
     endif()
 
-    add_library(${LIBRARY_TARGET_NAME}
-        ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    if(NOT TARGET ${LIBRARY_TARGET_NAME})
+        add_library(${LIBRARY_TARGET_NAME}
+            ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    else()
+        target_sources(${LIBRARY_TARGET_NAME} PRIVATE ${LIBRARY_SOURCES})
+    endif()
 
     target_include_directories(${LIBRARY_TARGET_NAME}
         PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})

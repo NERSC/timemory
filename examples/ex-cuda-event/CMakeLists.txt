@@ -5,6 +5,11 @@ project(TiMemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 set(EXE_NAME test_cuda_event)
 set(COMPONENTS cxx cuda compile-options)
 
+option(USE_CUPTI "Enable CUPTI" OFF)
+if(USE_CUPTI)
+    list(APPEND COMPONENTS cupti)
+endif()
+
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)
     list(APPEND COMPONENTS extern-templates)
