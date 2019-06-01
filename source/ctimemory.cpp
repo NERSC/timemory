@@ -67,6 +67,14 @@ using all_tuple_t =
                     num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
                     voluntary_context_switch, priority_context_switch>;
 
+using auto_list_t =
+    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
+                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
+                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
+                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
+                   voluntary_context_switch, priority_context_switch>;
+
 //======================================================================================//
 //
 //                      C++ extern template instantiation

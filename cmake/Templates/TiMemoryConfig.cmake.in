@@ -174,6 +174,12 @@ else() # build tree
         list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
     endif()
 
+    if(TIMEMORY_CUDA_LIBRARY)
+        set_property(TARGET @LIBNAME@-cuda-library
+            PROPERTY IMPORTED_LOCATION "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+        list(APPEND PROJECT_DEPENDS @LIBNAME@-cuda-library)
+    endif()
+
 endif()
 
 
@@ -197,6 +203,44 @@ foreach(_LANG ${TIMEMORY_LANGUAGES})
     if(NOT "${_LANG}" STREQUAL "CUDA")
         # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
         add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+        # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
+    else()
+        # timemory-cuda-library
+        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    endif()
+    unset(_LANG_LOWER)
+endforeach()
+
+
+#------------------------------------------------------------------------------#
+#   Alias target
+#------------------------------------------------------------------------------#
+if(DYNAMIC_LINK)
+    if(NOT TARGET @LIBNAME@-c-library-shared)
+        add_library(@LIBNAME@-c-library-shared ALIAS @LIBNAME@-c-library)
+    endif()
+    if(NOT TARGET @LIBNAME@-cxx-library-shared)
+        add_library(@LIBNAME@-cxx-library-shared ALIAS @LIBNAME@-cxx-library)
+    endif()
+    if(NOT TARGET @LIBNAME@-cuda-library-static)
+        add_library(@LIBNAME@-cuda-library-static ALIAS @LIBNAME@-cuda-library)
+    endif()
+endif()
+
+
+#------------------------------------------------------------------------------#
+#   Interface
+#------------------------------------------------------------------------------#
+foreach(_LANG ${TIMEMORY_LANGUAGES})
+    string(TOLOWER "${_LANG}" _LANG_LOWER)
+    # timemory-{c,cxx,cuda}-library --> TiMemory::TiMemory_{C,CXX,CUDA}
+    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+    if(NOT "${_LANG}" STREQUAL "CUDA")
+        if(DYNAMIC_LINK)
+            # timemory-{c,cxx}-library --> TiMemory::TiMemory_{C,CXX}::shared
+            add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER}-library)
+        endif()
         # timemory-{c,cxx}-library-static --> TiMemory::TiMemory_{C,CXX}::static
         add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-library-static)
     else()

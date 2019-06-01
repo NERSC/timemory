@@ -367,7 +367,7 @@ if(TIMEMORY_USE_CUDA)
             # clean-up
             unset(_CUDA_PATHS)
         endif()
-        
+
         # timemory-headers provides timemory-cuda
         target_link_libraries(timemory-headers INTERFACE timemory-cuda)
 

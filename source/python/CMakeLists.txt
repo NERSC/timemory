@@ -49,8 +49,8 @@ target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
 target_include_directories(${PYLIBNAME} PRIVATE
     ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
-target_include_directories(${PYLIBNAME} SYSTEM
-    PRIVATE ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+target_include_directories(${PYLIBNAME} PRIVATE
+    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
 add_dependencies(${PYLIBNAME} ${LIBNAME}-cxx-library)
 
