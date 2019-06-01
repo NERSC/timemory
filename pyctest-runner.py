@@ -17,9 +17,24 @@ import pyctest.helpers as helpers
 
 clobber_notes = True
 
+
 #------------------------------------------------------------------------------#
+def get_branch(wd=pyctest.SOURCE_DIRECTORY):
+    cmd = pyctest.command(["git", "show", "-s", "--pretty=%d", "HEAD"])
+    cmd.SetOutputStripTrailingWhitespace(True)
+    cmd.SetWorkingDirectory(wd)
+    cmd.Execute()
+    branch = cmd.Output()
+    branch = branch.split(" ")
+    if branch:
+        branch = branch[len(branch)-1]
+        branch = branch.strip(")")
+    if not branch:
+        branch = pyctest.GetGitBranch(wd)
+    return branch
 
 
+#------------------------------------------------------------------------------#
 def configure():
 
     # Get pyctest argument parser that include PyCTest arguments
@@ -106,7 +121,7 @@ def run_pyctest():
     # Set the build name
     #
     pyctest.BUILD_NAME = "{} {} {} {} {} {}".format(
-        pyctest.GetGitBranch(pyctest.SOURCE_DIRECTORY),
+        get_branch(pyctest.SOURCE_DIRECTORY),
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
         platform.uname()[4],
