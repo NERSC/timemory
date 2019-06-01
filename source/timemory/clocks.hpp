@@ -69,7 +69,7 @@
 #    include <sys/types.h>
 #    include <winsock.h>
 
-EXTERN_C int
+EXTERN_C inline int
 gettimeofday(struct timeval* t, void* timezone)
 {
     struct _timeb timebuffer;
@@ -103,7 +103,7 @@ struct tms
 // Return the elapsed real time, or (clock_t) -1 for errors.
 // All times are in CLK_TCKths of a second.
 
-EXTERN_C clock_t
+EXTERN_C inline clock_t
          times(struct tms* __buffer)
 {
     __buffer->tms_utime  = clock();
@@ -124,7 +124,7 @@ enum clockid_t
     CLOCK_PROCESS_CPUTIME_ID
 };
 
-EXTERN_C LARGE_INTEGER
+EXTERN_C inline LARGE_INTEGER
          get_filetime_offset()
 {
     SYSTEMTIME    s;
@@ -145,8 +145,8 @@ EXTERN_C LARGE_INTEGER
     return (t);
 }
 
-EXTERN_C int
-clock_gettime(clockid_t, struct timespec* tv)
+EXTERN_C inline int
+         clock_gettime(clockid_t, struct timespec* tv)
 {
     LARGE_INTEGER        t;
     FILETIME             f;
