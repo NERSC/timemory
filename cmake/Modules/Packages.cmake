@@ -313,6 +313,12 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
+        set_target_properties(timemory-cuda PROPERTIES
+            INTERFACE_CUDA_STANDARD ${CMAKE_CUDA_STANDARD}
+            INTERFACE_CUDA_STANDARD_REQUIRED ${CMAKE_CUDA_STANDARD_REQUIRED}
+            INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS ON
+            INTERFACE_CUDA_SEPARABLE_COMPILATION ON)
+
         add_feature(CUDA_ARCH "CUDA architecture (e.g. '35' means '-arch=sm_35')")
 
         #   30, 32      + Kepler support

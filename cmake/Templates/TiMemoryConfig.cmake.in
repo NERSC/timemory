@@ -1,4 +1,6 @@
 
+cmake_policy(SET CMP0057 NEW)
+
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
 @PACKAGE_INIT@
@@ -267,6 +269,114 @@ endif()
 
 
 #------------------------------------------------------------------------------#
+#   timemory component interface library
+#------------------------------------------------------------------------------#
+set(_@PROJECT_NAME@_MISSING_COMPONENTS )
+set(@PROJECT_NAME@_FOUND_COMPONENTS ${@PROJECT_NAME@_FIND_COMPONENTS})
+
+set(_INTERFACE_LIB @LIBNAME@)
+if(@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE)
+    set(_INTERFACE_LIB ${@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE})
+endif()
+
+add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
+
+if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
+
+    set(_LINK )
+    set(_LANGUAGES )
+    set(_COMPONENT_LIST )
+
+    # always add headers
+    list(APPEND @PROJECT_NAME@_FIND_COMPONENTS headers)
+
+    # determine link type
+    if("shared" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        set(_LINK shared)
+        list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS shared)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS shared)
+    elseif("static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        set(_LINK static)
+        list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS static)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS static)
+    else()
+        if(BUILD_SHARED_LIBS)
+            set(_LINK shared)
+        else()
+            set(_LINK static)
+        endif()
+    endif()
+
+    # find languages
+    foreach(_LANGUAGE c cxx cuda)
+        if("${_LANGUAGE}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            list(APPEND _LANGUAGES ${_LANGUAGE})
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_LANGUAGE})
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_LANGUAGE})
+        endif()
+    endforeach()
+
+    # helper macro
+    macro(@PROJECT_NAME@_LINK_TARGET_IF_EXISTS _TARGET)
+        if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR TARGET ${_TARGET})
+            if(TARGET ${_TARGET})
+                target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET})
+                list(APPEND @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            else()
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+                list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+            endif()
+
+            if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_TARGET})
+            endif()
+
+            foreach(_ARG ${ARGN})
+                if("${_ARG}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                    list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_ARG})
+                endif()
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_ARG})
+            endforeach()
+        else()
+            message(WARNING "Target ${_TARGET} not found!")
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+        endif()
+    endmacro()
+
+    if("extern-templates" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LINK}-extern-templates
+            extern-templates ${_LINK}-extern-templates)
+    endif()
+
+    foreach(_LANGUAGE ${_LANGUAGES})
+        if("${_LANGUAGE}" STREQUAL "cuda")
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
+        else()
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-library-${_LINK})
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-compile-options compile-options)
+        endif()
+    endforeach()
+
+    foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+    endforeach()
+
+    if(NOT "${@PROJECT_NAME@_FOUND_COMPONENTS}" STREQUAL "")
+        list(REMOVE_DUPLICATES @PROJECT_NAME@_FOUND_COMPONENTS)
+    endif()
+    list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
+    set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
+    string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
+    message(STATUS "[${PROJECT_NAME}] @PROJECT_NAME@ found components: ${_COMPONENT_LIST}")
+
+    unset(_COMPONENT_LIST)
+    unset(_LINK)
+    unset(_LANGUAGES)
+endif()
+
+
+#------------------------------------------------------------------------------#
 #   find_package variables
 #------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
@@ -275,6 +385,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
     ${@PROJECT_NAME@_COMPONENTS}
+    ${_@PROJECT_NAME@_MISSING_COMPONENTS}
     @PROJECT_NAME@_LIBRARIES)
 
 if(APPLE)
