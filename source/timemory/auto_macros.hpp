@@ -72,10 +72,17 @@ using str = tim::apply<std::string>;
 #    define AUTO_NAME(Y) AUTO_NAME_COMBINE(macro_auto_timer, Y)
 #    define AUTO_TYPEDEF(Y) AUTO_NAME_COMBINE(typedef_auto_tuple, Y)
 // helper macro for "__FUNCTION__@'__FILE__':__LINE__" tagging
-#    define AUTO_STR(A, B)                                                               \
-        priv::apply::join("", "@'",                                                      \
-                          std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
-                          "':", B)
+#    if !defined(_WINDOWS)
+#        define AUTO_STR(A, B)                                                           \
+            priv::apply::join(                                                           \
+                "", "@'", std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
+                "':", B)
+#    else
+#        define AUTO_STR(A, B)                                                           \
+            priv::apply::join(                                                           \
+                "", "@'", std::string(A).substr(std::string(A).find_last_of('\\') + 1),  \
+                "':", B)
+#    endif
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_SIGN(...)
