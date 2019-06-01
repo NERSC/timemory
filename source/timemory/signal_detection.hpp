@@ -255,10 +255,10 @@ update_signal_detection(signal_settings::signal_set_t _signals)
 }
 
 //--------------------------------------------------------------------------------------//
-
+#if defined(SIGNAL_AVAILABLE)
 static void
 termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& message);
-
+#endif
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
