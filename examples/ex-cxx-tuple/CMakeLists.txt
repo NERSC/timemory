@@ -24,10 +24,6 @@ if(USE_EXTERN_TEMPLATES)
     target_link_libraries(${EXE_NAME} timemory-extern-templates)
 endif()
 
-foreach(_OPT ${TiMemory_CXX_LINK_OPTIONS})
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_OPT}")
-endforeach()
-
 if(NOT DEFINED TIMEMORY_SETUP_PY OR NOT TIMEMORY_SETUP_PY)
     install(TARGETS ${EXE_NAME} DESTINATION bin)
 endif()

@@ -36,10 +36,7 @@
 #
 
 # - Include guard
-if(__timemory_macroutilities_isloaded)
-  return()
-endif()
-set(__timemory_macroutilities_isloaded YES)
+include_guard(GLOBAL)
 
 cmake_policy(PUSH)
 if(NOT CMAKE_VERSION VERSION_LESS 3.1)
@@ -49,6 +46,9 @@ endif()
 include(CMakeDependentOption)
 include(CMakeParseArguments)
 
+unset(INSTALL_LIBRARIES)
+unset(INTERFACE_LIBRARIES)
+unset(EXTERNAL_LIBRARIES)
 
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS

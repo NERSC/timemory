@@ -77,6 +77,11 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         SET(CMAKE_INSTALL_MESSAGE LAZY)
     endif()
 
+    foreach(_TYPE INSTALL INTERFACE EXTERNAL)
+        set(${PROJECT_NAME}_${_TYPE}_LIBRARIES ${${_TYPE}_LIBRARIES})
+        string(TOLOWER "${_TYPE}" _LTYPE)
+        add_feature(${PROJECT_NAME}_${_TYPE}_LIBRARIES "${_LTYPE} Libraries")
+    endforeach()
     print_features()
 
 endif()

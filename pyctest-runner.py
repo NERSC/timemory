@@ -15,8 +15,11 @@ import multiprocessing as mp
 import pyctest.pyctest as pyctest
 import pyctest.helpers as helpers
 
+clobber_notes = True
 
 #------------------------------------------------------------------------------#
+
+
 def configure():
 
     # Get pyctest argument parser that include PyCTest arguments
@@ -30,10 +33,10 @@ def configure():
 
     parser.add_argument("--arch", help="TIMEMORY_USE_ARCH=ON",
                         default=False, action='store_true')
-    parser.add_argument("--gperf", help="TIMEMORY_USE_GPERF=ON",
-                        default=False, action='store_true')
-    parser.add_argument("--sanitizer", help="TIMEMORY_USE_SANITIZER=ON",
-                        default=False, action='store_true')
+    parser.add_argument("--profile", help="Run gperf profiler",
+                        default=None, type=str, choices=("cpu", "heap"))
+    parser.add_argument("--sanitizer", help="Type of sanitizer",
+                        default=None, type=str, choices=("leak", "memory", "address", "thread"))
     parser.add_argument("--coverage", help="TIMEMORY_USE_COVERAGE=ON",
                         default=False, action='store_true')
     parser.add_argument("--static-analysis", help="TIMEMORY_USE_CLANG_TIDY=ON",
@@ -125,6 +128,7 @@ def run_pyctest():
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
 
+    test_name_suffix = ""
     if args.no_c:
         build_opts["TIMEMORY_BUILD_C"] = "OFF"
     else:
@@ -148,7 +152,7 @@ def run_pyctest():
         pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
 
     if args.arch:
-        pyctest.BUILD_NAME = "{} arch".format(pyctest.BUILD_NAME)
+        test_name_suffix += "_arch"
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
 
     if args.cuda:
@@ -157,15 +161,16 @@ def run_pyctest():
     else:
         build_opts["TIMEMORY_USE_CUDA"] = "OFF"
 
-    if args.gperf:
-        pyctest.BUILD_NAME = "{} gperf".format(pyctest.BUILD_NAME)
+    if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
-        warnings.warn(
-            "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
-        pyctest.BUILD_TYPE = "RelWithDebInfo"
+        if pyctest.BUILD_TYPE != "RelWithDebInfo":
+            warnings.warn(
+                "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
+            pyctest.BUILD_TYPE = "RelWithDebInfo"
 
-    if args.sanitizer:
-        pyctest.BUILD_NAME = "{} asan".format(pyctest.BUILD_NAME)
+    if args.sanitizer is not None:
+        test_name_suffix += "_{}-sanitizer".format(args.sanitizer)
+        build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
     if args.static_analysis:
@@ -176,11 +181,13 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            warnings.warn(
-                "Forcing build type to 'Debug' when coverage is enabled")
-            pyctest.BUILD_TYPE = "Debug"
-            pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
-                        "source/cereal/*;source/python/pybind11/*")
+            test_name_suffix += "_coverage"
+            if pyctest.BUILD_TYPE != "Debug":
+                warnings.warn(
+                    "Forcing build type to 'Debug' when coverage is enabled")
+                pyctest.BUILD_TYPE = "Debug"
+                pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
+                            "source/cereal/*;source/python/pybind11/*")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
@@ -238,51 +245,59 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # construct a command
     #
-    def construct_command(cmd, args, clobber=False):
-        _cmd = []
-        if args.gperf:
-            _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
-                                     "gperf-cpu-profile.sh"))
-            pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                             "gperf.cpu.prof.{}.0.txt".format(
-                                 os.path.basename(cmd[0])),
-                             clobber=clobber)
-            pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                             "gperf.cpu.prof.{}.0.cum.txt".format(
-                                 os.path.basename(cmd[0])),
-                             clobber=False)
-        else:
-            _cmd.append("./timem")
-        _cmd.extend(cmd)
-        return _cmd
+    def construct_name(test_name):
+        if args.profile is not None:
+            if args.profile == "cpu":
+                return "{}{}_{}".format(test_name, test_name_suffix, "gperf-cpu")
+            elif args.profile == "heap":
+                return "{}{}_{}".format(test_name, test_name_suffix, "gperf-heap")
+        return "{}{}".format(test_name, test_name_suffix)
 
     #--------------------------------------------------------------------------#
-    # standard environment settings for tests, adds profile to notes
+    # construct a command
     #
-    def test_env_settings(prof_fname, clobber=False, extra=""):
-        return "NUM_THREADS={};{}".format(
-            mp.cpu_count(), extra)
-
-    #pyctest.set("ENV{GCOV_PREFIX}", pyctest.BINARY_DIRECTORY)
-    #pyctest.set("ENV{GCOV_PREFIX_STRIP}", "4")
+    def construct_command(cmd, args):
+        global clobber_notes
+        _cmd = []
+        if args.profile is not None:
+            _exe = os.path.basename(cmd[0])
+            if args.profile == "cpu":
+                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                                         "gperf-cpu-profile.sh"))
+                pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                 "cpu.prof.{}/gperf.0.txt".format(_exe),
+                                 clobber=clobber_notes)
+                pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                 "cpu.prof.{}/gperf.0.cum.txt".format(_exe),
+                                 clobber=False)
+                clobber_notes = False
+            elif args.profile == "heap":
+                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                                         "gperf-heap-profile.sh"))
+                for itr in ["alloc_objects", "alloc_space", "inuse_objects", "inuse_space"]:
+                    pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                     "heap.prof.{}/gperf.0.0001.heap.{}.txt".format(
+                                         _exe, itr),
+                                     clobber=clobber_notes)
+                    # make sure all subsequent iterations don't clobber
+                    clobber_notes = False
+        else:
+            _cmd.append("{}/timem".format(pyctest.BINARY_DIRECTORY))
+        _cmd.extend(cmd)
+        return _cmd
 
     #--------------------------------------------------------------------------#
     # create tests
     #
     if not args.no_c:
-        pyctest.test("test_c_timing", construct_command(["./test_c_timing"], args, clobber=True),
+        pyctest.test(construct_name("test_c_timing"), construct_command(["./test_c_timing"], args),
                      {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    pyctest.test("test_cxx_overhead", construct_command(["./test_cxx_overhead"], args),
+
+    pyctest.test(construct_name("test_cxx_overhead"), construct_command(["./test_cxx_overhead"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    pyctest.test("test_cxx_tuple", construct_command(["./test_cxx_tuple"], args, clobber=True),
+
+    pyctest.test(construct_name("test_cxx_tuple"), construct_command(["./test_cxx_tuple"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # pyctest.test("test_cxx_total", construct_command(["./test_cxx_total"], args),
-    #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # pyctest.test("test_cxx_timing", construct_command(["./test_cxx_timing"], args, clobber=True),
-    #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # if args.mpi:
-    #    pyctest.test("test_cxx_mpi_timing", construct_command(["./test_cxx_mpi_timing"], args, clobber=True),
-    #                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(

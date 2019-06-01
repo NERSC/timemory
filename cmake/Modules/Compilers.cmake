@@ -1,9 +1,9 @@
 
-################################################################################
+##########################################################################################
 #
 #        Compilers
 #
-################################################################################
+##########################################################################################
 #
 #   sets (cached):
 #
@@ -37,27 +37,35 @@ include(CheckCXXCompilerFlag)
 include(CheckCXXSourceCompiles)
 include(CheckCXXSourceRuns)
 
+include(MacroUtilities)
 
-################################################################################
+if("${LIBNAME}" STREQUAL "")
+    string(TOLOWER "${PROJECT_NAME}" LIBNAME)
+endif()
+
+add_exported_interface_library(${LIBNAME}-c-compile-options)
+add_exported_interface_library(${LIBNAME}-cxx-compile-options)
+
+#----------------------------------------------------------------------------------------#
 # macro converting string to list
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(to_list _VAR _STR)
     STRING(REPLACE "  " " " ${_VAR} "${_STR}")
     STRING(REPLACE " " ";" ${_VAR} "${_STR}")
 endmacro(to_list _VAR _STR)
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 # macro converting string to list
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(to_string _VAR _STR)
     STRING(REPLACE ";" " " ${_VAR} "${_STR}")
 endmacro(to_string _VAR _STR)
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 #   Macro to add to string
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(add _VAR _FLAG)
     if(NOT "${_FLAG}" STREQUAL "")
         if("${${_VAR}}" STREQUAL "")
@@ -69,9 +77,9 @@ macro(add _VAR _FLAG)
 endmacro()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
 # macro to remove duplicates from string
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(set_no_duplicates _VAR)
     if(NOT "${ARGN}" STREQUAL "")
         set(${_VAR} "${ARGN}")
@@ -86,9 +94,46 @@ macro(set_no_duplicates _VAR)
 endmacro(set_no_duplicates _VAR)
 
 
-################################################################################
+##########################################################################################
+#
+#                                   C compiler flags
+#
+##########################################################################################
+
+
+#----------------------------------------------------------------------------------------#
+# add C flag to target
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_C_FLAG _TARG)
+    target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:C>:${ARGN}>)
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
+# add C flag w/o check
+#----------------------------------------------------------------------------------------#
+macro(ADD_C_FLAG FLAG)
+    set(_TARG )
+    set(_LTARG )
+    if(NOT "${ARGN}" STREQUAL "")
+        set(_TARG ${ARGN})
+        string(TOLOWER "_${ARGN}" _LTARG)
+    endif()
+    if(NOT "${FLAG}" STREQUAL "")
+        if("${_LTARG}" STREQUAL "")
+            list(APPEND ${PROJECT_NAME}_C_FLAGS "${FLAG}")
+            list(APPEND ${PROJECT_NAME}_C_COMPILE_OPTIONS "${FLAG}")
+            add_target_c_flag(${LIBNAME}-c-compile-options ${FLAG})
+        else()
+            add_target_c_flag(${_TARG} ${FLAG})
+        endif()
+    endif()
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
 # check C flag
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(ADD_C_FLAG_IF_AVAIL FLAG)
     set(_TARG )
     set(_LTARG )
@@ -107,19 +152,65 @@ macro(ADD_C_FLAG_IF_AVAIL FLAG)
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_C_FLAGS "${FLAG}")
                 list(APPEND ${PROJECT_NAME}_C_COMPILE_OPTIONS "${FLAG}")
+                add_target_c_flag(${LIBNAME}-c-compile-options ${FLAG})
             else()
-                message(STATUS "TARGET: ${_TARG}")
-                target_compile_options(${_TARG} INTERFACE
-                    $<$<COMPILE_LANGUAGE:C>:${FLAG}>)
+                add_target_c_flag(${_TARG} ${FLAG})
             endif()
         endif()
     endif()
 endmacro()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
+# add C flag to target
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_C_FLAG_IF_AVAIL _TARG)
+    foreach(_FLAG ${ARGN})
+        add_c_flag_if_avail(${_FLAG} ${_TARG})
+    endforeach()
+endmacro()
+
+
+##########################################################################################
+#
+#                                   CXX compiler flags
+#
+##########################################################################################
+
+
+#----------------------------------------------------------------------------------------#
+# add CXX flag to target
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_CXX_FLAG _TARG)
+    target_compile_options(${_TARG} INTERFACE $<$<COMPILE_LANGUAGE:CXX>:${ARGN}>)
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
+# add CXX flag w/o check
+#----------------------------------------------------------------------------------------#
+macro(ADD_CXX_FLAG FLAG)
+    set(_TARG )
+    set(_LTARG )
+    if(NOT "${ARGN}" STREQUAL "")
+        set(_TARG ${ARGN})
+        string(TOLOWER "_${ARGN}" _LTARG)
+    endif()
+    if(NOT "${FLAG}" STREQUAL "")
+        if("${_LTARG}" STREQUAL "")
+            list(APPEND ${PROJECT_NAME}_CXX_FLAGS "${FLAG}")
+            list(APPEND ${PROJECT_NAME}_CXX_COMPILE_OPTIONS "${FLAG}")
+            add_target_cxx_flag(${LIBNAME}-cxx-compile-options ${FLAG})
+        else()
+            add_target_cxx_flag(${_TARG} ${FLAG})
+        endif()
+    endif()
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
 # check CXX flag
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
     set(_TARG )
     set(_LTARG )
@@ -138,27 +229,53 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_CXX_FLAGS "${FLAG}")
                 list(APPEND ${PROJECT_NAME}_CXX_COMPILE_OPTIONS "${FLAG}")
+                add_target_cxx_flag(${LIBNAME}-cxx-compile-options ${FLAG})
             else()
-                target_compile_options(${_TARG} INTERFACE
-                    $<$<COMPILE_LANGUAGE:CXX>:${FLAG}>)
+                add_target_cxx_flag(${_TARG} ${FLAG})
             endif()
         endif()
     endif()
 endmacro()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
+# add CXX flag to target
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_CXX_FLAG_IF_AVAIL _TARG)
+    foreach(_FLAG ${ARGN})
+        add_cxx_flag_if_avail(${_FLAG} ${_TARG})
+    endforeach()
+endmacro()
+
+
+##########################################################################################
+#
+#                                       Common
+#
+##########################################################################################
+
+
+#----------------------------------------------------------------------------------------#
 # check C and CXX flag
-################################################################################
+#----------------------------------------------------------------------------------------#
 macro(ADD_FLAG_IF_AVAIL FLAG)
     ADD_C_FLAG_IF_AVAIL("${FLAG}")
     ADD_CXX_FLAG_IF_AVAIL("${FLAG}")
 endmacro()
 
 
-################################################################################
+#----------------------------------------------------------------------------------------#
+# check C and CXX flag
+#----------------------------------------------------------------------------------------#
+macro(ADD_TARGET_FLAG_IF_AVAIL _TARG)
+    ADD_TARGET_C_FLAG_IF_AVAIL(${_TARG} ${ARGN})
+    ADD_TARGET_CXX_FLAG_IF_AVAIL(${_TARG} ${ARGN})
+endmacro()
+
+
+#----------------------------------------------------------------------------------------#
 # determine compiler types for each language
-################################################################################
+#----------------------------------------------------------------------------------------#
 foreach(LANG C CXX)
 
     macro(SET_COMPILER_VAR VAR _BOOL)

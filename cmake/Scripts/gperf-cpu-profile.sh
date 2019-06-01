@@ -1,9 +1,13 @@
 #!/bin/bash -e
 
+EXE=$(basename ${1})
+DIR=cpu.prof.${EXE}
+mkdir -p ${DIR}
+
 : ${N:=0}
 : ${GPERF_PROFILE:=""}
-: ${GPERF_PROFILE_BASE:=gperf.cpu.prof}
-: ${PPROF_ARGS:=""}
+: ${GPERF_PROFILE_BASE:=${DIR}/gperf}
+: ${PPROF_ARGS:="--no_strip_temp --lines"}
 : ${MALLOCSTATS:=1}
 : ${CPUPROFILE_FREQUENCY:=500}
 : ${INTERACTIVE:=0}
@@ -22,7 +26,7 @@ export CPUPROFILE_FREQUENCY
 echo -e "\n\t--> Outputting profile to '${GPERF_PROFILE}'...\n"
 
 # remove profile file if unsucessful execution
-cleanup-failure() { set +v ; rm -f ${GPERF_PROFILE}; }
+cleanup-failure() { set +v ; echo "failure"; rm -f ${GPERF_PROFILE}; }
 trap cleanup-failure SIGHUP SIGINT SIGQUIT SIGILL SIGABRT SIGKILL
 
 ADD_LIBS()
@@ -85,5 +89,9 @@ if [ -f "${GPERF_PROFILE}" ]; then
         if [ "${INTERACTIVE}" -gt 0 ]; then
             eval ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}
         fi
+    else
+        echo -e "google-pprof/pprof not found!"
     fi
+else
+    echo -e "profile file \"${GPERF_PROFILE}\" not found!"
 fi

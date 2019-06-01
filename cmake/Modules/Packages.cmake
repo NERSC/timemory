@@ -115,7 +115,7 @@ if(TIMEMORY_USE_MPI)
             # compile flags
             to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
             foreach(_FLAG ${_FLAGS})
-                list(APPEND EXTERNAL_${_LANG}_LINK_OPTIONS ${_FLAG})
+                target_link_options(timemory-mpi INTERFACE $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
             endforeach()
             unset(_FLAGS)
 
@@ -268,22 +268,30 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_COVERAGE)
+    if(CMAKE_CXX_COMPILER_IS_GNU)
+        find_library(GCOV_LIBRARY gcov QUIET)
 
-    find_library(GCOV_LIBRARY gcov QUIET)
+        if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
+            add_interface_library(timemory-coverage)
+            add_c_flag_if_avail("-ftest-coverage" timemory-coverage)
+            add_cxx_flag_if_avail("-ftest-coverage" timemory-coverage)
+            if(cxx_ftest_coverage)
+                target_link_options(timemory-coverage INTERFACE "-fprofile-arcs")
+            endif()
+        endif()
 
-    if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
-        add_interface_library(timemory-coverage)
-    endif()
-
-    if(GCOV_LIBRARY)
-        target_link_libraries(timemory-coverage INTERFACE ${COVERAGE_LIBRARY})
-    elseif(CMAKE_CXX_COMPILER_IS_GNU)
-        target_link_libraries(timemory-coverage INTERFACE gcov)
+        if(GCOV_LIBRARY)
+            target_link_libraries(timemory-coverage INTERFACE ${COVERAGE_LIBRARY})
+        elseif(CMAKE_CXX_COMPILER_IS_GNU)
+            target_link_libraries(timemory-coverage INTERFACE gcov)
+        else()
+            message(WARNING "GCov library not found. Disabling coverage...")
+            set(TIMEMORY_USE_COVERAGE OFF)
+        endif()
     else()
-        message(STATUS "GCov library not found. Disabling coverage...")
+        message(WARNING "Coverage only available for GNU compilers...")
         set(TIMEMORY_USE_COVERAGE OFF)
     endif()
-
 endif()
 
 
@@ -359,7 +367,7 @@ if(TIMEMORY_USE_CUDA)
                     endif()
                 endforeach()
                 set(_MSG "${_MSG}. Disabling TIMEMORY_USE_CUPTI...")
-                message(STATUS "${_MSG}")
+                message(WARNING "${_MSG}")
                 set(TIMEMORY_USE_CUPTI OFF)
                 unset(_MSG)
             endif()
@@ -372,6 +380,7 @@ if(TIMEMORY_USE_CUDA)
         target_link_libraries(timemory-headers INTERFACE timemory-cuda)
 
     else()
+        message(WARNING "CUDA not available!")
         set(TIMEMORY_USE_CUPTI OFF)
         set(TIMEMORY_USE_CUDA OFF)
     endif()
@@ -387,7 +396,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_USE_GPERF)
-    find_package(GPerfTools COMPONENTS profiler)
+    find_package(GPerfTools COMPONENTS profiler tcmalloc)
 
     if(GPerfTools_FOUND)
         add_interface_library(timemory-gperf)
@@ -443,14 +452,8 @@ target_link_libraries(timemory-headers INTERFACE timemory-cereal)
 #----------------------------------------------------------------------------------------#
 
 # including the directories
-safe_remove_duplicates(EXTERNAL_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
 safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-safe_remove_duplicates(PRIVATE_EXTERNAL_INCLUDE_DIRS ${PRIVATE_EXTERNAL_INCLUDE_DIRS})
-safe_remove_duplicates(PRIVATE_EXTERNAL_LIBRARIES ${PRIVATE_EXTERNAL_LIBRARIES})
-
-set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES} PRIVATE ${PRIVATE_EXTERNAL_LIBRARIES})
-
-list(APPEND ${PROJECT_NAME}_TARGET_INCLUDE_DIRS ${EXTERNAL_INCLUDE_DIRS})
+set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
 list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES ${EXTERNAL_LIBRARIES})
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)

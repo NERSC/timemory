@@ -60,10 +60,6 @@ endif()
 
 
 # ---------------------------------------------------------------------------- #
-# used by configure_package_*
-set(LIBNAME timemory)
-
-# ---------------------------------------------------------------------------- #
 # set the compiler flags
 add_c_flag_if_avail("-W")
 if(NOT WIN32)
@@ -110,19 +106,23 @@ if(NOT DEBUG)
     add_c_flag_if_avail("-funroll-loops")
     add_c_flag_if_avail("-ftree-vectorize")
     add_c_flag_if_avail("-finline-functions")
+    add_c_flag_if_avail("-ftree-loop-optimize")
+    add_c_flag_if_avail("-ftree-loop-vectorize")
     # add_c_flag_if_avail("-fira-loop-pressure")
 
     add_cxx_flag_if_avail("-funroll-loops")
     add_cxx_flag_if_avail("-ftree-vectorize")
     add_cxx_flag_if_avail("-finline-functions")
+    add_cxx_flag_if_avail("-ftree-loop-optimize")
+    add_cxx_flag_if_avail("-ftree-loop-vectorize")
     # add_cxx_flag_if_avail("-fira-loop-pressure")
 endif()
 
 # ---------------------------------------------------------------------------- #
 # Intel floating-point model (implies -fprotect-parens)
 #
-add_c_flag_if_avail("-fp-model=precise")
-add_cxx_flag_if_avail("-fp-model=precise")
+# add_c_flag_if_avail("-fp-model=precise")
+# add_cxx_flag_if_avail("-fp-model=precise")
 
 # ---------------------------------------------------------------------------- #
 # debug-safe optimizations
@@ -185,52 +185,57 @@ endif()
 # sanitizer
 #
 if(TIMEMORY_USE_SANITIZER)
-    add_c_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
-    add_cxx_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
+    set(SANITIZER_TYPES address memory thread leak)
 
-    if(c_fsanitize_${SANITIZER_TYPE} AND cxx_fsanitize_${SANITIZER_TYPE})
-        if("${SANITIZER_TYPE}" STREQUAL "address")
-            set(SANITIZER_LIBNAME asan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "memory")
-            set(SANITIZER_LIBNAME msan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "thread")
-            set(SANITIZER_LIBNAME tsan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "leak")
-            set(SANITIZER_LIBNAME lsan)
-        endif()
-        find_library(SANITIZER_LIBRARY NAMES ${SANITIZER_LIBNAME})
-        if(SANITIZER_LIBRARY)
-            list(APPEND EXTERNAL_LIBRARIES ${SANITIZER_LIBRARY})
+    set(asan_key "address")
+    set(msan_key "memory")
+    set(tsan_key "thread")
+    set(lsan_key "leak")
+
+    set(address_lib asan)
+    set(memory_lib msan)
+    set(thread_lib tsan)
+    set(leak_lib lsan)
+
+    find_library(SANITIZER_asan_LIBRARY NAMES asan)
+    find_library(SANITIZER_msan_LIBRARY NAMES msan)
+    find_library(SANITIZER_tsan_LIBRARY NAMES tsan)
+    find_library(SANITIZER_lsan_LIBRARY NAMES lsan)
+
+    string(TOLOWER "${SANITIZER_TYPE}" SANITIZER_TYPE)
+    list(REMOVE_ITEM SANITIZER_TYPES ${SANITIZER_TYPE})
+    set(SANITIZER_TYPES ${SANITIZER_TYPE} ${SANITIZER_TYPES})
+
+    foreach(_TYPE ${SANITIZER_TYPES})
+        set(_LIB ${${_TYPE}_lib})
+        add_exported_interface_library(timemory-${_TYPE}-sanitizer INTERFACE)
+        add_target_flag_if_avail(timemory-${_TYPE}-sanitizer "-fsanitize=${SANITIZER_TYPE}")
+        target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_LIB}_LIBRARY})
+    endforeach()
+
+    foreach(_TYPE ${SANITIZER_TYPES})
+        set(_LIB ${${_TYPE}_lib})
+        if(c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+                SANITIZER_${_LIB}_LIBRARY)
+            add_interface_library(timemory-sanitizer INTERFACE)
+            add_target_flag_if_avail(timemory-sanitizer "-fno-omit-frame-pointer")
+            target_compile_definitions(timemory-sanitizer INTERFACE TIMEMORY_USE_SANITIZER)
+            target_link_libraries(timemory-sanitizer INTERFACE timemory-${_TYPE}-sanitizer)
+            break()
         else()
-            message(STATUS "TIMEMORY_USE_SANITIZER disabled. Unable to find sanitizer library \"${SANITIZER_LIBNAME}\"")
-            unset(SANITIZER_TYPE CACHE)
-            set(TIMEMORY_USE_SANITIZER OFF)
+            message(STATUS "${_TYPE} sanitizer not found. library: ${SANITIZER_${_LIB}_LIBRARY}...")
         endif()
-        unset(SANITIZER_LIBNAME)
-    else()
+    endforeach()
+
+    if(NOT TARGET timemory-sanitizer)
+        message(WARNING "TIMEMORY_USE_SANITIZER not found. Tried: ${SANITIZER_TYPES}")
         unset(SANITIZER_TYPE CACHE)
         set(TIMEMORY_USE_SANITIZER OFF)
     endif()
+
 endif()
 
-# ---------------------------------------------------------------------------- #
-# code coverage
-#
-if(TIMEMORY_USE_COVERAGE AND CMAKE_CXX_COMPILER_IS_GNU)
-    add_c_flag_if_avail("-ftest-coverage")
-    if(c_ftest_coverage)
-        list(APPEND ${PROJECT_NAME}_C_FLAGS "-fprofile-arcs")
-    endif()
-    add_cxx_flag_if_avail("-ftest-coverage")
-    if(cxx_ftest_coverage)
-        list(APPEND ${PROJECT_NAME}_CXX_FLAGS "-fprofile-arcs")
-        add(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs")
-        add_feature(CMAKE_EXE_LINKER_FLAGS "Linker flags")
-    endif()
-elseif(TIMEMORY_USE_COVERAGE)
-    message(STATUS "Coverage only available for GNU compilers...")
-    set(TIMEMORY_USE_COVERAGE OFF)
-endif()
 
 # ---------------------------------------------------------------------------- #
 # user customization

@@ -55,6 +55,7 @@ if(SKBUILD)
 endif()
 
 set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
+set(LIBNAME timemory)
 
 #----------------------------------------------------------------------------------------#
 #   configuration

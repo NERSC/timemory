@@ -84,7 +84,8 @@
 #    endif
 #endif
 
-#if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS)
+#if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS) &&                      \
+    !defined(TIMEMORY_USE_GPERF)
 #    if !defined(SIGNAL_AVAILABLE)
 #        define SIGNAL_AVAILABLE
 #    endif
@@ -600,11 +601,7 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-static bool enable_signal_detection(
-    signal_settings::signal_set_t = signal_settings::signal_set_t())
-{
-    return false;
-}
+static bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
 
 //--------------------------------------------------------------------------------------//
 

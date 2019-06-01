@@ -12,15 +12,8 @@ find_package(TiMemory REQUIRED)
 
 add_executable(${EXE_NAME} ${EXE_NAME}.c)
 
-target_link_libraries(${EXE_NAME} timemory-c-library-static)
-
-target_compile_options(${EXE_NAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS}>)
-
-#if(DEFINED PROJECT_DEPENDS)
-#    add_dependencies(${EXE_NAME} ${PROJECT_DEPENDS})
-#endif(DEFINED PROJECT_DEPENDS)
+target_link_libraries(${EXE_NAME} timemory-c-library-static timemory-c-compile-options)
 
 if(NOT DEFINED TIMEMORY_SETUP_PY OR NOT TIMEMORY_SETUP_PY)
     install(TARGETS ${EXE_NAME} DESTINATION bin)
-endif(NOT DEFINED TIMEMORY_SETUP_PY OR NOT TIMEMORY_SETUP_PY)
+endif()
