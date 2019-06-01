@@ -28,6 +28,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -47,6 +49,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
@@ -66,6 +70,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -84,6 +90,8 @@ matrix:
             - build-essential
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -104,6 +112,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -128,6 +138,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -147,6 +159,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
@@ -166,6 +180,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -184,6 +200,8 @@ matrix:
             - build-essential
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -204,6 +222,8 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -231,7 +251,7 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake gperftools
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
