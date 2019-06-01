@@ -51,6 +51,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-c", help="TIMEMORY_BUILD_C=OFF",
                         default=False, action='store_true')
+    parser.add_argument("--extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=ON",
+                        default=False, action='store_true')
 
     args = parser.parse_args()
 
@@ -126,9 +128,15 @@ def run_pyctest():
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
+        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "OFF",
     }
 
     test_name_suffix = ""
+
+    if args.extern_templates:
+        build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "ON"
+        build_opts["USE_EXTERN_TEMPLATES"] = "ON"
+
     if args.no_c:
         build_opts["TIMEMORY_BUILD_C"] = "OFF"
     else:
