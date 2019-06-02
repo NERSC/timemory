@@ -162,7 +162,8 @@ if(TIMEMORY_USE_MPI)
             # compile flags
             to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
             foreach(_FLAG ${_FLAGS})
-                target_link_options(timemory-mpi INTERFACE $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                #target_link_options(timemory-mpi INTERFACE $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+	        set_target_properties(timemory-mpi PROPERTIES INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
             endforeach()
             unset(_FLAGS)
 
