@@ -186,7 +186,6 @@ struct base : public tim::counted_object<_Tp>
     //----------------------------------------------------------------------------------//
     // reset the values
     //
-    template <typename U = value_type, enable_if_t<(std::is_pod<U>::value)> = 0>
     void reset()
     {
         is_running   = false;
@@ -194,18 +193,6 @@ struct base : public tim::counted_object<_Tp>
         laps         = 0;
         value        = value_type();
         accum        = value_type();
-    }
-
-    //----------------------------------------------------------------------------------//
-    // reset the values
-    //
-    template <typename U = value_type, enable_if_t<(!std::is_pod<U>::value)> = 0>
-    void reset()
-    {
-        is_running   = false;
-        is_transient = false;
-        laps         = 0;
-        static_cast<Type&>(*this).reset();
     }
 
     //----------------------------------------------------------------------------------//

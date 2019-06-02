@@ -33,6 +33,9 @@ pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
 target_link_libraries(${PYLIBNAME}
     PRIVATE timemory-headers timemory-extensions timemory-cxx-shared)
 
+target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+
 set_target_properties(${PYLIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
