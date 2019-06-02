@@ -14,7 +14,7 @@
 
 [TiMemory Release Notes](https://jrmadsen.github.io/TiMemory/ReleaseNotes.html)
 
-### TiMemory is easy-to-use
+### Easy-to-use
 
 In C++ and Python, TiMemory can be added in a single line of code:
 
@@ -99,11 +99,11 @@ When the application terminates, output to text and JSON is automated.
 - `voluntary_context_switch`
   - records the number of times a context switch resulted due to a process voluntarily giving up the processor before its time slice was completed (usually to await availability of a resource).
 
-### TiMemory's design is aimed at routine ("everyday") timing and memory analysis that can be standard part of the source code.
+### Design is aimed at routine ("everyday") timing and memory analysis that can be standard part of the source code.
 
 TiMemory is a very _lightweight_, _cross-language_ timing, resource usage, and hardware counter utility. It support implementation in C, C++, and Python and is easily imported into CMake projects.
 
-### TiMemory is Lightweight and Fast
+### Lightweight and Fast
 
 Analysis on a fibonacci calculation determined that one TiMemory "component" adds an average overhead of 3 microseconds (`0.000003 s`) when the component is being inserted into call-graph for the first time. Once a component exists in
 the call-graph, the overhead is approximately 1.25 microseconds. For example, in the following:
@@ -222,12 +222,12 @@ that get called very frequently**.
 
 TiMemory is not intended to replace profiling tools such as Intel's VTune, GProf, etc. -- instead, it complements them by enabling one to verify timing and memory usage without the overhead of the profiler.
 
-### TiMemory is Cross-Language: C, C++, and Python
+### Cross-Language Support: C, C++, CUDA, and Python
 
 It is very common for Python projects to implement expensive routines in C or C++. Implementing a TiMemory auto-tuple in any combination of these languages will produce one combined report for all the languages (provided each language links to the same library).
 However, this is a feature of TiMemory. TiMemory can be used in standalone C, C++, or Python projects.
 
-### TiMemory support multithreading
+### Multithreading support
 
 The multithreading overhead of TiMemory is essentially zero.
 All TiMemory components use static thread-local singletons of call-graps that are automatically created when a
@@ -235,11 +235,11 @@ new thread starts recording a component. The state of the singleton on the maste
 thread is destroyed, TiMemory merges the thread-local call-graph back into the master call-graph. Only during the
 merge into the master call-graph is a synchronization lock (mutex) utilized.
 
-### TiMemory supports MPI
+### MPI Support
 
 If a project uses MPI, TiMemory will combined the reports from all the MPI ranks when a report is requested.
 
-### TiMemory supports PAPI
+### PAPI support
 
 PAPI counters are available as a component in the same way timing and rusage components are available. If TiMemory
 is not compiled with PAPI, it is safe to keep their declaration in the code and their output will be suppressed.
@@ -256,7 +256,7 @@ void some_function()
 }
 ```
 
-### TiMemory supports CUDA
+### CUDA Support
 
 At this stage, TiMemory implements a `cudaEvent_t` that will record the wall-clock runtime of a kernel. If the
 kernel is launched in a stream, one must set the stream:
@@ -268,12 +268,12 @@ saxpy<<<ngrid, block, 0, stream>>>(N, 1.0f, _dx, _dy);
 
 Support for CUPTI (CUDA hardware counters) is planned.
 
-### TiMemory has built-in timing and memory plotting
+### Built-in plotting
 
 The results from TiMemory can be serialized to JSON and the JSON output can be used to produce performance plots
 via the standalone `timemory-plotter` or `timemory.plotting` Python module
 
-### TiMemory can be used from the command-line
+### Command-line
 
 UNIX systems provide `timem` executable that works like `time`. On all systems, `pytimem` is provided.
 
@@ -291,7 +291,7 @@ $ ./timem sleep 5
                5 prio_cxt_swch
 ```
 
-### TiMemory has environment controls
+### Environment Controls
 
 - `TIMEMORY_AUTO_OUTPUT`
   - automatic output at the end of application
@@ -333,3 +333,175 @@ $ ./timem sleep 5
   - initial output width of timing components
 - `TIMEMORY_WIDTH`
   - initial width for all components
+
+### Installation
+
+- Requirements
+  - C++ compiler (GNU, MSVC, Clang, Intel, PGI)
+  - CMake >= 3.10
+
+```shell
+$ git clone https://github.com/jrmadsen/TiMemory.git timemory
+$ mkdir -p timemory/build-timemory
+$ cd timemory/build-timemory
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
+$ cmake --build . --target INSTALL
+```
+
+### Getting Started
+
+For C++ projects, basic functionality simply requires including the header path,
+e.g. `-I/usr/include` if `timemory.hpp` is in `/usr/local/timemory/timemory.hpp`.
+However, this will not enable additional capabilities such as PAPI, CUPTI, CUDA kernel timing,
+extern templates, etc.
+
+```c++
+// STEP 1: include header
+#include <timemory/timemory.hpp>
+
+// STEP 2: declare some types
+using namespace tim::component;
+using comp_tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
+using auto_tuple_t = typename comp_tuple_t::auto_type;
+
+// STEP 3: add a timer to function
+intmax_t fibonacci(intmax_t n)
+{
+    // simple wall-clock timer
+    tim::auto_tuple<real_clock> timer(__FUNCTION__);
+    return (n < 2) ? n : fibonacci(n-1) + fibonacci(n-2);
+}
+
+int main(int argc, char** argv)
+{
+    // STEP 4: configure output and parse env  (optional)
+    tim::timemory_init(argc, argv);
+
+    comp_tuple_t main("overall timer", true);
+    main.start();
+    for(auto n : { 10, 11, 12})
+    {
+        auto_tuple_t t(tim::str::join("", "fibonacci(", n, ")"));
+        auto ret = fibonacci(n);
+        printf("fibonacci(%i) = %li\n", n, ret);
+    }
+    main.stop();
+    std::cout << main << std::endl;
+}
+```
+
+Compile:
+
+```shell
+$ g++ -O3 -I/usr/local example.cc -o example
+```
+### CMake Support
+
+**It is highly recommended to use CMake with TiMemory**
+
+TiMemory uses modern CMake INTERFACE targets to include the components you want without
+forcing you to include everything -- this means that compiler flags, preprocessor
+definitions, include paths, link options, and link libraries are bundled into separate
+"library" targets that only need to be "linked" to in CMake:
+
+```cmake
+add_library(foo SHARED foo.cpp)
+
+# this adds the timemory include path
+target_link_library(foo timemory-headers)
+
+# this sets foo.cpp to be compiled with the C++ compiler flags timemory was compiled with
+target_link_library(foo timemory-cxx-compile-flags)
+
+# this sets the TIMEMORY_USE_PAPI pre-processor definition, adds PAPI include path, and
+# links papi libraries
+target_link_library(foo timemory-papi)
+```
+
+When combined with `find_package`, TiMemory will bundle these targets into one
+interface library: `timemory`.
+
+```cmake
+# create interface target w/ the components
+find_package(TiMemory REQUIRED COMPONENTS cxx shared compile-options extensions)
+
+# create some library
+add_library(foo SHARED foo.cpp)
+
+# import all the compiler defs, flags, linked libs, include paths, etc. from above components
+target_link_library(foo timemory)
+
+# override the name of INTERFACE library w/ the components
+set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cuda-extern)
+
+# creates interface library target: timemory-cuda-extern
+find_package(TiMemory REQUIRED COMPONENTS cxx static compile-options extensions
+    cuda cupti extern-templates)
+
+# create anoter library
+add_library(bar STATIC bar.cpp)
+
+# import all the compiler defs, flags, linked libs, include paths, etc. from above components
+target_link_library(foo timemory-cuda-extern)
+```
+
+#### TiMemory Targets
+
+These are the full target names available within CMake. Some targets may not be available
+based on the installation, choice of compiler, etc.
+
+In general, when listed as `COMPONENTS` arguments to a `find_package`, the `timemory-` prefix
+can be dropped and the link type (`shared` or `static`), languages (`c`, `cxx`, `cuda`)
+can be listed once and dropped from subsequent items in the list of `COMPONENTS`.
+
+- Header libraries
+  - `timemory-headers`
+    - The include path to TiMemory headers
+  - `timemory-cereal`
+    - implicitly included with timemory-headers
+- Compiled libraries
+  - `timemory-c-shared`
+  - `timemory-c-static`
+  - `timemory-cxx-shared`
+  - `timemory-cxx-static`
+  - `timemory-cupti-shared`
+    - shared library that enables recording NVIDIA hardware events and metrics
+    (e.g. profiling counters)
+  - `timemory-cupti-static`
+    - static library that enables recording NVIDIA hardware events and metrics
+    (e.g. profiling counters)
+- Alias libraries
+  - `timemory-c` == `timemory-c-shared`
+  - `timemory-cxx` == `timemory-cxx-shared`
+- Extensions
+  - `timemory-extensions`
+    - all of the extensions below that were found/enabled when configuring TiMemory
+  - `timemory-threading`
+    - enables any necessary threading flags, e.g. `-lpthread`
+  - `timemory-mpi`
+    - enables MPI support
+  - `timemory-papi`
+    - enable PAPI support (CPU hardware counters)
+  - `timemory-cuda`
+    - enables wall-clock timing CUDA kernels
+  - `timemory-gperf`
+    - enables using google-perftools with TiMemory
+  - `timemory-coverage`
+    - adds GNU coverage flags, if available
+  - `timemory-sanitizer`
+    - adds sanitizer
+  - `timemory-memory-sanitizer`
+  - `timemory-leak-sanitizer`
+  - `timemory-address-sanitier`
+  - `timemory-thread-sanitizer`
+- Miscellaneous
+  - `timemory-c-compile-options`
+    - Adds C compiler flags used by TiMemory
+  - `timemory-cxx-compile-options`
+    - Adds CXX compiler flags used by TiMemory
+  - `timemory-arch`
+    - enables architecture-specific compiler flags, if available
+  - `timemory-avx512`
+    -sets AVX-512 compiler flags, if available
+  - `timemory-extern-templates`
+    - declares a subset of templates as extern to reduce compile time
