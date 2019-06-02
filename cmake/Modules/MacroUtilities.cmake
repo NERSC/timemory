@@ -326,8 +326,8 @@ macro(BUILD_LIBRARY)
             $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
 
     # link options
-    target_link_options(${LIBRARY_TARGET_NAME}
-        PUBLIC ${LIBRARY_LINK_OPTIONS})
+    #target_link_options(${LIBRARY_TARGET_NAME}
+    #    PUBLIC ${LIBRARY_LINK_OPTIONS})
 
     # link libraries
     target_link_libraries(${LIBRARY_TARGET_NAME}
