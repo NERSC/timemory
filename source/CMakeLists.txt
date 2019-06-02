@@ -27,25 +27,13 @@ add_subdirectory(timemory)
 #----------------------------------------------------------------------------------------#
 # build library setup
 #
-set(_OUTPUT_DIR ${PROJECT_BINARY_DIR}/timemory/lib)
 # directly compile sources
 set(C_LIBRARY_SOURCES    ${c_sources}    ${c_headers})
 set(CXX_LIBRARY_SOURCES  ${cxx_sources}  ${cxx_headers} ${cxx_headers_impl} ${cereal_headers})
 set(CUDA_LIBRARY_SOURCES ${cuda_sources} )
 
-# if Windows, set _COMPILE_DEFS and possibly _ARCHIVE_SUFFIX
-if(WIN32)
-    if(BUILD_SHARED_LIBS)
-        set(PRIVATE_COMPILE_DEFINITIONS         _TIMEMORY_DLL)
-    else()
-        list(APPEND ${PROJECT_NAME}_DEFINITIONS _TIMEMORY_ARCHIVE)
-        set(PRIVATE_COMPILE_DEFINITIONS         _TIMEMORY_ARCHIVE)
-    endif()
-
-    # Set source file compile definitions
-    set_source_files_properties(${c_sources} ${cxx_sources}
-        PROPERTIES COMPILE_DEFINITIONS ${PRIVATE_COMPILE_DEFINITIONS})
-elseif(XCODE)
+set(_OUTPUT_DIR ${PROJECT_BINARY_DIR}/timemory/lib)
+if(XCODE)
     set(_OUTPUT_DIR ${PROJECT_BINARY_DIR})
 endif()
 
@@ -57,27 +45,27 @@ if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI)
     build_library(
         PIC
         TYPE                SHARED
-        TARGET_NAME         ${LIBNAME}-cupti-shared
-        OUTPUT_NAME         cu${LIBNAME}
+        TARGET_NAME         timemory-cupti-shared
+        OUTPUT_NAME         cutimemory
         LANGUAGE            CUDA
         LINKER_LANGUAGE     CUDA
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
         SOURCES             ${CUDA_LIBRARY_SOURCES}
-        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES} ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
+        LINK_LIBRARIES      timemory-headers timemory-extensions ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
     build_library(
         PIC
         TYPE                STATIC
-        TARGET_NAME         ${LIBNAME}-cupti-static
-        OUTPUT_NAME         cu${LIBNAME}
+        TARGET_NAME         timemory-cupti-static
+        OUTPUT_NAME         cutimemory
         LANGUAGE            CUDA
         LINKER_LANGUAGE     CUDA
         OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
         COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
         SOURCES             ${CUDA_LIBRARY_SOURCES}
-        LINK_LIBRARIES      ${EXTERNAL_LIBRARIES} ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
+        LINK_LIBRARIES      timemory-headers timemory-extensions ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
         INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
     target_include_directories(timemory-cupti-shared PUBLIC ${CUDA_cupti_INCLUDE_DIR})
@@ -86,98 +74,89 @@ if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI)
     target_link_libraries(timemory-cupti-shared INTERFACE timemory-cuda)
     target_link_libraries(timemory-cupti-static INTERFACE timemory-cuda)
 
+    if(WIN32)
+        target_compile_definitions(timemory-cupti-shared PRIVATE _TIMEMORY_DLL)
+        target_compile_definitions(timemory-cupti-static PUBLIC  _TIMEMORY_ARCHIVE)
+    endif()
+
 elseif(TIMEMORY_USE_CUDA)
-    add_exported_interface_library(timemory-cupti-shared)
-    add_exported_interface_library(timemory-cupti-static)
+    add_interface_library(timemory-cupti-shared)
+    add_interface_library(timemory-cupti-static)
 endif()
 
 
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
-
 build_library(
     PIC
     TYPE                SHARED
-    TARGET_NAME         ${LIBNAME}-cxx-shared
-    OUTPUT_NAME         ${LIBNAME}
+    TARGET_NAME         timemory-cxx-shared
+    OUTPUT_NAME         timemory
     LANGUAGE            CXX
     LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+    OUTPUT_DIR          ${_OUTPUT_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES})
+    COMPILE_DEFINITIONS
+    LINK_LIBRARIES      timemory-headers timemory-extensions)
 
 build_library(
-    PIC
     TYPE                STATIC
-    TARGET_NAME         ${LIBNAME}-cxx-static
-    OUTPUT_NAME         ${LIBNAME}
+    TARGET_NAME         timemory-cxx-static
+    OUTPUT_NAME         timemory
     LANGUAGE            CXX
     LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
+    OUTPUT_DIR          ${_OUTPUT_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
-    LINK_LIBRARIES      ${EXTERNAL_LIBRARIES})
+    LINK_LIBRARIES      timemory-headers timemory-extensions)
 
-add_library(${LIBNAME}-cxx INTERFACE)
-target_link_libraries(${LIBNAME}-cxx INTERFACE ${LIBNAME}-cxx-shared)
-list(APPEND INSTALL_LIBRARIES ${LIBNAME}-cxx)
-
-target_link_libraries(timemory-extern-templates INTERFACE timemory-cxx)
+add_interface_library(timemory-cxx)
+target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(${LIBNAME}-cxx-shared        PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(${LIBNAME}-cxx-static        PRIVATE     TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-extern-templates    INTERFACE   TIMEMORY_EXTERN_TEMPLATES)
+    target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
 endif()
+
+if(WIN32)
+    target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL)
+    target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
+endif()
+
 
 #----------------------------------------------------------------------------------------#
 # build the C libraries
 #
 if(TIMEMORY_BUILD_C)
 
-    if(XCODE)
-        set(C_OBJECT_SOURCES ${C_LIBRARY_SOURCES})
-    else()
-        build_library(
-            PIC
-            TYPE                OBJECT
-            TARGET_NAME         ${LIBNAME}-c-object
-            OUTPUT_NAME         c${LIBNAME}
-            LANGUAGE            C
-            LINKER_LANGUAGE     CXX
-            OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-            SOURCES             ${C_LIBRARY_SOURCES}
-            LINK_LIBRARIES      ${LIBNAME}-cxx-shared timemory-cereal)
-
-        set(C_OBJECT_SOURCES   $<TARGET_OBJECTS:${LIBNAME}-c-object>)
-    endif()
-
     build_library(
         PIC
         TYPE                SHARED
-        TARGET_NAME         ${LIBNAME}-c-shared
-        OUTPUT_NAME         c${LIBNAME}
+        TARGET_NAME         timemory-c-shared
+        OUTPUT_NAME         ctimemory
         LANGUAGE            C
         LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        SOURCES             ${C_OBJECT_SOURCES}
-        LINK_LIBRARIES      ${LIBNAME}-cxx-shared)
+        OUTPUT_DIR          ${_OUTPUT_DIR}
+        SOURCES             ${C_LIBRARY_SOURCES}
+        LINK_LIBRARIES      timemory-headers timemory-extensions timemory-cxx-shared)
 
     build_library(
-        PIC
         TYPE                STATIC
-        TARGET_NAME         ${LIBNAME}-c-static
-        OUTPUT_NAME         c${LIBNAME}
+        TARGET_NAME         timemory-c-static
+        OUTPUT_NAME         ctimemory
         LANGUAGE            C
         LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        SOURCES             ${C_OBJECT_SOURCES}
-        LINK_LIBRARIES      ${LIBNAME}-cxx-static)
+        OUTPUT_DIR          ${_OUTPUT_DIR}
+        SOURCES             ${C_LIBRARY_SOURCES}
+        LINK_LIBRARIES      timemory-headers timemory-extensions timemory-cxx-static)
 
-    add_library(${LIBNAME}-c INTERFACE)
-    target_link_libraries(${LIBNAME}-c INTERFACE ${LIBNAME}-c-shared)
-    list(APPEND INSTALL_LIBRARIES ${LIBNAME}-c)
+    add_interface_library(timemory-c)
+    target_link_libraries(timemory-c INTERFACE timemory-c-shared)
 
+    if(WIN32)
+        target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
+        target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
+    endif()
 endif()
 
 
@@ -186,7 +165,8 @@ endif()
 #
 
 # C/C++ compiled libraries
-install(TARGETS ${INSTALL_LIBRARIES}
+install(
+    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES} ${TIMEMORY_EXTERNAL_LIBRARIES}
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}LibraryDepends
     COMPONENT development)
@@ -205,7 +185,8 @@ install(EXPORT ${PROJECT_NAME}LibraryDepends
     DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
     COMPONENT development)
 
-export(TARGETS ${INSTALL_LIBRARIES}
+export(
+    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES} ${TIMEMORY_EXTERNAL_LIBRARIES}
     FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
 
 
@@ -223,11 +204,10 @@ if(TIMEMORY_BUILD_PYTHON)
     add_subdirectory(python)
 
     if(BUILD_SHARED_LIBS)
-        set(LINK_TYPE shared)
-        install(TARGETS ${LIBNAME}-cxx
+        install(TARGETS timemory-cxx
             DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib
             COMPONENT python)
-    endif(BUILD_SHARED_LIBS)
+    endif()
 
 endif()
 

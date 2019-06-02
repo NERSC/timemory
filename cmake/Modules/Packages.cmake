@@ -12,14 +12,68 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 #                               TiMemory headers
 #
 #----------------------------------------------------------------------------------------#
+
 add_interface_library(timemory-headers)
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>)
 target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
-add_exported_interface_library(timemory-extern-templates)
-target_link_libraries(timemory-extern-templates INTERFACE timemory-headers)
+
+#----------------------------------------------------------------------------------------#
+#
+#                               TiMemory extern-templates
+#
+#----------------------------------------------------------------------------------------#
+
+add_interface_library(timemory-extern-templates)
+if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    target_compile_definitions(timemory-extern-templates INTERFACE TIMEMORY_EXTERN_TEMPLATES)
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               TiMemory external libraries
+#
+#----------------------------------------------------------------------------------------#
+
+add_interface_library(timemory-extensions)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                           Cereal (serialization library)
+#
+#----------------------------------------------------------------------------------------#
+
+checkout_git_submodule(RECURSIVE
+    RELATIVE_PATH source/cereal
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
+# this gets annoying
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
+    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
+    FORCE)
+
+# add cereal
+if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
+endif()
+
+add_external_library(timemory-cereal)
+target_include_directories(timemory-cereal SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source/cereal/include>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
+set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
+    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
+    FORCE)
+
+# timemory-headers always provides timemory-cereal
+target_link_libraries(timemory-headers INTERFACE timemory-cereal)
+
 
 #----------------------------------------------------------------------------------------#
 #
@@ -36,8 +90,7 @@ find_library(PTHREADS_LIBRARY pthread)
 find_package(Threads QUIET)
 
 if(Threads_FOUND OR (PTHREADS_LIBRARY AND NOT WIN32))
-    add_interface_library(timemory-threading)
-    target_link_libraries(timemory-headers INTERFACE timemory-threading)
+    add_external_library(timemory-threading)
 endif()
 
 if(Threads_FOUND)
@@ -83,8 +136,7 @@ if(TIMEMORY_USE_MPI)
     find_package(MPI)
 
     if(MPI_FOUND)
-        add_interface_library(timemory-mpi)
-        target_link_libraries(timemory-headers INTERFACE timemory-mpi)
+        add_external_library(timemory-mpi)
 
         foreach(_LANG C CXX)
             # include directories
@@ -243,11 +295,10 @@ if(TIMEMORY_USE_PAPI)
     find_package(PAPI)
 
     if(PAPI_FOUND)
-        add_interface_library(timemory-papi)
+        add_external_library(timemory-papi)
         target_include_directories(timemory-papi SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
         target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
         target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
-        target_link_libraries(timemory-headers INTERFACE timemory-papi)
     else()
         set(TIMEMORY_USE_PAPI OFF)
         message(WARNING "PAPI package not found!")
@@ -267,7 +318,7 @@ if(TIMEMORY_USE_COVERAGE)
         find_library(GCOV_LIBRARY gcov QUIET)
 
         if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
-            add_interface_library(timemory-coverage)
+            add_external_library(timemory-coverage)
             add_c_flag_if_avail("-ftest-coverage" timemory-coverage)
             add_cxx_flag_if_avail("-ftest-coverage" timemory-coverage)
             if(cxx_ftest_coverage)
@@ -302,7 +353,7 @@ if(TIMEMORY_USE_CUDA)
 
     if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
 
-        add_interface_library(timemory-cuda)
+        add_external_library(timemory-cuda)
 
         target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
@@ -341,9 +392,6 @@ if(TIMEMORY_USE_CUDA)
         if(TIMEMORY_USE_CUPTI)
             set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
 
-            add_library(timemory-cupti-shared SHARED)
-            add_library(timemory-cupti-static STATIC)
-
             # try to find cupti header
             find_path(CUDA_cupti_INCLUDE_DIR
                 NAMES           cupti.h
@@ -376,10 +424,6 @@ if(TIMEMORY_USE_CUDA)
             # clean-up
             unset(_CUDA_PATHS)
         endif()
-
-        # timemory-headers provides timemory-cuda
-        target_link_libraries(timemory-headers INTERFACE timemory-cuda)
-
     else()
         message(WARNING "CUDA not available!")
         set(TIMEMORY_USE_CUPTI OFF)
@@ -400,11 +444,10 @@ if(TIMEMORY_USE_GPERF)
     find_package(GPerfTools COMPONENTS profiler tcmalloc)
 
     if(GPerfTools_FOUND)
-        add_interface_library(timemory-gperf)
+        add_external_library(timemory-gperf)
         target_compile_definitions(timemory-gperf INTERFACE TIMEMORY_USE_GPERF)
         target_include_directories(timemory-gperf INTERFACE ${GPerfTools_INCLUDE_DIRS})
         target_link_libraries(timemory-gperf INTERFACE ${GPerfTools_LIBRARIES})
-        target_link_libraries(timemory-headers INTERFACE timemory-gperf)
     else()
         set(TIMEMORY_USE_GPERF OFF)
         message(WARNING "GPerfTools package not found!")
@@ -415,46 +458,8 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                           Cereal (serialization library)
-#
-#----------------------------------------------------------------------------------------#
-
-checkout_git_submodule(RECURSIVE
-    RELATIVE_PATH source/cereal
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-
-set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
-# this gets annoying
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
-
-# add cereal
-if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
-    add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
-endif()
-
-add_interface_library(timemory-cereal IMPORTED GLOBAL)
-target_include_directories(timemory-cereal SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source/cereal/include>
-    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
-
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
-
-target_link_libraries(timemory-headers INTERFACE timemory-cereal)
-
-
-#----------------------------------------------------------------------------------------#
-#
 #                               External variables
 #
 #----------------------------------------------------------------------------------------#
-
-# including the directories
-safe_remove_duplicates(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-set(EXTERNAL_LIBRARIES ${EXTERNAL_LIBRARIES})
-list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES ${EXTERNAL_LIBRARIES})
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)

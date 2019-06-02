@@ -46,9 +46,27 @@ endif()
 include(CMakeDependentOption)
 include(CMakeParseArguments)
 
-unset(INSTALL_LIBRARIES)
-unset(INTERFACE_LIBRARIES)
-unset(EXTERNAL_LIBRARIES)
+# Make this file generic by not explicitly defining the name of the project
+string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UC)
+string(TOLOWER "${PROJECT_NAME}" PROJECT_NAME_LC)
+
+unset(${PROJECT_NAME_UC}_EXTERNAL_LIBRARIES CACHE)
+unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
+unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
+
+#-----------------------------------------------------------------------
+# CACHED LIST
+#-----------------------------------------------------------------------
+# macro set_ifnot(<var> <value>)
+#       If variable var is not set, set its value to that provided
+#
+FUNCTION(CACHE_LIST _OP _LIST)
+    # apply operation on list
+    list(${_OP} ${_LIST} ${ARGN})
+    # replace list
+    set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
+ENDFUNCTION()
+
 
 #-----------------------------------------------------------------------
 # CMAKE EXTENSIONS
@@ -227,21 +245,19 @@ ENDMACRO()
 #------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
-MACRO(ADD_INTERFACE_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE)
-    list(APPEND EXTERNAL_LIBRARIES ${_TARGET})
-    list(APPEND INSTALL_LIBRARIES ${_TARGET})
-    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
+MACRO(ADD_EXTERNAL_LIBRARY _TARGET)
+    add_library(${_TARGET} INTERFACE ${ARGN})
+    cache_list(APPEND ${PROJECT_NAME_UC}_EXTERNAL_LIBRARIES ${_TARGET})
+    target_link_libraries(${PROJECT_NAME_LC}-extensions INTERFACE ${_TARGET})
 ENDMACRO()
 
 
 #------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
-MACRO(ADD_EXPORTED_INTERFACE_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE)
-    list(APPEND INSTALL_LIBRARIES ${_TARGET})
-    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
+MACRO(ADD_INTERFACE_LIBRARY _TARGET)
+    add_library(${_TARGET} INTERFACE ${ARGN})
+    cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
 ENDMACRO()
 
 
@@ -264,6 +280,10 @@ macro(BUILD_LIBRARY)
                     LINK_LIBRARIES
                     COMPILE_DEFINITIONS
                     INCLUDE_DIRECTORIES
+                    LINK_OPTIONS
+                    C_COMPILE_OPTIONS
+                    CXX_FLAGS
+                    CUDA_FLAGS
                     EXTRA_PROPERTIES)
 
     cmake_parse_arguments(
@@ -283,35 +303,37 @@ macro(BUILD_LIBRARY)
         set(LIB_PREFIX lib)
     endif()
 
+    # add the library or sources
     if(NOT TARGET ${LIBRARY_TARGET_NAME})
-        add_library(${LIBRARY_TARGET_NAME}
-            ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+        add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
     else()
         target_sources(${LIBRARY_TARGET_NAME} PRIVATE ${LIBRARY_SOURCES})
     endif()
 
+    # append include directories
     target_include_directories(${LIBRARY_TARGET_NAME}
-        PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+        PUBLIC ${LIBRARY_INCLUDE_DIRECTORIES})
 
-    target_include_directories(${LIBRARY_TARGET_NAME} SYSTEM
-        PRIVATE ${${PROJECT_NAME}_SYSTEM_INCLUDE_DIRS})
-
-    target_include_directories(${LIBRARY_TARGET_NAME} SYSTEM
-        PUBLIC ${EXTERNAL_INCLUDE_DIRS})
-
+    # compile definitions
     target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
 
+    # compile flags
     target_compile_options(${LIBRARY_TARGET_NAME}
         PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
-            $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+            $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
+            $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>
+            $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
 
-    if(NOT LIBRARY_TYPE STREQUAL OBJECT)
-        target_link_libraries(${LIBRARY_TARGET_NAME}
-            PUBLIC ${LIBRARY_LINK_LIBRARIES})
-    endif()
+    # link options
+    target_link_options(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_LINK_OPTIONS})
+
+    # link libraries
+    target_link_libraries(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_LINK_LIBRARIES})
     
+    # other properties
     set_target_properties(
         ${LIBRARY_TARGET_NAME}          PROPERTIES
         OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
@@ -320,7 +342,12 @@ macro(BUILD_LIBRARY)
         POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
         ${LIBRARY_EXTRA_PROPERTIES})
 
-    list(APPEND INSTALL_LIBRARIES ${LIBRARY_TARGET_NAME})
+    # add to cached list of compiled libraries
+    set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
+    if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
+        cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES ${LIBRARY_TARGET_NAME})
+    endif()
+    unset(COMPILED_TYPES)
 
 endmacro(BUILD_LIBRARY)
 

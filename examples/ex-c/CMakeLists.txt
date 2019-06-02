@@ -1,9 +1,9 @@
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 project(TiMemory-C-Example LANGUAGES C)
 
 set(EXE_NAME test_c_timing)
-set(COMPONENTS c static compile-options)
+set(COMPONENTS c static compile-options extensions)
 
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)

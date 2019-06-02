@@ -7,7 +7,7 @@
 
 unset(CMAKE_CXX_CLANG_TIDY)
 
-set(PYLIBNAME lib${LIBNAME})
+set(PYLIBNAME libtimemory)
 set(TIMEMORY_TLS_MODEL "global-dynamic")
 add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
 
@@ -31,32 +31,7 @@ pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
 
 target_link_libraries(${PYLIBNAME}
-    PRIVATE ${LIBNAME}-cxx timemory-headers)
-
-target_compile_definitions(${PYLIBNAME} PRIVATE
-    ${${PROJECT_NAME}_DEFINITIONS})
-
-target_compile_options(${PYLIBNAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
-    $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
-
-target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
-
-target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
-    ${${PROJECT_NAME}_SYSTEM_INCLUDE_DIRS})
-
-target_include_directories(${PYLIBNAME} PRIVATE
-    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-
-target_include_directories(${PYLIBNAME} PRIVATE
-    ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
-
-add_dependencies(${PYLIBNAME} ${LIBNAME}-cxx)
-
-if(TIMEMORY_BUILD_C)
-    add_dependencies(${PYLIBNAME} ${LIBNAME}-c)
-endif()
+    PRIVATE timemory-headers timemory-extensions timemory-cxx-shared)
 
 set_target_properties(${PYLIBNAME} PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
@@ -143,7 +118,7 @@ if(BUILD_SHARED_LIBS)
             -DOUTPUT=${TIMEMORY_INFO_FILE}
             -DLENGTH=2
             -DNAMES="timemory_shared_library\;timemory_dynamic_library"
-            -DVALUES="$<TARGET_FILE:${LIBNAME}-cxx-shared>\;$<TARGET_FILE:${PYLIBNAME}>"
+            -DVALUES="$<TARGET_FILE:timemory-cxx-shared>\;$<TARGET_FILE:${PYLIBNAME}>"
             -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
         COMMENT "Generating timemory_pathinfo.txt..."
     VERBATIM)
@@ -173,8 +148,6 @@ endforeach()
 install(TARGETS ${PYLIBNAME}
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
     COMPONENT python)
-
-export(TARGETS ${INSTALL_LIBRARIES} FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
 
 #----------------------------------------------------------------------------
 # Python testing

@@ -43,8 +43,8 @@ if("${LIBNAME}" STREQUAL "")
     string(TOLOWER "${PROJECT_NAME}" LIBNAME)
 endif()
 
-add_exported_interface_library(${LIBNAME}-c-compile-options)
-add_exported_interface_library(${LIBNAME}-cxx-compile-options)
+add_interface_library(${LIBNAME}-c-compile-options)
+add_interface_library(${LIBNAME}-cxx-compile-options)
 
 #----------------------------------------------------------------------------------------#
 # macro converting string to list

@@ -104,7 +104,7 @@ struct tms
 // All times are in CLK_TCKths of a second.
 
 EXTERN_C inline clock_t
-         times(struct tms* __buffer)
+times(struct tms* __buffer)
 {
     __buffer->tms_utime  = clock();
     __buffer->tms_stime  = 0;
@@ -125,7 +125,7 @@ enum clockid_t
 };
 
 EXTERN_C inline LARGE_INTEGER
-         get_filetime_offset()
+get_filetime_offset()
 {
     SYSTEMTIME    s;
     FILETIME      f;
@@ -146,7 +146,7 @@ EXTERN_C inline LARGE_INTEGER
 }
 
 EXTERN_C inline int
-         clock_gettime(clockid_t, struct timespec* tv)
+clock_gettime(clockid_t, struct timespec* tv)
 {
     LARGE_INTEGER        t;
     FILETIME             f;

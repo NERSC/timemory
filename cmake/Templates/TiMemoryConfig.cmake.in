@@ -1,5 +1,5 @@
 
-cmake_policy(SET CMP0057 NEW)
+# cmake_policy(SET CMP0057 NEW)
 
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
@@ -25,8 +25,9 @@ set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
 # installed and interface libraries
-set(@PROJECT_NAME@_INSTALLED_LIBRARIES @INSTALL_LIBRARIES@)
-set(@PROJECT_NAME@_INTERFACE_LIBRARIES @INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
+set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_EXTERNAL_LIBRARIES @TIMEMORY_EXTERNAL_LIBRARIES@)
 
 # language standards
 set(CMAKE_C_STANDARD @CMAKE_C_STANDARD@ CACHE STRING "")
@@ -89,50 +90,6 @@ if(TIMEMORY_INSTALL_TREE)
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
     check_required_components(@PROJECT_NAME@)
 
-    #--------------------------------------------------------------------------#
-    #   try to get imported location
-    #--------------------------------------------------------------------------#
-
-    set(IMPORTED_LOCATION_BUILD )
-    string(TOUPPER "${@PROJECT_NAME@_BUILD_TYPE}" _BUILD_TYPE)
-    if("${@PROJECT_NAME@_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-        set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-    endif()
-
-    set(LOCATIONS IMPORTED_LOCATION
-        ${IMPORTED_LOCATION_BUILD}
-        IMPORTED_LOCATION_RELEASE
-        IMPORTED_LOCATION_RELWITHDEBINFO
-        IMPORTED_LOCATION_DEBUG
-        IMPORTED_LOCATION_MINSIZEREL)
-
-    # loop over library types
-    foreach(_TYPE shared static)
-        # loop over languages
-        foreach(_LANG ${TIMEMORY_LANGUAGES})
-            string(TOLOWER "${_LANG}" _LANG_LOWER)
-            # try imported locations until one is found
-            foreach(_LOC ${LOCATIONS})
-                if(NOT _${_LANG}_LOCATION)
-                    get_target_property(_${_LANG}_LOCATION
-                        @LIBNAME@-${_LANG_LOWER}-${_TYPE} ${_LOC})
-                endif()
-            endforeach()
-
-            if(_${_LANG}_LOCATION)
-                set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
-                    CACHE INTERNAL "@PROJECT_NAME@ ${_LANG} library")
-            endif()
-
-            unset(_${_LANG}_LOCATION)
-
-            if("${_TYPE}" STREQUAL "static" AND WIN32)
-                target_compile_definitions(@LIBNAME@-${_LANG_LOWER}-${_TYPE} PUBLIC
-                    _TIMEMORY_ARCHIVE)
-            endif()
-        endforeach()
-    endforeach()
-
 else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
@@ -152,9 +109,7 @@ else() # build tree
         import_lib(${_LIB} INTERFACE_IMPORTED_LOCATION)
     endforeach()
 
-    list(REMOVE_ITEM @PROJECT_NAME@_INSTALLED_LIBRARIES ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
-
-    foreach(_LIB ${@PROJECT_NAME@_INSTALLED_LIBRARIES})
+    foreach(_LIB ${@PROJECT_NAME@_COMPILED_LIBRARIES})
         import_lib(${_LIB} IMPORTED_LOCATION)
     endforeach()
 
@@ -176,55 +131,6 @@ endif()
 
 
 #------------------------------------------------------------------------------#
-#   Alias target
-#------------------------------------------------------------------------------#
-if(DYNAMIC_LINK)
-    if(NOT TARGET @LIBNAME@-c-shared)
-        add_library(@LIBNAME@-c-shared ALIAS @LIBNAME@-c)
-    endif()
-    if(NOT TARGET @LIBNAME@-cxx-shared)
-        add_library(@LIBNAME@-cxx-shared ALIAS @LIBNAME@-cxx)
-    endif()
-    if(NOT TARGET @LIBNAME@-cuda-static)
-        add_library(@LIBNAME@-cuda-static ALIAS @LIBNAME@-cuda)
-    endif()
-endif()
-
-
-#------------------------------------------------------------------------------#
-#   Interface
-#------------------------------------------------------------------------------#
-foreach(_LANG ${TIMEMORY_LANGUAGES})
-    string(TOLOWER "${_LANG}" _LANG_LOWER)
-    # timemory-{c,cxx,cuda} --> TiMemory::TiMemory_{C,CXX,CUDA}
-    add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG} ALIAS @LIBNAME@-${_LANG_LOWER})
-    if(NOT "${_LANG}" STREQUAL "CUDA")
-        if(DYNAMIC_LINK)
-            # timemory-{c,cxx} --> TiMemory::TiMemory_{C,CXX}::shared
-            add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::shared ALIAS @LIBNAME@-${_LANG_LOWER})
-        endif()
-        # timemory-{c,cxx}-static --> TiMemory::TiMemory_{C,CXX}::static
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER}-static)
-    else()
-        # timemory-cuda
-        add_library(@PROJECT_NAME@::@PROJECT_NAME@_${_LANG}::static ALIAS @LIBNAME@-${_LANG_LOWER})
-    endif()
-    unset(_LANG_LOWER)
-endforeach()
-
-
-#------------------------------------------------------------------------------#
-#   Definitions
-#------------------------------------------------------------------------------#
-if(WIN32)
-    target_compile_definitions(@LIBNAME@-cxx-static INTERFACE _TIMEMORY_ARCHIVE)
-    if(TIMEMORY_C_LIBRARY)
-        target_compile_definitions(@LIBNAME@-c-static INTERFACE _TIMEMORY_ARCHIVE)
-    endif()
-endif()
-
-
-#------------------------------------------------------------------------------#
 #   TiMemory link target
 #------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
@@ -232,14 +138,6 @@ set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx)
 if(TIMEMORY_C_LIBRARY)
     set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
     list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
-endif()
-
-
-#------------------------------------------------------------------------------#
-#   components for install tree
-#------------------------------------------------------------------------------#
-if(TIMEMORY_INSTALL_TREE)
-    set(@PROJECT_NAME@_COMPONENTS @INSTALL_LIBRARIES@ @INTERFACE_LIBRARIES@)
 endif()
 
 
@@ -359,6 +257,7 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
     list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
     set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
     string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
+    string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
     message(STATUS "[${PROJECT_NAME}] @PROJECT_NAME@ found components: ${_COMPONENT_LIST}")
 
     unset(_COMPONENT_LIST)
@@ -375,7 +274,6 @@ include(FindPackageHandleStandardArgs)
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
-    ${@PROJECT_NAME@_COMPONENTS}
     ${_@PROJECT_NAME@_MISSING_COMPONENTS}
     @PROJECT_NAME@_LIBRARIES)
 
