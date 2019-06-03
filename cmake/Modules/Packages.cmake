@@ -94,7 +94,9 @@ add_external_library(timemory-threading)
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
-elseif(PTHREADS_LIBRARY AND NOT WIN32)
+endif()
+  
+if(PTHREADS_LIBRARY AND NOT WIN32)  
     target_link_libraries(timemory-threading INTERFACE ${PTHREADS_LIBRARY})
 endif()
 
