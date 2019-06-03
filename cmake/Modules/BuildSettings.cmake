@@ -186,7 +186,7 @@ if(TIMEMORY_USE_SANITIZER)
 
     foreach(_TYPE ${SANITIZER_TYPES})
         set(_LIB ${${_TYPE}_lib})
-        add_interface_library(timemory-${_TYPE}-sanitizer INTERFACE)
+        add_interface_library(timemory-${_TYPE}-sanitizer)
         add_target_flag_if_avail(timemory-${_TYPE}-sanitizer "-fsanitize=${SANITIZER_TYPE}")
         target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_LIB}_LIBRARY})
     endforeach()
