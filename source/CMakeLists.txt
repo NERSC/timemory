@@ -1,4 +1,16 @@
 
+#----------------------------------------------------------------------------------------#
+#   configuration
+#----------------------------------------------------------------------------------------#
+
+include(MacroUtilities)
+include(Options)
+include(Compilers)
+include(GNUInstallDirs)
+include(ProjectSettings)
+include(BuildSettings)
+include(Packages)
+include(ClangFormat)
 include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
@@ -239,3 +251,9 @@ if(TIMEMORY_BUILD_PYTHON)
         GROUP_EXECUTE GROUP_READ
         WORLD_EXECUTE WORLD_READ)
 endif()
+
+#----------------------------------------------------------------------------------------#
+#   Package setup
+#----------------------------------------------------------------------------------------#
+
+include(PackageConfigure)

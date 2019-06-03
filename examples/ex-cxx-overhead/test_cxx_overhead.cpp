@@ -123,9 +123,6 @@ run(int64_t n, bool with_timing, int64_t cutoff)
 int
 main(int argc, char** argv)
 {
-#if defined(TIMEMORY_EXTERN_TEMPLATES)
-    extern_template_instantiation();
-#endif
     tim::settings::timing_scientific() = true;
     tim::settings::cout_output()       = false;
     tim::timemory_init(argc, argv);

@@ -15,7 +15,7 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
 add_interface_library(timemory-headers)
 target_include_directories(timemory-headers INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source>)
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
 target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
@@ -64,7 +64,7 @@ endif()
 
 add_external_library(timemory-cereal)
 target_include_directories(timemory-cereal SYSTEM INTERFACE
-    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/source/cereal/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
 set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
