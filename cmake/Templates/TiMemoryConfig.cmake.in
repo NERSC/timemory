@@ -167,7 +167,6 @@ else()
 endif()
 
 if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
-    message(STATUS "Components interface library: ${_INTERFACE_LIB}")
 
     set(_LINK )
     set(_LANGUAGES )
@@ -271,7 +270,7 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
     set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
     string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
     string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
-    message(STATUS "[${PROJECT_NAME}] @PROJECT_NAME@ found components: ${_COMPONENT_LIST}")
+    message(STATUS "[${PROJECT_NAME}] @PROJECT_NAME@ : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
 
     unset(_COMPONENT_LIST)
     unset(_LINK)
