@@ -328,7 +328,7 @@ macro(BUILD_LIBRARY)
     # link options
     if(NOT CMAKE_VERSION VERSION_LESS 3.13)
         target_link_options(${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_OPTIONS})
-    else()
+    elseif(NOT "${LIBRARY_LINK_OPTIONS}" STREQUAL "")
         list(APPEND LIBRARY_EXTRA_PROPERTIES LINK_OPTIONS ${LIBRARY_LINK_OPTIONS})
     endif()
 
