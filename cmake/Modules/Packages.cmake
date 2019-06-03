@@ -320,7 +320,12 @@ if(TIMEMORY_USE_COVERAGE)
             add_c_flag_if_avail("-ftest-coverage" timemory-coverage)
             add_cxx_flag_if_avail("-ftest-coverage" timemory-coverage)
             if(cxx_ftest_coverage)
-                target_link_options(timemory-coverage INTERFACE "-fprofile-arcs")
+                if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+                    target_link_options(timemory-mpi INTERFACE "-fprofile-arcs")
+                else()
+                    set_target_properties(timemory-coverage PROPERTIES
+                        INTERFACE_LINK_OPTIONS "-fprofile-arcs")
+                endif()
             endif()
         endif()
 

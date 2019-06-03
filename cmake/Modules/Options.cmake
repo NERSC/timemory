@@ -24,11 +24,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
 endif()
 
-set(_RPATH_LINK OFF)
-if(APPLE)
-    set(_RPATH_LINK ON)
-endif()
-
 # Check if CUDA can be enabled
 set(_USE_CUDA ON)
 find_package(CUDA QUIET)
@@ -51,7 +46,7 @@ set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
 add_option(CMAKE_C_STANDARD_REQUIRED "Require C standard" ON)
 add_option(CMAKE_CXX_STANDARD_REQUIRED "Require C++ standard" ON)
 add_option(CMAKE_CXX_EXTENSIONS "Build with CXX extensions (e.g. gnu++11)" OFF)
-add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ${_RPATH_LINK})
+add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 add_option(BUILD_SHARED_LIBS "Build shared libraries" ON)
 
 # Build settings

@@ -92,7 +92,7 @@
 
 #if defined(DEBUG)
 template <typename... Args>
-void
+inline void
 _LOG(const char* msg, Args&&... args)
 {
     fprintf(stderr, "[Log]: ");
@@ -102,7 +102,7 @@ _LOG(const char* msg, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-void
+inline void
 _LOG(const char* msg)
 {
     fprintf(stderr, "[Log]: %s\n", msg);
@@ -111,7 +111,7 @@ _LOG(const char* msg)
 //--------------------------------------------------------------------------------------//
 
 template <typename... Args>
-void
+inline void
 _DBG(const char* msg, Args&&... args)
 {
     fprintf(stderr, msg, std::forward<Args>(args)...);
@@ -119,7 +119,7 @@ _DBG(const char* msg, Args&&... args)
 
 //--------------------------------------------------------------------------------------//
 
-void
+inline void
 _DBG(const char* msg)
 {
     fprintf(stderr, "%s", msg);
