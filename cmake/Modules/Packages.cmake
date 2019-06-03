@@ -479,7 +479,17 @@ if(TIMEMORY_USE_CUDA)
                 NAMES           cuda
                 HINTS           ${_CUDA_PATHS}
                 PATHS           ${_CUDA_PATHS}
-                PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia lib/stubs lib64/stubs stubs)
+                PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
+
+            # try to find cuda driver stubs library if no real driver
+            if(NOT CUDA_cuda_LIBRARY)
+                set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF CACHE BOOL "Use link path for RPATH" FORCE)
+                find_library(CUDA_cuda_LIBRARY
+                    NAMES           cuda
+                    HINTS           ${_CUDA_PATHS}
+                    PATHS           ${_CUDA_PATHS}
+                    PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+            endif()
 
             # if header and library found
             if(CUDA_cupti_INCLUDE_DIR AND CUDA_cupti_LIBRARY AND CUDA_cuda_LIBRARY)

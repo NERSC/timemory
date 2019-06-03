@@ -30,19 +30,20 @@ set(CMAKE_CUDA_EXTENSIONS OFF CACHE BOOL "CUDA language extensions")
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
     # if ${PROJECT_NAME}_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
     if(NOT DEFINED ${PROJECT_NAME}_OUTPUT_DIR OR "${${PROJECT_NAME}_OUTPUT_DIR}" STREQUAL "")
-        set(${PROJECT_NAME}_OUTPUT_DIR ${CMAKE_BINARY_DIR})
+        set(${PROJECT_NAME}_OUTPUT_DIR ${CMAKE_BINARY_DIR} PARENT_SCOPE)
     endif()
 
     # set the CMAKE_{ARCHIVE,LIBRARY,RUNTIME}_OUTPUT_DIRECTORY variables
     if(WIN32)
         # on Windows, separate types into different directories
         string(TOLOWER "${_TYPE}" _LTYPE)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE})
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE}
+            PARENT_SCOPE)
     elseif(XCODE)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR} PARENT_SCOPE)
     else()
         # on UNIX, just set to same directory
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR})
+        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR} PARENT_SCOPE)
     endif()
 endforeach()
 
