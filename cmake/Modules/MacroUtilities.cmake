@@ -280,10 +280,10 @@ macro(BUILD_LIBRARY)
                     LINK_LIBRARIES
                     COMPILE_DEFINITIONS
                     INCLUDE_DIRECTORIES
-                    LINK_OPTIONS
                     C_COMPILE_OPTIONS
-                    CXX_FLAGS
-                    CUDA_FLAGS
+                    CXX_COMPILE_OPTIONS
+                    CUDA_COMPILE_OPTIONS
+                    LINK_OPTIONS
                     EXTRA_PROPERTIES)
 
     cmake_parse_arguments(
@@ -326,8 +326,11 @@ macro(BUILD_LIBRARY)
             $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
 
     # link options
-    #target_link_options(${LIBRARY_TARGET_NAME}
-    #    PUBLIC ${LIBRARY_LINK_OPTIONS})
+    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+        target_link_options(${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_OPTIONS})
+    else()
+        list(APPEND LIBRARY_EXTRA_PROPERTIES LINK_OPTIONS ${LIBRARY_LINK_OPTIONS})
+    endif()
 
     # link libraries
     target_link_libraries(${LIBRARY_TARGET_NAME}
@@ -335,11 +338,11 @@ macro(BUILD_LIBRARY)
     
     # other properties
     set_target_properties(
-        ${LIBRARY_TARGET_NAME}          PROPERTIES
-        OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
-        LANGUAGE                        ${LIBRARY_LANGUAGE}
-        LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
-        POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
+        ${LIBRARY_TARGET_NAME}      PROPERTIES
+        OUTPUT_NAME                 ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
+        LANGUAGE                    ${LIBRARY_LANGUAGE}
+        LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
+        POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
         ${LIBRARY_EXTRA_PROPERTIES})
 
     # add to cached list of compiled libraries

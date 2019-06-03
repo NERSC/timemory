@@ -57,7 +57,7 @@ add_option(TIMEMORY_BUILD_C "Build the C compatible library" ON ${_FEATURE})
 add_option(TIMEMORY_BUILD_PYTHON "Build Python binds for ${PROJECT_NAME}" ON ${_FEATURE})
 add_option(TIMEMORY_BUILD_LTO "Enable link-time optimizations in build" OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_TOOLS "Enable building tools" ON ${_FEATURE})
-add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES "Pre-compile list of templates for extern" ON)
+add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES "Pre-compile list of templates for extern" ON ${_FEATURE})
 
 # Features
 add_feature(CMAKE_C_STANDARD "C language standard")

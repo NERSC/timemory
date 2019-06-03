@@ -42,34 +42,40 @@ endif()
 # build the CUDA library
 #
 if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI)
-    build_library(
-        PIC
-        TYPE                SHARED
-        TARGET_NAME         timemory-cupti-shared
-        OUTPUT_NAME         cutimemory
-        LANGUAGE            CUDA
-        LINKER_LANGUAGE     CUDA
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
-        SOURCES             ${CUDA_LIBRARY_SOURCES}
-        LINK_LIBRARIES      timemory-headers timemory-extensions ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
-        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
 
     build_library(
         PIC
-        TYPE                STATIC
-        TARGET_NAME         timemory-cupti-static
-        OUTPUT_NAME         cutimemory
-        LANGUAGE            CUDA
-        LINKER_LANGUAGE     CUDA
-        OUTPUT_DIR          ${_OUTPUT_DIR} # ignored on Windows
-        COMPILE_DEFINITIONS ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
-        SOURCES             ${CUDA_LIBRARY_SOURCES}
-        LINK_LIBRARIES      timemory-headers timemory-extensions ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
-        INCLUDE_DIRECTORIES ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+        TYPE                    SHARED
+        TARGET_NAME             timemory-cupti-shared
+        OUTPUT_NAME             cutimemory
+        LANGUAGE                CUDA
+        LINKER_LANGUAGE         CUDA
+        OUTPUT_DIR              ${_OUTPUT_DIR}
+        COMPILE_DEFINITIONS     ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
+        CXX_COMPILE_OPTIONS     ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        CUDA_COMPILE_OPTIONS    ${${PROJECT_NAME}_CUDA_COMPILE_OPTIONS}
+        SOURCES                 ${CUDA_LIBRARY_SOURCES}
+        LINK_LIBRARIES          timemory-headers timemory-extensions timemory-cuda
+                                ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
+        INCLUDE_DIRECTORIES     ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS}
+                                ${CUDA_cupti_INCLUDE_DIR})
 
-    target_include_directories(timemory-cupti-shared PUBLIC ${CUDA_cupti_INCLUDE_DIR})
-    target_include_directories(timemory-cupti-static PUBLIC ${CUDA_cupti_INCLUDE_DIR})
+    build_library(
+        PIC
+        TYPE                    STATIC
+        TARGET_NAME             timemory-cupti-static
+        OUTPUT_NAME             cutimemory
+        LANGUAGE                CUDA
+        LINKER_LANGUAGE         CUDA
+        OUTPUT_DIR              ${_OUTPUT_DIR}
+        COMPILE_DEFINITIONS     ${${PROJECT_NAME}_DEFINITIONS} TIMEMORY_USE_CUPTI
+        SOURCES                 ${CUDA_LIBRARY_SOURCES}
+        CXX_COMPILE_OPTIONS     ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        CUDA_COMPILE_OPTIONS    ${${PROJECT_NAME}_CUDA_COMPILE_OPTIONS}
+        LINK_LIBRARIES          timemory-headers timemory-extensions timemory-cuda
+                                ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY}
+        INCLUDE_DIRECTORIES     ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS}
+                                ${CUDA_cupti_INCLUDE_DIR})
 
     target_link_libraries(timemory-cupti-shared INTERFACE timemory-cuda)
     target_link_libraries(timemory-cupti-static INTERFACE timemory-cuda)
@@ -97,8 +103,9 @@ build_library(
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
+    CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers timemory-extensions)
+    LINK_LIBRARIES      timemory-cxx-compile-options timemory-headers timemory-extensions)
 
 build_library(
     TYPE                STATIC
@@ -108,6 +115,7 @@ build_library(
     LINKER_LANGUAGE     CXX
     OUTPUT_DIR          ${_OUTPUT_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
+    CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     LINK_LIBRARIES      timemory-headers timemory-extensions)
 
 add_interface_library(timemory-cxx)
@@ -138,6 +146,7 @@ if(TIMEMORY_BUILD_C)
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
+        C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
         LINK_LIBRARIES      timemory-headers timemory-extensions timemory-cxx-shared)
 
     build_library(
@@ -148,6 +157,7 @@ if(TIMEMORY_BUILD_C)
         LINKER_LANGUAGE     CXX
         OUTPUT_DIR          ${_OUTPUT_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
+        C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
         LINK_LIBRARIES      timemory-headers timemory-extensions timemory-cxx-static)
 
     add_interface_library(timemory-c)

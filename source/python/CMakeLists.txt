@@ -30,8 +30,8 @@ endif(NOT BUILD_SHARED_LIBS AND WIN32)
 pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
     ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
 
-target_link_libraries(${PYLIBNAME}
-    PRIVATE timemory-headers timemory-extensions timemory-cxx-shared)
+target_link_libraries(${PYLIBNAME} PRIVATE timemory-cxx-compile-options timemory-headers
+    timemory-extensions timemory-cxx-shared)
 
 target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)

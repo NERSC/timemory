@@ -89,9 +89,8 @@ endif()
 find_library(PTHREADS_LIBRARY pthread)
 find_package(Threads QUIET)
 
-if(Threads_FOUND OR (PTHREADS_LIBRARY AND NOT WIN32))
-    add_external_library(timemory-threading)
-endif()
+# empty target if nothing found
+add_external_library(timemory-threading)
 
 if(Threads_FOUND)
     target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
@@ -108,30 +107,21 @@ endif()
 
 if(TIMEMORY_USE_MPI)
 
+    # MS-MPI standard install
     if(WIN32)
-        if(EXISTS "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI")
-            list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI")
-        endif(EXISTS "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI")
-
-        if(EXISTS "C:/Program\ Files/Microsoft\ SDKs/MPI")
-            list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files/Microsoft\ SDKs/MPI")
-        endif(EXISTS "C:/Program\ Files/Microsoft\ SDKs/MPI")
+        list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
+            "C:/Program\ Files/Microsoft\ SDKs/MPI")
     endif()
 
     # MPI C compiler from environment
-    set(_ENV MPICC)
-    if(NOT DEFINED MPI_C_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
-        message(STATUS "Setting MPI C compiler to: $ENV{${_ENV}}")
-        set(MPI_C_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C compiler")
+    if(NOT "$ENV{MPICC}" STREQUAL "")
+        set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
     endif()
 
     # MPI C++ compiler from environment
-    set(_ENV MPICXX)
-    if(NOT DEFINED MPI_CXX_COMPILER AND NOT "$ENV{${_ENV}}" STREQUAL "")
-        message(STATUS "Setting MPI C++ compiler to: $ENV{${_ENV}}")
-        set(MPI_CXX_COMPILER $ENV{${_ENV}} CACHE FILEPATH "MPI C++ compiler")
+    if(NOT "$ENV{MPICXX}" STREQUAL "")
+        set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
     endif()
-    unset(_ENV)
 
     find_package(MPI)
 
@@ -162,8 +152,13 @@ if(TIMEMORY_USE_MPI)
             # compile flags
             to_list(_FLAGS "${MPI_${_LANG}_LINK_FLAGS}")
             foreach(_FLAG ${_FLAGS})
-                #target_link_options(timemory-mpi INTERFACE $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
-	        set_target_properties(timemory-mpi PROPERTIES INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+                    target_link_options(timemory-mpi INTERFACE
+                        $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                else()
+                    set_target_properties(timemory-mpi PROPERTIES
+                        INTERFACE_LINK_OPTIONS $<$<COMPILE_LANGUAGE:${_LANG}>:${_FLAG}>)
+                endif()
             endforeach()
             unset(_FLAGS)
 
@@ -192,7 +187,7 @@ if(TIMEMORY_USE_MPI)
     else()
 
         set(TIMEMORY_USE_MPI OFF)
-        message(WARNING "MPI not found. Proceeding without MPI")
+        message(WARNING "MPI not found! Proceeding without MPI...")
 
     endif()
 
@@ -302,7 +297,7 @@ if(TIMEMORY_USE_PAPI)
         target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
     else()
         set(TIMEMORY_USE_PAPI OFF)
-        message(WARNING "PAPI package not found!")
+        message(WARNING "PAPI package not found! Proceeding without PAPI...")
     endif()
 
 endif()
@@ -350,7 +345,7 @@ endif()
 
 if(TIMEMORY_USE_CUDA)
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
-    find_package(CUDA)
+    find_package(CUDA QUIET)
 
     if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
 
@@ -361,12 +356,94 @@ if(TIMEMORY_USE_CUDA)
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
         set_target_properties(timemory-cuda PROPERTIES
-            INTERFACE_CUDA_STANDARD ${CMAKE_CUDA_STANDARD}
-            INTERFACE_CUDA_STANDARD_REQUIRED ${CMAKE_CUDA_STANDARD_REQUIRED}
-            INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS ON
-            INTERFACE_CUDA_SEPARABLE_COMPILATION ON)
+            INTERFACE_CUDA_STANDARD                 ${CMAKE_CUDA_STANDARD}
+            INTERFACE_CUDA_STANDARD_REQUIRED        ${CMAKE_CUDA_STANDARD_REQUIRED}
+            INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
+            INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
 
-        add_feature(CUDA_ARCH "CUDA architecture (e.g. '35' means '-arch=sm_35')")
+        set(CUDA_GENERIC_ARCH "version")
+        set(CUDA_ARCHITECTURES version kepler tesla maxwell pascal volta turing)
+        set(CUDA_ARCH "${CUDA_GENERIC_ARCH}" CACHE STRING "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
+        add_feature(CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
+        set_property(CACHE CUDA_ARCH PROPERTY STRINGS ${CUDA_ARCHITECTURES})
+
+        set(cuda_kepler_arch    30)
+        set(cuda_tesla_arch     35)
+        set(cuda_maxwell_arch   50)
+        set(cuda_pascal_arch    60)
+        set(cuda_volta_arch     70)
+        set(cuda_turing_arch    75)
+
+        if(NOT "${CUDA_ARCH}" STREQUAL "${CUDA_GENERIC_ARCH}")
+            if(NOT "${CUDA_ARCH}" IN_LIST CUDA_ARCHITECTURES)
+                message(WARNING "CUDA architecture \"${CUDA_ARCH}\" not known. Options: ${CUDA_ARCH}")
+                unset(CUDA_ARCH CACHE)
+                set(CUDA_ARCH "${CUDA_GENERIC_ARCH}")
+            else()
+                set(_ARCH_NUM ${cuda_${CUDA_ARCH}_arch})
+            endif()
+        endif()
+
+        message(STATUS "${CUDA_GENERIC_ARCH} ${CUDA_ARCH}")
+        add_interface_library(timemory-cuda-7)
+        target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_20,code=sm_20
+            -gencode=arch=compute_30,code=sm_30
+            -gencode=arch=compute_50,code=sm_50
+            -gencode=arch=compute_52,code=sm_52
+            -gencode=arch=compute_52,code=compute_52
+            >)
+
+        add_interface_library(timemory-cuda-8)
+        target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_20,code=sm_20
+            -gencode=arch=compute_30,code=sm_30
+            -gencode=arch=compute_50,code=sm_50
+            -gencode=arch=compute_52,code=sm_52
+            -gencode=arch=compute_60,code=sm_60
+            -gencode=arch=compute_61,code=sm_61
+            -gencode=arch=compute_61,code=compute_61
+            >)
+
+        add_interface_library(timemory-cuda-9)
+        target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_50,code=sm_50
+            -gencode=arch=compute_52,code=sm_52
+            -gencode=arch=compute_60,code=sm_60
+            -gencode=arch=compute_61,code=sm_61
+            -gencode=arch=compute_70,code=sm_70
+            -gencode=arch=compute_70,code=compute_70
+            >)
+
+        add_interface_library(timemory-cuda-10)
+        target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_GENERIC_ARCH}">,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_50,code=sm_50
+            -gencode=arch=compute_52,code=sm_52
+            -gencode=arch=compute_60,code=sm_60
+            -gencode=arch=compute_61,code=sm_61
+            -gencode=arch=compute_70,code=sm_70
+            -gencode=arch=compute_75,code=sm_75
+            -gencode=arch=compute_75,code=compute_75
+            >)
+
+        string(REPLACE "." ";" CUDA_MAJOR_VERSION "${CUDA_VERSION}")
+        list(GET CUDA_MAJOR_VERSION 0 CUDA_MAJOR_VERSION)
+
+        if(CUDA_MAJOR_VERSION VERSION_GREATER 10 OR CUDA_MAJOR_VERSION MATCHES 10)
+            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-10)
+        elseif(CUDA_MAJOR_VERSION MATCHES 9)
+            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-9)
+        elseif(CUDA_MAJOR_VERSION MATCHES 8)
+            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
+        elseif(CUDA_MAJOR_VERSION MATCHES 7)
+            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+        else()
+            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+        endif()
 
         #   30, 32      + Kepler support
         #               + Unified memory programming
@@ -375,12 +452,9 @@ if(TIMEMORY_USE_CUDA)
         #   60, 61, 62  + Pascal support
         #   70, 72      + Volta support
         #   75          + Turing support
-        if(NOT DEFINED CUDA_ARCH)
-            set(CUDA_ARCH "35")
-        endif()
 
         target_compile_options(timemory-cuda INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:-arch=sm_${CUDA_ARCH} --default-stream per-thread>)
+            $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
 
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE
