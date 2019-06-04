@@ -391,7 +391,6 @@ if(TIMEMORY_USE_CUDA)
             endif()
         endif()
 
-        message(STATUS "${CUDA_GENERIC_ARCH} ${CUDA_ARCH}")
         add_interface_library(timemory-cuda-7)
         target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
