@@ -338,10 +338,6 @@ public:
         auto _update = [&](iterator itr) {
             exists         = true;
             m_data.depth() = itr->depth();
-#if defined(DEBUG)
-            printf("hash_id = %li, depth = %li\n", static_cast<long>(hash_id),
-                   static_cast<long>(m_data.depth()));
-#endif
             return (m_data.current() = itr);
         };
 
@@ -358,12 +354,6 @@ public:
         auto _insert_child = [&]() {
             exists       = false;
             node.depth() = m_data.depth() + 1;
-
-#if defined(DEBUG)
-            printf("hash_id = %li, depth = %li\n", static_cast<long>(hash_id),
-                   static_cast<long>(node.depth()));
-#endif
-
             auto itr = m_data.append_child(node);
             m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
@@ -442,21 +432,10 @@ public:
     iterator insert(int64_t hash_id, const ObjectType& obj, const string_t& prefix)
     {
         hash_id *= (m_data.depth() >= 0) ? (m_data.depth() + 1) : 1;
-
-#if defined(DEBUG)
-        printf("hash_id = %li, prefix = %s\n", static_cast<long>(hash_id),
-               prefix.c_str());
-#endif
-
         bool exists = false;
         auto itr    = insert(hash_id, obj, exists);
         if(!exists)
             itr->prefix() = prefix;
-
-#if defined(DEBUG)
-        printf("\n");
-#endif
-
         return itr;
     }
 
@@ -612,25 +591,20 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
 
         if(ptr && master && ptr != master)
         {
-            DEBUG_PRINT_HERE("storage_deleter");
             master->StorageType::merge(ptr);
         }
         else
         {
-            DEBUG_PRINT_HERE("storage_deleter");
             if(ptr)
             {
-                DEBUG_PRINT_HERE("storage_deleter");
                 ptr->StorageType::print();
             }
             else if(master)
             {
-                DEBUG_PRINT_HERE("storage_deleter");
                 master->StorageType::print();
             }
         }
 
-        DEBUG_PRINT_HERE("storage_deleter");
         if(this_tid == master_tid)
         {
             delete ptr;
@@ -639,10 +613,8 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
         {
             if(master && ptr != master)
             {
-                DEBUG_PRINT_HERE("storage_deleter");
                 singleton_t::remove(ptr);
             }
-            DEBUG_PRINT_HERE("storage_deleter");
             delete ptr;
         }
     }

@@ -162,14 +162,12 @@ tim::graph_storage<ObjectType>::print()
             std::cout << _oss.str() << std::endl;
         }
 
-        DEBUG_PRINT_HERE("reset instances");
         instance_count().store(0);
     }
     else
     {
         if(singleton_t::is_master(this))
         {
-            DEBUG_PRINT_HERE("reset instances");
             instance_count().store(0);
         }
     }

@@ -349,37 +349,29 @@ struct manager_deleter
 
         if(ptr && master && ptr != master)
         {
-            DEBUG_PRINT_HERE("manager_deleter");
         }
         else
         {
-            DEBUG_PRINT_HERE("manager_deleter");
             if(ptr)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 // ptr->print();
             }
             else if(master)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 // master->print();
             }
         }
 
-        DEBUG_PRINT_HERE("manager_deleter");
         if(this_tid == master_tid)
         {
-            DEBUG_PRINT_HERE("manager_deleter");
             // delete ptr;
         }
         else
         {
             if(master && ptr != master)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 singleton_t::remove(ptr);
             }
-            DEBUG_PRINT_HERE("manager_deleter");
             delete ptr;
         }
     }
