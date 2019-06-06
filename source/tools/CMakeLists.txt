@@ -23,7 +23,6 @@ target_link_libraries(${TIMEM_NAME} PRIVATE
     timemory-compile-options
     timemory-headers
     timemory-cxx-static)
-target_compile_definitions(${TIMEM_NAME} PRIVATE ${${PROJECT_NAME}_DEFINITIONS})
 
 # timem installation
 install(TARGETS ${TIMEM_NAME}
