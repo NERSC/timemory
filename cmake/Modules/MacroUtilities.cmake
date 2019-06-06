@@ -1,47 +1,11 @@
+# include guard
+include_guard(DIRECTORY)
+
 # MacroUtilities - useful macros and functions for generic tasks
 #
-# CMake Extensions
-# ----------------
-# macro set_ifnot(<var> <value>)
-#       If variable var is not set, set its value to that provided
-#
-# function enum_option(<option>
-#                      VALUES <value1> ... <valueN>
-#                      TYPE   <valuetype>
-#                      DOC    <docstring>
-#                      [DEFAULT <elem>]
-#                      [CASE_INSENSITIVE])
-#          Declare a cache variable <option> that can only take values
-#          listed in VALUES. TYPE may be FILEPATH, PATH or STRING.
-#          <docstring> should describe that option, and will appear in
-#          the interactive CMake interfaces. If DEFAULT is provided,
-#          <elem> will be taken as the zero-indexed element in VALUES
-#          to which the value of <option> should default to if not
-#          provided. Otherwise, the default is taken as the first
-#          entry in VALUES. If CASE_INSENSITIVE is present, then
-#          checks of the value of <option> against the allowed values
-#          will ignore the case when performing string comparison.
-#
-#
-# General
-# --------------
-# function add_feature(<NAME> <DOCSTRING>)
-#          Add a  feature, whose activation is specified by the
-#          existence of the variable <NAME>, to the list of enabled/disabled
-#          features, plus a docstring describing the feature
-#
-# function print_enabled_features()
-#          Print enabled  features plus their docstrings.
-#
-#
-
-# - Include guard
-include_guard(GLOBAL)
 
 cmake_policy(PUSH)
-if(NOT CMAKE_VERSION VERSION_LESS 3.1)
-    cmake_policy(SET CMP0054 NEW)
-endif()
+cmake_policy(SET CMP0054 NEW)
 
 include(CMakeDependentOption)
 include(CMakeParseArguments)
@@ -155,7 +119,7 @@ FUNCTION(ADD_FEATURE _var _description)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
 #          Add an option and add as a feature if NO_FEATURE is not provided
 #
@@ -170,7 +134,7 @@ FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 ENDFUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # macro CHECKOUT_GIT_SUBMODULE()
 #
 #   Run "git submodule update" if a file in a submodule does not exist
@@ -241,7 +205,7 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
 ENDMACRO()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
 MACRO(ADD_INTERFACE_LIBRARY _TARGET)
@@ -250,7 +214,7 @@ MACRO(ADD_INTERFACE_LIBRARY _TARGET)
 ENDMACRO()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
 macro(BUILD_LIBRARY)
@@ -344,7 +308,7 @@ macro(BUILD_LIBRARY)
 endmacro(BUILD_LIBRARY)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_enabled_features()
 #          Print enabled  features plus their docstrings.
 #
@@ -392,7 +356,7 @@ FUNCTION(print_enabled_features)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_disabled_features()
 #          Print disabled features plus their docstrings.
 #
@@ -422,7 +386,7 @@ FUNCTION(print_disabled_features)
     endif()
 ENDFUNCTION()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_features()
 #          Print all features plus their docstrings.
 #
@@ -433,7 +397,7 @@ FUNCTION(print_features)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
     set(_LIBDIR_DEFAULT "lib")
     # Override this default 'lib' with 'lib64' iff:
@@ -498,7 +462,7 @@ MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
     endif()
 ENDMACRO()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # always determine the default lib directory
 DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)
 

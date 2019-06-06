@@ -1,14 +1,18 @@
-################################################################################
+# include guard
+include_guard(DIRECTORY)
+
+##########################################################################################
 #
 #        Handles the build settings
 #
-################################################################################
+##########################################################################################
+
 
 include(GNUInstallDirs)
 include(Compilers)
 
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # set the compiler flags
 add_c_flag_if_avail("-W")
 if(NOT WIN32)
@@ -17,12 +21,12 @@ else()
     add_c_flag_if_avail("/bigobj")
 endif()
 add_c_flag_if_avail("-Wextra")
-add_c_flag_if_avail("-Wshadow")
-add_c_flag_if_avail("-Wno-unused-value")
-add_c_flag_if_avail("-Wno-unused-function")
-add_c_flag_if_avail("-Wno-unknown-pragmas")
-add_c_flag_if_avail("-Wno-reserved-id-macro")
-add_c_flag_if_avail("-Wno-deprecated-declarations")
+# add_c_flag_if_avail("-Wshadow")
+# add_c_flag_if_avail("-Wno-unused-value")
+# add_c_flag_if_avail("-Wno-unused-function")
+# add_c_flag_if_avail("-Wno-unknown-pragmas")
+# add_c_flag_if_avail("-Wno-reserved-id-macro")
+# add_c_flag_if_avail("-Wno-deprecated-declarations")
 
 add_cxx_flag_if_avail("-W")
 if(NOT WIN32)
@@ -31,24 +35,24 @@ else()
     add_cxx_flag_if_avail("/bigobj")
 endif()
 add_cxx_flag_if_avail("-Wextra")
-add_cxx_flag_if_avail("-Wshadow")
-add_cxx_flag_if_avail("-Wno-unused-value")
-add_cxx_flag_if_avail("-Wno-unused-function")
-add_cxx_flag_if_avail("-Wno-unknown-pragmas")
+# add_cxx_flag_if_avail("-Wshadow")
+# add_cxx_flag_if_avail("-Wno-unused-value")
+# add_cxx_flag_if_avail("-Wno-unused-function")
+# add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-c++17-extensions")
-add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
-add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+# add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
+# add_cxx_flag_if_avail("-Wno-deprecated-declarations")
 add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
-    add_cxx_flag_if_avail("-Wno-exceptions")
-    add_cxx_flag_if_avail("-Wno-class-memaccess")
-    add_cxx_flag_if_avail("-Wno-reserved-id-macro")
-    add_cxx_flag_if_avail("-Wno-unused-private-field")
+    # add_cxx_flag_if_avail("-Wno-exceptions")
+    # add_cxx_flag_if_avail("-Wno-class-memaccess")
+    # add_cxx_flag_if_avail("-Wno-reserved-id-macro")
+    # add_cxx_flag_if_avail("-Wno-unused-private-field")
 endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
 if(NOT DEBUG)
@@ -57,35 +61,26 @@ if(NOT DEBUG)
     add_c_flag_if_avail("-finline-functions")
     add_c_flag_if_avail("-ftree-loop-optimize")
     add_c_flag_if_avail("-ftree-loop-vectorize")
-    # add_c_flag_if_avail("-fira-loop-pressure")
 
     add_cxx_flag_if_avail("-funroll-loops")
     add_cxx_flag_if_avail("-ftree-vectorize")
     add_cxx_flag_if_avail("-finline-functions")
     add_cxx_flag_if_avail("-ftree-loop-optimize")
     add_cxx_flag_if_avail("-ftree-loop-vectorize")
-    # add_cxx_flag_if_avail("-fira-loop-pressure")
 endif()
 
-# ---------------------------------------------------------------------------- #
-# Intel floating-point model (implies -fprotect-parens)
-#
-# add_c_flag_if_avail("-fp-model=precise")
-# add_cxx_flag_if_avail("-fp-model=precise")
-
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # debug-safe optimizations
 #
 add_cxx_flag_if_avail("-faligned-new")
 add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
-
 
 if(TIMEMORY_BUILD_LTO)
     add_c_flag_if_avail("-flto")
     add_cxx_flag_if_avail("-flto")
 endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
 add_interface_library(timemory-arch)
@@ -108,7 +103,7 @@ if(TIMEMORY_USE_ARCH)
     endif()
 endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # sanitizer
 #
 if(TIMEMORY_USE_SANITIZER)
@@ -164,7 +159,8 @@ if(TIMEMORY_USE_SANITIZER)
 endif()
 
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------- #
 # user customization
 #
 add_user_flags(timemory-compile-options "C")

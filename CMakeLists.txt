@@ -1,6 +1,8 @@
 ##########################################################################################
+
 #       CMake settings
 ##########################################################################################
+
 
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
@@ -49,7 +51,7 @@ foreach(_TYPE MAJOR MINOR PATCH)
 endforeach(_TYPE MAJOR MINOR PATCH)
 set(LIBNAME timemory)
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # set the output directory (critical for Windows and Xcode)
 #
 foreach(_TYPE ARCHIVE LIBRARY RUNTIME)

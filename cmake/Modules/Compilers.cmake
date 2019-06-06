@@ -1,3 +1,5 @@
+# include guard
+include_guard(DIRECTORY)
 
 ##########################################################################################
 #
@@ -23,12 +25,6 @@
 #       - MSVC
 #
 
-# include guard
-if(__compilers_is_loaded)
-    return()
-endif()
-set(__compilers_is_loaded ON)
-
 include(CheckCCompilerFlag)
 include(CheckCSourceCompiles)
 include(CheckCSourceRuns)
@@ -44,7 +40,6 @@ if("${LIBNAME}" STREQUAL "")
 endif()
 
 add_interface_library(${LIBNAME}-compile-options)
-target_compile_definitions(timemory-compile-options INTERFACE $<$<CONFIG:Debug>:DEBUG,NDEBUG>)
 
 #----------------------------------------------------------------------------------------#
 # macro converting string to list
@@ -99,6 +94,7 @@ endmacro(set_no_duplicates _VAR)
 #                               C compiler flags
 #
 ##########################################################################################
+
 
 #----------------------------------------------------------------------------------------#
 # add C flag to target
@@ -177,6 +173,7 @@ endmacro()
 ##########################################################################################
 
 
+
 #----------------------------------------------------------------------------------------#
 # add CXX flag to target
 #----------------------------------------------------------------------------------------#
@@ -252,6 +249,7 @@ endmacro()
 #                                       Common
 #
 ##########################################################################################
+
 
 
 #----------------------------------------------------------------------------------------#
@@ -376,7 +374,7 @@ foreach(LANG C CXX)
     endforeach()
 
     if(APPLE OR ("${CMAKE_INCLUDE_SYSTEM_FLAG_${LANG}}" STREQUAL "-I" AND NOT WIN32))
-        set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
+        # set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
     endif()
 
 endforeach()

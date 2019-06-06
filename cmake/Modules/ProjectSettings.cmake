@@ -1,8 +1,10 @@
+# include guard
+include_guard(DIRECTORY)
+
 #
 # Project settings
 #
 
-################################################################################
 
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type")
@@ -22,11 +24,12 @@ set(TIMEMORY_INSTALL_PREFIX ${CMAKE_INSTALL_PREFIX})
 add_feature(CMAKE_C_FLAGS_${_CONFIG} "C compiler build type flags")
 add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 
-################################################################################
+##########################################################################################
 #
 #   Non-python installation directories
 #
-################################################################################
+##########################################################################################
+
 
 if(TIMEMORY_DEVELOPER_INSTALL)
 

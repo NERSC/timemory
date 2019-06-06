@@ -3,4 +3,4 @@
 	url = https://github.com/jrmadsen/cereal.git
 [submodule "source/python/pybind11"]
 	path = source/python/pybind11
-	url = https://github.com/pybind/pybind11.git
+	url = https://github.com/jrmadsen/pybind11.git

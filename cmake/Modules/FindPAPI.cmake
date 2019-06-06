@@ -47,7 +47,7 @@
 # You should not need to set these in the vast majority of cases
 #
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 find_path(PAPI_ROOT_DIR
           NAMES
@@ -57,7 +57,7 @@ find_path(PAPI_ROOT_DIR
           DOC
               "PAPI root installation directory")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 find_path(PAPI_INCLUDE_DIR
           NAMES
@@ -71,7 +71,7 @@ find_path(PAPI_INCLUDE_DIR
           DOC
               "Path to the PAPI headers")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 find_library(PAPI_LIBRARY
              NAMES
@@ -88,7 +88,7 @@ find_library(PAPI_LIBRARY
              DOC
                  "Path to the PAPI library")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set PAPI_FOUND to TRUE
@@ -96,7 +96,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(PAPI DEFAULT_MSG
     PAPI_INCLUDE_DIR PAPI_LIBRARY)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 if(PAPI_FOUND)
     get_filename_component(PAPI_INCLUDE_DIRS

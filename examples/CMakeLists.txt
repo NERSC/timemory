@@ -2,12 +2,12 @@ cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   TiMemory examples project
 #
 project(TiMemory-Examples C CXX)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Determine if standalone
 #
 set(STANDALONE ON)
@@ -15,7 +15,7 @@ if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(STANDALONE OFF)
 endif()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   If we are building as a standalone project or as part of source/build tree
 #
 if(STANDALONE)
@@ -29,7 +29,7 @@ else()
     endif()
 endif()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Add the examples
 #
 if(TIMEMORY_BUILD_C OR TIMEMORY_C_LIBRARY)

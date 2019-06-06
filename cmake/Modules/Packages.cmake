@@ -1,8 +1,12 @@
+# include guard
+include_guard(DIRECTORY)
+
 ##########################################################################################
 #
 #                       External Packages are found here
 #
 ##########################################################################################
+
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
@@ -70,9 +74,10 @@ endfunction()
 #----------------------------------------------------------------------------------------#
 
 target_include_directories(timemory-headers INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
-target_include_directories(timemory-headers SYSTEM INTERFACE
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+#target_include_directories(timemory-headers SYSTEM INTERFACE
+#    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
 
 #----------------------------------------------------------------------------------------#
@@ -114,7 +119,7 @@ set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
 # add cereal
 add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
 
-target_include_directories(timemory-cereal SYSTEM INTERFACE
+target_include_directories(timemory-cereal INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
@@ -177,7 +182,7 @@ if(MPI_FOUND)
 
     foreach(_LANG C CXX)
         # include directories
-        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
+        target_include_directories(timemory-mpi INTERFACE ${MPI_${_LANG}_INCLUDE_PATH})
 
         # link targets
         set(_TYPE )
@@ -216,7 +221,7 @@ if(MPI_FOUND)
     endif()
 
     if(MPI_INCLUDE_PATH)
-        target_include_directories(timemory-mpi SYSTEM INTERFACE ${MPI_INCLUDE_PATH})
+        target_include_directories(timemory-mpi INTERFACE ${MPI_INCLUDE_PATH})
     endif()
 
     target_compile_definitions(timemory-mpi INTERFACE TIMEMORY_USE_MPI)
@@ -308,7 +313,7 @@ endif()
 find_package(PAPI QUIET)
 
 if(PAPI_FOUND)
-    target_include_directories(timemory-papi SYSTEM INTERFACE ${PAPI_INCLUDE_DIRS})
+    target_include_directories(timemory-papi INTERFACE ${PAPI_INCLUDE_DIRS})
     target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
     target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
 else()
@@ -376,9 +381,9 @@ if(TIMEMORY_USE_CUDA)
             INTERFACE_CUDA_RESOLVE_DEVICE_SYMBOLS   ON
             INTERFACE_CUDA_SEPARABLE_COMPILATION    ON)
 
-        set(CUDA_GENERIC_ARCH "version")
-        set(CUDA_ARCHITECTURES version kepler tesla maxwell pascal volta turing)
-        set(CUDA_ARCH "${CUDA_GENERIC_ARCH}" CACHE STRING
+        set(CUDA_AUTO_ARCH "auto")
+        set(CUDA_ARCHITECTURES auto kepler tesla maxwell pascal volta turing)
+        set(CUDA_ARCH "${CUDA_AUTO_ARCH}" CACHE STRING
             "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
         add_feature(CUDA_ARCH "CUDA architecture (options: ${CUDA_ARCHITECTURES})")
         set_property(CACHE CUDA_ARCH PROPERTY STRINGS ${CUDA_ARCHITECTURES})
@@ -390,11 +395,11 @@ if(TIMEMORY_USE_CUDA)
         set(cuda_volta_arch     70)
         set(cuda_turing_arch    75)
 
-        if(NOT "${CUDA_ARCH}" STREQUAL "${CUDA_GENERIC_ARCH}")
+        if(NOT "${CUDA_ARCH}" STREQUAL "${CUDA_AUTO_ARCH}")
             if(NOT "${CUDA_ARCH}" IN_LIST CUDA_ARCHITECTURES)
                 message(WARNING "CUDA architecture \"${CUDA_ARCH}\" not known. Options: ${CUDA_ARCH}")
                 unset(CUDA_ARCH CACHE)
-                set(CUDA_ARCH "${CUDA_GENERIC_ARCH}")
+                set(CUDA_ARCH "${CUDA_AUTO_ARCH}")
             else()
                 set(_ARCH_NUM ${cuda_${CUDA_ARCH}_arch})
             endif()
@@ -402,7 +407,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-7)
         target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_20,code=sm_20
             -gencode=arch=compute_30,code=sm_30
             -gencode=arch=compute_50,code=sm_50
@@ -412,7 +417,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-8)
         target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_20,code=sm_20
             -gencode=arch=compute_30,code=sm_30
             -gencode=arch=compute_50,code=sm_50
@@ -424,7 +429,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_GENERIC_ARCH}>,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_50,code=sm_50
             -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
@@ -435,7 +440,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-10)
         target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_GENERIC_ARCH}">,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_50,code=sm_50
             -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60

@@ -5,9 +5,9 @@ include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
 @PACKAGE_INIT@
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Settings
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_BUILD_PYTHON@)
 if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -49,9 +49,9 @@ if(TIMEMORY_C_LIBRARY)
     list(APPEND TIMEMORY_LANGUAGES C)
 endif()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 set(TIMEMORY_INSTALL_TREE ON)
 if("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
     set(TIMEMORY_INSTALL_TREE OFF) # build tree
@@ -117,9 +117,9 @@ else() # build tree
 endif()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   TiMemory link target
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
 set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx)
 if(TIMEMORY_C_LIBRARY)
@@ -128,9 +128,9 @@ if(TIMEMORY_C_LIBRARY)
 endif()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   timemory component interface library
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 set(_@PROJECT_NAME@_MISSING_COMPONENTS )
 set(@PROJECT_NAME@_FOUND_COMPONENTS ${@PROJECT_NAME@_FIND_COMPONENTS})
 
@@ -264,9 +264,9 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
 endif()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   find_package variables
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set TiMemory_FOUND to TRUE
 # if all listed variables are TRUE
@@ -276,7 +276,7 @@ find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_LIBRARIES)
 
 if(APPLE)
-    set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
+    # set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
 endif(APPLE)
 
 unset(TIMEMORY_INSTALL_TREE)

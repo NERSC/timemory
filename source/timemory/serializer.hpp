@@ -47,6 +47,11 @@
 #include <unordered_set>
 #include <vector>
 
+// define this so avoid warnings about noexcept functions throwing
+#define CEREAL_RAPIDJSON_ASSERT(x)                                                       \
+    {                                                                                    \
+    }
+
 // general
 #include <cereal/access.hpp>
 #include <cereal/cereal.hpp>
@@ -78,8 +83,6 @@
 #include <cereal/archives/adapters.hpp>
 #include <cereal/archives/binary.hpp>
 #include <cereal/archives/json.hpp>
-#include <cereal/archives/portable_binary.hpp>
-#include <cereal/archives/xml.hpp>
 
 //======================================================================================//
 

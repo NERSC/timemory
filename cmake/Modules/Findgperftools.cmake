@@ -3,7 +3,7 @@
 
 include(FindPackageHandleStandardArgs)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 IF (CMAKE_VERSION VERSION_GREATER 2.8.7)
   SET (gperftools_CHECK_COMPONENTS FALSE)
@@ -11,7 +11,7 @@ ELSE (CMAKE_VERSION VERSION_GREATER 2.8.7)
   SET (gperftools_CHECK_COMPONENTS TRUE)
 ENDIF (CMAKE_VERSION VERSION_GREATER 2.8.7)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 # Component options
 set(_gperftools_COMPONENT_OPTIONS
@@ -23,7 +23,7 @@ set(_gperftools_COMPONENT_OPTIONS
     tcmalloc_minimal_debug
 )
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 IF("${gperftools_FIND_COMPONENTS}" STREQUAL "")
     IF("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
@@ -33,11 +33,11 @@ IF("${gperftools_FIND_COMPONENTS}" STREQUAL "")
     ENDIF()
 ENDIF("${gperftools_FIND_COMPONENTS}" STREQUAL "")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 set(_gperftools_POSSIBLE_LIB_SUFFIXES lib lib64 lib32)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 find_path(gperftools_ROOT_DIR
     NAMES
@@ -47,7 +47,7 @@ find_path(gperftools_ROOT_DIR
         include/google/profiler.h
     DOC "Google perftools root directory")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 find_path(gperftools_INCLUDE_DIR
     NAMES
@@ -61,11 +61,11 @@ find_path(gperftools_INCLUDE_DIR
         include
     DOC "Google perftools profiler include directory")
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 set(gperftools_INCLUDE_DIRS ${gperftools_INCLUDE_DIR})
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # Find components
 
 FOREACH (_gperftools_COMPONENT ${gperftools_FIND_COMPONENTS})
@@ -120,7 +120,7 @@ IF (DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
     ENDIF (NOT gperftools_FIND_QUIETLY)
 ENDIF (DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 mark_as_advanced(gperftools_INCLUDE_DIR)
 find_package_handle_standard_args(gperftools DEFAULT_MSG

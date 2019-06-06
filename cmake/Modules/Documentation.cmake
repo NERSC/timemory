@@ -9,7 +9,7 @@
 include(MacroUtilities)
 include(CMakeDependentOption)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_DOXYGEN_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
@@ -175,7 +175,7 @@ if(TIMEMORY_DOXYGEN_DOCS)
 
 endif() # TIMEMORY_DOXYGEN_DOCS
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # Macro to generate documentation
 # from:
 #   http://www.cmake.org/pipermail/cmake/2007-May/014174.html
@@ -238,7 +238,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
 ENDMACRO(GENERATE_DOCUMENTATION)
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # Macro to generate PDF manual from LaTeX using pdflatex
 # assumes manual is in ${CMAKE_SOURCE_DIR}/doc
 MACRO(GENERATE_MANUAL MANUAL_TEX MANUAL_BUILD_PATH EXTRA_FILES_TO_COPY)
