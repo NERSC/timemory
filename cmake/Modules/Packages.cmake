@@ -22,6 +22,7 @@ add_interface_library(timemory-cuda)
 add_interface_library(timemory-cupti)
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
+add_interface_library(timemory-exceptions)
 
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
@@ -31,12 +32,18 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cuda
     timemory-cupti
     timemory-coverage
-    timemory-gperftools)
+    timemory-gperftools
+    timemory-santizier)
 
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
 
 add_interface_library(timemory-analysis-tools)
+
+if(TIMEMORY_USE_SANITIZER)
+    target_link_libraries(timemory-analysis-tools INTERFACE
+        timemory-sanitizer)
+endif()
 
 if(TIMEMORY_USE_GPERF)
     target_link_libraries(timemory-analysis-tools INTERFACE
@@ -66,6 +73,15 @@ target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>)
 target_include_directories(timemory-headers SYSTEM INTERFACE
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               TiMemory exceptions
+#
+#----------------------------------------------------------------------------------------#
+
+target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 
 
 #----------------------------------------------------------------------------------------#
@@ -546,7 +562,8 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(gperftools QUIET COMPONENTS profiler tcmalloc)
+set(gperftools_COMPONENTS profiler tcmalloc CACHE STRING "gperftools components")
+find_package(gperftools QUIET COMPONENTS ${gperftools_COMPONENTS})
 
 if(gperftools_FOUND)
     target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF)

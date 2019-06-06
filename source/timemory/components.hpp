@@ -58,9 +58,9 @@
 #    include <cuda_runtime_api.h>
 #endif
 
-#    if defined(TIMEMORY_USE_CUPTI)
-#        include "timemory/cupti.hpp"
-#    endif
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/cupti.hpp"
+#endif
 
 //======================================================================================//
 
