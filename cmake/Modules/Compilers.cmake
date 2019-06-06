@@ -43,8 +43,8 @@ if("${LIBNAME}" STREQUAL "")
     string(TOLOWER "${PROJECT_NAME}" LIBNAME)
 endif()
 
-add_interface_library(${LIBNAME}-c-compile-options)
-add_interface_library(${LIBNAME}-cxx-compile-options)
+add_interface_library(${LIBNAME}-compile-options)
+target_compile_definitions(timemory-compile-options INTERFACE $<$<CONFIG:Debug>:DEBUG,NDEBUG>)
 
 #----------------------------------------------------------------------------------------#
 # macro converting string to list
@@ -96,10 +96,9 @@ endmacro(set_no_duplicates _VAR)
 
 ##########################################################################################
 #
-#                                   C compiler flags
+#                               C compiler flags
 #
 ##########################################################################################
-
 
 #----------------------------------------------------------------------------------------#
 # add C flag to target
@@ -123,7 +122,7 @@ macro(ADD_C_FLAG FLAG)
         if("${_LTARG}" STREQUAL "")
             list(APPEND ${PROJECT_NAME}_C_FLAGS "${FLAG}")
             list(APPEND ${PROJECT_NAME}_C_COMPILE_OPTIONS "${FLAG}")
-            add_target_c_flag(${LIBNAME}-c-compile-options ${FLAG})
+            add_target_c_flag(${LIBNAME}-compile-options ${FLAG})
         else()
             add_target_c_flag(${_TARG} ${FLAG})
         endif()
@@ -152,7 +151,7 @@ macro(ADD_C_FLAG_IF_AVAIL FLAG)
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_C_FLAGS "${FLAG}")
                 list(APPEND ${PROJECT_NAME}_C_COMPILE_OPTIONS "${FLAG}")
-                add_target_c_flag(${LIBNAME}-c-compile-options ${FLAG})
+                add_target_c_flag(${LIBNAME}-compile-options ${FLAG})
             else()
                 add_target_c_flag(${_TARG} ${FLAG})
             endif()
@@ -200,7 +199,7 @@ macro(ADD_CXX_FLAG FLAG)
         if("${_LTARG}" STREQUAL "")
             list(APPEND ${PROJECT_NAME}_CXX_FLAGS "${FLAG}")
             list(APPEND ${PROJECT_NAME}_CXX_COMPILE_OPTIONS "${FLAG}")
-            add_target_cxx_flag(${LIBNAME}-cxx-compile-options ${FLAG})
+            add_target_cxx_flag(${LIBNAME}-compile-options ${FLAG})
         else()
             add_target_cxx_flag(${_TARG} ${FLAG})
         endif()
@@ -229,7 +228,7 @@ macro(ADD_CXX_FLAG_IF_AVAIL FLAG)
             if("${_LTARG}" STREQUAL "")
                 list(APPEND ${PROJECT_NAME}_CXX_FLAGS "${FLAG}")
                 list(APPEND ${PROJECT_NAME}_CXX_COMPILE_OPTIONS "${FLAG}")
-                add_target_cxx_flag(${LIBNAME}-cxx-compile-options ${FLAG})
+                add_target_cxx_flag(${LIBNAME}-compile-options ${FLAG})
             else()
                 add_target_cxx_flag(${_TARG} ${FLAG})
             endif()
@@ -271,6 +270,27 @@ macro(ADD_TARGET_FLAG_IF_AVAIL _TARG)
     ADD_TARGET_C_FLAG_IF_AVAIL(${_TARG} ${ARGN})
     ADD_TARGET_CXX_FLAG_IF_AVAIL(${_TARG} ${ARGN})
 endmacro()
+
+
+#----------------------------------------------------------------------------------------#
+# add to any language
+#----------------------------------------------------------------------------------------#
+function(ADD_USER_FLAGS _TARGET _LANGUAGE)
+
+    set(_FLAGS ${${_LANGUAGE}FLAGS} $ENV{${_LANGUAGE}FLAGS}
+        ${${_LANGUAGE}_FLAGS} $ENV{${_LANGUAGE}_FLAGS})
+
+    string(REPLACE " " ";" _FLAGS "${_FLAGS}")
+
+    set(${PROJECT_NAME}_${_LANGUAGE}_FLAGS
+        ${${PROJECT_NAME}_${_LANGUAGE}_FLAGS} ${_FLAGS} PARENT_SCOPE)
+
+    set(${PROJECT_NAME}_${_LANGUAGE}_COMPILE_OPTIONS
+        ${${PROJECT_NAME}_${_LANGUAGE}_COMPILE_OPTIONS} ${_FLAGS} PARENT_SCOPE)
+
+    target_compile_options(${_TARGET} INTERFACE
+        $<$<COMPILE_LANGUAGE:${_LANGUAGE}>:${_FLAGS}>)
+endfunction()
 
 
 #----------------------------------------------------------------------------------------#
@@ -337,7 +357,7 @@ foreach(LANG C CXX)
         set(CTYPE ICC)
         if("${LANG}" STREQUAL "CXX")
             set(CTYPE ICPC)
-        endif("${LANG}" STREQUAL "CXX")
+        endif()
 
         SET_COMPILER_VAR(       INTEL_${CTYPE}      ON)
 
@@ -355,7 +375,7 @@ foreach(LANG C CXX)
         endif()
     endforeach()
 
-    if(APPLE)
+    if(APPLE OR ("${CMAKE_INCLUDE_SYSTEM_FLAG_${LANG}}" STREQUAL "-I" AND NOT WIN32))
         set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
     endif()
 

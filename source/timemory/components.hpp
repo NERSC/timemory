@@ -56,10 +56,11 @@
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
 #    include <cuda_runtime_api.h>
+#endif
+
 #    if defined(TIMEMORY_USE_CUPTI)
 #        include "timemory/cupti.hpp"
 #    endif
-#endif
 
 //======================================================================================//
 
@@ -2091,14 +2092,18 @@ struct cuda_event : public base<cuda_event, float>
     cuda_event(cudaStream_t _stream = 0)
     : m_stream(_stream)
     {
-        cudaEventCreate(&m_start);
-        cudaEventCreate(&m_stop);
+        m_is_valid = check(cudaEventCreate(&m_start));
+        if(m_is_valid)
+            m_is_valid = check(cudaEventCreate(&m_stop));
     }
 
     ~cuda_event()
     {
-        sync();
-        destroy();
+        if(m_is_valid)
+        {
+            sync();
+            destroy();
+        }
     }
 
     float compute_display() const
@@ -2112,16 +2117,22 @@ struct cuda_event : public base<cuda_event, float>
     void start()
     {
         set_started();
-        m_is_synced = false;
-        // cuda_event* _this = static_cast<cuda_event*>(this);
-        // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
-        cudaEventRecord(m_start, m_stream);
+        if(m_is_valid)
+        {
+            m_is_synced = false;
+            // cuda_event* _this = static_cast<cuda_event*>(this);
+            // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
+            cudaEventRecord(m_start, m_stream);
+        }
     }
 
     void stop()
     {
-        cudaEventRecord(m_stop, m_stream);
-        sync();
+        if(m_is_valid)
+        {
+            cudaEventRecord(m_stop, m_stream);
+            sync();
+        }
         set_stopped();
     }
 
@@ -2129,7 +2140,7 @@ struct cuda_event : public base<cuda_event, float>
 
     void sync()
     {
-        if(!m_is_synced)
+        if(m_is_valid && !m_is_synced)
         {
             cudaEventSynchronize(m_stop);
             float tmp = 0.0f;
@@ -2142,7 +2153,7 @@ struct cuda_event : public base<cuda_event, float>
 
     void destroy()
     {
-        if(is_valid())
+        if(m_is_valid && is_valid())
         {
             cudaEventDestroy(m_start);
             cudaEventDestroy(m_stop);
@@ -2154,6 +2165,8 @@ struct cuda_event : public base<cuda_event, float>
         auto ret = cudaEventQuery(m_stop);
         return (ret == cudaSuccess && ret == cudaErrorNotReady);
     }
+
+    bool check(cudaError_t err) const { return (err == cudaSuccess); }
 
 protected:
     static void callback(cudaStream_t /*_stream*/, cudaError_t /*_status*/,
@@ -2173,6 +2186,7 @@ protected:
 
 private:
     bool         m_is_synced = false;
+    bool         m_is_valid  = true;
     cudaStream_t m_stream    = 0;
     cudaEvent_t  m_start;
     cudaEvent_t  m_stop;

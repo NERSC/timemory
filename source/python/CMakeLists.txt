@@ -7,9 +7,8 @@
 
 unset(CMAKE_CXX_CLANG_TIDY)
 
-set(PYLIBNAME libtimemory)
-set(TIMEMORY_TLS_MODEL "global-dynamic")
-add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
+add_library(tls-model-global-dynamic INTERFACE)
+add_cxx_flag_if_avail("-ftls-model=global-dynamic" tls-model-global-dynamic)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
@@ -19,24 +18,25 @@ add_definitions(-D_PYTHON_MAJOR_VERSION=${PYTHON_MAJOR_VERSION})
 
 file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 
-if(NOT BUILD_SHARED_LIBS AND WIN32)
-    set_source_files_properties(${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
-        PROPERTIES COMPILE_DEFINITIONS _TIMEMORY_ARCHIVE)
-endif(NOT BUILD_SHARED_LIBS AND WIN32)
-
 #----------------------------------------------------------------------------
 # PyBind11
 #
-pybind11_add_module(${PYLIBNAME} ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/${PYLIBNAME}.hpp ${pybind_headers})
+pybind11_add_module(libtimemory ${CMAKE_CURRENT_LIST_DIR}/libtimemory.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/libtimemory.hpp ${pybind_headers})
 
-target_link_libraries(${PYLIBNAME} PRIVATE timemory-cxx-compile-options timemory-headers
-    timemory-extensions timemory-cxx-shared)
+target_link_libraries(libtimemory PRIVATE
+    timemory-headers
+    timemory-cxx-shared
+    timemory-compile-options
+    timemory-analysis-tools
+    timemory-cuda
+    timemory-papi
+    tls-model-global-dynamic)
 
-target_include_directories(${PYLIBNAME} SYSTEM PRIVATE
+target_include_directories(libtimemory SYSTEM PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
 
-set_target_properties(${PYLIBNAME} PROPERTIES
+set_target_properties(libtimemory PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
@@ -112,23 +112,6 @@ foreach(_TYPE exe c cxx)
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/mpi_support)
 endforeach(_TYPE exe c cxx)
 
-#----------------------------------------------------------------------------
-# Installation info for Python
-if(BUILD_SHARED_LIBS)
-    set(TIMEMORY_INFO_FILE ${CMAKE_BINARY_DIR}/timemory/lib/timemory_pathinfo.txt)
-    add_custom_target(${PROJECT_NAME}-dynamic-path ALL
-        COMMAND ${CMAKE_COMMAND}
-            -DOUTPUT=${TIMEMORY_INFO_FILE}
-            -DLENGTH=2
-            -DNAMES="timemory_shared_library\;timemory_dynamic_library"
-            -DVALUES="$<TARGET_FILE:timemory-cxx-shared>\;$<TARGET_FILE:${PYLIBNAME}>"
-            -P ${PROJECT_SOURCE_DIR}/cmake/Scripts/generator2file.cmake
-        COMMENT "Generating timemory_pathinfo.txt..."
-    VERBATIM)
-
-    install(FILES ${TIMEMORY_INFO_FILE}
-        DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/lib)
-endif(BUILD_SHARED_LIBS)
 
 #----------------------------------------------------------------------------
 # Install the python stuff
@@ -148,7 +131,7 @@ foreach(PYLIB_SUBMODULE options units signals)
 endforeach()
 
 # Python library target (linked to static target)
-install(TARGETS ${PYLIBNAME}
+install(TARGETS libtimemory
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
     COMPONENT python)
 

@@ -13,8 +13,7 @@ set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 foreach(_LANG C CXX CUDA)
     foreach(_TYPE COMPILE LINK)
         set(PROJECT_${_LANG}_${_TYPE}_OPTIONS
-            ${${PROJECT_NAME}_${_LANG}_${_TYPE}_OPTIONS}
-            ${EXTERNAL_${_LANG}_${_TYPE}_OPTIONS})
+            ${${PROJECT_NAME}_${_LANG}_${_TYPE}_OPTIONS})
     endforeach()
 endforeach()
 
@@ -51,13 +50,7 @@ install(
     COMPONENT
         development)
 
-if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
-    install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
-        COMPONENT development)
-endif()
-
+# only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     # documentation
@@ -79,7 +72,6 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
     add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
-    add_feature(TIMEMORY_EXTERNAL_LIBRARIES "External libraries")
     print_features()
 
 endif()

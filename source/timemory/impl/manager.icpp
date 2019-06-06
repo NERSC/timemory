@@ -110,14 +110,23 @@ manager::noninit_master_instance()
 inline manager::manager()
 : m_instance_count(f_manager_instance_count()++)
 {
+    static std::once_flag papi_init_once;
+    static std::once_flag cupti_init_once;
+    static std::once_flag parse_env_once;
+
+    auto _init_papi  = []() { tim::papi::init(); };
+    auto _init_cupti = []() { tim::cupti::initialize(); };
+    auto _parse_once = []() { tim::settings::parse(); };
+
+    std::call_once(parse_env_once, _parse_once);
+    std::call_once(papi_init_once, _init_papi);
+    std::call_once(cupti_init_once, _init_cupti);
+
     if(m_instance_count == 0)
     {
         printf("############## tim::%s initialized [%i] ##############\n\n", __FUNCTION__,
                m_instance_count);
-        tim::settings::parse();
-        tim::papi::init();
         std::atexit(&exit_print);
-        tim::cupti::initialize();
     }
     else
     {

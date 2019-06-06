@@ -354,7 +354,7 @@ public:
         auto _insert_child = [&]() {
             exists       = false;
             node.depth() = m_data.depth() + 1;
-            auto itr = m_data.append_child(node);
+            auto itr     = m_data.append_child(node);
             m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
         };

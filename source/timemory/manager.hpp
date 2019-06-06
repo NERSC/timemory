@@ -63,15 +63,14 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 namespace cupti
 {
-#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_CUPTI)
-extern void
-initialize();
-#else
-static void
+inline void
 initialize()
 {
-}
+#if defined(TIMEMORY_USE_CUPTI)
+    unsigned int init_flags = 0;
+    cuInit(init_flags);
 #endif
+}
 }  // namespace cupti
 
 //--------------------------------------------------------------------------------------//

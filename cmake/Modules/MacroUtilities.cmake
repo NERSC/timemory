@@ -50,7 +50,6 @@ include(CMakeParseArguments)
 string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UC)
 string(TOLOWER "${PROJECT_NAME}" PROJECT_NAME_LC)
 
-unset(${PROJECT_NAME_UC}_EXTERNAL_LIBRARIES CACHE)
 unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
 unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 
@@ -239,16 +238,6 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
 
     endif()
 
-ENDMACRO()
-
-
-#------------------------------------------------------------------------------#
-# macro to add an interface lib
-#
-MACRO(ADD_EXTERNAL_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE ${ARGN})
-    cache_list(APPEND ${PROJECT_NAME_UC}_EXTERNAL_LIBRARIES ${_TARGET})
-    target_link_libraries(${PROJECT_NAME_LC}-extensions INTERFACE ${_TARGET})
 ENDMACRO()
 
 

@@ -11,13 +11,6 @@ include(CMakeDependentOption)
 
 #------------------------------------------------------------------------------#
 
-if(TIMEMORY_SETUP_PY AND TIMEMORY_DOXYGEN_DOCS)
-    message(AUTHOR_WARNING "Skipping documentation generation because TIMEMORY_SETUP_PY=ON")
-    set(TIMEMORY_DOXYGEN_DOCS OFF CACHE BOOL "Make a `doc` make target" FORCE)
-endif(TIMEMORY_SETUP_PY AND TIMEMORY_DOXYGEN_DOCS)
-
-#------------------------------------------------------------------------------#
-
 if(TIMEMORY_DOXYGEN_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
