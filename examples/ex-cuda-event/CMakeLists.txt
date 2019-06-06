@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(TiMemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 
 set(EXE_NAME test_cuda_event)
-set(COMPONENTS cxx cuda papi threading compile-options)
+set(COMPONENTS cxx cuda papi threading compile-options analysis-tools)
 
 option(USE_CUPTI "Enable CUPTI" OFF)
 if(USE_CUPTI)
