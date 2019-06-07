@@ -251,17 +251,20 @@ public:
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
-    static void exit_print()
+    static void exit_hook()
     {
         auto*   ptr   = noninit_master_instance();
-        void*   vptr  = static_cast<void*>(ptr);
-        int32_t count = -1;
+        int32_t count = 0;
         if(ptr)
         {
             ptr->print(false, false);
             count = ptr->instance_count();
+            printf("\n\n############## tim::~manager destroyed [%i] ##############\n",
+                   count);
+            delete ptr;
         }
-        printf("############## tim::~manager [%p, %i] ##############\n", vptr, count);
+        tim::papi::shutdown();
+        // tim::cupti::shutdown();
     }
 
     static void print(const tim::component_tuple<>&) {}

@@ -49,44 +49,97 @@
 
 #----------------------------------------------------------------------------------------#
 
+function(FIND_STATIC_LIBRARY _VAR)
+    set(_options    )
+    set(_onevalue   DOC)
+    set(_multival   NAMES HINTS PATHS PASS_SUFFIXES)
+
+    cmake_parse_arguments(
+        LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    SET(CMAKE_FIND_LIBRARY_SUFFIXES .a)
+    find_library(${_VAR}
+                NAMES ${LIBRARY_NAMES}
+                HINTS ${LIBRARY_HINTS}
+                PATHS ${LIBRARY_PATHS}
+                PATH_SUFFIXES ${LIBRARY_PATH_SUFFIXES}
+                DOC "${LIBRARY_DOC}")
+endfunction()
+
+#----------------------------------------------------------------------------------------#
+
 find_path(PAPI_ROOT_DIR
-          NAMES
-              include/papi.h
-          HINTS
-              ENV PAPI_ROOT_DIR
-          DOC
-              "PAPI root installation directory")
+    NAMES
+        include/papi.h
+    HINTS
+        ENV PAPI_ROOT_DIR
+    DOC
+        "PAPI root installation directory")
 
 #----------------------------------------------------------------------------------------#
 
 find_path(PAPI_INCLUDE_DIR
-          NAMES
-              papi.h
-          HINTS
-              ${PAPI_ROOT_DIR}
-              ENV PAPI_ROOT_DIR
-              ENV CPATH
-          PATH_SUFFIXES
-              include
-          DOC
-              "Path to the PAPI headers")
+    NAMES
+        papi.h
+    HINTS
+        ${PAPI_ROOT_DIR}
+        ENV PAPI_ROOT_DIR
+        ENV CPATH
+    PATH_SUFFIXES
+        include
+    DOC
+        "Path to the PAPI headers")
 
 #----------------------------------------------------------------------------------------#
 
 find_library(PAPI_LIBRARY
-             NAMES
-                 papi
-             HINTS
-                 ${PAPI_ROOT_DIR}
-                 ENV PAPI_ROOT_DIR
-                 ENV LD_LIBRARY_PATH
-                 ENV LIBRARY_PATH
-                 ENV DYLD_LIBRARY_PATH
-             PATH_SUFFIXES
-                 lib
-                 lib64
-             DOC
-                 "Path to the PAPI library")
+    NAMES
+        papi
+    HINTS
+        ${PAPI_ROOT_DIR}
+        ENV PAPI_ROOT_DIR
+        ENV LD_LIBRARY_PATH
+        ENV LIBRARY_PATH
+        ENV DYLD_LIBRARY_PATH
+    PATH_SUFFIXES
+        lib
+        lib64
+    DOC
+        "Path to the PAPI library")
+
+#----------------------------------------------------------------------------------------#
+
+find_library(PAPI_pfm_LIBRARY
+    NAMES
+        pfm
+    HINTS
+        ${PAPI_ROOT_DIR}
+        ENV PAPI_ROOT_DIR
+        ENV LD_LIBRARY_PATH
+        ENV LIBRARY_PATH
+        ENV DYLD_LIBRARY_PATH
+    PATH_SUFFIXES
+        lib
+        lib64
+    DOC
+        "Path to the PAPI library")
+
+#----------------------------------------------------------------------------------------#
+
+find_static_library(PAPI_STATIC_LIBRARY
+    NAMES
+        papi
+    HINTS
+        ${PAPI_ROOT_DIR}
+        ENV PAPI_ROOT_DIR
+        ENV LD_LIBRARY_PATH
+        ENV LIBRARY_PATH
+        ENV DYLD_LIBRARY_PATH
+    PATH_SUFFIXES
+        lib
+        lib64
+    DOC
+        "Path to the PAPI library")
 
 #----------------------------------------------------------------------------------------#
 
@@ -103,6 +156,9 @@ if(PAPI_FOUND)
         ${PAPI_INCLUDE_DIR} REALPATH)
     get_filename_component(PAPI_LIBRARIES
         ${PAPI_LIBRARY} REALPATH)
+    if(PAPI_pfm_LIBRARY)
+        list(APPEND PAPI_LIBRARIES ${PAPI_pfm_LIBRARY})
+    endif()
 endif()
 
 mark_as_advanced(PAPI_INCLUDE_DIR PAPI_LIBRARY)

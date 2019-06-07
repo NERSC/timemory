@@ -223,12 +223,15 @@ tim::graph_storage<ObjectType>::serialize(std::true_type, Archive& ar,
         return _list;
     };
 
-    auto graph_list    = convert_graph();
-    auto data_type     = type_id<value_type>::value(m_data.head()->obj().value);
-    auto labels        = ObjectType::label_array();
-    auto descripts     = ObjectType::descript_array();
-    auto units         = ObjectType::unit_array();
-    auto display_units = ObjectType::display_unit_array();
+    auto graph_list = convert_graph();
+    if(graph_list.size() == 0)
+        return;
+    ObjectType& obj           = std::get<1>(graph_list.front());
+    auto        data_type     = type_id<value_type>::value(m_data.head()->obj().value);
+    auto        labels        = obj.label_array();
+    auto        descripts     = obj.descript_array();
+    auto        units         = obj.unit_array();
+    auto        display_units = obj.display_unit_array();
     ar(serializer::make_nvp("type", labels), serializer::make_nvp("descript", descripts),
        serializer::make_nvp("unit_value", units),
        serializer::make_nvp("unit_repr", display_units),

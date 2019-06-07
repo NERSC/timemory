@@ -7,6 +7,16 @@ include_guard(DIRECTORY)
 #
 ##########################################################################################
 
+find_package(OpenMP)
+find_package(OpenACC)
+
+add_library(openmp INTERFACE)
+target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
+target_compile_definitions(openmp INTERFACE USE_OPENMP)
+
+add_library(openacc INTERFACE)
+target_link_libraries(openacc INTERFACE OpenMP::OpenMP_CXX)
+target_compile_definitions(openmp INTERFACE USE_OPENMP)
 
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
@@ -21,9 +31,11 @@ set(TIMEMORY_REQUIRED_INTERFACES
 
 add_interface_library(timemory-mpi)
 add_interface_library(timemory-threading)
+
 add_interface_library(timemory-papi)
 add_interface_library(timemory-cuda)
 add_interface_library(timemory-cupti)
+
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -370,7 +382,6 @@ if(TIMEMORY_USE_CUDA)
 
     if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
 
-
         target_compile_definitions(timemory-cuda INTERFACE TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
@@ -397,7 +408,8 @@ if(TIMEMORY_USE_CUDA)
 
         if(NOT "${CUDA_ARCH}" STREQUAL "${CUDA_AUTO_ARCH}")
             if(NOT "${CUDA_ARCH}" IN_LIST CUDA_ARCHITECTURES)
-                message(WARNING "CUDA architecture \"${CUDA_ARCH}\" not known. Options: ${CUDA_ARCH}")
+                message(WARNING
+                    "CUDA architecture \"${CUDA_ARCH}\" not known. Options: ${CUDA_ARCH}")
                 unset(CUDA_ARCH CACHE)
                 set(CUDA_ARCH "${CUDA_AUTO_ARCH}")
             else()
@@ -461,8 +473,6 @@ if(TIMEMORY_USE_CUDA)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
         elseif(CUDA_MAJOR_VERSION MATCHES 7)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
-        else()
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
         endif()
 
         #   30, 32      + Kepler support
@@ -496,7 +506,7 @@ if(TIMEMORY_USE_CUDA)
             target_link_libraries(timemory-cuda INTERFACE ${CUDA_cudart_static_LIBRARY})
         endif()
     else()
-        message(WARNING "CUDA not available!")
+        inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)
     endif()
 else()

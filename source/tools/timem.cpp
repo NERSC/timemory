@@ -62,6 +62,15 @@ using comp_tuple_t = tim::details::custom_component_tuple<
 
 //--------------------------------------------------------------------------------------//
 
+bool&
+papi_enabled()
+{
+    static bool _instance = false;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
 std::string&
 command()
 {
@@ -184,6 +193,13 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
     if(argc < 2)
         exit(0);
 
+    if(papi_enabled())
+    {
+#if defined(TIMEMORY_USE_PAPI)
+        PAPI_attach(0, getpid());
+#endif
+    }
+
     // the argv list first argument should point to filename associated
     // with file being executed the array pointer must be terminated by
     // NULL pointer
@@ -221,12 +237,13 @@ main(int argc, char** argv)
 {
     // set some defaults
     tim::settings::file_output() = false;
-    tim::settings::scientific()  = true;
+    tim::settings::scientific()  = false;
     tim::settings::width()       = 12;
-    tim::settings::precision()   = 3;
+    tim::settings::precision()   = 6;
 
     // parse for settings configurations
-    tim::settings::parse();
+    if(argc > 1)
+        tim::timemory_init(argc, argv);
 
     // override a some settings
     tim::settings::suppress_parsing() = true;

@@ -419,6 +419,24 @@ tim::settings::process()
         process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
         cuda_event::get_unit()          = std::get<1>(_timing_unit);
     }
+
+    if(precision() > 0)
+    {
+        timing_precision() = precision();
+        memory_precision() = precision();
+    }
+
+    if(width() > 0)
+    {
+        timing_width() = width();
+        memory_width() = width();
+    }
+
+    if(scientific())
+    {
+        timing_scientific() = true;
+        memory_scientific() = true;
+    }
 }
 
 //--------------------------------------------------------------------------------------//
