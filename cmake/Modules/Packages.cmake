@@ -549,7 +549,8 @@ if(TIMEMORY_USE_CUPTI)
         set(TIMEMORY_USE_CUPTI OFF)
     else()
         target_compile_definitions(timemory-cupti INTERFACE TIMEMORY_USE_CUPTI)
-        target_include_directories(timemory-cupti INTERFACE ${CUDA_cupti_INCLUDE_DIR})
+        target_include_directories(timemory-cupti INTERFACE ${CUDA_INCLUDE_DIRS}
+            ${CUDA_cupti_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         target_link_libraries(timemory-cupti INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
     endif()
 

@@ -108,6 +108,20 @@ struct type_id
     {
         return "float_array";
     }
+
+    template <typename _Up, typename SubType, std::size_t SubTypeSize,
+              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
+    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
+    {
+        return "int_array_paird";
+    }
+
+    template <typename _Up, typename SubType, std::size_t SubTypeSize,
+              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
+    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
+    {
+        return "float_array_paired";
+    }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -44,7 +44,7 @@ set_target_properties(libtimemory PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
     PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
 
-foreach(_SUBMODULE plotting mpi_support util)
+foreach(_SUBMODULE plotting mpi_support util ert)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_SUBMODULE})
 

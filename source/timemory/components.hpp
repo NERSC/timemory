@@ -2310,7 +2310,7 @@ struct cpu_roofline
         auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
             return 0.0;
-        return std::accumulate(obj.begin(), obj.end(), 0) /
+        return std::accumulate(obj.first.begin(), obj.first.end(), 0) /
                static_cast<double>(obj.second);
     }
     double serial() { return compute_display(); }
