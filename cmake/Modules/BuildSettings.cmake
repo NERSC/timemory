@@ -50,6 +50,8 @@ if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # add_cxx_flag_if_avail("-Wno-class-memaccess")
     # add_cxx_flag_if_avail("-Wno-reserved-id-macro")
     # add_cxx_flag_if_avail("-Wno-unused-private-field")
+else()
+    add_cxx_flag_if_avail("-Wno-class-memaccess")
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -85,23 +87,33 @@ endif()
 #
 add_interface_library(timemory-arch)
 add_interface_library(timemory-avx512)
+target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
 
-if(CMAKE_C_COMPILER_IS_INTEL)
-    add_target_flag_if_avail(timemory-arch "-xHOST")
-    add_target_flag_if_avail(timemory-avx512 "-axMIC-AVX512")
-else()
-    add_target_flag_if_avail(timemory-arch "-march=native" "-msse2" "-msse3" "-msse4" "-mavx" "-mavx2")
+find_package(CpuArch)
+
+if(CpuArch_FOUND)
+
+    foreach(_ARCH ${CpuArch_FEATURES})
+        # intel compiler
+        if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
+            add_target_flag_if_avail(timemory-arch "-x${_ARCH}")
+        endif()
+        # non-intel compilers
+        if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
+            add_target_flag_if_avail(timemory-arch "-m${_ARCH}")
+        endif()
+    endforeach()
+
+endif()
+
+if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
+    add_target_flag_if_avail(timemory-avx512 "-xMIC-AVX512")
+endif()
+
+if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
     add_target_flag_if_avail(timemory-avx512 "-mavx512f" "-mavx512pf" "-mavx512er" "-mavx512cd")
 endif()
 
-target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
-
-if(TIMEMORY_USE_ARCH)
-    list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES timemory-arch)
-    if(TIMEMORY_USE_AVX512)
-        list(APPEND ${PROJECT_NAME}_TARGET_LIBRARIES timemory-avx512)
-    endif()
-endif()
 
 #----------------------------------------------------------------------------------------#
 # sanitizer

@@ -24,6 +24,9 @@ add_interface_library(timemory-threading)
 add_interface_library(timemory-papi)
 add_interface_library(timemory-cuda)
 add_interface_library(timemory-cupti)
+add_interface_library(timemory-cudart)
+add_interface_library(timemory-cudart-device)
+add_interface_library(timemory-cudart-static)
 
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
@@ -485,15 +488,14 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-        foreach(_LIB CUDART cudadevrt rt)
-            if(CUDA_${_LIB}_LIBRARY)
-                target_link_libraries(timemory-cuda INTERFACE ${CUDA_${_LIB}_LIBRARY})
-            endif()
-        endforeach()
+        target_link_libraries(timemory-cudart INTERFACE
+            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
-        if(NOT CUDA_CUDART_LIBRARY AND CUDA_cudart_static_LIBRARY)
-            target_link_libraries(timemory-cuda INTERFACE ${CUDA_cudart_static_LIBRARY})
-        endif()
+        target_link_libraries(timemory-cudart-device INTERFACE
+            ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
+
+        target_link_libraries(timemory-cudart-static INTERFACE
+            ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
     else()
         inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)

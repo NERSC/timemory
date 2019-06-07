@@ -229,8 +229,42 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "")
     endif()
 
     foreach(_LANGUAGE ${_LANGUAGES})
+        # handle special case of cuda
         if("${_LANGUAGE}" STREQUAL "cuda")
+            # link to timemory-cuda
             @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
+
+            set(_CUDART_DEV OFF)
+            set(_CUDART     ON)
+            # if cudart-device specified, only link to timemory-cudart-device
+            if("cudart-device" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                set(_CUDART_DEV ON)
+                set(_CUDART OFF)
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-device)
+            endif()
+
+            if("cudart" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR
+                "cudart-static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                 set(_CUDART ON)
+            endif()
+
+            if(_CUDART AND _CUDART_DEV)
+                set(_MSG "Requesting linking to cudadevrt (device runtime) and")
+                set(_MSG "${_MSG} cudart/cudart_static. This has been found to cause")
+                set(_MSG "${_MSG} compilation error in CUDA 10.1")
+                message(DEVELOPER_WARNING "${_MSG}")
+                unset(_MSG)
+            endif()
+
+            if(_CUDART)
+                if("${_LINK}" STREQUAL "static")
+                    @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-static)
+                else()
+                    @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart)
+                endif()
+            endif()
+            unset(_CUDART)
+            unset(_CUDART_DEV)
         else()
             @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
         endif()
