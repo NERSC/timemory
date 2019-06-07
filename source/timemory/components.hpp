@@ -2414,11 +2414,11 @@ struct cuda_event : public base<cuda_event, float>
 
     ~cuda_event()
     {
-        if(m_is_valid)
+        /*if(m_is_valid && is_valid())
         {
             sync();
             destroy();
-        }
+        }*/
     }
 
     float compute_display() const
@@ -2477,8 +2477,20 @@ struct cuda_event : public base<cuda_event, float>
 
     bool is_valid() const
     {
-        auto ret = cudaEventQuery(m_stop);
-        return (ret == cudaSuccess && ret == cudaErrorNotReady);
+        // get last error but don't reset last error to cudaSuccess
+        auto ret = cudaPeekAtLastError();
+        // if failure previously, return false
+        if(ret != cudaSuccess)
+            return false;
+        // query
+        ret = cudaEventQuery(m_stop);
+        // if all good, return valid
+        if(ret == cudaSuccess)
+            return true;
+        // if not all good, clear the last error bc if was from failed query
+        ret = cudaGetLastError();
+        // return if not ready (OK) or something else
+        return (ret == cudaErrorNotReady);
     }
 
     bool check(cudaError_t err) const { return (err == cudaSuccess); }
