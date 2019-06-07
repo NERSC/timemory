@@ -329,6 +329,14 @@ private:
     graph_data m_data;
     /// list of node ids
     std::unordered_map<int64_t, iterator> m_node_ids;
+
+private:
+    /// num-threads based on number of managers created
+    static std::atomic<int32_t>& f_thread_counter()
+    {
+        static std::atomic<int32_t> _instance;
+        return _instance;
+    }
 };
 
 //======================================================================================//

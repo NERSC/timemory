@@ -173,7 +173,7 @@ endif()
 # named 'timemory-plotter' as C++ JSON outputs can use this
 # to generate plots
 #
-if(TIMEMORY_BUILD_PYTHON)
+if(TIMEMORY_BUILD_PYTHON AND NOT SKBUILD)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/plotting/__main__.py
         ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 

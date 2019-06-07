@@ -380,7 +380,7 @@ get_env(const std::string& env_id, bool _default)
         return val;
     }
     // record default value
-    env_settings::GetInstance()->insert<bool>(env_id, false);
+    env_settings::GetInstance()->insert<bool>(env_id, _default);
 
     // return default if not specified in environment
     return _default;

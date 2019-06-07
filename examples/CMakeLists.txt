@@ -1,4 +1,5 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
+
 cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
@@ -27,6 +28,7 @@ else()
     if(NOT TIMEMORY_BUILD_EXAMPLES)
         return()
     endif()
+    find_package(MPI QUIET)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -48,6 +50,7 @@ endif()
 
 #add_subdirectory(ex-cxx-graph)
 #add_subdirectory(ex-cxx)
+
 #if(TIMEMORY_USE_MPI AND MPI_FOUND)
 #    add_subdirectory(ex-cxx-mpi)
 #endif()

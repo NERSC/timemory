@@ -21,6 +21,7 @@ do
 done
 
 export MALLOCSTATS
+
 echo -e "\n\t--> Outputting profile to '${GPERF_PROFILE}'...\n"
 
 # remove profile file if unsucessful execution

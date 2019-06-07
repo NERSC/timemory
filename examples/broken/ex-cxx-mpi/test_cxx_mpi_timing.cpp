@@ -39,7 +39,6 @@
 #include <timemory/mpi.hpp>
 #include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
-#include <timemory/usage.hpp>
 
 using manager_t = tim::manager;
 

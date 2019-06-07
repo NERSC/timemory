@@ -2226,7 +2226,7 @@ private:
         {
 #if defined(_WINDOWS)
             for(std::size_t i = 0; i < NumEvent; ++i)
-                events[i] = 0;
+                evt_types[i] = 0;
 #else
             apply<void>::set_value(evt_types, 0);
 #endif
@@ -2383,6 +2383,7 @@ using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_USE_CUDA)
+
 //--------------------------------------------------------------------------------------//
 // this component extracts the time spent in GPU kernels
 //

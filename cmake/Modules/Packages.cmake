@@ -7,17 +7,6 @@ include_guard(DIRECTORY)
 #
 ##########################################################################################
 
-find_package(OpenMP)
-find_package(OpenACC)
-
-add_library(openmp INTERFACE)
-target_link_libraries(openmp INTERFACE OpenMP::OpenMP_CXX)
-target_compile_definitions(openmp INTERFACE USE_OPENMP)
-
-add_library(openacc INTERFACE)
-target_link_libraries(openacc INTERFACE OpenMP::OpenMP_CXX)
-target_compile_definitions(openmp INTERFACE USE_OPENMP)
-
 set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 
 add_interface_library(timemory-headers)

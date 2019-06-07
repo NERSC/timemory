@@ -47,18 +47,31 @@
 
 //--------------------------------------------------------------------------------------//
 
-using vector_t = std::vector<uint64_t>;
-using namespace tim::component;
-// using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
-using comp_tuple_t = tim::details::custom_component_tuple<
-    real_clock, system_clock, cpu_clock, cpu_util, peak_rss, num_minor_page_faults,
-    num_major_page_faults, voluntary_context_switch, priority_context_switch>;
-
 #if defined(__GNUC__) || defined(__clang__)
 #    define declare_attribute(attr) __attribute__((attr))
 #elif defined(_WIN32)
 #    define declare_attribute(attr) __declspec(attr)
 #endif
+
+#if !defined(PAPI_NUM_COUNTERS)
+#    define PAPI_NUM_COUNTERS 8
+#endif
+
+using namespace tim::component;
+
+//--------------------------------------------------------------------------------------//
+// papi event set 0 with 4 counters
+//
+using papi_array_t = papi_array<0, PAPI_NUM_COUNTERS>;
+
+//--------------------------------------------------------------------------------------//
+//
+//
+using comp_tuple_t =
+    tim::details::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock,
+                                         cpu_util, peak_rss, num_minor_page_faults,
+                                         num_major_page_faults, voluntary_context_switch,
+                                         priority_context_switch>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -140,7 +153,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     {
         measure.stop();
         std::stringstream _oss;
-        _oss << "\n" << measure << std::endl;
+        _oss << "\n" << measure << std::flush;
 
         if(tim::settings::file_output())
         {
@@ -264,7 +277,7 @@ main(int argc, char** argv)
         comp_tuple_t measure("total execution time", command());
         measure.start();
         measure.stop();
-        std::cout << "\n" << measure << std::endl;
+        std::cout << "\n" << measure << std::flush;
         exit(EXIT_SUCCESS);
     }
 

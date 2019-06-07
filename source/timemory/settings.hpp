@@ -76,8 +76,6 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, cout_output, true)
 
 // general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, env_num_threads, "TIMEMORY_NUM_THREADS")
-DEFINE_STATIC_ACCESSOR_FUNCTION(int, num_threads, 0)
 DEFINE_STATIC_ACCESSOR_FUNCTION(uint16_t, max_depth, std::numeric_limits<uint16_t>::max())
 
 // general formatting
@@ -169,10 +167,8 @@ tim::settings::parse()
     cout_output() = tim::get_env("TIMEMORY_COUT_OUTPUT", cout_output());
 
     // settings
-    verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
-    env_num_threads() = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads());
-    num_threads()     = tim::get_env(env_num_threads(), num_threads());
-    max_depth()       = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
+    verbose()   = tim::get_env("TIMEMORY_VERBOSE", verbose());
+    max_depth() = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
 
     // general formatting
     precision() = tim::get_env("TIMEMORY_PRECISION", precision());

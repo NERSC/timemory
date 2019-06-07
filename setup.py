@@ -58,14 +58,20 @@ if args.help:
 sys.argv = sys.argv[:1] + left
 
 set_cmake_bool_option("TIMEMORY_USE_MPI", args.enable_mpi, args.disable_mpi)
-set_cmake_bool_option("TIMEMORY_EXCEPTIONS", args.enable_exceptions, args.disable_exceptions)
-set_cmake_bool_option("PYBIND11_INSTALL", args.enable_pybind_install, args.disable_pybind_install)
-set_cmake_bool_option("TIMEMORY_DEVELOPER_INSTALL", args.enable_devel_install, args.disable_devel_install)
-set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES", args.enable_build_examples, args.disable_build_examples)
+set_cmake_bool_option("TIMEMORY_EXCEPTIONS",
+                      args.enable_exceptions, args.disable_exceptions)
+set_cmake_bool_option("PYBIND11_INSTALL",
+                      args.enable_pybind_install, args.disable_pybind_install)
+set_cmake_bool_option("TIMEMORY_DEVELOPER_INSTALL",
+                      args.enable_devel_install, args.disable_devel_install)
+set_cmake_bool_option("TIMEMORY_BUILD_EXAMPLES",
+                      args.enable_build_examples, args.disable_build_examples)
 cmake_args.append("-DCMAKE_CXX_STANDARD={}".format(args.cxx_standard))
 
 # ---------------------------------------------------------------------------- #
 #
+
+
 def get_project_version():
     # open "VERSION"
     with open(os.path.join(os.getcwd(), 'VERSION'), 'r') as f:
@@ -100,9 +106,9 @@ def get_short_description():
 
 # ---------------------------------------------------------------------------- #
 def get_keywords():
-    return [ 'timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx', 'rss',
-             'resident set size', 'cpu time', 'cpu utilization', 'wall clock',
-             'system clock', 'user clock', 'pybind11', 'profiling' ]
+    return ['timing', 'memory', 'auto-timers', 'signal', 'c++', 'cxx', 'rss',
+            'resident set size', 'cpu time', 'cpu utilization', 'wall clock',
+            'system clock', 'user clock', 'pybind11', 'profiling']
 
 
 # ---------------------------------------------------------------------------- #
@@ -162,9 +168,9 @@ class custom_install(skinstall):
     """
     Custom installation
     """
+
     def __init__(self, *args, **kwargs):
         skinstall.__init__(self, *args, **kwargs)
-
 
     def run(self):
         print('\n\n\tRunning install...')
@@ -221,6 +227,7 @@ with warnings.catch_warnings():
         classifiers=get_classifiers(),
         python_requires='>=2.6',
         cmdclass=dict(install=custom_install),
-)
-
-
+        entry_points={
+            'console_scripts': ['timemory-plotter=timemory.plotting.__main__:plot'],
+        },
+    )

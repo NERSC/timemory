@@ -11,6 +11,7 @@ mkdir -p ${DIR}
 : ${MALLOCSTATS:=1}
 : ${CPUPROFILE_FREQUENCY:=500}
 : ${INTERACTIVE:=0}
+: ${CPUPROFILE_REALTIME:=1}
 
 while [ -z "${GPERF_PROFILE}" ]
 do
@@ -23,6 +24,8 @@ done
 
 export MALLOCSTATS
 export CPUPROFILE_FREQUENCY
+export CPUPROFILE_REALTIME
+
 echo -e "\n\t--> Outputting profile to '${GPERF_PROFILE}'...\n"
 
 # remove profile file if unsucessful execution
