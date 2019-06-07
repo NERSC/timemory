@@ -2389,7 +2389,7 @@ using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
 //
 struct cuda_event : public base<cuda_event, float>
 {
-    using ratio_t    = std::micro;
+    using ratio_t    = std::milli;
     using value_type = float;
     using base_type  = base<cuda_event, value_type>;
 
