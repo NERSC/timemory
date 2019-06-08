@@ -196,10 +196,8 @@ public:
 
         iterator       begin() { return m_graph.begin(); }
         iterator       end() { return m_graph.end(); }
-        const_iterator begin() const { return m_graph.cbegin(); }
-        const_iterator end() const { return m_graph.cend(); }
-        const_iterator cbegin() const { return m_graph.cbegin(); }
-        const_iterator cend() const { return m_graph.cend(); }
+        const_iterator begin() const { return m_graph.begin(); }
+        const_iterator end() const { return m_graph.end(); }
 
         inline void reset()
         {

@@ -44,7 +44,6 @@
 #include "timemory/apply.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
-#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
@@ -443,7 +442,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<component::serial<Types, Archive>...>;
+        using apply_types = std::tuple<component::serialization<Types, Archive>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");

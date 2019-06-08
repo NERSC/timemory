@@ -124,22 +124,6 @@ struct type_id
     }
 };
 
-//--------------------------------------------------------------------------------------//
-/*
-template <typename SubType, std::size_t TypeSize>
-struct type_id<std::array<SubType, TypeSize>, SubType, TypeSize>
-{
-    static std::string value() { return "array"; }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename SubType, std::size_t TypeSize>
-struct type_id<std::pair<SubType, SubType>, SubType, TypeSize>
-{
-    static std::string value() { return "pair"; }
-};
-*/
 //======================================================================================//
 
 template <typename ObjectType>
@@ -206,6 +190,7 @@ public:
         {
             return (id() == rhs.id() && depth() == rhs.depth());
         }
+
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
 
         graph_node& operator+=(const graph_node& rhs)
@@ -227,31 +212,33 @@ public:
     //  graph instance + current node + head node
     //
     //----------------------------------------------------------------------------------//
-    struct graph_data
+    class graph_data
     {
-        using this_type  = graph_data;
-        int64_t  m_depth = -1;
-        graph_t  m_graph;
-        iterator m_current;
-        iterator m_head;
+    public:
+        using this_type = graph_data;
 
-        graph_data()
-        : m_depth(-1)
-        {
-        }
+    public:
+        graph_data() = default;
 
-        graph_data(const graph_node& rhs)
-        : m_depth(0)
+        explicit graph_data(const graph_node& rhs)
+        : m_has_head(true)
+        , m_depth(0)
         {
             m_head    = m_graph.set_head(rhs);
+            m_depth   = 0;
             m_current = m_head;
         }
 
         ~graph_data() { m_graph.clear(); }
 
-        graph_data(const this_type&) = default;
-        graph_data& operator=(const this_type&) = delete;
+        // allow move and copy construct
+        explicit graph_data(const this_type&) = default;
         graph_data& operator=(this_type&&) = default;
+
+        // delete copy-assignment
+        graph_data& operator=(const this_type&) = delete;
+
+        bool has_head() const { return m_has_head; }
 
         int64_t&  depth() { return m_depth; }
         graph_t&  graph() { return m_graph; }
@@ -291,6 +278,13 @@ public:
             ++m_depth;
             return (m_current = m_graph.append_child(m_current, node));
         }
+
+    private:
+        bool     m_has_head = false;
+        int64_t  m_depth    = -1;
+        graph_t  m_graph;
+        iterator m_current = nullptr;
+        iterator m_head    = nullptr;
     };
 
 public:
@@ -374,7 +368,7 @@ public:
         };
 
         // if first instance
-        if(m_data.depth() < 0)
+        if(!m_data.has_head())
         {
             if(this == master_instance())
             {

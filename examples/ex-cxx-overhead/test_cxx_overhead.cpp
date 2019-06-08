@@ -29,11 +29,13 @@
 
 using namespace tim::component;
 
-using auto_tuple_t   = tim::auto_tuple<real_clock>;
-using timer_tuple_t  = tim::component_tuple<real_clock, system_clock, user_clock>;
-using papi_tuple_t   = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
-using global_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                       peak_rss, current_rss, papi_tuple_t>;
+using auto_tuple_t  = tim::auto_tuple<real_clock>;
+using timer_tuple_t = tim::component_tuple<real_clock, system_clock, user_clock>;
+using papi_tuple_t  = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using global_tuple_t =
+    tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
+                    current_rss, priority_context_switch, voluntary_context_switch,
+                    papi_tuple_t>;
 
 static int64_t nlaps = 0;
 

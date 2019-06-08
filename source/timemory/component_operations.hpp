@@ -146,7 +146,7 @@ struct pop_node
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    pop_node(base_type& obj) { obj.pop_node(); }
+    explicit pop_node(base_type& obj) { obj.pop_node(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -158,15 +158,15 @@ struct record
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    record(base_type& obj) { obj.value = Type::record(); }
+    explicit record(base_type& obj) { obj.value = Type::record(); }
 
-    template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true)> = 0>
+    template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true), int> = 0>
     record(base_type& obj, const base_type& rhs)
     {
         obj = std::max(obj, rhs);
     }
 
-    template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false)> = 0>
+    template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == false), int> = 0>
     record(base_type& obj, const base_type& rhs)
     {
         obj += rhs;
@@ -182,7 +182,7 @@ struct reset
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    reset(base_type& obj) { obj.reset(); }
+    explicit reset(base_type& obj) { obj.reset(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -194,7 +194,7 @@ struct measure
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    measure(base_type& obj) { obj.measure(); }
+    explicit measure(base_type& obj) { obj.measure(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -206,7 +206,7 @@ struct start
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    start(base_type& obj) { obj.start(); }
+    explicit start(base_type& obj) { obj.start(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -218,7 +218,7 @@ struct stop
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    stop(base_type& obj) { obj.stop(); }
+    explicit stop(base_type& obj) { obj.stop(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -230,7 +230,7 @@ struct conditional_start
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    conditional_start(base_type& obj) { obj.conditional_start(); }
+    explicit conditional_start(base_type& obj) { obj.conditional_start(); }
 
     template <typename _Func>
     conditional_start(base_type& obj, _Func&& func)
@@ -248,7 +248,7 @@ struct conditional_stop
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    conditional_stop(base_type& obj) { obj.conditional_stop(); }
+    explicit conditional_stop(base_type& obj) { obj.conditional_stop(); }
 
     template <typename _Func>
     conditional_stop(base_type& obj, _Func&& func)
@@ -481,14 +481,14 @@ struct print
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp, typename Archive>
-struct serial
+template <typename _Tp, typename _Archive>
+struct serialization
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
     using base_type  = base<Type, value_type>;
 
-    serial(base_type& obj, Archive& ar, const unsigned int version)
+    serialization(base_type& obj, _Archive& ar, const unsigned int version)
     {
         auto _disp = static_cast<const Type&>(obj).compute_display();
         ar(serializer::make_nvp("is_transient", obj.is_transient),

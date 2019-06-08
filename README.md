@@ -14,10 +14,205 @@
 
 [TiMemory Release Notes](https://jrmadsen.github.io/TiMemory/ReleaseNotes.html)
 
-### Easy-to-use
+### Overview
+
+TiMemory is generic C++11 template library providing a variety of [performance components](#Components)
+for reporting timing, resource usage, and hardware counters for the CPU and GPU.
+
+TiMemory provides also provides Python and C interfaces.
+
+### Purpose
+
+The purpose of the TiMemory package is to provide as easy way to regularly report on the performance
+of your code. If you have ever something like this in your code:
+
+```python
+tstart = time.now()
+# do something
+tstop = time.now()
+print("Elapsed time: {}".format(tstop - tstart))
+```
+
+TiMemory streamlines this work. In C++ codes, all you have to do is include the headers.
+It comes in handy especially when optimizing a
+certain algorithm or section of your code -- you just insert a line of code that specifies what
+you want to measure and run your code: __*initialization and output are automated*__.
+
+TiMemory is not a full profiler and it is not intended to be used in lieu of the profiling,
+instead __*it provides an simplified method to check your changes have not degraded performance
+or increased resource utilization*__.
+For example, if the API provides a generic set of components around the core workload pieces,
+these can be saved
+
+### Installation
+
+- Requirements
+  - C++ compiler (GNU, MSVC, Clang, Intel, PGI)
+  - CMake >= 3.10
+
+```shell
+$ git clone https://github.com/jrmadsen/TiMemory.git timemory
+$ mkdir -p timemory/build-timemory
+$ cd timemory/build-timemory
+$ cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
+$ cmake --build . --target INSTALL
+```
+
+### Getting Started
+
+For C++ projects, basic functionality simply requires including the header path,
+e.g. `-I/usr/include` if `timemory.hpp` is in `/usr/local/timemory/timemory.hpp`.
+However, this will not enable additional capabilities such as PAPI, CUPTI, CUDA kernel timing,
+extern templates, etc.
+
+#### C++
+
+```c++
+//--------------------------------------------------------------------//
+// STEP 1: include header (REQUIRED)
+//
+#include <timemory/timemory.hpp>
+//
+//--------------------------------------------------------------------//
+
+
+//--------------------------------------------------------------------//
+// STEP 2: declare some types (OPTIONAL)
+//
+using auto_tuple_t =
+    tim::auto_tuple<
+        tim::component::real_clock,     // wall-clock timer
+        tim::component::cpu_clock,      // cpu-clock timer
+        tim::component::cpu_util,       // (cpu-time / wall-time) * 100
+        tim::component::peak_rss,       // high-water mark of memory
+        tim::component::papi_tuple<0, PAPI_TOT_CYC> // total cycles
+    >;
+
+using comp_tuple_t = typename auto_tuple_t::component_type;
+//
+// NOTE:
+//   "tim::auto_tuple<...>" will statically filter out any components
+//   that are not available, e.g. "papi_tuple" if TIMEMORY_USE_PAPI
+//   is not defined at compile time.
+//--------------------------------------------------------------------//
+
+
+intmax_t fibonacci(intmax_t n)
+{
+    //----------------------------------------------------------------//
+    // STEP 3: add a timer to function (OPTIONAL)
+    //
+    tim::auto_tuple<tim::component::real_clock> timer(__FUNCTION__);
+    //
+    //----------------------------------------------------------------//
+    return (n < 2) ? n : fibonacci(n-1) + fibonacci(n-2);
+}
+
+
+int main(int argc, char** argv)
+{
+    //----------------------------------------------------------------//
+    // STEP 4: configure output and parse env  (OPTIONAL)
+    //
+    tim::timemory_init(argc, argv);
+    //
+    //----------------------------------------------------------------//
+
+    comp_tuple_t main("overall timer", true);
+    main.start();
+    for(auto n : { 10, 11, 12})
+    {
+        // "tim::str::join" is similar to this in Python:
+        //
+        //      args = [ "fibonacci(", n, ")" ]
+        //      "".join(args)
+        //
+        auto_tuple_t t(tim::str::join("", "fibonacci(", n, ")"));
+        auto ret = fibonacci(n);
+        printf("fibonacci(%i) = %li\n", n, ret);
+    }
+    main.stop();
+    std::cout << main << std::endl;
+}
+```
+
+Compile:
+
+```shell
+$ g++ -O3 -I/usr/local example.cc -o example
+```
+
+Output:
+
+```shell
+fibonacci(10) = 55
+fibonacci(11) = 89
+fibonacci(12) = 144
+> [cxx] overall timer :  0.002 sec real,  0.000 sec cpu,   0.0 % cpu_util,   0.1 MB peak_rss [laps: 1]
+
+[graph_storage<peak_rss>]> Outputting 'timemory-test-cxx-roofline-output/peak_rss.txt'... Done
+> [cxx] overall timer :   0.1 MB peak_rss, 1 laps
+> [cxx] fibonacci(10) :   0.1 MB peak_rss, 1 laps
+> [cxx] fibonacci(11) :   0.0 MB peak_rss, 1 laps
+> [cxx] fibonacci(12) :   0.0 MB peak_rss, 1 laps
+
+[graph_storage<cpu_util>]> Outputting 'timemory-test-cxx-roofline-output/cpu_util.txt'... Done
+> [cxx] overall timer :   0.0 % cpu_util, 1 laps
+> [cxx] fibonacci(10) :   0.0 % cpu_util, 1 laps
+> [cxx] fibonacci(11) :   0.0 % cpu_util, 1 laps
+> [cxx] fibonacci(12) :   0.0 % cpu_util, 1 laps
+
+[graph_storage<cpu>]> Outputting 'timemory-test-cxx-roofline-output/cpu.txt'... Done
+> [cxx] overall timer :  0.000 sec cpu, 1 laps
+> [cxx] fibonacci(10) :  0.000 sec cpu, 1 laps
+> [cxx] fibonacci(11) :  0.000 sec cpu, 1 laps
+> [cxx] fibonacci(12) :  0.000 sec cpu, 1 laps
+
+[graph_storage<real>]> Outputting 'timemory-test-cxx-roofline-output/real.txt'... Done
+> [cxx] overall timer                   :  0.002 sec real, 1 laps
+> [cxx] fibonacci(10)                   :  0.000 sec real, 1 laps
+> [cxx] fibonacci                       :  0.000 sec real, 1 laps
+> [cxx] |_fibonacci                     :  0.000 sec real, 2 laps
+> [cxx]   |_fibonacci                   :  0.000 sec real, 4 laps
+> [cxx]     |_fibonacci                 :  0.000 sec real, 8 laps
+> [cxx]       |_fibonacci               :  0.000 sec real, 16 laps
+> [cxx]         |_fibonacci             :  0.000 sec real, 32 laps
+> [cxx]           |_fibonacci           :  0.000 sec real, 52 laps
+> [cxx]             |_fibonacci         :  0.000 sec real, 44 laps
+> [cxx]               |_fibonacci       :  0.000 sec real, 16 laps
+> [cxx]                 |_fibonacci     :  0.000 sec real, 2 laps
+> [cxx] fibonacci(11)                   :  0.001 sec real, 1 laps
+> [cxx] fibonacci                       :  0.001 sec real, 1 laps
+> [cxx] |_fibonacci                     :  0.001 sec real, 2 laps
+> [cxx]   |_fibonacci                   :  0.001 sec real, 4 laps
+> [cxx]     |_fibonacci                 :  0.001 sec real, 8 laps
+> [cxx]       |_fibonacci               :  0.001 sec real, 16 laps
+> [cxx]         |_fibonacci             :  0.001 sec real, 32 laps
+> [cxx]           |_fibonacci           :  0.000 sec real, 62 laps
+> [cxx]             |_fibonacci         :  0.000 sec real, 84 laps
+> [cxx]               |_fibonacci       :  0.000 sec real, 58 laps
+> [cxx]                 |_fibonacci     :  0.000 sec real, 18 laps
+> [cxx]                   |_fibonacci   :  0.000 sec real, 2 laps
+> [cxx] fibonacci(12)                   :  0.001 sec real, 1 laps
+> [cxx] fibonacci                       :  0.001 sec real, 1 laps
+> [cxx] |_fibonacci                     :  0.001 sec real, 2 laps
+> [cxx]   |_fibonacci                   :  0.001 sec real, 4 laps
+> [cxx]     |_fibonacci                 :  0.001 sec real, 8 laps
+> [cxx]       |_fibonacci               :  0.001 sec real, 16 laps
+> [cxx]         |_fibonacci             :  0.001 sec real, 32 laps
+> [cxx]           |_fibonacci           :  0.001 sec real, 64 laps
+> [cxx]             |_fibonacci         :  0.001 sec real, 114 laps
+> [cxx]               |_fibonacci       :  0.000 sec real, 128 laps
+> [cxx]                 |_fibonacci     :  0.000 sec real, 74 laps
+> [cxx]                   |_fibonacci   :  0.000 sec real, 20 laps
+> [cxx]                     |_fibonacci :  0.000 sec real, 2 laps
+```
+
+### Usage
 
 In C++ and Python, TiMemory can be added in a single line of code:
 
+#### C++
 ```cpp
 void some_function()
 {
@@ -26,11 +221,15 @@ void some_function()
 }
 ```
 
+#### Python
+
 ```python
 @timemory.util.auto_timer()
 def some_function():
     # ...
 ```
+
+#### C
 
 In C, TiMemory requires only two lines of code
 ```c
@@ -41,14 +240,17 @@ FREE_TIMEMORY_AUTO_TIMER(timer);
 
 When the application terminates, output to text and JSON is automated.
 
-### TiMemory supports a variety of Components
+### Components
 
 - `cpu_clock`
   - records the CPU clock time (user + kernel time)
 - `cpu_util`
   - records the CPU utilization
-- `cuda_event`
+- `cuda_event` (__GPU__)
   - records a CUDA kernel runtime
+  - (currently) care must be take to make sure the stream is synchronized before
+    the component is destroyed
+    - A callback system is being devised to fix this restriction
 - `current_rss`
   - records the current resident-set size via number of pages allocated times the size of a page
 - `data_rss`
@@ -73,8 +275,12 @@ When the application terminates, output to text and JSON is automated.
   - records the number of signals delivered.
 - `num_swap`
   - records the number of swaps out of main memory
-- `papi_event`
-  - records a specified set of PAPI counters
+- `papi_tuple<EventSet, EventTypes...>` (__Hardware counters__)
+  - records a compile-time specified list of PAPI counters
+- `papi_array<EventSet, N>` (__Hardware counters__)
+  - records a variable set of PAPI counters up to size _N_
+- `cpu_roofline<EventTypes...>` (__Hardware counters__)
+  - records a CPU roofline calculation based on the specified set of PAPI counters
 - `peak_rss`
   - records the peak resident-set size ("high-water" memory mark)
 - `priority_context_switch`
@@ -245,7 +451,7 @@ PAPI counters are available as a component in the same way timing and rusage com
 is not compiled with PAPI, it is safe to keep their declaration in the code and their output will be suppressed.
 
 ```c++
-using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
                                        peak_rss, current_rss, papi_tuple_t>;
 
@@ -334,67 +540,6 @@ $ ./timem sleep 5
 - `TIMEMORY_WIDTH`
   - initial width for all components
 
-### Installation
-
-- Requirements
-  - C++ compiler (GNU, MSVC, Clang, Intel, PGI)
-  - CMake >= 3.10
-
-```shell
-$ git clone https://github.com/jrmadsen/TiMemory.git timemory
-$ mkdir -p timemory/build-timemory
-$ cd timemory/build-timemory
-$ cmake -DCMAKE_INSTALL_PREFIX=/usr/local ..
-$ cmake --build . --target INSTALL
-```
-
-### Getting Started
-
-For C++ projects, basic functionality simply requires including the header path,
-e.g. `-I/usr/include` if `timemory.hpp` is in `/usr/local/timemory/timemory.hpp`.
-However, this will not enable additional capabilities such as PAPI, CUPTI, CUDA kernel timing,
-extern templates, etc.
-
-```c++
-// STEP 1: include header
-#include <timemory/timemory.hpp>
-
-// STEP 2: declare some types
-using namespace tim::component;
-using comp_tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using auto_tuple_t = typename comp_tuple_t::auto_type;
-
-// STEP 3: add a timer to function
-intmax_t fibonacci(intmax_t n)
-{
-    // simple wall-clock timer
-    tim::auto_tuple<real_clock> timer(__FUNCTION__);
-    return (n < 2) ? n : fibonacci(n-1) + fibonacci(n-2);
-}
-
-int main(int argc, char** argv)
-{
-    // STEP 4: configure output and parse env  (optional)
-    tim::timemory_init(argc, argv);
-
-    comp_tuple_t main("overall timer", true);
-    main.start();
-    for(auto n : { 10, 11, 12})
-    {
-        auto_tuple_t t(tim::str::join("", "fibonacci(", n, ")"));
-        auto ret = fibonacci(n);
-        printf("fibonacci(%i) = %li\n", n, ret);
-    }
-    main.stop();
-    std::cout << main << std::endl;
-}
-```
-
-Compile:
-
-```shell
-$ g++ -O3 -I/usr/local example.cc -o example
-```
 ### CMake Support
 
 **It is highly recommended to use CMake with TiMemory**

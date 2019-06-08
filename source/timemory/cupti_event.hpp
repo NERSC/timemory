@@ -244,7 +244,7 @@ struct cupti_event
         return *this;
     }
 
-    value_type serial() { return accum; }
+    value_type serialization() { return accum; }
 };
 
 }  // namespace component

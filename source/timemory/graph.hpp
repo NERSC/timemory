@@ -55,15 +55,21 @@ class tgraph_node
     // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
 public:
     tgraph_node();
-    tgraph_node(const T&);
-    tgraph_node(T&&);
+    explicit tgraph_node(const T&);
+    explicit tgraph_node(T&&);
 
-    tgraph_node<T>* parent;
-    tgraph_node<T>* first_child;
-    tgraph_node<T>* last_child;
-    tgraph_node<T>* prev_sibling;
-    tgraph_node<T>* next_sibling;
-    T               data;
+    tgraph_node(const tgraph_node&) = delete;
+    tgraph_node(tgraph_node&&)      = default;
+
+    tgraph_node& operator=(const tgraph_node&) = delete;
+    tgraph_node& operator=(tgraph_node&&) = default;
+
+    tgraph_node<T>* parent       = nullptr;
+    tgraph_node<T>* first_child  = nullptr;
+    tgraph_node<T>* last_child   = nullptr;
+    tgraph_node<T>* prev_sibling = nullptr;
+    tgraph_node<T>* next_sibling = nullptr;
+    T               data         = T();
 };
 
 //======================================================================================//
@@ -82,12 +88,7 @@ tgraph_node<T>::tgraph_node()
 
 template <typename T>
 tgraph_node<T>::tgraph_node(const T& val)
-: parent(nullptr)
-, first_child(nullptr)
-, last_child(nullptr)
-, prev_sibling(nullptr)
-, next_sibling(nullptr)
-, data(val)
+: data(val)
 {
 }
 
@@ -95,12 +96,7 @@ tgraph_node<T>::tgraph_node(const T& val)
 
 template <typename T>
 tgraph_node<T>::tgraph_node(T&& val)
-: parent(nullptr)
-, first_child(nullptr)
-, last_child(nullptr)
-, prev_sibling(nullptr)
-, next_sibling(nullptr)
-, data(val)
+: data(std::move(val))
 {
 }
 
@@ -118,9 +114,7 @@ public:
 
     class iterator_base;
     class pre_order_iterator;
-    class post_order_iterator;
     class sibling_iterator;
-    class leaf_iterator;
 
     graph();          // empty constructor
     graph(const T&);  // constructor setting given element as head
@@ -163,7 +157,7 @@ public:
         graph_node* node = nullptr;
 
     protected:
-        bool m_skip_current_children;
+        bool m_skip_current_children = false;
     };
 
     /// Depth-first iterator, first accessing the node, then its children.
@@ -188,74 +182,10 @@ public:
         pre_order_iterator& next_skip_children();
     };
 
-    /// Depth-first iterator, first accessing the children, then the node
-    /// itself.
-    class post_order_iterator : public iterator_base
-    {
-    public:
-        post_order_iterator();
-        post_order_iterator(graph_node*);
-        post_order_iterator(const iterator_base&);
-        post_order_iterator(const sibling_iterator&);
-
-        bool                 operator==(const post_order_iterator&) const;
-        bool                 operator!=(const post_order_iterator&) const;
-        post_order_iterator& operator++();
-        post_order_iterator& operator--();
-        post_order_iterator  operator++(int);
-        post_order_iterator  operator--(int);
-        post_order_iterator& operator+=(unsigned int);
-        post_order_iterator& operator-=(unsigned int);
-
-        /// Set iterator to the first child as deep as possible down the graph.
-        void descend_all();
-    };
-
-    /// Breadth-first iterator, using a queue
-    class breadth_first_queued_iterator : public iterator_base
-    {
-    public:
-        breadth_first_queued_iterator();
-        breadth_first_queued_iterator(graph_node*);
-        breadth_first_queued_iterator(const iterator_base&);
-
-        bool operator==(const breadth_first_queued_iterator&) const;
-        bool operator!=(const breadth_first_queued_iterator&) const;
-        breadth_first_queued_iterator& operator++();
-        breadth_first_queued_iterator  operator++(int);
-        breadth_first_queued_iterator& operator+=(unsigned int);
-
-    private:
-        std::queue<graph_node*> traversal_queue;
-    };
-
     /// The default iterator types throughout the graph class.
     typedef pre_order_iterator                 iterator;
     typedef const iterator                     const_iterator;
     typedef typename iterator::difference_type difference_type;
-    typedef breadth_first_queued_iterator      breadth_first_iterator;
-
-    /// Iterator which traverses only the nodes at a given depth from the root.
-    class fixed_depth_iterator : public iterator_base
-    {
-    public:
-        fixed_depth_iterator();
-        fixed_depth_iterator(graph_node*);
-        fixed_depth_iterator(const iterator_base&);
-        fixed_depth_iterator(const sibling_iterator&);
-        fixed_depth_iterator(const fixed_depth_iterator&);
-
-        bool                  operator==(const fixed_depth_iterator&) const;
-        bool                  operator!=(const fixed_depth_iterator&) const;
-        fixed_depth_iterator& operator++();
-        fixed_depth_iterator& operator--();
-        fixed_depth_iterator  operator++(int);
-        fixed_depth_iterator  operator--(int);
-        fixed_depth_iterator& operator+=(unsigned int);
-        fixed_depth_iterator& operator-=(unsigned int);
-
-        graph_node* top_node;
-    };
 
     /// Iterator which traverses only the nodes which are siblings of each
     /// other.
@@ -285,62 +215,14 @@ public:
         void m_set_parent();
     };
 
-    /// Iterator which traverses only the leaves.
-    class leaf_iterator : public iterator_base
-    {
-    public:
-        leaf_iterator();
-        leaf_iterator(graph_node*, graph_node* top = 0);
-        leaf_iterator(const sibling_iterator&);
-        leaf_iterator(const iterator_base&);
-
-        bool           operator==(const leaf_iterator&) const;
-        bool           operator!=(const leaf_iterator&) const;
-        leaf_iterator& operator++();
-        leaf_iterator& operator--();
-        leaf_iterator  operator++(int);
-        leaf_iterator  operator--(int);
-        leaf_iterator& operator+=(unsigned int);
-        leaf_iterator& operator-=(unsigned int);
-
-    private:
-        graph_node* top_node;
-    };
-
     /// Return iterator to the beginning of the graph.
     inline pre_order_iterator begin() const;
     /// Return iterator to the end of the graph.
     inline pre_order_iterator end() const;
-    /// Return iterator to the beginning of the graph.
-    inline const pre_order_iterator cbegin() const;
-    /// Return iterator to the end of the graph.
-    inline const pre_order_iterator cend() const;
-    /// Return post-order iterator to the beginning of the graph.
-    post_order_iterator begin_post() const;
-    /// Return post-order end iterator of the graph.
-    post_order_iterator end_post() const;
-    /// Return fixed-depth iterator to the first node at a given depth from the
-    /// given iterator.
-    fixed_depth_iterator begin_fixed(const iterator_base&, unsigned int) const;
-    /// Return fixed-depth end iterator.
-    fixed_depth_iterator end_fixed(const iterator_base&, unsigned int) const;
-    /// Return breadth-first iterator to the first node at a given depth.
-    breadth_first_queued_iterator begin_breadth_first() const;
-    /// Return breadth-first end iterator.
-    breadth_first_queued_iterator end_breadth_first() const;
     /// Return sibling iterator to the first child of given node.
     static sibling_iterator begin(const iterator_base&);
     /// Return sibling end iterator for children of given node.
     static sibling_iterator end(const iterator_base&);
-    /// Return leaf iterator to the first leaf of the graph.
-    leaf_iterator begin_leaf() const;
-    /// Return leaf end iterator for entire graph.
-    leaf_iterator end_leaf() const;
-    /// Return leaf iterator to the first leaf of the subgraph at the given
-    /// node.
-    leaf_iterator begin_leaf(const iterator_base& top) const;
-    /// Return leaf end iterator for the subgraph at the given node.
-    leaf_iterator end_leaf(const iterator_base& top) const;
 
     /// Return iterator to the parent of a node.
     template <typename iter>
@@ -351,220 +233,225 @@ public:
     /// Return iterator to the next sibling of a node.
     template <typename iter>
     static iter next_sibling(iter);
-    /// Return iterator to the next node at a given depth.
-    template <typename iter>
-    iter next_at_same_depth(iter) const;
 
     /// Erase all nodes of the graph.
-    void clear();
+    inline void clear();
     /// Erase element at position pointed to by iterator, return incremented
     /// iterator.
     template <typename iter>
-    iter erase(iter);
+    inline iter erase(iter);
     /// Erase all children of the node pointed to by iterator.
-    void erase_children(const iterator_base&);
+    inline void erase_children(const iterator_base&);
     /// Erase all siblings to the right of the iterator.
-    void erase_right_siblings(const iterator_base&);
+    inline void erase_right_siblings(const iterator_base&);
     /// Erase all siblings to the left of the iterator.
-    void erase_left_siblings(const iterator_base&);
+    inline void erase_left_siblings(const iterator_base&);
 
     /// Insert empty node as last/first child of node pointed to by position.
     template <typename iter>
-    iter append_child(iter position);
+    inline iter append_child(iter position);
     template <typename iter>
-    iter prepend_child(iter position);
+    inline iter prepend_child(iter position);
     /// Insert node as last/first child of node pointed to by position.
     template <typename iter>
-    iter append_child(iter position, const T& x);
+    inline iter append_child(iter position, const T& x);
     template <typename iter>
-    iter append_child(iter position, T&& x);
+    inline iter append_child(iter position, T&& x);
     template <typename iter>
-    iter prepend_child(iter position, const T& x);
+    inline iter prepend_child(iter position, const T& x);
     template <typename iter>
-    iter prepend_child(iter position, T&& x);
+    inline iter prepend_child(iter position, T&& x);
     /// Append the node (plus its children) at other_position as last/first
     /// child of position.
     template <typename iter>
-    iter append_child(iter position, iter other_position);
+    inline iter append_child(iter position, iter other_position);
     template <typename iter>
-    iter prepend_child(iter position, iter other_position);
+    inline iter prepend_child(iter position, iter other_position);
     /// Append the nodes in the from-to range (plus their children) as
     /// last/first children of position.
     template <typename iter>
-    iter append_children(iter position, sibling_iterator from, sibling_iterator to);
+    inline iter append_children(iter position, sibling_iterator from,
+                                const sibling_iterator& to);
     template <typename iter>
-    iter prepend_children(iter position, sibling_iterator from, sibling_iterator to);
+    inline iter prepend_children(iter position, sibling_iterator from,
+                                 sibling_iterator to);
 
     /// Short-hand to insert topmost node in otherwise empty graph.
-    pre_order_iterator set_head(const T& x);
-    pre_order_iterator set_head(T&& x);
+    inline pre_order_iterator set_head(const T& x);
+    inline pre_order_iterator set_head(T&& x);
     /// Insert node as previous sibling of node pointed to by position.
     template <typename iter>
-    iter insert(iter position, const T& x);
+    inline iter insert(iter position, const T& x);
     template <typename iter>
-    iter insert(iter position, T&& x);
+    inline iter insert(iter position, T&& x);
     /// Specialisation of previous member.
-    sibling_iterator insert(sibling_iterator position, const T& x);
+    inline sibling_iterator insert(sibling_iterator position, const T& x);
     /// Insert node (with children) pointed to by subgraph as previous sibling
     /// of node pointed to by position. Does not change the subgraph itself (use
     /// move_in or move_in_below for that).
     template <typename iter>
-    iter insert_subgraph(iter position, const iterator_base& subgraph);
+    inline iter insert_subgraph(iter position, const iterator_base& subgraph);
     /// Insert node as next sibling of node pointed to by position.
     template <typename iter>
-    iter insert_after(iter position, const T& x);
+    inline iter insert_after(iter position, const T& x);
     template <typename iter>
-    iter insert_after(iter position, T&& x);
+    inline iter insert_after(iter position, T&& x);
     /// Insert node (with children) pointed to by subgraph as next sibling of
     /// node pointed to by position.
     template <typename iter>
-    iter insert_subgraph_after(iter position, const iterator_base& subgraph);
+    inline iter insert_subgraph_after(iter position, const iterator_base& subgraph);
 
     /// Replace node at 'position' with other node (keeping same children);
     /// 'position' becomes invalid.
     template <typename iter>
-    iter replace(iter position, const T& x);
+    inline iter replace(iter position, const T& x);
     /// Replace node at 'position' with subgraph starting at 'from' (do not
     /// erase subgraph at 'from'); see above.
     template <typename iter>
-    iter replace(iter position, const iterator_base& from);
+    inline iter replace(iter position, const iterator_base& from);
     /// Replace string of siblings (plus their children) with copy of a new
     /// string (with children); see above
-    sibling_iterator replace(sibling_iterator orig_begin, sibling_iterator orig_end,
-                             sibling_iterator new_begin, sibling_iterator new_end);
+    inline sibling_iterator replace(sibling_iterator        orig_begin,
+                                    const sibling_iterator& orig_end,
+                                    sibling_iterator        new_begin,
+                                    const sibling_iterator& new_end);
 
     /// Move all children of node at 'position' to be siblings, returns
     /// position.
     template <typename iter>
-    iter flatten(iter position);
+    inline iter flatten(iter position);
     /// Move nodes in range to be children of 'position'.
     template <typename iter>
-    iter reparent(iter position, sibling_iterator begin, sibling_iterator end);
+    inline iter reparent(iter position, sibling_iterator begin,
+                         const sibling_iterator& end);
     /// Move all child nodes of 'from' to be children of 'position'.
     template <typename iter>
-    iter reparent(iter position, iter from);
+    inline iter reparent(iter position, iter from);
 
     /// Replace node with a new node, making the old node (plus subgraph) a
     /// child of the new node.
     template <typename iter>
-    iter wrap(iter position, const T& x);
+    inline iter wrap(iter position, const T& x);
     /// Replace the range of sibling nodes (plus subgraphs), making these
     /// children of the new node.
     template <typename iter>
-    iter wrap(iter from, iter to, const T& x);
+    inline iter wrap(iter from, iter to, const T& x);
 
     /// Move 'source' node (plus its children) to become the next sibling of
     /// 'target'.
     template <typename iter>
-    iter move_after(iter target, iter source);
+    inline iter move_after(iter target, iter source);
     /// Move 'source' node (plus its children) to become the previous sibling of
     /// 'target'.
     template <typename iter>
-    iter             move_before(iter target, iter source);
-    sibling_iterator move_before(sibling_iterator target, sibling_iterator source);
+    inline iter             move_before(iter target, iter source);
+    inline sibling_iterator move_before(sibling_iterator target, sibling_iterator source);
     /// Move 'source' node (plus its children) to become the node at 'target'
     /// (erasing the node at 'target').
     template <typename iter>
-    iter move_ontop(iter target, iter source);
+    inline iter move_ontop(iter target, iter source);
 
     /// Extract the subgraph starting at the indicated node, removing it from
     /// the original graph.
-    graph move_out(iterator);
+    inline graph move_out(iterator);
     /// Inverse of take_out: inserts the given graph as previous sibling of
     /// indicated node by a move operation, that is, the given graph becomes
     /// empty. Returns iterator to the top node.
     template <typename iter>
-    iter move_in(iter, graph&);
+    inline iter move_in(iter, graph&);
     /// As above, but now make the graph a child of the indicated node.
     template <typename iter>
-    iter move_in_below(iter, graph&);
+    inline iter move_in_below(iter, graph&);
     /// As above, but now make the graph the nth child of the indicated node (if
     /// possible).
     template <typename iter>
-    iter move_in_as_nth_child(iter, size_t, graph&);
+    inline iter move_in_as_nth_child(iter, size_t, graph&);
 
     /// Merge with other graph, creating new branches and leaves only if they
     /// are not already present.
-    void merge(sibling_iterator, sibling_iterator, sibling_iterator, sibling_iterator,
-               bool duplicate_leaves = false, bool first = false);
+    inline void merge(const sibling_iterator&, const sibling_iterator&, sibling_iterator,
+                      const sibling_iterator&, bool duplicate_leaves = false,
+                      bool first = false);
     /// Reduce duplicate nodes
     template <typename Predicate>
-    void reduce(sibling_iterator, sibling_iterator, sibling_iterator, sibling_iterator,
-                const Predicate&);
+    inline void reduce(const sibling_iterator&, const sibling_iterator&,
+                       const sibling_iterator&, sibling_iterator, const Predicate&);
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
-    void sort(sibling_iterator from, sibling_iterator to, bool deep = false);
+    inline void sort(const sibling_iterator& from, const sibling_iterator& to,
+                     bool deep = false);
     template <class StrictWeakOrdering>
-    void sort(sibling_iterator from, sibling_iterator to, StrictWeakOrdering comp,
-              bool deep = false);
+    inline void sort(sibling_iterator from, const sibling_iterator& to,
+                     StrictWeakOrdering comp, bool deep = false);
     /// Compare two ranges of nodes (compares nodes as well as graph structure).
     template <typename iter>
-    bool equal(const iter& one, const iter& two, const iter& three) const;
+    inline bool equal(const iter& one, const iter& two, const iter& three) const;
     template <typename iter, class BinaryPredicate>
-    bool equal(const iter& one, const iter& two, const iter& three,
-               BinaryPredicate) const;
+    inline bool equal(const iter& one, const iter& two, const iter& three,
+                      BinaryPredicate) const;
     template <typename iter>
-    bool equal_subgraph(const iter& one, const iter& two) const;
+    inline bool equal_subgraph(const iter& one, const iter& two) const;
     template <typename iter, class BinaryPredicate>
-    bool equal_subgraph(const iter& one, const iter& two, BinaryPredicate) const;
+    inline bool equal_subgraph(const iter& one, const iter& two, BinaryPredicate) const;
     /// Extract a new graph formed by the range of siblings plus all their
     /// children.
-    graph subgraph(sibling_iterator from, sibling_iterator to) const;
-    void  subgraph(graph&, sibling_iterator from, sibling_iterator to) const;
+    inline graph subgraph(sibling_iterator from, sibling_iterator to) const;
+    inline void  subgraph(graph&, sibling_iterator from, sibling_iterator to) const;
     /// Exchange the node (plus subgraph) with its sibling node (do nothing if
     /// no sibling present).
-    void swap(sibling_iterator it);
+    inline void swap(sibling_iterator it);
     /// Exchange two nodes (plus subgraphs). The iterators will remain valid and
     /// keep pointing to the same nodes, which now sit at different locations in
     /// the graph.
-    void swap(iterator, iterator);
+    inline void swap(iterator, iterator);
 
     /// Count the total number of nodes.
-    size_t size() const;
+    inline size_t size() const;
     /// Count the total number of nodes below the indicated node (plus one).
-    size_t size(const iterator_base&) const;
+    inline size_t size(const iterator_base&) const;
     /// Check if graph is empty.
-    bool empty() const;
+    inline bool empty() const;
     /// Compute the depth to the root or to a fixed other iterator.
     static int depth(const iterator_base&);
     static int depth(const iterator_base&, const iterator_base&);
     /// Determine the maximal depth of the graph. An empty graph has
     /// max_depth=-1.
-    int max_depth() const;
+    inline int max_depth() const;
     /// Determine the maximal depth of the graph with top node at the given
     /// position.
-    int max_depth(const iterator_base&) const;
+    inline int max_depth(const iterator_base&) const;
     /// Count the number of children of node at position.
     static unsigned int number_of_children(const iterator_base&);
     /// Count the number of siblings (left and right) of node at iterator. Total
     /// nodes at this level is +1.
-    unsigned int number_of_siblings(const iterator_base&) const;
+    inline unsigned int number_of_siblings(const iterator_base&) const;
     /// Determine whether node at position is in the subgraphs with root in the
     /// range.
-    bool is_in_subgraph(const iterator_base& position, const iterator_base& begin,
-                        const iterator_base& end) const;
+    inline bool is_in_subgraph(const iterator_base& position, const iterator_base& begin,
+                               const iterator_base& end) const;
     /// Determine whether the iterator is an 'end' iterator and thus not
     /// actually pointing to a node.
-    bool is_valid(const iterator_base&) const;
+    inline bool is_valid(const iterator_base&) const;
     /// Determine whether the iterator is one of the 'head' nodes at the top
     /// level, i.e. has no parent.
     static bool is_head(const iterator_base&);
     /// Find the lowest common ancestor of two nodes, that is, the deepest node
     /// such that both nodes are descendants of it.
-    iterator lowest_common_ancestor(const iterator_base&, const iterator_base&) const;
+    inline iterator lowest_common_ancestor(const iterator_base&,
+                                           const iterator_base&) const;
 
     /// Determine the index of a node in the range of siblings to which it
     /// belongs.
-    unsigned int index(sibling_iterator it) const;
+    inline unsigned int index(sibling_iterator it) const;
     /// Inverse of 'index': return the n-th child of the node at position.
     static sibling_iterator child(const iterator_base& position, unsigned int);
     /// Return iterator to the sibling indicated by index
-    sibling_iterator sibling(const iterator_base& position, unsigned int) const;
+    inline sibling_iterator sibling(const iterator_base& position, unsigned int) const;
 
     /// For debugging only: verify internal consistency by inspecting all
     /// pointers in the graph (which will also trigger a valgrind error in case
     /// something got corrupted).
-    void debug_verify_consistency() const;
+    inline void debug_verify_consistency() const;
 
     /// Comparator class for iterators (compares pointer values; why doesn't
     /// this work automatically?)
@@ -582,16 +469,16 @@ public:
     graph_node* feet;  // points to them it is invalid
 
 private:
-    AllocatorT m_alloc;
-    void       m_head_initialize();
-    void       m_copy(const graph<T, AllocatorT>& other);
+    AllocatorT  m_alloc;
+    inline void m_head_initialize();
+    inline void m_copy(const graph<T, AllocatorT>& other);
 
     /// Comparator class for two nodes of a graph (used for sorting and searching).
     template <class StrictWeakOrdering>
     class compare_nodes
     {
     public:
-        compare_nodes(StrictWeakOrdering comp)
+        explicit compare_nodes(StrictWeakOrdering comp)
         : m_comp(comp)
         {
         }
@@ -672,8 +559,8 @@ graph<T, AllocatorT>::m_head_initialize()
 {
     head = m_alloc.allocate(1, 0);  // MSVC does not have default second argument
     feet = m_alloc.allocate(1, 0);
-    m_alloc.construct(head, tgraph_node<T>());
-    m_alloc.construct(feet, tgraph_node<T>());
+    m_alloc.construct(head, std::move(tgraph_node<T>()));
+    m_alloc.construct(feet, std::move(tgraph_node<T>()));
 
     head->parent       = 0;
     head->first_child  = 0;
@@ -773,73 +660,18 @@ graph<T, AllocatorT>::erase_children(const iterator_base& it)
     if(it.node == 0)
         return;
 
-    graph_node* cur  = it.node->first_child;
-    graph_node* prev = 0;
+    graph_node* cur = it.node->first_child;
 
     while(cur != 0)
     {
-        prev = cur;
-        cur  = cur->next_sibling;
+        graph_node* prev = 0;
+        cur              = cur->next_sibling;
         erase_children(pre_order_iterator(prev));
-        //		kp::destructor(&prev->data);
         m_alloc.destroy(prev);
         m_alloc.deallocate(prev, 1);
     }
     it.node->first_child = 0;
     it.node->last_child  = 0;
-    //	std::cout << "exit" << std::endl;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::erase_right_siblings(const iterator_base& it)
-{
-    if(it.node == 0)
-        return;
-
-    graph_node* cur  = it.node->next_sibling;
-    graph_node* prev = 0;
-
-    while(cur != 0)
-    {
-        prev = cur;
-        cur  = cur->next_sibling;
-        erase_children(pre_order_iterator(prev));
-        //		kp::destructor(&prev->data);
-        m_alloc.destroy(prev);
-        m_alloc.deallocate(prev, 1);
-    }
-    it.node->next_sibling = 0;
-    if(it.node->parent != 0)
-        it.node->parent->last_child = it.node;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::erase_left_siblings(const iterator_base& it)
-{
-    if(it.node == 0)
-        return;
-
-    graph_node* cur  = it.node->prev_sibling;
-    graph_node* prev = 0;
-
-    while(cur != 0)
-    {
-        prev = cur;
-        cur  = cur->prev_sibling;
-        erase_children(pre_order_iterator(prev));
-        //		kp::destructor(&prev->data);
-        m_alloc.destroy(prev);
-        m_alloc.deallocate(prev, 1);
-    }
-    it.node->prev_sibling = 0;
-    if(it.node->parent != 0)
-        it.node->parent->first_child = it.node;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -899,127 +731,6 @@ graph<T, AllocatorT>::end() const
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
-const typename graph<T, AllocatorT>::pre_order_iterator
-graph<T, AllocatorT>::cbegin() const
-{
-    return pre_order_iterator(head->next_sibling);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-const typename graph<T, AllocatorT>::pre_order_iterator
-graph<T, AllocatorT>::cend() const
-{
-    return pre_order_iterator(feet);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::breadth_first_queued_iterator
-graph<T, AllocatorT>::begin_breadth_first() const
-{
-    return breadth_first_queued_iterator(head->next_sibling);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::breadth_first_queued_iterator
-graph<T, AllocatorT>::end_breadth_first() const
-{
-    return breadth_first_queued_iterator();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator
-graph<T, AllocatorT>::begin_post() const
-{
-    graph_node* tmp = head->next_sibling;
-    if(tmp != feet)
-    {
-        while(tmp->first_child)
-            tmp = tmp->first_child;
-    }
-    return post_order_iterator(tmp);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator
-graph<T, AllocatorT>::end_post() const
-{
-    return post_order_iterator(feet);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator
-graph<T, AllocatorT>::begin_fixed(const iterator_base& pos, unsigned int dp) const
-{
-    typename graph<T, AllocatorT>::fixed_depth_iterator ret;
-    ret.top_node = pos.node;
-
-    graph_node*  tmp      = pos.node;
-    unsigned int curdepth = 0;
-    while(curdepth < dp)
-    {  // go down one level
-        while(tmp->first_child == 0)
-        {
-            if(tmp->next_sibling == 0)
-            {
-                // try to walk up and then right again
-                do
-                {
-                    if(tmp == ret.top_node)
-                        throw std::range_error("graph: begin_fixed out of range");
-                    tmp = tmp->parent;
-                    if(tmp == 0)
-                        throw std::range_error("graph: begin_fixed out of range");
-                    --curdepth;
-                } while(tmp->next_sibling == 0);
-            }
-            tmp = tmp->next_sibling;
-        }
-        tmp = tmp->first_child;
-        ++curdepth;
-    }
-
-    ret.node = tmp;
-    return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator
-graph<T, AllocatorT>::end_fixed(const iterator_base& pos, unsigned int dp) const
-{
-    assert(1 == 0);  // FIXME: not correct yet: use is_valid() as a temporary workaround
-    graph_node*  tmp      = pos.node;
-    unsigned int curdepth = 1;
-    while(curdepth < dp)
-    {  // go down one level
-        while(tmp->first_child == 0)
-        {
-            tmp = tmp->next_sibling;
-            if(tmp == 0)
-                throw std::range_error("graph: end_fixed out of range");
-        }
-        tmp = tmp->first_child;
-        ++curdepth;
-    }
-    return tmp;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
 graph<T, AllocatorT>::begin(const iterator_base& pos)
 {
@@ -1040,51 +751,6 @@ graph<T, AllocatorT>::end(const iterator_base& pos)
     sibling_iterator ret(nullptr);
     ret.m_parent = pos.node;
     return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::begin_leaf() const
-{
-    graph_node* tmp = head->next_sibling;
-    if(tmp != feet)
-    {
-        while(tmp->first_child)
-            tmp = tmp->first_child;
-    }
-    return leaf_iterator(tmp);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::end_leaf() const
-{
-    return leaf_iterator(feet);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::begin_leaf(const iterator_base& top) const
-{
-    graph_node* tmp = top.node;
-    while(tmp->first_child)
-        tmp = tmp->first_child;
-    return leaf_iterator(tmp, top.node);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::end_leaf(const iterator_base& top) const
-{
-    return leaf_iterator(top.node, top.node);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1122,54 +788,6 @@ graph<T, AllocatorT>::next_sibling(iter position)
     iter ret(position);
     ret.node = position.node->next_sibling;
     return ret;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-template <typename iter>
-iter
-graph<T, AllocatorT>::next_at_same_depth(iter position) const
-{
-    // We make use of a temporary fixed_depth iterator to implement this.
-
-    typename graph<T, AllocatorT>::fixed_depth_iterator tmp(position.node);
-
-    ++tmp;
-    return iter(tmp);
-
-    //	assert(position.node!=0);
-    //	iter ret(position);
-    //
-    //	if(position.node->next_sibling) {
-    //		ret.node=position.node->next_sibling;
-    //		}
-    //	else {
-    //		int relative_depth=0;
-    //	   upper:
-    //		do {
-    //			ret.node=ret.node->parent;
-    //			if(ret.node==0) return ret;
-    //			--relative_depth;
-    //			} while(ret.node->next_sibling==0);
-    //	   lower:
-    //		ret.node=ret.node->next_sibling;
-    //		while(ret.node->first_child==0) {
-    //			if(ret.node->next_sibling==0)
-    //				goto upper;
-    //			ret.node=ret.node->next_sibling;
-    //			if(ret.node==0) return ret;
-    //			}
-    //		while(relative_depth<0 && ret.node->first_child!=0) {
-    //			ret.node=ret.node->first_child;
-    //			++relative_depth;
-    //			}
-    //		if(relative_depth<0) {
-    //			if(ret.node->next_sibling==0) goto upper;
-    //			else                          goto lower;
-    //			}
-    //		}
-    //	return ret;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1285,7 +903,7 @@ graph<T, AllocatorT>::append_child(iter position, T&& x)
 
     graph_node* tmp = m_alloc.allocate(1, 0);
     m_alloc.construct(tmp);  // Here is where the move semantics kick in
-    std::swap(tmp->data, x);
+    std::swap(tmp->data, std::move(x));
 
     tmp->first_child = 0;
     tmp->last_child  = 0;
@@ -1350,7 +968,7 @@ graph<T, AllocatorT>::prepend_child(iter position, T&& x)
 
     graph_node* tmp = m_alloc.allocate(1, 0);
     m_alloc.construct(tmp);
-    std::swap(tmp->data, x);
+    std::swap(tmp->data, std::move(x));
 
     tmp->first_child = 0;
     tmp->last_child  = 0;
@@ -1406,7 +1024,7 @@ template <typename T, typename AllocatorT>
 template <class iter>
 iter
 graph<T, AllocatorT>::append_children(iter position, sibling_iterator from,
-                                      sibling_iterator to)
+                                      const sibling_iterator& to)
 {
     assert(position.node != head);
     assert(position.node != feet);
@@ -1464,7 +1082,7 @@ typename graph<T, AllocatorT>::pre_order_iterator
 graph<T, AllocatorT>::set_head(T&& x)
 {
     assert(head->next_sibling == feet);
-    return insert(iterator(feet), x);
+    return insert(iterator(feet), std::move(x));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1769,8 +1387,9 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
 
 template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::sibling_iterator
-graph<T, AllocatorT>::replace(sibling_iterator orig_begin, sibling_iterator orig_end,
-                              sibling_iterator new_begin, sibling_iterator new_end)
+graph<T, AllocatorT>::replace(sibling_iterator        orig_begin,
+                              const sibling_iterator& orig_end,
+                              sibling_iterator new_begin, const sibling_iterator& new_end)
 {
     graph_node* orig_first = orig_begin.node;
     graph_node* new_first  = new_begin.node;
@@ -1784,7 +1403,7 @@ graph<T, AllocatorT>::replace(sibling_iterator orig_begin, sibling_iterator orig
     // insert all siblings in new_first..new_last before orig_first
     bool               first = true;
     pre_order_iterator ret;
-    while(1 == 1)
+    while(true)
     {
         pre_order_iterator tt = insert_subgraph(pre_order_iterator(orig_first),
                                                 pre_order_iterator(new_first));
@@ -1801,7 +1420,7 @@ graph<T, AllocatorT>::replace(sibling_iterator orig_begin, sibling_iterator orig
     // erase old range of siblings
     bool        last = false;
     graph_node* next = orig_first;
-    while(1 == 1)
+    while(true)
     {
         if(next == orig_last)
             last = true;
@@ -1853,7 +1472,7 @@ template <typename T, typename AllocatorT>
 template <typename iter>
 iter
 graph<T, AllocatorT>::reparent(iter position, sibling_iterator _begin,
-                               sibling_iterator _end)
+                               const sibling_iterator& _end)
 {
     graph_node* first = _begin.node;
     graph_node* last  = first;
@@ -2027,56 +1646,6 @@ graph<T, AllocatorT>::move_before(iter target, iter source)
     dst->prev_sibling = src;
     src->next_sibling = dst;
     src->parent       = dst->parent;
-    return src;
-}
-
-//--------------------------------------------------------------------------------------//
-
-// specialisation for sibling_iterators
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::sibling_iterator
-graph<T, AllocatorT>::move_before(sibling_iterator target, sibling_iterator source)
-{
-    graph_node* dst = target.node;
-    graph_node* src = source.node;
-    graph_node* dst_prev_sibling;
-    if(dst == 0)
-    {  // must then be an end iterator
-        dst_prev_sibling = target.m_parent->last_child;
-        assert(dst_prev_sibling);
-    }
-    else
-        dst_prev_sibling = dst->prev_sibling;
-    assert(src);
-
-    if(dst == src)
-        return source;
-    if(dst_prev_sibling)
-        if(dst_prev_sibling == src)  // already in the right spot
-            return source;
-
-    // take src out of the graph
-    if(src->prev_sibling != 0)
-        src->prev_sibling->next_sibling = src->next_sibling;
-    else
-        src->parent->first_child = src->next_sibling;
-    if(src->next_sibling != 0)
-        src->next_sibling->prev_sibling = src->prev_sibling;
-    else
-        src->parent->last_child = src->prev_sibling;
-
-    // connect it to the new point
-    if(dst_prev_sibling != 0)
-        dst_prev_sibling->next_sibling = src;
-    else
-        target.m_parent->first_child = src;
-    src->prev_sibling = dst_prev_sibling;
-    if(dst)
-    {
-        dst->prev_sibling = src;
-        src->parent       = dst->parent;
-    }
-    src->next_sibling = dst;
     return src;
 }
 
@@ -2271,8 +1840,8 @@ graph<T, AllocatorT>::move_in_as_nth_child(iter loc, size_t n, graph& other)
 
 template <typename T, typename AllocatorT>
 void
-graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
-                            sibling_iterator from1, sibling_iterator from2,
+graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator& to2,
+                            sibling_iterator from1, const sibling_iterator& from2,
                             bool duplicate_leaves, bool first)
 {
     while(from1 != from2)
@@ -2326,8 +1895,8 @@ graph<T, AllocatorT>::merge(sibling_iterator to1, sibling_iterator to2,
 template <typename T, typename AllocatorT>
 template <typename Predicate>
 void
-graph<T, AllocatorT>::reduce(sibling_iterator beg1, sibling_iterator end1,
-                             sibling_iterator beg2, sibling_iterator end2,
+graph<T, AllocatorT>::reduce(const sibling_iterator& beg1, const sibling_iterator& end1,
+                             const sibling_iterator& beg2, sibling_iterator end2,
                              const Predicate& predicate)
 {
     for(auto itr1 = beg1; itr1 != end1; ++itr1)
@@ -2351,7 +1920,8 @@ graph<T, AllocatorT>::reduce(sibling_iterator beg1, sibling_iterator end1,
 
 template <typename T, typename AllocatorT>
 void
-graph<T, AllocatorT>::sort(sibling_iterator from, sibling_iterator to, bool deep)
+graph<T, AllocatorT>::sort(const sibling_iterator& from, const sibling_iterator& to,
+                           bool deep)
 {
     std::less<T> comp;
     sort(from, to, comp, deep);
@@ -2362,7 +1932,7 @@ graph<T, AllocatorT>::sort(sibling_iterator from, sibling_iterator to, bool deep
 template <typename T, typename AllocatorT>
 template <class StrictWeakOrdering>
 void
-graph<T, AllocatorT>::sort(sibling_iterator from, sibling_iterator to,
+graph<T, AllocatorT>::sort(sibling_iterator from, const sibling_iterator& to,
                            StrictWeakOrdering comp, bool deep)
 {
     if(from == to)
@@ -2494,67 +2064,6 @@ graph<T, AllocatorT>::equal_subgraph(const iter& one_, const iter& two_,
     if(number_of_children(one) != number_of_children(two))
         return false;
     return equal(begin(one), end(one), begin(two), fun);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>
-graph<T, AllocatorT>::subgraph(sibling_iterator from, sibling_iterator to) const
-{
-    assert(from != to);  // if from==to, the range is empty, hence no graph to return.
-
-    graph tmp;
-    tmp.set_head(value_type());
-    tmp.replace(tmp.begin(), tmp.end(), from, to);
-    return tmp;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::subgraph(graph& tmp, sibling_iterator from,
-                               sibling_iterator to) const
-{
-    assert(from != to);  // if from==to, the range is empty, hence no graph to return.
-
-    tmp.set_head(value_type());
-    tmp.replace(tmp.begin(), tmp.end(), from, to);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-size_t
-graph<T, AllocatorT>::size() const
-{
-    size_t             i  = 0;
-    pre_order_iterator it = begin(), eit = end();
-    while(it != eit)
-    {
-        ++i;
-        ++it;
-    }
-    return i;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-size_t
-graph<T, AllocatorT>::size(const iterator_base& top) const
-{
-    size_t             i  = 0;
-    pre_order_iterator it = top, eit = top;
-    eit.skip_children();
-    ++eit;
-    while(it != eit)
-    {
-        ++i;
-        ++it;
-    }
-    return i;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -2772,41 +2281,6 @@ graph<T, AllocatorT>::swap(iterator one, iterator two)
 
 //--------------------------------------------------------------------------------------//
 
-// template <class BinaryPredicate>
-// graph<T, AllocatorT>::iterator graph<T,
-// AllocatorT>::find_subgraph( 	sibling_iterator subfrom,
-// sibling_iterator subto, iterator from, iterator to, 	BinaryPredicate fun)
-// const
-// 	{
-// 	assert(1==0); // this routine is not finished yet.
-// 	while(from!=to) {
-// 		if(fun(*subfrom, *from)) {
-//
-// 			}
-// 		}
-// 	return to;
-// 	}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::is_in_subgraph(const iterator_base& it, const iterator_base& _begin,
-                                     const iterator_base& _end) const
-{
-    // FIXME: this should be optimised.
-    pre_order_iterator tmp = _begin;
-    while(tmp != _end)
-    {
-        if(tmp == it)
-            return true;
-        ++tmp;
-    }
-    return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
 template <typename T, typename AllocatorT>
 bool
 graph<T, AllocatorT>::is_valid(const iterator_base& it) const
@@ -2826,114 +2300,6 @@ graph<T, AllocatorT>::is_head(const iterator_base& it)
     if(it.node->parent == 0)
         return true;
     return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::iterator
-graph<T, AllocatorT>::lowest_common_ancestor(const iterator_base& one,
-                                             const iterator_base& two) const
-{
-    std::set<iterator, iterator_base_less> parents;
-
-    // Walk up from 'one' storing all parents.
-    iterator walk = one;
-    do
-    {
-        walk = parent(walk);
-        parents.insert(walk);
-    } while(is_valid(parent(walk)));
-
-    // Walk up from 'two' until we encounter a node in parents.
-    walk = two;
-    do
-    {
-        walk = parent(walk);
-        if(parents.find(walk) != parents.end())
-            break;
-    } while(is_valid(parent(walk)));
-
-    return walk;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-unsigned int
-graph<T, AllocatorT>::index(sibling_iterator it) const
-{
-    unsigned int ind = 0;
-    if(it.node->parent == 0)
-    {
-        while(it.node->prev_sibling != head)
-        {
-            it.node = it.node->prev_sibling;
-            ++ind;
-        }
-    }
-    else
-    {
-        while(it.node->prev_sibling != 0)
-        {
-            it.node = it.node->prev_sibling;
-            ++ind;
-        }
-    }
-    return ind;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::sibling_iterator
-graph<T, AllocatorT>::sibling(const iterator_base& it, unsigned int num) const
-{
-    graph_node* tmp;
-    if(it.node->parent == 0)
-    {
-        tmp = head->next_sibling;
-        while(num)
-        {
-            tmp = tmp->next_sibling;
-            --num;
-        }
-    }
-    else
-    {
-        tmp = it.node->parent->first_child;
-        while(num)
-        {
-            assert(tmp != 0);
-            tmp = tmp->next_sibling;
-            --num;
-        }
-    }
-    return tmp;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::debug_verify_consistency() const
-{
-    iterator it = begin();
-    while(it != end())
-    {
-        if(it.node->parent != 0)
-        {
-            if(it.node->prev_sibling == 0)
-                assert(it.node->parent->first_child == it.node);
-            else
-                assert(it.node->prev_sibling->next_sibling == it.node);
-            if(it.node->next_sibling == 0)
-                assert(it.node->parent->last_child == it.node);
-            else
-                assert(it.node->next_sibling->prev_sibling == it.node);
-        }
-        ++it;
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -2990,32 +2356,6 @@ T* graph<T, AllocatorT>::iterator_base::operator->() const
 
 template <typename T, typename AllocatorT>
 bool
-graph<T, AllocatorT>::post_order_iterator::operator!=(
-    const post_order_iterator& other) const
-{
-    if(other.node != this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::post_order_iterator::operator==(
-    const post_order_iterator& other) const
-{
-    if(other.node == this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
 graph<T, AllocatorT>::pre_order_iterator::operator!=(
     const pre_order_iterator& other) const
 {
@@ -3057,30 +2397,6 @@ bool
 graph<T, AllocatorT>::sibling_iterator::operator==(const sibling_iterator& other) const
 {
     if(other.node == this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::leaf_iterator::operator!=(const leaf_iterator& other) const
-{
-    if(other.node != this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::leaf_iterator::operator==(const leaf_iterator& other) const
-{
-    if(other.node == this->node && other.top_node == this->top_node)
         return true;
     else
         return false;
@@ -3252,17 +2568,6 @@ graph<T, AllocatorT>::pre_order_iterator::operator++(int)
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::pre_order_iterator&
-graph<T, AllocatorT>::pre_order_iterator::next_skip_children()
-{
-    (*this).skip_children();
-    (*this)++;
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::pre_order_iterator
 graph<T, AllocatorT>::pre_order_iterator::operator--(int)
 {
@@ -3312,516 +2617,6 @@ graph<T, AllocatorT>::pre_order_iterator::operator+(unsigned int num)
         --num;
     }
     return itr;
-}
-
-//--------------------------------------------------------------------------------------//
-// Post-order iterator
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::post_order_iterator::post_order_iterator()
-: iterator_base(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::post_order_iterator::post_order_iterator(graph_node* tn)
-: iterator_base(tn)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::post_order_iterator::post_order_iterator(const iterator_base& other)
-: iterator_base(other.node)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::post_order_iterator::post_order_iterator(
-    const sibling_iterator& other)
-: iterator_base(other.node)
-{
-    if(this->node == 0)
-    {
-        if(other.range_last() != 0)
-            this->node = other.range_last();
-        else
-            this->node = other.m_parent;
-        this->skip_children();
-        ++(*this);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator&
-graph<T, AllocatorT>::post_order_iterator::operator++()
-{
-    assert(this->node != 0);
-    if(this->node->next_sibling == 0)
-    {
-        this->node                    = this->node->parent;
-        this->m_skip_current_children = false;
-    }
-    else
-    {
-        this->node = this->node->next_sibling;
-        if(this->m_skip_current_children)
-        {
-            this->m_skip_current_children = false;
-        }
-        else
-        {
-            while(this->node->first_child)
-                this->node = this->node->first_child;
-        }
-    }
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator&
-graph<T, AllocatorT>::post_order_iterator::operator--()
-{
-    assert(this->node != 0);
-    if(this->m_skip_current_children || this->node->last_child == 0)
-    {
-        this->m_skip_current_children = false;
-        while(this->node->prev_sibling == 0)
-            this->node = this->node->parent;
-        this->node = this->node->prev_sibling;
-    }
-    else
-    {
-        this->node = this->node->last_child;
-    }
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator
-graph<T, AllocatorT>::post_order_iterator::operator++(int)
-{
-    post_order_iterator copy = *this;
-    ++(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator
-graph<T, AllocatorT>::post_order_iterator::operator--(int)
-{
-    post_order_iterator copy = *this;
-    --(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator&
-graph<T, AllocatorT>::post_order_iterator::operator+=(unsigned int num)
-{
-    while(num > 0)
-    {
-        ++(*this);
-        --num;
-    }
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::post_order_iterator&
-graph<T, AllocatorT>::post_order_iterator::operator-=(unsigned int num)
-{
-    while(num > 0)
-    {
-        --(*this);
-        --num;
-    }
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-void
-graph<T, AllocatorT>::post_order_iterator::descend_all()
-{
-    assert(this->node != 0);
-    while(this->node->first_child)
-        this->node = this->node->first_child;
-}
-
-//--------------------------------------------------------------------------------------//
-// Breadth-first iterator
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::breadth_first_queued_iterator::breadth_first_queued_iterator()
-: iterator_base()
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::breadth_first_queued_iterator::breadth_first_queued_iterator(
-    graph_node* tn)
-: iterator_base(tn)
-{
-    traversal_queue.push(tn);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::breadth_first_queued_iterator::breadth_first_queued_iterator(
-    const iterator_base& other)
-: iterator_base(other.node)
-{
-    traversal_queue.push(other.node);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::breadth_first_queued_iterator::operator!=(
-    const breadth_first_queued_iterator& other) const
-{
-    if(other.node != this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::breadth_first_queued_iterator::operator==(
-    const breadth_first_queued_iterator& other) const
-{
-    if(other.node == this->node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::breadth_first_queued_iterator&
-graph<T, AllocatorT>::breadth_first_queued_iterator::operator++()
-{
-    assert(this->node != 0);
-
-    // Add child nodes and pop current node
-    sibling_iterator sib = this->begin();
-    while(sib != this->end())
-    {
-        traversal_queue.push(sib.node);
-        ++sib;
-    }
-    traversal_queue.pop();
-    if(traversal_queue.size() > 0)
-        this->node = traversal_queue.front();
-    else
-        this->node = 0;
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::breadth_first_queued_iterator
-graph<T, AllocatorT>::breadth_first_queued_iterator::operator++(int)
-{
-    breadth_first_queued_iterator copy = *this;
-    ++(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::breadth_first_queued_iterator&
-graph<T, AllocatorT>::breadth_first_queued_iterator::operator+=(unsigned int num)
-{
-    while(num > 0)
-    {
-        ++(*this);
-        --num;
-    }
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-// Fixed depth iterator
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::fixed_depth_iterator::fixed_depth_iterator()
-: iterator_base()
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::fixed_depth_iterator::fixed_depth_iterator(graph_node* tn)
-: iterator_base(tn)
-, top_node(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::fixed_depth_iterator::fixed_depth_iterator(
-    const iterator_base& other)
-: iterator_base(other.node)
-, top_node(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::fixed_depth_iterator::fixed_depth_iterator(
-    const sibling_iterator& other)
-: iterator_base(other.node)
-, top_node(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::fixed_depth_iterator::fixed_depth_iterator(
-    const fixed_depth_iterator& other)
-: iterator_base(other.node)
-, top_node(other.top_node)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::fixed_depth_iterator::operator==(
-    const fixed_depth_iterator& other) const
-{
-    if(other.node == this->node && other.top_node == top_node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-bool
-graph<T, AllocatorT>::fixed_depth_iterator::operator!=(
-    const fixed_depth_iterator& other) const
-{
-    if(other.node != this->node || other.top_node != top_node)
-        return true;
-    else
-        return false;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator&
-graph<T, AllocatorT>::fixed_depth_iterator::operator++()
-{
-    assert(this->node != 0);
-
-    if(this->node->next_sibling)
-    {
-        this->node = this->node->next_sibling;
-    }
-    else
-    {
-        int relative_depth = 0;
-    upper:
-        do
-        {
-            if(this->node == this->top_node)
-            {
-                this->node = 0;  // FIXME: return a proper fixed_depth end
-                                 // iterator once implemented
-                return *this;
-            }
-            this->node = this->node->parent;
-            if(this->node == 0)
-                return *this;
-            --relative_depth;
-        } while(this->node->next_sibling == 0);
-    lower:
-        this->node = this->node->next_sibling;
-        while(this->node->first_child == 0)
-        {
-            if(this->node->next_sibling == 0)
-                goto upper;
-            this->node = this->node->next_sibling;
-            if(this->node == 0)
-                return *this;
-        }
-        while(relative_depth < 0 && this->node->first_child != 0)
-        {
-            this->node = this->node->first_child;
-            ++relative_depth;
-        }
-        if(relative_depth < 0)
-        {
-            if(this->node->next_sibling == 0)
-                goto upper;
-            else
-                goto lower;
-        }
-    }
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator&
-graph<T, AllocatorT>::fixed_depth_iterator::operator--()
-{
-    assert(this->node != 0);
-
-    if(this->node->prev_sibling)
-    {
-        this->node = this->node->prev_sibling;
-    }
-    else
-    {
-        int relative_depth = 0;
-    upper:
-        do
-        {
-            if(this->node == this->top_node)
-            {
-                this->node = 0;
-                return *this;
-            }
-            this->node = this->node->parent;
-            if(this->node == 0)
-                return *this;
-            --relative_depth;
-        } while(this->node->prev_sibling == 0);
-    lower:
-        this->node = this->node->prev_sibling;
-        while(this->node->last_child == 0)
-        {
-            if(this->node->prev_sibling == 0)
-                goto upper;
-            this->node = this->node->prev_sibling;
-            if(this->node == 0)
-                return *this;
-        }
-        while(relative_depth < 0 && this->node->last_child != 0)
-        {
-            this->node = this->node->last_child;
-            ++relative_depth;
-        }
-        if(relative_depth < 0)
-        {
-            if(this->node->prev_sibling == 0)
-                goto upper;
-            else
-                goto lower;
-        }
-    }
-    return *this;
-
-    //
-    //
-    //	assert(this->node!=0);
-    //	if(this->node->prev_sibling!=0) {
-    //		this->node=this->node->prev_sibling;
-    //		assert(this->node!=0);
-    //		if(this->node->parent==0 && this->node->prev_sibling==0) // head
-    // element 			this->node=0;
-    //		}
-    //	else {
-    //		graph_node *par=this->node->parent;
-    //		do {
-    //			par=par->prev_sibling;
-    //			if(par==0) { // FIXME: need to keep track of this!
-    //				this->node=0;
-    //				return *this;
-    //				}
-    //			} while(par->last_child==0);
-    //		this->node=par->last_child;
-    //		}
-    //	return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator
-graph<T, AllocatorT>::fixed_depth_iterator::operator++(int)
-{
-    fixed_depth_iterator copy = *this;
-    ++(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator
-graph<T, AllocatorT>::fixed_depth_iterator::operator--(int)
-{
-    fixed_depth_iterator copy = *this;
-    --(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator&
-graph<T, AllocatorT>::fixed_depth_iterator::operator-=(unsigned int num)
-{
-    while(num > 0)
-    {
-        --(*this);
-        --(num);
-    }
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::fixed_depth_iterator&
-graph<T, AllocatorT>::fixed_depth_iterator::operator+=(unsigned int num)
-{
-    while(num > 0)
-    {
-        ++(*this);
-        --(num);
-    }
-    return *this;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -3969,163 +2764,9 @@ graph<T, AllocatorT>::sibling_iterator::operator+(unsigned int num)
 
 template <typename T, typename AllocatorT>
 typename graph<T, AllocatorT>::graph_node*
-graph<T, AllocatorT>::sibling_iterator::range_first() const
-{
-    graph_node* tmp = m_parent->first_child;
-    return tmp;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::graph_node*
 graph<T, AllocatorT>::sibling_iterator::range_last() const
 {
     return m_parent->last_child;
-}
-
-//--------------------------------------------------------------------------------------//
-// Leaf iterator
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::leaf_iterator::leaf_iterator()
-: iterator_base(nullptr)
-, top_node(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::leaf_iterator::leaf_iterator(graph_node* tn, graph_node* top)
-: iterator_base(tn)
-, top_node(top)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::leaf_iterator::leaf_iterator(const iterator_base& other)
-: iterator_base(other.node)
-, top_node(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::leaf_iterator::leaf_iterator(const sibling_iterator& other)
-: iterator_base(other.node)
-, top_node(nullptr)
-{
-    if(this->node == 0)
-    {
-        if(other.range_last() != 0)
-            this->node = other.range_last();
-        else
-            this->node = other.m_parent;
-        ++(*this);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator&
-graph<T, AllocatorT>::leaf_iterator::operator++()
-{
-    assert(this->node != 0);
-    if(this->node->first_child != 0)
-    {  // current node is no longer leaf (children got added)
-        while(this->node->first_child)
-            this->node = this->node->first_child;
-    }
-    else
-    {
-        while(this->node->next_sibling == 0)
-        {
-            if(this->node->parent == 0)
-                return *this;
-            this->node = this->node->parent;
-            if(top_node != 0 && this->node == top_node)
-                return *this;
-        }
-        this->node = this->node->next_sibling;
-        while(this->node->first_child)
-            this->node = this->node->first_child;
-    }
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator&
-graph<T, AllocatorT>::leaf_iterator::operator--()
-{
-    assert(this->node != 0);
-    while(this->node->prev_sibling == 0)
-    {
-        if(this->node->parent == 0)
-            return *this;
-        this->node = this->node->parent;
-        if(top_node != 0 && this->node == top_node)
-            return *this;
-    }
-    this->node = this->node->prev_sibling;
-    while(this->node->last_child)
-        this->node = this->node->last_child;
-    return *this;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::leaf_iterator::operator++(int)
-{
-    leaf_iterator copy = *this;
-    ++(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator
-graph<T, AllocatorT>::leaf_iterator::operator--(int)
-{
-    leaf_iterator copy = *this;
-    --(*this);
-    return copy;
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator&
-graph<T, AllocatorT>::leaf_iterator::operator+=(unsigned int num)
-{
-    while(num > 0)
-    {
-        ++(*this);
-        --num;
-    }
-    return (*this);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-typename graph<T, AllocatorT>::leaf_iterator&
-graph<T, AllocatorT>::leaf_iterator::operator-=(unsigned int num)
-{
-    while(num > 0)
-    {
-        --(*this);
-        --num;
-    }
-    return (*this);
 }
 
 //--------------------------------------------------------------------------------------//

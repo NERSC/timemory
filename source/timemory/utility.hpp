@@ -62,7 +62,6 @@
 #include <mutex>
 #include <thread>
 
-#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/singleton.hpp"
 

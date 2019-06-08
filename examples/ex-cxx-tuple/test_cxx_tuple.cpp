@@ -38,7 +38,7 @@
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
                                      peak_rss, current_rss, papi_tuple_t>;
@@ -104,7 +104,7 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
-    auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
+    auto* timing = new tim::standard_timing_t("Tests runtime", true);
     tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 
     timing->start();

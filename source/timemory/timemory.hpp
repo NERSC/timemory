@@ -34,20 +34,14 @@
 #include "timemory/auto_list.hpp"
 #include "timemory/auto_macros.hpp"
 #include "timemory/auto_timer.hpp"
-#include "timemory/clocks.hpp"
 #include "timemory/component_list.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/components.hpp"
-#include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
-#include "timemory/rusage.hpp"
-#include "timemory/serializer.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/signal_detection.hpp"
-#include "timemory/singleton.hpp"
-#include "timemory/storage.hpp"
 #include "timemory/testing.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
@@ -65,9 +59,9 @@ namespace tim
 {
 namespace details
 {
-using papi0_t = tim::component::papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
+using papi0_t = tim::component::papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
 using papi1_t =
-    tim::component::papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+    tim::component::papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
 }
 }
 
@@ -98,19 +92,18 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system
 //  standard configurations
 //
 
-// standard_rusage_components_t
+// standard_rusage_t
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::current_rss, tim::component::peak_rss,
                               tim::component::num_io_in, tim::component::num_io_out,
                               tim::component::num_minor_page_faults,
                               tim::component::num_major_page_faults,
-                              tim::component::priority_context_switch)
+                              tim::component::priority_context_switch,
+                              tim::component::voluntary_context_switch)
 
-// standard_timing_components_t
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::thread_cpu_util,
-                              tim::component::process_cpu_clock,
-                              tim::component::process_cpu_util)
+// standard_timing_t
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::user_clock,
+                              tim::component::system_clock, tim::component::cpu_clock,
+                              tim::component::cpu_util)
 
 //--------------------------------------------------------------------------------------//
 // auto_timer_t
