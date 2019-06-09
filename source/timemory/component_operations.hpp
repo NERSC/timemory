@@ -94,6 +94,19 @@ static _Tuple create(std::tuple<Types...>&& __c)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct live_count
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = base<Type, value_type>;
+    using string_t   = std::string;
+
+    live_count(base_type& obj, int64_t& counter) { counter = obj.m_count; }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct set_prefix
 {
     using Type       = _Tp;

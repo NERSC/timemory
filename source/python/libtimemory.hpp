@@ -284,11 +284,11 @@ components_enum_to_vec(py::list enum_list)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-create_component_list(std::string obj_tag, int lineno, std::string lang_tag, bool report,
-                      const component_enum_vec& components)
+create_component_list(std::string obj_tag, int lineno, const tim::language& lang,
+                      bool report, const component_enum_vec& components)
 {
     using data_type = typename component_list_t::data_type;
-    auto obj        = new component_list_t(obj_tag, lineno, lang_tag, report);
+    auto obj        = new component_list_t(obj_tag, lineno, lang, report);
     for(std::size_t i = 0; i < components.size(); ++i)
     {
         COMPONENT component = static_cast<COMPONENT>(components[i]);
@@ -460,7 +460,7 @@ timer(std::string prefix = "")
     }
 
     auto op_line = get_line(1);
-    return new tim_timer_t(prefix, op_line, "pyc");
+    return new tim_timer_t(prefix, op_line, tim::language::pyc());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -488,7 +488,7 @@ auto_timer(const std::string& key, bool report_at_exit, int nback, bool added_ar
         keyss << get_line(nback);
     }
     auto op_line = get_line(1);
-    return new auto_timer_t(keyss.str(), op_line, "pyc", report_at_exit);
+    return new auto_timer_t(keyss.str(), op_line, tim::language::pyc(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -503,7 +503,7 @@ rss_usage(std::string prefix = "", bool record = false)
         prefix = keyss.str();
     }
     auto         op_line = get_line(1);
-    rss_usage_t* _rss    = new rss_usage_t(prefix, op_line, "pyc");
+    rss_usage_t* _rss    = new rss_usage_t(prefix, op_line, tim::language::pyc());
     if(record)
         _rss->measure();
     return _rss;
@@ -534,8 +534,8 @@ component_list(py::list components, const std::string& key, bool report_at_exit,
         keyss << get_line(nback);
     }
     auto op_line = get_line(1);
-    return create_component_list(keyss.str(), op_line, "pyc", report_at_exit,
-                                 components_enum_to_vec(components));
+    return create_component_list(keyss.str(), op_line, tim::language::pyc(),
+                                 report_at_exit, components_enum_to_vec(components));
 }
 
 //----------------------------------------------------------------------------//
@@ -566,7 +566,8 @@ timer_decorator(const std::string& func, const std::string& file, int line,
         keyss << ":";
         keyss << line;
     }
-    return &(*_ptr = new auto_timer_t(keyss.str(), line, "pyc", report_at_exit));
+    return &(*_ptr = new auto_timer_t(keyss.str(), line, tim::language::pyc(),
+                                      report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
@@ -598,7 +599,8 @@ component_decorator(py::list components, const std::string& func, const std::str
         keyss << ":";
         keyss << line;
     }
-    return &(*_ptr = create_component_list(keyss.str(), line, "pyc", report_at_exit,
+    return &(*_ptr = create_component_list(keyss.str(), line, tim::language::pyc(),
+                                           report_at_exit,
                                            components_enum_to_vec(components)));
 }
 

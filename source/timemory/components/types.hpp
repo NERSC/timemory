@@ -105,6 +105,9 @@ template <typename _Tp>
 struct construct;
 
 template <typename _Tp>
+struct live_count;
+
+template <typename _Tp>
 struct set_prefix;
 
 template <typename _Tp>
@@ -159,6 +162,62 @@ template <typename _Tp>
 struct pointer_deleter;
 
 }  // component
+
+//--------------------------------------------------------------------------------------//
+//
+//  Language specification
+//
+//--------------------------------------------------------------------------------------//
+
+class language
+{
+public:
+    enum class type : int64_t
+    {
+        C       = 1,
+        CXX     = 2,
+        PYTHON  = 3,
+        UNKNOWN = 4
+    };
+
+    friend std::ostream& operator<<(std::ostream& os, const language& lang)
+    {
+        os << language::as_string(lang);
+        return os;
+    }
+
+    static std::string as_string(const language& _lang)
+    {
+        switch(_lang.m_type)
+        {
+            case type::C: return "[_c_]";
+            case type::CXX: return "[cxx]";
+            case type::PYTHON: return "[pyc]";
+            case type::UNKNOWN:
+            default: return _lang.m_descript;
+        }
+    }
+
+    operator int64_t() const { return static_cast<int64_t>(m_type); }
+    operator uint64_t() const { return static_cast<uint64_t>(m_type); }
+
+    constexpr explicit language(const type& _type)
+    : m_type(_type)
+    {}
+
+    language(const char* m_lang)
+    : m_type(type::UNKNOWN)
+    , m_descript(m_lang)
+    {}
+
+    constexpr static language c() { return language(type::C); }
+    constexpr static language cxx() { return language(type::CXX); }
+    constexpr static language pyc() { return language(type::PYTHON); }
+
+private:
+    type              m_type;
+    const char* const m_descript = nullptr;
+};
 
 //--------------------------------------------------------------------------------------//
 //

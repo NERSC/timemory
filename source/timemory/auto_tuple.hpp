@@ -64,10 +64,11 @@ public:
     using string_t       = std::string;
     using string_hash    = std::hash<string_t>;
     using base_type      = implemented_component_tuple<Types...>;
+    using language_t     = tim::language;
 
 public:
-    auto_tuple(const string_t&, const int32_t& lineno = 0, const string_t& = "cxx",
-               bool report_at_exit = false);
+    auto_tuple(const string_t&, const int32_t& lineno = 0,
+               const language_t& lang = language_t::cxx(), bool report_at_exit = false);
     auto_tuple(component_type& tmp, const int32_t& lineno = 0,
                bool report_at_exit = false);
     ~auto_tuple();
@@ -110,16 +111,16 @@ private:
 
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& lineno,
-                                 const string_t& lang_tag, bool report_at_exit)
+                                 const language_t& lang, bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
-                  ? (string_hash()(object_tag) + string_hash()(lang_tag) +
+                  ? (string_hash()(object_tag) * static_cast<int64_t>(lang) +
                      (counter_type::live() + hashed_type::live() + lineno))
                   : 0)
-, m_enabled(counter_type::enable())
+, m_enabled(counter_type::enable() && tim::settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, lang_tag, counter_type::m_count, hashed_type::m_hash,
-                     true)
+, m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
+                     m_enabled)
 {
     if(m_enabled)
     {
@@ -134,10 +135,10 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, const int32_t& lineno,
                                  bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
-                  ? (string_hash()(tmp.key()) + string_hash()(tmp.tag()) +
+                  ? (string_hash()(tmp.key()) * static_cast<int64_t>(tmp.lang()) +
                      (counter_type::live() + hashed_type::live() + lineno))
                   : 0)
-, m_enabled(counter_type::enable())
+, m_enabled(true)
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(tmp)
 , m_reference_object(&tmp)
@@ -183,8 +184,8 @@ TIM_NAMESPACE_END
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, signature)                            \
+    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, signature)
 
 #define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
     TIMEMORY_BASIC_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)

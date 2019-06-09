@@ -118,6 +118,30 @@ using str = tim::apply<std::string>;
                           AUTO_STR(__FILE__, LINE_STRING))
 
 //--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_BLANK_AUTO_OBJECT(type, arg)
+ *
+ * No tagging is provided. This create the fastest generation of an auto object
+ * because it does not variadically combine arguments
+ *
+ * Signature:
+ *      None
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_BLANK_AUTO_OBJECT(type, __FUNCTION__);
+ *          ...
+ *      }
+ *
+ * Example where ... == "(15)":
+ *
+ *      > [pyc] some_func :  0.363 wall, ... etc.
+ */
+#    define TIMEMORY_BLANK_AUTO_OBJECT(type, signature)                                  \
+        type AUTO_NAME(__LINE__)(signature, __LINE__)
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_OBJECT(type, ...)
  *
  * simple tagging with <function name> + <string> where the string param

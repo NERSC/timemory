@@ -89,7 +89,8 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         ++nlaps;
         // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n : (fibonacci(n - 1, cutoff) + fibonacci(n - 2, cutoff));
     }
     return fibonacci(n);
@@ -131,7 +132,7 @@ main(int argc, char** argv)
     tim::settings::cout_output() = false;
     tim::settings::json_output() = true;
 
-    // default calc: fibonacci(40)
+    // default calc: fibonacci(43)
     int nfib = 43;
     if(argc > 1)
         nfib = atoi(argv[1]);
@@ -144,7 +145,7 @@ main(int argc, char** argv)
     std::cout << "Running fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")..."
               << std::endl;
     tim::consume_parameters(tim::manager::instance());
-    tim::auto_tuple<>          test("test");
+    tim::auto_tuple<>          empty_test("test");
     std::vector<timer_tuple_t> timer_list;
 
     std::cout << std::endl;

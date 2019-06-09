@@ -116,7 +116,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     int status;
     int ret                = 0;
     tim::get_rusage_type() = RUSAGE_CHILDREN;
-    comp_tuple_t measure("total execution time", command());
+    comp_tuple_t measure("total execution time", tim::language(command().c_str()));
     if(getpid() != getppid() + 1)
         measure.start();
 
@@ -268,13 +268,13 @@ main(int argc, char** argv)
 
     if(argc > 1)
     {
-        command() = std::string(const_cast<const char*>(argv[1]));
+        command() = "[" + std::string(const_cast<const char*>(argv[1])) + "]";
     }
     else
     {
-        command()              = std::string(const_cast<const char*>(argv[0]));
+        command() = "[" + std::string(const_cast<const char*>(argv[0])) + "]";
         tim::get_rusage_type() = RUSAGE_CHILDREN;
-        comp_tuple_t measure("total execution time", command());
+        comp_tuple_t measure("total execution time", tim::language(command().c_str()));
         measure.start();
         measure.stop();
         std::cout << "\n" << measure << std::flush;

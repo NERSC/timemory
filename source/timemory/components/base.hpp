@@ -57,15 +57,14 @@ struct base : public tim::counted_object<_Tp>
     friend struct multiply<_Tp>;
     friend struct divide<_Tp>;
     friend struct print<_Tp>;
+    friend struct live_count<_Tp>;
 
     template <typename _Up, typename Archive>
     friend struct serialization;
 
     // template <typename _Up, typename _Op>
     // friend struct pointer_operator<_Up, _Op>;
-
-    // template <typename _Up, typename _Op>
-    // friend struct pointer_deleter<_Up, _Op>;
+    // friend struct pointer_deleter<_Tp>;
 
 public:
     using Type           = _Tp;

@@ -281,7 +281,7 @@ public:
 
     private:
         bool     m_has_head = false;
-        int64_t  m_depth    = -1;
+        int64_t  m_depth    = 0;
         graph_t  m_graph;
         iterator m_current = nullptr;
         iterator m_head    = nullptr;

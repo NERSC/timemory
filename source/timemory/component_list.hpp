@@ -83,6 +83,7 @@ public:
     using counter_type = tim::counted_object<this_type>;
     using counter_void = tim::counted_object<void>;
     using hashed_type  = tim::hashed_object<this_type>;
+    using language_t   = tim::language;
 
 public:
     using auto_type = auto_list<Types...>;
@@ -92,58 +93,52 @@ public:
     using construct_types = std::tuple<component::construct<Types>...>;
     template <typename... Constructors>
     explicit component_list(std::tuple<Constructors...>&& _ctors, const string_t& key,
-                             const bool& store, const string_t& tag = "cxx",
-                             const int32_t& ncount = 0, const int32_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash(nhash)
-    , m_key(key)
-    , m_tag(tag)
-    , m_identifier("")
-    , m_data(apply<data_type>::template all<construct_types>(component::create,
-                                                          _ctors))
+                             const bool& store, const language_t& lang =
+    language_t::cxx(), const int32_t& ncount = 0, const int32_t& nhash = 0) :
+    m_store(store) , m_laps(0) , m_count(ncount) , m_hash(nhash) , m_key(key) ,
+    m_lang(lang) , m_identifier("") , m_data(apply<data_type>::template
+    all<construct_types>(component::create, _ctors))
     {
-        compute_identifier(key, tag);
+        compute_identifier(key, lang);
         init_manager();
         push();
     }*/
 
     explicit component_list(const string_t& key, const bool& store,
-                            const string_t& tag = "cxx", const int32_t& ncount = 0,
-                            const int32_t& nhash = 0)
+                            const language_t& lang = language_t::cxx(),
+                            const int32_t& ncount = 0, const int32_t& nhash = 0)
     : counter_type()
-    , hashed_type((string_hash()(key) + string_hash()(tag) +
+    , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
                    (counter_type::live() + hashed_type::live() + ncount + nhash)))
     , m_store(store)
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)
     , m_key(key)
-    , m_tag(tag)
+    , m_lang(lang)
     , m_identifier("")
     {
         apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, tag);
+        compute_identifier(key, lang);
         init_manager();
     }
 
-    component_list(const string_t& key, const string_t& tag = "cxx",
+    component_list(const string_t& key, const language_t& lang = language_t::cxx(),
                    const int32_t& ncount = 0, const int32_t& nhash = 0,
                    bool store = false)
     : counter_type()
-    , hashed_type((string_hash()(key) + string_hash()(tag) +
+    , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
                    (counter_type::live() + hashed_type::live() + ncount + nhash)))
     , m_store(store)
     , m_laps(0)
     , m_count(ncount)
     , m_hash(nhash)
     , m_key(key)
-    , m_tag(tag)
+    , m_lang(lang)
     , m_identifier("")
     {
         apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, tag);
+        compute_identifier(key, lang);
         init_manager();
     }
 
@@ -450,7 +445,9 @@ public:
         }
         obj.update_identifier();
         ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
-        os << ss_prefix.str() << ss_data.str() << " [laps: " << obj.m_laps << "]";
+        os << ss_prefix.str() << ss_data.str();
+        if(obj.laps() > 0)
+            os << " [laps: " << obj.m_laps << "]";
         return os;
     }
 
@@ -491,12 +488,12 @@ public:
 
     int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
-    string_t& tag() { return m_tag; }
+    string_t& lang() { return m_lang; }
     string_t& identifier() { return m_identifier; }
 
     const int64_t&  hash() const { return m_hash; }
     const string_t& key() const { return m_key; }
-    const string_t& tag() const { return m_tag; }
+    const string_t& lang() const { return m_lang; }
     const string_t& identifier() const { return m_identifier; }
 
     bool&       store() { return m_store; }
@@ -528,7 +525,7 @@ protected:
     int64_t           m_count      = 0;
     int64_t           m_hash       = 0;
     string_t          m_key        = "";
-    string_t          m_tag        = "";
+    language_t        m_lang       = language_t::cxx();
     string_t          m_identifier = "";
     mutable data_type m_data;
 
@@ -552,13 +549,13 @@ protected:
         return _prefix;
     }
 
-    void compute_identifier(const string_t& key, const string_t& tag)
+    void compute_identifier(const string_t& key, const language_t& lang)
     {
         static string_t   _prefix = get_prefix();
         std::stringstream ss;
 
         // designated as [cxx], [pyc], etc.
-        ss << _prefix << "[" << tag << "] ";
+        ss << _prefix << lang << " ";
 
         // indent
         for(int64_t i = 0; i < m_count; ++i)
@@ -575,7 +572,7 @@ protected:
 
     void update_identifier() const
     {
-        const_cast<this_type&>(*this).compute_identifier(m_key, m_tag);
+        const_cast<this_type&>(*this).compute_identifier(m_key, m_lang);
     }
 
     static int64_t output_width(int64_t width = 0)

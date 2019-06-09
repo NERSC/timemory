@@ -234,14 +234,13 @@ cxx_timemory_enabled(void)
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, const char* lang_tag,
-                               int report)
+cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, int report)
 {
     using namespace tim::component;
     std::string key_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    return (void*) new auto_timer_t(key_tag, lineno, lang_tag,
+    return (void*) new auto_timer_t(key_tag, lineno, tim::language::c(),
                                     (report > 0) ? true : false);
 }
 
@@ -254,8 +253,7 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
     using namespace tim::component;
     using data_type = typename auto_list_t::component_type::data_type;
     std::string key_tag(timer_tag);
-    auto        lang_tag = "_c_";
-    auto        obj      = new auto_list_t(key_tag, lineno, lang_tag, false);
+    auto        obj = new auto_list_t(key_tag, lineno, tim::language::c(), false);
     obj->stop();
     obj->reset();
     for(int i = 0; i < num_components; ++i)
