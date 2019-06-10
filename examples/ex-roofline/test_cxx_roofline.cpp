@@ -54,7 +54,7 @@ main(int argc, char** argv)
 
     comp_tuple_t main("overall timer", true);
     main.start();
-    for(auto n : { 10, 11, 12 })
+    for(auto n : { 35, 38, 45 })
     {
         auto_tuple_t t(tim::str::join("", "fibonacci(", n, ")"));
         auto         ret = fibonacci<double>(n);

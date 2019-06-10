@@ -85,8 +85,24 @@ struct cpu_roofline
     static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_roofline"; }
     static std::string descript() { return "cpu roofline"; }
-    static std::string display_unit() { return "OPS/s"; }
-    static value_type  record()
+    static std::string display_unit()
+    {
+        std::stringstream ss;
+        ss << "(";
+        auto labels = papi_type::label_array();
+        for(size_type i = 0; i < labels.size(); ++i)
+        {
+            ss << labels[i];
+            if(i + 1 < labels.size())
+            {
+                ss << " + ";
+            }
+        }
+        ss << ") / " << real_clock::display_unit();
+        return ss.str();
+    }
+
+    static value_type record()
     {
         return value_type(papi_type::record(), real_clock::record());
     }
@@ -100,7 +116,8 @@ struct cpu_roofline
         if(obj.second == 0)
             return 0.0;
         return std::accumulate(obj.first.begin(), obj.first.end(), 0) /
-               static_cast<double>(obj.second);
+               (static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
+                                    real_clock::get_unit()));
     }
     double serial() { return compute_display(); }
     void   start()
