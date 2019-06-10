@@ -29,16 +29,18 @@
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, cpu_roofline_flops>;
+
+using roofline_t   = cpu_roofline<PAPI_DP_OPS>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 
-intmax_t
-fibonacci(intmax_t n)
+template <typename _Tp>
+_Tp
+fibonacci(const _Tp& n)
 {
-    // simple wall-clock timer
-    TIMEMORY_BASIC_AUTO_TUPLE(tim::auto_tuple<real_clock>, "");
-    return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
+    // fibonacci using floating point
+    return (n < _Tp(2)) ? n
+                        : (1.0 * fibonacci(n - _Tp(1))) + (1.0 * fibonacci(n - _Tp(2)));
 }
 
 int
@@ -52,8 +54,8 @@ main(int argc, char** argv)
     for(auto n : { 10, 11, 12 })
     {
         auto_tuple_t t(tim::str::join("", "fibonacci(", n, ")"));
-        auto         ret = fibonacci(n);
-        printf("fibonacci(%i) = %li\n", n, ret);
+        auto         ret = fibonacci<double>(n);
+        printf("fibonacci(%i) = %li\n", n, static_cast<long int>(ret));
     }
 
     // ERT Kernel goes here

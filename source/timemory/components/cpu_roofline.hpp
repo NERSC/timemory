@@ -93,7 +93,10 @@ struct cpu_roofline
 
     double compute_display() const
     {
-        auto& obj = (accum.second > 0) ? accum : value;
+        base_type::get_precision()    = real_clock::get_precision();
+        base_type::get_format_flags() = real_clock::get_format_flags();
+        base_type::get_width()        = real_clock::get_width();
+        auto& obj                     = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
             return 0.0;
         return std::accumulate(obj.first.begin(), obj.first.end(), 0) /
@@ -142,6 +145,10 @@ struct cpu_roofline
             is_transient = rhs.is_transient;
         return *this;
     }
+
+private:
+    // create and destroy a papi_tuple<...> so that the event set gets registered
+    papi_type _impl;
 };
 
 //--------------------------------------------------------------------------------------//
