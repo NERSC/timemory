@@ -50,7 +50,6 @@
 //--------------------------------------------------------------------------------------//
 
 #define DRIVER_API_CALL(apiFuncCall)                                                     \
-    do                                                                                   \
     {                                                                                    \
         CUresult _status = apiFuncCall;                                                  \
         if(_status != CUDA_SUCCESS)                                                      \
@@ -58,12 +57,11 @@
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %d.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, _status);                          \
         }                                                                                \
-    } while(0)
+    }
 
 //--------------------------------------------------------------------------------------//
 
 #define RUNTIME_API_CALL(apiFuncCall)                                                    \
-    do                                                                                   \
     {                                                                                    \
         cudaError_t _status = apiFuncCall;                                               \
         if(_status != cudaSuccess)                                                       \
@@ -71,12 +69,11 @@
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));      \
         }                                                                                \
-    } while(0)
+    }
 
 //--------------------------------------------------------------------------------------//
 
 #define CUPTI_CALL(call)                                                                 \
-    do                                                                                   \
     {                                                                                    \
         CUptiResult _status = call;                                                      \
         if(_status != CUPTI_SUCCESS)                                                     \
@@ -86,7 +83,7 @@
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
                     __FILE__, __LINE__, #call, errstr);                                  \
         }                                                                                \
-    } while(0)
+    }
 
 //--------------------------------------------------------------------------------------//
 
@@ -355,63 +352,68 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
         {
             CUpti_EventGroup    group = pass_data.event_groups->eventGroups[i];
             CUpti_EventDomainID group_domain;
-            uint32_t            numEvents, numInstances, numTotalInstances;
-            CUpti_EventID*      eventIds;
-            size_t              groupDomainSize       = sizeof(group_domain);
-            size_t              numEventsSize         = sizeof(numEvents);
-            size_t              numInstancesSize      = sizeof(numInstances);
-            size_t              numTotalInstancesSize = sizeof(numTotalInstances);
-            uint64_t *          values, normalized, sum;
-            size_t              valuesSize, eventIdsSize;
+            uint32_t            num_events;
+            uint32_t            num_instances;
+            uint32_t            num_total_instances;
+            CUpti_EventID*      event_ids;
+            size_t              group_domain_size        = sizeof(group_domain);
+            size_t              num_events_size          = sizeof(num_events);
+            size_t              num_instances_size       = sizeof(num_instances);
+            size_t              num_total_instances_size = sizeof(num_total_instances);
+            uint64_t*           values;
+            uint64_t            normalized;
+            uint64_t            sum;
+            size_t              values_size;
+            size_t              event_ids_size;
 
             CUPTI_CALL(cuptiEventGroupGetAttribute(group,
                                                    CUPTI_EVENT_GROUP_ATTR_EVENT_DOMAIN_ID,
-                                                   &groupDomainSize, &group_domain));
+                                                   &group_domain_size, &group_domain));
             CUPTI_CALL(cuptiDeviceGetEventDomainAttribute(
                 current_kernel.m_device, group_domain,
-                CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &numTotalInstancesSize,
-                &numTotalInstances));
+                CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &num_total_instances_size,
+                &num_total_instances));
             CUPTI_CALL(cuptiEventGroupGetAttribute(group,
                                                    CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT,
-                                                   &numInstancesSize, &numInstances));
+                                                   &num_instances_size, &num_instances));
             CUPTI_CALL(cuptiEventGroupGetAttribute(
-                group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &numEventsSize, &numEvents));
-            eventIdsSize = numEvents * sizeof(CUpti_EventID);
-            eventIds     = (CUpti_EventID*) malloc(eventIdsSize);
+                group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &num_events_size, &num_events));
+            event_ids_size = num_events * sizeof(CUpti_EventID);
+            event_ids      = (CUpti_EventID*) malloc(event_ids_size);
             CUPTI_CALL(cuptiEventGroupGetAttribute(group, CUPTI_EVENT_GROUP_ATTR_EVENTS,
-                                                   &eventIdsSize, eventIds));
+                                                   &event_ids_size, event_ids));
 
-            valuesSize = sizeof(uint64_t) * numInstances;
-            values     = (uint64_t*) malloc(valuesSize);
+            values_size = sizeof(uint64_t) * num_instances;
+            values      = (uint64_t*) malloc(values_size);
 
-            for(uint32_t j = 0; j < numEvents; j++)
+            for(uint32_t j = 0; j < num_events; j++)
             {
                 CUPTI_CALL(cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
-                                                    eventIds[j], &valuesSize, values));
+                                                    event_ids[j], &values_size, values));
 
                 // sum collect event values from all instances
                 sum = 0;
-                for(uint32_t k = 0; k < numInstances; k++)
+                for(uint32_t k = 0; k < num_instances; k++)
                     sum += values[k];
 
                 // normalize the event value to represent the total number of
                 // domain instances on the device
-                normalized = (sum * numTotalInstances) / numInstances;
+                normalized = (sum * num_total_instances) / num_instances;
 
-                pass_data.event_ids.push_back(eventIds[j]);
+                pass_data.event_ids.push_back(event_ids[j]);
                 pass_data.event_values.push_back(normalized);
 
                 // print collected value
                 {
                     char   eventName[128];
                     size_t eventNameSize = sizeof(eventName) - 1;
-                    CUPTI_CALL(cuptiEventGetAttribute(eventIds[j], CUPTI_EVENT_ATTR_NAME,
+                    CUPTI_CALL(cuptiEventGetAttribute(event_ids[j], CUPTI_EVENT_ATTR_NAME,
                                                       &eventNameSize, eventName));
                     eventName[127] = '\0';
                     _DBG("\t%s = %llu (", eventName, (unsigned long long) sum);
-                    if(numInstances > 1)
+                    if(num_instances > 1)
                     {
-                        for(uint32_t k = 0; k < numInstances; k++)
+                        for(uint32_t k = 0; k < num_instances; k++)
                         {
                             if(k != 0)
                                 _DBG(", ");
@@ -421,12 +423,12 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
 
                     _DBG(")\n");
                     _LOG("\t%s (normalized) (%llu * %u) / %u = %llu", eventName,
-                         (unsigned long long) sum, numTotalInstances, numInstances,
+                         (unsigned long long) sum, num_total_instances, num_instances,
                          (unsigned long long) normalized);
                 }
             }
             free(values);
-            free(eventIds);
+            free(event_ids);
         }
 
         for(uint32_t i = 0; i < pass_data.event_groups->numEventGroups; i++)
@@ -494,7 +496,6 @@ struct profiler
     void init()
     {
         int device_count = 0;
-
         CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
         DRIVER_API_CALL(cuDeviceGetCount(&device_count));
         if(device_count == 0)
@@ -904,7 +905,7 @@ available_events(CUdevice device)
 {
     std::vector<string_t> event_names;
     uint32_t              numDomains  = 0;
-    uint32_t              numEvents   = 0;
+    uint32_t              num_events  = 0;
     uint32_t              totalEvents = 0;
     size_t                size;
     CUpti_EventDomainID*  domainIdArray;
@@ -924,8 +925,8 @@ available_events(CUdevice device)
 
     for(uint32_t i = 0; i < numDomains; i++)
     {
-        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &numEvents));
-        totalEvents += numEvents;
+        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        totalEvents += num_events;
     }
 
     eventIdArraySize = sizeof(CUpti_EventID) * totalEvents;
@@ -935,11 +936,11 @@ available_events(CUdevice device)
     for(uint32_t i = 0; i < numDomains; i++)
     {
         // Query num of events available in the domain
-        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &numEvents));
-        size = numEvents * sizeof(CUpti_EventID);
+        CUPTI_CALL(cuptiEventDomainGetNumEvents(domainIdArray[i], &num_events));
+        size = num_events * sizeof(CUpti_EventID);
         CUPTI_CALL(cuptiEventDomainEnumEvents(domainIdArray[i], &size,
                                               eventIdArray + totalEvents));
-        totalEvents += numEvents;
+        totalEvents += num_events;
     }
 
     for(uint32_t i = 0; i < totalEvents; i++)

@@ -613,9 +613,9 @@ disable_signal_detection()
 //--------------------------------------------------------------------------------------//
 
 static void
-stack_backtrace(std::ostream& os)
+timemory_stack_backtrace(std::ostream& os)
 {
-    os << "stack_backtrace() not available." << std::endl;
+    os << "timemory_stack_backtrace() not available." << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//

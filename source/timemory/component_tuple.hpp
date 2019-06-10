@@ -705,57 +705,55 @@ namespace details
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename...>
+template <typename... _Tp>
 struct component_tuple_concat
 {
+    using type = component_tuple<_Tp...>;
 };
 
-template <>
-struct component_tuple_concat<>
+template <typename... _Tp>
+struct component_tuple_concat<component_tuple<_Tp...>>
 {
-    using type = component_tuple<>;
+    using type = component_tuple<_Tp...>;
 };
 
-template <typename... Ts>
-struct component_tuple_concat<component_tuple<Ts...>>
-{
-    using type = component_tuple<Ts...>;
-};
-
-template <typename... Ts0, typename... Ts1, typename... Rest>
-struct component_tuple_concat<component_tuple<Ts0...>, component_tuple<Ts1...>, Rest...>
-: component_tuple_concat<component_tuple<Ts0..., Ts1...>, Rest...>
+template <typename... _Tp0, typename... _Tp1, typename... Rest>
+struct component_tuple_concat<component_tuple<_Tp0...>, component_tuple<_Tp1...>, Rest...>
+: component_tuple_concat<component_tuple<_Tp0..., _Tp1...>, Rest...>
 {
 };
 
-template <typename... Ts>
-using component_tuple_concat_t = typename component_tuple_concat<Ts...>::type;
+template <typename... _Tp>
+using component_tuple_concat_t = typename component_tuple_concat<_Tp...>::type;
 
 //--------------------------------------------------------------------------------------//
 
 template <bool>
 struct component_tuple_filter_if_result
 {
-    template <typename T>
-    using type = component_tuple<T>;
+    template <typename _Tp>
+    using type = component_tuple<_Tp>;
 };
 
 template <>
 struct component_tuple_filter_if_result<false>
 {
-    template <typename T>
+    template <typename _Tp>
     using type = component_tuple<>;
 };
 
 template <template <typename> class Predicate, typename Sequence>
 struct component_tuple_filter_if;
 
-template <template <typename> class Predicate, typename... Ts>
-struct component_tuple_filter_if<Predicate, component_tuple<Ts...>>
+template <template <typename> class Predicate, typename... _Tp>
+struct component_tuple_filter_if<Predicate, component_tuple<_Tp...>>
 {
     using type = component_tuple_concat_t<typename component_tuple_filter_if_result<
-        Predicate<Ts>::value>::template type<Ts>...>;
+        Predicate<_Tp>::value>::template type<_Tp>...>;
 };
+
+template <template <typename> class Predicate, typename Sequence>
+using tuple_type_filter = details::component_tuple_filter_if<Predicate, Sequence>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -763,13 +761,10 @@ struct component_tuple_filter_if<Predicate, component_tuple<Ts...>>
 
 //--------------------------------------------------------------------------------------//
 
-template <template <typename> class Predicate, typename Sequence>
-using tuple_type_filter =
-    typename details::component_tuple_filter_if<Predicate, Sequence>::type;
-
 template <typename... Types>
 using implemented_component_tuple =
-    tuple_type_filter<component::impl_available, component_tuple<Types...>>;
+    typename details::tuple_type_filter<component::impl_available,
+                                        component_tuple<Types...>>::type;
 
 //======================================================================================//
 

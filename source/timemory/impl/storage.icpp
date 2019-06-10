@@ -80,6 +80,12 @@ tim::graph_storage<ObjectType>::print()
 #endif
         }
 
+        if(!settings::file_output() && !settings::cout_output())
+        {
+            instance_count().store(0);
+            return;
+        }
+
         // auto _manager = tim::manager::master_instance();
         /*
         using predicate_type = decltype(graph().begin());
@@ -105,12 +111,6 @@ tim::graph_storage<ObjectType>::print()
             auto _laps   = _obj.laps;
             component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
             component::print<ObjectType>(_obj, _mss, false);
-            /*if(_manager)
-            {
-                auto _id     = itr.id();
-                if(_mss.str().length() > 0)
-                    _manager->insert(_id, _prefix, _mss.str());
-            }*/
         }
 
         if(settings::file_output() && _oss.str().length() > 0)

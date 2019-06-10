@@ -394,7 +394,9 @@ public:
            serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
     }
 
-    int64_t nlaps() const { return laps; }
+    const int64_t&    nlaps() const { return laps; }
+    const value_type& get_value() const { return value; }
+    const value_type& get_accum() const { return accum; }
 
 protected:
     bool           is_running   = false;

@@ -30,11 +30,8 @@
  */
 
 #include "timemory/macros.hpp"
-#include "timemory/manager.hpp"
 #include "timemory/papi.hpp"
-#include "timemory/serializer.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/signal_detection.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/utility.hpp"
 

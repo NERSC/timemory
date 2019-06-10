@@ -89,10 +89,10 @@ echo -e "Files: ${FILES}"
 for i in ${FILES}
 do
     if [ -n "${PPROF}" ]; then
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --inuse_space   ${1} ${i} &> ${i}.inuse_space.txt
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --inuse_objects ${1} ${i} &> ${i}.inuse_objects.txt
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --alloc_space   ${1} ${i} &> ${i}.alloc_space.txt
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --alloc_objects ${1} ${i} &> ${i}.alloc_objects.txt
+        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --inuse_space   ${1} ${i} > ${i}.inuse_space.txt
+        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --inuse_objects ${1} ${i} > ${i}.inuse_objects.txt
+        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --alloc_space   ${1} ${i} > ${i}.alloc_space.txt
+        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} --alloc_objects ${1} ${i} > ${i}.alloc_objects.txt
         if [ "${INTERACTIVE}" -gt 0 ]; then
             eval ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${i}
         fi

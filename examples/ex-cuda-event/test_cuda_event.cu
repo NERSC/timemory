@@ -286,7 +286,7 @@ test_1_saxpy()
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
         evt->stop();
-        milliseconds += evt->value;
+        milliseconds += evt->get_value();
     }
 
     {
@@ -408,7 +408,7 @@ test_2_saxpy_async()
         saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, _dx, _dy);
 
         evt[i]->stop();
-        milliseconds += evt[i]->value;
+        milliseconds += evt[i]->get_value();
     }
 
     _sync();
@@ -519,7 +519,7 @@ test_3_saxpy_pinned()
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
 
         evt->stop();
-        milliseconds += evt->value;
+        milliseconds += evt->get_value();
     }
 
     {
@@ -635,7 +635,7 @@ test_4_saxpy_async_pinned()
         saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, d_x + offset, d_y + offset);
 
         evt[i]->stop();
-        milliseconds += evt[i]->value;
+        milliseconds += evt[i]->get_value();
     }
 
     {
@@ -747,7 +747,7 @@ test_5_mt_saxpy_async()
             saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
 
             evt.stop();
-            milliseconds += evt.value;
+            milliseconds += evt.get_value();
         }
 
         {
@@ -869,7 +869,7 @@ test_6_mt_saxpy_async_pinned()
             saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
 
             evt->stop();
-            milliseconds += evt->value;
+            milliseconds += evt->get_value();
         }
 
         {

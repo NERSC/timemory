@@ -67,31 +67,37 @@ public:
     using language_t     = tim::language;
 
 public:
-    auto_tuple(const string_t&, const int32_t& lineno = 0,
-               const language_t& lang = language_t::cxx(), bool report_at_exit = false);
-    auto_tuple(component_type& tmp, const int32_t& lineno = 0,
-               bool report_at_exit = false);
-    ~auto_tuple();
+    inline auto_tuple(const string_t&, const int32_t& lineno = 0,
+                      const language_t& lang           = language_t::cxx(),
+                      bool              report_at_exit = false);
+    inline auto_tuple(component_type& tmp, const int32_t& lineno = 0,
+                      bool report_at_exit = false);
+    inline ~auto_tuple();
 
     // copy and move
-    auto_tuple(const this_type&) = default;
-    auto_tuple(this_type&&)      = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    inline auto_tuple(const this_type&) = default;
+    inline auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+
+    static constexpr std::size_t size()
+    {
+        return std::tuple_size<std::tuple<Types...>>::value;
+    }
 
 public:
     // public member functions
-    component_type&       component_tuple() { return m_temporary_object; }
-    const component_type& component_tuple() const { return m_temporary_object; }
+    inline component_type&       component_tuple() { return m_temporary_object; }
+    inline const component_type& component_tuple() const { return m_temporary_object; }
 
     // partial interface to underlying component_tuple
-    void record() { m_temporary_object.record(); }
-    void pause() { m_temporary_object.pause(); }
-    void resume() { m_temporary_object.resume(); }
-    void start() { m_temporary_object.start(); }
-    void stop() { m_temporary_object.stop(); }
-    void push() { m_temporary_object.push(); }
-    void pop() { m_temporary_object.pop(); }
+    inline void record() { m_temporary_object.record(); }
+    inline void pause() { m_temporary_object.pause(); }
+    inline void resume() { m_temporary_object.resume(); }
+    inline void start() { m_temporary_object.start(); }
+    inline void stop() { m_temporary_object.stop(); }
+    inline void push() { m_temporary_object.push(); }
+    inline void pop() { m_temporary_object.pop(); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

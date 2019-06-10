@@ -488,13 +488,12 @@ public:
 
     int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
-    string_t& lang() { return m_lang; }
     string_t& identifier() { return m_identifier; }
 
-    const int64_t&  hash() const { return m_hash; }
-    const string_t& key() const { return m_key; }
-    const string_t& lang() const { return m_lang; }
-    const string_t& identifier() const { return m_identifier; }
+    const int64_t&    hash() const { return m_hash; }
+    const string_t&   key() const { return m_key; }
+    const language_t& lang() const { return m_lang; }
+    const string_t&   identifier() const { return m_identifier; }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }

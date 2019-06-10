@@ -113,14 +113,14 @@ struct type_id
               enable_if_t<(std::is_integral<SubType>::value), int> = 0>
     static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
     {
-        return "int_array_paird";
+        return "int_array_pair";
     }
 
     template <typename _Up, typename SubType, std::size_t SubTypeSize,
               enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
     static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
     {
-        return "float_array_paired";
+        return "float_array_pair";
     }
 };
 
@@ -363,7 +363,7 @@ public:
             exists       = false;
             node.depth() = m_data.depth() + 1;
             auto itr     = m_data.append_child(node);
-            m_node_ids.insert(std::make_pair(hash_id, itr));
+            // m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
         };
 
