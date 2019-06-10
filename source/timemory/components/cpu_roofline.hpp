@@ -89,7 +89,7 @@ struct cpu_roofline
     {
         std::stringstream ss;
         ss << "(";
-        auto labels = _impl.label_array();
+        auto labels = papi_type::label_array();
         for(size_type i = 0; i < labels.size(); ++i)
         {
             ss << labels[i];

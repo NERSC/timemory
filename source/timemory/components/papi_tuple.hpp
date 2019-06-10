@@ -191,7 +191,7 @@ struct papi_tuple
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    array_t<std::string> label_array() const
+    static array_t<std::string> label_array()
     {
         array_t<std::string> arr;
         int                  evt_types[] = { EventTypes... };
@@ -203,7 +203,7 @@ struct papi_tuple
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    array_t<std::string> descript_array() const
+    static array_t<std::string> descript_array()
     {
         array_t<std::string> arr;
         int                  evt_types[] = { EventTypes... };
@@ -215,7 +215,7 @@ struct papi_tuple
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    array_t<std::string> display_unit_array() const
+    static array_t<std::string> display_unit_array()
     {
         array_t<std::string> arr;
         int                  evt_types[] = { EventTypes... };
@@ -227,7 +227,7 @@ struct papi_tuple
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    array_t<int64_t> unit_array() const
+    static array_t<int64_t> unit_array()
     {
         array_t<int64_t> arr;
         for(size_type i = 0; i < num_events; ++i)
