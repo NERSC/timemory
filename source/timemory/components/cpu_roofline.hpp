@@ -62,11 +62,12 @@ struct cpu_roofline
 {
     using size_type  = std::size_t;
     using array_type = std::array<long long, sizeof...(EventTypes)>;
-    using papi_type  = papi_tuple<0, EventTypes...>;
-    using ratio_t    = typename real_clock::ratio_t;
     using value_type = std::pair<array_type, int64_t>;
-    using base_type  = base<cpu_roofline, value_type>;
     using this_type  = cpu_roofline<EventTypes...>;
+    using base_type  = base<this_type, value_type>;
+
+    using papi_type = papi_tuple<0, EventTypes...>;
+    using ratio_t   = typename real_clock::ratio_t;
 
     using base_type::accum;
     using base_type::is_running;
@@ -109,10 +110,7 @@ struct cpu_roofline
 
     double compute_display() const
     {
-        base_type::get_precision()    = real_clock::get_precision();
-        base_type::get_format_flags() = real_clock::get_format_flags();
-        base_type::get_width()        = real_clock::get_width();
-        auto& obj                     = (accum.second > 0) ? accum : value;
+        auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
             return 0.0;
         return std::accumulate(obj.first.begin(), obj.first.end(), 0) /
@@ -161,6 +159,28 @@ struct cpu_roofline
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        auto _value = obj.compute_display();
+        auto _label = this_type::get_label();
+        auto _disp  = this_type::display_unit();
+        auto _prec  = real_clock::get_precision();
+        auto _width = this_type::get_width();
+        auto _flags = real_clock::get_format_flags();
+
+        std::stringstream ss_value;
+        std::stringstream ss_extra;
+        ss_value.setf(_flags);
+        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
+        if(!_disp.empty())
+            ss_extra << " " << _disp;
+        else if(!_label.empty())
+            ss_extra << " " << _label;
+        os << ss_value.str() << ss_extra.str();
+
+        return os;
     }
 
 private:

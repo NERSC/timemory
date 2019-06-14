@@ -347,10 +347,10 @@ struct print
     //
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(const base_type& _obj, std::ostream& _os, bool _endline = false)
+    print(const Type& _obj, std::ostream& _os, bool _endline = false)
     {
         std::stringstream ss;
-        ss << static_cast<base_type>(_obj);
+        ss << _obj;
         if(_endline)
             ss << std::endl;
         _os << ss.str();
@@ -358,11 +358,11 @@ struct print
 
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(std::size_t _N, std::size_t _Ntot, const base_type& _obj, std::ostream& _os,
+    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
           bool _endline)
     {
         std::stringstream ss;
-        ss << static_cast<base_type>(_obj);
+        ss << _obj;
         if(_N + 1 < _Ntot)
             ss << ", ";
         else if(_N + 1 == _Ntot && _endline)
@@ -372,13 +372,13 @@ struct print
 
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(const base_type& _obj, std::ostream& _os, const string_t& _prefix,
-          int64_t _laps, int64_t _output_width, bool _endline)
+    print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
+          int64_t _output_width, bool _endline)
     {
         std::stringstream ss_prefix;
         std::stringstream ss;
         ss_prefix << std::setw(_output_width) << std::left << _prefix << " : ";
-        ss << ss_prefix.str() << static_cast<base_type>(_obj);
+        ss << ss_prefix.str() << _obj;
         if(_laps > 0)
             ss << ", " << _laps << " laps";
         if(_endline)
@@ -391,7 +391,7 @@ struct print
     //
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(const base_type* _obj, std::ostream& _os, bool _endline = false)
+    print(const Type* _obj, std::ostream& _os, bool _endline = false)
     {
         if(_obj)
             print(*_obj, _os, _endline);
@@ -399,7 +399,7 @@ struct print
 
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(std::size_t _N, std::size_t _Ntot, const base_type* _obj, std::ostream& _os,
+    print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
           bool _endline)
     {
         if(_obj)
@@ -408,45 +408,11 @@ struct print
 
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
-    print(const base_type* _obj, std::ostream& _os, const string_t& _prefix,
-          int64_t _laps, int64_t _output_width, bool _endline)
-    {
-        if(_obj)
-            print(*_obj, _os, _prefix, _laps, _output_width, _endline);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // fixes for exact match issue on Windows
-    //
-    print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
-          bool _endline)
-    {
-        print(_N, _Ntot, static_cast<const base_type&>(_obj), _os, _endline);
-    }
-
-    print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _output_width, bool _endline)
-    {
-        print(static_cast<const base_type&>(_obj), _os, _prefix, _laps, _output_width,
-              _endline);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // fixes for exact match issue on Windows -- pointers
-    //
-    print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
-          bool _endline)
-    {
-        if(_obj)
-            print(_N, _Ntot, static_cast<const base_type&>(*_obj), _os, _endline);
-    }
-
     print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _output_width, bool _endline)
     {
         if(_obj)
-            print(static_cast<const base_type&>(*_obj), _os, _prefix, _laps,
-                  _output_width, _endline);
+            print(*_obj, _os, _prefix, _laps, _output_width, _endline);
     }
 
     //----------------------------------------------------------------------------------//
@@ -454,19 +420,19 @@ struct print
     //
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const base_type&, std::ostream&, bool = false)
+    print(const Type&, std::ostream&, bool = false)
     {
     }
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(std::size_t, std::size_t, const base_type&, std::ostream&, bool)
+    print(std::size_t, std::size_t, const Type&, std::ostream&, bool)
     {
     }
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const base_type&, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, bool)
     {
     }
 
@@ -475,19 +441,19 @@ struct print
     //
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const base_type*, std::ostream&, bool = false)
+    print(const Type*, std::ostream&, bool = false)
     {
     }
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(std::size_t, std::size_t, const base_type*, std::ostream&, bool)
+    print(std::size_t, std::size_t, const Type*, std::ostream&, bool)
     {
     }
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const base_type*, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, bool)
     {
     }
 };

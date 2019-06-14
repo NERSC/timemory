@@ -126,8 +126,8 @@ tim::graph_storage<ObjectType>::print()
                 if(ofs)
                 {
                     auto_lock_t l(type_mutex<std::ofstream>());
-                    std::cout << "[graph_storage<" << ObjectType::label()
-                              << ">]> Outputting '" << fname << "'... " << std::flush;
+                    std::cout << "[" << ObjectType::label() << "]> Outputting '" << fname
+                              << "'... " << std::flush;
                     ofs << _oss.str();
                     std::cout << "Done" << std::endl;
                     ofs.close();
@@ -150,9 +150,10 @@ tim::graph_storage<ObjectType>::print()
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
                 auto jname = tim::settings::compose_output_filename(label, ".json");
-                printf("[graph_storage<%s>]> Outputting '%s'...\n",
-                       ObjectType::label().c_str(), jname.c_str());
+                printf("[%s]> Outputting '%s'...", ObjectType::label().c_str(),
+                       jname.c_str());
                 serialize_storage(jname, *this, num_instances);
+                printf("Done\n");
             }
         }
 

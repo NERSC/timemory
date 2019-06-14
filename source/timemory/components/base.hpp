@@ -362,21 +362,21 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        auto obj_value = static_cast<const Type&>(obj).compute_display();
-        auto label     = get_label();
-        auto disp      = get_display_unit();
-        auto prec      = get_precision();
-        auto width     = get_width();
-        auto flags     = get_format_flags();
+        auto _value = static_cast<const Type&>(obj).compute_display();
+        auto _label = this_type::get_label();
+        auto _disp  = this_type::get_display_unit();
+        auto _prec  = this_type::get_precision();
+        auto _width = this_type::get_width();
+        auto _flags = this_type::get_format_flags();
 
         std::stringstream ss_value;
         std::stringstream ss_extra;
-        ss_value.setf(flags);
-        ss_value << std::setw(width) << std::setprecision(prec) << obj_value;
-        if(!disp.empty())
-            ss_extra << " " << disp;
-        if(!label.empty())
-            ss_extra << " " << label;
+        ss_value.setf(_flags);
+        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
+        if(!_disp.empty())
+            ss_extra << " " << _disp;
+        if(!_label.empty())
+            ss_extra << " " << _label;
         os << ss_value.str() << ss_extra.str();
 
         return os;
