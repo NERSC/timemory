@@ -94,7 +94,7 @@ public:
     template <typename... Constructors>
     explicit component_list(std::tuple<Constructors...>&& _ctors, const string_t& key,
                              const bool& store, const language_t& lang =
-    language_t::cxx(), const int32_t& ncount = 0, const int32_t& nhash = 0) :
+    language_t::cxx(), const int64_t& ncount = 0, const int64_t& nhash = 0) :
     m_store(store) , m_laps(0) , m_count(ncount) , m_hash(nhash) , m_key(key) ,
     m_lang(lang) , m_identifier("") , m_data(apply<data_type>::template
     all<construct_types>(component::create, _ctors))
@@ -106,7 +106,7 @@ public:
 
     explicit component_list(const string_t& key, const bool& store,
                             const language_t& lang = language_t::cxx(),
-                            const int32_t& ncount = 0, const int32_t& nhash = 0)
+                            const int64_t& ncount = 0, const int64_t& nhash = 0)
     : counter_type()
     , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
                    (counter_type::live() + hashed_type::live() + ncount + nhash)))
@@ -124,7 +124,7 @@ public:
     }
 
     component_list(const string_t& key, const language_t& lang = language_t::cxx(),
-                   const int32_t& ncount = 0, const int32_t& nhash = 0,
+                   const int64_t& ncount = 0, const int64_t& nhash = 0,
                    bool store = false)
     : counter_type()
     , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
@@ -623,12 +623,12 @@ public:
     component_list(const component_list&) = default;
     component_list(component_list&&)      = default;
 
-    component_list(const string_t&, const string_t& = "", const int32_t& = 0,
-                   const int32_t& = 0, bool = true)
+    component_list(const string_t&, const string_t& = "", const int64_t& = 0,
+                   const int64_t& = 0, bool = true)
     {
     }
     explicit component_list(const string_t&, const bool&, const string_t& = "",
-                            const int32_t& = 0, const int32_t& = 0)
+                            const int64_t& = 0, const int64_t& = 0)
     {
     }
 

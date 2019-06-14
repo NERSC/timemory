@@ -34,11 +34,12 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <cstdio>
 #include <fstream>
+#include <functional>
 #include <iomanip>
 #include <ios>
 #include <iostream>
-#include <stdio.h>
 #include <string>
 
 #include "timemory/apply.hpp"
@@ -88,7 +89,7 @@ public:
     template <typename... Constructors>
     explicit component_tuple(std::tuple<Constructors...>&& _ctors, const string_t& key,
                              const bool& store, const language_t& lang = language_t::CXX,
-                             const int32_t& ncount = 0, const int32_t& nhash = 0)
+                             const int64_t& ncount = 0, const int64_t& nhash = 0)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -105,14 +106,30 @@ public:
     }*/
 
     explicit component_tuple(const string_t& key, const bool& store,
-                             const language_t& lang = language_t::cxx(),
-                             const int32_t& ncount = 0, const int32_t& nhash = 0)
+                             const int64_t& ncount = 0, const int64_t& nhash = 0,
+                             const language_t& lang = language_t::cxx())
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash(nhash)
-    , m_key(key)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_lang(lang)
+    , m_key(key)
+    , m_identifier("")
+    {
+        compute_identifier(key, lang);
+        init_manager();
+        push();
+    }
+
+    explicit component_tuple(const string_t& key, const bool& store,
+                             const language_t& lang, const int64_t& ncount = 0,
+                             const int64_t& nhash = 0)
+    : m_store(store)
+    , m_laps(0)
+    , m_count(ncount)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
+    , m_lang(lang)
+    , m_key(key)
     , m_identifier("")
     {
         compute_identifier(key, lang);
@@ -121,14 +138,14 @@ public:
     }
 
     component_tuple(const string_t& key, const language_t& lang = language_t::cxx(),
-                    const int32_t& ncount = 0, const int32_t& nhash = 0,
+                    const int64_t& ncount = 0, const int64_t& nhash = 0,
                     bool store = false)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash(nhash)
-    , m_key(key)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_lang(lang)
+    , m_key(key)
     , m_identifier("")
     {
         compute_identifier(key, lang);
@@ -141,21 +158,10 @@ public:
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_tuple(const component_tuple& rhs)
-    : m_store(rhs.m_store)
-    , m_laps(rhs.m_laps)
-    , m_count(rhs.m_count)
-    , m_hash(rhs.m_hash)
-    , m_key(rhs.m_key)
-    , m_lang(rhs.m_lang)
-    , m_identifier(rhs.m_identifier)
-    , m_data(rhs.m_data)
-    {
-    }
+    component_tuple(const component_tuple&) = default;
+    component_tuple(component_tuple&&)      = default;
 
     component_tuple& operator=(const component_tuple& rhs) = default;
-
-    component_tuple(component_tuple&&) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
 public:
@@ -285,19 +291,6 @@ public:
             apply<void>::access2<apply_types>(m_data, c_data);
         }
         return *this;
-    }
-
-    //----------------------------------------------------------------------------------//
-    this_type record() const
-    {
-        this_type tmp(*this);
-        return tmp.record();
-    }
-
-    this_type record(const this_type& rhs) const
-    {
-        this_type tmp(*this);
-        return tmp.record(rhs);
     }
 
     //----------------------------------------------------------------------------------//
@@ -483,14 +476,13 @@ protected:
 
 protected:
     // objects
-    bool             m_store     = false;
-    bool             m_is_pushed = false;
-    mutex_t          m_mutex;
+    bool             m_store      = false;
+    bool             m_is_pushed  = false;
     int64_t          m_laps       = 0;
     int64_t          m_count      = 0;
     int64_t          m_hash       = 0;
-    string_t         m_key        = "";
     const language_t m_lang       = language_t::cxx();
+    string_t         m_key        = "";
     string_t         m_identifier = "";
     mutable data_t   m_data;
 
@@ -591,12 +583,12 @@ public:
     component_tuple(component_tuple&&)      = default;
 
     component_tuple(const string_t&, const language_t& = language_t::cxx(),
-                    const int32_t& = 0, const int32_t& = 0, bool = true)
+                    const int64_t& = 0, const int64_t& = 0, bool = true)
     {
     }
     explicit component_tuple(const string_t&, const bool&,
-                             const language_t& = language_t::cxx(), const int32_t& = 0,
-                             const int32_t& = 0)
+                             const language_t& = language_t::cxx(), const int64_t& = 0,
+                             const int64_t& = 0)
     {
     }
 

@@ -68,9 +68,9 @@ public:
     using language_t     = tim::language;
 
 public:
-    auto_list(const string_t&, const int32_t& lineno = 0,
+    auto_list(const string_t&, const int64_t& lineno = 0,
               const language_t& lang = language_t::cxx(), bool report_at_exit = false);
-    auto_list(component_type& tmp, const int32_t& lineno = 0,
+    auto_list(component_type& tmp, const int64_t& lineno = 0,
               bool report_at_exit = false);
     ~auto_list();
 
@@ -124,7 +124,7 @@ private:
 //======================================================================================//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(const string_t& object_tag, const int32_t& lineno,
+auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno,
                                const language_t& lang, bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
@@ -145,7 +145,7 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int32_t& lineno
 //======================================================================================//
 
 template <typename... Types>
-auto_list<Types...>::auto_list(component_type& tmp, const int32_t& lineno,
+auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
                                bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())

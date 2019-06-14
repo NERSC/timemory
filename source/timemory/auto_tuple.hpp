@@ -67,10 +67,10 @@ public:
     using language_t     = tim::language;
 
 public:
-    inline auto_tuple(const string_t&, const int32_t& lineno = 0,
+    inline auto_tuple(const string_t&, const int64_t& lineno = 0,
                       const language_t& lang           = language_t::cxx(),
                       bool              report_at_exit = false);
-    inline auto_tuple(component_type& tmp, const int32_t& lineno = 0,
+    inline auto_tuple(component_type& tmp, const int64_t& lineno = 0,
                       bool report_at_exit = false);
     inline ~auto_tuple();
 
@@ -116,7 +116,7 @@ private:
 //======================================================================================//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& lineno,
+auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& lineno,
                                  const language_t& lang, bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
@@ -137,7 +137,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int32_t& line
 //======================================================================================//
 
 template <typename... Types>
-auto_tuple<Types...>::auto_tuple(component_type& tmp, const int32_t& lineno,
+auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
                                  bool report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())

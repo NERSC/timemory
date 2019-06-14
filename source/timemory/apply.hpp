@@ -218,21 +218,42 @@ struct _apply_impl
 
     //----------------------------------------------------------------------------------//
 
+    // prefix with _sep
     template <typename _Sep, typename _Arg,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
-    static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
+    static _Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
     {
         _ss << _sep << std::forward<_Arg>(_arg);
         return _ss.str();
     }
 
+    // prefix with _sep
+    template <typename _Sep, typename _Arg, typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
+    static _Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
+                          _Args&&... __args)
+    {
+        _ss << _sep << std::forward<_Arg>(_arg);
+        return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
+    }
+
+    // don't prefix
+    template <typename _Sep, typename _Arg,
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
+    static _Ret join(std::stringstream& _ss, const _Sep&, _Arg&& _arg)
+    {
+        _ss << std::forward<_Arg>(_arg);
+        return _ss.str();
+    }
+
+    // don't prefix
     template <typename _Sep, typename _Arg, typename... _Args,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
                      _Args&&... __args)
     {
-        _ss << _sep << std::forward<_Arg>(_arg);
-        return join<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
+        _ss << std::forward<_Arg>(_arg);
+        return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -512,8 +533,8 @@ struct apply
     {
         std::stringstream ss;
         ss << std::boolalpha;
-        return _apply_impl<_Ret>::template join<std::string, _Args...>(
-            std::ref(ss), separator, std::forward<_Args>(__args)...);
+        return _apply_impl<_Ret>::template join<std::string, _Args...>(std::ref(ss),
+              separator, std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//

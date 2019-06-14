@@ -84,8 +84,8 @@ class init
 public:
     using string_t  = std::string;
     bool     store  = false;
-    int32_t  ncount = 0;
-    int32_t  nhash  = 0;
+    int64_t  ncount = 0;
+    int64_t  nhash  = 0;
     string_t key    = "";
     string_t tag    = "";
 };
@@ -121,7 +121,7 @@ public:
 //--------------------------------------------------------------------------------------//
 //  component_tuple initialization
 //
-using init = constructor<void, std::string, std::string, int32_t, int32_t, bool>;
+using init = constructor<void, std::string, std::string, int64_t, int64_t, bool>;
 
 //--------------------------------------------------------------------------------------//
 

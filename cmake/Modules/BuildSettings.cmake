@@ -42,7 +42,6 @@ add_cxx_flag_if_avail("-Wextra")
 add_cxx_flag_if_avail("-Wno-c++17-extensions")
 # add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
 # add_cxx_flag_if_avail("-Wno-deprecated-declarations")
-add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
@@ -58,17 +57,14 @@ endif()
 # non-debug optimizations
 #
 if(NOT DEBUG)
-    add_c_flag_if_avail("-funroll-loops")
-    add_c_flag_if_avail("-ftree-vectorize")
-    add_c_flag_if_avail("-finline-functions")
-    add_c_flag_if_avail("-ftree-loop-optimize")
-    add_c_flag_if_avail("-ftree-loop-vectorize")
-
-    add_cxx_flag_if_avail("-funroll-loops")
-    add_cxx_flag_if_avail("-ftree-vectorize")
-    add_cxx_flag_if_avail("-finline-functions")
-    add_cxx_flag_if_avail("-ftree-loop-optimize")
-    add_cxx_flag_if_avail("-ftree-loop-vectorize")
+    add_flag_if_avail("-funroll-loops")
+    add_flag_if_avail("-ftree-vectorize")
+    add_flag_if_avail("-finline-functions")
+    add_flag_if_avail("-ftree-loop-optimize")
+    add_flag_if_avail("-ftree-loop-vectorize")
+    add_flag_if_avail("-finline-limit=2048")
+else()
+    add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 endif()
 
 #----------------------------------------------------------------------------------------#
