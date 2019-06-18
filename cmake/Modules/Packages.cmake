@@ -267,7 +267,9 @@ if(TIMEMORY_BUILD_PYTHON)
 
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
-    add_subdirectory(${PROJECT_SOURCE_DIR}/source/python/pybind11)
+    if(NOT TARGET pybind11)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/source/python/pybind11)
+    endif()
 
     if(NOT PYBIND11_PYTHON_VERSION)
         unset(PYBIND11_PYTHON_VERSION CACHE)
