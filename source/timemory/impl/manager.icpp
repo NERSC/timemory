@@ -60,7 +60,7 @@
 namespace tim
 {
 //======================================================================================//
-
+#if !defined(TIMEMORY_EXTERN_INIT)
 inline std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {
@@ -101,7 +101,7 @@ manager::noninit_master_instance()
 {
     return details::manager_singleton().master_instance_ptr();
 }
-
+#endif
 //======================================================================================//
 
 inline manager::manager()

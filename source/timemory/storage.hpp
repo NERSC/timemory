@@ -320,8 +320,14 @@ public:
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = default;
 
+    //#if !defined(TIMEMORY_EXTERN_INIT)
     static pointer instance() { return get_singleton().instance(); }
     static pointer master_instance() { return get_singleton().master_instance(); }
+    //#else
+    // initialize in the library
+    // static pointer instance();
+    // static pointer master_instance();
+    //#endif
 
     void print();
     bool empty() const { return (m_node_ids.size() == 0); }

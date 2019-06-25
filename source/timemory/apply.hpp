@@ -533,8 +533,8 @@ struct apply
     {
         std::stringstream ss;
         ss << std::boolalpha;
-        return _apply_impl<_Ret>::template join<std::string, _Args...>(std::ref(ss),
-              separator, std::forward<_Args>(__args)...);
+        return _apply_impl<_Ret>::template join<std::string, _Args...>(
+            std::ref(ss), separator, std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//

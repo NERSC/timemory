@@ -396,3 +396,54 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 }
 
 //======================================================================================//
+#if defined(TIMEMORY_EXTERN_INIT)
+namespace tim
+{
+std::atomic<int32_t>&
+manager::f_manager_instance_count()
+{
+    static std::atomic<int32_t> instance;
+    return instance;
+}
+
+//======================================================================================//
+// get either master or thread-local instance
+//
+manager::pointer
+manager::instance()
+{
+    return details::manager_singleton().instance();
+}
+
+//======================================================================================//
+// get master instance
+//
+manager::pointer
+manager::master_instance()
+{
+    return details::manager_singleton().master_instance();
+}
+
+//======================================================================================//
+// static function
+manager::pointer
+manager::noninit_instance()
+{
+    return details::manager_singleton().instance_ptr();
+}
+
+//======================================================================================//
+// static function
+manager::pointer
+manager::noninit_master_instance()
+{
+    return details::manager_singleton().master_instance_ptr();
+}
+
+// graph_storage::pointer graph_storage::instance() { return get_singleton().instance(); }
+// graph_storage::pointer graph_storage::master_instance() { return
+// get_singleton().master_instance(); }
+
+}  // namespace tim
+
+#endif  // defined(TIMEMORY_EXTERN_INIT

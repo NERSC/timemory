@@ -12,11 +12,11 @@ set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
 add_interface_library(timemory-extern-templates)
+add_interface_library(timemory-extern-init)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
-    timemory-cereal
-    timemory-extern-templates)
+    timemory-cereal)
 
 add_interface_library(timemory-mpi)
 add_interface_library(timemory-threading)
@@ -34,6 +34,7 @@ add_interface_library(timemory-exceptions)
 
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
+    timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
@@ -80,8 +81,9 @@ endfunction()
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
-#target_include_directories(timemory-headers SYSTEM INTERFACE
-#    $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+if(TIMEMORY_LINK_RT)
+    target_link_libraries(timemory-headers INTERFACE rt)
+endif()
 
 
 #----------------------------------------------------------------------------------------#
@@ -91,6 +93,18 @@ target_include_directories(timemory-headers INTERFACE
 #----------------------------------------------------------------------------------------#
 
 target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                        TiMemory extern initializaiton
+#
+#----------------------------------------------------------------------------------------#
+
+target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
+if(TIMEMORY_USE_EXTERN_INIT)
+    target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+endif()
 
 
 #----------------------------------------------------------------------------------------#
@@ -490,14 +504,16 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-        target_link_libraries(timemory-cudart INTERFACE
-            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
+        if(CUDA_rt_LIBRARY)
+            target_link_libraries(timemory-cudart INTERFACE
+                ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
-        target_link_libraries(timemory-cudart-device INTERFACE
-            ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
+            target_link_libraries(timemory-cudart-device INTERFACE
+                ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
 
-        target_link_libraries(timemory-cudart-static INTERFACE
-            ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
+            target_link_libraries(timemory-cudart-static INTERFACE
+                ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
+        endif()
     else()
         inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)

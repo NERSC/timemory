@@ -386,14 +386,12 @@ struct manager_deleter
 };
 
 //--------------------------------------------------------------------------------------//
-
 inline manager::singleton_t&
 manager_singleton()
 {
     static manager::singleton_t _instance = manager::singleton_t::instance();
     return _instance;
 }
-
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details
