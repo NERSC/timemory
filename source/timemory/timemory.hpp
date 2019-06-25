@@ -51,6 +51,10 @@
 #    include "timemory/cupti.hpp"
 #endif
 
+#if defined(TIMEMORY_EXTERN_INIT)
+#    include "timemory/storage.hpp"
+#endif
+
 //======================================================================================//
 
 #if defined(TIMEMORY_EXTERN_TEMPLATES)
@@ -98,6 +102,14 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::user_c
 //--------------------------------------------------------------------------------------//
 // auto_timer_t
 //
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
+                              tim::component::user_clock, tim::component::cpu_clock,
+                              tim::component::cpu_util)
+
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
+                              tim::component::user_clock, tim::component::cpu_clock,
+                              tim::component::cpu_util, tim::component::current_rss,
+                              tim::component::peak_rss)
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
                               tim::component::cpu_clock, tim::component::cpu_util,
@@ -179,5 +191,37 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock,
                               tim::component::process_cpu_util)
 
 #endif  // defined(TIMEMORY_EXTERN_TEMPLATES)
+
+//======================================================================================//
+
+#if defined(TIMEMORY_EXTERN_INIT)
+
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(real_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(system_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(user_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(cpu_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(monotonic_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(monotonic_raw_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(thread_cpu_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(process_cpu_clock)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(cpu_util)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(thread_cpu_util)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(process_cpu_util)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(current_rss)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(peak_rss)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(stack_rss)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(data_rss)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_swap)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_io_in)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_io_out)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_minor_page_faults)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_major_page_faults)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_msg_sent)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_msg_recv)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(num_signals)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(voluntary_context_switch)
+TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(priority_context_switch)
+
+#endif
 
 //======================================================================================//

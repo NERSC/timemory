@@ -124,6 +124,16 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::us
 //--------------------------------------------------------------------------------------//
 // auto_timer_t
 //
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock,
+                                  tim::component::user_clock, tim::component::cpu_clock,
+                                  tim::component::cpu_util)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
+                                  tim::component::system_clock,
+                                  tim::component::user_clock, tim::component::cpu_clock,
+                                  tim::component::cpu_util, tim::component::current_rss,
+                                  tim::component::peak_rss)
 
 TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
                                   tim::component::system_clock, tim::component::cpu_clock,
@@ -440,10 +450,44 @@ manager::noninit_master_instance()
     return details::manager_singleton().master_instance_ptr();
 }
 
-// graph_storage::pointer graph_storage::instance() { return get_singleton().instance(); }
-// graph_storage::pointer graph_storage::master_instance() { return
-// get_singleton().master_instance(); }
-
+//======================================================================================//
+// function for storage
+/*
+template <typename _Tp>
+details::storage_singleton_t<_Tp>&
+get_storage_singleton()
+{
+    using _single_t                         = details::storage_singleton_t<_Tp>;
+    static _single_t _instance = _single_t::instance();
+    return _instance;
+}
+*/
 }  // namespace tim
+
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(real_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(system_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(user_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(cpu_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(monotonic_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(monotonic_raw_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(thread_cpu_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(process_cpu_clock)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(cpu_util)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(thread_cpu_util)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(process_cpu_util)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(current_rss)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(peak_rss)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(stack_rss)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(data_rss)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_swap)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_io_in)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_io_out)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_minor_page_faults)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_major_page_faults)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_msg_sent)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_msg_recv)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_signals)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(voluntary_context_switch)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(priority_context_switch)
 
 #endif  // defined(TIMEMORY_EXTERN_INIT

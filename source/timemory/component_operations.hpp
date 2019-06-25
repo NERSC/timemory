@@ -373,7 +373,7 @@ struct print
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
     print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _output_width, bool _endline)
+          int64_t _depth, int64_t _output_width, bool _endline)
     {
         std::stringstream ss_prefix;
         std::stringstream ss;
@@ -382,7 +382,10 @@ struct print
         if(_laps > 0)
             ss << ", " << _laps << " laps";
         if(_endline)
+        {
+            ss << ", depth " << _depth;
             ss << std::endl;
+        }
         _os << ss.str();
     }
 

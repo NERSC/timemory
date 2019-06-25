@@ -65,6 +65,7 @@ __all__ = ['version_info',
            'plotting',
            'tests',
            'util',
+           'ert',
            # --------------- classes ---------------#
            'manager',
            'timer',
@@ -76,27 +77,25 @@ __all__ = ['version_info',
            'options',
            'signals',
            'signals.sys_signal',
-           # ------------ lib attributes -----------#
-           # 'timing_manager',
            # --------------- functions -------------#
            'report',
-           'clear',
-           'size',
-           'set_exit_action',
-           'LINE',                      # 5
+           'LINE',
            'FUNC',
            'FILE',
            'set_max_depth',
            'get_max_depth',
-           'toggle',                    # 10
+           'toggle',
            'enable',
            'disable',
            'is_enabled',
            'enabled',
-           'enable_signal_detection',   # 15
+           'enable_signal_detection',
            'disable_signal_detection',
            'has_mpi_support',
-           'get_missing_report'         # 20
+           'set_rusage_children',
+           'set_rusage_self',
+           'set_exit_action',
+           'timemory_init',
            ]
 
 sys.modules[__name__].__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@))
@@ -119,4 +118,3 @@ build_info = sys.modules[__name__].__getattribute__("build_info")
 
 version = sys.modules[__name__].__getattribute__("version")
 '''Version string'''
-

@@ -9,8 +9,8 @@
 
 unset(CMAKE_CXX_CLANG_TIDY)
 
-add_library(tls-model-global-dynamic INTERFACE)
-add_cxx_flag_if_avail("-ftls-model=global-dynamic" tls-model-global-dynamic)
+add_library(timemory-python-tls-model INTERFACE)
+add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-tls-model)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
@@ -23,22 +23,33 @@ file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-pybind11_add_module(libtimemory ${CMAKE_CURRENT_LIST_DIR}/libtimemory.cpp
+add_library(libtimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libtimemory.cpp
     ${CMAKE_CURRENT_LIST_DIR}/libtimemory.hpp ${pybind_headers})
 
-target_link_libraries(libtimemory PRIVATE
+target_include_directories(libtimemory SYSTEM PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
+
+target_link_libraries(libtimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
     timemory-compile-options
     timemory-analysis-tools
     timemory-cuda
     timemory-papi
-    tls-model-global-dynamic)
+    timemory-python-tls-model
+    PRIVATE pybind11::module)
 
-target_include_directories(libtimemory SYSTEM PRIVATE
-    ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
+if(TIMEMORY_USE_EXTERN_INIT)
+    target_link_libraries(libtimemory PUBLIC timemory-extern-init)
+endif()
+
+if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    target_link_libraries(libtimemory PUBLIC timemory-extern-templates)
+endif()
 
 set_target_properties(libtimemory PROPERTIES
+    PREFIX ""
+    SUFFIX "${PYTHON_MODULE_EXTENSION}"
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
@@ -152,9 +163,11 @@ set(TEST_FILES
 foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
     if("${_FILE}" MATCHES "_test.py")
-        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-            ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
-    endif("${_FILE}" MATCHES "_test.py")
+        if(${PROJECT_NAME}_MASTER_PROJECT)
+            configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+                ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
+        endif()
+    endif()
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}

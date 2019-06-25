@@ -51,6 +51,7 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
+#include "timemory/auto_list.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/auto_tuple.hpp"
 #include "timemory/component_list.hpp"
@@ -59,6 +60,7 @@
 #include "timemory/manager.hpp"
 #include "timemory/mpi.hpp"
 #include "timemory/signal_detection.hpp"
+#include "timemory/timemory.hpp"
 
 //======================================================================================//
 
@@ -70,29 +72,31 @@ extern "C"
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
-
 using namespace tim::component;
-using tim_timer_t = tim::component_tuple<wall_clock, system_clock, user_clock, cpu_clock,
-                                         cpu_util, thread_cpu_clock, thread_cpu_util,
-                                         process_cpu_clock, process_cpu_util>;
-using rss_usage_t = tim::component_tuple<current_rss, peak_rss, num_minor_page_faults,
-                                         num_major_page_faults, voluntary_context_switch,
-                                         priority_context_switch>;
-using component_enum_vec = std::vector<COMPONENT>;
-using component_list_t   = tim::component_list<
-    real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
-    thread_cpu_clock, process_cpu_clock, cpu_util, thread_cpu_util, process_cpu_util,
-    current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
-    num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-    voluntary_context_switch, priority_context_switch>;
 
-using auto_timer_t      = typename tim_timer_t::auto_type;
-using auto_usage_t      = typename rss_usage_t::auto_type;
+using auto_timer_t =
+    tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+using auto_usage_t =
+    tim::auto_tuple<current_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
+                    voluntary_context_switch, priority_context_switch>;
+using auto_list_t =
+    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
+                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
+                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
+                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
+                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
+                   voluntary_context_switch, priority_context_switch>;
+
+using tim_timer_t       = typename auto_timer_t::component_type;
+using rss_usage_t       = typename auto_usage_t::component_type;
+using component_list_t  = typename auto_list_t::component_type;
 using manager_t         = tim::manager;
 using sys_signal_t      = tim::sys_signal;
 using signal_settings_t = tim::signal_settings;
 using signal_set_t      = signal_settings_t::signal_set_t;
 using farray_t          = py::array_t<double, py::array::c_style | py::array::forcecast>;
+
+using component_enum_vec = std::vector<COMPONENT>;
 
 //======================================================================================//
 
@@ -549,12 +553,13 @@ timer_decorator(const std::string& func, const std::string& file, int line,
         return _ptr;
 
     std::stringstream keyss;
-    keyss << func;
+    if(func != "<module>")
+        keyss << func;
 
     // add arguments to end of function
     if(added_args)
         keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
+    else if(func != "<module>" && key != "" && key[0] != '@' && !added_args)
         keyss << "@";
 
     if(key != "" && !added_args)
@@ -718,9 +723,12 @@ ensure_directory_exists(string_t file_path)
 //--------------------------------------------------------------------------------------//
 
 py::object
-add_arguments(py::object parser = py::none(), std::string fname = "")
+add_arguments(py::object parser = py::none(), std::string fpath = ".")
 {
-    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
+    if(fpath == ".")
+        fpath = tim::settings::output_path();
+
+    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
     py::exec(R"(
              import sys
              import os
@@ -731,45 +739,41 @@ add_arguments(py::object parser = py::none(), std::string fname = "")
              if parser is None:
                 parser = argparse.ArgumentParser()
 
-             # Function to add default output arguments
-             def get_file_tag(fname):
-                 import os
-                 _l = os.path.basename(fname).split('.')
-                 if len(_l) > 1:
-                     _l.pop()
-                 return ("{}".format('_'.join(_l)))
+             parser.add_argument('--output-path', required=False,
+                                 default=fpath, type=str, help="Output directory")
 
-             def_fname = "timing_report"
-             if fname != "":
-                 def_fname = '_'.join(["timing_report", get_file_tag(fname)])
+             parser.add_argument('--output-prefix', required=False,
+                                 default="", type=str,
+                                 help="Filename prefix without path")
 
-             parser.add_argument('--output-dir', required=False,
-                                 default='.', type=str, help="Output directory")
-             parser.add_argument('--filename', required=False,
-                                 default=def_fname, type=str,
-                                 help="Filename for timing report w/o directory and w/o suffix")
              parser.add_argument('--disable-timers', required=False,
                                  action='store_false',
                                  dest='use_timers',
                                  help="Disable timers for script")
+
              parser.add_argument('--enable-timers', required=False,
                                  action='store_true',
                                  dest='use_timers', help="Enable timers for script")
+
              parser.add_argument('--disable-timer-serialization',
                                  required=False, action='store_false',
                                  dest='serial_file',
                                  help="Disable serialization for timers")
+
              parser.add_argument('--enable-timer-serialization',
                                  required=False, action='store_true',
                                  dest='serial_file',
                                  help="Enable serialization for timers")
+
              parser.add_argument('--max-timer-depth',
                                  help="Maximum timer depth",
                                  type=int,
                                  default=timemory.options.default_max_depth())
+
              parser.add_argument('--enable-dart',
                                  help="Print DartMeasurementFile tag for plots",
                                  required=False, action='store_true')
+
              parser.add_argument('--write-ctest-notes',
                                  help="Write a CTestNotes.cmake file for TiMemory ASCII output",
                                  required=False, action='store_true')
@@ -795,33 +799,32 @@ parse_args(py::object args)
              import timemory
 
              # Function to add default output arguments
-             timemory.options.serial_file = args.serial_file
              timemory.options.use_timers = args.use_timers
              timemory.options.max_timer_depth = args.max_timer_depth
-             timemory.options.output_dir = args.output_dir
              timemory.options.echo_dart = args.enable_dart
              timemory.options.ctest_notes = args.write_ctest_notes
+             timemory.options.output_path = args.output_path
+             timemory.options.output_prefix = args.output_prefix
+             timemory.toggle(args.use_timers)
+             timemory.set_max_depth(args.max_timer_depth)
 
-             if args.filename:
-                 timemory.options.set_output("{}".format(args.filename))
-
-             timemory.toggle(timemory.options.use_timers)
-             timemory.set_max_depth(timemory.options.max_timer_depth)
+             _enable_serial = args.serial_file
              )",
              py::globals(), locals);
+    tim::settings::json_output() = locals["_enable_serial"].cast<bool>();
 }
 
 //--------------------------------------------------------------------------------------//
 
 py::object
-add_arguments_and_parse(py::object parser = py::none(), std::string fname = "")
+add_arguments_and_parse(py::object parser = py::none(), std::string fpath = "")
 {
-    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
+    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
     py::exec(R"(
              import timemory
 
-             # Combination of timing.add_arguments and timing.parse_args but returns
-             parser = timemory.options.add_arguments(parser, fname)
+             # Combination of timemory.add_arguments and timemory.parse_args but returns
+             parser = timemory.options.add_arguments(parser, fpath)
              args = parser.parse_args()
              timemory.options.parse_args(args)
              )",
@@ -832,14 +835,14 @@ add_arguments_and_parse(py::object parser = py::none(), std::string fname = "")
 //--------------------------------------------------------------------------------------//
 
 py::object
-add_args_and_parse_known(py::object parser = py::none(), std::string fname = "")
+add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 {
-    auto locals = py::dict("parser"_a = parser, "fname"_a = fname);
+    auto locals = py::dict("parser"_a = parser, "fpath"_a = fpath);
     py::exec(R"(
              import timemory
 
              # Combination of timing.add_arguments and timing.parse_args but returns
-             parser = timemory.options.add_arguments(parser, fname)
+             parser = timemory.options.add_arguments(parser, fpath)
              args, left = parser.parse_known_args()
              timemory.options.parse_args(args)
              # replace sys.argv with unknown args only

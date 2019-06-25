@@ -48,7 +48,73 @@ storage_once_flag()
     static std::once_flag _instance;
     return _instance;
 }
+
+template <typename _Pred, typename _Tp>
+void
+reduce_merge(_Pred lhs, _Pred rhs)
+{
+    *lhs += *rhs;
 }
+/*
+template <typename _Pred, typename _Tp,
+          enable_if_t<(tim::component::record_max<_Tp>::value == true), int> = 0>
+void
+reduce_merge(_Pred lhs, _Pred rhs)
+{
+    *lhs += *rhs;
+}
+*/
+}
+}
+
+template <typename ObjectType>
+void
+tim::graph_storage<ObjectType>::merge(this_type* itr)
+{
+    if(itr == this)
+        return;
+
+    // create lock but don't immediately lock
+    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+    // lock if not already owned
+    if(!l.owns_lock())
+        l.lock();
+
+    auto _this_beg = graph().begin();
+    auto _this_end = graph().end();
+
+    bool _merged = false;
+    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
+    {
+        if(_this_itr == itr->data().head())
+        {
+            auto _iter_beg = itr->graph().begin();
+            auto _iter_end = itr->graph().end();
+            graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
+            _merged = true;
+            break;
+        }
+    }
+
+    if(_merged)
+    {
+        using predicate_type = decltype(_this_beg);
+        auto _reduce         = [](predicate_type lhs, predicate_type rhs) {
+            tim::details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
+        };
+        _this_beg = graph().begin();
+        _this_end = graph().end();
+        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+    }
+    else
+    {
+        auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
+        std::cerr << "Failure to merge graphs!" << std::endl;
+        auto g = graph();
+        graph().insert_subgraph_after(m_data.current(), itr->data().head());
+        // itr->graph()
+    }
 }
 
 //======================================================================================//
@@ -94,11 +160,58 @@ tim::graph_storage<ObjectType>::print()
         auto _this_end = graph().end();
         graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
         */
+
+        auto _compute_modified_prefix = [](const graph_node& itr) {
+            std::string _prefix = itr.prefix();  // + std::to_string(itr.id());
+            if(itr.depth() < 1)
+                return _prefix;
+
+            // fix up the prefix based on the actual depth
+            auto _ebracket = _prefix.find("]");
+            auto _boffset  = _prefix.find("|_");
+            // printf("ebracket = %i, boffset = %i, depth = %i\n", (int) _ebracket,
+            //       (int) _boffset, (int) itr.depth());
+
+            if(_boffset == std::string::npos)
+            {
+                // printf("inserting '|_' into '%s'\n", _prefix.c_str());
+                _prefix.insert(_ebracket + 2, "|_");
+            }
+            else
+            {
+                int _diff = (_boffset - (_ebracket + 2));
+                int _expd = 2 * (itr.depth() - 1);
+                // printf("diff = %i, expd = %i\n", (int) _diff, (int) _expd);
+
+                //_prefix.insert(_ebracket + 2, "  ");
+                if(_expd > _diff)
+                {
+                    int ninsert = (_expd - _diff);
+                    // printf("inserting %i values from '%s'\n", ninsert,
+                    // _prefix.c_str());
+                    for(auto i = 0; i < ninsert; ++i)
+                    {
+                        _prefix.insert(_ebracket + 1, " ");
+                    }
+                }
+                else if(_diff > _expd)
+                {
+                    int nstrip = (_diff - _expd);
+                    // printf("stripping %i values from '%s'\n", nstrip, _prefix.c_str());
+                    for(auto i = 0; i < nstrip; ++i)
+                    {
+                        _prefix = _prefix.erase(_ebracket + 1, 1);
+                    }
+                }
+            }
+            return _prefix;
+        };
+
         m_data.current() = m_data.head();
         int64_t _width   = ObjectType::get_width();
         for(const auto& itr : m_data.graph())
         {
-            int64_t _len = itr.prefix().length();
+            int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
         }
 
@@ -107,12 +220,16 @@ tim::graph_storage<ObjectType>::print()
         for(const auto& itr : m_data.graph())
         {
             auto _obj    = itr.obj();
-            auto _prefix = itr.prefix();  // + std::to_string(itr.id());
+            auto _prefix = _compute_modified_prefix(itr);
             auto _laps   = _obj.laps;
-            component::print<ObjectType>(_obj, _oss, _prefix, _laps, _width, true);
+            auto _depth  = itr.depth();
+            component::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _width,
+                                         true);
             component::print<ObjectType>(_obj, _mss, false);
         }
 
+        // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
+        //          << ", thread = " << std::this_thread::get_id() << "..." << std::endl;
         if(settings::file_output() && _oss.str().length() > 0)
         {
             auto label = ObjectType::label();

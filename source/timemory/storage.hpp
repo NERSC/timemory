@@ -61,7 +61,31 @@ namespace details
 {
 template <typename StorageType>
 struct storage_deleter;
+
+template <typename ObjectType>
+class graph_storage;
+
+template <typename _Tp>
+using storage_smart_pointer = std::unique_ptr<_Tp, details::storage_deleter<_Tp>>;
+template <typename _Tp>
+using storage_singleton_t = singleton<_Tp, storage_smart_pointer<_Tp>>;
+
 }  // namespace details
+
+//#if defined(TIMEMORY_EXTERN_INIT)
+// template <typename _Tp>
+// details::storage_singleton_t<_Tp>&
+// get_storage_singleton();
+//#else
+template <typename _Tp>
+details::storage_singleton_t<_Tp>&
+get_storage_singleton()
+{
+    using _single_t            = details::storage_singleton_t<_Tp>;
+    static _single_t _instance = _single_t::instance();
+    return _instance;
+}
+//#endif  // defined(TIMEMORY_EXTERN_INIT
 
 //======================================================================================//
 // static functions that return a string identifying the data type (used in Python plot)
@@ -320,14 +344,8 @@ public:
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = default;
 
-    //#if !defined(TIMEMORY_EXTERN_INIT)
     static pointer instance() { return get_singleton().instance(); }
     static pointer master_instance() { return get_singleton().master_instance(); }
-    //#else
-    // initialize in the library
-    // static pointer instance();
-    // static pointer master_instance();
-    //#endif
 
     void print();
     bool empty() const { return (m_node_ids.size() == 0); }
@@ -352,6 +370,9 @@ public:
         auto _update = [&](iterator itr) {
             exists         = true;
             m_data.depth() = itr->depth();
+            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
+            //          << ", thread = " << std::this_thread::get_id() << "..."
+            //          << " updating to depth " << itr->depth() << "..." << std::endl;
             return (m_data.current() = itr);
         };
 
@@ -368,7 +389,11 @@ public:
         auto _insert_child = [&]() {
             exists       = false;
             node.depth() = m_data.depth() + 1;
-            auto itr     = m_data.append_child(node);
+            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
+            //          << ", thread = " << std::this_thread::get_id() << "..."
+            //          << " inserting child at depth " << node.depth() << "..."
+            //          << std::endl;
+            auto itr = m_data.append_child(node);
             // m_node_ids.insert(std::make_pair(hash_id, itr));
             return itr;
         };
@@ -378,6 +403,10 @@ public:
         {
             if(this == master_instance())
             {
+                // std::cout << "[master] storage<" << ObjectType::label() << "> = " <<
+                // this
+                //          << ", thread = " << std::this_thread::get_id() << "..."
+                //          << " creating new graph_data..." << std::endl;
                 m_data         = graph_data(node);
                 exists         = false;
                 m_data.depth() = 0;
@@ -484,62 +513,14 @@ protected:
                 itr->data().reset();
     }
 
-    void merge(this_type* itr)
-    {
-        if(itr == this)
-            return;
-
-        // create lock but don't immediately lock
-        auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-        // lock if not already owned
-        if(!l.owns_lock())
-            l.lock();
-
-        auto _this_beg = graph().begin();
-        auto _this_end = graph().end();
-
-        bool _merged = false;
-        for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
-        {
-            if(_this_itr == itr->data().head())
-            {
-                auto _iter_beg = itr->graph().begin();
-                auto _iter_end = itr->graph().end();
-                graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
-                _merged = true;
-                break;
-            }
-        }
-
-        if(_merged)
-        {
-            using predicate_type = decltype(_this_beg);
-            auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-            _this_beg    = graph().begin();
-            _this_end    = graph().end();
-            graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
-        }
-        else
-        {
-            auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
-            std::cerr << "Failure to merge graphs!" << std::endl;
-            auto g = graph();
-            graph().insert_subgraph_after(m_data.current(), itr->data().head());
-            // itr->graph()
-        }
-    }
+    void merge(this_type* itr);
 
 protected:
     graph_data                            m_data;
     std::unordered_map<int64_t, iterator> m_node_ids;
 
 private:
-    static singleton_t& get_singleton()
-    {
-        static singleton_t _instance = singleton_t::instance();
-        return _instance;
-    }
+    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
 
     static std::atomic<int64_t>& instance_count()
     {

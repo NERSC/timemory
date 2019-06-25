@@ -28,13 +28,17 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/source/*.cpp
         ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
         ${PROJECT_SOURCE_DIR}/source/python/*.cpp)
-    file(GLOB_RECURSE examples
-        ${PROJECT_SOURCE_DIR}/examples/*.h
-        ${PROJECT_SOURCE_DIR}/examples/*.c
-        ${PROJECT_SOURCE_DIR}/examples/*.hpp
-        ${PROJECT_SOURCE_DIR}/examples/*.cpp
-        ${PROJECT_SOURCE_DIR}/examples/*.cuh
-        ${PROJECT_SOURCE_DIR}/examples/*.cu)
+    if(TIMEMORY_BUILD_EXAMPLES)
+        file(GLOB_RECURSE examples
+            ${PROJECT_SOURCE_DIR}/examples/*.h
+            ${PROJECT_SOURCE_DIR}/examples/*.c
+            ${PROJECT_SOURCE_DIR}/examples/*.hpp
+            ${PROJECT_SOURCE_DIR}/examples/*.cpp
+            ${PROJECT_SOURCE_DIR}/examples/*.cuh
+            ${PROJECT_SOURCE_DIR}/examples/*.cu)
+    else()
+        set(examples)
+    endif()
 
     set(FORMAT_NAME format)
     if(TARGET format)

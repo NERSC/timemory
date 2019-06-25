@@ -49,7 +49,8 @@ namespace tim
 {
 // initialization (creates manager and configures output path)
 void
-timemory_init(int argc, char** argv);
+timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
 
 namespace settings
 {
@@ -96,8 +97,8 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, memory_units, "")
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
 
 // output control
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")  // folder
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")                // file prefix
 
 //--------------------------------------------------------------------------------------//
 
@@ -469,7 +470,8 @@ tim::settings::compose_output_filename(const std::string& _tag, std::string _ext
 //--------------------------------------------------------------------------------------//
 
 inline void
-tim::timemory_init(int argc, char** argv)
+tim::timemory_init(int argc, char** argv, const std::string& _prefix,
+                   const std::string& _suffix)
 {
     consume_parameters(argc);
     std::string exe_name = argv[0];
@@ -480,9 +482,13 @@ tim::timemory_init(int argc, char** argv)
     while(exe_name.find("/") != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
+    std::string pyext = ".py";
+    if(exe_name.find(pyext))
+        exe_name.erase(exe_name.find(pyext), pyext.length() + 1);
+
     gperf::profiler_start(exe_name);
 
-    exe_name = "timemory-" + exe_name + "-output";
+    exe_name = _prefix + exe_name + _suffix;
     for(auto& itr : exe_name)
     {
         if(itr == '_')

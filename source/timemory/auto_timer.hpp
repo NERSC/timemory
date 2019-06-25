@@ -44,9 +44,7 @@ TIM_NAMESPACE_BEGIN
 
 using auto_timer =
     auto_tuple<component::real_clock, component::system_clock, component::user_clock,
-               component::cpu_clock, component::cpu_util, component::thread_cpu_clock,
-               component::thread_cpu_util, component::process_cpu_clock,
-               component::process_cpu_util>;
+               component::cpu_clock, component::cpu_util>;
 
 //--------------------------------------------------------------------------------------//
 
