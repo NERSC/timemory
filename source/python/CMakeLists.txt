@@ -39,14 +39,14 @@ target_include_directories(libtimemory SYSTEM PRIVATE
     ${CMAKE_CURRENT_LIST_DIR}/pybind11/include)
 
 set_target_properties(libtimemory PROPERTIES
-    LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
-    ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
-    RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory
-    PDB_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/timemory)
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
+    PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory)
 
 foreach(_SUBMODULE plotting mpi_support util ert)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
-    set(BINARY_DIR ${PROJECT_BINARY_DIR}/timemory/${_SUBMODULE})
+    set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
 
     # copy over the python file
     if(EXISTS ${SOURCE_DIR}/${_SUBMODULE}.py)
@@ -105,12 +105,12 @@ if(TIMEMORY_USE_MPI AND MPI_FOUND)
 
 endif(TIMEMORY_USE_MPI AND MPI_FOUND)
 
-file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
-file(WRITE ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
+file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_exe_info.txt "${MPI_EXE_INFO}")
+file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_c_info.txt "${MPI_C_INFO}")
+file(WRITE ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_cxx_info.txt "${MPI_CXX_INFO}")
 
 foreach(_TYPE exe c cxx)
-    install(FILES ${PROJECT_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
+    install(FILES ${CMAKE_BINARY_DIR}/timemory/mpi_support/mpi_${_TYPE}_info.txt
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/mpi_support)
 endforeach(_TYPE exe c cxx)
 
@@ -119,15 +119,15 @@ endforeach(_TYPE exe c cxx)
 # Install the python stuff
 #
 configure_file(${PROJECT_SOURCE_DIR}/timemory/__init__.py.in
-    ${PROJECT_BINARY_DIR}/timemory/__init__.py @ONLY)
-install(FILES ${PROJECT_BINARY_DIR}/timemory/__init__.py
+    ${CMAKE_BINARY_DIR}/timemory/__init__.py @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/timemory/__init__.py
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
     COMPONENT python)
 
 foreach(PYLIB_SUBMODULE options units signals)
     configure_file(${PROJECT_SOURCE_DIR}/timemory/${PYLIB_SUBMODULE}.py
-        ${PROJECT_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
-    install(FILES ${PROJECT_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
+        ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py @ONLY)
+    install(FILES ${CMAKE_BINARY_DIR}/timemory/${PYLIB_SUBMODULE}.py
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
         COMPONENT python)
 endforeach()
@@ -153,15 +153,15 @@ foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
     if("${_FILE}" MATCHES "_test.py")
         configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-            ${PROJECT_BINARY_DIR}/${_FILE} @ONLY)
+            ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
     endif("${_FILE}" MATCHES "_test.py")
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-        ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE} @ONLY)
+        ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE} @ONLY)
 
     # install them though
-    install(FILES ${PROJECT_BINARY_DIR}/timemory/tests/${_FILE}
+    install(FILES ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE}
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests
         COMPONENT python)
 

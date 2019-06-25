@@ -66,6 +66,8 @@ struct base : public tim::counted_object<_Tp>
     // friend struct pointer_operator<_Up, _Op>;
     // friend struct pointer_deleter<_Tp>;
 
+    static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
+
 public:
     using Type           = _Tp;
     using this_type      = base<_Tp, value_type>;
