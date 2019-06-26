@@ -483,7 +483,7 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
     std::string pyext = ".py";
-    if(exe_name.find(pyext))
+    if(exe_name.find(pyext) != std::string::npos)
         exe_name.erase(exe_name.find(pyext), pyext.length() + 1);
 
     gperf::profiler_start(exe_name);
