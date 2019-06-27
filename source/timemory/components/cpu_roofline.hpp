@@ -58,13 +58,17 @@ namespace component
 template <int... EventTypes>
 struct cpu_roofline
 : public base<cpu_roofline<EventTypes...>,
-              std::pair<std::array<long long, sizeof...(EventTypes)>, int64_t>>
+              std::pair<std::array<long long, sizeof...(EventTypes)>, int64_t>,
+              policy::initialization, policy::finalization>
 {
+    friend struct policy::wrapper<policy::initialization, policy::finalization>;
+
     using size_type  = std::size_t;
     using array_type = std::array<long long, sizeof...(EventTypes)>;
     using value_type = std::pair<array_type, int64_t>;
     using this_type  = cpu_roofline<EventTypes...>;
-    using base_type  = base<this_type, value_type>;
+    using base_type =
+        base<this_type, value_type, policy::initialization, policy::finalization>;
 
     using papi_type = papi_tuple<0, EventTypes...>;
     using ratio_t   = typename real_clock::ratio_t;
@@ -82,6 +86,17 @@ struct cpu_roofline
     static const short                   width      = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
+
+    static void invoke_initialize()
+    {
+        int events[] = { EventTypes... };
+        tim::papi::start_counters(events, num_events);
+    }
+    static void invoke_finalize()
+    {
+        array_type events = {};
+        tim::papi::stop_counters(events.data(), num_events);
+    }
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_roofline"; }
@@ -185,7 +200,7 @@ struct cpu_roofline
 
 private:
     // create and destroy a papi_tuple<...> so that the event set gets registered
-    papi_type _impl;
+    // papi_type _impl;
 };
 
 //--------------------------------------------------------------------------------------//

@@ -82,11 +82,13 @@ struct papi_tuple
     {
         int events[] = { EventTypes... };
         tim::papi::start_counters(events, num_events);
+        printf("starting papi counter...\n");
     }
     static void invoke_finalize()
     {
         value_type events = {};
         tim::papi::stop_counters(events.data(), num_events);
+        printf("stopping papi counter...\n");
     }
 
     papi_tuple()

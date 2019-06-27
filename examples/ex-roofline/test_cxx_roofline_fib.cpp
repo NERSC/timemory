@@ -28,30 +28,35 @@
 #include <thread>
 #include <timemory/timemory.hpp>
 
-#include "kernel.hpp"
-
-using namespace tim::component;
-
+using namespace tim::component;  // RELEVANT
 using roofline_t   = cpu_roofline<PAPI_DP_OPS>;
-using papi_tup_t   = papi_tuple<0, PAPI_DP_OPS>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using comp_tuple_t = typename auto_tuple_t::component_type;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, roofline_t>;
+
+double
+fib(double n)
+{
+    return (n < 2.0) ? n : 1.0 * (fib(n - 1) + fib(n - 2));
+}
 
 int
 main(int argc, char** argv)
 {
-    // STEP 4: configure output and parse env  (optional)
-    tim::settings::precision() = 6;
-    tim::timemory_init(argc, argv);
-    tim::print_env();
-    std::cout << std::endl;
+    tim::timemory_init(argc, argv);  // RELEVANT
 
-    comp_tuple_t main("overall timer", true);
-    main.start();
+    // RELEVANT
+    using comp_tuple_t = typename auto_tuple_t::component_type;
+    comp_tuple_t _main("overall timer", true);
 
-    // ERT Kernel goes here
-    ert_main(argc, argv);
+    _main.start();  // RELEVANT
+    for(auto n : { 35, 38, 45 })
+    {
+        // RELEVANT
+        auto label = tim::str::join("", "fibonacci(", n, ")");
+        TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
+        auto ret = fib(n);
+        printf("fib(%i) = %f\n", n, ret);
+    }
+    _main.stop();  // RELEVANT
 
-    main.stop();
-    std::cout << main << "\n" << std::endl;
+    std::cout << "\n" << _main << "\n" << std::endl;  // RELEVANT
 }
