@@ -153,7 +153,30 @@ template <class T>
 using decay_t = typename std::decay<T>::type;
 
 //======================================================================================//
+// check if type is in expansion
+//
+namespace impl
+{
 
+template <typename...>
+struct is_one_of {
+    static constexpr bool value = false;
+};
+
+template <typename F, typename S, typename... T>
+struct is_one_of<F, S, T...> {
+    static constexpr bool value =
+        std::is_same<F, S>::value || is_one_of<F, T...>::value;
+};
+
+} // namespace impl
+
+template <typename _Tp, typename... _Types>
+using is_one_of_v = typename impl::is_one_of<_Tp, _Types...>::value;
+
+//======================================================================================//
+// remove first type from expansion
+//
 template <typename List>
 class pop_front_t;
 
@@ -168,7 +191,8 @@ template <typename List>
 using pop_front = typename pop_front_t<List>::Type;
 
 //======================================================================================//
-
+// add type to expansion
+//
 template <typename List, typename NewElement>
 class push_back_t;
 
@@ -183,19 +207,16 @@ template <typename List, typename NewElement>
 using push_back = typename push_back_t<List, NewElement>::type;
 
 //======================================================================================//
-
+// get the index of a type in expansion
+//
 template <typename _Tp, typename Type>
 struct index_of;
-
-//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... Types>
 struct index_of<_Tp, std::tuple<_Tp, Types...>>
 {
     static constexpr std::size_t value = 0;
 };
-
-//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename Head, typename... Tail>
 struct index_of<_Tp, std::tuple<Head, Tail...>>

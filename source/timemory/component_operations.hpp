@@ -412,10 +412,10 @@ struct print
     template <typename _Up                                            = _Tp,
               enable_if_t<(impl_available<_Up>::value == true), char> = 0>
     print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _output_width, bool _endline)
+          int64_t _depth, int64_t _output_width, bool _endline)
     {
         if(_obj)
-            print(*_obj, _os, _prefix, _laps, _output_width, _endline);
+            print(*_obj, _os, _prefix, _laps, _depth, _output_width, _endline);
     }
 
     //----------------------------------------------------------------------------------//
@@ -435,7 +435,7 @@ struct print
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool)
     {
     }
 
@@ -456,7 +456,7 @@ struct print
 
     template <typename _Up                                             = _Tp,
               enable_if_t<(impl_available<_Up>::value == false), char> = 0>
-    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, bool)
+    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool)
     {
     }
 };

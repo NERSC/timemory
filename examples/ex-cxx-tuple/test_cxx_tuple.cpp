@@ -39,27 +39,33 @@
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
                                      peak_rss, current_rss, papi_tuple_t>;
-using full_measurement_t =
-    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
-                         num_io_out, num_minor_page_faults, num_major_page_faults,
-                         num_msg_sent, num_msg_recv, num_signals,
-                         voluntary_context_switch, priority_context_switch, papi_tuple_t>;
+using __full_measurement_t =
+    tim::auto_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+                    num_io_out, num_minor_page_faults, num_major_page_faults,
+                    num_msg_sent, num_msg_recv, num_signals, voluntary_context_switch,
+                    priority_context_switch, papi_tuple_t>;
 
-using measurement_t =
-    tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
-                         thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                         process_cpu_util, monotonic_clock, monotonic_raw_clock,
-                         papi_tuple_t>;
-using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                                       thread_cpu_clock, process_cpu_clock>;
+using __measurement_t =
+    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+                    thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                    process_cpu_util, monotonic_clock, monotonic_raw_clock, papi_tuple_t>;
+
+using __printed_t = tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                                    thread_cpu_clock, process_cpu_clock>;
+
+using full_measurement_t = typename __full_measurement_t::component_type;
+using measurement_t      = typename __measurement_t::component_type;
+using printed_t          = typename __printed_t::component_type;
 
 // measure multiple clock time + resident set sizes
 using full_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                     process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
+
 // measure wall-clock, thread cpu-clock + process cpu-utilization
 using small_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
