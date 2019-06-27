@@ -60,7 +60,7 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers timemory-compile-options)
+    LINK_LIBRARIES      timemory-headers)
 
 build_library(
     TYPE                STATIC
@@ -75,6 +75,10 @@ build_library(
 
 add_interface_library(timemory-cxx)
 target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
+
+# private compile options
+target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options)
+target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options)
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
     target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)

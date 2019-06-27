@@ -72,7 +72,9 @@ endif()
 # debug-safe optimizations
 #
 add_cxx_flag_if_avail("-faligned-new")
-add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
+if(NOT TIMEMORY_USE_SANITIZER)
+    add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
+endif()
 
 if(TIMEMORY_BUILD_LTO)
     add_c_flag_if_avail("-flto")

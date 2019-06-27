@@ -50,18 +50,15 @@ target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFA
 add_interface_library(timemory-analysis-tools)
 
 if(TIMEMORY_USE_SANITIZER)
-    target_link_libraries(timemory-analysis-tools INTERFACE
-        timemory-sanitizer)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-sanitizer)
 endif()
 
 if(TIMEMORY_USE_GPERF)
-    target_link_libraries(timemory-analysis-tools INTERFACE
-        timemory-gperftools)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-gperftools)
 endif()
 
 if(TIMEMORY_USE_COVERAGE)
-    target_link_libraries(timemory-analysis-tools INTERFACE
-        timemory-coverage)
+    target_link_libraries(timemory-analysis-tools INTERFACE timemory-coverage)
 endif()
 
 

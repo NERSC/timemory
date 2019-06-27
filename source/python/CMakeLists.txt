@@ -10,7 +10,9 @@
 unset(CMAKE_CXX_CLANG_TIDY)
 
 add_library(timemory-python-tls-model INTERFACE)
-add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-tls-model)
+if(NOT TIMEMORY_USE_SANITIZER)
+    add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-tls-model)
+endif()
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"

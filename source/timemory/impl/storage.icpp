@@ -42,10 +42,10 @@ namespace tim
 {
 namespace details
 {
-inline std::once_flag&
+inline std::atomic<int>&
 storage_once_flag()
 {
-    static std::once_flag _instance;
+    static std::atomic<int> _instance;
     return _instance;
 }
 
@@ -136,7 +136,8 @@ tim::graph_storage<ObjectType>::print()
         // disable gperf if profiling
         try
         {
-            std::call_once(details::storage_once_flag(), &gperf::profiler_stop);
+            if(details::storage_once_flag()++ == 0)
+                gperf::profiler_stop();
         }
         catch(std::exception& e)
         {
