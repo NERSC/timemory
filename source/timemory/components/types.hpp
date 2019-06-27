@@ -48,7 +48,7 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 namespace component
 {
 // generic static polymorphic base class
-template <typename _Tp, typename value_type = int64_t>
+template <typename _Tp, typename value_type = int64_t, typename... _Policies>
 struct base;
 
 // timing

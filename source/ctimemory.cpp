@@ -248,6 +248,7 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
 //                      C++ interface
 //
 //======================================================================================//
+#if defined(TIMEMORY_BUILD_C)
 
 extern "C" tim_api int
 cxx_timemory_enabled(void)
@@ -428,6 +429,7 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
 }
+#endif
 
 //======================================================================================//
 #if defined(TIMEMORY_EXTERN_INIT)

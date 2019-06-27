@@ -98,7 +98,7 @@ struct live_count
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
     using string_t   = std::string;
 
     live_count(base_type& obj, int64_t& counter) { counter = obj.m_count; }
@@ -111,7 +111,7 @@ struct set_prefix
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
     using string_t   = std::string;
 
     set_prefix(base_type& obj, const bool& exists, const string_t& _prefix)
@@ -128,7 +128,7 @@ struct insert_node
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
                 const int64_t& id)
@@ -148,6 +148,11 @@ struct insert_node
     {
         obj.insert_node(_prefix, id);
     }
+
+    insert_node(Type& obj, const string_t& _prefix, const int64_t& id)
+    {
+        obj.insert_node(_prefix, id);
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -157,7 +162,7 @@ struct pop_node
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit pop_node(base_type& obj) { obj.pop_node(); }
 };
@@ -169,7 +174,7 @@ struct record
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit record(base_type& obj) { obj.value = Type::record(); }
 
@@ -193,7 +198,7 @@ struct reset
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit reset(base_type& obj) { obj.reset(); }
 };
@@ -205,7 +210,7 @@ struct measure
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit measure(base_type& obj) { obj.measure(); }
 };
@@ -217,7 +222,7 @@ struct start
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit start(base_type& obj) { obj.start(); }
 };
@@ -229,7 +234,7 @@ struct stop
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit stop(base_type& obj) { obj.stop(); }
 };
@@ -241,7 +246,7 @@ struct conditional_start
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit conditional_start(base_type& obj) { obj.conditional_start(); }
 
@@ -259,7 +264,7 @@ struct conditional_stop
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit conditional_stop(base_type& obj) { obj.conditional_stop(); }
 
@@ -277,7 +282,7 @@ struct minus
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     minus(base_type& obj, const int64_t& rhs) { obj -= rhs; }
     minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
@@ -290,7 +295,7 @@ struct plus
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     template <typename _Up = _Tp, enable_if_t<(record_max<_Up>::value == true), int> = 0>
     plus(base_type& obj, const base_type& rhs)
@@ -314,7 +319,7 @@ struct multiply
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     multiply(base_type& obj, const int64_t& rhs) { obj *= rhs; }
     multiply(base_type& obj, const base_type& rhs) { obj *= rhs; }
@@ -327,7 +332,7 @@ struct divide
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     divide(base_type& obj, const int64_t& rhs) { obj /= rhs; }
     divide(base_type& obj, const base_type& rhs) { obj /= rhs; }
@@ -340,7 +345,7 @@ struct print
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
     // only if components are available
@@ -468,7 +473,7 @@ struct serialization
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     serialization(base_type& obj, _Archive& ar, const unsigned int version)
     {
@@ -491,7 +496,7 @@ struct pointer_operator
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     template <typename... _Args>
     explicit pointer_operator(base_type* obj, _Args&&... _args)
@@ -537,7 +542,7 @@ struct pointer_deleter
 {
     using Type       = _Tp;
     using value_type = typename Type::value_type;
-    using base_type  = base<Type, value_type>;
+    using base_type  = typename Type::base_type;
 
     explicit pointer_deleter(Type*& obj) { delete obj; }
     explicit pointer_deleter(base_type*& obj) { delete static_cast<Type*&>(obj); }

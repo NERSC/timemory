@@ -36,60 +36,82 @@ namespace tim
 {
 namespace policy
 {
-
 // these are policy classes
-struct serialization;
-// struct type_addition;
-struct initialization;
-struct finalization;
-
-template <typename... _Policies>
-class PolicyWrapper : _Policies...
+struct serialization
 {
-public:
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<serialization, _Policies...> == true), int> = 0>
-    void apply_serialization(_Tp&& obj)
-    {
-        serialization::apply(std::forward<_Tp>(obj));
-    }
-
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<serialization, _Policies...> == false), int> = 0>
-    void apply_serialization(_Tp&&)
-    {
-
-    }
-
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<initialization, _Policies...> == true), int> = 0>
-    void apply_initialization(_Tp&& obj)
-    {
-        initialization::apply(std::forward<_Tp>(obj));
-    }
-
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<initialization, _Policies...> == false), int> = 0>
-    void apply_initialization(_Tp&&)
-    {
-
-    }
-
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<finalization, _Policies...> == true), int> = 0>
-    void apply_finalization(_Tp&& obj)
-    {
-        finalization::apply(std::forward<_Tp>(obj));
-    }
-
-    template <typename _Tp,
-              enable_if_t<(is_one_of_v<finalization, _Policies...> == false), int> = 0>
-    void apply_finalization(_Tp&&)
-    {
-
-    }
-
 };
 
-}
-}
+// struct type_addition;
+struct initialization
+{
+};
+
+struct finalization
+{
+};
+
+template <typename... _Policies>
+struct wrapper
+{
+    using type = std::tuple<_Policies...>;
+
+    //----------------------------------------------------------------------------------//
+    //  Policy is specified
+    //----------------------------------------------------------------------------------//
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<serialization, typename _Polp::type>::value == true),
+                    int> = 0>
+    static void invoke_serialize()
+    {
+        _Tp::invoke_serialize();
+    }
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<initialization, typename _Polp::type>::value == true),
+                    int> = 0>
+    static void invoke_initialize()
+    {
+        _Tp::invoke_initialize();
+    }
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<finalization, typename _Polp::type>::value == true),
+                    int> = 0>
+    static void invoke_finalize()
+    {
+        _Tp::invoke_finalize();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  Policy is NOT specified
+    //----------------------------------------------------------------------------------//
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<serialization, typename _Polp::type>::value == false),
+                    int> = 0>
+    static void invoke_serialize()
+    {
+    }
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<initialization, typename _Polp::type>::value == false),
+                    int> = 0>
+    static void invoke_initialize()
+    {
+    }
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of_v<finalization, typename _Polp::type>::value == false),
+                    int> = 0>
+    static void invoke_finalize()
+    {
+    }
+};
+
+}  // namespace policy
+}  // namespace tim

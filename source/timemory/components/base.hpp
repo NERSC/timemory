@@ -26,6 +26,7 @@
 
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
+#include "timemory/policy.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 
@@ -35,7 +36,7 @@ namespace tim
 {
 namespace component
 {
-template <typename _Tp, typename value_type>
+template <typename _Tp, typename value_type, typename... _Policies>
 struct base : public tim::counted_object<_Tp>
 {
     //
@@ -70,7 +71,8 @@ struct base : public tim::counted_object<_Tp>
 
 public:
     using Type           = _Tp;
-    using this_type      = base<_Tp, value_type>;
+    using policy_type    = policy::wrapper<_Policies...>;
+    using this_type      = base<_Tp, value_type, _Policies...>;
     using storage_type   = graph_storage<Type>;
     using graph_iterator = typename storage_type::iterator;
 
@@ -81,6 +83,12 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
+private:
+    static void serialization_policy() { policy_type::template invoke_serialize<_Tp>(); }
+    static void initialize_policy() { policy_type::template invoke_initialize<_Tp>(); }
+    static void finalize_policy() { policy_type::template invoke_finalize<_Tp>(); }
+
+public:
     //----------------------------------------------------------------------------------//
     // function operator
     //

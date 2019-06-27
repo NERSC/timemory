@@ -330,6 +330,10 @@ public:
             m_data.current() = master_instance()->data().current();
             m_data.depth()   = master_instance()->data().depth();
         }
+        else
+        {
+            ObjectType::initialize_policy();
+        }
     }
 
     ~graph_storage()

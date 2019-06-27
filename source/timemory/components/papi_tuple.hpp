@@ -46,13 +46,17 @@ namespace component
 template <int EventSet, int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventSet, EventTypes...>,
-              std::array<long long, sizeof...(EventTypes)>>
+              std::array<long long, sizeof...(EventTypes)>, policy::initialization,
+              policy::finalization>
 , public static_counted_object<papi_tuple<EventSet>>
 {
+    friend struct policy::wrapper<policy::initialization, policy::finalization>;
+
     using size_type   = std::size_t;
     using value_type  = std::array<long long, sizeof...(EventTypes)>;
     using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_tuple<EventSet, EventTypes...>, value_type>;
+    using base_type   = base<papi_tuple<EventSet, EventTypes...>, value_type,
+                           policy::initialization, policy::finalization>;
     using this_type   = papi_tuple<EventSet, EventTypes...>;
     using event_count = static_counted_object<papi_tuple<EventSet>>;
 
@@ -74,12 +78,23 @@ struct papi_tuple
     template <typename _Tp>
     using array_t = std::array<_Tp, num_events>;
 
+    static void invoke_initialize()
+    {
+        int events[] = { EventTypes... };
+        tim::papi::start_counters(events, num_events);
+    }
+    static void invoke_finalize()
+    {
+        value_type events = {};
+        tim::papi::stop_counters(events.data(), num_events);
+    }
+
     papi_tuple()
     {
         if(event_count::is_master())
         {
             // add_event_types();
-            start_event_set();
+            // start_event_set();
         }
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
@@ -89,7 +104,7 @@ struct papi_tuple
     {
         if(event_count::live() < 1 && event_count::is_master())
         {
-            stop_event_set();
+            // stop_event_set();
             // remove_event_types();
         }
     }

@@ -96,6 +96,9 @@ endif()
 #
 if(TIMEMORY_BUILD_C)
 
+    target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
+    target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
+
     build_library(
         PIC
         TYPE                SHARED

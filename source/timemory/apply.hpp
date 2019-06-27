@@ -73,25 +73,25 @@ struct _Itup_cat<_Index_tuple<_Ind1...>, _Index_tuple<_Ind2...>>
 //--------------------------------------------------------------------------------------//
 
 // Builds an _Index_tuple<0, 1, 2, ..., _Num-1>.
-template <size_t _Num>
+template <size_t _Num, size_t _Off = 0>
 struct _Build_index_tuple
-: _Itup_cat<typename _Build_index_tuple<_Num / 2>::__type,
-            typename _Build_index_tuple<_Num - _Num / 2>::__type>
+: _Itup_cat<typename _Build_index_tuple<_Num / 2, _Off>::__type,
+            typename _Build_index_tuple<_Num - _Num / 2, _Off>::__type>
 {
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct _Build_index_tuple<1>
+template <size_t _Off>
+struct _Build_index_tuple<1, _Off>
 {
-    using __type = _Index_tuple<0>;
+    using __type = _Index_tuple<0 + _Off>;
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <>
-struct _Build_index_tuple<0>
+template <size_t _Off>
+struct _Build_index_tuple<0, _Off>
 {
     using __type = _Index_tuple<>;
 };
@@ -157,22 +157,29 @@ using decay_t = typename std::decay<T>::type;
 //
 namespace impl
 {
-
 template <typename...>
-struct is_one_of {
+struct is_one_of
+{
     static constexpr bool value = false;
 };
 
 template <typename F, typename S, typename... T>
-struct is_one_of<F, S, T...> {
+struct is_one_of<F, S, std::tuple<T...>>
+{
     static constexpr bool value =
-        std::is_same<F, S>::value || is_one_of<F, T...>::value;
+        std::is_same<F, S>::value || is_one_of<F, std::tuple<T...>>::value;
 };
 
-} // namespace impl
+template <typename F, typename S, typename... T>
+struct is_one_of<F, std::tuple<S, T...>>
+{
+    static constexpr bool value = is_one_of<F, S, std::tuple<T...>>::value;
+};
 
-template <typename _Tp, typename... _Types>
-using is_one_of_v = typename impl::is_one_of<_Tp, _Types...>::value;
+}  // namespace impl
+
+template <typename _Tp, typename _Types>
+using is_one_of_v = typename impl::is_one_of<_Tp, _Types>;
 
 //======================================================================================//
 // remove first type from expansion
@@ -286,13 +293,13 @@ template <>
 struct _apply_impl<void>
 {
     //----------------------------------------------------------------------------------//
-
+    /*
     template <typename _Fn, typename _Tuple, size_t... _Idx>
     static void all(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
     {
         __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
     }
-
+    */
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
@@ -315,7 +322,7 @@ struct _apply_impl<void>
     }
 
     //----------------------------------------------------------------------------------//
-
+    /*
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename... _Args,
               enable_if_t<(_N == _Nt), char> = 0>
     static void loop(_Tuple&& __t, _Args&&... __args)
@@ -333,6 +340,37 @@ struct _apply_impl<void>
         // recursive call
         loop<_N + 1, _Nt, _Tuple, _Args...>(std::forward<_Tuple>(__t),
                                             std::forward<_Args>(__args)...);
+    }
+    */
+    //----------------------------------------------------------------------------------//
+
+    /*template <typename _Access, typename... _Args>
+    static void unroll_access(std::tuple<>&&, index_sequence<0>, _Args&&...)
+    {
+    }*/
+
+    template <template <typename> class _Access, size_t _N, typename _Tuple,
+              typename... _Args, enable_if_t<(_N == 0), char> = 0>
+    static void unroll_access(_Tuple&& __t, _Args&&... __args)
+    {
+        using _Tp = decltype(std::get<_N>(__t));
+        using _Rp = typename std::remove_reference<_Tp>::type;
+        using _Ap = typename std::remove_const<_Rp>::type;
+        _Access<_Ap>(std::forward<_Tp>(std::get<_N>(__t)),
+                     std::forward<_Args>(__args)...);
+    }
+
+    template <template <typename> class _Access, size_t _N, typename _Tuple,
+              typename... _Args, enable_if_t<(_N > 0), char> = 0>
+    static void unroll_access(_Tuple&& __t, _Args&&... __args)
+    {
+        using _Tp = decltype(std::get<_N>(__t));
+        using _Rp = typename std::remove_reference<_Tp>::type;
+        using _Ap = typename std::remove_const<_Rp>::type;
+        _Access<_Ap>(std::forward<_Tp>(std::get<_N>(__t)),
+                     std::forward<_Args>(__args)...);
+        unroll_access<_Access, _N - 1, _Tuple, _Args...>(std::forward<_Tuple>(__t),
+                                                         std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -420,7 +458,7 @@ struct _apply_impl<void>
     }
 
     //----------------------------------------------------------------------------------//
-
+    /*
     template <typename _Tp, typename _Funct, typename... _Args,
               enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     static void apply_function(_Tp&& __t, _Funct&& __f, _Args&&... __args)
@@ -526,7 +564,7 @@ struct _apply_impl<void>
             std::forward<_Tuple>(__t), std::forward<_Funct>(__f),
             std::forward<_Args>(__args)...);
     }
-
+    */
     //----------------------------------------------------------------------------------//
 };
 
@@ -536,7 +574,7 @@ template <typename _Ret>
 struct apply
 {
     //----------------------------------------------------------------------------------//
-
+    /*
     template <typename _Fn, typename _Tuple,
               std::size_t _N    = std::tuple_size<decay_t<_Tuple>>::value,
               typename _Indices = make_index_sequence<_N>>
@@ -545,7 +583,7 @@ struct apply
         return _apply_impl<_Ret>::template all<_Fn, _Tuple>(
             std::forward<_Fn>(__f), std::forward<_Tuple>(__t), _Indices{});
     }
-
+    */
     //----------------------------------------------------------------------------------//
 
     template <typename... _Args,
@@ -567,7 +605,7 @@ template <>
 struct apply<void>
 {
     //----------------------------------------------------------------------------------//
-
+    /*
     template <typename _Fn, typename _Tuple,
               std::size_t _N    = std::tuple_size<decay_t<_Tuple>>::value,
               typename _Indices = make_index_sequence<_N>>
@@ -576,7 +614,7 @@ struct apply<void>
         _apply_impl<void>::template all<_Fn, _Tuple>(
             std::forward<_Fn>(__f), std::forward<_Tuple>(__t), _Indices{});
     }
-
+    */
     //----------------------------------------------------------------------------------//
 
     template <typename _Tuple, typename _Value,
@@ -588,7 +626,7 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
-
+    /*
     template <typename _Tuple, typename... _Args,
               std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
     static void loop(_Tuple&& __t, _Args&&... __args)
@@ -596,7 +634,7 @@ struct apply<void>
         _apply_impl<void>::template loop<0, _N - 1, _Tuple, _Args...>(
             std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
     }
-
+    */
     //----------------------------------------------------------------------------------//
 
     template <typename _Access, typename _Tuple, typename... _Args,
@@ -634,6 +672,19 @@ struct apply<void>
 
     //----------------------------------------------------------------------------------//
 
+    template <template <typename> class _Access, typename _Tuple, typename... _Args,
+              // typename _Tuple = std::tuple<_Types...>,
+              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+    static void unroll_access(_Tuple&& __t, _Args&&... __args)
+    {
+        // using access_type = std::tuple<_Access<_Types>...>;
+        // access<access_type>(std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        _apply_impl<void>::template unroll_access<_Access, _N - 1, _Tuple, _Args...>(
+            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /*
     template <typename _Tuple, typename _Funct, typename... _Args,
               std::size_t _Nt = std::tuple_size<decay_t<_Tuple>>::value,
               std::size_t _Nf = std::tuple_size<decay_t<_Funct>>::value>
@@ -675,7 +726,7 @@ struct apply<void>
             std::forward<_Tuple>(__t), std::forward<_Funct>(__f),
             std::forward<_Args>(__args)...);
     }
-
+    */
     //----------------------------------------------------------------------------------//
 };
 

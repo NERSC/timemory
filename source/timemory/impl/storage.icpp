@@ -132,6 +132,7 @@ tim::graph_storage<ObjectType>::print()
     else if(settings::auto_output())
     {
         merge();
+        ObjectType::finalize_policy();
 
         // disable gperf if profiling
         try
