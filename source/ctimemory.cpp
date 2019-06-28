@@ -243,6 +243,13 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
 
 #    if defined(TIMEMORY_USE_CUDA)
 TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_clock,
+                                  tim::component::cuda_event)
+
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_clock,
+                                  tim::component::thread_cpu_util,
+                                  tim::component::cuda_event)
 #    endif
 
 #endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
