@@ -469,6 +469,32 @@ public:
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
 
+public:
+    // get member functions taking either an integer or a type
+    template <std::size_t _N>
+    typename std::tuple_element<_N, data_t>::type& get()
+    {
+        return std::get<_N>(m_data);
+    }
+
+    template <std::size_t _N>
+    const typename std::tuple_element<_N, data_t>::type& get() const
+    {
+        return std::get<_N>(m_data);
+    }
+
+    template <typename _Tp>
+    _Tp& get()
+    {
+        return std::get<index_of<_Tp, data_t>::value>(m_data);
+    }
+
+    template <typename _Tp>
+    const _Tp& get() const
+    {
+        return std::get<index_of<_Tp, data_t>::value>(m_data);
+    }
+
 protected:
     // protected member functions
     data_t&       get_data() { return m_data; }
@@ -666,6 +692,32 @@ public:
     inline data_t&       data() { return m_data; }
     inline const data_t& data() const { return m_data; }
     inline int64_t       laps() const { return m_laps; }
+
+public:
+    // get member functions taking either an integer or a type
+    template <std::size_t _N>
+    typename std::tuple_element<_N, data_t>::type& get()
+    {
+        return std::get<_N>(m_data);
+    }
+
+    template <std::size_t _N>
+    const typename std::tuple_element<_N, data_t>::type& get() const
+    {
+        return std::get<_N>(m_data);
+    }
+
+    template <typename _Tp>
+    _Tp& get()
+    {
+        return std::get<index_of<_Tp, data_t>::value>(m_data);
+    }
+
+    template <typename _Tp>
+    const _Tp& get() const
+    {
+        return std::get<index_of<_Tp, data_t>::value>(m_data);
+    }
 
 protected:
     // protected member functions

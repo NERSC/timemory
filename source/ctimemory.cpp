@@ -241,6 +241,10 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
                                   tim::component::thread_cpu_clock,
                                   tim::component::process_cpu_util)
 
+#    if defined(TIMEMORY_USE_CUDA)
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event)
+#    endif
+
 #endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
 
 //======================================================================================//
@@ -515,5 +519,9 @@ TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_msg_recv)
 TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(num_signals)
 TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(voluntary_context_switch)
 TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(priority_context_switch)
+
+#    if defined(TIMEMORY_USE_CUDA)
+TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(cuda_event)
+#    endif
 
 #endif  // defined(TIMEMORY_EXTERN_INIT
