@@ -28,6 +28,15 @@ set(TIMEMORY_VERSION "${VERSION_STRING}")
 message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 
 #----------------------------------------------------------------------------------------#
+#   setup.py
+#----------------------------------------------------------------------------------------#
+
+if(SKBUILD)
+    set(CMAKE_INSTALL_LIBDIR lib)
+    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
+endif()
+
+#----------------------------------------------------------------------------------------#
 #   project
 #----------------------------------------------------------------------------------------#
 
