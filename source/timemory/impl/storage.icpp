@@ -24,7 +24,7 @@
 
 /** \file storage.icpp
  * \headerfile storage.icpp "timemory/impl/storage.icpp"
- * Provides inline implementation of graph_storage member functions
+ * Provides inline implementation of storage member functions
  *
  */
 
@@ -69,7 +69,7 @@ reduce_merge(_Pred lhs, _Pred rhs)
 
 template <typename ObjectType>
 void
-tim::graph_storage<ObjectType>::merge(this_type* itr)
+tim::storage<ObjectType>::merge(this_type* itr)
 {
     if(itr == this)
         return;
@@ -121,7 +121,7 @@ tim::graph_storage<ObjectType>::merge(this_type* itr)
 
 template <typename ObjectType>
 void
-tim::graph_storage<ObjectType>::print()
+tim::storage<ObjectType>::print()
 {
     auto num_instances = instance_count().load();
 
@@ -254,8 +254,7 @@ tim::graph_storage<ObjectType>::print()
                 else
                 {
                     auto_lock_t l(type_mutex<decltype(std::cout)>());
-                    fprintf(stderr,
-                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                    fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
                             ObjectType::label().c_str(), __FUNCTION__, __LINE__,
                             fname.c_str());
                     std::cout << _oss.str();
@@ -298,8 +297,8 @@ tim::graph_storage<ObjectType>::print()
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::graph_storage<ObjectType>::serialize(std::false_type, Archive& ar,
-                                          const unsigned int /*version*/)
+tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
+                                    const unsigned int /*version*/)
 {
     using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -328,8 +327,8 @@ tim::graph_storage<ObjectType>::serialize(std::false_type, Archive& ar,
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::graph_storage<ObjectType>::serialize(std::true_type, Archive& ar,
-                                          const unsigned int /*version*/)
+tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
+                                    const unsigned int /*version*/)
 {
     using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -364,7 +363,7 @@ tim::graph_storage<ObjectType>::serialize(std::true_type, Archive& ar,
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::graph_storage<ObjectType>::serialize(Archive& ar, const unsigned int version)
+tim::storage<ObjectType>::serialize(Archive& ar, const unsigned int version)
 {
     typename tim::component::array_serialization<ObjectType>::type type;
     serialize<Archive>(type, ar, version);

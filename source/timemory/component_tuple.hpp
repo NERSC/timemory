@@ -185,7 +185,7 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // pop out of grapsh
+    // pop out of graph
     inline void pop()
     {
         if(m_store && m_is_pushed)

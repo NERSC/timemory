@@ -63,7 +63,7 @@ template <typename StorageType>
 struct storage_deleter;
 
 template <typename ObjectType>
-class graph_storage;
+class storage;
 
 template <typename _Tp>
 using storage_smart_pointer = std::unique_ptr<_Tp, details::storage_deleter<_Tp>>;
@@ -151,13 +151,13 @@ struct type_id
 //======================================================================================//
 
 template <typename ObjectType>
-class graph_storage
+class storage
 {
 public:
     //----------------------------------------------------------------------------------//
     //
-    using this_type     = graph_storage<ObjectType>;
-    using void_type     = graph_storage<void>;
+    using this_type     = storage<ObjectType>;
+    using void_type     = storage<void>;
     using string_t      = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
@@ -264,6 +264,9 @@ public:
 
         bool has_head() const { return m_has_head; }
 
+        const int64_t& depth() const { return m_depth; }
+        const graph_t& graph() const { return m_graph; }
+
         int64_t&  depth() { return m_depth; }
         graph_t&  graph() { return m_graph; }
         iterator& current() { return m_current; }
@@ -318,7 +321,7 @@ public:
     //
     //----------------------------------------------------------------------------------//
 
-    graph_storage()
+    storage()
     {
         instance_count()++;
         static std::atomic<short> _once;
@@ -336,14 +339,14 @@ public:
         }
     }
 
-    ~graph_storage()
+    ~storage()
     {
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
     }
 
-    explicit graph_storage(const this_type&) = delete;
-    explicit graph_storage(this_type&&)      = default;
+    explicit storage(const this_type&) = delete;
+    explicit storage(this_type&&)      = default;
 
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = default;
@@ -356,6 +359,7 @@ public:
 
     const graph_data& data() const { return m_data; }
     const graph_t&    graph() const { return m_data.graph(); }
+    const int64_t&    depth() const { return m_data.depth(); }
 
     graph_data& data() { return m_data; }
     iterator&   current() { return m_data.current(); }

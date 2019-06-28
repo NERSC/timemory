@@ -441,7 +441,7 @@ manager::merge(pointer itr)
 /*
 template <typename _Tp>
 inline void
-manager::report(ostream_t* os, graph_storage<_Tp>* data, bool ign_cutoff, bool endline)
+manager::report(ostream_t* os, storage<_Tp>* data, bool ign_cutoff, bool endline)
 const
 {
     const_cast<this_type*>(this)->merge();
@@ -782,7 +782,7 @@ template <typename Head, typename... Tail>
 inline void
 tim::manager::print(const tim::component_tuple<Head, Tail...>&)
 {
-    auto storage = tim::graph_storage<Head>::instance();
+    auto storage = tim::storage<Head>::instance();
     if(storage && !storage->empty())
         storage->print();
     using tail_obj_t = PopFront<tim::component_tuple<Head, Tail...>>;
@@ -850,7 +850,7 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
                 if(ofs)
                 {
                     auto_lock_t l(type_mutex<std::ofstream>());
-                    printf("[graph_storage<%s>]> Outputting '%s'...\n", label.c_str(),
+                    printf("[storage<%s>]> Outputting '%s'...\n", label.c_str(),
                            fname.c_str());
                     ofs << _oss.str();
                     ofs.close();
@@ -859,7 +859,7 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
                 {
                     auto_lock_t l(type_mutex<decltype(std::cout)>());
                     fprintf(stderr,
-                            "[graph_storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                            "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
                             label.c_str(), __FUNCTION__, __LINE__, fname.c_str());
                     std::cout << _oss.str();
                 }
@@ -872,7 +872,7 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
             {
                 // auto_lock_t l(type_mutex<std::ofstream>());
                 // auto        jname = tim::settings::compose_output_filename(label,
-                // ".json"); printf("[graph_storage<%s>]> Outputting '%s'...\n",
+                // ".json"); printf("[storage<%s>]> Outputting '%s'...\n",
                 //       label.c_str(), jname.c_str());
                 // serialize_storage(jname, label, *this);
             }

@@ -296,18 +296,16 @@
                          TIMEMORY_FE_3, TIMEMORY_FE_2, TIMEMORY_FE_1, TIMEMORY_FE_0)     \
     (x, ##__VA_ARGS__)
 
-#define TIMEMORY_EXTERN_GRAPH_STORAGE_TYPE(OBJ_TYPE)                                     \
-    tim::graph_storage<tim::component::OBJ_TYPE>
+#define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
 
-#define TIMEMORY_DECLARE_EXTERN_GRAPH_STORAGE(OBJ_TYPE)                                  \
-    extern template tim::details::storage_singleton_t<                                   \
-        TIMEMORY_EXTERN_GRAPH_STORAGE_TYPE(OBJ_TYPE)>&                                   \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_GRAPH_STORAGE_TYPE(OBJ_TYPE)>();
-
-#define TIMEMORY_INSTANTIATE_EXTERN_GRAPH_STORAGE(OBJ_TYPE)                              \
-    template tim::details::storage_singleton_t<TIMEMORY_EXTERN_GRAPH_STORAGE_TYPE(       \
+#define TIMEMORY_DECLARE_EXTERN_STORAGE(OBJ_TYPE)                                        \
+    extern template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(      \
         OBJ_TYPE)>&                                                                      \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_GRAPH_STORAGE_TYPE(OBJ_TYPE)>();
+    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+
+#define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                    \
+    template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
+    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
 
 //======================================================================================//
 //

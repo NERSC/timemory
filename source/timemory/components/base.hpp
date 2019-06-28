@@ -40,7 +40,7 @@ template <typename _Tp, typename value_type, typename... _Policies>
 struct base : public tim::counted_object<_Tp>
 {
     //
-    friend class graph_storage<_Tp>;
+    friend class storage<_Tp>;
 
     friend struct construct<_Tp>;
     friend struct set_prefix<_Tp>;
@@ -73,7 +73,7 @@ public:
     using Type           = _Tp;
     using policy_type    = policy::wrapper<_Policies...>;
     using this_type      = base<_Tp, value_type, _Policies...>;
-    using storage_type   = graph_storage<Type>;
+    using storage_type   = storage<Type>;
     using graph_iterator = typename storage_type::iterator;
 
     base()                          = default;
