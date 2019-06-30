@@ -98,6 +98,8 @@ public:
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
+    inline void conditional_start() { m_temporary_object.conditional_start(); }
+    inline void conditional_stop() { m_temporary_object.conditional_stop(); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

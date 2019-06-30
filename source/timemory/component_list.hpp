@@ -76,14 +76,15 @@ class component_list
     friend class manager;
 
 public:
-    using size_type    = int64_t;
-    using this_type    = component_list<Types...>;
-    using data_type    = std::tuple<Types*...>;
-    using string_hash  = std::hash<string_t>;
-    using counter_type = tim::counted_object<this_type>;
-    using counter_void = tim::counted_object<void>;
-    using hashed_type  = tim::hashed_object<this_type>;
-    using language_t   = tim::language;
+    using size_type      = int64_t;
+    using this_type      = component_list<Types...>;
+    using data_type      = std::tuple<Types*...>;
+    using reference_type = std::tuple<Types...>;
+    using string_hash    = std::hash<string_t>;
+    using counter_type   = tim::counted_object<this_type>;
+    using counter_void   = tim::counted_object<void>;
+    using hashed_type    = tim::hashed_object<this_type>;
+    using language_t     = tim::language;
 
 public:
     using auto_type = auto_list<Types...>;
@@ -481,6 +482,11 @@ public:
         os << ss.str();
     }
 
+    static void print_storage()
+    {
+        apply<void>::type_access<component::print_storage, reference_type>();
+    }
+
 public:
     inline data_type&       data() { return m_data; }
     inline const data_type& data() const { return m_data; }
@@ -512,16 +518,28 @@ public:
         return std::get<_N>(m_data);
     }
 
-    template <typename _Tp>
+    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     _Tp& get()
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp>
+    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    _Tp*& get()
+    {
+        return std::get<index_of<_Tp*, data_type>::value>(m_data);
+    }
+
+    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     const _Tp& get() const
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
+    }
+
+    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    const _Tp* get() const
+    {
+        return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
 protected:
@@ -531,9 +549,8 @@ protected:
 
 protected:
     // objects
-    bool              m_store     = false;
-    bool              m_is_pushed = false;
-    mutex_t           m_mutex;
+    bool              m_store      = false;
+    bool              m_is_pushed  = false;
     int64_t           m_laps       = 0;
     int64_t           m_count      = 0;
     int64_t           m_hash       = 0;
@@ -715,6 +732,7 @@ public:
     {
     }
     inline void report(std::ostream&, bool, bool) const {}
+    static void print_storage() {}
 
 public:
     inline data_type&       data() { return m_data; }
@@ -735,16 +753,28 @@ public:
         return std::get<_N>(m_data);
     }
 
-    template <typename _Tp>
+    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     _Tp& get()
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp>
+    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    _Tp& get()
+    {
+        return std::get<index_of<_Tp*, data_type>::value>(m_data);
+    }
+
+    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     const _Tp& get() const
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
+    }
+
+    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    const _Tp& get() const
+    {
+        return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
 protected:

@@ -452,6 +452,12 @@ public:
         os << ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
+    static void print_storage()
+    {
+        apply<void>::type_access<component::print_storage, data_t>();
+    }
+
 public:
     inline data_t&       data() { return m_data; }
     inline const data_t& data() const { return m_data; }
@@ -687,6 +693,8 @@ public:
     {
     }
     inline void report(std::ostream&, bool, bool) const {}
+
+    static void print_storage() {}
 
 public:
     inline data_t&       data() { return m_data; }

@@ -43,6 +43,7 @@ struct base : public tim::counted_object<_Tp>
     friend class storage<_Tp>;
 
     friend struct construct<_Tp>;
+    friend struct live_count<_Tp>;
     friend struct set_prefix<_Tp>;
     friend struct insert_node<_Tp>;
     friend struct pop_node<_Tp>;
@@ -58,7 +59,7 @@ struct base : public tim::counted_object<_Tp>
     friend struct multiply<_Tp>;
     friend struct divide<_Tp>;
     friend struct print<_Tp>;
-    friend struct live_count<_Tp>;
+    friend struct print_storage<_Tp>;
 
     template <typename _Up, typename Archive>
     friend struct serialization;

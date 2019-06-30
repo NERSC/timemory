@@ -55,6 +55,8 @@
 #    include "timemory/storage.hpp"
 #endif
 
+#include "timemory/ctimemory.h"
+
 //======================================================================================//
 
 #if defined(TIMEMORY_EXTERN_TEMPLATES)

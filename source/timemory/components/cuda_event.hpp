@@ -186,14 +186,14 @@ private:
 //--------------------------------------------------------------------------------------//
 // dummy for cuda_event when CUDA is not available
 //
-using cudaStream_t = int;
-using cudaError_t  = int;
 // this struct extracts only the CPU time spent in kernel-mode
 struct cuda_event : public base<cuda_event, float>
 {
-    using ratio_t    = std::milli;
-    using value_type = float;
-    using base_type  = base<cuda_event, value_type>;
+    using cudaStream_t = int;
+    using cudaError_t  = int;
+    using ratio_t      = std::milli;
+    using value_type   = float;
+    using base_type    = base<cuda_event, value_type>;
 
     static const short                   precision = 3;
     static const short                   width     = 6;
@@ -207,7 +207,7 @@ struct cuda_event : public base<cuda_event, float>
     static value_type  record() { return 0.0f; }
 
     cuda_event() {}
-    cuda_event(cudaStream_t) {}
+    explicit cuda_event(cudaStream_t) {}
     ~cuda_event() {}
 
     float       compute_display() const { return 0.0f; }

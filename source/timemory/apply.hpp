@@ -344,11 +344,6 @@ struct _apply_impl<void>
     */
     //----------------------------------------------------------------------------------//
 
-    /*template <typename _Access, typename... _Args>
-    static void unroll_access(std::tuple<>&&, index_sequence<0>, _Args&&...)
-    {
-    }*/
-
     template <template <typename> class _Access, size_t _N, typename _Tuple,
               typename... _Args, enable_if_t<(_N == 0), char> = 0>
     static void unroll_access(_Tuple&& __t, _Args&&... __args)
@@ -371,6 +366,29 @@ struct _apply_impl<void>
                      std::forward<_Args>(__args)...);
         unroll_access<_Access, _N - 1, _Tuple, _Args...>(std::forward<_Tuple>(__t),
                                                          std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <template <typename> class _Access, size_t _N, typename _Tuple,
+              typename... _Args, enable_if_t<(_N == 0), char> = 0>
+    static void type_access(_Args&&... __args)
+    {
+        using _Tp = typename std::tuple_element<_N, _Tuple>::type;
+        using _Rp = typename std::remove_reference<_Tp>::type;
+        using _Ap = typename std::remove_const<_Rp>::type;
+        _Access<_Ap>(std::forward<_Args>(__args)...);
+    }
+
+    template <template <typename> class _Access, size_t _N, typename _Tuple,
+              typename... _Args, enable_if_t<(_N > 0), char> = 0>
+    static void type_access(_Args&&... __args)
+    {
+        using _Tp = typename std::tuple_element<_N, _Tuple>::type;
+        using _Rp = typename std::remove_reference<_Tp>::type;
+        using _Ap = typename std::remove_const<_Rp>::type;
+        _Access<_Ap>(std::forward<_Args>(__args)...);
+        type_access<_Access, _N - 1, _Tuple, _Args...>(std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -673,14 +691,21 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <template <typename> class _Access, typename _Tuple, typename... _Args,
-              // typename _Tuple = std::tuple<_Types...>,
               std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
     static void unroll_access(_Tuple&& __t, _Args&&... __args)
     {
-        // using access_type = std::tuple<_Access<_Types>...>;
-        // access<access_type>(std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
         _apply_impl<void>::template unroll_access<_Access, _N - 1, _Tuple, _Args...>(
             std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <template <typename> class _Access, typename _Tuple, typename... _Args,
+              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+    static void type_access(_Args&&... __args)
+    {
+        _apply_impl<void>::template type_access<_Access, _N - 1, _Tuple, _Args...>(
+            std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//

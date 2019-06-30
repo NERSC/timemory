@@ -114,7 +114,7 @@
 //
 //======================================================================================//
 
-enum COMPONENT
+enum TIMEMORY_COMPONENT
 {
     WALL_CLOCK,
     SYS_CLOCK,
@@ -140,7 +140,8 @@ enum COMPONENT
     NUM_MSG_RECV,
     NUM_SIGNALS,
     VOLUNTARY_CONTEXT_SWITCH,
-    PRIORITY_CONTEXT_SWITCH
+    PRIORITY_CONTEXT_SWITCH,
+    CUDA_EVENT
 };
 
 //======================================================================================//

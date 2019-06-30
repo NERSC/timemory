@@ -72,11 +72,6 @@ using storage_singleton_t = singleton<_Tp, storage_smart_pointer<_Tp>>;
 
 }  // namespace details
 
-//#if defined(TIMEMORY_EXTERN_INIT)
-// template <typename _Tp>
-// details::storage_singleton_t<_Tp>&
-// get_storage_singleton();
-//#else
 template <typename _Tp>
 details::storage_singleton_t<_Tp>&
 get_storage_singleton()
@@ -85,7 +80,15 @@ get_storage_singleton()
     static _single_t _instance = _single_t::instance();
     return _instance;
 }
-//#endif  // defined(TIMEMORY_EXTERN_INIT
+
+template <typename _Tp>
+details::storage_singleton_t<_Tp>&
+get_noninit_storage_singleton()
+{
+    using _single_t            = details::storage_singleton_t<_Tp>;
+    static _single_t _instance = _single_t::instance_ptr();
+    return _instance;
+}
 
 //======================================================================================//
 // static functions that return a string identifying the data type (used in Python plot)
@@ -353,6 +356,11 @@ public:
 
     static pointer instance() { return get_singleton().instance(); }
     static pointer master_instance() { return get_singleton().master_instance(); }
+    static pointer noninit_instance() { return get_noninit_singleton().instance(); }
+    static pointer noninit_master_instance()
+    {
+        return get_noninit_singleton().master_instance();
+    }
 
     void print();
     bool empty() const { return (m_node_ids.size() == 0); }
@@ -529,6 +537,10 @@ protected:
 
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
+    static singleton_t& get_noninit_singleton()
+    {
+        return get_noninit_storage_singleton<this_type>();
+    }
 
     static std::atomic<int64_t>& instance_count()
     {

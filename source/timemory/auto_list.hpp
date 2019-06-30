@@ -86,14 +86,16 @@ public:
     const component_type& component_list() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
-    void record() { m_temporary_object.record(); }
-    void pause() { m_temporary_object.pause(); }
-    void resume() { m_temporary_object.resume(); }
-    void start() { m_temporary_object.start(); }
-    void stop() { m_temporary_object.stop(); }
-    void push() { m_temporary_object.push(); }
-    void pop() { m_temporary_object.pop(); }
-    void reset() { m_temporary_object.reset(); }
+    inline void record() { m_temporary_object.record(); }
+    inline void pause() { m_temporary_object.pause(); }
+    inline void resume() { m_temporary_object.resume(); }
+    inline void start() { m_temporary_object.start(); }
+    inline void stop() { m_temporary_object.stop(); }
+    inline void push() { m_temporary_object.push(); }
+    inline void pop() { m_temporary_object.pop(); }
+    inline void reset() { m_temporary_object.reset(); }
+    inline void conditional_start() { m_temporary_object.conditional_start(); }
+    inline void conditional_stop() { m_temporary_object.conditional_stop(); }
 
     template <std::size_t _N>
     typename std::tuple_element<_N, data_type>::type& get()
@@ -105,6 +107,18 @@ public:
     const typename std::tuple_element<_N, data_type>::type& get() const
     {
         return m_temporary_object.template get<_N>();
+    }
+
+    template <typename _Tp>
+    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    {
+        return m_temporary_object.template get<_Tp>();
+    }
+
+    template <typename _Tp>
+    const auto get() const -> decltype(std::declval<component_type>().template get<_Tp>())
+    {
+        return m_temporary_object.template get<_Tp>();
     }
 
 public:

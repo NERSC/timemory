@@ -152,6 +152,9 @@ struct divide;
 template <typename _Tp>
 struct print;
 
+template <typename _Tp>
+struct print_storage;
+
 template <typename _Tp, typename _Archive>
 struct serialization;
 

@@ -93,23 +93,11 @@ struct papi_tuple
 
     papi_tuple()
     {
-        if(event_count::is_master())
-        {
-            // add_event_types();
-            // start_event_set();
-        }
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
     }
 
-    ~papi_tuple()
-    {
-        if(event_count::live() < 1 && event_count::is_master())
-        {
-            // stop_event_set();
-            // remove_event_types();
-        }
-    }
+    ~papi_tuple() {}
 
     papi_tuple(const papi_tuple& rhs) = default;
     this_type& operator=(const this_type& rhs) = default;
@@ -267,8 +255,6 @@ struct papi_tuple
         for(size_type i = 0; i < num_events; ++i)
         {
             accum[i] += (tmp[i] - value[i]);
-            // auto diff = (tmp[i] - value[i]);
-            // accum[i] += (diff > 0) ? diff : 0;
         }
         value = std::move(tmp);
         set_stopped();
@@ -327,6 +313,7 @@ private:
         return instance;
     }
 
+    /*
     void add_event_types()
     {
         if(acquire_claim(event_type_added()))
@@ -367,7 +354,7 @@ private:
 #endif
             tim::papi::stop_counters(events.data(), num_events);
         }
-    }
+    }*/
 };
 
 //--------------------------------------------------------------------------------------//

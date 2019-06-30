@@ -468,6 +468,39 @@ struct print
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp>
+struct print_storage
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up                                            = _Tp,
+              enable_if_t<(impl_available<_Up>::value == true), char> = 0>
+    print_storage()
+    {
+        auto _storage = tim::storage<_Tp>::noninit_instance();
+        if(_storage)
+        {
+            _storage->print();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                             = _Tp,
+              enable_if_t<(impl_available<_Up>::value == false), char> = 0>
+    print_storage()
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp, typename _Archive>
 struct serialization
 {

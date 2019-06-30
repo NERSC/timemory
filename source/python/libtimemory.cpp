@@ -63,8 +63,8 @@ PYBIND11_MODULE(libtimemory, tim)
     //      Components submodule
     //
     //==================================================================================//
-    py::enum_<COMPONENT> components_enum(tim, "component", py::arithmetic(),
-                                         "Components for TiMemory module");
+    py::enum_<TIMEMORY_COMPONENT> components_enum(tim, "component", py::arithmetic(),
+                                                  "Components for TiMemory module");
     //----------------------------------------------------------------------------------//
     components_enum.value("wall_clock", WALL_CLOCK)
         .value("sys_clock", SYS_CLOCK)
@@ -90,7 +90,8 @@ PYBIND11_MODULE(libtimemory, tim)
         .value("num_msg_recv", NUM_MSG_RECV)
         .value("num_signals", NUM_SIGNALS)
         .value("voluntary_context_switch", VOLUNTARY_CONTEXT_SWITCH)
-        .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH);
+        .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH)
+        .value("cuda_event", CUDA_EVENT);
 
     //==================================================================================//
     //
@@ -406,7 +407,7 @@ PYBIND11_MODULE(libtimemory, tim)
 
     //==================================================================================//
     //
-    //                      COMPONENT TUPLE
+    //                      TIMEMORY_COMPONENT TUPLE
     //
     //==================================================================================//
     comp_list.def(py::init(&pytim::init::component_list), "Initialization",

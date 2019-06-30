@@ -51,6 +51,10 @@ namespace tim
 void
 timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
+// initialization (creates manager and configures output path)
+void
+timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
 
 namespace settings
 {
@@ -498,6 +502,16 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
     tim::settings::output_path() = exe_name;
     // allow environment overrides
     tim::settings::parse();
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
+                   const std::string& _suffix)
+{
+    auto cstr = const_cast<char*>(exe_name.c_str());
+    tim::timemory_init(1, &cstr, _prefix, _suffix);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -48,14 +48,6 @@ EXTERN_C_END
 
 using namespace tim::component;
 
-using auto_list_t =
-    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
-                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
-                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
-                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
-                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch>;
-
 using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
@@ -73,7 +65,7 @@ using auto_list_t =
                    thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch>;
+                   voluntary_context_switch, priority_context_switch, cuda_event>;
 
 //======================================================================================//
 //
@@ -287,108 +279,64 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
                                const int* components)
 {
     using namespace tim::component;
-    using data_type = typename auto_list_t::component_type::data_type;
     std::string key_tag(timer_tag);
     auto        obj = new auto_list_t(key_tag, lineno, tim::language::c(), false);
     obj->stop();
     obj->reset();
     for(int i = 0; i < num_components; ++i)
     {
-        COMPONENT component = static_cast<COMPONENT>(components[i]);
+        TIMEMORY_COMPONENT component = static_cast<TIMEMORY_COMPONENT>(components[i]);
         switch(component)
         {
-            case WALL_CLOCK:
-                obj->get<tim::index_of<real_clock*, data_type>::value>() =
-                    new real_clock();
-                break;
-            case SYS_CLOCK:
-                obj->get<tim::index_of<system_clock*, data_type>::value>() =
-                    new system_clock();
-                break;
-            case USER_CLOCK:
-                obj->get<tim::index_of<user_clock*, data_type>::value>() =
-                    new user_clock();
-                break;
-            case CPU_CLOCK:
-                obj->get<tim::index_of<cpu_clock*, data_type>::value>() = new cpu_clock();
-                break;
+            case WALL_CLOCK: obj->get<real_clock>() = new real_clock(); break;
+            case SYS_CLOCK: obj->get<system_clock>() = new system_clock(); break;
+            case USER_CLOCK: obj->get<user_clock>() = new user_clock(); break;
+            case CPU_CLOCK: obj->get<cpu_clock>() = new cpu_clock(); break;
             case MONOTONIC_CLOCK:
-                obj->get<tim::index_of<monotonic_clock*, data_type>::value>() =
-                    new monotonic_clock();
+                obj->get<monotonic_clock>() = new monotonic_clock();
                 break;
             case MONOTONIC_RAW_CLOCK:
-                obj->get<tim::index_of<monotonic_raw_clock*, data_type>::value>() =
-                    new monotonic_raw_clock();
+                obj->get<monotonic_raw_clock>() = new monotonic_raw_clock();
                 break;
             case THREAD_CPU_CLOCK:
-                obj->get<tim::index_of<thread_cpu_clock*, data_type>::value>() =
-                    new thread_cpu_clock();
+                obj->get<thread_cpu_clock>() = new thread_cpu_clock();
                 break;
             case PROCESS_CPU_CLOCK:
-                obj->get<tim::index_of<process_cpu_clock*, data_type>::value>() =
-                    new process_cpu_clock();
+                obj->get<process_cpu_clock>() = new process_cpu_clock();
                 break;
-            case CPU_UTIL:
-                obj->get<tim::index_of<cpu_util*, data_type>::value>() = new cpu_util();
-                break;
+            case CPU_UTIL: obj->get<cpu_util>() = new cpu_util(); break;
             case THREAD_CPU_UTIL:
-                obj->get<tim::index_of<thread_cpu_util*, data_type>::value>() =
-                    new thread_cpu_util();
+                obj->get<thread_cpu_util>() = new thread_cpu_util();
                 break;
             case PROCESS_CPU_UTIL:
-                obj->get<tim::index_of<process_cpu_util*, data_type>::value>() =
-                    new process_cpu_util();
+                obj->get<process_cpu_util>() = new process_cpu_util();
                 break;
-            case CURRENT_RSS:
-                obj->get<tim::index_of<current_rss*, data_type>::value>() =
-                    new current_rss();
-                break;
-            case PEAK_RSS:
-                obj->get<tim::index_of<peak_rss*, data_type>::value>() = new peak_rss();
-                break;
-            case STACK_RSS:
-                obj->get<tim::index_of<stack_rss*, data_type>::value>() = new stack_rss();
-                break;
-            case DATA_RSS:
-                obj->get<tim::index_of<data_rss*, data_type>::value>() = new data_rss();
-                break;
-            case NUM_SWAP:
-                obj->get<tim::index_of<num_swap*, data_type>::value>() = new num_swap();
-                break;
-            case NUM_IO_IN:
-                obj->get<tim::index_of<num_io_in*, data_type>::value>() = new num_io_in();
-                break;
-            case NUM_IO_OUT:
-                obj->get<tim::index_of<num_io_out*, data_type>::value>() =
-                    new num_io_out();
-                break;
+            case CURRENT_RSS: obj->get<current_rss>() = new current_rss(); break;
+            case PEAK_RSS: obj->get<peak_rss>() = new peak_rss(); break;
+            case STACK_RSS: obj->get<stack_rss>() = new stack_rss(); break;
+            case DATA_RSS: obj->get<data_rss>() = new data_rss(); break;
+            case NUM_SWAP: obj->get<num_swap>() = new num_swap(); break;
+            case NUM_IO_IN: obj->get<num_io_in>() = new num_io_in(); break;
+            case NUM_IO_OUT: obj->get<num_io_out>() = new num_io_out(); break;
             case NUM_MINOR_PAGE_FAULTS:
-                obj->get<tim::index_of<num_minor_page_faults*, data_type>::value>() =
-                    new num_minor_page_faults();
+                obj->get<num_minor_page_faults>() = new num_minor_page_faults();
                 break;
             case NUM_MAJOR_PAGE_FAULTS:
-                obj->get<tim::index_of<num_major_page_faults*, data_type>::value>() =
-                    new num_major_page_faults();
+                obj->get<num_major_page_faults>() = new num_major_page_faults();
                 break;
-            case NUM_MSG_SENT:
-                obj->get<tim::index_of<num_msg_sent*, data_type>::value>() =
-                    new num_msg_sent();
-                break;
-            case NUM_MSG_RECV:
-                obj->get<tim::index_of<num_msg_recv*, data_type>::value>() =
-                    new num_msg_recv();
-                break;
-            case NUM_SIGNALS:
-                obj->get<tim::index_of<num_signals*, data_type>::value>() =
-                    new num_signals();
-                break;
+            case NUM_MSG_SENT: obj->get<num_msg_sent>() = new num_msg_sent(); break;
+            case NUM_MSG_RECV: obj->get<num_msg_recv>() = new num_msg_recv(); break;
+            case NUM_SIGNALS: obj->get<num_signals>() = new num_signals(); break;
             case VOLUNTARY_CONTEXT_SWITCH:
-                obj->get<tim::index_of<voluntary_context_switch*, data_type>::value>() =
-                    new voluntary_context_switch();
+                obj->get<voluntary_context_switch>() = new voluntary_context_switch();
                 break;
             case PRIORITY_CONTEXT_SWITCH:
-                obj->get<tim::index_of<priority_context_switch*, data_type>::value>() =
-                    new priority_context_switch();
+                obj->get<priority_context_switch>() = new priority_context_switch();
+                break;
+            case CUDA_EVENT:
+#    if defined(TIMEMORY_USE_CUDA)
+                obj->get<cuda_event>() = new cuda_event();
+#    endif
                 break;
         }
     }
