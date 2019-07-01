@@ -67,13 +67,11 @@ tim::get_peak_rss()
     return static_cast<int64_t>(_units * _usage.ru_maxrss);
 
 #elif defined(_WINDOWS)
+    /*
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
 
-    // Print the process identifier.
-    // printf( "\nProcess ID: %u\n", processID );
-    // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, TRUE, processID);
     if(NULL == hProcess)
         return static_cast<int64_t>(0);
@@ -83,8 +81,9 @@ tim::get_peak_rss()
         nsize = static_cast<int64_t>(pmc.PeakWorkingSetSize);
 
     CloseHandle(hProcess);
-
     return nsize;
+    */
+    return static_cast<int64_t>(0);
 #else
     return static_cast<int64_t>(0);
 #endif
@@ -125,13 +124,11 @@ tim::get_current_rss()
 
 #    endif
 #elif defined(_WINDOWS)
+    /*
     DWORD                   processID = GetCurrentProcessId();
     HANDLE                  hProcess;
     PROCESS_MEMORY_COUNTERS pmc;
 
-    // Print the process identifier.
-    // printf( "\nProcess ID: %u\n", processID );
-    // Print information about the memory usage of the process.
     hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, FALSE, processID);
     if(NULL == hProcess)
         return static_cast<int64_t>(0);
@@ -141,8 +138,9 @@ tim::get_current_rss()
         nsize = static_cast<int64_t>(pmc.WorkingSetSize);
 
     CloseHandle(hProcess);
-
     return nsize;
+    */
+    return static_cast<int64_t>(0);
 #else
     return static_cast<int64_t>(0);
 #endif

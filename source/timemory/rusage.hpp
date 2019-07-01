@@ -54,7 +54,8 @@
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
 #    endif
-#    include <psapi.h>
+// currently, this is causing a bunch of errors, need to disable
+// #    include <psapi.h>
 #    include <stdio.h>
 #    include <windows.h>
 #else
