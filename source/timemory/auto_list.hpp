@@ -116,7 +116,7 @@ public:
     }
 
     template <typename _Tp>
-    const auto get() const -> decltype(std::declval<component_type>().template get<_Tp>())
+    auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
     {
         return m_temporary_object.template get<_Tp>();
     }
