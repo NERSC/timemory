@@ -31,13 +31,12 @@
 
 #pragma once
 
+#include "timemory/macros.hpp"
+
 // C library
-#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
-#include <stdint.h>
-#include <stdlib.h>
 // I/O
 #include <iomanip>
 #include <iostream>
@@ -48,22 +47,15 @@
 #include <functional>
 #include <limits>
 #include <stdexcept>
-#include <type_traits>
 #include <utility>
 // container
 #include <deque>
-#include <list>
 #include <map>
-#include <set>
-#include <tuple>
 #include <vector>
 // threading
 #include <atomic>
 #include <mutex>
 #include <thread>
-
-#include "timemory/macros.hpp"
-#include "timemory/singleton.hpp"
 
 #if defined(_UNIX)
 #    include <errno.h>

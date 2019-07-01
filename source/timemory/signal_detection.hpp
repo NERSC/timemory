@@ -236,6 +236,24 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
+inline std::string
+demangle(const std::string& _str)
+{
+#if defined(SIGNAL_AVAILABLE)
+    // demangling a string when delimiting
+    int   _ret    = 0;
+    char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
+    if(_demang && _ret == 0)
+        return std::string(const_cast<const char*>(_demang));
+    else
+        return _str;
+#else
+    return _str;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 // declarations
 static bool enable_signal_detection(
     signal_settings::signal_set_t = signal_settings::get_default());

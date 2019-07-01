@@ -42,7 +42,6 @@
 #include "timemory/mpi.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/signal_detection.hpp"
-#include "timemory/testing.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 

@@ -35,6 +35,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;

@@ -26,17 +26,24 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;  // RELEVANT
 using roofline_t   = cpu_roofline<PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, roofline_t>;
+using auto_list_t  = tim::auto_list<real_clock, cpu_clock, roofline_t>;
+
+//--------------------------------------------------------------------------------------//
 
 double
-fib(double n)
-{
-    return (n < 2.0) ? n : 1.0 * (fib(n - 1) + fib(n - 2));
-}
+fib(double n);
+void
+check(auto_list_t& l);
+void
+check_const(const auto_list_t& l);
+
+//--------------------------------------------------------------------------------------//
 
 int
 main(int argc, char** argv)
@@ -59,4 +66,35 @@ main(int argc, char** argv)
     _main.stop();  // RELEVANT
 
     std::cout << "\n" << _main << "\n" << std::endl;  // RELEVANT
+    auto_list_t l(__FUNCTION__, false);
+    check(l);
+    check_const(l);
 }
+
+//--------------------------------------------------------------------------------------//
+
+double
+fib(double n)
+{
+    return (n < 2.0) ? n : 1.0 * (fib(n - 1) + fib(n - 2));
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+check_const(const auto_list_t& l)
+{
+    const real_clock* rc = l.get<real_clock>();
+    std::cout << "type: " << tim::demangle(typeid(rc).name()) << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+check(auto_list_t& l)
+{
+    real_clock* rc = l.get<real_clock>();
+    std::cout << "type: " << tim::demangle(typeid(rc).name()) << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
