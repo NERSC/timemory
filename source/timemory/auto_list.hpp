@@ -89,15 +89,15 @@ public:
 
     // partial interface to underlying component_list
     inline void record() { m_temporary_object.record(); }
-    inline void pause() { m_temporary_object.pause(); }
-    inline void resume() { m_temporary_object.resume(); }
+    // inline void pause() { m_temporary_object.pause(); }
+    // inline void resume() { m_temporary_object.resume(); }
     inline void start() { m_temporary_object.start(); }
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
-    inline void conditional_start() { m_temporary_object.conditional_start(); }
-    inline void conditional_stop() { m_temporary_object.conditional_stop(); }
+    // inline void conditional_start() { m_temporary_object.conditional_start(); }
+    // inline void conditional_stop() { m_temporary_object.conditional_stop(); }
 
     template <std::size_t _N>
     typename std::tuple_element<_N, data_type>::type& get()

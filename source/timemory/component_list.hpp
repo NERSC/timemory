@@ -210,7 +210,7 @@ public:
 
     //----------------------------------------------------------------------------------//
     // conditional start/stop functions
-    void conditional_start()
+    /*void conditional_start()
     {
         auto increment = [&](bool did_start) {
             if(did_start)
@@ -250,7 +250,7 @@ public:
         using apply_types = std::tuple<
             component::pointer_operator<Types, component::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data, decrement);
-    }
+    }*/
 
     //----------------------------------------------------------------------------------//
     // recording
@@ -266,7 +266,7 @@ public:
         return *this;
     }
 
-    this_type& record(const this_type& rhs)
+    /*this_type& record(const this_type& rhs)
     {
         if(this != &rhs)
             ++m_laps;
@@ -282,20 +282,7 @@ public:
             apply<void>::access2<apply_types>(m_data, c_data);
         }
         return *this;
-    }
-
-    //----------------------------------------------------------------------------------//
-    this_type record() const
-    {
-        this_type tmp(*this);
-        return tmp.record();
-    }
-
-    this_type record(const this_type& rhs) const
-    {
-        this_type tmp(*this);
-        return tmp.record(rhs);
-    }
+    }*/
 
     //----------------------------------------------------------------------------------//
     void reset()
@@ -658,19 +645,13 @@ public:
     void                         measure() {}
     void                         start() {}
     void                         stop() {}
-    void                         conditional_start() {}
-    void                         conditional_stop() {}
-    void                         pause() {}
-    void                         resume() {}
     void                         reset() {}
     this_type&                   record() { return *this; }
     this_type&                   record(const this_type&) { return *this; }
-    this_type                    record() const { return this_type(*this); }
-    this_type  record(const this_type&) const { return this_type(*this); }
-    this_type& operator-=(const this_type&) { return *this; }
-    this_type& operator-=(this_type&) { return *this; }
-    this_type& operator+=(const this_type&) { return *this; }
-    this_type& operator+=(this_type&) { return *this; }
+    this_type&                   operator-=(const this_type&) { return *this; }
+    this_type&                   operator-=(this_type&) { return *this; }
+    this_type&                   operator+=(const this_type&) { return *this; }
+    this_type&                   operator+=(this_type&) { return *this; }
 
     template <typename _Op>
     this_type& operator-=(_Op&&)
