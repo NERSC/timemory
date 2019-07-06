@@ -90,7 +90,7 @@ struct papi_tuple;
 template <int EventSet, std::size_t NumEvent>
 struct papi_array;
 
-template <int... EventTypes>
+template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
 
 }  // component

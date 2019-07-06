@@ -90,7 +90,7 @@ except:
 #
 if (os.environ.get("DISPLAY") is None and
     os.environ.get("MPLBACKEND") is None and
-    _matplotlib_backend is None):
+        _matplotlib_backend is None):
     os.environ.setdefault("MPLBACKEND", "agg")
 
 
@@ -123,7 +123,7 @@ except:
 #----------------------------------------------------------------------------------------#
 #
 #
-_default_min_percent = 0.05 # 5% of max
+_default_min_percent = 0.05  # 5% of max
 """ Default minimum percent of max when reducing # of timing functions plotted """
 
 _default_img_dpi = 75
@@ -139,6 +139,8 @@ plotted_files = []
 """ A list of all files that have been plotted """
 
 #==============================================================================#
+
+
 class plot_parameters():
     """
     A class for reducing the amount of data in plot by specifying a minimum
@@ -156,10 +158,10 @@ class plot_parameters():
     """ Global image plotting params (these should be modified instead of _default_*) """
 
     def __init__(self,
-                 min_percent = min_percent,
-                 img_dpi = img_dpi,
-                 img_size = img_size,
-                 img_type = img_type):
+                 min_percent=min_percent,
+                 img_dpi=img_dpi,
+                 img_size=img_size,
+                 img_type=img_type):
         self.min_percent = min_percent
         self.img_dpi = img_dpi
         self.img_size = img_size
@@ -182,7 +184,7 @@ def echo_dart_tag(name, filepath, img_type=plot_parameters.img_type):
     Printing this string will upload the results to CDash when running CTest
     """
     print('<DartMeasurementFile name="{}" '.format(name) +
-    'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath))
+          'type="image/{}">{}</DartMeasurementFile>'.format(img_type, filepath))
 
 
 #==============================================================================#
@@ -199,7 +201,7 @@ def add_plotted_files(name, filepath, echo_dart):
             found = True
             break
     if found is False:
-        plotted_files.append([ name, filepath ])
+        plotted_files.append([name, filepath])
 
 
 #==============================================================================#
@@ -342,17 +344,18 @@ class plot_data():
             the plotting parameters
         output_name (str):
     """
+
     def __init__(self,
-                 filename = "output",
-                 concurrency = 1, mpi_size = 1,
-                 timemory_functions = [],
-                 title = "",
-                 units = "",
-                 ctype = "",
-                 dtype = "",
-                 description = "",
-                 plot_params = plot_parameters(),
-                 output_name = None):
+                 filename="output",
+                 concurrency=1, mpi_size=1,
+                 timemory_functions=[],
+                 title="",
+                 units="",
+                 ctype="",
+                 dtype="",
+                 description="",
+                 plot_params=plot_parameters(),
+                 output_name=None):
 
         def _convert(_obj):
             if isinstance(_obj, dict):
@@ -393,7 +396,7 @@ class plot_data():
             print("plot output name: {}".format(self.output_name))
 
     # ------------------------------------------------------------------------ #
-    def update_parameters(self, params = None):
+    def update_parameters(self, params=None):
         """
         Update plot parameters (i.e. recalculate maxes)
         """
@@ -443,7 +446,7 @@ class plot_data():
             ('MPI ranks', self.mpi_size),
             ('# functions', len(self)),
             ('Title', self.title),
-            ('Parameters', self.plot_params) ]
+            ('Parameters', self.plot_params)]
         _str = '\n'
         for entry in _list:
             _str = '{}\t{} : "{}"\n'.format(_str, entry[0], entry[1])
@@ -455,7 +458,7 @@ class plot_data():
         Construct the title for the plot
         """
         return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
-                self.mpi_size, int(self.concurrency))
+                                                                  self.mpi_size, int(self.concurrency))
 
 
 #==============================================================================#
@@ -471,8 +474,6 @@ def read(json_obj, plot_params=plot_parameters()):
     timemory_functions = nested_dict()
 
     print('num ranks = {}'.format(nranks))
-    #for itr in data0.keys():
-        #print('key: {}'.format(itr))
 
     data1 = data0['rank']
     # nrank = data1['rank_id']        # rank number
@@ -485,19 +486,20 @@ def read(json_obj, plot_params=plot_parameters()):
     unitr = rdata['unit_repr']      # collection unit display repr
     gdata = rdata['graph']          # graph data
     ngraph = len(gdata)              # number of graph entries
+    roofl = rdata['roofline'] if 'roofline' in rdata else None
+
+    if roofl is not None:
+        print(roofl)
 
     concurrency_sum += nthrd
-
-    #print("Rank #{}: type = {}, descript = \"{}\", data type = {}, unit value = {}, "
-    #      "unit repr = {}, # entries = {}, num threads = {}".format(
-    #        nrank, ctype, cdesc, dtype, unitv, unitr, ngraph, nthrd))
 
     # ------------------------------------------------------------------------ #
     # loop over ranks
     for i in range(0, ngraph):
         _data = gdata[i]
         tag = _data['tuple_element2']
-        def _replace(_tag, _a, _b, _n = 0):
+
+        def _replace(_tag, _a, _b, _n=0):
             _c = 0
             while _a in _tag:
                 _tag = _tag.replace(_a, _b)
@@ -505,12 +507,6 @@ def read(json_obj, plot_params=plot_parameters()):
                 if _n > 0 and _c >= _n:
                     break
             return _tag
-
-        #tag = _replace(tag, " |", "||")
-        #tag = _replace(tag, "| |", "||")
-        #tag = _replace(tag, "]|", "] |")
-        #tag = _replace(tag, "|_", "| ")
-        #tag = _replace(tag, "] ||", "] |", 1)
 
         tfunc = timemory_data(tag, _data['tuple_element1'], dtype)
 
@@ -521,7 +517,7 @@ def read(json_obj, plot_params=plot_parameters()):
             # append
             timemory_functions[tag] += tfunc
 
-        #print(timemory_functions[tag])
+        # print(timemory_functions[tag])
 
     # ------------------------------------------------------------------------ #
     # return a plot_data object
@@ -543,7 +539,8 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
             import matplotlib
             import matplotlib.pyplot as plt
         except:
-            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            warnings.warn(
+                "Matplotlib could not find a suitable backend. Skipping plotting...")
             return
 
     import numpy as np
@@ -566,8 +563,8 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     print("Plot types: {}".format(types))
 
     if ntics == 0:
-        print ('{} had no data less than the minimum time ({} {})'.format(
-               filename, _type_min, _type_unit))
+        print('{} had no data less than the minimum time ({} {})'.format(
+            filename, _type_min, _type_unit))
         return False
 
     avgs = []
@@ -596,7 +593,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
     stds.reverse()
 
     # construct the plots
-    _colors=None
+    _colors = None
     if len(types) == 1:
         _colors = ['darkred', 'green']
     _plot = plt.barh(ind, avgs, thickness, xerr=stds,
@@ -630,7 +627,8 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             import matplotlib
             import matplotlib.pyplot as plt
         except:
-            warnings.warn("Matplotlib could not find a suitable backend. Skipping plotting...")
+            warnings.warn(
+                "Matplotlib could not find a suitable backend. Skipping plotting...")
             return
 
     import matplotlib
@@ -680,7 +678,8 @@ def plot_all(_plot_data, disp=False, output_dir=".", echo_dart=False):
             while '..' in imgfname:
                 imgfname = imgfname.replace('..', '.')
 
-            add_plotted_files(imgfname, os.path.join(output_dir, imgfname), echo_dart)
+            add_plotted_files(imgfname, os.path.join(
+                output_dir, imgfname), echo_dart)
 
             imgfname = os.path.join(output_dir, imgfname)
             print('Saving plot: "{}"...'.format(imgfname))
@@ -719,13 +718,13 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
     _combined = None
     for _data in data:
         if _combined is None:
-            _combined = plot_data(filename = output_name,
-                                  output_name = output_name,
-                                  concurrency = _data.concurrency,
-                                  mpi_size = _data.mpi_size,
-                                  timemory_functions = {},
-                                  title = title,
-                                  plot_params = plot_params)
+            _combined = plot_data(filename=output_name,
+                                  output_name=output_name,
+                                  concurrency=_data.concurrency,
+                                  mpi_size=_data.mpi_size,
+                                  timemory_functions={},
+                                  title=title,
+                                  plot_params=plot_params)
 
         _key = list(_data.timemory_functions.keys())[0]
         _obj = _data.timemory_functions[_key]
@@ -734,18 +733,18 @@ def plot_maximums(output_name, title, data, plot_params=plot_parameters(),
         _combined.timemory_functions[_obj_name] = _obj
 
     try:
-        print ('Plotting {}...'.format(_combined.filename))
+        print('Plotting {}...'.format(_combined.filename))
         plot_all(_combined, display, output_dir, echo_dart)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-        print ('Exception - {}'.format(e))
-        print ('Error! Unable to plot "{}"...'.format(_combined.filename))
+        print('Exception - {}'.format(e))
+        print('Error! Unable to plot "{}"...'.format(_combined.filename))
 
 
 #==============================================================================#
-def plot(data = [], files = [], plot_params=plot_parameters(),
+def plot(data=[], files=[], plot_params=plot_parameters(),
          combine=False, display=False, output_dir='.', echo_dart=None):
     """
     A function to plot JSON data
@@ -774,7 +773,7 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
 
     if len(files) > 0:
         for filename in files:
-            print ('Reading {}...'.format(filename))
+            print('Reading {}...'.format(filename))
             f = open(filename, "r")
             _data = read(json.load(f))
             f.close()
@@ -794,11 +793,12 @@ def plot(data = [], files = [], plot_params=plot_parameters(),
 
     for _data in data:
         try:
-            print ('Plotting {}...'.format(_data.filename))
+            print('Plotting {}...'.format(_data.filename))
             plot_all(_data, display, output_dir, echo_dart)
 
         except Exception as e:
             exc_type, exc_value, exc_traceback = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-            print ('Exception - {}'.format(e))
-            print ('Error! Unable to plot "{}"...'.format(_data.filename))
+            traceback.print_exception(
+                exc_type, exc_value, exc_traceback, limit=5)
+            print('Exception - {}'.format(e))
+            print('Error! Unable to plot "{}"...'.format(_data.filename))

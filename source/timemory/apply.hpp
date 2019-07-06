@@ -175,7 +175,7 @@ struct is_one_of<F, std::tuple<S, T...>>
 }  // namespace impl
 
 template <typename _Tp, typename _Types>
-using is_one_of_v = typename impl::is_one_of<_Tp, _Types>;
+using is_one_of = typename impl::is_one_of<_Tp, _Types>;
 
 //======================================================================================//
 // remove first type from expansion
@@ -287,6 +287,24 @@ struct _apply_impl
 template <>
 struct _apply_impl<void>
 {
+    //----------------------------------------------------------------------------------//
+    // unroll
+    template <size_t _N, typename _Func, typename... _Args,
+              typename std::enable_if<(_N == 1), char>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+    }
+
+    template <size_t _N, typename _Func, typename... _Args,
+              typename std::enable_if<(_N > 1), char>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+        unroll<_N - 1, _Func, _Args...>(std::forward<_Func>(__func),
+                                        std::forward<_Args>(__args)...);
+    }
+
     //----------------------------------------------------------------------------------//
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
@@ -469,6 +487,15 @@ struct apply
 template <>
 struct apply<void>
 {
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Func, typename... _Args>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        _apply_impl<void>::template unroll<_N, _Func, _Args...>(
+            std::forward<_Func>(__func), std::forward<_Args>(__args)...);
+    }
+
     //----------------------------------------------------------------------------------//
 
     template <typename _Tuple, typename _Value,

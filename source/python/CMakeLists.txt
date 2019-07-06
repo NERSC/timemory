@@ -41,6 +41,10 @@ target_link_libraries(libtimemory PUBLIC
     timemory-python-tls-model
     PRIVATE pybind11::module)
 
+if(TIMEMORY_USE_CUDA)
+    set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
+endif()
+
 if(TIMEMORY_USE_EXTERN_INIT)
     target_link_libraries(libtimemory PUBLIC timemory-extern-init)
 endif()
@@ -55,7 +59,8 @@ set_target_properties(libtimemory PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
-    PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory)
+    PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
+    ${EXTRA_PROPERTIES})
 
 foreach(_SUBMODULE plotting mpi_support util ert)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})

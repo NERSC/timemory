@@ -298,7 +298,7 @@ template <typename ObjectType>
 template <typename Archive>
 void
 tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
-                                    const unsigned int /*version*/)
+                                    const unsigned int version)
 {
     using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -318,8 +318,9 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
        serializer::make_nvp("descript", ObjectType::descript()),
        serializer::make_nvp("unit_value", ObjectType::unit()),
        serializer::make_nvp("unit_repr", ObjectType::display_unit()),
-       serializer::make_nvp("dtype", data_type),
-       serializer::make_nvp("graph", graph_list));
+       serializer::make_nvp("dtype", data_type));
+    ObjectType::serialization_policy(ar, version);
+    ar(serializer::make_nvp("graph", graph_list));
 }
 
 //======================================================================================//
@@ -328,7 +329,7 @@ template <typename ObjectType>
 template <typename Archive>
 void
 tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
-                                    const unsigned int /*version*/)
+                                    const unsigned int version)
 {
     using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -354,8 +355,9 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     ar(serializer::make_nvp("type", labels), serializer::make_nvp("descript", descripts),
        serializer::make_nvp("unit_value", units),
        serializer::make_nvp("unit_repr", display_units),
-       serializer::make_nvp("dtype", data_type),
-       serializer::make_nvp("graph", graph_list));
+       serializer::make_nvp("dtype", data_type));
+    ObjectType::serialization_policy(ar, version);
+    ar(serializer::make_nvp("graph", graph_list));
 }
 
 //======================================================================================//

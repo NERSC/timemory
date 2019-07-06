@@ -32,7 +32,7 @@
 
 using namespace tim::component;
 
-using roofline_t   = cpu_roofline<PAPI_DP_OPS>;
+using roofline_t   = cpu_roofline<double, PAPI_DP_OPS>;
 using papi_tup_t   = papi_tuple<0, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;

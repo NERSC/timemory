@@ -58,28 +58,26 @@ struct wrapper
     //----------------------------------------------------------------------------------//
     //  Policy is specified
     //----------------------------------------------------------------------------------//
-    template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<serialization, typename _Polp::type>::value == true),
-                    int> = 0>
-    static void invoke_serialize()
+    template <typename _Tp, typename _Archive, typename _Polp = typename _Tp::policy_type,
+              enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == true),
+                          int> = 0>
+    static void invoke_serialize(_Archive& ar, const unsigned int ver)
     {
-        _Tp::invoke_serialize();
+        _Tp::invoke_serialize(ar, ver);
     }
 
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<initialization, typename _Polp::type>::value == true),
+        enable_if_t<(is_one_of<initialization, typename _Polp::type>::value == true),
                     int> = 0>
     static void invoke_initialize()
     {
         _Tp::invoke_initialize();
     }
 
-    template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<finalization, typename _Polp::type>::value == true),
-                    int> = 0>
+    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+              enable_if_t<(is_one_of<finalization, typename _Polp::type>::value == true),
+                          int> = 0>
     static void invoke_finalize()
     {
         _Tp::invoke_finalize();
@@ -89,25 +87,24 @@ struct wrapper
     //  Policy is NOT specified
     //----------------------------------------------------------------------------------//
     template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<serialization, typename _Polp::type>::value == false),
+        typename _Tp, typename _Archive, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == false),
                     int> = 0>
-    static void invoke_serialize()
+    static void invoke_serialize(_Archive&, const unsigned int)
     {
     }
 
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<initialization, typename _Polp::type>::value == false),
+        enable_if_t<(is_one_of<initialization, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_initialize()
     {
     }
 
-    template <
-        typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of_v<finalization, typename _Polp::type>::value == false),
-                    int> = 0>
+    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+              enable_if_t<(is_one_of<finalization, typename _Polp::type>::value == false),
+                          int> = 0>
     static void invoke_finalize()
     {
     }

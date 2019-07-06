@@ -7,10 +7,10 @@
 #include <sys/time.h>
 
 #define ERT_ALIGN 64
-#define ERT_FLOP 256
+#define ERT_FLOP 128
 #define ERT_TRIALS_MIN 100
-#define ERT_WORKING_SET_MIN 100
-#define ERT_MEMORY_MAX 64 * 64 * 64 * 64
+#define ERT_WORKING_SET_MIN 10
+#define ERT_MEMORY_MAX 64 * 64 * 64
 
 double
 getTime()
@@ -248,9 +248,9 @@ ert_main(int, char**)
                     float tim_flops_per_sec = std::get<0>(*rl).compute_display();
                     float perc_error        = (tim_flops_per_sec - ert_flops_per_sec) /
                                        ert_flops_per_sec * 100.;
-                    printf("%8" PRIu64 "%6" PRIu64 " %12.3lf %10" PRIu64 " %10" PRIu64
+                    printf("%8" PRIu64 "%6" PRIu64 " %12.4e %10" PRIu64 " %10" PRIu64
                            " flops/sec: %8.0f (ERT), %8.0f (TiM), err: %5.2f %s\n",
-                           working_set_size * bytes_per_elem, t, seconds * 1000000,
+                           working_set_size * bytes_per_elem, t, seconds,  //* 1000000,
                            total_bytes, total_flops, ert_flops_per_sec, tim_flops_per_sec,
                            perc_error, "%");
                     delete rl;

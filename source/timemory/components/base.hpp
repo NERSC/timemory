@@ -85,9 +85,13 @@ public:
     base& operator=(this_type&&) = default;
 
 private:
-    static void serialization_policy() { policy_type::template invoke_serialize<_Tp>(); }
     static void initialize_policy() { policy_type::template invoke_initialize<_Tp>(); }
     static void finalize_policy() { policy_type::template invoke_finalize<_Tp>(); }
+    template <typename _Archive>
+    static void serialization_policy(_Archive& ar, const unsigned int ver)
+    {
+        policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
+    }
 
 public:
     //----------------------------------------------------------------------------------//

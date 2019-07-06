@@ -170,8 +170,8 @@ template <int EventSet, std::size_t NumEvent>
 struct impl_available<papi_array<EventSet, NumEvent>> : std::false_type
 {};
 
-template <int... EventTypes>
-struct impl_available<cpu_roofline<EventTypes...>> : std::false_type
+template <typename _Tp, int... EventTypes>
+struct impl_available<cpu_roofline<_Tp, EventTypes...>> : std::false_type
 {};
 
 #endif  // TIMEMORY_USE_PAPI

@@ -16,26 +16,23 @@ find_program(CLANG_FORMATTER
         clang-format)
 
 if(CLANG_FORMATTER)
-    file(GLOB headers
+    file(GLOB_RECURSE headers
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/timemory/impl/*.icpp
-        ${PROJECT_SOURCE_DIR}/source/timemory/components/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/timemory/*.thpp
-        ${PROJECT_SOURCE_DIR}/source/python/*.hpp)
+        ${PROJECT_SOURCE_DIR}/source/timemory/*.icpp)
     file(GLOB sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/python/*.cpp)
+        ${PROJECT_SOURCE_DIR}/source/python/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/python/*.hpp)
     if(TIMEMORY_BUILD_EXAMPLES)
         file(GLOB_RECURSE examples
-            ${PROJECT_SOURCE_DIR}/examples/*.h
-            ${PROJECT_SOURCE_DIR}/examples/*.c
-            ${PROJECT_SOURCE_DIR}/examples/*.hpp
-            ${PROJECT_SOURCE_DIR}/examples/*.cpp
-            ${PROJECT_SOURCE_DIR}/examples/*.cuh
-            ${PROJECT_SOURCE_DIR}/examples/*.cu)
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.h
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.c
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.hpp
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.cpp
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.cuh
+            ${PROJECT_SOURCE_DIR}/examples/ex-*/*.cu)
     else()
         set(examples)
     endif()

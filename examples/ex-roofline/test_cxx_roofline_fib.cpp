@@ -29,15 +29,16 @@
 #include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 
-using namespace tim::component;  // RELEVANT
-using roofline_t   = cpu_roofline<PAPI_DP_OPS>;
+using namespace tim::component;
+using float_type   = double;
+using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, roofline_t>;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 
-double
-fib(double n);
+float_type
+fib(float_type n);
 void
 check(auto_list_t& l);
 void
@@ -48,24 +49,34 @@ check_const(const auto_list_t& l);
 int
 main(int argc, char** argv)
 {
-    tim::timemory_init(argc, argv);  // RELEVANT
+    tim::timemory_init(argc, argv);
 
-    // RELEVANT
     using comp_tuple_t = typename auto_tuple_t::component_type;
     comp_tuple_t _main("overall timer", true);
 
-    _main.start();  // RELEVANT
+    roofline_t::operation_function_t roof_func = []() {
+        using _Tp     = float_type;
+        auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+        auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+        tim::ert::exec_params params(500, 500, 500 * 500 * 10);
+        auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
+        tim::ert::cpu_ops_main<1>(*op_counter, add_func);
+        tim::ert::cpu_ops_main<2, 4, 8, 32, 64, 128, 256, 512>(*op_counter, fma_func);
+        return op_counter;
+    };
+    roofline_t::get_finalize_function() = roof_func;
+
+    _main.start();
     for(auto n : { 35, 38, 45 })
     {
-        // RELEVANT
         auto label = tim::str::join("", "fibonacci(", n, ")");
         TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
         auto ret = fib(n);
-        printf("fib(%i) = %f\n", n, ret);
+        printf("fib(%i) = %.2f\n", n, ret);
     }
-    _main.stop();  // RELEVANT
+    _main.stop();
 
-    std::cout << "\n" << _main << "\n" << std::endl;  // RELEVANT
+    std::cout << "\n" << _main << "\n" << std::endl;
     auto_list_t l(__FUNCTION__, false);
     check(l);
     check_const(l);
@@ -73,10 +84,13 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-double
-fib(double n)
+#define ftwo static_cast<float_type>(2.0)
+#define fone static_cast<float_type>(1.0)
+
+float_type
+fib(float_type n)
 {
-    return (n < 2.0) ? n : 1.0 * (fib(n - 1) + fib(n - 2));
+    return (n < ftwo) ? n : fone * (fib(n - 1) + fib(n - 2));
 }
 
 //--------------------------------------------------------------------------------------//

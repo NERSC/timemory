@@ -67,6 +67,12 @@ struct real_clock : public base<real_clock>
                                    base_type::get_unit());
     }
 
+    double get() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<double>(val / static_cast<double>(ratio_t::den));
+    }
+
     void start()
     {
         set_started();

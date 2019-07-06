@@ -20,6 +20,7 @@ include(CMakeParseArguments)
 file(GLOB c_headers                 ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB cxx_headers_impl          ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
 file(GLOB cxx_headers_comp          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
@@ -42,8 +43,9 @@ add_subdirectory(timemory)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES    ${c_sources}    ${c_headers})
-set(CXX_LIBRARY_SOURCES  ${cxx_sources}  ${cxx_headers} ${cxx_headers_comp} ${cxx_headers_impl} ${cereal_headers})
+set(C_LIBRARY_SOURCES    ${c_sources}        ${c_headers})
+set(CXX_LIBRARY_SOURCES  ${cxx_sources}      ${cxx_headers}      ${cxx_headers_ert}
+                         ${cxx_headers_comp} ${cxx_headers_impl} ${cereal_headers})
 
 
 #----------------------------------------------------------------------------------------#

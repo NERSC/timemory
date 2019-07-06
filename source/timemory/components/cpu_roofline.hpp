@@ -27,6 +27,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/ert/kernels.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/papi.hpp"
 #include "timemory/storage.hpp"
@@ -55,23 +56,26 @@ namespace component
 // NOTE: in order to do a roofline, the peak must be calculated with ERT
 //      (eventually will be integrated)
 //
-template <int... EventTypes>
+template <typename _Tp, int... EventTypes>
 struct cpu_roofline
-: public base<cpu_roofline<EventTypes...>,
-              std::pair<std::array<long long, sizeof...(EventTypes)>, int64_t>,
-              policy::initialization, policy::finalization>
+: public base<cpu_roofline<_Tp, EventTypes...>,
+              std::pair<std::array<long long, sizeof...(EventTypes) + 1>, int64_t>,
+              policy::initialization, policy::finalization, policy::serialization>
 {
-    friend struct policy::wrapper<policy::initialization, policy::finalization>;
+    friend struct policy::wrapper<policy::initialization, policy::finalization,
+                                  policy::serialization>;
 
     using size_type  = std::size_t;
-    using array_type = std::array<long long, sizeof...(EventTypes)>;
+    using array_type = std::array<long long, sizeof...(EventTypes) + 1>;
     using value_type = std::pair<array_type, int64_t>;
-    using this_type  = cpu_roofline<EventTypes...>;
-    using base_type =
-        base<this_type, value_type, policy::initialization, policy::finalization>;
+    using this_type  = cpu_roofline<_Tp, EventTypes...>;
+    using base_type  = base<this_type, value_type, policy::initialization,
+                           policy::finalization, policy::serialization>;
 
-    using papi_type = papi_tuple<0, EventTypes...>;
-    using ratio_t   = typename real_clock::ratio_t;
+    using papi_type            = papi_tuple<0, EventTypes..., PAPI_LST_INS>;
+    using ratio_t              = typename real_clock::ratio_t;
+    using operation_counter_t  = tim::ert::cpu::operation_counter<_Tp>;
+    using operation_function_t = std::function<operation_counter_t*()>;
 
     using base_type::accum;
     using base_type::is_running;
@@ -81,21 +85,54 @@ struct cpu_roofline
     using base_type::set_stopped;
     using base_type::value;
 
-    static const size_type               num_events = sizeof...(EventTypes);
+    static const size_type               num_events = sizeof...(EventTypes) + 1;
     static const short                   precision  = 3;
     static const short                   width      = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec;
 
+    static operation_function_t& get_finalize_function()
+    {
+        static operation_function_t _instance = []() {
+            auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+            auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+            tim::ert::exec_params params(10, 100, 64 * 64 * 64);
+            auto                  op_counter =
+                new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
+            tim::ert::cpu_ops_main<1>(*op_counter, add_func);
+            tim::ert::cpu_ops_main<2, 4, 8, 32, 64, 128>(*op_counter, fma_func);
+            return op_counter;
+        };
+        return _instance;
+    }
+
+    static operation_counter_t*& get_operation_counter()
+    {
+        static operation_counter_t* _instance = nullptr;
+        return _instance;
+    }
+
     static void invoke_initialize()
     {
-        int events[] = { EventTypes... };
+        int events[] = { EventTypes..., PAPI_LST_INS };
         tim::papi::start_counters(events, num_events);
     }
+
     static void invoke_finalize()
     {
+        auto  op_counter_func   = get_finalize_function();
+        auto* op_counter        = op_counter_func();
+        get_operation_counter() = op_counter;
+        std::cout << *op_counter << std::endl;
         array_type events = {};
         tim::papi::stop_counters(events.data(), num_events);
+    }
+
+    template <typename _Archive>
+    static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
+    {
+        auto*& op_counter = get_operation_counter();
+        ar(serializer::make_nvp("roofline", op_counter->data));
     }
 
     static int64_t     unit() { return 1; }
@@ -106,10 +143,10 @@ struct cpu_roofline
         std::stringstream ss;
         ss << "(";
         auto labels = papi_type::label_array();
-        for(size_type i = 0; i < labels.size(); ++i)
+        for(size_type i = 0; i < labels.size() - 1; ++i)
         {
             ss << labels[i];
-            if(i + 1 < labels.size())
+            if(i + 1 < labels.size() - 1)
             {
                 ss << " + ";
             }
@@ -123,12 +160,25 @@ struct cpu_roofline
         return value_type(papi_type::record(), real_clock::record());
     }
 
+    double get_elapsed(const int64_t& _unit = real_clock::get_unit()) const
+    {
+        auto& obj = (accum.second > 0) ? accum : value;
+        return static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
+                                   _unit);
+    }
+
+    int64_t get_counted() const
+    {
+        auto& obj = (accum.second > 0) ? accum : value;
+        return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0);
+    }
+
     double compute_display() const
     {
         auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
             return 0.0;
-        return std::accumulate(obj.first.begin(), obj.first.end(), 0) /
+        return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
                (static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
                                     real_clock::get_unit()));
     }
@@ -206,15 +256,15 @@ private:
 //--------------------------------------------------------------------------------------//
 // Shorthand aliases for common roofline types
 //
-using cpu_roofline_sflops = cpu_roofline<PAPI_SP_OPS>;
-using cpu_roofline_dflops = cpu_roofline<PAPI_DP_OPS>;
-using cpu_roofline_flops  = cpu_roofline<PAPI_FP_OPS>;
+using cpu_roofline_sflops = cpu_roofline<float, PAPI_SP_OPS>;
+using cpu_roofline_dflops = cpu_roofline<double, PAPI_DP_OPS>;
+// using cpu_roofline_flops  = cpu_roofline<double, PAPI_FP_OPS>;
 // TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
 // accesses/reads/writes/etc.
-using cpu_roofline_l1 = cpu_roofline<PAPI_L1_TCH>;
+// using cpu_roofline_l1 = cpu_roofline<PAPI_L1_TCH>;
 // TODO: check if L2 roofline wants L2 total cache hits (below) or L2 composite of
 // accesses/reads/writes/etc.
-using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
+// using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component
