@@ -66,7 +66,7 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-c", help="TIMEMORY_BUILD_C=OFF",
                         default=False, action='store_true')
-    parser.add_argument("--extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=ON",
+    parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
                         default=False, action='store_true')
 
     args = parser.parse_args()
@@ -143,13 +143,15 @@ def run_pyctest():
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
-        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "OFF",
+        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON",
     }
 
     test_name_suffix = ""
 
-    if args.extern_templates:
-        build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "ON"
+    if args.no_extern_templates:
+        build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "OFF"
+        build_opts["USE_EXTERN_TEMPLATES"] = "OFF"
+    else:
         build_opts["USE_EXTERN_TEMPLATES"] = "ON"
 
     if args.no_c:
@@ -209,8 +211,8 @@ def run_pyctest():
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
                 pyctest.BUILD_TYPE = "Debug"
-                pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
-                            "source/cereal/*;source/python/pybind11/*")
+        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
+                    "source/cereal/*;source/python/pybind11/*")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())

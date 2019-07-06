@@ -102,7 +102,10 @@ main(int argc, char** argv)
     tim::settings::cout_output()       = false;
     tim::timemory_init(argc, argv);
     tim::settings::cout_output() = false;
+#if !defined(TIMEMORY_USE_GPERF)
+    // heap-profiler will take a long timer if enabled
     tim::settings::json_output() = true;
+#endif
 
     // default calc: fibonacci(43)
     int nfib = 43;
