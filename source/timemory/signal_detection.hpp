@@ -255,17 +255,17 @@ demangle(const std::string& _str)
 //--------------------------------------------------------------------------------------//
 
 // declarations
-static bool enable_signal_detection(
+inline bool enable_signal_detection(
     signal_settings::signal_set_t = signal_settings::get_default());
 
 //--------------------------------------------------------------------------------------//
 
-static void
+inline void
 disable_signal_detection();
 
 //--------------------------------------------------------------------------------------//
 
-static void
+inline void
 update_signal_detection(signal_settings::signal_set_t _signals)
 {
     disable_signal_detection();
@@ -540,7 +540,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 
 //--------------------------------------------------------------------------------------//
 
-static bool
+inline bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
     // don't re-enable
@@ -581,7 +581,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
 
 //--------------------------------------------------------------------------------------//
 
-static void
+inline void
 disable_signal_detection()
 {
     // don't re-disable
@@ -591,7 +591,7 @@ disable_signal_detection()
     sigemptyset(&tim_signal_termaction().sa_mask);
     tim_signal_termaction().sa_handler = SIG_DFL;
 
-    auto _disable = [](const signal_settings::signal_set_t& _set) {
+    auto _disable = [](signal_settings::signal_set_t _set) {
         for(auto itr = _set.cbegin(); itr != _set.cend(); ++itr)
         {
             int _itr = static_cast<int>(*itr);
@@ -619,18 +619,18 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-static bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
+inline bool enable_signal_detection(signal_settings::signal_set_t) { return false; }
 
 //--------------------------------------------------------------------------------------//
 
-static void
+inline void
 disable_signal_detection()
 {
 }
 
 //--------------------------------------------------------------------------------------//
 
-static void
+inline void
 timemory_stack_backtrace(std::ostream& os)
 {
     os << "timemory_stack_backtrace() not available." << std::endl;

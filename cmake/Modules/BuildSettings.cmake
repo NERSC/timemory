@@ -88,6 +88,10 @@ add_interface_library(timemory-arch)
 add_interface_library(timemory-avx512)
 target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
 
+if(TIMEMORY_USE_ARCH)
+    target_link_libraries(timemory-compile-options INTERFACE timemory-arch)
+endif()
+
 find_package(CpuArch)
 
 if(CpuArch_FOUND)

@@ -56,6 +56,12 @@ add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
 
+set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
+set(BUILD_STATIC_LIBS ON CACHE BOOL "Build static libraries")
+
+add_feature(BUILD_SHARED_LIBS "Build shared libraries")
+add_feature(BUILD_STATIC_LIBS "Build static libraries")
+
 if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     # standard
     set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
@@ -126,6 +132,8 @@ add_option(TIMEMORY_USE_COVERAGE
     "Enable code-coverage" ${_USE_COVERAGE} ${_FEATURE})
 add_option(TIMEMORY_USE_GPERF
     "Enable gperf-tools" OFF)
+add_option(TIMEMORY_USE_ARCH
+    "Enable architecture flags" OFF ${_FEATURE})
 add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CUPTI

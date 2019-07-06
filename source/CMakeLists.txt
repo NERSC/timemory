@@ -77,8 +77,8 @@ add_interface_library(timemory-cxx)
 target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
 
 # private compile options
-target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options)
-target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options)
+target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options timemory-analysis-tools)
+target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options timemory-analysis-tools)
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
     target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
@@ -124,6 +124,9 @@ if(TIMEMORY_BUILD_C)
 
     add_interface_library(timemory-c)
     target_link_libraries(timemory-c INTERFACE timemory-c-shared)
+
+    target_link_libraries(timemory-c-shared PRIVATE timemory-analysis-tools)
+    target_link_libraries(timemory-c-static PRIVATE timemory-analysis-tools)
 
     if(WIN32)
         target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
