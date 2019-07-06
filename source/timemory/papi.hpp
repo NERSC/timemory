@@ -143,11 +143,11 @@ register_thread()
 {
     // inform PAPI of the existence of a new thread
 #if defined(TIMEMORY_USE_PAPI)
-    // std::stringstream ss;
-    // ss << std::this_thread::get_id();
-    // PRINT_HERE(ss.str().c_str());
-    int retval = PAPI_register_thread();
-    working()  = check(retval, "Warning!! Failure registering thread");
+    if(working())
+    {
+        int retval = PAPI_register_thread();
+        working()  = check(retval, "Warning!! Failure registering thread");
+    }
 #endif
 }
 
@@ -158,8 +158,11 @@ unregister_thread()
 {
     // inform PAPI that a previously registered thread is disappearing
 #if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_unregister_thread();
-    working()  = check(retval, "Warning!! Failure unregistering thread");
+    if(working())
+    {
+        int retval = PAPI_unregister_thread();
+        working()  = check(retval, "Warning!! Failure unregistering thread");
+    }
 #endif
 }
 

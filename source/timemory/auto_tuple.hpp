@@ -43,6 +43,7 @@
 
 #include "timemory/auto_macros.hpp"
 #include "timemory/component_tuple.hpp"
+#include "timemory/filters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 

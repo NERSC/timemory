@@ -90,21 +90,6 @@ public:
     using auto_type = auto_list<Types...>;
 
 public:
-    /*
-    using construct_types = std::tuple<component::construct<Types>...>;
-    template <typename... Constructors>
-    explicit component_list(std::tuple<Constructors...>&& _ctors, const string_t& key,
-                             const bool& store, const language_t& lang =
-    language_t::cxx(), const int64_t& ncount = 0, const int64_t& nhash = 0) :
-    m_store(store) , m_laps(0) , m_count(ncount) , m_hash(nhash) , m_key(key) ,
-    m_lang(lang) , m_identifier("") , m_data(apply<data_type>::template
-    all<construct_types>(component::create, _ctors))
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        push();
-    }*/
-
     explicit component_list(const string_t& key, const bool& store,
                             const language_t& lang = language_t::cxx(),
                             const int64_t& ncount = 0, const int64_t& nhash = 0)
@@ -800,78 +785,6 @@ protected:
 private:
     void init_manager();
 };
-
-//--------------------------------------------------------------------------------------//
-
-namespace details
-{
-//--------------------------------------------------------------------------------------//
-
-template <typename...>
-struct component_list_concat
-{
-};
-
-template <>
-struct component_list_concat<>
-{
-    using type = component_list<>;
-};
-
-template <typename... Ts>
-struct component_list_concat<component_list<Ts...>>
-{
-    using type = component_list<Ts...>;
-};
-
-template <typename... Ts0, typename... Ts1, typename... Rest>
-struct component_list_concat<component_list<Ts0...>, component_list<Ts1...>, Rest...>
-: component_list_concat<component_list<Ts0..., Ts1...>, Rest...>
-{
-};
-
-template <typename... Ts>
-using component_list_concat_t = typename component_list_concat<Ts...>::type;
-
-//--------------------------------------------------------------------------------------//
-
-template <bool>
-struct component_list_filter_if_result
-{
-    template <typename T>
-    using type = component_list<T>;
-};
-
-template <>
-struct component_list_filter_if_result<false>
-{
-    template <typename T>
-    using type = component_list<>;
-};
-
-template <template <typename> class Predicate, typename Sequence>
-struct component_list_filter_if;
-
-template <template <typename> class Predicate, typename... Ts>
-struct component_list_filter_if<Predicate, component_list<Ts...>>
-{
-    using type = component_list_concat_t<typename component_list_filter_if_result<
-        Predicate<Ts>::value>::template type<Ts>...>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace details
-
-//--------------------------------------------------------------------------------------//
-
-template <template <typename> class Predicate, typename Sequence>
-using list_type_filter =
-    typename details::component_list_filter_if<Predicate, Sequence>::type;
-
-template <typename... Types>
-using implemented_component_list =
-    list_type_filter<component::impl_available, component_list<Types...>>;
 
 //--------------------------------------------------------------------------------------//
 

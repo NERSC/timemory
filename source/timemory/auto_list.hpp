@@ -43,6 +43,7 @@
 
 #include "timemory/auto_macros.hpp"
 #include "timemory/component_list.hpp"
+#include "timemory/filters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 
@@ -66,6 +67,7 @@ public:
     using string_hash    = std::hash<string_t>;
     using base_type      = implemented_component_list<Types...>;
     using language_t     = tim::language;
+    using tuple_type     = implemented_tuple<Types...>;
 
 public:
     auto_list(const string_t&, const int64_t& lineno = 0,
@@ -119,6 +121,20 @@ public:
     auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
     {
         return m_temporary_object.template get<_Tp>();
+    }
+
+    template <typename _Tp, typename... _Args,
+              tim::enable_if_t<(is_one_of_v<_Tp, tuple_type>::value == true), int> = 0>
+    void init(_Args&&... _args)
+    {
+        auto&& _obj = m_temporary_object.template get<_Tp>();
+        _obj        = new _Tp(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename... _Args,
+              tim::enable_if_t<(is_one_of_v<_Tp, tuple_type>::value == false), int> = 0>
+    void init(_Args&&... _args)
+    {
     }
 
 public:

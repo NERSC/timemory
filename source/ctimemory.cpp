@@ -288,56 +288,32 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
         TIMEMORY_COMPONENT component = static_cast<TIMEMORY_COMPONENT>(components[i]);
         switch(component)
         {
-            case WALL_CLOCK: obj->get<real_clock>() = new real_clock(); break;
-            case SYS_CLOCK: obj->get<system_clock>() = new system_clock(); break;
-            case USER_CLOCK: obj->get<user_clock>() = new user_clock(); break;
-            case CPU_CLOCK: obj->get<cpu_clock>() = new cpu_clock(); break;
-            case MONOTONIC_CLOCK:
-                obj->get<monotonic_clock>() = new monotonic_clock();
-                break;
-            case MONOTONIC_RAW_CLOCK:
-                obj->get<monotonic_raw_clock>() = new monotonic_raw_clock();
-                break;
-            case THREAD_CPU_CLOCK:
-                obj->get<thread_cpu_clock>() = new thread_cpu_clock();
-                break;
-            case PROCESS_CPU_CLOCK:
-                obj->get<process_cpu_clock>() = new process_cpu_clock();
-                break;
-            case CPU_UTIL: obj->get<cpu_util>() = new cpu_util(); break;
-            case THREAD_CPU_UTIL:
-                obj->get<thread_cpu_util>() = new thread_cpu_util();
-                break;
-            case PROCESS_CPU_UTIL:
-                obj->get<process_cpu_util>() = new process_cpu_util();
-                break;
-            case CURRENT_RSS: obj->get<current_rss>() = new current_rss(); break;
-            case PEAK_RSS: obj->get<peak_rss>() = new peak_rss(); break;
-            case STACK_RSS: obj->get<stack_rss>() = new stack_rss(); break;
-            case DATA_RSS: obj->get<data_rss>() = new data_rss(); break;
-            case NUM_SWAP: obj->get<num_swap>() = new num_swap(); break;
-            case NUM_IO_IN: obj->get<num_io_in>() = new num_io_in(); break;
-            case NUM_IO_OUT: obj->get<num_io_out>() = new num_io_out(); break;
-            case NUM_MINOR_PAGE_FAULTS:
-                obj->get<num_minor_page_faults>() = new num_minor_page_faults();
-                break;
-            case NUM_MAJOR_PAGE_FAULTS:
-                obj->get<num_major_page_faults>() = new num_major_page_faults();
-                break;
-            case NUM_MSG_SENT: obj->get<num_msg_sent>() = new num_msg_sent(); break;
-            case NUM_MSG_RECV: obj->get<num_msg_recv>() = new num_msg_recv(); break;
-            case NUM_SIGNALS: obj->get<num_signals>() = new num_signals(); break;
-            case VOLUNTARY_CONTEXT_SWITCH:
-                obj->get<voluntary_context_switch>() = new voluntary_context_switch();
-                break;
-            case PRIORITY_CONTEXT_SWITCH:
-                obj->get<priority_context_switch>() = new priority_context_switch();
-                break;
-            case CUDA_EVENT:
-#    if defined(TIMEMORY_USE_CUDA)
-                obj->get<cuda_event>() = new cuda_event();
-#    endif
-                break;
+            case WALL_CLOCK: obj->init<real_clock>(); break;
+            case SYS_CLOCK: obj->init<system_clock>(); break;
+            case USER_CLOCK: obj->init<user_clock>(); break;
+            case CPU_CLOCK: obj->init<cpu_clock>(); break;
+            case MONOTONIC_CLOCK: obj->init<monotonic_clock>(); break;
+            case MONOTONIC_RAW_CLOCK: obj->init<monotonic_raw_clock>(); break;
+            case THREAD_CPU_CLOCK: obj->init<thread_cpu_clock>(); break;
+            case PROCESS_CPU_CLOCK: obj->init<process_cpu_clock>(); break;
+            case CPU_UTIL: obj->init<cpu_util>(); break;
+            case THREAD_CPU_UTIL: obj->init<thread_cpu_util>(); break;
+            case PROCESS_CPU_UTIL: obj->init<process_cpu_util>(); break;
+            case CURRENT_RSS: obj->init<current_rss>(); break;
+            case PEAK_RSS: obj->init<peak_rss>(); break;
+            case STACK_RSS: obj->init<stack_rss>(); break;
+            case DATA_RSS: obj->init<data_rss>(); break;
+            case NUM_SWAP: obj->init<num_swap>(); break;
+            case NUM_IO_IN: obj->init<num_io_in>(); break;
+            case NUM_IO_OUT: obj->init<num_io_out>(); break;
+            case NUM_MINOR_PAGE_FAULTS: obj->init<num_minor_page_faults>(); break;
+            case NUM_MAJOR_PAGE_FAULTS: obj->init<num_major_page_faults>(); break;
+            case NUM_MSG_SENT: obj->init<num_msg_sent>(); break;
+            case NUM_MSG_RECV: obj->init<num_msg_recv>(); break;
+            case NUM_SIGNALS: obj->init<num_signals>(); break;
+            case VOLUNTARY_CONTEXT_SWITCH: obj->init<voluntary_context_switch>(); break;
+            case PRIORITY_CONTEXT_SWITCH: obj->init<priority_context_switch>(); break;
+            case CUDA_EVENT: obj->init<cuda_event>(); break;
         }
     }
     obj->push();

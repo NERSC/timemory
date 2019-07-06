@@ -80,7 +80,6 @@ struct papi_array
     {
         if(event_count::is_master())
         {
-            // add_event_types();
             start_event_set();
         }
         apply<void>::set_value(value, 0);
@@ -92,7 +91,6 @@ struct papi_array
         if(event_count::live() < 1 && event_count::is_master())
         {
             stop_event_set();
-            // remove_event_types();
         }
     }
 
