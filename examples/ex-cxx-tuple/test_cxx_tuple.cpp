@@ -39,7 +39,7 @@
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS>;
+using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
@@ -112,10 +112,10 @@ main(int argc, char** argv)
     tim::enable_signal_detection();
 
     auto* timing = new tim::standard_timing_t("Tests runtime", true);
-    tim::component_tuple<papi_tuple_t> m("PAPI measurements");
+    // tim::component_tuple<papi_tuple_t> m("PAPI measurements");
 
     timing->start();
-    m.start();
+    // m.start();
 
     CONFIGURE_TEST_SELECTOR(4);
 
@@ -135,10 +135,10 @@ main(int argc, char** argv)
         std::cerr << e.what() << std::endl;
     }
 
-    m.stop();
+    // m.stop();
     timing->stop();
 
-    std::cout << "\n" << m << std::endl;
+    // std::cout << "\n" << m << std::endl;
     std::cout << "\n" << *timing << std::endl;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);

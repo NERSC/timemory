@@ -245,7 +245,8 @@ ert_main(int, char**)
                     // nsize; trials; microseconds; bytes; single thread bandwidth; total
                     // bandwidth
                     float ert_flops_per_sec = (float) total_flops / seconds;
-                    float tim_flops_per_sec = std::get<0>(*rl).compute_display();
+                    float tim_second = std::get<0>(*rl).get_elapsed() * tim::units::sec;
+                    float tim_flops_per_sec = std::get<0>(*rl).get_counted() / tim_second;
                     float perc_error        = (tim_flops_per_sec - ert_flops_per_sec) /
                                        ert_flops_per_sec * 100.;
                     printf("%8" PRIu64 "%6" PRIu64 " %12.4e %10" PRIu64 " %10" PRIu64

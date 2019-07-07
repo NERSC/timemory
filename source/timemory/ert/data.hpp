@@ -67,7 +67,8 @@ allocate_aligned(size_t size, size_t alignment)
     return static_cast<_Tp*>(_mm_malloc(size * sizeof(_Tp), alignment));
 #elif defined(_UNIX)
     void* ptr = nullptr;
-    posix_memalign(&ptr, alignment, size * sizeof(_Tp));
+    auto  ret = posix_memalign(&ptr, alignment, size * sizeof(_Tp));
+    consume_parameters(ret);
     return static_cast<_Tp*>(ptr);
 #elif defined(_WINDOWS)
     return static_cast<_Tp*>(_aligned_malloc(size * sizeof(_Tp), alignment));

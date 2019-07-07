@@ -72,7 +72,7 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_type            = papi_tuple<0, EventTypes..., PAPI_LST_INS>;
+    using papi_type            = papi_tuple<0, EventTypes..., PAPI_LD_INS>;
     using ratio_t              = typename real_clock::ratio_t;
     using operation_counter_t  = tim::ert::cpu::operation_counter<_Tp>;
     using operation_function_t = std::function<operation_counter_t*()>;
@@ -114,7 +114,7 @@ struct cpu_roofline
 
     static void invoke_initialize()
     {
-        int events[] = { EventTypes..., PAPI_LST_INS };
+        int events[] = { EventTypes..., PAPI_LD_INS };
         tim::papi::start_counters(events, num_events);
     }
 
@@ -135,6 +135,17 @@ struct cpu_roofline
         ar(serializer::make_nvp("roofline", op_counter->data));
     }
 
+    static PAPI_event_info_t info(int evt_type)
+    {
+        PAPI_event_info_t evt_info;
+#if defined(TIMEMORY_USE_PAPI)
+        PAPI_get_event_info(evt_type, &evt_info);
+#else
+        consume_parameters(std::move(evt_type));
+#endif
+        return evt_info;
+    }
+
     static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_roofline"; }
     static std::string descript() { return "cpu roofline"; }
@@ -151,7 +162,7 @@ struct cpu_roofline
                 ss << " + ";
             }
         }
-        ss << ") / " << real_clock::display_unit();
+        ss << ") / " << real_clock::display_unit() << " + " << labels.back();
         return ss.str();
     }
 
@@ -173,14 +184,17 @@ struct cpu_roofline
         return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0);
     }
 
-    double compute_display() const
+    string_t compute_display() const
     {
-        auto& obj = (accum.second > 0) ? accum : value;
+        std::stringstream ss;
+        auto&             obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
-            return 0.0;
-        return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
-               (static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
-                                    real_clock::get_unit()));
+            return "";
+        auto v1 = std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
+                  (static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
+                                       real_clock::get_unit()));
+        ss << v1 << " + " << obj.first.back();
+        return ss.str();
     }
     double serial() { return compute_display(); }
     void   start()
