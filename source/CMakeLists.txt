@@ -161,6 +161,10 @@ install(FILES ${cxx_headers_comp}
     DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/components
     COMPONENT development)
 
+install(FILES ${cxx_headers_ert}
+    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/ert
+    COMPONENT development)
+
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends
     DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
