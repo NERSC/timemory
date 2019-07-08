@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 
@@ -37,37 +38,20 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <map>
 #include <thread>
 #include <unordered_map>
 #include <vector>
 
-#if defined(TIMEMORY_USE_CUPTI)
-#    include <cuda.h>
-#    include <cuda_runtime.h>
-#    include <cupti.h>
-#endif
-
 //--------------------------------------------------------------------------------------//
 
-#define DRIVER_API_CALL(apiFuncCall)                                                     \
+#define CUDA_DRIVER_API_CALL(apiFuncCall)                                                \
     {                                                                                    \
         CUresult _status = apiFuncCall;                                                  \
         if(_status != CUDA_SUCCESS)                                                      \
         {                                                                                \
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %d.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, _status);                          \
-        }                                                                                \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define RUNTIME_API_CALL(apiFuncCall)                                                    \
-    {                                                                                    \
-        cudaError_t _status = apiFuncCall;                                               \
-        if(_status != cudaSuccess)                                                       \
-        {                                                                                \
-            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                    __FILE__, __LINE__, #apiFuncCall, cudaGetErrorString(_status));      \
         }                                                                                \
     }
 
@@ -87,49 +71,6 @@
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(DEBUG)
-template <typename... Args>
-inline void
-_LOG(const char* msg, Args&&... args)
-{
-    fprintf(stderr, "[Log]: ");
-    fprintf(stderr, msg, std::forward<Args>(args)...);
-    fprintf(stderr, "\n");
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-_LOG(const char* msg)
-{
-    fprintf(stderr, "[Log]: %s\n", msg);
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... Args>
-inline void
-_DBG(const char* msg, Args&&... args)
-{
-    fprintf(stderr, msg, std::forward<Args>(args)...);
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-_DBG(const char* msg)
-{
-    fprintf(stderr, "%s", msg);
-}
-#else
-#    define _LOG(...)                                                                    \
-        {                                                                                \
-        }
-#    define _DBG(...)                                                                    \
-        {                                                                                \
-        }
-#endif
-
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -143,7 +84,7 @@ namespace cupti
 using string_t = std::string;
 
 template <typename _Key, typename _Mapped>
-using uomap = std::unordered_map<_Key, _Mapped>;
+using map_t = std::map<_Key, _Mapped>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -164,6 +105,93 @@ struct pass_data_t
     std::vector<uint64_t> event_values;
 };
 
+using metric_tuple_t = std::tuple<double, uint64_t, int64_t>;
+
+static metric_tuple_t
+get_metric_tuple(CUpti_MetricID& id, CUpti_MetricValue& value)
+{
+    CUpti_MetricValueKind value_kind;
+    size_t                value_kind_sz = sizeof(value_kind);
+    CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
+                                       &value_kind));
+    metric_tuple_t ret(0.0, 0, 0);
+    switch(value_kind)
+    {
+        case CUPTI_METRIC_VALUE_KIND_DOUBLE:
+            std::get<0>(ret) = value.metricValueDouble;
+            break;
+        case CUPTI_METRIC_VALUE_KIND_UINT64:
+            std::get<1>(ret) = value.metricValueUint64;
+            break;
+        case CUPTI_METRIC_VALUE_KIND_INT64:
+            std::get<2>(ret) = value.metricValueInt64;
+            break;
+        case CUPTI_METRIC_VALUE_KIND_PERCENT:
+            std::get<0>(ret) = value.metricValuePercent;
+            break;
+        case CUPTI_METRIC_VALUE_KIND_THROUGHPUT:
+            std::get<0>(ret) = value.metricValueThroughput;
+            break;
+        case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL:
+            std::get<2>(ret) = value.metricValueUtilizationLevel;
+            break;
+        default: break;
+    }
+    return ret;
+}
+
+static int
+get_metric_tuple_index(CUpti_MetricID& id)
+{
+    CUpti_MetricValueKind value_kind;
+    size_t                value_kind_sz = sizeof(value_kind);
+    CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
+                                       &value_kind));
+    switch(value_kind)
+    {
+        case CUPTI_METRIC_VALUE_KIND_DOUBLE: return 0; break;
+        case CUPTI_METRIC_VALUE_KIND_UINT64: return 1; break;
+        case CUPTI_METRIC_VALUE_KIND_INT64: return 2; break;
+        case CUPTI_METRIC_VALUE_KIND_PERCENT: return 0; break;
+        case CUPTI_METRIC_VALUE_KIND_THROUGHPUT: return 0; break;
+        case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL: return 2; break;
+        default: break;
+    }
+    return -1;
+}
+
+template <size_t _N, typename _Tuple>
+void
+plus(_Tuple& lhs, const _Tuple& rhs)
+{
+    std::get<_N>(lhs) += std::get<_N>(rhs);
+}
+
+template <size_t _N, typename _Tuple>
+void
+minus(_Tuple& lhs, const _Tuple& rhs)
+{
+    std::get<_N>(lhs) -= std::get<_N>(rhs);
+}
+
+inline metric_tuple_t&
+operator+=(metric_tuple_t& lhs, const metric_tuple_t& rhs)
+{
+    plus<0>(lhs, rhs);
+    plus<1>(lhs, rhs);
+    plus<2>(lhs, rhs);
+    return lhs;
+}
+
+inline metric_tuple_t&
+operator-=(metric_tuple_t& lhs, const metric_tuple_t& rhs)
+{
+    minus<0>(lhs, rhs);
+    minus<1>(lhs, rhs);
+    minus<2>(lhs, rhs);
+    return lhs;
+}
+
 //--------------------------------------------------------------------------------------//
 // data for the kernels
 //
@@ -171,26 +199,39 @@ struct kernel_data_t
 {
     using event_val_t  = std::vector<uint64_t>;
     using metric_val_t = std::vector<CUpti_MetricValue>;
+    using metric_tup_t = std::vector<metric_tuple_t>;
+    using pass_val_t   = std::vector<pass_data_t>;
 
     kernel_data_t() {}
 
-    std::vector<pass_data_t> m_pass_data;
-    string_t                 m_name;
-
+    CUdevice m_device;
     int      m_metric_passes = 0;
     int      m_event_passes  = 0;
     int      m_current_pass  = 0;
     int      m_total_passes  = 0;
-    CUdevice m_device;
+    string_t m_name          = "";
 
+    pass_val_t   m_pass_data;
     event_val_t  m_event_values;
     metric_val_t m_metric_values;
+    metric_tup_t m_metric_tuples;
+
+    void clone(const kernel_data_t& rhs)
+    {
+        m_device        = rhs.m_device;
+        m_metric_passes = rhs.m_metric_passes;
+        m_event_passes  = rhs.m_event_passes;
+        m_current_pass  = rhs.m_current_pass;
+        m_total_passes  = rhs.m_total_passes;
+        // m_pass_data = rhs.m_pass_data;
+    }
 
     kernel_data_t& operator+=(const kernel_data_t& rhs)
     {
         for(uint64_t i = 0; i < m_event_values.size(); ++i)
         {
             m_event_values[i] += rhs.m_event_values[i];
+            m_metric_tuples[i] += rhs.m_metric_tuples[i];
         }
         return *this;
     }
@@ -200,6 +241,7 @@ struct kernel_data_t
         for(uint64_t i = 0; i < m_event_values.size(); ++i)
         {
             m_event_values[i] -= rhs.m_event_values[i];
+            m_metric_tuples[i] -= rhs.m_metric_tuples[i];
         }
         return *this;
     }
@@ -240,39 +282,10 @@ get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_Callba
         return;
     }
 
-#if defined(TIMEMORY_DEMANGLE)
-    // lambda for demangling a string when delimiting
-    auto _demangle = [](string_t _str) {
-        auto _to_str = [](char* cstr) {
-            std::stringstream ss;
-            ss << cstr;
-            return ss.str();
-        };
+    using map_type = map_t<string_t, kernel_data_t>;
 
-        const int _max_len = 256;
-        int       _ret     = 0;
-        size_t    _len     = 0;
-        char*     _buf     = new char[_max_len];
-        char*     _demang  = abi::__cxa_demangle(_str.c_str(), _buf, &_len, &_ret);
-
-        if(_len > 0 && _len < _max_len)
-            _buf[_len] = '\0';
-
-        if(_ret == 0 && (_len > 0 || _demang))
-            _str = _to_str((_len > 0) ? _buf : _demang);
-
-        delete[] _buf;
-        return _str;
-    };
-    auto _demangled_name = _demangle(_current_kernel_name);
-    _LOG("  Demangled name: %s", _demangled_name.c_str());
-    auto current_kernel_name = _demangled_name.c_str();
-#else
-    auto current_kernel_name = _current_kernel_name;
-#endif
-
-    using uomap_type  = uomap<string_t, kernel_data_t>;
-    auto* kernel_data = static_cast<uomap_type*>(userdata);
+    auto  current_kernel_name = _current_kernel_name;
+    auto* kernel_data         = static_cast<map_type*>(userdata);
     _LOG("... begin callback for %s...\n", current_kernel_name);
 
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
@@ -469,13 +482,88 @@ print_metric(CUpti_MetricID& id, CUpti_MetricValue& value, std::ostream& s)
 
 }  // namespace impl
 
+struct result
+{
+    using data_t = std::tuple<uint64_t, int64_t, double>;
+
+    bool        is_event_value = true;
+    int         index          = 0;
+    std::string name           = "unk";
+    data_t      data           = data_t(0, 0, 0.0);
+
+    result()              = default;
+    ~result()             = default;
+    result(const result&) = default;
+    result(result&&)      = default;
+    result& operator=(const result&) = default;
+    result& operator=(result&&) = default;
+
+    explicit result(const std::string& _name, const uint64_t& _data, bool _is = true)
+    : is_event_value(_is)
+    , index(0)
+    , name(_name)
+    , data({ _data, 0, 0.0 })
+    {
+    }
+
+    explicit result(const std::string& _name, const int64_t& _data, bool _is = false)
+    : is_event_value(_is)
+    , index(1)
+    , name(_name)
+    , data({ 0, _data, 0.0 })
+    {
+    }
+
+    explicit result(const std::string& _name, const double& _data, bool _is = false)
+    : is_event_value(_is)
+    , index(2)
+    , name(_name)
+    , data({ 0, 0, _data })
+    {
+    }
+
+    bool operator==(const result& rhs) const { return (name == rhs.name); }
+    bool operator!=(const result& rhs) const { return !(*this == rhs); }
+    bool operator<(const result& rhs) const { return (name < rhs.name); }
+    bool operator>(const result& rhs) const { return (name > rhs.name); }
+    bool operator<=(const result& rhs) const { return !(*this > rhs); }
+    bool operator>=(const result& rhs) const { return !(*this < rhs); }
+
+    result& operator+=(const result& rhs)
+    {
+        impl::plus<0>(data, rhs.data);
+        impl::plus<1>(data, rhs.data);
+        impl::plus<2>(data, rhs.data);
+        return *this;
+    }
+
+    result& operator-=(const result& rhs)
+    {
+        impl::minus<0>(data, rhs.data);
+        impl::minus<1>(data, rhs.data);
+        impl::minus<2>(data, rhs.data);
+        return *this;
+    }
+
+    friend result operator+(const result& lhs, const result& rhs)
+    {
+        return result(lhs) += rhs;
+    }
+
+    friend result operator-(const result& lhs, const result& rhs)
+    {
+        return result(lhs) -= rhs;
+    }
+};
+
 //--------------------------------------------------------------------------------------//
 
 struct profiler
 {
-    typedef std::vector<string_t> strvec_t;
+    using strvec_t     = std::vector<string_t>;
     using event_val_t  = impl::kernel_data_t::event_val_t;
     using metric_val_t = impl::kernel_data_t::metric_val_t;
+    using results_t    = std::vector<result>;
 
     profiler(const strvec_t& events, const strvec_t& metrics, const int device_num = 0)
     : m_device_num(device_num)
@@ -489,15 +577,20 @@ struct profiler
 
     ~profiler()
     {
-        DRIVER_API_CALL(cuCtxDestroy(m_context));
+        // Disable callback and unsubscribe
+        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
         CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
+        CUDA_DRIVER_API_CALL(cuCtxDestroy(m_context));
     }
 
     void init()
     {
         int device_count = 0;
         CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
-        DRIVER_API_CALL(cuDeviceGetCount(&device_count));
+        CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
         if(device_count == 0)
         {
             fprintf(stderr, "There is no device supporting CUDA.\n");
@@ -508,15 +601,8 @@ struct profiler
         m_event_ids.resize(m_num_events);
 
         // Init device, context and setup callback
-        DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
-        DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
-        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
-                                  (CUpti_CallbackFunc) impl::get_value_callback,
-                                  &m_kernel_data));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
+        CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
 
         CUpti_MetricID* metric_ids =
             (CUpti_MetricID*) calloc(sizeof(CUpti_MetricID), m_num_metrics);
@@ -607,6 +693,14 @@ struct profiler
         m_kernel_data[dummy_kernel_name] = dummy_data;
         free(metric_ids);
         free(event_ids);
+
+        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
+                                  (CUpti_CallbackFunc) impl::get_value_callback,
+                                  &m_kernel_data));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
     }
 
     int passes() { return m_metric_passes + m_event_passes; }
@@ -656,12 +750,14 @@ struct profiler
                     return;
                 }
                 k.second.m_metric_values.push_back(metric_value);
+                k.second.m_metric_tuples.push_back(
+                    impl::get_metric_tuple(m_metric_ids[i], metric_value));
             }
 
             delete[] event_ids;
             delete[] event_values;
 
-            uomap<CUpti_EventID, uint64_t> event_map;
+            map_t<CUpti_EventID, uint64_t> event_map;
             for(int i = m_metric_passes; i < (m_metric_passes + m_event_passes); ++i)
             {
                 for(uint32_t j = 0; j < data[i].num_events; ++j)
@@ -675,13 +771,6 @@ struct profiler
                 k.second.m_event_values.push_back(event_map[m_event_ids[i]]);
             }
         }
-
-        // Disable callback and unsubscribe
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
-        CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
     }
 
     template <typename stream>
@@ -741,6 +830,65 @@ struct profiler
             s << kernel_separator;
         }
         printf("\n");
+    }
+
+    results_t get_events_and_metrics(const std::vector<std::string>& labels)
+    {
+        results_t kern_data(labels.size());
+        if(m_num_events <= 0 && m_num_metrics <= 0)
+            return kern_data;
+
+        using ull_t                   = unsigned long long;
+        const char* dummy_kernel_name = "^^ DUMMY ^^";
+        auto        get_label_index   = [&](const std::string& key) -> int64_t {
+            for(int64_t i = 0; i < static_cast<int64_t>(labels.size()); ++i)
+            {
+                if(key == labels[i])
+                    return i;
+            }
+            return -1;
+        };
+
+        for(auto const& k : m_kernel_data)
+        {
+            if(k.first == dummy_kernel_name)
+                continue;
+            for(int i = 0; i < m_num_events; ++i)
+            {
+                std::string evt_name  = m_event_names[i].c_str();
+                auto        label_idx = get_label_index(evt_name);
+                if(label_idx < 0)
+                    continue;
+                auto value = static_cast<uint64_t>(
+                    m_kernel_data.find(k.first)->second.m_event_values[i]);
+                kern_data[label_idx] = result(evt_name, value, true);
+            }
+
+            for(int i = 0; i < m_num_metrics; ++i)
+            {
+                std::string met_name  = m_metric_names[i].c_str();
+                auto        label_idx = get_label_index(met_name);
+                if(label_idx < 0)
+                    continue;
+                auto idx = impl::get_metric_tuple_index(m_metric_ids[i]);
+                auto ret = impl::get_metric_tuple(
+                    m_metric_ids[i],
+                    m_kernel_data.find(k.first)->second.m_metric_values[i]);
+                switch(idx)
+                {
+                    case 0:
+                        kern_data[label_idx] = result(met_name, std::get<0>(ret), false);
+                        break;
+                    case 1:
+                        kern_data[label_idx] = result(met_name, std::get<1>(ret), false);
+                        break;
+                    case 2:
+                        kern_data[label_idx] = result(met_name, std::get<2>(ret), false);
+                        break;
+                }
+            }
+        }
+        return kern_data;
     }
 
     template <typename stream>
@@ -827,8 +975,8 @@ private:
     int m_metric_passes = 0;
     int m_event_passes  = 0;
 
-    const strvec_t&             m_event_names;
-    const strvec_t&             m_metric_names;
+    strvec_t                    m_event_names;
+    strvec_t                    m_metric_names;
     std::vector<CUpti_MetricID> m_metric_ids;
     std::vector<CUpti_EventID>  m_event_ids;
 
@@ -840,7 +988,7 @@ private:
     CUpti_EventGroupSets* m_event_pass_data;
 
     // Kernel-specific (indexed by name) trace data
-    uomap<string_t, impl::kernel_data_t> m_kernel_data;
+    map_t<string_t, impl::kernel_data_t> m_kernel_data;
     strvec_t                             m_kernel_names;
 };
 

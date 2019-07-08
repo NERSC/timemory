@@ -23,7 +23,7 @@
 // SOFTWARE.
 
 /** \file policy.hpp
- * \headerfile policy.hpp "timemory/policy.hpp"
+ * \headerfile policy.hpp "timemory/components/policy.hpp"
  * Provides the template meta-programming policy types
  *
  */
@@ -38,17 +38,14 @@ namespace policy
 {
 // these are policy classes
 struct serialization
-{
-};
+{};
 
 // struct type_addition;
 struct initialization
-{
-};
+{};
 
 struct finalization
-{
-};
+{};
 
 template <typename... _Policies>
 struct wrapper
@@ -91,23 +88,20 @@ struct wrapper
         enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_serialize(_Archive&, const unsigned int)
-    {
-    }
+    {}
 
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<initialization, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_initialize()
-    {
-    }
+    {}
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<finalization, typename _Polp::type>::value == false),
                           int> = 0>
     static void invoke_finalize()
-    {
-    }
+    {}
 };
 
 }  // namespace policy

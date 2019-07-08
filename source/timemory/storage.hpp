@@ -37,9 +37,9 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/apply.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/utility.hpp"
@@ -57,6 +57,10 @@
 
 namespace tim
 {
+namespace cupti
+{
+struct result;
+}
 namespace details
 {
 template <typename StorageType>
@@ -148,6 +152,11 @@ struct type_id
     static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
     {
         return "float_array_pair";
+    }
+
+    static std::string value(const std::vector<cupti::result>&)
+    {
+        return "result_vector";
     }
 };
 

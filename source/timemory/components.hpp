@@ -31,27 +31,6 @@
 
 #pragma once
 
-#include <algorithm>
-#include <array>
-#include <cstdint>
-#include <cstdio>
-#include <fstream>
-#include <iomanip>
-#include <ios>
-#include <iostream>
-#include <numeric>
-#include <string>
-
-#include "timemory/macros.hpp"
-#include "timemory/papi.hpp"
-#include "timemory/storage.hpp"
-#include "timemory/units.hpp"
-#include "timemory/utility.hpp"
-
-#include "timemory/components/base.hpp"
-#include "timemory/components/type_traits.hpp"
-#include "timemory/components/types.hpp"
-
 // general components
 #include "timemory/components/cuda_event.hpp"
 #include "timemory/components/resource_usage.hpp"
@@ -68,67 +47,5 @@
 #include "timemory/components/gpu_roofline.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/cupti_event.hpp"
+#    include "timemory/components/cupti_event.hpp"
 #endif
-
-//======================================================================================//
-
-namespace tim
-{
-namespace component
-{
-//======================================================================================//
-// component initialization
-//
-/*
-class init
-{
-public:
-    using string_t  = std::string;
-    bool     store  = false;
-    int64_t  ncount = 0;
-    int64_t  nhash  = 0;
-    string_t key    = "";
-    string_t tag    = "";
-};
-*/
-
-//======================================================================================//
-// construction tuple for a component
-//
-template <typename Type, typename... Args>
-class constructor : public std::tuple<Args...>
-{
-public:
-    using base_type                    = std::tuple<Args...>;
-    static constexpr std::size_t nargs = std::tuple_size<decay_t<base_type>>::value;
-
-    explicit constructor(Args&&... _args)
-    : base_type(std::forward<Args>(_args)...)
-    {
-    }
-
-    template <typename _Tuple, size_t... _Idx>
-    Type operator()(_Tuple&& __t, index_sequence<_Idx...>)
-    {
-        return Type(std::get<_Idx>(std::forward<_Tuple>(__t))...);
-    }
-
-    Type operator()()
-    {
-        return (*this)(static_cast<base_type>(*this), make_index_sequence<nargs>{});
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-//  component_tuple initialization
-//
-using init = constructor<void, std::string, std::string, int64_t, int64_t, bool>;
-
-}  // namespace component
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace tim
-
-//--------------------------------------------------------------------------------------//

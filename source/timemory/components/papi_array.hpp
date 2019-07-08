@@ -24,10 +24,10 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/rusage.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 #include "timemory/units.hpp"
@@ -57,10 +57,10 @@ struct papi_array
     using this_type   = papi_array<EventSet, NumEvent>;
     using event_count = static_counted_object<papi_array<EventSet, 0>>;
 
-    static const short                   precision = 6;
-    static const short                   width     = 8;
+    static const short                   precision = 3;
+    static const short                   width     = 12;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::scientific | std::ios_base::dec;
+        std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
 
     using base_type::accum;
     using base_type::is_running;

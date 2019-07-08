@@ -24,10 +24,10 @@
 
 #pragma once
 
+#include "timemory/backends/rusage.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/rusage.hpp"
 #include "timemory/storage.hpp"
 #include "timemory/units.hpp"
 
@@ -55,7 +55,7 @@ struct peak_rss : public base<peak_rss>
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "peak_rss"; }
@@ -94,7 +94,7 @@ struct current_rss : public base<current_rss>
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "current_rss"; }
@@ -134,7 +134,7 @@ struct stack_rss : public base<stack_rss>
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "stack_rss"; }
@@ -172,7 +172,7 @@ struct data_rss : public base<data_rss>
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "data_rss"; }

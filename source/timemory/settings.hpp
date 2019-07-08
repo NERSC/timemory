@@ -145,9 +145,9 @@ tim::settings::toupper(std::string str)
 
 //======================================================================================//
 
+#include "timemory/backends/mpi.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
 

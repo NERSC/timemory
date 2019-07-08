@@ -34,6 +34,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 

@@ -93,6 +93,8 @@ struct papi_array;
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
 
+struct cupti_event;
+
 }  // component
 
 //======================================================================================//

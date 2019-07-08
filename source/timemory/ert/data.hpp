@@ -24,9 +24,10 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 
 #include <cstdint>
 #include <string>
@@ -211,6 +212,110 @@ private:
     }
 };
 }  // namespace cpu
+
+//--------------------------------------------------------------------------------------//
+//  measure CPU floating-point or integer operations
+//
+namespace gpu
+{
+template <typename _Tp>
+class operation_counter
+{
+public:
+    using string_t = std::string;
+    using timer_t  = tim::component::real_clock;
+    using result_type =
+        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float>;
+    using result_array = std::vector<result_type>;
+    using labels_type  = std::array<string_t, 7>;
+
+public:
+    operation_counter() = default;
+    operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
+    : params(_params)
+    , align(_align)
+    {
+    }
+    ~operation_counter()
+    {
+        delete rc;
+        cuda::free(buffer);
+    }
+
+public:
+    _Tp* initialize()
+    {
+        nsize  = params.memory_max / params.nproc / params.nthreads;
+        nsize  = nsize & (~(align - 1));
+        nsize  = nsize / sizeof(_Tp);
+        buffer = cuda::malloc<_Tp>(nsize);
+        cuda::memset<_Tp>(buffer, 0, nsize);
+        return buffer;
+    }
+
+    inline void start()
+    {
+        rc = new timer_t();
+        rc->start();
+        // return rc;
+    }
+
+    inline void stop(int n, int t, size_t nops)
+    {
+        rc->stop();
+        uint64_t working_set_size = n * params.nthreads * params.nproc;
+        uint64_t total_bytes =
+            t * working_set_size * bytes_per_elem * mem_accesses_per_elem;
+        uint64_t total_ops = t * working_set_size * nops;
+        auto     seconds   = rc->get() * tim::units::sec;
+        data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
+                                   total_bytes, total_ops, total_ops / seconds,
+                                   total_ops / static_cast<float>(total_bytes)));
+        delete rc;
+        rc = nullptr;
+    }
+
+public:
+    exec_params    params                = exec_params();
+    int            grid_size             = 32;
+    int            block_size            = 32;
+    int            shmem                 = 0;
+    cuda::stream_t stream                = 0;
+    int            bytes_per_elem        = 0;
+    int            mem_accesses_per_elem = 0;
+    size_t         align                 = 32;
+    uint64_t       nsize                 = 0;
+    timer_t*       rc                    = nullptr;
+    result_array   data;
+    labels_type labels = labels_type({ "working-set", "trials", "seconds", "total-bytes",
+                                       "total-ops", "ops-per-sec", "intensity" });
+    _Tp*        buffer = nullptr;
+
+public:
+    friend std::ostream& operator<<(std::ostream& os, const operation_counter& obj)
+    {
+        for(const auto& itr : obj.data)
+        {
+            obj.write<0>(os, itr, ", ");
+            obj.write<1>(os, itr, ", ");
+            obj.write<2>(os, itr, ", ");
+            obj.write<3>(os, itr, ", ");
+            obj.write<4>(os, itr, ", ");
+            obj.write<5>(os, itr, ", ");
+            obj.write<6>(os, itr, "\n");
+        }
+        return os;
+    }
+
+private:
+    template <size_t _N>
+    void write(std::ostream& os, const result_type& ret, const string_t& _trailing) const
+    {
+        os << std::setw(12) << std::get<_N>(labels) << " = " << std::setw(12)
+           << std::get<_N>(ret) << _trailing;
+    }
+};
+}  // namespace gpu
 
 }  // namespace ert
 }  // namespace tim

@@ -37,10 +37,11 @@
 
 #pragma once
 
+#include "timemory/backends/mpi.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/utility.hpp"
 
+#include <cfenv>
 #include <cmath>
 #include <csignal>
 #include <cstdlib>
@@ -65,6 +66,139 @@
 #if defined(_LINUX)
 #    include <features.h>
 #endif
+
+//======================================================================================//
+//
+//      WINDOWS SIGNALS (dummy)
+//
+//======================================================================================//
+
+#if defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
+//   dummy definition of SIGHUP
+#    ifndef SIGHUP
+#        define SIGHUP 1
+#    endif
+//   dummy definition of SIGINT
+#    ifndef SIGINT
+#        define SIGINT 2
+#    endif
+//   dummy definition of SIGQUIT
+#    ifndef SIGQUIT
+#        define SIGQUIT 3
+#    endif
+//   dummy definition of SIGILL
+#    ifndef SIGILL
+#        define SIGILL 4
+#    endif
+//   dummy definition of SIGTRAP
+#    ifndef SIGTRAP
+#        define SIGTRAP 5
+#    endif
+//   dummy definition of SIGABRT
+#    ifndef SIGABRT
+#        define SIGABRT 6
+#    endif
+//   dummy definition of SIGEMT
+#    ifndef SIGEMT
+#        define SIGEMT 7
+#    endif
+//   dummy definition of SIGFPE
+#    ifndef SIGFPE
+#        define SIGFPE 8
+#    endif
+//   dummy definition of SIGKILL
+#    ifndef SIGKILL
+#        define SIGKILL 9
+#    endif
+//   dummy definition of SIGBUS
+#    ifndef SIGBUS
+#        define SIGBUS 10
+#    endif
+//   dummy definition of SIGSEGV
+#    ifndef SIGSEGV
+#        define SIGSEGV 11
+#    endif
+//   dummy definition of SIGSYS
+#    ifndef SIGSYS
+#        define SIGSYS 12
+#    endif
+//   dummy definition of SIGPIPE
+#    ifndef SIGPIPE
+#        define SIGPIPE 13
+#    endif
+//   dummy definition of SIGALRM
+#    ifndef SIGALRM
+#        define SIGALRM 14
+#    endif
+//   dummy definition of SIGTERM
+#    ifndef SIGTERM
+#        define SIGTERM 15
+#    endif
+//   dummy definition of SIGURG
+#    ifndef SIGURG
+#        define SIGURG 16
+#    endif
+//   dummy definition of SIGSTOP
+#    ifndef SIGSTOP
+#        define SIGSTOP 17
+#    endif
+//   dummy definition of SIGTSTP
+#    ifndef SIGTSTP
+#        define SIGTSTP 18
+#    endif
+//   dummy definition of SIGCONT
+#    ifndef SIGCONT
+#        define SIGCONT 19
+#    endif
+//   dummy definition of SIGCHLD
+#    ifndef SIGCHLD
+#        define SIGCHLD 20
+#    endif
+//   dummy definition of SIGTTIN
+#    ifndef SIGTTIN
+#        define SIGTTIN 21
+#    endif
+//   dummy definition of SIGTTOU
+#    ifndef SIGTTOU
+#        define SIGTTOU 22
+#    endif
+//   dummy definition of SIGIO
+#    ifndef SIGIO
+#        define SIGIO 23
+#    endif
+//   dummy definition of SIGXCPU
+#    ifndef SIGXCPU
+#        define SIGXCPU 24
+#    endif
+//   dummy definition of SIGXFSZ
+#    ifndef SIGXFSZ
+#        define SIGXFSZ 25
+#    endif
+//   dummy definition of SIGVTALRM
+#    ifndef SIGVTALRM
+#        define SIGVTALRM 26
+#    endif
+//   dummy definition of SIGPROF
+#    ifndef SIGPROF
+#        define SIGPROF 27
+#    endif
+//   dummy definition of SIGWINCH
+#    ifndef SIGWINCH
+#        define SIGWINCH 28
+#    endif
+//   dummy definition of SIGINFO
+#    ifndef SIGINFO
+#        define SIGINFO 29
+#    endif
+//   dummy definition of SIGUSR1
+#    ifndef SIGUSR1
+#        define SIGUSR1 30
+#    endif
+//   dummy definition of SIGUSR2
+#    ifndef SIGUSR2
+#        define SIGUSR2 31
+#    endif
+#endif  // defined(_WINDOWS)
 
 // compatible compiler
 #if(defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
@@ -233,24 +367,6 @@ protected:
         return instance;
     }
 };
-
-//--------------------------------------------------------------------------------------//
-
-inline std::string
-demangle(const std::string& _str)
-{
-#if defined(SIGNAL_AVAILABLE)
-    // demangling a string when delimiting
-    int   _ret    = 0;
-    char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
-    if(_demang && _ret == 0)
-        return std::string(const_cast<const char*>(_demang));
-    else
-        return _str;
-#else
-    return _str;
-#endif
-}
 
 //--------------------------------------------------------------------------------------//
 

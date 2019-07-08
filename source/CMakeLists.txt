@@ -23,6 +23,7 @@ file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB cxx_headers_impl          ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
 file(GLOB cxx_headers_comp          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_backend       ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
@@ -45,7 +46,8 @@ add_subdirectory(timemory)
 # directly compile sources
 set(C_LIBRARY_SOURCES    ${c_sources}        ${c_headers})
 set(CXX_LIBRARY_SOURCES  ${cxx_sources}      ${cxx_headers}      ${cxx_headers_ert}
-                         ${cxx_headers_comp} ${cxx_headers_impl} ${cereal_headers})
+                         ${cxx_headers_comp} ${cxx_headers_impl} ${cxx_headers_backend}
+                         ${cereal_headers})
 
 
 #----------------------------------------------------------------------------------------#
@@ -163,6 +165,10 @@ install(FILES ${cxx_headers_comp}
 
 install(FILES ${cxx_headers_ert}
     DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/ert
+    COMPONENT development)
+
+install(FILES ${cxx_headers_backend}
+    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/backends
     COMPONENT development)
 
 # Install the export set for use with the install-tree

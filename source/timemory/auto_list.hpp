@@ -47,8 +47,8 @@
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 
-TIM_NAMESPACE_BEGIN
-
+namespace tim
+{
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
@@ -224,7 +224,7 @@ auto_list<Types...>::~auto_list()
 
 //======================================================================================//
 
-TIM_NAMESPACE_END
+}  // namespace tim
 
 //======================================================================================//
 

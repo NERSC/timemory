@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/clocks.hpp"
+#include "timemory/backends/clocks.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/storage.hpp"
@@ -52,7 +52,7 @@ struct real_clock : public base<real_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "real"; }
@@ -107,7 +107,7 @@ struct system_clock : public base<system_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "sys"; }
@@ -149,7 +149,7 @@ struct user_clock : public base<user_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "user"; }
@@ -191,7 +191,7 @@ struct cpu_clock : public base<cpu_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "cpu"; }
@@ -230,7 +230,7 @@ struct monotonic_clock : public base<monotonic_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "mono"; }
@@ -273,7 +273,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "raw_mono"; }
@@ -317,7 +317,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "thread_cpu"; }
@@ -357,7 +357,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "process_cpu"; }
@@ -402,7 +402,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_util"; }
@@ -474,7 +474,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "proc_cpu_util"; }
@@ -546,7 +546,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     static const short                   precision = 1;
     static const short                   width     = 5;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "thread_cpu_util"; }

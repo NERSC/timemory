@@ -25,6 +25,7 @@
 
 #include <cstdint>
 
+#include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 

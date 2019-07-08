@@ -54,11 +54,11 @@
 #include "timemory/auto_list.hpp"
 #include "timemory/auto_timer.hpp"
 #include "timemory/auto_tuple.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/component_list.hpp"
 #include "timemory/component_tuple.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/signal_detection.hpp"
 #include "timemory/timemory.hpp"
 

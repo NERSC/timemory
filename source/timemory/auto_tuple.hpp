@@ -47,8 +47,8 @@
 #include "timemory/macros.hpp"
 #include "timemory/utility.hpp"
 
-TIM_NAMESPACE_BEGIN
-
+namespace tim
+{
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
@@ -189,7 +189,7 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-TIM_NAMESPACE_END
+}  // namespace tim
 
 //======================================================================================//
 

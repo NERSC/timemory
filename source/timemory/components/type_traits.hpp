@@ -157,6 +157,12 @@ struct array_serialization<papi_array<EventSet, NumEvent>>
     using type = std::true_type;
 };
 
+template <>
+struct array_serialization<cupti_event>
+{
+    using type = std::true_type;
+};
+
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
 //

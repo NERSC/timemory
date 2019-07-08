@@ -38,7 +38,6 @@
 #include "timemory/apply.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/storage.hpp"

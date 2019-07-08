@@ -20,4 +20,12 @@ find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 target_link_libraries(${EXE_NAME} timemory-cuda-event-example)
+target_compile_options(${EXE_NAME} PRIVATE
+    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
 install(TARGETS ${EXE_NAME} DESTINATION bin)
+
+if(USE_CUPTI)
+    add_executable(demo demo.cu)
+    target_link_libraries(demo timemory-headers timemory-cuda timemory-cupti)
+    target_include_directories(demo PRIVATE ${CMAKE_CURRENT_LIST_DIR})
+endif()

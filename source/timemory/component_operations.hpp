@@ -32,6 +32,15 @@
 #pragma once
 
 #include "timemory/components.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/type_traits.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/serializer.hpp"
+
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <string>
 
 //======================================================================================//
 
@@ -41,56 +50,6 @@ namespace tim
 
 namespace component
 {
-//--------------------------------------------------------------------------------------//
-/*
-template <typename Type>
-struct construct
-{
-    template <typename... Args>
-    static Type create(constructor<Type, Args...>&& _constructor)
-    {
-        return _constructor();
-    }
-
-    template <std::size_t Idx, typename... Types, typename... Args>
-    static Type create(std::tuple<Types...>&& __t, constructor<Type, Args...>&& __c)
-    {
-        return create(std::get<Idx>(__c));
-    }
-
-    template <std::size_t Idx, typename Other, typename... Types, typename... Args>
-    static Type create(std::tuple<Types...>&& __t, constructor<Other, Args...>&& __c)
-    {
-        return Other();
-    }
-
-    template <typename... Types>
-    static Type create(std::tuple<Types...>&& __t)
-    {
-        constexpr std::size_t Idx = index_of<Type, std::tuple<Types...>>::value;
-        return create<Idx>(__t, std::get<Idx>(__t));
-    }
-
-};
-
-template <typename... _Tuple, typename... Types, std::size_t... _Idx>
-static void create(std::tuple<_Tuple...>& __t, std::tuple<Types...>&& __c,
-                   index_sequence<_Idx...>)
-{
-    using construct_types = std::tuple<construct<Types>...>;
-    //std::get<_Idx>(__t)... = create<decltype(std::get<_Idx>(__t)...)>(__c);
-    //return apply<_Tuple>::template all<construct_types>(__t));
-    //return create<Idx>(__t, std::get<Idx>(__t));
-}
-
-template <typename _Tuple, typename... Types>
-static _Tuple create(std::tuple<Types...>&& __c)
-{
-    _Tuple __t;
-    create(__t, __c);
-    return __t;
-}
-*/
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>

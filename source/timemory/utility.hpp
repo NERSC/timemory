@@ -34,6 +34,8 @@
 #include "timemory/macros.hpp"
 
 // C library
+#include <cctype>
+#include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -43,10 +45,8 @@
 #include <sstream>
 #include <string>
 // general
-#include <exception>
 #include <functional>
 #include <limits>
-#include <stdexcept>
 #include <utility>
 // container
 #include <deque>
@@ -150,6 +150,24 @@ type_mutex(const uint64_t& _n = 0)
 //--------------------------------------------------------------------------------------//
 
 inline std::string
+demangle(const std::string& _str)
+{
+#if defined(SIGNAL_AVAILABLE)
+    // demangling a string when delimiting
+    int   _ret    = 0;
+    char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
+    if(_demang && _ret == 0)
+        return std::string(const_cast<const char*>(_demang));
+    else
+        return _str;
+#else
+    return _str;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
 dirname(std::string _fname)
 {
 #if defined(_UNIX)
@@ -218,20 +236,6 @@ get_max_threads()
     return _fallback;
 #endif
 }
-
-//--------------------------------------------------------------------------------------//
-
-namespace internal
-{
-//--------------------------------------------------------------------------------------//
-inline std::string
-dummy_str_return(std::string str)
-{
-    return str;
-}
-
-//--------------------------------------------------------------------------------------//
-}  // namespace internal
 
 //======================================================================================//
 //

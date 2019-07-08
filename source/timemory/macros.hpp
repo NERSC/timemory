@@ -34,20 +34,11 @@
 
 #pragma once
 
-//======================================================================================//
-//
-//      TiMemory specific
-//
-//======================================================================================//
-#if !defined(TIM_NAMESPACE_BEGIN)
-#    define TIM_NAMESPACE_BEGIN                                                          \
-        namespace tim                                                                    \
-        {
-#endif
-
-#if !defined(TIM_NAMESPACE_END)
-#    define TIM_NAMESPACE_END }  // namespace tim
-#endif
+#include <cstdint>
+#include <cstdio>
+#include <iostream>
+#include <string>
+#include <utility>
 
 //======================================================================================//
 //
@@ -93,16 +84,10 @@
 #    endif
 //--------------------------------------------------------------------------------------//
 
-#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#elif defined(__unix__) || defined(__unix) || defined(unix)
 #    if !defined(_UNIX)
 #        define _UNIX
 #    endif
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-#if defined(_LINUX) || defined(_MACOS)
-#    define _C_UNIX  // common unix derivative (i.e. Linux or macOS)
 #endif
 
 //======================================================================================//
@@ -144,16 +129,16 @@
 
 //  clang compiler
 #if defined(__clang__)
-#    define _C_CLANG
+#    define _TIMEMORY_CLANG
 #endif
 
 //--------------------------------------------------------------------------------------//
 
 //  Intel compiler
 #if defined(__INTEL_COMPILER)
-#    define _C_INTEL
+#    define _TIMEMORY_INTEL
 #    if __INTEL_COMPILER < 1500
-#        define _C_INTEL_DEPREC  // older intel compiler
+#        warning "Intel compilers < 1500 have been known to have compiler errors"
 #    endif
 #endif
 
@@ -161,31 +146,11 @@
 
 // GNU compiler
 #if defined(__GNUC__)
-#    if(__GNUC__ >= 4 && __GNUC_MINOR__ < 9)
-#        define _C_GNU_DEPREC  // older GNU compiler with questionable C++11
-                               // support
-#        define _C_GNU
+#    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
+#        warning "GCC compilers < 4.9 have been known to have compiler errors"
 #    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
-#        define _C_GNU
+#        define _TIMEMORY_GNU
 #    endif
-#endif
-
-//======================================================================================//
-//
-//      OS + Compiler
-//
-//======================================================================================//
-
-// macOS using clang
-#if defined(_MACOS) && defined(_C_CLANG) && defined(_64BIT)
-#    define _MACOS_CLANG
-#endif
-
-//--------------------------------------------------------------------------------------//
-
-//  linux using clang
-#if defined(_LINUX) && defined(_C_CLANG)
-#    define _LINUX_CLANG
 #endif
 
 //======================================================================================//
@@ -193,20 +158,6 @@
 //      GLOBAL LINKING
 //
 //======================================================================================//
-
-#ifdef __cplusplus
-#    define EXTERN_C extern "C"
-#    define EXTERN_C_BEGIN                                                               \
-        extern "C"                                                                       \
-        {
-#    define EXTERN_C_END }
-#else
-#    define EXTERN_C
-#    define EXTERN_C_BEGIN
-#    define EXTERN_C_END
-#endif
-
-//--------------------------------------------------------------------------------------//
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
 #if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
@@ -240,6 +191,10 @@
 #    pragma warning(disable : 4700)  // uninitialized local variable used
 #    pragma warning(disable : 4217)  // locally defined symbol
 #    pragma warning(disable : 4251)  // needs to have dll-interface to be used
+
+#    if !defined(NOMINMAX)
+#        define NOMINMAX
+#    endif
 #endif
 
 //======================================================================================//
@@ -256,6 +211,18 @@
     template class tim::auto_tuple<__VA_ARGS__>;                                         \
     template class tim::component_tuple<__VA_ARGS__>;
 
+#define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
+
+#define TIMEMORY_DECLARE_EXTERN_STORAGE(OBJ_TYPE)                                        \
+    extern template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(      \
+        OBJ_TYPE)>&                                                                      \
+    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+
+#define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                    \
+    template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
+    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+
+/*
 // Accept any number of args >= N, but expand to just the Nth one.
 // Here, N == 6.
 #define TIMEMORY_GET_NTH_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
@@ -273,8 +240,8 @@
 #define TIMEMORY_FE_8(_call, x, ...) _call(x) TIMEMORY_FE_7(_call, __VA_ARGS__)
 #define TIMEMORY_FE_9(_call, x, ...) _call(x) TIMEMORY_FE_8(_call, __VA_ARGS__)
 #define TIMEMORY_FE_10(_call, x, ...) _call(x) TIMEMORY_FE_9(_call, __VA_ARGS__)
-
-/**
+*/
+/*
  * Provide a for-each construct for variadic macros. Supports up
  * to 9 args.
  *
@@ -290,68 +257,13 @@
  *     typedef foo int;
  *     CALL_MACRO_X_FOR_EACH(END_NS, MY_NAMESPACES)
  */
+/*
 #define CALL_MACRO_X_FOR_EACH(x, ...)                                                    \
     TIMEMORY_GET_NTH_ARG("ignored", ##__VA_ARGS__, TIMEMORY_FE_9, TIMEMORY_FE_8,         \
                          TIMEMORY_FE_7, TIMEMORY_FE_6, TIMEMORY_FE_5, TIMEMORY_FE_4,     \
                          TIMEMORY_FE_3, TIMEMORY_FE_2, TIMEMORY_FE_1, TIMEMORY_FE_0)     \
     (x, ##__VA_ARGS__)
-
-#define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
-
-#define TIMEMORY_DECLARE_EXTERN_STORAGE(OBJ_TYPE)                                        \
-    extern template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(      \
-        OBJ_TYPE)>&                                                                      \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
-
-#define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                    \
-    template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
-
-//======================================================================================//
-//
-//      THREAD-LOCAL STORAGE
-//
-//======================================================================================//
-
-#if defined(_MACOS_CLANG) || defined(_LINUX_CLANG)
-#    define tim_static_thread_local static thread_local
-#    define tim_thread_local thread_local
-//--------------------------------------------------------------------------------------//
-
-#elif defined(_C_UNIX) && !defined(_C_INTEL) && defined(_C_GNU)
-#    if defined(_C_GNU_DEPREC)
-#        define tim_static_thread_local static __thread
-#    else
-#        define tim_static_thread_local static thread_local
-#    endif
-#    define tim_thread_local thread_local
-//--------------------------------------------------------------------------------------//
-
-#elif defined(_C_UNIX) && defined(_C_INTEL)
-#    if defined(_C_INTEL_DEPREC)
-#        define tim_static_thread_local static __thread
-#        define tim_thread_local __thread
-#    else
-#        define tim_static_thread_local static thread_local
-#        define tim_thread_local thread_local
-#    endif
-//--------------------------------------------------------------------------------------//
-
-#elif defined(_AIX)
-#    define tim_static_thread_local static thread_local
-#    define tim_thread_local thread_local
-//--------------------------------------------------------------------------------------//
-
-#elif defined(WIN32)
-#    define tim_static_thread_local static thread_local
-#    define tim_thread_local thread_local
-//--------------------------------------------------------------------------------------//
-
-#else
-#    define tim_static_thread_local
-#    define tim_thread_local
-
-#endif
+*/
 
 //======================================================================================//
 //
@@ -384,8 +296,6 @@
 //      FLOATING POINT EXCEPTIONS
 //
 //======================================================================================//
-#include <cfenv>
-#include <cmath>
 
 #if !defined(_WINDOWS)
 #    define init_priority(N) __attribute__((init_priority(N)))
@@ -397,145 +307,6 @@
 #    define init_construct(N)
 #    define __c_ctor__
 #    define __c_dtor__
-#endif
-
-//======================================================================================//
-//
-//      WINDOWS SIGNALS (dummy)
-//
-//======================================================================================//
-
-#if defined(_WINDOWS)
-//   dummy definition of SIGHUP
-#    ifndef SIGHUP
-#        define SIGHUP 1
-#    endif
-//   dummy definition of SIGINT
-#    ifndef SIGINT
-#        define SIGINT 2
-#    endif
-//   dummy definition of SIGQUIT
-#    ifndef SIGQUIT
-#        define SIGQUIT 3
-#    endif
-//   dummy definition of SIGILL
-#    ifndef SIGILL
-#        define SIGILL 4
-#    endif
-//   dummy definition of SIGTRAP
-#    ifndef SIGTRAP
-#        define SIGTRAP 5
-#    endif
-//   dummy definition of SIGABRT
-#    ifndef SIGABRT
-#        define SIGABRT 6
-#    endif
-//   dummy definition of SIGEMT
-#    ifndef SIGEMT
-#        define SIGEMT 7
-#    endif
-//   dummy definition of SIGFPE
-#    ifndef SIGFPE
-#        define SIGFPE 8
-#    endif
-//   dummy definition of SIGKILL
-#    ifndef SIGKILL
-#        define SIGKILL 9
-#    endif
-//   dummy definition of SIGBUS
-#    ifndef SIGBUS
-#        define SIGBUS 10
-#    endif
-//   dummy definition of SIGSEGV
-#    ifndef SIGSEGV
-#        define SIGSEGV 11
-#    endif
-//   dummy definition of SIGSYS
-#    ifndef SIGSYS
-#        define SIGSYS 12
-#    endif
-//   dummy definition of SIGPIPE
-#    ifndef SIGPIPE
-#        define SIGPIPE 13
-#    endif
-//   dummy definition of SIGALRM
-#    ifndef SIGALRM
-#        define SIGALRM 14
-#    endif
-//   dummy definition of SIGTERM
-#    ifndef SIGTERM
-#        define SIGTERM 15
-#    endif
-//   dummy definition of SIGURG
-#    ifndef SIGURG
-#        define SIGURG 16
-#    endif
-//   dummy definition of SIGSTOP
-#    ifndef SIGSTOP
-#        define SIGSTOP 17
-#    endif
-//   dummy definition of SIGTSTP
-#    ifndef SIGTSTP
-#        define SIGTSTP 18
-#    endif
-//   dummy definition of SIGCONT
-#    ifndef SIGCONT
-#        define SIGCONT 19
-#    endif
-//   dummy definition of SIGCHLD
-#    ifndef SIGCHLD
-#        define SIGCHLD 20
-#    endif
-//   dummy definition of SIGTTIN
-#    ifndef SIGTTIN
-#        define SIGTTIN 21
-#    endif
-//   dummy definition of SIGTTOU
-#    ifndef SIGTTOU
-#        define SIGTTOU 22
-#    endif
-//   dummy definition of SIGIO
-#    ifndef SIGIO
-#        define SIGIO 23
-#    endif
-//   dummy definition of SIGXCPU
-#    ifndef SIGXCPU
-#        define SIGXCPU 24
-#    endif
-//   dummy definition of SIGXFSZ
-#    ifndef SIGXFSZ
-#        define SIGXFSZ 25
-#    endif
-//   dummy definition of SIGVTALRM
-#    ifndef SIGVTALRM
-#        define SIGVTALRM 26
-#    endif
-//   dummy definition of SIGPROF
-#    ifndef SIGPROF
-#        define SIGPROF 27
-#    endif
-//   dummy definition of SIGWINCH
-#    ifndef SIGWINCH
-#        define SIGWINCH 28
-#    endif
-//   dummy definition of SIGINFO
-#    ifndef SIGINFO
-#        define SIGINFO 29
-#    endif
-//   dummy definition of SIGUSR1
-#    ifndef SIGUSR1
-#        define SIGUSR1 30
-#    endif
-//   dummy definition of SIGUSR2
-#    ifndef SIGUSR2
-#        define SIGUSR2 31
-#    endif
-#endif  // defined(_WINDOWS)
-
-#if defined(_WINDOWS)
-#    if !defined(NOMINMAX)
-#        define NOMINMAX
-#    endif
 #endif
 
 //======================================================================================//
@@ -559,7 +330,7 @@
 #endif
 
 #if !defined(PRETTY_PRINT_HERE)
-#    if defined(_C_GNU) || defined(_C_CLANG)
+#    if defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG)
 #        define PRETTY_PRINT_HERE(extra)                                                 \
             printf("> [%s@'%s':%i] %s...\n", __PRETTY_FUNCTION__, __FILE__, __LINE__,    \
                    extra)
@@ -567,6 +338,59 @@
 #        define PRETTY_PRINT_HERE(extra)                                                 \
             printf("> [%s@'%s':%i] %s...\n", __FUNCTION__, __FILE__, __LINE__, extra)
 #    endif
+#endif
+
+#if defined(DEBUG)
+
+template <typename... Args>
+inline void
+__LOG(std::string file, int line, const char* msg, Args&&... args)
+{
+    if(file.find("/") != std::string::npos)
+        file = file.substr(file.find_last_of("/"));
+    fprintf(stderr, "[Log @ %s:%i]> ", file.c_str(), line);
+    fprintf(stderr, msg, std::forward<Args>(args)...);
+    fprintf(stderr, "\n");
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+__LOG(std::string file, int line, const char* msg)
+{
+    if(file.find("/") != std::string::npos)
+        file = file.substr(file.find_last_of("/"));
+    fprintf(stderr, "[Log @ %s:%i]> %s\n", file.c_str(), line, msg);
+}
+
+//--------------------------------------------------------------------------------------//
+// auto insert the file and line
+#    define _LOG(...) __LOG(__FILE__, __LINE__, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Args>
+inline void
+_DBG(const char* msg, Args&&... args)
+{
+    fprintf(stderr, msg, std::forward<Args>(args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+_DBG(const char* msg)
+{
+    fprintf(stderr, "%s", msg);
+}
+
+#else
+#    define _LOG(...)                                                                    \
+        {                                                                                \
+        }
+#    define _DBG(...)                                                                    \
+        {                                                                                \
+        }
 #endif
 
 //======================================================================================//
@@ -578,7 +402,6 @@
 #if defined(TIMEMORY_USE_GPERF)
 #    include <gperftools/heap-profiler.h>
 #    include <gperftools/profiler.h>
-#    include <iostream>
 
 namespace gperf
 {

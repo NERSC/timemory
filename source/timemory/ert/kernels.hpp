@@ -25,9 +25,9 @@
 #pragma once
 
 #include "timemory/apply.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 
 #include <cstdint>
 #include <functional>
@@ -183,6 +183,162 @@ cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
     tim::mpi_barrier();
     cpu_ops_main<_Nextra...>(counter, std::forward<_Func>(func));
 }
+
+//--------------------------------------------------------------------------------------//
+#if defined(__NVCC__)
+
+template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
+          tim::enable_if_t<(_Nrep == 1), int> = 0>
+__global__ void
+gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_elem,
+               int* mem_accesses_per_elem)
+{
+    _Intp i0      = blockIdx.x * blockDim.x + threadIdx.x;
+    _Intp istride = blockDim.x * gridDim.x;
+
+    if(i0 == 0)
+    {
+        *bytes_per_elem        = sizeof(_Tp);
+        *mem_accesses_per_elem = 2;
+    }
+
+    for(_Intp j = 0; j < ntrials; ++j)
+    {
+        _Tp alpha = 0.5;
+        for(_Intp i = i0; i < nsize; i += istride)
+        {
+            _Tp beta = 0.8;
+            func(beta, A[i], alpha);
+            A[i] = beta;
+        }
+        alpha *= (1.0 - 1.0e-8);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
+          tim::enable_if_t<(_Nrep > 1), int> = 0>
+__global__ void
+gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_elem,
+               int* mem_accesses_per_elem)
+{
+    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
+    constexpr size_t NUM_REP = _Nrep / 2;
+
+    _Intp i0      = blockIdx.x * blockDim.x + threadIdx.x;
+    _Intp istride = blockDim.x * gridDim.x;
+
+    if(i0 == 0)
+    {
+        *bytes_per_elem        = sizeof(_Tp);
+        *mem_accesses_per_elem = 2;
+    }
+
+    for(_Intp j = 0; j < ntrials; ++j)
+    {
+        _Tp alpha = 0.5;
+        for(_Intp i = i0; i < nsize; i += istride)
+        {
+            _Tp beta = 0.8;
+            apply<void>::unroll<NUM_REP>(std::forward<_Func>(func), beta, A[i], alpha);
+            A[i] = beta;
+        }
+        alpha *= (1.0 - 1.0e-8);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
+          tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
+void
+gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
+{
+    OMP_PARALLEL
+    {
+        auto     buf          = counter.initialize();
+        uint64_t n            = counter.params.working_set_min;
+        int*     counter_data = cuda::malloc<int>(2);
+        while(n <= counter.nsize)
+        {
+            // working set - nsize
+            uint64_t ntrials = counter.nsize / n;
+            if(ntrials < 1)
+                ntrials = 1;
+            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
+            {
+                // working set - ntrials
+                OMP_MASTER { tim::mpi_barrier(); }
+                OMP_BARRIER
+                counter.start();
+                gpu_ops_kernel<_Nops>
+                    <<<counter.grid_size, counter.block_size, counter.shmem,
+                       counter.stream>>>(t, std::forward<_Func>(func), n, buf,
+                                         &counter_data[0], &counter_data[1]);
+                cuda::stream_sync(counter.stream);
+                OMP_BARRIER
+                OMP_MASTER { tim::mpi_barrier(); }
+                counter.stop(n, t, _Nops);
+            }
+            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
+        }
+        cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,
+                          cuda::device_to_host_v, counter.stream);
+        cuda::memcpy<int>(&counter.mem_accesses_per_elem, counter_data + 1, 1,
+                          cuda::device_to_host_v, counter.stream);
+        cuda::stream_sync(counter.stream);
+        cuda::free(counter_data);
+    }
+    tim::mpi_barrier();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
+          tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
+void
+gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
+{
+    OMP_PARALLEL
+    {
+        auto     buf          = counter.initialize();
+        uint64_t n            = counter.params.working_set_min;
+        int*     counter_data = cuda::malloc<int>(2);
+        while(n <= counter.nsize)
+        {
+            // working set - nsize
+            uint64_t ntrials = counter.nsize / n;
+            if(ntrials < 1)
+                ntrials = 1;
+            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
+            {
+                // working set - ntrials
+                OMP_MASTER { tim::mpi_barrier(); }
+                OMP_BARRIER
+                counter.start();
+                gpu_ops_kernel<_Nops>
+                    <<<counter.grid_size, counter.block_size, counter.shmem,
+                       counter.stream>>>(t, std::forward<_Func>(func), n, buf,
+                                         &counter_data[0], &counter_data[1]);
+                OMP_BARRIER
+                OMP_MASTER { tim::mpi_barrier(); }
+                counter.stop(n, t, _Nops);
+            }
+            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
+        }
+        cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,
+                          cuda::device_to_host_v, counter.stream);
+        cuda::memcpy<int>(&counter.mem_accesses_per_elem, counter_data + 1, 1,
+                          cuda::device_to_host_v, counter.stream);
+        cuda::stream_sync(counter.stream);
+        cuda::free(counter_data);
+    }
+    tim::mpi_barrier();
+    gpu_ops_main<_Nextra...>(counter, std::forward<_Func>(func));
+}
+
+#endif
 
 }  // namespace ert
 }  // namespace tim

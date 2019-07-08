@@ -24,14 +24,18 @@
 
 #pragma once
 
+#include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
+#include "timemory/components/policy.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/papi.hpp"
-#include "timemory/storage.hpp"
 #include "timemory/units.hpp"
+
+#include <array>
+#include <numeric>
+#include <utility>
 
 //======================================================================================//
 
@@ -89,7 +93,7 @@ struct cpu_roofline
     static const short                   precision  = 3;
     static const short                   width      = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static operation_function_t& get_finalize_function()
     {

@@ -30,13 +30,13 @@
 
 #pragma once
 
-#if defined(TIMEMORY_USE_CUDA)
-#    include <cuda.h>
-#    include <cuda_runtime_api.h>
-#endif
+#include "timemory/backends/cuda.hpp"
+#include "timemory/components/base.hpp"
+#include "timemory/components/types.hpp"
+#include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/cupti.hpp"
+#    include "timemory/backends/cupti.hpp"
 #endif
 
 //======================================================================================//
@@ -45,8 +45,6 @@ namespace tim
 {
 namespace component
 {
-#if defined(TIMEMORY_USE_CUDA)
-
 //--------------------------------------------------------------------------------------//
 // this component extracts the time spent in GPU kernels
 //
@@ -59,7 +57,7 @@ struct cuda_event : public base<cuda_event, float>
     static const short                   precision = 3;
     static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "cuda_event"; }
@@ -67,22 +65,13 @@ struct cuda_event : public base<cuda_event, float>
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
 
-    cuda_event(cudaStream_t _stream = 0)
+    cuda_event(cuda::stream_t _stream = 0)
     : m_stream(_stream)
     {
-        m_is_valid = check(cudaEventCreate(&m_start));
-        if(m_is_valid)
-            m_is_valid = check(cudaEventCreate(&m_stop));
+        m_is_valid = (cuda::event_create(m_start) && cuda::event_create(m_stop));
     }
 
-    ~cuda_event()
-    {
-        /*if(m_is_valid && is_valid())
-        {
-            sync();
-            destroy();
-        }*/
-    }
+    ~cuda_event() {}
 
     float compute_display() const
     {
@@ -100,7 +89,7 @@ struct cuda_event : public base<cuda_event, float>
             m_is_synced = false;
             // cuda_event* _this = static_cast<cuda_event*>(this);
             // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
-            cudaEventRecord(m_start, m_stream);
+            cuda::event_record(m_start, m_stream);
         }
     }
 
@@ -108,21 +97,20 @@ struct cuda_event : public base<cuda_event, float>
     {
         if(m_is_valid)
         {
-            cudaEventRecord(m_stop, m_stream);
+            cuda::event_record(m_stop, m_stream);
             sync();
         }
         set_stopped();
     }
 
-    void set_stream(cudaStream_t _stream = 0) { m_stream = _stream; }
+    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
 
     void sync()
     {
         if(m_is_valid && !m_is_synced)
         {
-            cudaEventSynchronize(m_stop);
-            float tmp = 0.0f;
-            cudaEventElapsedTime(&tmp, m_start, m_stop);
+            cuda::event_sync(m_stop);
+            float tmp = cuda::event_elapsed_time(m_start, m_stop);
             accum += tmp;
             value       = std::move(tmp);
             m_is_synced = true;
@@ -133,41 +121,38 @@ struct cuda_event : public base<cuda_event, float>
     {
         if(m_is_valid && is_valid())
         {
-            cudaEventDestroy(m_start);
-            cudaEventDestroy(m_stop);
+            cuda::event_destroy(m_start);
+            cuda::event_destroy(m_stop);
         }
     }
 
     bool is_valid() const
     {
         // get last error but don't reset last error to cudaSuccess
-        auto ret = cudaPeekAtLastError();
+        auto ret = cuda::peek_at_last_error();
         // if failure previously, return false
-        if(ret != cudaSuccess)
+        if(ret != cuda::success_v)
             return false;
         // query
-        ret = cudaEventQuery(m_stop);
+        ret = cuda::event_query(m_stop);
         // if all good, return valid
-        if(ret == cudaSuccess)
+        if(ret == cuda::success_v)
             return true;
         // if not all good, clear the last error bc if was from failed query
-        ret = cudaGetLastError();
+        ret = cuda::get_last_error();
         // return if not ready (OK) or something else
-        return (ret == cudaErrorNotReady);
+        return (ret == cuda::err_not_ready_v);
     }
 
-    bool check(cudaError_t err) const { return (err == cudaSuccess); }
-
 protected:
-    static void callback(cudaStream_t /*_stream*/, cudaError_t /*_status*/,
+    static void callback(cuda::stream_t /*_stream*/, cuda::error_t /*_status*/,
                          void* user_data)
     {
         cuda_event* _this = static_cast<cuda_event*>(user_data);
         if(!_this->m_is_synced && _this->is_valid())
         {
-            cudaEventSynchronize(_this->m_stop);
-            float tmp = 0.0f;
-            cudaEventElapsedTime(&tmp, _this->m_start, _this->m_stop);
+            cuda::event_sync(_this->m_stop);
+            float tmp = cuda::event_elapsed_time(_this->m_start, _this->m_stop);
             _this->accum += tmp;
             _this->value       = std::move(tmp);
             _this->m_is_synced = true;
@@ -175,50 +160,12 @@ protected:
     }
 
 private:
-    bool         m_is_synced = false;
-    bool         m_is_valid  = true;
-    cudaStream_t m_stream    = 0;
-    cudaEvent_t  m_start;
-    cudaEvent_t  m_stop;
+    bool           m_is_synced = false;
+    bool           m_is_valid  = true;
+    cuda::stream_t m_stream    = 0;
+    cuda::event_t  m_start;
+    cuda::event_t  m_stop;
 };
-
-#else
-//--------------------------------------------------------------------------------------//
-// dummy for cuda_event when CUDA is not available
-//
-// this struct extracts only the CPU time spent in kernel-mode
-struct cuda_event : public base<cuda_event, float>
-{
-    using cudaStream_t = int;
-    using cudaError_t  = int;
-    using ratio_t      = std::milli;
-    using value_type   = float;
-    using base_type    = base<cuda_event, value_type>;
-
-    static const short                   precision = 3;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec;
-
-    static int64_t     unit() { return units::sec; }
-    static std::string label() { return "cuda_event"; }
-    static std::string descript() { return "event time"; }
-    static std::string display_unit() { return "sec"; }
-    static value_type  record() { return 0.0f; }
-
-    cuda_event() {}
-    explicit cuda_event(cudaStream_t) {}
-    ~cuda_event() {}
-
-    float       compute_display() const { return 0.0f; }
-    void        start() {}
-    void        stop() {}
-    void        set_stream(cudaStream_t = 0) {}
-    static void callback(cudaStream_t, cudaError_t, void*) {}
-    void        sync() {}
-};
-
-#endif
 
 }  // namespace component
 

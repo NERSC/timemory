@@ -26,6 +26,7 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+#include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 

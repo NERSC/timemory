@@ -38,6 +38,12 @@
 #include <type_traits>
 #include <utility>
 
+#if defined(__NVCC__)
+#    define TIMEMORY_LAMBDA __host__ __device__
+#else
+#    define TIMEMORY_LAMBDA
+#endif
+
 //======================================================================================//
 
 namespace tim
@@ -291,14 +297,14 @@ struct _apply_impl<void>
     // unroll
     template <size_t _N, typename _Func, typename... _Args,
               typename std::enable_if<(_N == 1), char>::type = 0>
-    static void unroll(_Func&& __func, _Args&&... __args)
+    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
         std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
     }
 
     template <size_t _N, typename _Func, typename... _Args,
               typename std::enable_if<(_N > 1), char>::type = 0>
-    static void unroll(_Func&& __func, _Args&&... __args)
+    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
         std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
         unroll<_N - 1, _Func, _Args...>(std::forward<_Func>(__func),
@@ -490,7 +496,7 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Func, typename... _Args>
-    static void unroll(_Func&& __func, _Args&&... __args)
+    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
         _apply_impl<void>::template unroll<_N, _Func, _Args...>(
             std::forward<_Func>(__func), std::forward<_Args>(__args)...);

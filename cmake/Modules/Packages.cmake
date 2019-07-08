@@ -488,8 +488,8 @@ if(TIMEMORY_USE_CUDA)
         #   70, 72      + Volta support
         #   75          + Turing support
 
-        target_compile_options(timemory-cuda INTERFACE
-            $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
+        #target_compile_options(timemory-cuda INTERFACE
+        #    $<$<COMPILE_LANGUAGE:CUDA>:--default-stream per-thread>)
 
         add_user_flags(timemory-cuda "CUDA")
 

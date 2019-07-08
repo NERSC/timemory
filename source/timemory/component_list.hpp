@@ -43,10 +43,10 @@
 #include <string>
 
 #include "timemory/apply.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 
