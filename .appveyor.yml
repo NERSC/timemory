@@ -48,13 +48,11 @@ install:
         $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
-        $env:TIMEMORY_BUILD_SHARED = "ON"
         $env:TIMEMORY_USE_MPI = "ON"
       } else {
         $env:PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts"
         $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
-        $env:TIMEMORY_BUILD_SHARED = "OFF"
         $env:TIMEMORY_USE_MPI = "ON"
       }
       python -m pip install --disable-pip-version-check --user --upgrade pip wheel
@@ -64,14 +62,12 @@ install:
         $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
-        $env:TIMEMORY_BUILD_SHARED = "ON"
         $env:TIMEMORY_USE_MPI = "ON"
       } else {
         $env:PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts;$env:PATH"
         $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts"
         $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
         $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
-        $env:TIMEMORY_BUILD_SHARED = "OFF"
         $env:TIMEMORY_USE_MPI = "OFF"
       }
       conda update -y -q -n base conda
@@ -103,8 +99,7 @@ build_script:
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
     -DTIMEMORY_USE_MPI=ON
     -DTIMEMORY_BUILD_C=OFF
-    -DTIMEMORY_BUILD_PYTHON=OFF
-    -DBUILD_SHARED_LIBS="%BUILD_SHARED%"
+    -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
     -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
     -DMPI_CXX_INCLUDE_PATH="C:\Program Files (x86)\Microsoft SDKs\MPI\Include"
