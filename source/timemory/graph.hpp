@@ -2771,6 +2771,22 @@ graph<T, AllocatorT>::sibling_iterator::range_last() const
 
 //--------------------------------------------------------------------------------------//
 
+template <typename T, typename AllocatorT>
+size_t
+graph<T, AllocatorT>::size() const
+{
+    size_t             i  = 0;
+    pre_order_iterator it = begin(), eit = end();
+    while(it != eit)
+    {
+        ++i;
+        ++it;
+    }
+    return i;
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename T>
 void
 print_graph_bracketed(const graph<T>& t, std::ostream& os = std::cout);

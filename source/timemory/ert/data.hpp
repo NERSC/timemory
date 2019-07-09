@@ -134,7 +134,7 @@ cache_size(const int& _level)
 
     // files to read
     static thread_local std::array<std::string, 3> files(
-        { "number_of_sets", "ways_of_associativity", "coherency_line_size" });
+        { { "number_of_sets", "ways_of_associativity", "coherency_line_size" } });
 
     uint64_t product = 1;
     for(unsigned i = 0; i < files.size(); ++i)
@@ -197,7 +197,7 @@ struct cache_size
         }
         // avoid multiple queries
         static std::array<size_t, 3> _values(
-            { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) });
+            { { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) } });
         return _values.at(_level - 1);
     }
 };
@@ -329,8 +329,9 @@ public:
     uint64_t     nsize                 = 0;
     timer_t*     rc                    = nullptr;
     result_array data;
-    labels_type  labels = labels_type({ "working-set", "trials", "seconds", "total-bytes",
-                                       "total-ops", "ops-per-sec", "intensity" });
+    labels_type  labels =
+        labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
+                        "ops-per-sec", "intensity" } });
     RESTRICT(_Tp*) buffer = nullptr;
 
 public:

@@ -147,14 +147,16 @@ main(int argc, char** argv)
     for(auto& itr : timer_list)
         std::cout << "\t" << itr << std::endl;
 
-
-    auto l1_size  = tim::ert::cache_size::get<1>();
-    auto l2_size  = tim::ert::cache_size::get<2>();
-    auto l3_size  = tim::ert::cache_size::get<3>();
+    auto l1_size = tim::ert::cache_size::get<1>();
+    auto l2_size = tim::ert::cache_size::get<2>();
+    auto l3_size = tim::ert::cache_size::get<3>();
     std::cout << "\n[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
               << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
               << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte) << " KB\n"
               << std::endl;
 
-    return 0;
+    int64_t rc_size = tim::storage<real_clock>::instance()->size();
+    int64_t ex_size = (nlaps / auto_tuple_t::size()) + 3;
+    printf("Expected size: %li, actual size: %li\n", (long) ex_size, (long) rc_size);
+    return (rc_size == ex_size) ? EXIT_SUCCESS : EXIT_FAILURE;
 }
