@@ -145,6 +145,8 @@ tim::storage<ObjectType>::print()
 #if defined(TIMEMORY_USE_GPERF)
             std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
                       << ". Continuing..." << std::endl;
+#else
+            consume_parameters(e);
 #endif
         }
 

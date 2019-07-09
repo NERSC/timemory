@@ -25,7 +25,7 @@
 #
 
 """
-Imports timemory.libtimemory.units as timemory.units
+Imports timemory.libpytimemory.units as timemory.units
 """
 
 from __future__ import absolute_import
@@ -39,4 +39,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jonrobm.programming@gmail.com"
 __status__ = "Development"
 
-from .libtimemory.units import *
+from .libpytimemory.units import *

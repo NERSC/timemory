@@ -327,7 +327,7 @@ enum class sys_signal : int
 
 //--------------------------------------------------------------------------------------//
 
-tim_api class signal_settings
+class signal_settings
 {
 public:
     using signal_set_t      = std::set<sys_signal>;

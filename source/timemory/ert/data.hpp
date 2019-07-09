@@ -29,16 +29,18 @@
 #include "timemory/components/timing.hpp"
 #include "timemory/macros.hpp"
 
+#include <array>
 #include <cstdint>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <vector>
 
 #if defined(__INTEL_COMPILER)
-#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __assume_aligned(ARRAY, WIDTH);
+#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __assume_aligned(ARRAY, WIDTH)
 #elif defined(__xlC__)
-#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __alignx(WIDTH, ARRAY);
+#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __alignx(WIDTH, ARRAY)
 #else
 #    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH)
 #endif
@@ -196,7 +198,7 @@ struct cache_size
             throw std::runtime_error(ss.str());
         }
         // avoid multiple queries
-        static std::array<size_t, 3> _values(
+        static std::vector<size_t> _values(
             { { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) } });
         return _values.at(_level - 1);
     }

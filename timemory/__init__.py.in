@@ -46,7 +46,7 @@ __status__ = "Development"
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
-from . import libtimemory
+from . import libpytimemory
 from . import plotting
 from . import tests
 from . import mpi_support
@@ -54,13 +54,13 @@ from . import util
 from . import options
 from . import units
 from . import signals
-from .libtimemory import *
+from .libpytimemory import *
 
 __all__ = ['version_info',
            'build_info',
            'version',
            # --------------- modules ---------------#
-           'libtimemory',
+           'libpytimemory',
            'mpi_support',
            'plotting',
            'tests',

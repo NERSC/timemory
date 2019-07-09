@@ -84,7 +84,7 @@ struct manager_deleter;
 
 //--------------------------------------------------------------------------------------//
 
-tim_api class manager
+class manager
 {
 public:
     using this_type     = manager;

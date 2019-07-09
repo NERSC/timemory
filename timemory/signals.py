@@ -25,7 +25,7 @@
 #
 
 """
-Imports timemory.libtimemory.signals as timemory.signals
+Imports timemory.libpytimemory.signals as timemory.signals
 """
 
 from __future__ import absolute_import
@@ -39,4 +39,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jonrobm.programming@gmail.com"
 __status__ = "Development"
 
-from .libtimemory.signals import *
+from .libpytimemory.signals import *
