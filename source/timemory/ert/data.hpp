@@ -30,6 +30,9 @@
 #include "timemory/macros.hpp"
 
 #include <cstdint>
+#include <numeric>
+#include <sstream>
+#include <stdexcept>
 #include <string>
 
 #if defined(__INTEL_COMPILER)
@@ -51,11 +54,153 @@
 #    define RESTRICT(TYPE) TYPE
 #endif
 
+#include <cstddef>
+
+#if defined(_MACOS)
+#    include <sys/sysctl.h>
+#elif defined(_WINDOWS)
+#    include <cstdlib>
+#    include <windows.h>
+#elif defined(_LINUX)
+#    include <cstdio>
+#endif
+
 namespace tim
 {
 namespace ert
 {
 using std::size_t;
+
+namespace impl
+{
+#if defined(_MACOS)
+inline size_t
+cache_size(const int& level)
+{
+    // configure sysctl query
+    //      L1  ->  hw.l1dcachesize
+    //      L2  ->  hw.l2cachesize
+    //      L3  ->  hw.l3cachesize
+    //
+    std::stringstream query;
+    query << "hw.l" << level;
+    if(level == 1)
+        query << "d";
+    query << "cachesize";
+
+    size_t line_size        = 0;
+    size_t sizeof_line_size = sizeof(line_size);
+    sysctlbyname(query.str().c_str(), &line_size, &sizeof_line_size, 0, 0);
+    return line_size;
+}
+
+#elif defined(_WINDOWS)
+
+inline size_t
+cache_size(const int& level)
+{
+    size_t                                line_size   = 0;
+    DWORD                                 buffer_size = 0;
+    DWORD                                 i           = 0;
+    SYSTEM_LOGICAL_PROCESSOR_INFORMATION* buffer      = 0;
+
+    GetLogicalProcessorInformation(0, &buffer_size);
+    buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION*) malloc(buffer_size);
+    GetLogicalProcessorInformation(&buffer[0], &buffer_size);
+
+    for(i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)
+    {
+        if(buffer[i].Relationship == RelationCache && buffer[i].Cache.Level == level)
+        {
+            line_size = buffer[i].Cache.Size;
+            break;
+        }
+    }
+
+    free(buffer);
+    return line_size;
+}
+
+#elif defined(_LINUX)
+
+inline size_t
+cache_size(const int& _level)
+{
+    // L1 has a data and instruction cache, index0 should be data
+    auto level = (_level == 1) ? 0 : (_level);
+    // location of files
+    std::stringstream fpath;
+    fpath << "/sys/devices/system/cpu/cpu0/cache/index" << level << "/";
+
+    // files to read
+    static thread_local std::array<std::string, 3> files(
+        { "number_of_sets", "ways_of_associativity", "coherency_line_size" });
+
+    uint64_t product = 1;
+    for(unsigned i = 0; i < files.size(); ++i)
+    {
+        std::string   fname = fpath.str() + files[i];
+        std::ifstream ifs(fname.c_str());
+        if(ifs)
+        {
+            uint64_t val;
+            ifs >> val;
+            product *= val;
+        }
+        else
+        {
+            throw std::runtime_error("Unable to open file: " + fname);
+        }
+        ifs.close();
+    }
+    return (product > 1) ? product : 0;
+}
+
+#else
+
+#    warning Unrecognized platform
+inline size_t
+cache_size()
+{
+    return 0;
+}
+
+#endif
+
+}  // namespace impl
+
+//--------------------------------------------------------------------------------------//
+//  get the size of the L1 (data), L2, or L3 cache
+//
+struct cache_size
+{
+    // only enable queries 1, 2, 3
+    template <size_t _Level>
+    static size_t get()
+    {
+        static_assert(_Level > 0 && _Level < 4,
+                      "Request for cache level that is not supported");
+
+        // avoid multiple queries
+        static size_t _value = impl::cache_size(_Level);
+        return _value;
+    }
+
+    static size_t get(const int& _level)
+    {
+        if(_level < 1 || _level > 3)
+        {
+            std::stringstream ss;
+            ss << "tim::ert::cache_size::get(" << _level << ") :: "
+               << "Requesting invalid cache level";
+            throw std::runtime_error(ss.str());
+        }
+        // avoid multiple queries
+        static std::array<size_t, 3> _values(
+            { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) });
+        return _values.at(_level - 1);
+    }
+};
 
 //--------------------------------------------------------------------------------------//
 //  aligned allocation
@@ -96,7 +241,8 @@ free_aligned(_Tp* ptr)
 struct exec_params
 {
     exec_params() {}
-    exec_params(uint64_t _work_set, uint64_t _min_try, uint64_t mem_max, int _nthread = 1)
+    exec_params(uint64_t _work_set, uint64_t _min_try,
+                uint64_t mem_max = 8 * cache_size::get<3>(), int _nthread = 1)
     : working_set_min(_work_set)
     , min_trials(_min_try)
     , memory_max(mem_max)
@@ -106,7 +252,7 @@ struct exec_params
 
     uint64_t  working_set_min = 1;
     uint64_t  min_trials      = 1;
-    uint64_t  memory_max      = 64 * 64;
+    uint64_t  memory_max      = 8 * cache_size::get<3>();  // default is 8 * L3 cache size
     const int nthreads        = 1;
     const int nrank           = tim::mpi_rank();
     const int nproc           = tim::mpi_size();

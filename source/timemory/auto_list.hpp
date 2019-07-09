@@ -133,7 +133,7 @@ public:
 
     template <typename _Tp, typename... _Args,
               tim::enable_if_t<(is_one_of<_Tp, tuple_type>::value == false), int> = 0>
-    void init(_Args&&... _args)
+    void init(_Args&&...)
     {
     }
 

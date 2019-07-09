@@ -108,6 +108,7 @@ main(int argc, char** argv)
     // heap-profiler will take a long timer if enabled
     tim::settings::json_output() = true;
 #endif
+    tim::print_env();
 
     // default calc: fibonacci(43)
     int nfib = 43;
@@ -119,7 +120,7 @@ main(int argc, char** argv)
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    std::cout << "Running fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")..."
+    std::cout << "\nRunning fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")...\n"
               << std::endl;
     tim::consume_parameters(tim::manager::instance());
     tim::auto_tuple<>          empty_test("test");
@@ -146,6 +147,14 @@ main(int argc, char** argv)
     for(auto& itr : timer_list)
         std::cout << "\t" << itr << std::endl;
 
-    tim::print_env();
+
+    auto l1_size  = tim::ert::cache_size::get<1>();
+    auto l2_size  = tim::ert::cache_size::get<2>();
+    auto l3_size  = tim::ert::cache_size::get<3>();
+    std::cout << "\n[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
+              << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
+              << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte) << " KB\n"
+              << std::endl;
+
     return 0;
 }

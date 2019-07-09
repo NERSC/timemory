@@ -43,7 +43,8 @@ int
 main(int argc, char** argv)
 {
     // STEP 4: configure output and parse env  (optional)
-    tim::settings::precision() = 6;
+    tim::settings::json_output() = true;
+    tim::settings::precision()   = 6;
     tim::timemory_init(argc, argv);
     tim::print_env();
     std::cout << std::endl;

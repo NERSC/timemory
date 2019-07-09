@@ -145,11 +145,24 @@
 //--------------------------------------------------------------------------------------//
 
 // GNU compiler
-#if defined(__GNUC__)
+#if defined(__GNUC__) && !defined(_TIMEMORY_CLANG)
 #    if(__GNUC__ <= 4 && __GNUC_MINOR__ < 9)
 #        warning "GCC compilers < 4.9 have been known to have compiler errors"
 #    elif(__GNUC__ >= 4 && __GNUC_MINOR__ >= 9) || __GNUC__ >= 5
 #        define _TIMEMORY_GNU
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Demangling
+//
+//======================================================================================//
+
+#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL)) &&   \
+    defined(_UNIX)
+#    if !defined(_TIMEMORY_ENABLE_DEMANGLE)
+#        define _TIMEMORY_ENABLE_DEMANGLE 1
 #    endif
 #endif
 

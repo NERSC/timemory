@@ -89,8 +89,10 @@ struct real_clock : public base<real_clock>
 };
 
 //--------------------------------------------------------------------------------------//
-// alias for "real" clock
+// alias for "real_clock"
 using wall_clock = real_clock;
+// alias for "real_clock" since time is a construct of our consciousness
+using virtual_clock = real_clock;
 
 //--------------------------------------------------------------------------------------//
 // uses clock() -- only relevant as a time when a different is computed

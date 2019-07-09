@@ -50,7 +50,9 @@ check_const(const auto_list_t& l);
 int
 main(int argc, char** argv)
 {
+    tim::settings::json_output() = true;
     tim::timemory_init(argc, argv);
+    tim::print_env();
 
     using comp_tuple_t = typename auto_tuple_t::component_type;
     comp_tuple_t _main("overall timer", true);
@@ -59,16 +61,23 @@ main(int argc, char** argv)
         using _Tp     = float_type;
         auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
         auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-        tim::ert::exec_params params(500, 500, 500 * 500 * 10);
+        auto l1_size  = tim::ert::cache_size::get<1>();
+        auto l2_size  = tim::ert::cache_size::get<2>();
+        auto l3_size  = tim::ert::cache_size::get<3>();
+        std::cout << "[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
+                  << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
+                  << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte) << " KB\n"
+                  << std::endl;
+        tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * l3_size);
         auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
         tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-        tim::ert::cpu_ops_main<2, 4, 8, 32, 64, 128, 256, 512>(*op_counter, fma_func);
+        tim::ert::cpu_ops_main<2, 4, 8, 16, 32, 64, 128, 256>(*op_counter, fma_func);
         return op_counter;
     };
     roofline_t::get_finalize_function() = roof_func;
 
     _main.start();
-    for(auto n : { 35, 38, 45 })
+    for(auto n : { 35, 38, 44 })
     {
         auto label = tim::str::join("", "fibonacci(", n, ")");
         TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
@@ -81,6 +90,7 @@ main(int argc, char** argv)
     auto_list_t l(__FUNCTION__, false);
     check(l);
     check_const(l);
+    std::cout << std::endl;
 }
 
 //--------------------------------------------------------------------------------------//

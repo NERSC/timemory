@@ -63,7 +63,7 @@ namespace component
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline
 : public base<cpu_roofline<_Tp, EventTypes...>,
-              std::pair<std::array<long long, sizeof...(EventTypes) + 1>, int64_t>,
+              std::pair<std::array<long long, sizeof...(EventTypes) + 1>, double>,
               policy::initialization, policy::finalization, policy::serialization>
 {
     friend struct policy::wrapper<policy::initialization, policy::finalization,
@@ -71,13 +71,14 @@ struct cpu_roofline
 
     using size_type  = std::size_t;
     using array_type = std::array<long long, sizeof...(EventTypes) + 1>;
-    using value_type = std::pair<array_type, int64_t>;
+    using value_type = std::pair<array_type, double>;
     using this_type  = cpu_roofline<_Tp, EventTypes...>;
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
     using papi_type            = papi_tuple<0, EventTypes..., PAPI_LD_INS>;
-    using ratio_t              = typename real_clock::ratio_t;
+    using clock_type           = real_clock;
+    using ratio_t              = typename clock_type::ratio_t;
     using operation_counter_t  = tim::ert::cpu::operation_counter<_Tp>;
     using operation_function_t = std::function<operation_counter_t*()>;
 
@@ -100,11 +101,13 @@ struct cpu_roofline
         static operation_function_t _instance = []() {
             auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
             auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-            tim::ert::exec_params params(10, 100, 64 * 64 * 64);
+            auto l1_size  = tim::ert::cache_size::get<1>();
+            auto l3_size  = tim::ert::cache_size::get<3>();
+            tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * l3_size);
             auto                  op_counter =
                 new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
             tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-            tim::ert::cpu_ops_main<2, 4, 8, 32, 64, 128>(*op_counter, fma_func);
+            tim::ert::cpu_ops_main<2, 4, 8, 32, 64>(*op_counter, fma_func);
             return op_counter;
         };
         return _instance;
@@ -166,20 +169,23 @@ struct cpu_roofline
                 ss << " + ";
             }
         }
-        ss << ") / " << real_clock::display_unit() << " + " << labels.back();
+        ss << ") / " << clock_type::display_unit() << ", " << labels.back();
+
         return ss.str();
     }
 
     static value_type record()
     {
-        return value_type(papi_type::record(), real_clock::record());
+        return value_type(papi_type::record(), clock_type::record() /
+                                                   static_cast<double>(ratio_t::den) *
+                                                   tim::units::sec);
     }
 
-    double get_elapsed(const int64_t& _unit = real_clock::get_unit()) const
+    double get_elapsed(const int64_t& _unit = clock_type::get_unit()) const
     {
         auto& obj = (accum.second > 0) ? accum : value;
-        return static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
-                                   _unit);
+        return static_cast<double>(obj.second *
+                                   (static_cast<double>(_unit) / tim::units::sec));
     }
 
     int64_t get_counted() const
@@ -188,20 +194,7 @@ struct cpu_roofline
         return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0);
     }
 
-    string_t compute_display() const
-    {
-        std::stringstream ss;
-        auto&             obj = (accum.second > 0) ? accum : value;
-        if(obj.second == 0)
-            return "";
-        auto v1 = std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
-                  (static_cast<double>(obj.second / static_cast<double>(ratio_t::den) *
-                                       real_clock::get_unit()));
-        ss << v1 << " + " << obj.first.back();
-        return ss.str();
-    }
-    double serial() { return compute_display(); }
-    void   start()
+    void start()
     {
         set_started();
         value = record();
@@ -244,14 +237,52 @@ struct cpu_roofline
         return *this;
     }
 
+public:
+    //==================================================================================//
+    //
+    //      representation as a string
+    //
+    //==================================================================================//
+    string_t compute_display() const
+    {
+        auto& obj = (accum.second > 0) ? accum : value;
+        if(obj.second == 0)
+            return "";
+
+        // output the roofline metric
+        std::stringstream ss;
+        auto v1 = std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
+                  static_cast<double>(obj.second);
+        ss << v1 << ", " << obj.first.back();
+        return ss.str();
+    }
+
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        // output the time
+        auto&             _obj = (obj.accum.second > 0) ? obj.accum : obj.value;
+        std::stringstream sst;
+        auto              t_value = _obj.second;
+        auto              t_label = clock_type::get_label();
+        auto              t_disp  = clock_type::get_display_unit();
+        auto              t_prec  = clock_type::get_precision();
+        auto              t_width = clock_type::get_width();
+        auto              t_flags = clock_type::get_format_flags();
+        sst.setf(t_flags);
+        sst << std::setw(t_width) << std::setprecision(t_prec) << t_value;
+        if(!t_disp.empty())
+            sst << " " << t_disp;
+        if(!t_label.empty())
+            sst << " " << t_label;
+        sst << ", ";
+
+        // output the roofline metric
         auto _value = obj.compute_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::display_unit();
-        auto _prec  = real_clock::get_precision();
+        auto _prec  = clock_type::get_precision();
         auto _width = this_type::get_width();
-        auto _flags = real_clock::get_format_flags();
+        auto _flags = clock_type::get_format_flags();
 
         std::stringstream ss_value;
         std::stringstream ss_extra;
@@ -261,14 +292,10 @@ struct cpu_roofline
             ss_extra << " " << _disp;
         else if(!_label.empty())
             ss_extra << " " << _label;
-        os << ss_value.str() << ss_extra.str();
+        os << sst.str() << ss_value.str() << ss_extra.str();
 
         return os;
     }
-
-private:
-    // create and destroy a papi_tuple<...> so that the event set gets registered
-    // papi_type _impl;
 };
 
 //--------------------------------------------------------------------------------------//

@@ -289,8 +289,12 @@ When the application terminates, output to text and JSON is automated.
   - records the CPU time within the current process (excludes child processes) clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling process.
 - `process_cpu_util`
   - records the CPU utilization as `process_cpu_clock` / `wall_clock`
-- `real_clock` / `wall_clock`
+- `real_clock`
   - records the system's real time (i.e. wall time) clock, expressed as the amount of time since the epoch.
+- `wall_clock`
+  - alias to `real_clock` for convenience
+- `virtual_clock`
+  - alias to `real_clock` since time is a construct of our consciousness
 - `stack_rss`
   - records the integral value of the amount of unshared memory residing in the stack segment of a process
 - `system_clock`

@@ -58,6 +58,7 @@
 #include <thread>
 
 #if defined(_UNIX)
+#    include <cxxabi.h>
 #    include <errno.h>
 #    include <stdio.h>
 #    include <string.h>
@@ -152,7 +153,7 @@ type_mutex(const uint64_t& _n = 0)
 inline std::string
 demangle(const std::string& _str)
 {
-#if defined(SIGNAL_AVAILABLE)
+#if defined(_TIMEMORY_ENABLE_DEMANGLE)
     // demangling a string when delimiting
     int   _ret    = 0;
     char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
@@ -527,7 +528,7 @@ public:
 
 //======================================================================================//
 //
-//
+//  Counting the number of objects of a given type
 //
 //======================================================================================//
 
@@ -548,55 +549,36 @@ protected:
     : m_thread(thread_number())
     , m_count(count()++)
     {
-        // PRINT_HERE(std::to_string(m_count).c_str());
     }
-
     ~static_counted_object()
     {
         if(m_decrement)
         {
             --count();
-            // int64_t c = --count();
-            // PRINT_HERE(std::to_string(c).c_str());
         }
     }
-
     static_counted_object(const this_type& rhs)
     : m_decrement(false)
+    , m_thread(rhs.m_thread)
     , m_count(rhs.m_count)
     {
-        // std::stringstream ss;
-        // ss << "copy_constructor " << m_count;
-        // PRINT_HERE(ss.str().c_str());
     }
-
     this_type& operator=(const this_type& rhs)
     {
         if(this != &rhs)
         {
             m_decrement = false;
+            m_thread    = rhs.m_thread;
             m_count     = rhs.m_count;
         }
-        // PRINT_HERE("copy_assignment");
         return *this;
     }
-
     static_counted_object(this_type&& rhs)
     : m_decrement(false)
+    , m_thread(std::move(rhs.m_thread))
     , m_count(std::move(rhs.m_count))
     {
-        // std::stringstream ss;
-        // ss << "move_constructor " << m_count;
-        // PRINT_HERE(ss.str().c_str());
     }
-
-    /*this_type& operator=(this_type&& rhs)
-    {
-        // PRINT_HERE("move_assignment");
-        m_decrement     = std::move(rhs.m_decrement);
-        m_count         = std::move(rhs.m_count);
-        rhs.m_decrement = true;
-    }*/
 
 protected:
     bool    m_decrement = true;
@@ -632,7 +614,7 @@ static_counted_object<CountedType>::count()
 
 //======================================================================================//
 //
-//
+//  Counting the number of objects of a given type
 //
 //======================================================================================//
 
@@ -741,7 +723,7 @@ bool counted_object<CountedType>::fenabled = true;
 
 //======================================================================================//
 //
-//
+//  Running hash for object and children of a given type
 //
 //======================================================================================//
 
@@ -820,8 +802,6 @@ hashed_object<HashedType>::hash()
     static thread_local int64_t _instance = master_hash();
     return _instance;
 }
-
-//--------------------------------------------------------------------------------------//
 
 //--------------------------------------------------------------------------------------//
 
