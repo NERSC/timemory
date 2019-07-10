@@ -102,8 +102,8 @@ struct cpu_roofline
             auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
             auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
             auto l1_size  = tim::ert::cache_size::get<1>();
-            auto l3_size  = tim::ert::cache_size::get<3>();
-            tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * l3_size);
+            auto lm_size  = tim::ert::cache_size::get_max();
+            tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * lm_size);
             auto                  op_counter =
                 new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
             tim::ert::cpu_ops_main<1>(*op_counter, add_func);

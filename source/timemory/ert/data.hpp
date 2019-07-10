@@ -174,34 +174,57 @@ cache_size()
 //--------------------------------------------------------------------------------------//
 //  get the size of the L1 (data), L2, or L3 cache
 //
-struct cache_size
+namespace cache_size
+{
+template <size_t _Level>
+inline size_t
+get()
 {
     // only enable queries 1, 2, 3
-    template <size_t _Level>
-    static size_t get()
-    {
-        static_assert(_Level > 0 && _Level < 4,
-                      "Request for cache level that is not supported");
+    static_assert(_Level > 0 && _Level < 4,
+                  "Request for cache level that is not supported");
 
-        // avoid multiple queries
-        static size_t _value = impl::cache_size(_Level);
-        return _value;
+    // avoid multiple queries
+    static size_t _value = impl::cache_size(_Level);
+    return _value;
+}
+
+inline size_t
+get(const int& _level)
+{
+    // only enable queries 1, 2, 3
+    if(_level < 1 || _level > 3)
+    {
+        std::stringstream ss;
+        ss << "tim::ert::cache_size::get(" << _level << ") :: "
+           << "Requesting invalid cache level";
+        throw std::runtime_error(ss.str());
     }
+    // avoid multiple queries
+    static std::vector<size_t> _values(
+        { { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) } });
+    return _values.at(_level - 1);
+}
 
-    static size_t get(const int& _level)
+inline size_t
+get_max()
+{
+    // this is useful for system like KNL that do not have L3 cache
+    for(auto level : { 3, 2, 1 })
     {
-        if(_level < 1 || _level > 3)
+        try
         {
-            std::stringstream ss;
-            ss << "tim::ert::cache_size::get(" << _level << ") :: "
-               << "Requesting invalid cache level";
-            throw std::runtime_error(ss.str());
+            auto sz = get(level);
+            // if this succeeded, we can return the value
+            return sz;
         }
-        // avoid multiple queries
-        static std::vector<size_t> _values(
-            { { impl::cache_size(1), impl::cache_size(2), impl::cache_size(3) } });
-        return _values.at(_level - 1);
+        catch(...)
+        {
+            continue;
+        }
     }
+    return 0;
+}
 };
 
 //--------------------------------------------------------------------------------------//
@@ -254,10 +277,10 @@ struct exec_params
 
     uint64_t  working_set_min = 1;
     uint64_t  min_trials      = 1;
-    uint64_t  memory_max      = 8 * cache_size::get<3>();  // default is 8 * L3 cache size
-    const int nthreads        = 1;
-    const int nrank           = tim::mpi_rank();
-    const int nproc           = tim::mpi_size();
+    uint64_t  memory_max = 8 * cache_size::get_max();  // default is 8 * L3 cache size
+    const int nthreads   = 1;
+    const int nrank      = tim::mpi_rank();
+    const int nproc      = tim::mpi_size();
 };
 
 //--------------------------------------------------------------------------------------//

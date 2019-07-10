@@ -147,12 +147,14 @@ main(int argc, char** argv)
     for(auto& itr : timer_list)
         std::cout << "\t" << itr << std::endl;
 
-    auto l1_size = tim::ert::cache_size::get<1>();
-    auto l2_size = tim::ert::cache_size::get<2>();
-    auto l3_size = tim::ert::cache_size::get<3>();
+    auto l1_size  = tim::ert::cache_size::get<1>();
+    auto l2_size  = tim::ert::cache_size::get<2>();
+    auto l3_size  = tim::ert::cache_size::get<3>();
+    auto max_size = tim::ert::cache_size::get_max();
     std::cout << "\n[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
               << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
-              << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte) << " KB\n"
+              << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte)
+              << " KB, max cache size: " << (max_size / tim::units::kilobyte) << " KB\n"
               << std::endl;
 
     int64_t rc_size = tim::storage<real_clock>::instance()->size();
