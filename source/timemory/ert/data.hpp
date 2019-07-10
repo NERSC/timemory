@@ -267,7 +267,7 @@ struct exec_params
 {
     exec_params() {}
     exec_params(uint64_t _work_set, uint64_t _min_try,
-                uint64_t mem_max = 8 * cache_size::get<3>(), int _nthread = 1)
+                uint64_t mem_max = 2 * cache_size::get_max(), int _nthread = 1)
     : working_set_min(_work_set)
     , min_trials(_min_try)
     , memory_max(mem_max)
@@ -277,7 +277,7 @@ struct exec_params
 
     uint64_t  working_set_min = 1;
     uint64_t  min_trials      = 1;
-    uint64_t  memory_max = 8 * cache_size::get_max();  // default is 8 * L3 cache size
+    uint64_t  memory_max = 2 * cache_size::get_max();  // default is 8 * L3 cache size
     const int nthreads   = 1;
     const int nrank      = tim::mpi_rank();
     const int nproc      = tim::mpi_size();
