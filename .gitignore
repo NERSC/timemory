@@ -4,6 +4,7 @@
 /.vscode
 /*.nja
 settings.json
+*.swp
 
 # Edit files
 *~

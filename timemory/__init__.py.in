@@ -48,6 +48,7 @@ this_path = os.path.abspath(os.path.dirname(__file__))
 
 from . import libpytimemory
 from . import plotting
+from . import roofline
 from . import tests
 from . import mpi_support
 from . import util

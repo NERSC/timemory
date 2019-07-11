@@ -259,7 +259,7 @@ function(GET_CPU_FEATURES _OUTVAR)
 endfunction()
 
 if(NOT CpuArch_FIND_COMPONENTS)
-    set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 avx avx2
+    set(CpuArch_FIND_COMPONENTS sse sse2 sse3 ssse3 sse4 sse4_1 sse4_2 fma avx avx2
         avx512f avx512pf avx512er avx512cd)
 endif()
 

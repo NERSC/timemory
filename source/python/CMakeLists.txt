@@ -63,7 +63,7 @@ set_target_properties(libpytimemory PROPERTIES
     PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     ${EXTRA_PROPERTIES})
 
-foreach(_SUBMODULE plotting mpi_support util ert)
+foreach(_SUBMODULE plotting mpi_support util ert roofline)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
 
