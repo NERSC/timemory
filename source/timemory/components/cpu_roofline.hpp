@@ -101,13 +101,13 @@ struct cpu_roofline
         static operation_function_t _instance = []() {
             auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
             auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-            auto l1_size  = tim::ert::cache_size::get(1);
-            auto lm_size  = tim::ert::cache_size::get_max();
-            tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * lm_size);
+            // auto l1_size  = tim::ert::cache_size::get(1);
+            auto                  lm_size = tim::ert::cache_size::get_max();
+            tim::ert::exec_params params(16, 8 * lm_size);
             auto                  op_counter =
                 new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
             tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-            tim::ert::cpu_ops_main<2, 4, 8, 32, 64>(*op_counter, fma_func);
+            tim::ert::cpu_ops_main<4>(*op_counter, fma_func);
             return op_counter;
         };
         return _instance;

@@ -1198,7 +1198,7 @@ test_9_cupti_event()
         a = a * b + c;
     };
 
-    tim::ert::exec_params params(10, 100, 64 * 64 * 64);
+    tim::ert::exec_params params(16, 64 * 64 * 64);
     auto                  op_counter = new operation_counter_t(params, 64);
 
     constexpr int      N = 1000;

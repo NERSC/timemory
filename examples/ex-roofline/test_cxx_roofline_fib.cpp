@@ -68,10 +68,10 @@ main(int argc, char** argv)
                   << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
                   << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte) << " KB\n"
                   << std::endl;
-        tim::ert::exec_params params(l1_size / 19, l1_size / 19, 2 * l3_size);
+        tim::ert::exec_params params(16, 8 * l3_size);
         auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
         tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-        tim::ert::cpu_ops_main<2, 4, 8, 16, 32, 64, 128, 256>(*op_counter, fma_func);
+        tim::ert::cpu_ops_main<4>(*op_counter, fma_func);
         return op_counter;
     };
     roofline_t::get_finalize_function() = roof_func;

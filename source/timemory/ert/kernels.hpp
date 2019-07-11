@@ -128,19 +128,16 @@ cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
             uint64_t ntrials = counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
-            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
-            {
-                // working set - ntrials
-                OMP_MASTER { tim::mpi_barrier(); }
-                OMP_BARRIER
-                counter.start();
-                cpu_ops_kernel<_Nops>(t, std::forward<_Func>(func), n, buf,
-                                      counter.bytes_per_elem,
-                                      counter.mem_accesses_per_elem);
-                OMP_BARRIER
-                OMP_MASTER { tim::mpi_barrier(); }
-                counter.stop(n, t, _Nops);
-            }  // working set - ntrials
+
+            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_BARRIER
+            counter.start();
+            cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
+                                  counter.bytes_per_elem, counter.mem_accesses_per_elem);
+            OMP_BARRIER
+            OMP_MASTER { tim::mpi_barrier(); }
+            counter.stop(n, ntrials, _Nops);
+
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }  // working set - nsize
     }      // parallel region
@@ -164,19 +161,16 @@ cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
             uint64_t ntrials = counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
-            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
-            {
-                // working set - ntrials
-                OMP_MASTER { tim::mpi_barrier(); }
-                OMP_BARRIER
-                counter.start();
-                cpu_ops_kernel<_Nops>(t, std::forward<_Func>(func), n, buf,
-                                      counter.bytes_per_elem,
-                                      counter.mem_accesses_per_elem);
-                OMP_BARRIER
-                OMP_MASTER { tim::mpi_barrier(); }
-                counter.stop(n, t, _Nops);
-            }  // working set - ntrials
+
+            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_BARRIER
+            counter.start();
+            cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
+                                  counter.bytes_per_elem, counter.mem_accesses_per_elem);
+            OMP_BARRIER
+            OMP_MASTER { tim::mpi_barrier(); }
+            counter.stop(n, ntrials, _Nops);
+
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }  // working set - nsize
     }      // parallel region
@@ -266,21 +260,19 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
             uint64_t ntrials = counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
-            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
-            {
-                // working set - ntrials
-                OMP_MASTER { tim::mpi_barrier(); }
-                OMP_BARRIER
-                counter.start();
-                gpu_ops_kernel<_Nops>
-                    <<<counter.grid_size, counter.block_size, counter.shmem,
-                       counter.stream>>>(t, std::forward<_Func>(func), n, buf,
-                                         &counter_data[0], &counter_data[1]);
-                cuda::stream_sync(counter.stream);
-                OMP_BARRIER
-                OMP_MASTER { tim::mpi_barrier(); }
-                counter.stop(n, t, _Nops);
-            }
+
+            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_BARRIER
+            counter.start();
+            gpu_ops_kernel<_Nops><<<counter.grid_size, counter.block_size, counter.shmem,
+                                    counter.stream>>>(ntrials, std::forward<_Func>(func),
+                                                      n, buf, &counter_data[0],
+                                                      &counter_data[1]);
+            cuda::stream_sync(counter.stream);
+            OMP_BARRIER
+            OMP_MASTER { tim::mpi_barrier(); }
+            counter.stop(n, ntrials, _Nops);
+
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
         cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,
@@ -311,20 +303,19 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
             uint64_t ntrials = counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
-            for(uint64_t t = counter.params.min_trials; t <= ntrials; t *= 2)
-            {
-                // working set - ntrials
-                OMP_MASTER { tim::mpi_barrier(); }
-                OMP_BARRIER
-                counter.start();
-                gpu_ops_kernel<_Nops>
-                    <<<counter.grid_size, counter.block_size, counter.shmem,
-                       counter.stream>>>(t, std::forward<_Func>(func), n, buf,
-                                         &counter_data[0], &counter_data[1]);
-                OMP_BARRIER
-                OMP_MASTER { tim::mpi_barrier(); }
-                counter.stop(n, t, _Nops);
-            }
+
+            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_BARRIER
+            counter.start();
+            gpu_ops_kernel<_Nops><<<counter.grid_size, counter.block_size, counter.shmem,
+                                    counter.stream>>>(ntrials, std::forward<_Func>(func),
+                                                      n, buf, &counter_data[0],
+                                                      &counter_data[1]);
+            cuda::stream_sync(counter.stream);
+            OMP_BARRIER
+            OMP_MASTER { tim::mpi_barrier(); }
+            counter.stop(n, ntrials, _Nops);
+
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
         cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,

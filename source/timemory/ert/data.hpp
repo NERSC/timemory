@@ -266,18 +266,16 @@ free_aligned(_Tp* ptr)
 struct exec_params
 {
     exec_params() {}
-    exec_params(uint64_t _work_set, uint64_t _min_try,
-                uint64_t mem_max = 2 * cache_size::get_max(), int _nthread = 1)
+    exec_params(uint64_t _work_set, uint64_t mem_max = 8 * cache_size::get_max(),
+                int _nthread = 1)
     : working_set_min(_work_set)
-    , min_trials(_min_try)
     , memory_max(mem_max)
     , nthreads(_nthread)
     {
     }
 
     uint64_t  working_set_min = 1;
-    uint64_t  min_trials      = 1;
-    uint64_t  memory_max = 2 * cache_size::get_max();  // default is 8 * L3 cache size
+    uint64_t  memory_max = 8 * cache_size::get_max();  // default is 8 * L3 cache size
     const int nthreads   = 1;
     const int nrank      = tim::mpi_rank();
     const int nproc      = tim::mpi_size();
@@ -295,9 +293,9 @@ public:
     using string_t = std::string;
     using timer_t  = tim::component::real_clock;
     using result_type =
-        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float>;
+        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float, float>;
     using result_array = std::vector<result_type>;
-    using labels_type  = std::array<string_t, 7>;
+    using labels_type  = std::array<string_t, 8>;
 
 public:
     operation_counter() = default;
@@ -340,7 +338,8 @@ public:
         uint64_t total_ops = t * working_set_size * nops;
         auto     seconds   = rc->get() * tim::units::sec;
         data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
-                                   total_bytes, total_ops, total_ops / seconds,
+                                   total_bytes, total_ops, total_bytes / seconds,
+                                   total_ops / seconds,
                                    total_ops / static_cast<float>(total_bytes)));
         delete rc;
         rc = nullptr;
@@ -356,7 +355,7 @@ public:
     result_array data;
     labels_type  labels =
         labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
-                        "ops-per-sec", "intensity" } });
+                        "bytes-per-sec", "ops-per-sec", "intensity" } });
     RESTRICT(_Tp*) buffer = nullptr;
 
 public:
@@ -370,7 +369,8 @@ public:
             obj.write<3>(os, itr, ", ");
             obj.write<4>(os, itr, ", ");
             obj.write<5>(os, itr, ", ");
-            obj.write<6>(os, itr, "\n");
+            obj.write<6>(os, itr, ", ");
+            obj.write<7>(os, itr, "\n");
         }
         return os;
     }
@@ -397,9 +397,9 @@ public:
     using string_t = std::string;
     using timer_t  = tim::component::real_clock;
     using result_type =
-        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float>;
+        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float, float>;
     using result_array = std::vector<result_type>;
-    using labels_type  = std::array<string_t, 7>;
+    using labels_type  = std::array<string_t, 8>;
 
 public:
     operation_counter() = default;
@@ -441,7 +441,8 @@ public:
         uint64_t total_ops = t * working_set_size * nops;
         auto     seconds   = rc->get() * tim::units::sec;
         data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
-                                   total_bytes, total_ops, total_ops / seconds,
+                                   total_bytes, total_ops, total_bytes / seconds,
+                                   total_ops / seconds,
                                    total_ops / static_cast<float>(total_bytes)));
         delete rc;
         rc = nullptr;
@@ -459,9 +460,10 @@ public:
     uint64_t       nsize                 = 0;
     timer_t*       rc                    = nullptr;
     result_array   data;
-    labels_type labels = labels_type({ "working-set", "trials", "seconds", "total-bytes",
-                                       "total-ops", "ops-per-sec", "intensity" });
-    _Tp*        buffer = nullptr;
+    labels_type    labels =
+        labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
+                        "bytes-per-sec", "ops-per-sec", "intensity" } });
+    _Tp* buffer = nullptr;
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const operation_counter& obj)
@@ -474,7 +476,8 @@ public:
             obj.write<3>(os, itr, ", ");
             obj.write<4>(os, itr, ", ");
             obj.write<5>(os, itr, ", ");
-            obj.write<6>(os, itr, "\n");
+            obj.write<6>(os, itr, ", ");
+            obj.write<7>(os, itr, "\n");
         }
         return os;
     }
