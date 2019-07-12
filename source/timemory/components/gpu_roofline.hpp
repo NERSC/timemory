@@ -27,7 +27,6 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 #include "timemory/units.hpp"
 

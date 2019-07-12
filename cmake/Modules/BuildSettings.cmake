@@ -59,7 +59,6 @@ endif()
 #
 if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     add_flag_if_avail("-finline-functions")
-    add_flag_if_avail("-finline-limit=4096")
     # add_flag_if_avail("-funroll-loops")
     # add_flag_if_avail("-ftree-vectorize")
     # add_flag_if_avail("-ftree-loop-optimize")

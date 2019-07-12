@@ -34,6 +34,7 @@
 #include "timemory/units.hpp"
 
 #include <array>
+#include <memory>
 #include <numeric>
 #include <utility>
 
@@ -76,11 +77,12 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_type            = papi_tuple<0, EventTypes..., PAPI_LD_INS>;
-    using clock_type           = real_clock;
-    using ratio_t              = typename clock_type::ratio_t;
-    using operation_counter_t  = tim::ert::cpu::operation_counter<_Tp>;
-    using operation_function_t = std::function<operation_counter_t*()>;
+    using papi_type               = papi_tuple<0, EventTypes..., PAPI_LD_INS>;
+    using clock_type              = real_clock;
+    using ratio_t                 = typename clock_type::ratio_t;
+    using operation_counter_t     = tim::ert::cpu::operation_counter<_Tp, clock_type>;
+    using operation_function_t    = std::function<operation_counter_t*()>;
+    using operation_counter_ptr_t = std::shared_ptr<operation_counter_t>;
 
     using base_type::accum;
     using base_type::is_running;
@@ -101,8 +103,7 @@ struct cpu_roofline
         static operation_function_t _instance = []() {
             auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
             auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-            // auto l1_size  = tim::ert::cache_size::get(1);
-            auto                  lm_size = tim::ert::cache_size::get_max();
+            auto lm_size  = tim::ert::cache_size::get_max();
             tim::ert::exec_params params(16, 8 * lm_size);
             auto                  op_counter =
                 new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
@@ -113,9 +114,9 @@ struct cpu_roofline
         return _instance;
     }
 
-    static operation_counter_t*& get_operation_counter()
+    static operation_counter_ptr_t& get_operation_counter()
     {
-        static operation_counter_t* _instance = nullptr;
+        static operation_counter_ptr_t _instance;
         return _instance;
     }
 
@@ -127,10 +128,11 @@ struct cpu_roofline
 
     static void invoke_finalize()
     {
-        auto  op_counter_func   = get_finalize_function();
-        auto* op_counter        = op_counter_func();
-        get_operation_counter() = op_counter;
-        std::cout << *op_counter << std::endl;
+        auto  op_counter_func = get_finalize_function();
+        auto* op_counter      = op_counter_func();
+        get_operation_counter().reset(op_counter);
+        if(op_counter)
+            std::cout << *op_counter << std::endl;
         array_type events = {};
         tim::papi::stop_counters(events.data(), num_events);
     }
@@ -138,8 +140,8 @@ struct cpu_roofline
     template <typename _Archive>
     static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
     {
-        auto*& op_counter = get_operation_counter();
-        ar(serializer::make_nvp("roofline", op_counter->data));
+        auto& op_counter = get_operation_counter();
+        ar(serializer::make_nvp("roofline", op_counter));
     }
 
     static PAPI_event_info_t info(int evt_type)

@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <functional>
+#include <future>
 #include <iomanip>
 #include <sstream>
 #include <string>
@@ -113,14 +114,15 @@ cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
-          tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
+template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
+          typename _Func, tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
+cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 {
-    OMP_PARALLEL
-    {
-        auto     buf = counter.initialize();
+    using thread_list_t = std::vector<std::thread>;
+
+    auto _cpu_op = [&](int tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        auto     buf = counter.get_buffer();
         uint64_t n   = counter.params.working_set_min;
         while(n <= counter.nsize)
         {
@@ -129,31 +131,69 @@ cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
             if(ntrials < 1)
                 ntrials = 1;
 
-            OMP_MASTER { tim::mpi_barrier(); }
-            OMP_BARRIER
-            counter.start();
+            // wait master thread notifies to proceed
+            if(fbarrier)
+                fbarrier->wait();
+
+            // get instance of object measuring something during the calculation
+            _Counter ct = counter.get_counter();
+            // start the timer or anything else being recorded
+            ct.start();
+
             cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
                                   counter.bytes_per_elem, counter.mem_accesses_per_elem);
-            OMP_BARRIER
-            OMP_MASTER { tim::mpi_barrier(); }
-            counter.stop(n, ntrials, _Nops);
+
+            // wait master thread notifies to proceed
+            if(lbarrier)
+                lbarrier->wait();
+            // stop the timer or anything else being recorded
+            ct.stop();
+            // store the result
+            counter.record(ct, n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }  // working set - nsize
-    }      // parallel region
-    tim::mpi_barrier();
+        }
+        printf("[%i]> terminating...\n", tid);
+        counter.destroy_buffer(buf);
+    };
+
+    tim::mpi_barrier();  // i.e. OMP_MASTER
+
+    if(counter.params.nthreads > 1)
+    {
+        // create synchronization barriers for the threads
+        thread_barrier fbarrier(counter.params.nthreads);
+        thread_barrier lbarrier(counter.params.nthreads);
+
+        // launch the threads
+        thread_list_t threads;
+        for(uint64_t i = 0; i < counter.params.nthreads; ++i)
+            threads.push_back(std::thread(_cpu_op, i, &fbarrier, &lbarrier));
+
+        // wait for threads to finish
+        for(auto& itr : threads)
+            itr.join();
+    }
+    else
+    {
+        _cpu_op(0, nullptr, nullptr);
+    }
+
+    tim::mpi_barrier();  // i.e. OMP_MASTER
+    // end the recursive loop
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
-          tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
+template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
+          typename _Func, tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
+cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 {
-    OMP_PARALLEL
-    {
-        auto     buf = counter.initialize();
+    using thread_list_t = std::vector<std::thread>;
+
+    auto _cpu_op = [&](int tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        auto     buf = counter.get_buffer();
         uint64_t n   = counter.params.working_set_min;
         while(n <= counter.nsize)
         {
@@ -162,20 +202,58 @@ cpu_ops_main(cpu::operation_counter<_Tp>& counter, _Func&& func)
             if(ntrials < 1)
                 ntrials = 1;
 
-            OMP_MASTER { tim::mpi_barrier(); }
-            OMP_BARRIER
-            counter.start();
+            // wait master thread notifies to proceed
+            if(fbarrier)
+                fbarrier->wait();
+
+            // get instance of object measuring something during the calculation
+            _Counter ct = counter.get_counter();
+            // start the timer or anything else being recorded
+            ct.start();
+
             cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
                                   counter.bytes_per_elem, counter.mem_accesses_per_elem);
-            OMP_BARRIER
-            OMP_MASTER { tim::mpi_barrier(); }
-            counter.stop(n, ntrials, _Nops);
+
+            // wait master thread notifies to proceed
+            if(lbarrier)
+                lbarrier->wait();
+            // stop the timer or anything else being recorded
+            ct.stop();
+            // store the result
+            counter.record(ct, n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }  // working set - nsize
-    }      // parallel region
-    tim::mpi_barrier();
-    cpu_ops_main<_Nextra...>(counter, std::forward<_Func>(func));
+        }
+        printf("[%i]> terminating...\n", tid);
+        counter.destroy_buffer(buf);
+    };
+
+    tim::mpi_barrier();  // i.e. OMP_MASTER
+
+    if(counter.params.nthreads > 1)
+    {
+        // create synchronization barriers for the threads
+        thread_barrier fbarrier(counter.params.nthreads);
+        thread_barrier lbarrier(counter.params.nthreads);
+
+        // launch the threads
+        thread_list_t threads;
+        for(uint64_t i = 0; i < counter.params.nthreads; ++i)
+            threads.push_back(std::thread(_cpu_op, i, &fbarrier, &lbarrier));
+
+        // wait for threads to finish
+        for(auto& itr : threads)
+            itr.join();
+    }
+    else
+    {
+        _cpu_op(0, nullptr, nullptr);
+    }
+
+    tim::mpi_barrier();  // i.e. OMP_MASTER
+
+    // continue the recursive loop
+    cpu_ops_main<_Nextra...>(counter, func);
 }
 
 //--------------------------------------------------------------------------------------//

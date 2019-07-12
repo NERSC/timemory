@@ -30,11 +30,15 @@
 #include "timemory/macros.hpp"
 
 #include <array>
+#include <atomic>
+#include <condition_variable>
 #include <cstdint>
+#include <mutex>
 #include <numeric>
 #include <sstream>
 #include <stdexcept>
 #include <string>
+#include <thread>
 #include <vector>
 
 #if defined(__INTEL_COMPILER)
@@ -267,18 +271,85 @@ struct exec_params
 {
     exec_params() {}
     exec_params(uint64_t _work_set, uint64_t mem_max = 8 * cache_size::get_max(),
-                int _nthread = 1)
+                uint64_t _nthread = 1)
     : working_set_min(_work_set)
     , memory_max(mem_max)
     , nthreads(_nthread)
     {
     }
 
-    uint64_t  working_set_min = 1;
-    uint64_t  memory_max = 8 * cache_size::get_max();  // default is 8 * L3 cache size
-    const int nthreads   = 1;
-    const int nrank      = tim::mpi_rank();
-    const int nproc      = tim::mpi_size();
+    uint64_t working_set_min = 1;
+    uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
+    const uint64_t nthreads  = 1;
+    const uint64_t nrank     = tim::mpi_rank();
+    const uint64_t nproc     = tim::mpi_size();
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp("working_set_min", working_set_min),
+           serializer::make_nvp("memory_max", memory_max),
+           serializer::make_nvp("nthreads", nthreads),
+           serializer::make_nvp("nrank", nrank), serializer::make_nvp("nproc", nproc));
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+//  creates a multithreading barrier
+//
+class thread_barrier
+{
+public:
+    using size_type = int64_t;
+    using mutex_t   = std::mutex;
+    using condvar_t = std::condition_variable;
+    using atomic_t  = std::atomic<size_type>;
+    using lock_t    = std::unique_lock<mutex_t>;
+
+public:
+    thread_barrier(const size_t& nthreads, int64_t timeout = 100)
+    : m_num_threads(nthreads)
+    , m_timeout(timeout)
+    {
+    }
+
+    thread_barrier(const thread_barrier&) = delete;
+    thread_barrier(thread_barrier&&)      = default;
+
+    thread_barrier& operator=(const thread_barrier&) = delete;
+    thread_barrier& operator=(thread_barrier&&) = default;
+
+    size_type size() const { return m_num_threads; }
+
+    // call from worker thread
+    void wait()
+    {
+        if(is_master())
+            throw std::runtime_error("master thread calling worker wait function");
+
+        lock_t lk(m_mutex);
+        ++m_counter;
+        ++m_waiting;
+        m_cv.wait(lk, [&] { return m_counter >= m_num_threads; });
+        m_cv.notify_one();
+        --m_waiting;
+        if(m_waiting == 0)
+            m_counter = 0;  // reset barrier
+    }
+
+    // check if this is the thread the created barrier
+    bool is_master() const { return std::this_thread::get_id() == m_master; }
+    void set_timeout(const size_type& n) { m_timeout = n; }
+
+private:
+    // the constructing thread will be set to master
+    std::thread::id m_master      = std::this_thread::get_id();
+    size_type       m_num_threads = 0;  // number of threads that will wait on barrier
+    size_type       m_timeout = 100;    // number of milliseconds to wait before checking
+    size_type       m_waiting = 0;      // number of threads waiting on lock
+    size_type       m_counter = 0;      // number of threads that have entered wait func
+    mutex_t         m_mutex;
+    condvar_t       m_cv;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -286,77 +357,102 @@ struct exec_params
 //
 namespace cpu
 {
-template <typename _Tp>
+template <typename _Tp, typename _Counter = tim::component::real_clock>
 class operation_counter
 {
 public:
-    using string_t = std::string;
-    using timer_t  = tim::component::real_clock;
+    using string_t            = std::string;
+    using counter_type        = _Counter;
+    using counter_create_func = std::function<counter_type()>;
+    using units_type          = decltype(counter_type::unit());
+    using labels_type         = std::array<string_t, 8>;
+    using mutex_t             = std::mutex;
+    using lock_t              = std::unique_lock<mutex_t>;
     using result_type =
         std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float, float>;
     using result_array = std::vector<result_type>;
-    using labels_type  = std::array<string_t, 8>;
 
 public:
     operation_counter() = default;
-    operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
+
+    explicit operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
     : params(_params)
     , align(_align)
     {
-    }
-    ~operation_counter()
-    {
-        delete rc;
-        free_aligned(buffer);
+        nsize = params.memory_max / params.nproc / params.nthreads;
+        nsize = nsize & (~(align - 1));
+        nsize = nsize / sizeof(_Tp);
+        nsize = std::max<uint64_t>(nsize, 1);
     }
 
-public:
-    _Tp* initialize()
+    // overload how to create the counter
+    operation_counter(const exec_params& _params, const counter_create_func& _func,
+                      size_t _align = sizeof(_Tp))
+    : params(_params)
+    , align(_align)
+    , create_counter(_func)
     {
-        nsize  = params.memory_max / params.nproc / params.nthreads;
-        nsize  = nsize & (~(align - 1));
-        nsize  = nsize / sizeof(_Tp);
-        buffer = allocate_aligned<_Tp>(nsize, align);
+    }
+
+    ~operation_counter() { delete pmutex; }
+
+public:
+    _Tp* get_buffer()
+    {
+        _Tp* buffer = allocate_aligned<_Tp>(nsize, align);
         for(uint64_t i = 0; i < nsize; ++i)
             buffer[i] = _Tp(1);
         return buffer;
     }
 
-    inline void start()
-    {
-        rc = new timer_t();
-        rc->start();
-        // return rc;
-    }
+    void destroy_buffer(_Tp* buffer) { free_aligned(buffer); }
 
-    inline void stop(int n, int t, size_t nops)
+    counter_type&& get_counter() const { return std::move(create_counter()); }
+
+    inline void record(counter_type& _counter, int n, int t, size_t nops)
     {
-        rc->stop();
         uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t total_bytes =
             t * working_set_size * bytes_per_elem * mem_accesses_per_elem;
         uint64_t total_ops = t * working_set_size * nops;
-        auto     seconds   = rc->get() * tim::units::sec;
+        auto     seconds   = _counter.get() * counter_units;
+        // lock before storing result
+        lock_t lk(*pmutex);
         data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
                                    total_bytes, total_ops, total_bytes / seconds,
-                                   total_ops / seconds,
-                                   total_ops / static_cast<float>(total_bytes)));
-        delete rc;
-        rc = nullptr;
+                                   total_ops / seconds, nops));
     }
+
+    /*
+    void        set_labels(const labels_type& _labels) { label = _labels; }
+    labels_type get_labels() const { return labels; }
+    void        set_create_counter(counter_create_func&& f)
+    {
+        create_counter = std::bind(std::forward<_Func>(_func));
+    }*/
 
 public:
     exec_params  params                = exec_params();
     int          bytes_per_elem        = 0;
     int          mem_accesses_per_elem = 0;
-    size_t       align                 = 32;
+    size_t       align                 = sizeof(_Tp);
     uint64_t     nsize                 = 0;
-    timer_t*     rc                    = nullptr;
+    units_type   counter_units         = tim::units::sec;
     result_array data;
-    labels_type  labels =
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp("params", params), serializer::make_nvp("labels", labels),
+           serializer::make_nvp("data", data));
+    }
+
+protected:
+    std::mutex* pmutex = new std::mutex;
+    labels_type labels =
         labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
-                        "bytes-per-sec", "ops-per-sec", "intensity" } });
-    RESTRICT(_Tp*) buffer = nullptr;
+                        "bytes-per-sec", "ops-per-sec", "ops-per-set" } });
+    counter_create_func create_counter = []() -> counter_type { return counter_type(); };
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const operation_counter& obj)
@@ -386,7 +482,7 @@ private:
 }  // namespace cpu
 
 //--------------------------------------------------------------------------------------//
-//  measure CPU floating-point or integer operations
+//  measure GPU floating-point or integer operations
 //
 namespace gpu
 {
@@ -403,7 +499,7 @@ public:
 
 public:
     operation_counter() = default;
-    operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
+    explicit operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
     : params(_params)
     , align(_align)
     {
