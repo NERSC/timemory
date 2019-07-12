@@ -153,7 +153,6 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        printf("[%i]> terminating...\n", tid);
         counter.destroy_buffer(buf);
     };
 
@@ -224,7 +223,6 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        printf("[%i]> terminating...\n", tid);
         counter.destroy_buffer(buf);
     };
 
