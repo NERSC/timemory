@@ -77,7 +77,7 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_type               = papi_tuple<EventTypes..., PAPI_LD_INS>;
+    using papi_type               = papi_tuple<EventTypes..., PAPI_LST_INS>;
     using clock_type              = real_clock;
     using ratio_t                 = typename clock_type::ratio_t;
     using operation_counter_t     = tim::ert::cpu::operation_counter<_Tp, clock_type>;
@@ -97,6 +97,12 @@ struct cpu_roofline
     static const short                   width      = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int& event_set()
+    {
+        static int _instance = PAPI_NULL;
+        return _instance;
+    }
 
     static operation_function_t& get_finalize_function()
     {
@@ -122,19 +128,28 @@ struct cpu_roofline
 
     static void invoke_initialize()
     {
-        int events[] = { EventTypes..., PAPI_LD_INS };
-        tim::papi::start_counters(events, num_events);
+        // start PAPI counters
+        int events[] = { EventTypes..., PAPI_LST_INS };
+        tim::papi::create_event_set(&event_set(), true);
+        tim::papi::add_events(event_set(), events, num_events);
+        tim::papi::start(event_set());
     }
 
     static void invoke_finalize()
     {
+        // stop PAPI counters
+        array_type values;
+        int        events[] = { EventTypes..., PAPI_LST_INS };
+        tim::papi::stop(event_set(), values.data());
+        tim::papi::remove_events(event_set(), events, num_events);
+        tim::papi::destroy_event_set(event_set());
+
+        // run roofline peak generation
         auto  op_counter_func = get_finalize_function();
         auto* op_counter      = op_counter_func();
         get_operation_counter().reset(op_counter);
         if(op_counter)
             std::cout << *op_counter << std::endl;
-        array_type events = {};
-        tim::papi::stop_counters(events.data(), num_events);
     }
 
     template <typename _Archive>
