@@ -44,23 +44,39 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 
-template <int EventSet, std::size_t NumEvent>
+template <std::size_t MaxNumEvents>
 struct papi_array
-: public base<papi_array<EventSet, NumEvent>, std::array<long long, NumEvent>>
-, public static_counted_object<papi_array<EventSet, 0>>
+: public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>>
+, public static_counted_object<papi_array<0>>
 {
-    using size_type   = std::size_t;
-    using event_list  = std::array<int, NumEvent>;
-    using value_type  = std::array<long long, NumEvent>;
-    using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_array<EventSet, NumEvent>, value_type>;
-    using this_type   = papi_array<EventSet, NumEvent>;
-    using event_count = static_counted_object<papi_array<EventSet, 0>>;
+    using size_type         = std::size_t;
+    using event_list        = std::vector<int>;
+    using value_type        = std::array<long long, MaxNumEvents>;
+    using entry_type        = typename value_type::value_type;
+    using base_type         = base<papi_array<MaxNumEvents>, value_type>;
+    using this_type         = papi_array<MaxNumEvents>;
+    using event_count       = static_counted_object<papi_array<0>>;
+    using get_events_func_t = std::function<event_list()>;
 
     static const short                   precision = 3;
     static const short                   width     = 12;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+    static int& event_set()
+    {
+        static int _instance = PAPI_NULL;
+        return _instance;
+    }
+    static bool& enable_multiplex()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+    static get_events_func_t& get_events_func()
+    {
+        static get_events_func_t _instance = []() { return event_list(); };
+        return _instance;
+    }
 
     using base_type::accum;
     using base_type::is_running;
@@ -72,14 +88,15 @@ struct papi_array
     using event_count::m_count;
 
     template <typename _Tp>
-    using array_t = std::array<_Tp, NumEvent>;
+    using array_t = std::array<_Tp, MaxNumEvents>;
 
-    event_list evt_types;
-    papi_array(const event_list& _evts)
-    : evt_types(_evts)
+    explicit papi_array(const event_list& _evts = get_events_func()())
+    : num_events(_evts.size())
+    , events(_evts)
     {
         if(event_count::is_master())
         {
+            add_event_types();
             start_event_set();
         }
         apply<void>::set_value(value, 0);
@@ -91,6 +108,7 @@ struct papi_array
         if(event_count::live() < 1 && event_count::is_master())
         {
             stop_event_set();
+            remove_event_types();
         }
     }
 
@@ -98,6 +116,10 @@ struct papi_array
     this_type& operator=(const this_type& rhs) = default;
     papi_array(papi_array&& rhs)               = default;
     this_type& operator=(this_type&&) = default;
+
+    // data types
+    size_type  num_events;
+    event_list events;
 
     //----------------------------------------------------------------------------------//
     // serialization
@@ -108,7 +130,7 @@ struct papi_array
         array_t<double> _disp;
         array_t<double> _value;
         array_t<double> _accum;
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
         {
             _disp[i]  = compute_display(i);
             _value[i] = value[i];
@@ -132,7 +154,7 @@ struct papi_array
 
     static int64_t unit() { return 1; }
     // leave these empty
-    static std::string label() { return "papi" + std::to_string(EventSet); }
+    static std::string label() { return "papi" + std::to_string(event_set()); }
     static std::string descript() { return ""; }
     static std::string display_unit() { return ""; }
     // use these instead
@@ -145,7 +167,7 @@ struct papi_array
         value_type read_value;
         apply<void>::set_value(read_value, 0);
         if(event_count::is_master())
-            tim::papi::read(EventSet, read_value.data());
+            tim::papi::read(event_set(), read_value.data());
         return read_value;
     }
 
@@ -160,7 +182,7 @@ struct papi_array
         auto val              = (is_transient) ? accum : value;
         auto _compute_display = [&](std::ostream& os, size_type idx) {
             auto _obj_value = val[idx];
-            auto _evt_type  = evt_types[idx];
+            auto _evt_type  = events[idx];
             auto _label     = label(_evt_type);
             auto _disp      = display_unit(_evt_type);
             auto _prec      = base_type::get_precision();
@@ -179,10 +201,10 @@ struct papi_array
         };
 
         std::stringstream ss;
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
         {
             _compute_display(ss, i);
-            if(i + 1 < NumEvent)
+            if(i + 1 < num_events)
                 ss << ", ";
         }
         return ss.str();
@@ -194,8 +216,8 @@ struct papi_array
     array_t<std::string> label_array() const
     {
         array_t<std::string> arr;
-        for(size_type i = 0; i < NumEvent; ++i)
-            arr[i] = label(evt_types[i]);
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = label(events[i]);
         return arr;
     }
 
@@ -205,8 +227,8 @@ struct papi_array
     array_t<std::string> descript_array() const
     {
         array_t<std::string> arr;
-        for(size_type i = 0; i < NumEvent; ++i)
-            arr[i] = descript(evt_types[i]);
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = descript(events[i]);
         return arr;
     }
 
@@ -216,8 +238,8 @@ struct papi_array
     array_t<std::string> display_unit_array() const
     {
         array_t<std::string> arr;
-        for(size_type i = 0; i < NumEvent; ++i)
-            arr[i] = display_unit(evt_types[i]);
+        for(size_type i = 0; i < num_events; ++i)
+            arr[i] = display_unit(events[i]);
         return arr;
     }
 
@@ -227,7 +249,7 @@ struct papi_array
     array_t<int64_t> unit_array() const
     {
         array_t<int64_t> arr;
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
             arr[i] = 1;
         return arr;
     }
@@ -244,7 +266,7 @@ struct papi_array
     void stop()
     {
         auto tmp = record();
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
         {
             accum[i] += (tmp[i] - value[i]);
         }
@@ -254,9 +276,9 @@ struct papi_array
 
     this_type& operator+=(const this_type& rhs)
     {
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
             accum[i] += rhs.accum[i];
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
             value[i] += rhs.value[i];
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
@@ -265,9 +287,9 @@ struct papi_array
 
     this_type& operator-=(const this_type& rhs)
     {
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
             accum[i] -= rhs.accum[i];
-        for(size_type i = 0; i < NumEvent; ++i)
+        for(size_type i = 0; i < num_events; ++i)
             value[i] -= rhs.value[i];
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
@@ -309,7 +331,8 @@ private:
     {
         if(acquire_claim(event_type_added()))
         {
-            tim::papi::add_events(EventSet, evt_types, NumEvent);
+            tim::papi::create_event_set(&event_set(), enable_multiplex());
+            tim::papi::add_events(event_set(), events.data(), num_events);
         }
     }
 
@@ -317,7 +340,8 @@ private:
     {
         if(release_claim(event_type_added()))
         {
-            tim::papi::remove_events(EventSet, evt_types, NumEvent);
+            tim::papi::remove_events(event_set(), events.data(), num_events);
+            tim::papi::destroy_event_set(event_set());
         }
     }
 
@@ -325,7 +349,7 @@ private:
     {
         if(acquire_claim(event_set_started()))
         {
-            tim::papi::start_counters(evt_types, NumEvent);
+            tim::papi::start(event_set());
         }
     }
 
@@ -333,13 +357,8 @@ private:
     {
         if(release_claim(event_set_started()))
         {
-#if defined(_WINDOWS)
-            for(std::size_t i = 0; i < NumEvent; ++i)
-                evt_types[i] = 0;
-#else
-            apply<void>::set_value(evt_types, 0);
-#endif
-            tim::papi::stop_counters(evt_types.data(), NumEvent);
+            value_type _data;
+            tim::papi::stop(event_set(), _data.data());
         }
     }
 };

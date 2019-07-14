@@ -238,6 +238,62 @@ get_max_threads()
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+//  delimit a string into a set
+//
+template <typename _Container = std::vector<std::string>,
+          typename _Predicate = std::function<string_t(string_t)>>
+inline _Container
+delimit(const string_t& line, const string_t& delimiters = ",; ",
+        _Predicate&& predicate = [](string_t s) -> string_t { return s; })
+{
+    auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {
+        return _string.find_first_not_of(delimiters, _beg);
+    };
+
+    auto _get_first_of = [&delimiters](const string_t& _string, const size_t& _beg) {
+        return _string.find_first_of(delimiters, _beg);
+    };
+
+    _Container _result;
+    size_t     _beginp = 0;  // position that is the beginning of the new string
+    size_t     _delimp = 0;  // position of the delimiter in the string
+    while(_beginp < line.length() && _delimp < line.length())
+    {
+        // find the first character (starting at _end) that is not a delimiter
+        _beginp = _get_first_not_of(line, _delimp);
+        // if no a character after or at _end that is not a delimiter is not found
+        // then we are done
+        if(_beginp == string_t::npos)
+        {
+            break;
+        }
+        // starting at the position of the new string, find the next delimiter
+        _delimp = _get_first_of(line, _beginp);
+        // if(d2 == string_t::npos) { d2 = string_t::npos; }
+        string_t _tmp = "";
+        try
+        {
+            // starting at the position of the new string, get the characters
+            // between this position and the next delimiter
+            _tmp = line.substr(_beginp, _delimp - _beginp);
+        }
+        catch(std::exception& e)
+        {
+            // print the exception but don't fail, unless maybe it should?
+            std::stringstream ss;
+            ss << e.what();
+            fprintf(stderr, "%s\n", ss.str().c_str());
+        }
+        // don't add empty strings
+        if(!_tmp.empty())
+        {
+            _result.insert(_result.end(), predicate(_tmp));
+        }
+    }
+    return _result;
+}
+
 //======================================================================================//
 //
 //  Environment

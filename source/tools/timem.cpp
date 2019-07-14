@@ -54,15 +54,19 @@
 #endif
 
 #if !defined(PAPI_NUM_COUNTERS)
-#    define PAPI_NUM_COUNTERS 8
+#    define PAPI_NUM_COUNTERS 4
 #endif
+
+template <typename _Tp>
+using vector_t = std::vector<_Tp>;
+using string_t = std::string;
 
 using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
-// papi event set 0 with 4 counters
+// papi event set 0 with PAPI_NUM_COUNTERS (4) counters
 //
-using papi_array_t = papi_array<0, PAPI_NUM_COUNTERS>;
+using papi_array_t = papi_array<PAPI_NUM_COUNTERS>;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -78,7 +82,15 @@ using comp_tuple_t =
 bool&
 papi_enabled()
 {
-    static bool _instance = false;
+    static bool _instance = tim::get_env("TIMEM_PAPI", false);
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+papi_array_t& get_papi_array()
+{
+    static papi_array_t _instance;
     return _instance;
 }
 
@@ -118,8 +130,11 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     tim::get_rusage_type() = RUSAGE_CHILDREN;
     comp_tuple_t measure("total execution time", tim::language(command().c_str()));
     if(getpid() != getppid() + 1)
+    {
         measure.start();
-
+        if(papi_enabled())
+            get_papi_array().start();
+    }
     if(waitpid(pid, &status, 0) > 0)
     {
         if(WIFEXITED(status) && !WEXITSTATUS(status))
@@ -152,8 +167,12 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     if(getpid() != getppid() + 1)
     {
         measure.stop();
+        if(papi_enabled())
+            get_papi_array().stop();
         std::stringstream _oss;
         _oss << "\n" << measure << std::flush;
+        if(papi_enabled())
+            _oss << "\n" << get_papi_array() << std::flush;
 
         if(tim::settings::file_output())
         {
@@ -208,9 +227,20 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 
     if(papi_enabled())
     {
-#if defined(TIMEMORY_USE_PAPI)
-        PAPI_attach(0, getpid());
-#endif
+        tim::papi::init();
+        papi_array_t::get_events_func() = [&]()
+        {
+            auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS",
+                                                     "PAPI_DP_OPS,PAPI_LST_INS");
+            vector_t<string_t> events_str_list = tim::delimit(events_str);
+            vector_t<int> events_list;
+            for(const auto& itr : events_str_list)
+                events_list.push_back(tim::papi::get_event_code(itr));
+            return events_list;
+        };
+        papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", true);
+        auto _papi_array = get_papi_array();
+        tim::papi::attach(_papi_array.event_set(), getpid());
     }
 
     // the argv list first argument should point to filename associated

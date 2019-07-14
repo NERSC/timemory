@@ -42,7 +42,7 @@ struct base : public tim::counted_object<_Tp>
     //
     friend class storage<_Tp>;
 
-    friend struct construct<_Tp>;
+    friend struct init_storage<_Tp>;
     friend struct live_count<_Tp>;
     friend struct set_prefix<_Tp>;
     friend struct insert_node<_Tp>;
@@ -63,10 +63,6 @@ struct base : public tim::counted_object<_Tp>
 
     template <typename _Up, typename Archive>
     friend struct serialization;
-
-    // template <typename _Up, typename _Op>
-    // friend struct pointer_operator<_Up, _Op>;
-    // friend struct pointer_deleter<_Tp>;
 
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 

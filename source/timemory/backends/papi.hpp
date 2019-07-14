@@ -52,6 +52,23 @@
 #    include "timemory/impl/papi_defs.icpp"
 #endif
 
+// int EventSet = PAPI_NULL;
+// unsigned int native = 0x0;
+//
+// if(PAPI_create_eventset(&EventSet) != PAPI_OK)
+//     handle_error(1);
+//
+// Add Total Instructions Executed to our EventSet
+// if(PAPI_add_event(EventSet, PAPI_TOT_INS) != PAPI_OK)
+//     handle_error(1);
+//
+// Add native event PM_CYC to EventSet
+// if(PAPI_event_name_to_code("PM_CYC",&native) != PAPI_OK)
+//     handle_error(1);
+//
+// if(PAPI_add_event(EventSet, native) != PAPI_OK)
+//     handle_error(1);
+
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -84,6 +101,14 @@ get_master_tid()
 
 //--------------------------------------------------------------------------------------//
 
+inline bool
+is_master_thread()
+{
+    return (get_tid() == get_master_tid());
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline bool&
 working()
 {
@@ -94,11 +119,11 @@ working()
 //--------------------------------------------------------------------------------------//
 
 inline bool
-check(int retval, const std::string& mesg)
+check(int retval, const std::string& mesg, bool quiet = false)
 {
     bool success = (retval == PAPI_OK);
-    if(!success)
-        std::cerr << mesg << " (error code = " << retval << ")" << std::endl;
+    if(!success && !quiet)
+        fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
     return success;
 }
 
@@ -168,16 +193,34 @@ unregister_thread()
 
 //--------------------------------------------------------------------------------------//
 
+inline int
+get_event_code(const std::string& event_code_str)
+{
+#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
+    int event_code;
+    int retval = PAPI_event_name_to_code(event_code_str.c_str(), &event_code);
+    std::stringstream ss;
+    ss << "Warning!! Failure converting " << event_code_str << " to enum value";
+    working() = check(retval, ss.str());
+    return event_code;
+#else
+    consume_parameters(event_code_str);
+    return -1;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 inline void
-attach(int event_set)
+attach(int event_set, _Tp pid_or_tid)
 {
     // inform PAPI that a previously registered thread is disappearing
-#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
-    // int retval = PAPI_attach(event_set, getpid());
-    int retval = PAPI_attach(event_set, pthread_self());
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_attach(event_set, pid_or_tid);
     working()  = check(retval, "Warning!! Failure attaching to event set");
 #else
-    consume_parameters(event_set);
+    consume_parameters(event_set, pid_or_tid);
 #endif
 }
 
@@ -218,6 +261,22 @@ init()
 //--------------------------------------------------------------------------------------//
 
 inline void
+init_multiplexing()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    static bool multiplexing_initialized = false;
+    if(is_master_thread() && !multiplexing_initialized && working())
+    {
+        int retval = PAPI_multiplex_init();
+        working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
+        multiplexing_initialized = working();
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 shutdown()
 {
     // finish using PAPI and free all related resources
@@ -227,6 +286,47 @@ shutdown()
         return;
     PAPI_shutdown();
     working() = false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+create_event_set(int* event_set, bool enable_multiplexing = false)
+{
+    // create a new empty PAPI event set
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_create_eventset(event_set);
+    working()  = check(retval, "Warning!! Failure to create event set");
+    if(working() && enable_multiplexing)
+    {
+        retval = PAPI_set_multiplex(*event_set);
+        std::stringstream ss;
+        ss << "Warning!! Failure to enable multiplex on EventSet " << *event_set;
+        check(retval, ss.str());
+    }
+#else
+    consume_parameters(event_set, enable_multiplexing);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+destroy_event_set(int event_set)
+{
+    // remove all PAPI events from an event set
+#if defined(TIMEMORY_USE_PAPI)
+    int retval = PAPI_cleanup_eventset(event_set);
+    check(retval, "Warning!! Failure to cleanup event set");
+#endif
+
+    // deallocates memory associated with an empty PAPI event set
+#if defined(TIMEMORY_USE_PAPI)
+    retval = PAPI_destroy_eventset(&event_set);
+    check(retval, "Warning!! Failure to destroy event set");
+#else
+    consume_parameters(event_set);
 #endif
 }
 
@@ -351,41 +451,6 @@ reset(int event_set)
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_reset(event_set);
     check(retval, "Warning!! Failure to reset event set");
-#else
-    consume_parameters(event_set);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-create_event_set(int* event_set)
-{
-    // create a new empty PAPI event set
-#if defined(TIMEMORY_USE_PAPI)
-    init();
-    int retval = PAPI_create_eventset(event_set);
-    check(retval, "Warning!! Failure to create event set");
-#else
-    consume_parameters(event_set);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-destroy_event_set(int event_set)
-{
-    // remove all PAPI events from an event set
-#if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_cleanup_eventset(event_set);
-    check(retval, "Warning!! Failure to cleanup event set");
-#endif
-
-    // deallocates memory associated with an empty PAPI event set
-#if defined(TIMEMORY_USE_PAPI)
-    retval = PAPI_destroy_eventset(&event_set);
-    check(retval, "Warning!! Failure to destroy event set");
 #else
     consume_parameters(event_set);
 #endif

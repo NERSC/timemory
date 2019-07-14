@@ -62,57 +62,14 @@ struct impl_available : std::true_type
 {};
 
 //--------------------------------------------------------------------------------------//
-/// trait that registers how to construct a type
+/// trait that designates whether there is a priority ordering for variadic list
+/// e.g. -1 for type A would mean it should come before type B with 0 and
+/// type C with 1 should come after A and B
 ///
-template <typename T>
-struct construct_traits : public construct_traits<decltype(&T::operator())>
+template <typename _Tp>
+struct ordering_priority : std::integral_constant<int16_t, 0>
 {};
 
-template <typename ClassType, typename ReturnType, typename... Args>
-struct construct_traits<ReturnType (ClassType::*)(Args...) const>
-{
-    using result_type           = ReturnType;
-    using arg_tuple             = std::tuple<Args...>;
-    static constexpr auto nargs = sizeof...(Args);
-};
-
-template <typename Ret, typename... Args>
-struct construct_traits<Ret (&)(Args...)>
-{
-    using result_type           = Ret;
-    using arg_tuple             = std::tuple<Args...>;
-    static constexpr auto nargs = sizeof...(Args);
-};
-
-/*
-template <typename _Tp, typename... _Args>
-struct constructor
-{
-    using signature = void(_Args...);
-
-    template <typename Callable>
-    void Register(Callable && callable)
-    {
-        using ft = function_traits<Callable>;
-        static_assert(
-            std::is_same<
-                int,
-                std::decay_t<std::tuple_element_t<0, typename ft::arg_tuple>>>::value,
-            "");
-        static_assert(
-            std::is_same<
-                double,
-                std::decay_t<std::tuple_element_t<1, typename ft::arg_tuple>>>::value,
-            "");
-        static_assert(std::is_same<void, std::decay_t<typename ft::result_type>>::value,
-                      "");
-
-        callback = callable;
-    }
-
-    std::function<Signature> callback;
-};
-*/
 //--------------------------------------------------------------------------------------//
 }  // component
 }  // tim
@@ -145,14 +102,14 @@ template <>
 struct record_max<data_rss> : std::true_type
 {};
 
-template <int EventSet, int... EventTypes>
-struct array_serialization<papi_tuple<EventSet, EventTypes...>>
+template <int... EventTypes>
+struct array_serialization<papi_tuple<EventTypes...>>
 {
     using type = std::true_type;
 };
 
-template <int EventSet, std::size_t NumEvent>
-struct array_serialization<papi_array<EventSet, NumEvent>>
+template <std::size_t MaxNumEvents>
+struct array_serialization<papi_array<MaxNumEvents>>
 {
     using type = std::true_type;
 };
@@ -168,12 +125,12 @@ struct array_serialization<cupti_event>
 //
 #if !defined(TIMEMORY_USE_PAPI)
 
-template <int EventSet, int... EventTypes>
-struct impl_available<papi_tuple<EventSet, EventTypes...>> : std::false_type
+template <int... EventTypes>
+struct impl_available<papi_tuple<EventTypes...>> : std::false_type
 {};
 
-template <int EventSet, std::size_t NumEvent>
-struct impl_available<papi_array<EventSet, NumEvent>> : std::false_type
+template <std::size_t MaxNumEvents>
+struct impl_available<papi_array<MaxNumEvents>> : std::false_type
 {};
 
 template <typename _Tp, int... EventTypes>
@@ -192,6 +149,17 @@ struct impl_available<cuda_event> : std::false_type
 {};
 
 #endif  // TIMEMORY_USE_CUDA
+
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
+//
+#if !defined(TIMEMORY_USE_CUPTI)
+
+template <>
+struct impl_available<cupti_event> : std::false_type
+{};
+
+#endif  // TIMEMORY_USE_CUPTI
 
 //--------------------------------------------------------------------------------------//
 }  // component

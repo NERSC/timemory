@@ -213,6 +213,44 @@ template <template <typename> class Predicate, typename Sequence>
 using component_tuple_type_filter = component_tuple_filter_if<Predicate, Sequence>;
 
 //--------------------------------------------------------------------------------------//
+//
+// sort types
+//
+//--------------------------------------------------------------------------------------//
+/*
+template <bool>
+struct tuple_sort_result
+{
+    template <typename T>
+    using type = std::tuple<T>;
+
+    template <typename T, typename U>
+    using type = std::tuple<T, U>;
+};
+
+template <>
+struct tuple_sort_result<false>
+{
+    template <typename T>
+    using type = std::tuple<T>;
+
+    template <typename T, typename U>
+    using type = std::tuple<U, T>;
+};
+
+template <template <typename> class Predicate, typename Sequence>
+struct tuple_sort_if;
+
+template <template <typename> class Predicate, typename T, typename... Ts>
+struct tuple_sort_if<Predicate, std::tuple<T, Ts...>>
+{
+    using type = tuple_concat_t<
+        typename tuple_sort_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
+
+template <template <typename> class Predicate, typename Sequence>
+using tuple_type_sort = typename tuple_sort_if<Predicate, Sequence>::type;
+*/
 
 }  // namespace details
 

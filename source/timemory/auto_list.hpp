@@ -65,40 +65,38 @@ public:
     using hashed_type    = tim::hashed_object<this_type>;
     using string_t       = std::string;
     using string_hash    = std::hash<string_t>;
-    using base_type      = implemented_component_list<Types...>;
+    using base_type      = component_type;
     using language_t     = tim::language;
     using tuple_type     = implemented_tuple<Types...>;
 
 public:
-    auto_list(const string_t&, const int64_t& lineno = 0,
-              const language_t& lang = language_t::cxx(), bool report_at_exit = false);
-    auto_list(component_type& tmp, const int64_t& lineno = 0,
-              bool report_at_exit = false);
-    ~auto_list();
+    inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
+                              const language_t& lang           = language_t::cxx(),
+                              bool              report_at_exit = false);
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+                              bool report_at_exit = false);
+    inline ~auto_list();
 
     // copy and move
-    auto_list(const this_type&) = default;
-    auto_list(this_type&&)      = default;
-    this_type& operator=(const this_type&) = default;
-    this_type& operator=(this_type&&) = default;
+    inline auto_list(const this_type&) = default;
+    inline auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
 
 public:
     // public member functions
-    component_type&       component_list() { return m_temporary_object; }
-    const component_type& component_list() const { return m_temporary_object; }
+    inline component_type&       component_list() { return m_temporary_object; }
+    inline const component_type& component_list() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
     inline void record() { m_temporary_object.record(); }
-    // inline void pause() { m_temporary_object.pause(); }
-    // inline void resume() { m_temporary_object.resume(); }
     inline void start() { m_temporary_object.start(); }
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
-    // inline void conditional_start() { m_temporary_object.conditional_start(); }
-    // inline void conditional_stop() { m_temporary_object.conditional_stop(); }
 
+public:
     template <std::size_t _N>
     typename std::tuple_element<_N, data_type>::type& get()
     {
@@ -184,13 +182,11 @@ auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
                   : 0)
 , m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp)
+, m_temporary_object(tmp.clone(hashed_type::m_hash, true))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
     {
-        m_temporary_object.hash()  = hashed_type::m_hash;
-        m_temporary_object.store() = true;
         m_temporary_object.push();
         m_temporary_object.start();
     }

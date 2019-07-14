@@ -43,28 +43,37 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 
-template <int EventSet, int... EventTypes>
+template <int... EventTypes>
 struct papi_tuple
-: public base<papi_tuple<EventSet, EventTypes...>,
-              std::array<long long, sizeof...(EventTypes)>, policy::initialization,
-              policy::finalization>
-, public static_counted_object<papi_tuple<EventSet>>
+: public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>,
+              policy::initialization, policy::finalization>
+, public static_counted_object<papi_tuple<>>
 {
     friend struct policy::wrapper<policy::initialization, policy::finalization>;
 
-    using size_type   = std::size_t;
-    using value_type  = std::array<long long, sizeof...(EventTypes)>;
-    using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_tuple<EventSet, EventTypes...>, value_type,
-                           policy::initialization, policy::finalization>;
-    using this_type   = papi_tuple<EventSet, EventTypes...>;
-    using event_count = static_counted_object<papi_tuple<EventSet>>;
+    using size_type  = std::size_t;
+    using value_type = std::array<long long, sizeof...(EventTypes)>;
+    using entry_type = typename value_type::value_type;
+    using base_type  = base<papi_tuple<EventTypes...>, value_type, policy::initialization,
+                           policy::finalization>;
+    using this_type  = papi_tuple<EventTypes...>;
+    using event_count = static_counted_object<papi_tuple<>>;
 
     static const size_type               num_events = sizeof...(EventTypes);
     static const short                   precision  = 3;
     static const short                   width      = 12;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+    static int& event_set()
+    {
+        static int _instance = PAPI_NULL;
+        return _instance;
+    }
+    static bool& enable_multiplex()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
 
     using base_type::accum;
     using base_type::is_running;
@@ -81,14 +90,17 @@ struct papi_tuple
     static void invoke_initialize()
     {
         int events[] = { EventTypes... };
-        tim::papi::start_counters(events, num_events);
-        printf("starting papi counter...\n");
+        tim::papi::create_event_set(&event_set(), enable_multiplex());
+        tim::papi::add_events(event_set(), events, num_events);
+        tim::papi::start(event_set());
     }
     static void invoke_finalize()
     {
-        value_type events = {};
-        tim::papi::stop_counters(events.data(), num_events);
-        printf("stopping papi counter...\n");
+        value_type values;
+        int        events[] = { EventTypes... };
+        tim::papi::stop(event_set(), values.data());
+        tim::papi::remove_events(event_set(), events, num_events);
+        tim::papi::destroy_event_set(event_set());
     }
 
     papi_tuple()
@@ -137,7 +149,7 @@ struct papi_tuple
 
     static int64_t unit() { return 1; }
     // leave these empty
-    static std::string label() { return "papi" + std::to_string(EventSet); }
+    static std::string label() { return "papi" + std::to_string(event_set()); }
     static std::string descript() { return ""; }
     static std::string display_unit() { return ""; }
     // use these instead
@@ -150,7 +162,7 @@ struct papi_tuple
         value_type read_value;
         apply<void>::set_value(read_value, 0);
         if(event_count::is_master())
-            tim::papi::read(EventSet, read_value.data());
+            tim::papi::read(event_set(), read_value.data());
         return read_value;
     }
 
@@ -312,49 +324,6 @@ private:
         static std::atomic<bool> instance(false);
         return instance;
     }
-
-    /*
-    void add_event_types()
-    {
-        if(acquire_claim(event_type_added()))
-        {
-            int evt_types[] = { EventTypes... };
-            tim::papi::add_events(EventSet, evt_types, num_events);
-        }
-    }
-
-    void remove_event_types()
-    {
-        if(release_claim(event_type_added()))
-        {
-            int evt_types[] = { EventTypes... };
-            tim::papi::remove_events(EventSet, evt_types, num_events);
-        }
-    }
-
-    void start_event_set()
-    {
-        if(acquire_claim(event_set_started()))
-        {
-            int events[] = { EventTypes... };
-            tim::papi::start_counters(events, num_events);
-        }
-    }
-
-    void stop_event_set()
-    {
-        if(release_claim(event_set_started()))
-        {
-            value_type events;
-#if defined(_WINDOWS)
-            for(std::size_t i = 0; i < num_events; ++i)
-                events[i] = 0;
-#else
-            apply<void>::set_value(events, 0);
-#endif
-            tim::papi::stop_counters(events.data(), num_events);
-        }
-    }*/
 };
 
 //--------------------------------------------------------------------------------------//

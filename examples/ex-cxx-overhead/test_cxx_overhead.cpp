@@ -40,7 +40,7 @@ using auto_tuple_t =
 using timer_tuple_t = typename auto_tuple_t::component_type;
 
 using papi_tuple_t =
-    papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+    papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     current_rss, priority_context_switch, voluntary_context_switch,
@@ -90,6 +90,7 @@ run(int64_t n, bool with_timing, int64_t cutoff)
     {
         auto auto_timer = timer_tuple_t::auto_type(timer, __LINE__);
         result          = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n);
+        auto_timer.stop();
     }
     print_result(signature, result);
     return timer;

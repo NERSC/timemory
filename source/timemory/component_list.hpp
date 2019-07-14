@@ -46,6 +46,7 @@
 #include "timemory/backends/mpi.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
+#include "timemory/filters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
@@ -78,7 +79,7 @@ class component_list
 public:
     using size_type      = int64_t;
     using this_type      = component_list<Types...>;
-    using data_type      = std::tuple<Types*...>;
+    using data_type      = tim::implemented_tuple<Types*...>;
     using reference_type = std::tuple<Types...>;
     using string_hash    = std::hash<string_t>;
     using counter_type   = tim::counted_object<this_type>;
@@ -142,6 +143,14 @@ public:
     component_list& operator=(const component_list&) = delete;
     component_list(component_list&&)                 = default;
     component_list& operator=(component_list&&) = default;
+
+    component_list clone(const int64_t& nhash, bool store)
+    {
+        component_list tmp(*this);
+        tmp.m_hash  = nhash;
+        tmp.m_store = store;
+        return tmp;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -209,50 +218,6 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // conditional start/stop functions
-    /*void conditional_start()
-    {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data, increment);
-    }
-
-    void conditional_stop()
-    {
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pause/resume functions (typically for printing)
-    void pause()
-    {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data, increment);
-    }
-
-    void resume()
-    {
-        auto decrement = [&](bool did_stop) {
-            if(did_stop)
-                --m_laps;
-        };
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
-        apply<void>::access<apply_types>(m_data, decrement);
-    }*/
-
-    //----------------------------------------------------------------------------------//
     // recording
     //
     this_type& record()
@@ -265,24 +230,6 @@ public:
         }
         return *this;
     }
-
-    /*this_type& record(const this_type& rhs)
-    {
-        if(this != &rhs)
-            ++m_laps;
-        auto c_data = std::move(rhs.m_data);
-        {
-            using apply_types = std::tuple<
-                component::pointer_operator<Types, component::record<Types>>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
-        {
-            using apply_types = std::tuple<
-                component::pointer_operator<Types, component::minus<Types>>...>;
-            apply<void>::access2<apply_types>(m_data, c_data);
-        }
-        return *this;
-    }*/
 
     //----------------------------------------------------------------------------------//
     void reset()
@@ -637,6 +584,8 @@ public:
 
     component_list& operator=(const component_list&) = default;
     component_list& operator=(component_list&&) = default;
+
+    component_list clone(const int64_t&, bool) { return component_list(*this); }
 
 public:
     static constexpr std::size_t size() { return num_elements; }

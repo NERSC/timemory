@@ -77,7 +77,7 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_type               = papi_tuple<0, EventTypes..., PAPI_LD_INS>;
+    using papi_type               = papi_tuple<EventTypes..., PAPI_LD_INS>;
     using clock_type              = real_clock;
     using ratio_t                 = typename clock_type::ratio_t;
     using operation_counter_t     = tim::ert::cpu::operation_counter<_Tp, clock_type>;

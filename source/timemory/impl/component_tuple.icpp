@@ -32,7 +32,7 @@ namespace details
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-class custom_component_tuple : public implemented_component_tuple<Types...>
+class custom_component_tuple : public tim::component_tuple<Types...>
 {
 public:
     custom_component_tuple(const string_t& key, const language& lang)

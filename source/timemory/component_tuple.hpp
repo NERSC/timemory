@@ -46,6 +46,7 @@
 #include "timemory/backends/mpi.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
+#include "timemory/filters.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
@@ -67,7 +68,6 @@ template <typename... Types>
 class component_tuple
 {
     static const std::size_t num_elements = sizeof...(Types);
-
     // empty init for friends
     explicit component_tuple() {}
     // manager is friend so can use above
@@ -76,7 +76,7 @@ class component_tuple
 public:
     using size_type   = int64_t;
     using this_type   = component_tuple<Types...>;
-    using data_t      = std::tuple<Types...>;
+    using data_type   = tim::implemented_tuple<Types...>;
     using string_hash = std::hash<string_t>;
     using language_t  = tim::language;
 
@@ -84,27 +84,6 @@ public:
     using auto_type = auto_tuple<Types...>;
 
 public:
-    /*
-    using construct_types = std::tuple<component::construct<Types>...>;
-    template <typename... Constructors>
-    explicit component_tuple(std::tuple<Constructors...>&& _ctors, const string_t& key,
-                             const bool& store, const language_t& lang = language_t::CXX,
-                             const int64_t& ncount = 0, const int64_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash(nhash)
-    , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
-    , m_data(apply<data_t>::template all<construct_types>(component::create,
-                                                          _ctors))
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        push();
-    }*/
-
     explicit component_tuple(const string_t& key, const bool& store,
                              const int64_t& ncount = 0, const int64_t& nhash = 0,
                              const language_t& lang = language_t::cxx())
@@ -118,6 +97,7 @@ public:
     {
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         push();
     }
 
@@ -134,6 +114,7 @@ public:
     {
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         push();
     }
 
@@ -150,6 +131,7 @@ public:
     {
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         push();
     }
 
@@ -163,6 +145,14 @@ public:
 
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
+
+    component_tuple clone(const int64_t& nhash, bool store)
+    {
+        component_tuple tmp(*this);
+        tmp.m_hash  = nhash;
+        tmp.m_store = store;
+        return tmp;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -225,47 +215,6 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    // conditional start/stop functions
-    /*
-    void conditional_start()
-    {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
-        using apply_types = std::tuple<component::conditional_start<Types>...>;
-        apply<void>::access<apply_types>(m_data, increment);
-    }
-
-    void conditional_stop()
-    {
-        using apply_types = std::tuple<component::conditional_stop<Types>...>;
-        apply<void>::access<apply_types>(m_data);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pause/resume functions (typically for printing)
-    void pause()
-    {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
-        using apply_types = std::tuple<component::conditional_start<Types>...>;
-        apply<void>::access<apply_types>(m_data, increment);
-    }
-
-    void resume()
-    {
-        auto decrement = [&](bool did_stop) {
-            if(did_stop)
-                --m_laps;
-        };
-        using apply_types = std::tuple<component::conditional_stop<Types>...>;
-        apply<void>::access<apply_types>(m_data, decrement);
-    }*/
-
-    //----------------------------------------------------------------------------------//
     // recording
     //
     this_type& record()
@@ -277,22 +226,6 @@ public:
         }
         return *this;
     }
-
-    /*this_type& record(const this_type& rhs)
-    {
-        if(this != &rhs)
-            ++m_laps;
-        auto c_data = std::move(rhs.m_data);
-        {
-            using apply_types = std::tuple<component::record<Types>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
-        {
-            using apply_types = std::tuple<component::minus<Types>...>;
-            apply<void>::access2<apply_types>(m_data, c_data);
-        }
-        return *this;
-    }*/
 
     //----------------------------------------------------------------------------------//
     void reset()
@@ -456,13 +389,13 @@ public:
     //----------------------------------------------------------------------------------//
     static void print_storage()
     {
-        apply<void>::type_access<component::print_storage, data_t>();
+        apply<void>::type_access<component::print_storage, data_type>();
     }
 
 public:
-    inline data_t&       data() { return m_data; }
-    inline const data_t& data() const { return m_data; }
-    inline int64_t       laps() const { return m_laps; }
+    inline data_type&       data() { return m_data; }
+    inline const data_type& data() const { return m_data; }
+    inline int64_t          laps() const { return m_laps; }
 
     int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
@@ -479,13 +412,13 @@ public:
 public:
     // get member functions taking either an integer or a type
     template <std::size_t _N>
-    typename std::tuple_element<_N, data_t>::type& get()
+    typename std::tuple_element<_N, data_type>::type& get()
     {
         return std::get<_N>(m_data);
     }
 
     template <std::size_t _N>
-    const typename std::tuple_element<_N, data_t>::type& get() const
+    const typename std::tuple_element<_N, data_type>::type& get() const
     {
         return std::get<_N>(m_data);
     }
@@ -493,31 +426,31 @@ public:
     template <typename _Tp>
     _Tp& get()
     {
-        return std::get<index_of<_Tp, data_t>::value>(m_data);
+        return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
     template <typename _Tp>
     const _Tp& get() const
     {
-        return std::get<index_of<_Tp, data_t>::value>(m_data);
+        return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
 protected:
     // protected member functions
-    data_t&       get_data() { return m_data; }
-    const data_t& get_data() const { return m_data; }
+    data_type&       get_data() { return m_data; }
+    const data_type& get_data() const { return m_data; }
 
 protected:
     // objects
-    bool             m_store      = false;
-    bool             m_is_pushed  = false;
-    int64_t          m_laps       = 0;
-    int64_t          m_count      = 0;
-    int64_t          m_hash       = 0;
-    const language_t m_lang       = language_t::cxx();
-    string_t         m_key        = "";
-    string_t         m_identifier = "";
-    mutable data_t   m_data;
+    bool              m_store      = false;
+    bool              m_is_pushed  = false;
+    int64_t           m_laps       = 0;
+    int64_t           m_count      = 0;
+    int64_t           m_hash       = 0;
+    const language_t  m_lang       = language_t::cxx();
+    string_t          m_key        = "";
+    string_t          m_identifier = "";
+    mutable data_type m_data;
 
 protected:
     string_t get_prefix()
@@ -592,6 +525,10 @@ protected:
 
 private:
     void init_manager();
+    void init_storage()
+    {
+        apply<void>::type_access<component::init_storage, data_type>();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -605,7 +542,7 @@ class component_tuple<>
 public:
     using size_type   = int64_t;
     using this_type   = component_tuple<>;
-    using data_t      = std::tuple<>;
+    using data_type   = std::tuple<>;
     using string_hash = std::hash<string_t>;
     using language_t  = tim::language;
 
@@ -627,6 +564,8 @@ public:
 
     component_tuple& operator=(const component_tuple&) = default;
     component_tuple& operator=(component_tuple&&) = default;
+
+    component_tuple clone(const int64_t&, bool) { return component_tuple(*this); }
 
 public:
     static constexpr std::size_t size() { return num_elements; }
@@ -691,20 +630,20 @@ public:
     static void print_storage() {}
 
 public:
-    inline data_t&       data() { return m_data; }
-    inline const data_t& data() const { return m_data; }
-    inline int64_t       laps() const { return m_laps; }
+    inline data_type&       data() { return m_data; }
+    inline const data_type& data() const { return m_data; }
+    inline int64_t          laps() const { return m_laps; }
 
 public:
     // get member functions taking either an integer or a type
     template <std::size_t _N>
-    typename std::tuple_element<_N, data_t>::type& get()
+    typename std::tuple_element<_N, data_type>::type& get()
     {
         return std::get<_N>(m_data);
     }
 
     template <std::size_t _N>
-    const typename std::tuple_element<_N, data_t>::type& get() const
+    const typename std::tuple_element<_N, data_type>::type& get() const
     {
         return std::get<_N>(m_data);
     }
@@ -712,29 +651,29 @@ public:
     template <typename _Tp>
     _Tp& get()
     {
-        return std::get<index_of<_Tp, data_t>::value>(m_data);
+        return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
     template <typename _Tp>
     const _Tp& get() const
     {
-        return std::get<index_of<_Tp, data_t>::value>(m_data);
+        return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
 protected:
     // protected member functions
-    data_t&       get_data() { return m_data; }
-    const data_t& get_data() const { return m_data; }
+    data_type&       get_data() { return m_data; }
+    const data_type& get_data() const { return m_data; }
 
 protected:
     // objects
-    bool     m_store      = false;
-    bool     m_is_pushed  = false;
-    int64_t  m_laps       = 0;
-    int64_t  m_count      = 0;
-    int64_t  m_hash       = 0;
-    data_t   m_data       = data_t();
-    string_t m_identifier = "";
+    bool      m_store      = false;
+    bool      m_is_pushed  = false;
+    int64_t   m_laps       = 0;
+    int64_t   m_count      = 0;
+    int64_t   m_hash       = 0;
+    data_type m_data       = data_type();
+    string_t  m_identifier = "";
 
 protected:
     string_t       get_prefix() { return ""; }
@@ -742,7 +681,7 @@ protected:
     static int64_t output_width(int64_t width = 0) { return width; }
 
 private:
-    void init_manager();
+    void init_manager() {}
 };
 
 }  // namespace tim

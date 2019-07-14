@@ -53,6 +53,24 @@ namespace component
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct init_storage
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+    using string_t   = std::string;
+
+    init_storage()
+    {
+        using storage_type    = storage<Type>;
+        static auto _instance = storage_type::instance();
+        consume_parameters(_instance);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct live_count
 {
     using Type       = _Tp;
