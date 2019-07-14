@@ -269,7 +269,7 @@ init_multiplexing()
     {
         int retval = PAPI_multiplex_init();
         working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
-        multiplexing_initialized = working();
+        multiplexing_initialized = true;
     }
 #endif
 }
@@ -296,6 +296,8 @@ create_event_set(int* event_set, bool enable_multiplexing = false)
 {
     // create a new empty PAPI event set
 #if defined(TIMEMORY_USE_PAPI)
+    if(enable_multiplexing)
+        init_multiplexing();
     int retval = PAPI_create_eventset(event_set);
     working()  = check(retval, "Warning!! Failure to create event set");
     if(working() && enable_multiplexing)
