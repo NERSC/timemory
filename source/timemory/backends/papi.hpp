@@ -227,40 +227,6 @@ attach(int event_set, _Tp pid_or_tid)
 //--------------------------------------------------------------------------------------//
 
 inline void
-init()
-{
-    // initialize the PAPI library
-#if defined(TIMEMORY_USE_PAPI)
-    if(!PAPI_is_initialized())
-    {
-        get_master_tid();
-        {
-            int events       = PAPI_L1_TCM;
-            int num_events   = 1;
-            int retval       = PAPI_start_counters(&events, num_events);
-            working()        = (retval == PAPI_OK);
-            long long values = 0;
-            retval           = PAPI_stop_counters(&values, num_events);
-            working()        = (retval == PAPI_OK);
-        }
-        if(!working())
-        {
-            int retval = PAPI_library_init(PAPI_VER_CURRENT);
-            working()  = check(retval, "Warning!! Failure initializing PAPI");
-        }
-        // if(working())
-        {
-            int retval = PAPI_thread_init(pthread_self);
-            working()  = check(retval, "Warning!! Failure thread init");
-        }
-    }
-    register_thread();
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
@@ -271,6 +237,57 @@ init_multiplexing()
         working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
         multiplexing_initialized = true;
     }
+    else if(!is_master_thread())
+    {
+        fprintf(stderr,
+                "Warning!! Multiplexing is not enabled because it is not the master "
+                "thread\n");
+    }
+    else if(!working())
+    {
+        fprintf(stderr,
+                "Warning!! Multiplexing is not enabled because it is not currently "
+                "working\n");
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+init()
+{
+    // initialize the PAPI library
+#if defined(TIMEMORY_USE_PAPI)
+    if(!PAPI_is_initialized())
+    {
+        get_master_tid();
+        int retval = PAPI_library_init(PAPI_VER_CURRENT);
+        if(retval != PAPI_VER_CURRENT && retval > 0)
+            fprintf(stderr, "PAPI library version mismatch!\n");
+        working() = (retval == PAPI_VER_CURRENT);
+        if(working())
+        {
+            retval    = PAPI_thread_init(pthread_self);
+            working() = check(retval, "Warning!! Failure thread init");
+        }
+        init_multiplexing();
+
+        if(!working())
+        {
+            fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
+            /*
+            int events       = PAPI_L1_TCM;
+            int num_events   = 1;
+            int retval       = PAPI_start_counters(&events, num_events);
+            working()        = (retval == PAPI_OK);
+            long long values = 0;
+            retval           = PAPI_stop_counters(&values, num_events);
+            working()        = (retval == PAPI_OK);
+            */
+        }
+    }
+    register_thread();
 #endif
 }
 
@@ -302,10 +319,6 @@ create_event_set(int* event_set, bool enable_multiplexing = false)
     working()  = check(retval, "Warning!! Failure to create event set");
     if(working() && enable_multiplexing)
     {
-        retval = PAPI_set_multiplex(*event_set);
-        std::stringstream ss;
-        ss << "Warning!! Failure to enable multiplex on EventSet " << *event_set;
-        check(retval, ss.str());
     }
 #else
     consume_parameters(event_set, enable_multiplexing);
@@ -340,6 +353,14 @@ start(int event_set)
     // start counting hardware events in an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_start(event_set);
+    if(retval != PAPI_OK)
+    {
+        retval = PAPI_set_multiplex(event_set);
+        std::stringstream ss;
+        ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
+        check(retval, ss.str());
+        retval = PAPI_start(event_set);
+    }
     check(retval, "Warning!! Failure to start event set");
 #else
     consume_parameters(event_set);

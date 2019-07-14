@@ -110,20 +110,17 @@ main(int argc, char** argv)
         return op_counter;
     };
 
-    using comp_tuple_t = typename auto_tuple_t::component_type;
-    comp_tuple_t _main("overall timer", true);
-
-    _main.start();
-    for(const auto& n : fib_values)
     {
-        auto label = tim::str::join("", "fibonacci(", n, ")");
-        TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-        auto ret = fibonacci(n);
-        printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
-    }
-    _main.stop();
+        auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
 
-    std::cout << "\n" << _main << "\n" << std::endl;
+        for(const auto& n : fib_values)
+        {
+            auto label = tim::str::join("", "fibonacci(", n, ")");
+            TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
+            auto ret = fibonacci(n);
+            printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+        }
+    }
     auto_list_t l(__FUNCTION__, false);
     check(l);
     check_const(l);

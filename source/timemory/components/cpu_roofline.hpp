@@ -77,7 +77,8 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_type               = papi_tuple<EventTypes..., PAPI_LST_INS>;
+    using papi_op_type            = papi_tuple<EventTypes...>;
+    using papi_ai_type            = papi_tuple<PAPI_LST_INS>;
     using clock_type              = real_clock;
     using ratio_t                 = typename clock_type::ratio_t;
     using operation_counter_t     = tim::ert::cpu::operation_counter<_Tp, clock_type>;
@@ -92,15 +93,29 @@ struct cpu_roofline
     using base_type::set_stopped;
     using base_type::value;
 
-    static const size_type               num_events = sizeof...(EventTypes) + 1;
-    static const short                   precision  = 3;
-    static const short                   width      = 6;
+    static const size_type               num_op_events = sizeof...(EventTypes);
+    static const size_type               num_ai_events = 1;
+    static const size_type               num_events    = sizeof...(EventTypes) + 1;
+    static const short                   precision     = 3;
+    static const short                   width         = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
-    static int& event_set()
+    static int& op_event_set()
     {
         static int _instance = PAPI_NULL;
+        return _instance;
+    }
+    static int& ai_event_set()
+    {
+        static int _instance = PAPI_NULL;
+        return _instance;
+    }
+
+    static std::string& current_event_set()
+    {
+        static std::string _instance =
+            get_env<std::string>("TIMEMORY_ROOFLINE_AXIS", "x");
         return _instance;
     }
 
@@ -129,20 +144,37 @@ struct cpu_roofline
     static void invoke_initialize()
     {
         // start PAPI counters
-        int events[] = { EventTypes..., PAPI_LST_INS };
-        tim::papi::create_event_set(&event_set(), true);
-        tim::papi::add_events(event_set(), events, num_events);
-        tim::papi::start(event_set());
+        int op_events[] = { EventTypes... };
+        int ai_events[] = { PAPI_LST_INS };
+        tim::papi::create_event_set(&op_event_set(), true);
+        tim::papi::create_event_set(&ai_event_set(), true);
+        tim::papi::add_events(op_event_set(), op_events, num_op_events);
+        tim::papi::add_events(ai_event_set(), ai_events, num_ai_events);
+        auto& curr = current_event_set();
+        if(curr != "x" && curr != "y")
+            curr = "y";
+        if(curr == "x")
+            tim::papi::start(op_event_set());
+        if(curr == "y")
+            tim::papi::start(ai_event_set());
     }
 
     static void invoke_finalize()
     {
         // stop PAPI counters
-        array_type values;
-        int        events[] = { EventTypes..., PAPI_LST_INS };
-        tim::papi::stop(event_set(), values.data());
-        tim::papi::remove_events(event_set(), events, num_events);
-        tim::papi::destroy_event_set(event_set());
+        std::array<long long, num_op_events> op_values;
+        std::array<long long, num_ai_events> ai_values;
+        int                                  op_events[] = { EventTypes... };
+        int                                  ai_events[] = { PAPI_LST_INS };
+        auto&                                curr        = current_event_set();
+        if(curr == "x")
+            tim::papi::stop(op_event_set(), op_values.data());
+        if(curr == "y")
+            tim::papi::stop(ai_event_set(), ai_values.data());
+        tim::papi::remove_events(op_event_set(), op_events, num_op_events);
+        tim::papi::remove_events(ai_event_set(), ai_events, num_ai_events);
+        tim::papi::destroy_event_set(op_event_set());
+        tim::papi::destroy_event_set(ai_event_set());
 
         // run roofline peak generation
         auto  op_counter_func = get_finalize_function();
@@ -171,13 +203,22 @@ struct cpu_roofline
     }
 
     static int64_t     unit() { return 1; }
-    static std::string label() { return "cpu_roofline"; }
-    static std::string descript() { return "cpu roofline"; }
+    static std::string label() { return "cpu_roofline_" + current_event_set(); }
+    static std::string descript()
+    {
+        return "cpu roofline " + current_event_set() + "-axis";
+    }
     static std::string display_unit()
     {
         std::stringstream ss;
         ss << "(";
-        auto labels = papi_type::label_array();
+        auto                     op_labels = papi_op_type::label_array();
+        auto                     ai_labels = papi_ai_type::label_array();
+        std::vector<std::string> labels;
+        for(auto itr : op_labels)
+            labels.push_back(itr);
+        for(auto itr : ai_labels)
+            labels.push_back(itr);
         for(size_type i = 0; i < labels.size() - 1; ++i)
         {
             ss << labels[i];
@@ -193,9 +234,16 @@ struct cpu_roofline
 
     static value_type record()
     {
-        return value_type(papi_type::record(), clock_type::record() /
-                                                   static_cast<double>(ratio_t::den) *
-                                                   tim::units::sec);
+        std::array<long long, num_events> read_values;
+        apply<void>::set_value(read_values, 0);
+        auto& curr = current_event_set();
+        if(curr == "x")
+            tim::papi::read(op_event_set(), read_values.data());
+        if(curr == "y")
+            tim::papi::read(ai_event_set(), read_values.data() + num_op_events);
+        return value_type(read_values, clock_type::record() /
+                                           static_cast<double>(ratio_t::den) *
+                                           tim::units::sec);
     }
 
     double get_elapsed(const int64_t& _unit = clock_type::get_unit()) const
