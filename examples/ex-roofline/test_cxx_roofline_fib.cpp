@@ -118,7 +118,7 @@ main(int argc, char** argv)
     };
 
     {
-        auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
+        //auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
 
         for(const auto& n : fib_values)
         {
@@ -161,7 +161,7 @@ fibonacci_a(float_type n)
 float_type
 fibonacci_b(float_type n)
 {
-    return (n < ftwo) ? n : (fone * fibonacci_b(n - 1) + fibonacci_b(n - 2));
+    return (n < ftwo) ? n : ((fone/0.5 * fibonacci_b(n - 1)) + fibonacci_b(n - 2));
 }
 
 //--------------------------------------------------------------------------------------//
