@@ -6,7 +6,13 @@ import json, math, numpy, re
 from matplotlib.pyplot import text
 from math import log, pi
 
-GIGA = 1000 * 1000 * 1000
+GIGABYTE = 1024 * 1024 * 1024
+try:
+    import timemory
+    GIGABYTE = timemory.units.gigabyte
+except:
+    pass
+
 
 __all__ = ['smooth',
            'get_peak_flops',
@@ -40,7 +46,7 @@ def get_peak_flops(full_data):
     roof_data  = full_data["roofline"]
 
     for element in roof_data:
-        flops_data.append(element["tuple_element6"]/GIGA)
+        flops_data.append(element["tuple_element6"]/GIGABYTE)
     flops_info = full_data["unit_repr"]
     info_list = re.sub(r'[^\w]', ' ', flops_info).split()
     info = info_list[0] + " GFLOPs/sec"
@@ -66,7 +72,7 @@ def get_peak_bandwidth(roof_data):
         if intensity != ref_intensity:
             break
         work_set.append(element["tuple_element0"])
-        bandwidth_data.append(element["tuple_element5"]/GIGA)
+        bandwidth_data.append(element["tuple_element5"]/ GIGABYTE)
     fraction = 1.05
     samples  = 10000
 
@@ -141,7 +147,7 @@ def get_hotspots(full_data):
         label     = graph_data[i]["tuple_element2"]
 
         intensity  = flop / (bandwidth * 2)
-        flop       = flop / GIGA
+        flop       = flop / GIGABYTE
         proportion = runtime / total_runtime
         label      = label.replace("> [cxx] ", "")
 
@@ -182,14 +188,17 @@ class plot_parameters():
                 self.xmax = 10**int(log(intensity)/log(10)+1)
             if intensity < self.xmin:
                 self.xmin = 10**int(log(intensity)/log(10)-1)
-        print self.xmin, self.xmax
-        print self.ymin, self.ymax
+        print("X (min, max) = {}, {}, Y (min, max) = ".format(
+            self.xmin, self.xmax, self.ymin, self.ymax))
+
 
 #==============================================================================#
-def plot_roofline(data):
-    rank_data = data["rank"]
-    full_data = rank_data["data"]
-    roof_data = full_data["roofline"]
+def plot_roofline(ai_data, op_data):
+    """
+    Plot the roofline
+    """
+    full_data = op_data["rank"]["data"]
+    roof_data = ai_data["rank"]["data"]["roofline"]
     
     peak_bandwidths = get_peak_bandwidth(roof_data)
     peak_flops      = get_peak_flops(full_data)
@@ -249,7 +258,7 @@ def plot_roofline(data):
 
     # plot hotspots
     for element in (hotspots):
-        print element[0], element[1]
+        print(element[0], element[1])
         c = get_color(element[2])
         plt.scatter(element[0], element[1], color=c)
         text(element[0], element[1], "%s" % element[3], rotation=0, rotation_mode='anchor')
@@ -260,6 +269,14 @@ def plot_roofline(data):
 #==============================================================================#
 if __name__ == "__main__":
     import sys
-    f = open(sys.argv[1])
-    plot_roofline(json.load(f))
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-ai", "--arithmetic-intensity", type=str, help="AI intensity input")
+    parser.add_argument("-op", "--operations", type=str, help="Operations input")
+    args = parser.parse_arguments()
+
+    fai = open(args.arithmetic_intensity, 'r')
+    fop = open(args.operations, 'r')
+    plot_roofline(json.load(fai), json.load(fop))
     
