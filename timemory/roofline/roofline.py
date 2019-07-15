@@ -45,12 +45,11 @@ def smooth(x,y):
 
 
 #==============================================================================#
-def get_peak_flops(full_data):
+def get_peak_flops(roof_data):
     """
     Get the peak floating point operations / sec
     """
     flops_data = []
-    roof_data  = full_data["roofline"]["ptr_wrapper"]["data"]["data"]
 
     for element in roof_data:
         flops_data.append(element["tuple_element6"]/GIGABYTE)
@@ -139,22 +138,24 @@ def get_peak_bandwidth(roof_data):
 
 
 #==============================================================================#
-def get_hotspots(full_data):
+def get_hotspots(op_data, ai_data):
     """
     Get the hotspots information
     """
-    graph_data = full_data["graph"]
+    op_graph_data = op_data["graph"]
+    ai_graph_data = ai_data["graph"]
     hotspots   = []
     
-    total_runtime = float(graph_data[0]["tuple_element1"]["accum"]["second"])
-    for i in range(1, len(graph_data)):
-        runtime   = float(graph_data[i]["tuple_element1"]["accum"]["second"])
-        flop      = float(graph_data[i]["tuple_element1"]["accum"]["first"]["value0"])
-        bandwidth = float(graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
-        label     = graph_data[i]["tuple_element2"]
+    total_runtime = float(op_graph_data[0]["tuple_element1"]["accum"]["second"])
+    total_runtime += float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
+    total_runtime /= 2.0
 
-        if(bandwidth == 0.0):
-            bandwidth = 0.5
+    for i in range(1, len(op_graph_data)):
+        runtime   = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
+        flop      = float(op_graph_data[i]["tuple_element1"]["accum"]["first"]["value0"])
+        bandwidth = float(ai_graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
+        label     = op_graph_data[i]["tuple_element2"]
+
         intensity  = flop / bandwidth
         flop       = flop / GIGABYTE
         proportion = runtime / total_runtime
@@ -189,10 +190,6 @@ class plot_parameters():
         for element in (hotspots):
             intensity = element[0]
             flop      = element[1]
-            if flop == 0.0:
-                flop = 1.0
-            if intensity == 0.0:
-                intensity = 1.0
             if flop > self.ymax:
                 self.ymax = 10**int(log(flop)/log(10)+1)
             if flop < self.ymin:
@@ -211,12 +208,11 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     """
     Plot the roofline
     """
-    full_data = op_data["rank"]["data"]
     roof_data = ai_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
     
     peak_bandwidths = get_peak_bandwidth(roof_data)
-    peak_flops      = get_peak_flops(full_data)
-    hotspots        = get_hotspots(full_data)
+    peak_flops      = get_peak_flops(roof_data)
+    hotspots        = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
     
     plot_params = plot_parameters(peak_flops, hotspots)
 
