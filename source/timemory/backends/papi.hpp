@@ -197,8 +197,9 @@ inline int
 get_event_code(const std::string& event_code_str)
 {
 #if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
-    int event_code;
-    int retval = PAPI_event_name_to_code(event_code_str.c_str(), &event_code);
+    int               event_code;
+    auto              event_code_char = const_cast<char*>(event_code_str.c_str());
+    int               retval = PAPI_event_name_to_code(event_code_char, &event_code);
     std::stringstream ss;
     ss << "Warning!! Failure converting " << event_code_str << " to enum value";
     working() = check(retval, ss.str());

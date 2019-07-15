@@ -155,7 +155,7 @@ def get_hotspots(full_data):
 
         if(bandwidth == 0.0):
             bandwidth = 0.5
-        intensity  = flop / (bandwidth * 2)
+        intensity  = flop / bandwidth
         flop       = flop / GIGABYTE
         proportion = runtime / total_runtime
         label      = label.replace("> [cxx] ", "")
@@ -201,7 +201,7 @@ class plot_parameters():
                 self.xmax = 10**int(log(intensity)/log(10)+1)
             if intensity < self.xmin:
                 self.xmin = 10**int(log(intensity)/log(10)-1)
-        print("X (min, max) = {}, {}, Y (min, max) = ".format(
+        print("X (min, max) = {}, {}, Y (min, max) = {}, {}".format(
             self.xmin, self.xmax, self.ymin, self.ymax))
 
 

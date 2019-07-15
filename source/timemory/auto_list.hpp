@@ -57,7 +57,7 @@ class auto_list
 , public tim::hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type = implemented_component_list<Types...>;
+    using component_type = tim::component_list<Types...>;
     using this_type      = auto_list<Types...>;
     using data_type      = typename component_type::data_type;
     using counter_type   = tim::counted_object<this_type>;

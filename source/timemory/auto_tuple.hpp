@@ -57,7 +57,7 @@ class auto_tuple
 , public tim::hashed_object<auto_tuple<Types...>>
 {
 public:
-    using component_type = implemented_component_tuple<Types...>;
+    using component_type = tim::component_tuple<Types...>;
     using this_type      = auto_tuple<Types...>;
     using data_type      = typename component_type::data_type;
     using counter_type   = tim::counted_object<this_type>;

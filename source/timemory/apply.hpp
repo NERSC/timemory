@@ -503,9 +503,14 @@ struct apply<void>
     }
 
     //----------------------------------------------------------------------------------//
+    //
+    //      _N > 0
+    //
+    //----------------------------------------------------------------------------------//
 
     template <typename _Tuple, typename _Value,
-              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
         _apply_impl<void>::template set_value<0, _N - 1, _Tuple, _Value>(
@@ -515,7 +520,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename _Access, typename _Tuple, typename... _Args,
-              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void access(_Tuple&& __t, _Args&&... __args)
     {
         _apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
@@ -525,7 +531,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename _Access, typename _Tuple, typename... _Args,
-              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void access_with_indices(_Tuple&& __t, _Args&&... __args)
     {
         _apply_impl<void>::template apply_access_with_indices<0, _N - 1, _Access, _Tuple,
@@ -536,8 +543,9 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <typename _Access, typename _TupleA, typename _TupleB, typename... _Args,
-              std::size_t _N  = std::tuple_size<decay_t<_TupleA>>::value,
-              std::size_t _Nb = std::tuple_size<decay_t<_TupleB>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_TupleA>>::value,
+              std::size_t _Nb            = std::tuple_size<decay_t<_TupleB>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
     {
         static_assert(_N == _Nb, "tuple_size 1 must match tuple_size 2");
@@ -550,7 +558,8 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <template <typename> class _Access, typename _Tuple, typename... _Args,
-              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void unroll_access(_Tuple&& __t, _Args&&... __args)
     {
         _apply_impl<void>::template unroll_access<_Access, _N - 1, _Tuple, _Args...>(
@@ -560,11 +569,71 @@ struct apply<void>
     //----------------------------------------------------------------------------------//
 
     template <template <typename> class _Access, typename _Tuple, typename... _Args,
-              std::size_t _N = std::tuple_size<decay_t<_Tuple>>::value>
+              std::size_t _N             = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N > 0), int> = 0>
     static void type_access(_Args&&... __args)
     {
         _apply_impl<void>::template type_access<_Access, _N - 1, _Tuple, _Args...>(
             std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    //      _N == 0
+    //
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tuple, typename _Value,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void set_value(_Tuple&&, _Value&&)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void access(_Tuple&&, _Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void access_with_indices(_Tuple&&, _Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _TupleA, typename _TupleB, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_TupleA>>::value,
+              std::size_t _Nb             = std::tuple_size<decay_t<_TupleB>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void access2(_TupleA&&, _TupleB&&, _Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <template <typename> class _Access, typename _Tuple, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void unroll_access(_Tuple&&, _Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <template <typename> class _Access, typename _Tuple, typename... _Args,
+              std::size_t _N              = std::tuple_size<decay_t<_Tuple>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static void type_access(_Args&&...)
+    {
     }
 
     //----------------------------------------------------------------------------------//
