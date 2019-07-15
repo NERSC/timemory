@@ -233,6 +233,8 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     ax = f.add_subplot(111)
 
     plt.title(title)
+    plt.grid(True, which="major", ls="--", lw=1)
+    plt.grid(True, which="minor", ls="--", lw=0.5)
     plt.yscale("log")
     plt.xscale("log")
 
