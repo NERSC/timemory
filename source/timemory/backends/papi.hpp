@@ -123,7 +123,14 @@ check(int retval, const std::string& mesg, bool quiet = false)
 {
     bool success = (retval == PAPI_OK);
     if(!success && !quiet)
+    {
+#if defined(TIMEMORY_USE_PAPI)
+        auto error_str = PAPI_strerror(retval);
+        fprintf(stderr, "%s : PAPI_error %d: %s\n", mesg.c_str(), retval, error_str);
+#else
         fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
+#endif
+    }
     return success;
 }
 
