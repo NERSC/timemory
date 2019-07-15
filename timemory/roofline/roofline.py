@@ -149,7 +149,7 @@ def get_hotspots(op_data, ai_data):
     total_runtime += float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
     total_runtime /= 2.0
 
-    for i in range(1, len(op_graph_data)):
+    for i in range(0, len(op_graph_data)):
         runtime   = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
         flop      = float(op_graph_data[i]["tuple_element1"]["accum"]["first"]["value0"])
         bandwidth = float(ai_graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
@@ -159,6 +159,10 @@ def get_hotspots(op_data, ai_data):
         flop       = flop / GIGABYTE
         proportion = runtime / total_runtime
         label      = label.replace("> [cxx] ", "")
+
+        # this can arise from overflow
+        if flop < 0 or bandwidth < 0:
+            continue
 
         hotspots.append([intensity, flop, proportion, label])
     return hotspots

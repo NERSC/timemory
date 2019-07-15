@@ -275,11 +275,16 @@ When the application terminates, output to text and JSON is automated.
   - records the number of signals delivered.
 - `num_swap`
   - records the number of swaps out of main memory
-- `papi_tuple<EventSet, EventTypes...>` (__Hardware counters__)
+- `papi_tuple<EventTypes...>` (__Hardware counters__)
   - records a compile-time specified list of PAPI counters
-- `papi_array<EventSet, N>` (__Hardware counters__)
+- `papi_array<N>` (__Hardware counters__)
   - records a variable set of PAPI counters up to size _N_
-- `cpu_roofline<EventTypes...>` (__Hardware counters__)
+- `cpu_roofline<Type, EventTypes...>` (__Hardware counters__)
+  - Examples
+    - `cpu_roofline<double, PAPI_DP_OPS>`
+    - `cpu_roofline<double, PAPI_DP_OPS, PAPI_VEC_DP>`
+    - `cpu_roofline<float, PAPI_SP_OPS>`
+    - `cpu_roofline<float, PAPI_SP_OPS, PAPI_VEC_SP>`
   - records a CPU roofline calculation based on the specified set of PAPI counters
   - execute twice to get the operation counters in one run and the arithmetic intensity in other run
     - `TIMEMORY_ROOFLINE_MODE=op ./test_cxx_roofline`
