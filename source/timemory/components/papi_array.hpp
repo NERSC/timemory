@@ -62,19 +62,30 @@ struct papi_array
     static const short                   width     = 12;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+
     static int& event_set()
     {
         static int _instance = PAPI_NULL;
         return _instance;
     }
+
     static bool& enable_multiplex()
     {
-        static bool _instance = false;
+        static bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", false);
         return _instance;
     }
+
     static get_events_func_t& get_events_func()
     {
-        static get_events_func_t _instance = []() { return event_list(); };
+        static get_events_func_t _instance = []() {
+            auto                  events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS",
+                                                "PAPI_LD_INS,PAPI_SR_INS,PAPI_LST_INS");
+            std::vector<string_t> events_str_list = delimit(events_str);
+            std::vector<int>      events_list;
+            for(const auto& itr : events_str_list)
+                events_list.push_back(papi::get_event_code(itr));
+            return events_list;
+        };
         return _instance;
     }
 

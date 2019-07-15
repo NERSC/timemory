@@ -82,7 +82,7 @@ main(int argc, char** argv)
     }
 
     roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
-    
+
     /*
     // overload the finalization function that runs ERT calculations
     roofline_t::get_finalize_function() = [=]() {

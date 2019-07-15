@@ -39,7 +39,7 @@ using auto_tuple_t =
                     tim::component::user_clock>;
 using timer_tuple_t = typename auto_tuple_t::component_type;
 
-using papi_tuple_t = papi_tuple<PAPI_SR_INS, PAPI_DP_OPS>;
+using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     current_rss, priority_context_switch, voluntary_context_switch,
