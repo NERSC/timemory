@@ -145,12 +145,18 @@ def get_hotspots(op_data, ai_data):
     ai_graph_data = ai_data["graph"]
     hotspots   = []
     
-    total_runtime = 0.0
+    avg_runtime = 0.0
+    max_runtime = 0.0
     for i in range(0, len(op_graph_data)):
         op_runtime = float(op_graph_data[0]["tuple_element1"]["accum"]["second"])
-        ai_runtime += float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
-        total_runtime += 0.5 * (op_runtime + ai_runtime)
+        ai_runtime = float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
+        avg_runtime += 0.5 * (op_runtime + ai_runtime)
+        max_runtime = max([max_runtime, 0.5 * (op_runtime + ai_runtime)])
 
+    if len(op_graph_data) > 1:
+        avg_runtime -= max_runtime
+        avg_runtime /= len(op_graph_data) - 1
+    
     for i in range(0, len(op_graph_data)):
         runtime   = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
         flop      = float(op_graph_data[i]["tuple_element1"]["accum"]["first"]["value0"])
@@ -159,13 +165,13 @@ def get_hotspots(op_data, ai_data):
 
         intensity  = flop / bandwidth
         flop       = flop / GIGABYTE
-        proportion = runtime / total_runtime
+        proportion = runtime / avg_runtime
         label      = label.replace("> [cxx] ", "")
 
         # this can arise from overflow
         if flop < 0 or bandwidth < 0:
             continue
-
+        print("{} : runtime = {}, avg = {}, proportion = {}".format(label, runtime, avg_runtime, proportion))
         hotspots.append([intensity, flop, proportion, label])
     return hotspots
 

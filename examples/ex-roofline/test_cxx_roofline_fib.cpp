@@ -25,6 +25,7 @@
 
 #include <chrono>
 #include <iostream>
+#include <random>
 #include <thread>
 #include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
@@ -45,9 +46,9 @@ using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>
 //--------------------------------------------------------------------------------------//
 
 float_type
-fibonacci_a(float_type n);
+fibonacci(float_type n);
 float_type
-fibonacci_b(float_type n);
+random_fibonacci(float_type n);
 void
 check(auto_list_t& l);
 void
@@ -118,22 +119,22 @@ main(int argc, char** argv)
     };
 
     {
-        //auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
+        auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
 
         for(const auto& n : fib_values)
         {
-            auto label = tim::str::join("", "fibonacci_a(", n, ")");
+            auto label = tim::str::join("", "fibonacci(", n, ")");
             TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto ret = fibonacci_a(n);
-            printf("fibonacci_a(%li) = %.1f\n", static_cast<long>(n), ret);
+            auto ret = fibonacci(n);
+            printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
         }
 
         for(const auto& n : fib_values)
         {
-            auto label = tim::str::join("", "fibonacci_b(", n, ")");
+            auto label = tim::str::join("", "random_fibonacci(", n, ")");
             TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto ret = fibonacci_b(n);
-            printf("fibonacci_b(%li) = %.1f\n", static_cast<long>(n), ret);
+            auto ret = random_fibonacci(n);
+            printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
         }
     }
 
@@ -151,17 +152,27 @@ main(int argc, char** argv)
 //--------------------------------------------------------------------------------------//
 
 float_type
-fibonacci_a(float_type n)
+fibonacci(float_type n)
 {
-    return (n < ftwo) ? n : fone * (fibonacci_a(n - 1) + fibonacci_a(n - 2));
+    return (n < ftwo) ? n : fone * (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
 //--------------------------------------------------------------------------------------//
 
 float_type
-fibonacci_b(float_type n)
+random_fibonacci(float_type n)
 {
-    return (n < ftwo) ? n : ((fone/0.5 * fibonacci_b(n - 1)) + fibonacci_b(n - 2));
+    // this is intentionally different between runs so that we scatter
+    // the arithmetic intensity vs. the compute rate between runs to simulate
+    // different algorithms
+    static std::random_device rd;
+    static std::mt19937       gen(rd());
+    auto                      get_random = [&]() {
+        return 1.75 * std::generate_canonical<float_type, 16>(gen) + 0.9;
+    };
+    auto m1 = get_random();
+    auto m2 = get_random();
+    return (n < ftwo) ? n : (random_fibonacci(n - m1) + random_fibonacci(n - m2));
 }
 
 //--------------------------------------------------------------------------------------//
