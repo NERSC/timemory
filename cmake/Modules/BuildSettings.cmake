@@ -57,12 +57,12 @@ endif()
 #----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
     add_flag_if_avail("-finline-functions")
-    # add_flag_if_avail("-funroll-loops")
-    # add_flag_if_avail("-ftree-vectorize")
-    # add_flag_if_avail("-ftree-loop-optimize")
-    # add_flag_if_avail("-ftree-loop-vectorize")
+    add_flag_if_avail("-funroll-loops")
+    add_flag_if_avail("-ftree-vectorize")
+    add_flag_if_avail("-ftree-loop-optimize")
+    add_flag_if_avail("-ftree-loop-vectorize")
 else()
     add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 endif()

@@ -106,6 +106,8 @@ add_option(TIMEMORY_BUILD_TOOLS
     "Enable building tools"  ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
     "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
+add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
+    "Add extra optimization flags" OFF)
 
 # Features
 
