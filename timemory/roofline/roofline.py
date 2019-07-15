@@ -145,9 +145,11 @@ def get_hotspots(op_data, ai_data):
     ai_graph_data = ai_data["graph"]
     hotspots   = []
     
-    total_runtime = float(op_graph_data[0]["tuple_element1"]["accum"]["second"])
-    total_runtime += float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
-    total_runtime /= 2.0
+    total_runtime = 0.0
+    for i in range(0, len(op_graph_data)):
+        op_runtime = float(op_graph_data[0]["tuple_element1"]["accum"]["second"])
+        ai_runtime += float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
+        total_runtime += 0.5 * (op_runtime + ai_runtime)
 
     for i in range(0, len(op_graph_data)):
         runtime   = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
@@ -171,11 +173,11 @@ def get_hotspots(op_data, ai_data):
 #==============================================================================#
 def get_color(proportion):
     if proportion < 0.01:
-        color = "red"
+        color = "lawngreen"
     elif proportion < 0.1:
         color = "yellow"
     else:
-        color = "lawngreen"
+        color = "red"
     return color
 
 
