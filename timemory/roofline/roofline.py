@@ -203,7 +203,8 @@ class plot_parameters():
 
 #==============================================================================#
 def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
-                  image_type = "png", output_dir = os.getcwd()):
+                  image_type = "png", output_dir = os.getcwd(), title = "Roofline Plot",
+                  width = 1600, height = 800, dpi = 75):
     """
     Plot the roofline
     """
@@ -216,6 +217,10 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     
     plot_params = plot_parameters(peak_flops, hotspots)
 
+    f = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    ax = f.add_subplot(111)
+
+    plt.title(title)
     plt.yscale("log")
     plt.xscale("log")
 
