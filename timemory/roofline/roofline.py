@@ -167,11 +167,11 @@ def get_hotspots(op_data, ai_data):
 #==============================================================================#
 def get_color(proportion):
     if proportion < 0.01:
-        color = "lawngreen"
+        color = "red"
     elif proportion < 0.1:
         color = "yellow"
     else:
-        color = "red"
+        color = "lawngreen"
     return color
 
 
