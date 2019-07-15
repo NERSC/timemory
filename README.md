@@ -281,6 +281,11 @@ When the application terminates, output to text and JSON is automated.
   - records a variable set of PAPI counters up to size _N_
 - `cpu_roofline<EventTypes...>` (__Hardware counters__)
   - records a CPU roofline calculation based on the specified set of PAPI counters
+  - execute twice to get the operation counters in one run and the arithmetic intensity in other run
+    - `TIMEMORY_ROOFLINE_MODE=op ./test_cxx_roofline`
+    - `TIMEMORY_ROOFLINE_MODE=ai ./test_cxx_roofline`
+  - plotting
+    - `python -m timemory.roofline -ai timemory-test-cxx-roofline-output/cpu_roofline_ai.json -op timemory-test-cxx-roofline-output/cpu_roofline_op.json -d`
 - `peak_rss`
   - records the peak resident-set size ("high-water" memory mark)
 - `priority_context_switch`

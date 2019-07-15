@@ -166,14 +166,14 @@ struct cpu_roofline
         // start PAPI counters
         int op_events[] = { EventTypes... };
         int ai_events[] = { PAPI_LST_INS };
-        tim::papi::create_event_set(&op_event_set(), true);
-        tim::papi::create_event_set(&ai_event_set(), true);
+        tim::papi::create_event_set(&op_event_set());
+        tim::papi::create_event_set(&ai_event_set());
         tim::papi::add_events(op_event_set(), op_events, num_op_events);
         tim::papi::add_events(ai_event_set(), ai_events, num_ai_events);
         switch(event_mode())
         {
-            case MODE::OP: tim::papi::start(op_event_set()); break;
-            case MODE::AI: tim::papi::start(ai_event_set()); break;
+            case MODE::OP: tim::papi::start(op_event_set(), true); break;
+            case MODE::AI: tim::papi::start(ai_event_set(), true); break;
         }
     }
 

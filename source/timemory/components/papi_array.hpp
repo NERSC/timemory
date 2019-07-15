@@ -331,7 +331,7 @@ private:
     {
         if(acquire_claim(event_type_added()))
         {
-            tim::papi::create_event_set(&event_set(), enable_multiplex());
+            tim::papi::create_event_set(&event_set());
             tim::papi::add_events(event_set(), events.data(), num_events);
         }
     }
@@ -349,7 +349,7 @@ private:
     {
         if(acquire_claim(event_set_started()))
         {
-            tim::papi::start(event_set());
+            tim::papi::start(event_set(), enable_multiplex());
         }
     }
 

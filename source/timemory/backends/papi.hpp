@@ -309,19 +309,14 @@ shutdown()
 //--------------------------------------------------------------------------------------//
 
 inline void
-create_event_set(int* event_set, bool enable_multiplexing = false)
+create_event_set(int* event_set)
 {
     // create a new empty PAPI event set
 #if defined(TIMEMORY_USE_PAPI)
-    if(enable_multiplexing)
-        init_multiplexing();
     int retval = PAPI_create_eventset(event_set);
     working()  = check(retval, "Warning!! Failure to create event set");
-    if(working() && enable_multiplexing)
-    {
-    }
 #else
-    consume_parameters(event_set, enable_multiplexing);
+    consume_parameters(event_set);
 #endif
 }
 
@@ -348,22 +343,36 @@ destroy_event_set(int event_set)
 //--------------------------------------------------------------------------------------//
 
 inline void
-start(int event_set)
+enable_multiplexing(int event_set)
+{
+#if defined(TIMEMORY_USE_PAPI)
+    int               retval = PAPI_set_multiplex(event_set);
+    std::stringstream ss;
+    ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
+    check(retval, ss.str());
+#else
+    consume_parameters(event_set);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+start(int event_set, bool enable_multiplex = false)
 {
     // start counting hardware events in an event set
 #if defined(TIMEMORY_USE_PAPI)
+    if(enable_multiplex)
+        enable_multiplexing(event_set);
     int retval = PAPI_start(event_set);
     if(retval != PAPI_OK)
     {
-        retval = PAPI_set_multiplex(event_set);
-        std::stringstream ss;
-        ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
-        check(retval, ss.str());
+        enable_multiplexing(event_set);
         retval = PAPI_start(event_set);
     }
     check(retval, "Warning!! Failure to start event set");
 #else
-    consume_parameters(event_set);
+    consume_parameters(event_set, enable_multiplex);
 #endif
 }
 

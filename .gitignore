@@ -44,3 +44,11 @@ timing_report*
 # documentation
 /html
 /docs
+
+# images
+/*.png
+/*.tif
+/*.tiff
+/*.jpeg
+/*.jpg
+/*.gif

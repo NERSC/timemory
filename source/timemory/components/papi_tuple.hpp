@@ -90,9 +90,9 @@ struct papi_tuple
     static void invoke_initialize()
     {
         int events[] = { EventTypes... };
-        tim::papi::create_event_set(&event_set(), enable_multiplex());
+        tim::papi::create_event_set(&event_set());
         tim::papi::add_events(event_set(), events, num_events);
-        tim::papi::start(event_set());
+        tim::papi::start(event_set(), enable_multiplex());
     }
     static void invoke_finalize()
     {
