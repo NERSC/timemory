@@ -81,6 +81,9 @@ main(int argc, char** argv)
             fib_values.push_back(atol(argv[i]));
     }
 
+    roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
+    
+    /*
     // overload the finalization function that runs ERT calculations
     roofline_t::get_finalize_function() = [=]() {
         using _Tp = float_type;
@@ -117,6 +120,7 @@ main(int argc, char** argv)
         // return this data for processing
         return op_counter;
     };
+    */
 
     {
         auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
