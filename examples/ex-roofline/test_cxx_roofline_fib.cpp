@@ -45,7 +45,9 @@ using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>
 //--------------------------------------------------------------------------------------//
 
 float_type
-fibonacci(float_type n);
+fibonacci_a(float_type n);
+float_type
+fibonacci_b(float_type n);
 void
 check(auto_list_t& l);
 void
@@ -120,12 +122,21 @@ main(int argc, char** argv)
 
         for(const auto& n : fib_values)
         {
-            auto label = tim::str::join("", "fibonacci(", n, ")");
+            auto label = tim::str::join("", "fibonacci_a(", n, ")");
             TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto ret = fibonacci(n);
-            printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+            auto ret = fibonacci_a(n);
+            printf("fibonacci_a(%li) = %.1f\n", static_cast<long>(n), ret);
+        }
+
+        for(const auto& n : fib_values)
+        {
+            auto label = tim::str::join("", "fibonacci_b(", n, ")");
+            TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
+            auto ret = fibonacci_b(n);
+            printf("fibonacci_b(%li) = %.1f\n", static_cast<long>(n), ret);
         }
     }
+
     auto_list_t l(__FUNCTION__, false);
     check(l);
     check_const(l);
@@ -137,10 +148,20 @@ main(int argc, char** argv)
 #define ftwo static_cast<float_type>(2.0)
 #define fone static_cast<float_type>(1.0)
 
+//--------------------------------------------------------------------------------------//
+
 float_type
-fibonacci(float_type n)
+fibonacci_a(float_type n)
 {
-    return (n < ftwo) ? n : fone * (fibonacci(n - 1) + fibonacci(n - 2));
+    return (n < ftwo) ? n : fone * (fibonacci_a(n - 1) + fibonacci_a(n - 2));
+}
+
+//--------------------------------------------------------------------------------------//
+
+float_type
+fibonacci_b(float_type n)
+{
+    return (n < ftwo) ? n : (fone * fibonacci_b(n - 1) + fibonacci_b(n - 2));
 }
 
 //--------------------------------------------------------------------------------------//
