@@ -66,7 +66,7 @@ void
 cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Intp nsize,
                _Tp* A)
 {
-    ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
+    //ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
 
     _Tp alpha = 0.5;
     for(_Intp j = 0; j < ntrials; ++j)
@@ -89,7 +89,7 @@ void
 cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Intp nsize,
                _Tp* A)
 {
-    ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
+    //ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
     constexpr size_t NUM_REP = _Nrep / 2;
 
