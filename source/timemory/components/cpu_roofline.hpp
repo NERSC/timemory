@@ -198,7 +198,8 @@ struct cpu_roofline
         auto  op_counter_func = get_finalize_function();
         auto* op_counter      = op_counter_func();
         get_operation_counter().reset(op_counter);
-        if(op_counter)
+        int verbose = get_env<int>("TIMEMORY_VERBOSE", 0);
+        if(op_counter && verbose > 0)
             std::cout << *op_counter << std::endl;
     }
 
