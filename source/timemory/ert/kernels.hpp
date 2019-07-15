@@ -121,7 +121,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 {
     using thread_list_t = std::vector<std::thread>;
 
-    auto _cpu_op = [&](thread_barrier* fbarrier, thread_barrier* lbarrier) {
+    auto _cpu_op = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         auto     buf = counter.get_buffer();
         uint64_t n   = counter.params.working_set_min;
         while(n <= counter.nsize)
@@ -149,7 +149,8 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
             // stop the timer or anything else being recorded
             ct.stop();
             // store the result
-            counter.record(ct, n, ntrials, _Nops);
+            if(tid == 0)
+                counter.record(ct, n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
@@ -167,7 +168,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
         // launch the threads
         thread_list_t threads;
         for(uint64_t i = 0; i < counter.params.nthreads; ++i)
-            threads.push_back(std::thread(_cpu_op, &fbarrier, &lbarrier));
+            threads.push_back(std::thread(_cpu_op, i, &fbarrier, &lbarrier));
 
         // wait for threads to finish
         for(auto& itr : threads)
@@ -175,7 +176,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
     }
     else
     {
-        _cpu_op(nullptr, nullptr);
+        _cpu_op(0, nullptr, nullptr);
     }
 
     tim::mpi_barrier();  // i.e. OMP_MASTER
@@ -191,7 +192,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 {
     using thread_list_t = std::vector<std::thread>;
 
-    auto _cpu_op = [&](thread_barrier* fbarrier, thread_barrier* lbarrier) {
+    auto _cpu_op = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         auto     buf = counter.get_buffer();
         uint64_t n   = counter.params.working_set_min;
         while(n <= counter.nsize)
@@ -219,7 +220,8 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
             // stop the timer or anything else being recorded
             ct.stop();
             // store the result
-            counter.record(ct, n, ntrials, _Nops);
+            if(tid == 0)
+                counter.record(ct, n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
@@ -237,7 +239,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
         // launch the threads
         thread_list_t threads;
         for(uint64_t i = 0; i < counter.params.nthreads; ++i)
-            threads.push_back(std::thread(_cpu_op, &fbarrier, &lbarrier));
+            threads.push_back(std::thread(_cpu_op, i, &fbarrier, &lbarrier));
 
         // wait for threads to finish
         for(auto& itr : threads)
@@ -245,7 +247,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
     }
     else
     {
-        _cpu_op(nullptr, nullptr);
+        _cpu_op(0, nullptr, nullptr);
     }
 
     tim::mpi_barrier();  // i.e. OMP_MASTER
