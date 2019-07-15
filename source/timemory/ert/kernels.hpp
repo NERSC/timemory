@@ -60,15 +60,12 @@ namespace ert
 {
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
-          tim::enable_if_t<(_Nrep == 1), int> = 0>
+template <size_t _Nrep, typename _FuncOps, typename _FuncStore, typename _Tp,
+          typename _Intp = int32_t, tim::enable_if_t<(_Nrep == 1), int> = 0>
 void
-cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_elem,
-               int& mem_accesses_per_elem)
+cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Intp nsize,
+               _Tp* A)
 {
-    bytes_per_elem        = sizeof(_Tp);
-    mem_accesses_per_elem = 2;
-
     ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
 
     _Tp alpha = 0.5;
@@ -77,8 +74,8 @@ cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_
         for(_Intp i = 0; i < nsize; ++i)
         {
             _Tp beta = 0.8;
-            func(beta, A[i], alpha);
-            A[i] = beta;
+            ops_func(beta, A[i], alpha);
+            store_func(A[i], beta);
         }
         alpha *= (1.0 - 1.0e-8);
     }
@@ -86,15 +83,12 @@ cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_
 
 //--------------------------------------------------------------------------------------//
 
-template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
-          tim::enable_if_t<(_Nrep > 1), int> = 0>
+template <size_t _Nrep, typename _FuncOps, typename _FuncStore, typename _Tp,
+          typename _Intp = int32_t, tim::enable_if_t<(_Nrep > 1), int> = 0>
 void
-cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_elem,
-               int& mem_accesses_per_elem)
+cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Intp nsize,
+               _Tp* A)
 {
-    bytes_per_elem        = sizeof(_Tp);
-    mem_accesses_per_elem = 2;
-
     ASSUME_ALIGNED_ARRAY(A, ERT_ALIGN);
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
     constexpr size_t NUM_REP = _Nrep / 2;
@@ -105,8 +99,9 @@ cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_
         for(_Intp i = 0; i < nsize; ++i)
         {
             _Tp beta = 0.8;
-            apply<void>::unroll<NUM_REP>(std::forward<_Func>(func), beta, A[i], alpha);
-            A[i] = beta;
+            apply<void>::unroll<NUM_REP>(std::forward<_FuncOps>(ops_func), beta, A[i],
+                                         alpha);
+            store_func(A[i], beta);
         }
         alpha *= (1.0 - 1.0e-8);
     }
@@ -115,11 +110,20 @@ cpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int& bytes_per_
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
-          typename _Func, tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
+          typename _FuncOps, typename _FuncStore,
+          tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
+cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func,
+             _FuncStore&& store_func)
 {
     using thread_list_t = std::vector<std::thread>;
+
+    if(counter.bytes_per_element == 0)
+        fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
+                __LINE__);
+    if(counter.memory_accesses_per_element == 0)
+        fprintf(stderr, "[%s:%i]> memory-accesses-per-element is not set!\n",
+                __FUNCTION__, __LINE__);
 
     auto _cpu_op = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         auto     buf = counter.get_buffer();
@@ -140,8 +144,8 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
             // start the timer or anything else being recorded
             ct.start();
 
-            cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
-                                  counter.bytes_per_elem, counter.mem_accesses_per_elem);
+            cpu_ops_kernel<_Nops>(ntrials, std::forward<_FuncOps>(ops_func),
+                                  std::forward<_FuncStore>(store_func), n, buf);
 
             // wait master thread notifies to proceed
             if(lbarrier)
@@ -186,11 +190,20 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
-          typename _Func, tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
+          typename _FuncOps, typename _FuncStore,
+          tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
+cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func,
+             _FuncStore&& store_func)
 {
     using thread_list_t = std::vector<std::thread>;
+
+    if(counter.bytes_per_element == 0)
+        fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
+                __LINE__);
+    if(counter.memory_accesses_per_element == 0)
+        fprintf(stderr, "[%s:%i]> memory-accesses-per-element is not set!\n",
+                __FUNCTION__, __LINE__);
 
     auto _cpu_op = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         auto     buf = counter.get_buffer();
@@ -211,8 +224,8 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
             // start the timer or anything else being recorded
             ct.start();
 
-            cpu_ops_kernel<_Nops>(ntrials, std::forward<_Func>(func), n, buf,
-                                  counter.bytes_per_elem, counter.mem_accesses_per_elem);
+            cpu_ops_kernel<_Nops>(ntrials, std::forward<_FuncOps>(ops_func),
+                                  std::forward<_FuncStore>(store_func), n, buf);
 
             // wait master thread notifies to proceed
             if(lbarrier)
@@ -253,7 +266,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
     tim::mpi_barrier();  // i.e. OMP_MASTER
 
     // continue the recursive loop
-    cpu_ops_main<_Nextra...>(counter, func);
+    cpu_ops_main<_Nextra...>(counter, ops_func, store_func);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -262,16 +275,16 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _Func&& func)
 template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
           tim::enable_if_t<(_Nrep == 1), int> = 0>
 __global__ void
-gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_elem,
-               int* mem_accesses_per_elem)
+gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_element,
+               int* memory_accesses_per_element)
 {
     _Intp i0      = blockIdx.x * blockDim.x + threadIdx.x;
     _Intp istride = blockDim.x * gridDim.x;
 
     if(i0 == 0)
     {
-        *bytes_per_elem        = sizeof(_Tp);
-        *mem_accesses_per_elem = 2;
+        *bytes_per_element           = sizeof(_Tp);
+        *memory_accesses_per_element = 2;
     }
 
     for(_Intp j = 0; j < ntrials; ++j)
@@ -292,8 +305,8 @@ gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_
 template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t,
           tim::enable_if_t<(_Nrep > 1), int> = 0>
 __global__ void
-gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_elem,
-               int* mem_accesses_per_elem)
+gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_element,
+               int* memory_accesses_per_element)
 {
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
     constexpr size_t NUM_REP = _Nrep / 2;
@@ -303,8 +316,8 @@ gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_
 
     if(i0 == 0)
     {
-        *bytes_per_elem        = sizeof(_Tp);
-        *mem_accesses_per_elem = 2;
+        *bytes_per_element           = sizeof(_Tp);
+        *memory_accesses_per_element = 2;
     }
 
     for(_Intp j = 0; j < ntrials; ++j)
@@ -353,9 +366,9 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,
+        cuda::memcpy<int>(&counter.bytes_per_element, counter_data + 0, 1,
                           cuda::device_to_host_v, counter.stream);
-        cuda::memcpy<int>(&counter.mem_accesses_per_elem, counter_data + 1, 1,
+        cuda::memcpy<int>(&counter.memory_accesses_per_element, counter_data + 1, 1,
                           cuda::device_to_host_v, counter.stream);
         cuda::stream_sync(counter.stream);
         cuda::free(counter_data);
@@ -396,9 +409,9 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        cuda::memcpy<int>(&counter.bytes_per_elem, counter_data + 0, 1,
+        cuda::memcpy<int>(&counter.bytes_per_element, counter_data + 0, 1,
                           cuda::device_to_host_v, counter.stream);
-        cuda::memcpy<int>(&counter.mem_accesses_per_elem, counter_data + 1, 1,
+        cuda::memcpy<int>(&counter.memory_accesses_per_element, counter_data + 1, 1,
                           cuda::device_to_host_v, counter.stream);
         cuda::stream_sync(counter.stream);
         cuda::free(counter_data);

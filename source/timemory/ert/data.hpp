@@ -269,8 +269,7 @@ free_aligned(_Tp* ptr)
 //
 struct exec_params
 {
-    exec_params() {}
-    exec_params(uint64_t _work_set, uint64_t mem_max = 8 * cache_size::get_max(),
+    exec_params(uint64_t _work_set = 16, uint64_t mem_max = 8 * cache_size::get_max(),
                 uint64_t _nthread = 1)
     : working_set_min(_work_set)
     , memory_max(mem_max)
@@ -278,7 +277,7 @@ struct exec_params
     {
     }
 
-    uint64_t working_set_min = 1;
+    uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
     const uint64_t nthreads  = 1;
     const uint64_t nrank     = tim::mpi_rank();
@@ -375,7 +374,7 @@ public:
 public:
     operation_counter() = default;
 
-    explicit operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
+    explicit operation_counter(const exec_params& _params, uint64_t _align = sizeof(_Tp))
     : params(_params)
     , align(_align)
     {
@@ -387,7 +386,7 @@ public:
 
     // overload how to create the counter
     operation_counter(const exec_params& _params, const counter_create_func& _func,
-                      size_t _align = sizeof(_Tp))
+                      uint64_t _align = sizeof(_Tp))
     : params(_params)
     , align(_align)
     , create_counter(_func)
@@ -409,35 +408,31 @@ public:
 
     counter_type&& get_counter() const { return std::move(create_counter()); }
 
-    inline void record(counter_type& _counter, int n, int t, size_t nops)
+    inline void record(counter_type& _counter, int n, int t, uint64_t nops)
     {
         uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t total_bytes =
-            t * working_set_size * bytes_per_elem * mem_accesses_per_elem;
+            t * working_set_size * bytes_per_element * memory_accesses_per_element;
         uint64_t total_ops = t * working_set_size * nops;
         auto     seconds   = _counter.get() * counter_units;
         // lock before storing result
         lock_t lk(*pmutex);
-        data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
+        data.push_back(result_type(working_set_size * bytes_per_element, t, seconds,
                                    total_bytes, total_ops, total_bytes / seconds,
                                    total_ops / seconds, nops));
     }
 
-    /*
-    void        set_labels(const labels_type& _labels) { label = _labels; }
+    void        set_labels(const labels_type& _labels) { labels = _labels; }
     labels_type get_labels() const { return labels; }
-    void        set_create_counter(counter_create_func&& f)
-    {
-        create_counter = std::bind(std::forward<_Func>(_func));
-    }*/
+    void set_create_counter(counter_create_func& f) { create_counter = std::bind(f); }
 
 public:
-    exec_params  params                = exec_params();
-    int          bytes_per_elem        = 0;
-    int          mem_accesses_per_elem = 0;
-    size_t       align                 = sizeof(_Tp);
-    uint64_t     nsize                 = 0;
-    units_type   counter_units         = tim::units::sec;
+    exec_params  params                      = exec_params();
+    int          bytes_per_element           = 0;
+    int          memory_accesses_per_element = 0;
+    uint64_t     align                       = sizeof(_Tp);
+    uint64_t     nsize                       = 0;
+    units_type   counter_units               = tim::units::sec;
     result_array data;
 
     template <typename Archive>
@@ -533,10 +528,10 @@ public:
         rc->stop();
         uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t total_bytes =
-            t * working_set_size * bytes_per_elem * mem_accesses_per_elem;
+            t * working_set_size * bytes_per_element * memory_accesses_per_element;
         uint64_t total_ops = t * working_set_size * nops;
         auto     seconds   = rc->get() * tim::units::sec;
-        data.push_back(result_type(working_set_size * bytes_per_elem, t, seconds,
+        data.push_back(result_type(working_set_size * bytes_per_element, t, seconds,
                                    total_bytes, total_ops, total_bytes / seconds,
                                    total_ops / seconds,
                                    total_ops / static_cast<float>(total_bytes)));
@@ -545,16 +540,16 @@ public:
     }
 
 public:
-    exec_params    params                = exec_params();
-    int            grid_size             = 32;
-    int            block_size            = 32;
-    int            shmem                 = 0;
-    cuda::stream_t stream                = 0;
-    int            bytes_per_elem        = 0;
-    int            mem_accesses_per_elem = 0;
-    size_t         align                 = 32;
-    uint64_t       nsize                 = 0;
-    timer_t*       rc                    = nullptr;
+    exec_params    params                      = exec_params();
+    int            grid_size                   = 32;
+    int            block_size                  = 32;
+    int            shmem                       = 0;
+    cuda::stream_t stream                      = 0;
+    int            bytes_per_element           = 0;
+    int            memory_accesses_per_element = 0;
+    size_t         align                       = 32;
+    uint64_t       nsize                       = 0;
+    timer_t*       rc                          = nullptr;
     result_array   data;
     labels_type    labels =
         labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",

@@ -29,6 +29,7 @@
 #include "timemory/components/policy.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/units.hpp"
@@ -37,6 +38,11 @@
 #include <memory>
 #include <numeric>
 #include <utility>
+
+// default vectorization width
+#if !defined(TIMEMORY_VEC)
+#    define TIMEMORY_VEC 256
+#endif
 
 //======================================================================================//
 
@@ -77,14 +83,14 @@ struct cpu_roofline
     using base_type  = base<this_type, value_type, policy::initialization,
                            policy::finalization, policy::serialization>;
 
-    using papi_op_type            = papi_tuple<EventTypes...>;
-    using papi_ai_type            = papi_tuple<PAPI_LST_INS>;
-    using clock_type              = real_clock;
-    using ratio_t                 = typename clock_type::ratio_t;
-    using operation_counter_t     = tim::ert::cpu::operation_counter<_Tp, clock_type>;
-    using operation_function_t    = std::function<operation_counter_t*()>;
-    using operation_counter_ptr_t = std::shared_ptr<operation_counter_t>;
-
+    using papi_op_type                = papi_tuple<EventTypes...>;
+    using papi_ai_type                = papi_tuple<PAPI_LST_INS>;
+    using clock_type                  = real_clock;
+    using ratio_t                     = typename clock_type::ratio_t;
+    using operation_counter_t         = tim::ert::cpu::operation_counter<_Tp, clock_type>;
+    using operation_function_t        = std::function<operation_counter_t*()>;
+    using operation_counter_ptr_t     = std::shared_ptr<operation_counter_t>;
+    using operation_uint64_function_t = std::function<uint64_t()>;
     using base_type::accum;
     using base_type::is_running;
     using base_type::is_transient;
@@ -139,17 +145,47 @@ struct cpu_roofline
         return _instance;
     }
 
+    static operation_uint64_function_t& get_finalize_threads_function()
+    {
+        static operation_uint64_function_t _instance = []() -> uint64_t {
+            return std::thread::hardware_concurrency();
+        };
+        return _instance;
+    }
+
+    static operation_uint64_function_t& get_finalize_align_function()
+    {
+        static operation_uint64_function_t _instance = []() -> uint64_t {
+            return std::max<uint64_t>(32, sizeof(_Tp));
+        };
+        return _instance;
+    }
+
     static operation_function_t& get_finalize_function()
     {
         static operation_function_t _instance = []() {
-            auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-            auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-            auto lm_size  = tim::ert::cache_size::get_max();
-            tim::ert::exec_params params(16, 8 * lm_size);
-            auto                  op_counter =
-                new operation_counter_t(params, std::max<size_t>(32, sizeof(_Tp)));
-            tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-            tim::ert::cpu_ops_main<4>(*op_counter, fma_func);
+            // vectorization number of ops
+            static constexpr const int VEC = TIMEMORY_VEC / sizeof(_Tp);
+            // functions
+            auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
+            auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+            auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+            // configuration sizes
+            auto lm_size    = tim::ert::cache_size::get_max();
+            auto num_thread = get_finalize_threads_function()();
+            auto align_size = get_finalize_align_function()();
+            // execution parameters
+            ert::exec_params params(16, 8 * lm_size, num_thread);
+            // operation counter instance
+            auto op_counter = new operation_counter_t(params, align_size);
+            // set bytes per element
+            op_counter->bytes_per_element = sizeof(_Tp);
+            // set number of memory accesses per element from two functions
+            op_counter->memory_accesses_per_element = 2;
+            // run the kernels (<4> is ideal for avx, <8> is ideal for KNL)
+            tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
+            tim::ert::cpu_ops_main<VEC>(*op_counter, fma_func, store_func);
+            // return the operation count data
             return op_counter;
         };
         return _instance;

@@ -82,8 +82,9 @@ main(int argc, char** argv)
     roofline_t::get_finalize_function() = [=]() {
         using _Tp = float_type;
         // these are the kernel functions we want to calculate the peaks with
-        auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-        auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
+        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
         // test getting the cache info
         auto l1_size = tim::ert::cache_size::get<1>();
         auto l2_size = tim::ert::cache_size::get<2>();
@@ -103,9 +104,13 @@ main(int argc, char** argv)
         tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
         // create the operation counter
         auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
+        // set bytes per element
+        op_counter->bytes_per_element = sizeof(_Tp);
+        // set number of memory accesses per element from two functions
+        op_counter->memory_accesses_per_element = 2;
         // run the operation counter kernels
-        tim::ert::cpu_ops_main<1>(*op_counter, add_func);
-        tim::ert::cpu_ops_main<4>(*op_counter, fma_func);
+        tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
+        tim::ert::cpu_ops_main<4>(*op_counter, fma_func, store_func);
         // return this data for processing
         return op_counter;
     };
