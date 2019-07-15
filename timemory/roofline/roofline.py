@@ -196,7 +196,7 @@ class plot_parameters():
         self.ymin = 1
         self.ymax = 10**y_digits
         self.xlabel = ('Arithmetic Intensity [FLOPs/Byte]')
-        self.ylabel = ('Performance [GFLOPS/sec]')
+        self.ylabel = ('Performance [GFLOPs/sec]')
 
         for element in (hotspots):
             intensity = element[0]
