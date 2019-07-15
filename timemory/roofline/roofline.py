@@ -45,7 +45,7 @@ def smooth(x,y):
 
 
 #==============================================================================#
-def get_peak_flops(roof_data):
+def get_peak_flops(roof_data, flops_info):
     """
     Get the peak floating point operations / sec
     """
@@ -53,7 +53,6 @@ def get_peak_flops(roof_data):
 
     for element in roof_data:
         flops_data.append(element["tuple_element6"]/GIGABYTE)
-    flops_info = full_data["unit_repr"]
     info_list = re.sub(r'[^\w]', ' ', flops_info).split()
     info = info_list[0] + " GFLOPs/sec"
     peak_flops = [max(flops_data), info]
@@ -209,9 +208,10 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     Plot the roofline
     """
     roof_data = ai_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
-    
+    flops_info = op_data["rank"]["data"]["unit_repr"]
+
     peak_bandwidths = get_peak_bandwidth(roof_data)
-    peak_flops      = get_peak_flops(roof_data)
+    peak_flops      = get_peak_flops(roof_data, flops_info)
     hotspots        = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
     
     plot_params = plot_parameters(peak_flops, hotspots)
