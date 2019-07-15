@@ -52,7 +52,8 @@ random_fibonacci(float_type n);
 void
 check(auto_list_t& l);
 void
-check_const(const auto_list_t& l);
+     check_const(const auto_list_t& l);
+void customize_roofline(int64_t, int64_t, int64_t);
 
 //--------------------------------------------------------------------------------------//
 
@@ -83,44 +84,8 @@ main(int argc, char** argv)
 
     roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
 
-    /*
-    // overload the finalization function that runs ERT calculations
-    roofline_t::get_finalize_function() = [=]() {
-        using _Tp = float_type;
-        // these are the kernel functions we want to calculate the peaks with
-        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
-        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-        // test getting the cache info
-        auto l1_size = tim::ert::cache_size::get<1>();
-        auto l2_size = tim::ert::cache_size::get<2>();
-        auto l3_size = tim::ert::cache_size::get<3>();
-        auto lm_size = tim::ert::cache_size::get_max();
-        // log the cache info
-        std::cout << "[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
-                  << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
-                  << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte)
-                  << " KB, max cache size: " << (lm_size / tim::units::kilobyte)
-                  << " KB\n"
-                  << std::endl;
-        // log how many threads were used
-        printf("[INFO]> Running ERT with %li threads...\n\n",
-               static_cast<long>(num_threads));
-        // create the execution parameters
-        tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
-        // create the operation counter
-        auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
-        // set bytes per element
-        op_counter->bytes_per_element = sizeof(_Tp);
-        // set number of memory accesses per element from two functions
-        op_counter->memory_accesses_per_element = 2;
-        // run the operation counter kernels
-        tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::cpu_ops_main<4>(*op_counter, fma_func, store_func);
-        // return this data for processing
-        return op_counter;
-    };
-    */
+    if(tim::get_env("CUSTOMIZE_ROOFLINE", false))
+        customize_roofline(num_threads, working_size, memory_factor);
 
     {
         auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
@@ -199,4 +164,46 @@ check(auto_list_t& l)
               << std::endl;
 }
 
+//--------------------------------------------------------------------------------------//
+
+void
+customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
+{
+    // overload the finalization function that runs ERT calculations
+    roofline_t::get_finalize_function() = [=]() {
+        using _Tp = float_type;
+        // these are the kernel functions we want to calculate the peaks with
+        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
+        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+        // test getting the cache info
+        auto l1_size = tim::ert::cache_size::get<1>();
+        auto l2_size = tim::ert::cache_size::get<2>();
+        auto l3_size = tim::ert::cache_size::get<3>();
+        auto lm_size = tim::ert::cache_size::get_max();
+        // log the cache info
+        std::cout << "[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
+                  << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
+                  << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte)
+                  << " KB, max cache size: " << (lm_size / tim::units::kilobyte)
+                  << " KB\n"
+                  << std::endl;
+        // log how many threads were used
+        printf("[INFO]> Running ERT with %li threads...\n\n",
+               static_cast<long>(num_threads));
+        // create the execution parameters
+        tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
+        // create the operation counter
+        auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
+        // set bytes per element
+        op_counter->bytes_per_element = sizeof(_Tp);
+        // set number of memory accesses per element from two functions
+        op_counter->memory_accesses_per_element = 2;
+        // run the operation counter kernels
+        tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
+        tim::ert::cpu_ops_main<4>(*op_counter, fma_func, store_func);
+        // return this data for processing
+        return op_counter;
+    };
+}
 //--------------------------------------------------------------------------------------//
