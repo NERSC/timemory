@@ -23,6 +23,8 @@ if(CLANG_FORMATTER)
     file(GLOB sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
         ${PROJECT_SOURCE_DIR}/source/python/*.cpp
         ${PROJECT_SOURCE_DIR}/source/python/*.hpp)
     if(TIMEMORY_BUILD_EXAMPLES)

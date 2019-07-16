@@ -188,39 +188,6 @@ struct papi_array
         return val;
     }
 
-    string_t compute_display() const
-    {
-        auto val              = (is_transient) ? accum : value;
-        auto _compute_display = [&](std::ostream& os, size_type idx) {
-            auto _obj_value = val[idx];
-            auto _evt_type  = events[idx];
-            auto _label     = label(_evt_type);
-            auto _disp      = display_unit(_evt_type);
-            auto _prec      = base_type::get_precision();
-            auto _width     = base_type::get_width();
-            auto _flags     = base_type::get_format_flags();
-
-            std::stringstream ss, ssv, ssi;
-            ssv.setf(_flags);
-            ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
-            if(!_disp.empty())
-                ssv << " " << _disp;
-            if(!_label.empty())
-                ssi << " " << _label;
-            ss << ssv.str() << ssi.str();
-            os << ss.str();
-        };
-
-        std::stringstream ss;
-        for(size_type i = 0; i < num_events; ++i)
-        {
-            _compute_display(ss, i);
-            if(i + 1 < num_events)
-                ss << ", ";
-        }
-        return ss.str();
-    }
-
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
@@ -278,9 +245,7 @@ struct papi_array
     {
         auto tmp = record();
         for(size_type i = 0; i < num_events; ++i)
-        {
             accum[i] += (tmp[i] - value[i]);
-        }
         value = std::move(tmp);
         set_stopped();
     }
@@ -307,7 +272,7 @@ struct papi_array
         return *this;
     }
 
-    value_type serialization() { return accum; }
+    // value_type serialization() { return accum; }
 
 private:
     inline bool acquire_claim(std::atomic<bool>& m_check)
@@ -371,6 +336,68 @@ private:
             value_type _data;
             tim::papi::stop(event_set(), _data.data());
         }
+    }
+
+public:
+    //==================================================================================//
+    //
+    //      representation as a string
+    //
+    //==================================================================================//
+    string_t compute_display() const
+    {
+        auto val              = (is_transient) ? accum : value;
+        auto _compute_display = [&](std::ostream& os, size_type idx) {
+            auto _obj_value = val[idx];
+            auto _evt_type  = events[idx];
+            auto _label     = label(_evt_type);
+            auto _disp      = display_unit(_evt_type);
+            auto _prec      = base_type::get_precision();
+            auto _width     = base_type::get_width();
+            auto _flags     = base_type::get_format_flags();
+
+            std::stringstream ss, ssv, ssi;
+            ssv.setf(_flags);
+            ssv << std::setw(_width) << std::setprecision(_prec) << _obj_value;
+            if(!_disp.empty())
+                ssv << " " << _disp;
+            if(!_label.empty())
+                ssi << " " << _label;
+            ss << ssv.str() << ssi.str();
+            os << ss.str();
+        };
+
+        std::stringstream ss;
+        for(size_type i = 0; i < num_events; ++i)
+        {
+            _compute_display(ss, i);
+            if(i + 1 < num_events)
+                ss << ", ";
+        }
+        return ss.str();
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
+    {
+        // output the metrics
+        auto _value = obj.compute_display();
+        auto _label = this_type::get_label();
+        auto _disp  = this_type::display_unit();
+        auto _prec  = this_type::get_precision();
+        auto _width = this_type::get_width();
+        auto _flags = this_type::get_format_flags();
+
+        std::stringstream ss_value;
+        std::stringstream ss_extra;
+        ss_value.setf(_flags);
+        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
+        if(!_disp.empty())
+            ss_extra << " " << _disp;
+        else if(!_label.empty())
+            ss_extra << " " << _label;
+        os << ss_value.str() << ss_extra.str();
+
+        return os;
     }
 };
 

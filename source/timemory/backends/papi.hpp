@@ -284,15 +284,6 @@ init()
         if(!working())
         {
             fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
-            /*
-            int events       = PAPI_L1_TCM;
-            int num_events   = 1;
-            int retval       = PAPI_start_counters(&events, num_events);
-            working()        = (retval == PAPI_OK);
-            long long values = 0;
-            retval           = PAPI_stop_counters(&values, num_events);
-            working()        = (retval == PAPI_OK);
-            */
         }
     }
     register_thread();
@@ -387,20 +378,6 @@ start(int event_set, bool enable_multiplex = false)
 //--------------------------------------------------------------------------------------//
 
 inline void
-start_counters(int* events, int num_events)
-{
-    // start counting hardware events in an event set
-#if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_start_counters(events, num_events);
-    check(retval, "Warning!! Failure to start event counters");
-#else
-    consume_parameters(events, num_events);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
 stop(int event_set, long long* values)
 {
     // stop counting hardware events in an event set and return current events
@@ -415,20 +392,6 @@ stop(int event_set, long long* values)
 //--------------------------------------------------------------------------------------//
 
 inline void
-stop_counters(long long* values, int num_events)
-{
-    // stop counting hardware events in an event set and return current events
-#if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_stop_counters(values, num_events);
-    check(retval, "Warning!! Failure to stop counters");
-#else
-    consume_parameters(values, num_events);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
 read(int event_set, long long* values)
 {
     // read hardware events from an event set with no reset
@@ -437,20 +400,6 @@ read(int event_set, long long* values)
     check(retval, "Warning!! Failure to read event set");
 #else
     consume_parameters(event_set, values);
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-read_counters(long long* values, int num_events)
-{
-    // read hardware events from an event set with no reset
-#if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_read_counters(values, num_events);
-    check(retval, "Warning!! Failure to read event set");
-#else
-    consume_parameters(values, num_events);
 #endif
 }
 

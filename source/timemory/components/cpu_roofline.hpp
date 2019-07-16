@@ -78,6 +78,7 @@ struct cpu_roofline
 
     using size_type  = std::size_t;
     using array_type = std::array<long long, sizeof...(EventTypes) + 1>;
+    using data_type  = long long*;
     using value_type = std::pair<array_type, double>;
     using this_type  = cpu_roofline<_Tp, EventTypes...>;
     using base_type  = base<this_type, value_type, policy::initialization,
@@ -91,6 +92,10 @@ struct cpu_roofline
     using operation_function_t        = std::function<operation_counter_t*()>;
     using operation_counter_ptr_t     = std::shared_ptr<operation_counter_t>;
     using operation_uint64_function_t = std::function<uint64_t()>;
+
+    using iterator       = typename array_type::iterator;
+    using const_iterator = typename array_type::const_iterator;
+
     using base_type::accum;
     using base_type::is_running;
     using base_type::is_transient;
@@ -258,23 +263,28 @@ struct cpu_roofline
     {
         std::stringstream ss;
         ss << "(";
-        auto                     op_labels = papi_op_type::label_array();
-        auto                     ai_labels = papi_ai_type::label_array();
         std::vector<std::string> labels;
-        for(auto itr : op_labels)
-            labels.push_back(itr);
-        for(auto itr : ai_labels)
-            labels.push_back(itr);
+        if(event_mode() == MODE::OP)
+        {
+            auto op_labels = papi_op_type::label_array();
+            for(auto itr : op_labels)
+                labels.push_back(itr);
+        } else
+        {
+            auto ai_labels = papi_ai_type::label_array();
+            for(auto itr : ai_labels)
+                labels.push_back(itr);
+        }
+
         for(size_type i = 0; i < labels.size() - 1; ++i)
         {
             ss << labels[i];
             if(i + 1 < labels.size() - 1)
-            {
                 ss << " + ";
-            }
         }
-        ss << ") / " << clock_type::display_unit() << ", " << labels.back();
-
+        ss << ")";
+        if(event_mode() == MODE::OP)
+            ss << " / " << clock_type::display_unit();
         return ss.str();
     }
 
@@ -289,22 +299,50 @@ struct cpu_roofline
                 tim::papi::read(ai_event_set(), read_values.data() + num_op_events);
                 break;
         }
-        return value_type(read_values, clock_type::record() /
-                                           static_cast<double>(ratio_t::den) *
-                                           tim::units::sec);
+        auto delta_duration =
+            clock_type::record() / static_cast<double>(ratio_t::den) * tim::units::sec;
+        return value_type(read_values, delta_duration);
+    }
+
+    iterator begin()
+    {
+        auto& obj = (accum.second > 0) ? accum : value;
+        return (event_mode() == MODE::OP) ? obj.first.begin()
+                                          : (obj.first.begin() + num_op_events);
+    }
+
+    const_iterator begin() const
+    {
+        const auto& obj = (accum.second > 0) ? accum : value;
+        return (event_mode() == MODE::OP) ? obj.first.begin()
+                                          : (obj.first.begin() + num_op_events);
+    }
+
+    iterator end()
+    {
+        auto& obj = (accum.second > 0) ? accum : value;
+        return (event_mode() == MODE::OP) ? (obj.first.end() - 1) : obj.first.end();
+    }
+
+    const_iterator end() const
+    {
+        const auto& obj = (accum.second > 0) ? accum : value;
+        return (event_mode() == MODE::OP) ? (obj.first.end() - 1) : obj.first.end();
     }
 
     double get_elapsed(const int64_t& _unit = clock_type::get_unit()) const
     {
         auto& obj = (accum.second > 0) ? accum : value;
-        return static_cast<double>(obj.second *
-                                   (static_cast<double>(_unit) / tim::units::sec));
+        return static_cast<double>(obj.second) *
+               (static_cast<double>(_unit) / tim::units::sec);
     }
 
-    int64_t get_counted() const
+    double get_counted() const
     {
-        auto& obj = (accum.second > 0) ? accum : value;
-        return std::accumulate(obj.first.begin(), obj.first.end() - 1, 0);
+        double _sum = 0.0;
+        for(auto itr = begin(); itr != end(); ++itr)
+            _sum += static_cast<double>(*itr);
+        return _sum;
     }
 
     void start()
@@ -417,10 +455,11 @@ public:
 //
 using cpu_roofline_sflops = cpu_roofline<float, PAPI_SP_OPS>;
 using cpu_roofline_dflops = cpu_roofline<double, PAPI_DP_OPS>;
-// using cpu_roofline_flops  = cpu_roofline<double, PAPI_FP_OPS>;
+
 // TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
 // accesses/reads/writes/etc.
 // using cpu_roofline_l1 = cpu_roofline<PAPI_L1_TCH>;
+
 // TODO: check if L2 roofline wants L2 total cache hits (below) or L2 composite of
 // accesses/reads/writes/etc.
 // using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;

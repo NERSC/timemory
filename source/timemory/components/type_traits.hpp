@@ -49,10 +49,8 @@ struct record_max : std::false_type
 /// trait that signifies that data is an array type
 ///
 template <typename _Tp>
-struct array_serialization
-{
-    using type = std::false_type;
-};
+struct array_serialization : std::false_type
+{};
 
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that an implementation (e.g. PAPI) is available
@@ -103,22 +101,20 @@ struct record_max<data_rss> : std::true_type
 {};
 
 template <int... EventTypes>
-struct array_serialization<papi_tuple<EventTypes...>>
-{
-    using type = std::true_type;
-};
+struct array_serialization<papi_tuple<EventTypes...>> : std::true_type
+{};
 
 template <std::size_t MaxNumEvents>
-struct array_serialization<papi_array<MaxNumEvents>>
-{
-    using type = std::true_type;
-};
+struct array_serialization<papi_array<MaxNumEvents>> : std::true_type
+{};
 
 template <>
-struct array_serialization<cupti_event>
-{
-    using type = std::true_type;
-};
+struct array_serialization<cupti_event> : std::true_type
+{};
+
+template <>
+struct ordering_priority<cuda_event> : std::integral_constant<int16_t, -1>
+{};
 
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
