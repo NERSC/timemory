@@ -13,7 +13,7 @@ from matplotlib.pyplot import text
 from math import log, pi
 
 
-GIGABYTE = 1024 * 1024 * 1024
+GIGABYTE = 1000 * 1000 * 1000
 try:
     import timemory
     GIGABYTE = timemory.units.gigabyte
@@ -45,7 +45,7 @@ def smooth(x,y):
 
 
 #==============================================================================#
-def get_peak_flops(roof_data, flops_info):
+def get_peak_flops(roof_data, flop_info):
     """
     Get the peak floating point operations / sec
     """
@@ -53,7 +53,7 @@ def get_peak_flops(roof_data, flops_info):
 
     for element in roof_data:
         flops_data.append(element["tuple_element6"]/GIGABYTE)
-    info_list = re.sub(r'[^\w]', ' ', flops_info).split()
+    info_list = re.sub(r'[^\w]', ' ', flop_info).split()
     info = info_list[0] + " GFLOPs/sec"
     peak_flops = [max(flops_data), info]
     return peak_flops
@@ -115,7 +115,7 @@ def get_peak_bandwidth(roof_data):
         else:
             if maxc > 1:
                 value = float(totals[maxi])/max(1,counts[maxi])
-                if 1.10*value < float(band_list[-1][0])/band_list[-1][1]:
+                if 1.20*value < float(band_list[-1][0])/band_list[-1][1]:
                     band_list.append([totals[maxi],counts[maxi]])
                 else:
                     band_list[-1][0] += totals[maxi]
@@ -220,14 +220,15 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     """
     Plot the roofline
     """
-    roof_data = ai_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
-    flops_info = op_data["rank"]["data"]["unit_repr"]
+    band_data = ai_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
+    flop_data = op_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
+    flop_info = op_data["rank"]["data"]["unit_repr"]
 
-    peak_bandwidths = get_peak_bandwidth(roof_data)
-    peak_flops      = get_peak_flops(roof_data, flops_info)
-    hotspots        = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
+    peak_band = get_peak_bandwidth(band_data)
+    peak_flop = get_peak_flops(flop_data, flop_info)
+    hotspots  = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
     
-    plot_params = plot_parameters(peak_flops, hotspots)
+    plot_params = plot_parameters(peak_flop, hotspots)
 
     f = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
     ax = f.add_subplot(111)
@@ -247,14 +248,14 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
     
     # plot bandwidth roof
     x0 = plot_params.xmax
-    for band in (peak_bandwidths):
+    for band in (peak_band):
         x1 = plot_params.xmin
         y1 = band[0] * plot_params.xmin
         if y1 < plot_params.ymin:
             x1 = plot_params.ymin / band[0]
             y1 = plot_params.ymin
-        x2 = peak_flops[0] / band[0]
-        y2 = peak_flops[0]
+        x2 = peak_flop[0] / band[0]
+        y2 = peak_flop[0]
         if x2 < x0:
             x0 = x2
         
@@ -281,9 +282,9 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
         plt.plot([x1, x2], [y1, y2], color='magenta')
 
     # plot computing roof
-    text(plot_params.xmax, peak_flops[0] + 2, "%.2f %s" % (peak_flops[0],
-        peak_flops[1]), horizontalalignment='right')
-    plt.plot([x0, plot_params.xmax], [peak_flops[0], peak_flops[0]], color='b')
+    text(plot_params.xmax, peak_flop[0] + 2, "%.2f %s" % (peak_flop[0],
+        peak_flop[1]), horizontalalignment='right')
+    plt.plot([x0, plot_params.xmax], [peak_flop[0], peak_flop[0]], color='b')
 
     # plot hotspots
     for element in (hotspots):
