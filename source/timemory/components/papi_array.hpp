@@ -114,6 +114,21 @@ struct papi_array
         apply<void>::set_value(accum, 0);
     }
 
+    template <typename _PidOrTid>
+    explicit papi_array(const _PidOrTid& _id, const event_list& _evts)
+    : num_events(_evts.size())
+    , events(_evts)
+    {
+        if(event_count::is_master())
+        {
+            add_event_types();
+            tim::papi::attach(event_set(), _id);
+            start_event_set();
+        }
+        apply<void>::set_value(value, 0);
+        apply<void>::set_value(accum, 0);
+    }
+
     ~papi_array()
     {
         if(event_count::live() < 1 && event_count::is_master())

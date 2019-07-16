@@ -58,7 +58,7 @@
 #endif
 
 #if !defined(PAPI_NUM_COUNTERS)
-#    define PAPI_NUM_COUNTERS 4
+#    define PAPI_NUM_COUNTERS 32
 #endif
 
 template <typename _Tp>
@@ -143,8 +143,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
             return events_list;
         };
         papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
-        tim::papi::attach(_papi_array->event_set(), getppid() + 1);
-        _papi_array = new papi_array_t();
+        _papi_array = new papi_array_t(getpid(), papi_array_t::get_events_func()());
         _papi_array->start();
     }
 
