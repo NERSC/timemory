@@ -325,18 +325,25 @@ public:
         if(is_master())
             throw std::runtime_error("master thread calling worker wait function");
 
-        // lock_t lk(m_mutex);
-        ++m_counter;
-        ++m_waiting;
-        while(m_counter.load() >= m_num_threads &&
-              spin_lock.test_and_set(std::memory_order_acquire))  // acquire lock
-            ;                                                     // spin
-        spin_lock.clear(std::memory_order_release);
-        // m_cv.wait(lk, [&] { return m_counter >= m_num_threads; });
-        // m_cv.notify_one();
-        --m_waiting;
-        if(m_waiting.load() == 0)
-            m_counter.store(0);  // reset barrier
+        {
+            lock_t lk(m_mutex);
+            ++m_counter;
+            ++m_waiting;
+        }
+
+        while(m_counter < m_num_threads)
+        {
+            while(spin_lock.test_and_set(std::memory_order_acquire))  // acquire lock
+                ;                                                     // spin
+            spin_lock.clear(std::memory_order_release);
+        }
+
+        {
+            lock_t lk(m_mutex);
+            --m_waiting;
+            if(m_waiting == 0)
+                m_counter = 0;  // reset barrier
+        }
     }
 
     // call from worker thread -- condition variable wait (slower)
@@ -351,8 +358,8 @@ public:
         m_cv.wait(lk, [&] { return m_counter >= m_num_threads; });
         m_cv.notify_one();
         --m_waiting;
-        if(m_waiting.load() == 0)
-            m_counter.store(0);  // reset barrier
+        if(m_waiting == 0)
+            m_counter = 0;  // reset barrier
     }
 
     // check if this is the thread the created barrier
@@ -362,11 +369,11 @@ private:
     // the constructing thread will be set to master
     std::thread::id  m_master      = std::this_thread::get_id();
     size_type        m_num_threads = 0;  // number of threads that will wait on barrier
-    atomic_t         m_waiting;          // number of threads waiting on lock
-    atomic_t         m_counter;          // number of threads that have entered wait func
+    size_type        m_waiting     = 0;  // number of threads waiting on lock
+    size_type        m_counter     = 0;  // number of threads that have entered wait func
+    std::atomic_flag spin_lock     = ATOMIC_FLAG_INIT;  // for spin lock
     mutex_t          m_mutex;
     condvar_t        m_cv;
-    std::atomic_flag spin_lock = ATOMIC_FLAG_INIT;
 };
 
 //--------------------------------------------------------------------------------------//
