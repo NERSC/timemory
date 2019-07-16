@@ -94,16 +94,30 @@ main(int argc, char** argv)
         {
             auto label = tim::str::join("", "fibonacci(", n, ")");
             TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto ret = fibonacci(n);
-            printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+            auto exec = [&]() {
+                auto ret = fibonacci(n);
+                printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+            };
+            std::vector<std::thread> threads;
+            for(int64_t i = 0; i < num_threads; ++i)
+                threads.push_back(std::thread(exec));
+            for(auto& itr : threads)
+                itr.join();
         }
 
         for(const auto& n : fib_values)
         {
             auto label = tim::str::join("", "random_fibonacci(", n, ")");
             TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto ret = random_fibonacci(n);
-            printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+            auto exec = [&]() {
+                auto ret = random_fibonacci(n);
+                printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+            };
+            std::vector<std::thread> threads;
+            for(int64_t i = 0; i < num_threads; ++i)
+                threads.push_back(std::thread(exec));
+            for(auto& itr : threads)
+                itr.join();
         }
     }
 
@@ -134,9 +148,10 @@ random_fibonacci(float_type n)
     // this is intentionally different between runs so that we scatter
     // the arithmetic intensity vs. the compute rate between runs to simulate
     // different algorithms
-    static std::random_device rd;
-    static std::mt19937       gen(rd());
-    auto                      get_random = [&]() {
+    static std::atomic<int>                tid;
+    static thread_local std::random_device rd;
+    static thread_local std::mt19937       gen(rd() + tid++);
+    auto                                   get_random = [&]() {
         return 1.75 * std::generate_canonical<float_type, 16>(gen) + 0.9;
     };
     auto m1 = get_random();
