@@ -170,7 +170,10 @@ struct cpu_roofline
     {
         static operation_function_t _instance = []() {
             // vectorization number of ops
-            static constexpr const int VEC = TIMEMORY_VEC / sizeof(_Tp);
+            static constexpr const int SIZE_BITS = sizeof(_Tp) * 8;
+            static_assert(SIZE_BITS > 0, "Calculated bits size is not greater than zero");
+            static constexpr const int VEC = TIMEMORY_VEC / SIZE_BITS;
+            static_assert(VEC > 0, "Calculated vector size is zero");
             // functions
             auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
             auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
@@ -189,7 +192,7 @@ struct cpu_roofline
             op_counter->memory_accesses_per_element = 2;
             // run the kernels (<4> is ideal for avx, <8> is ideal for KNL)
             tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-            tim::ert::cpu_ops_main<VEC>(*op_counter, fma_func, store_func);
+            tim::ert::cpu_ops_main<VEC, 2 * VEC>(*op_counter, fma_func, store_func);
             // return the operation count data
             return op_counter;
         };
@@ -276,10 +279,10 @@ struct cpu_roofline
                 labels.push_back(itr);
         }
 
-        for(size_type i = 0; i < labels.size() - 1; ++i)
+        for(size_type i = 0; i < labels.size(); ++i)
         {
             ss << labels[i];
-            if(i + 1 < labels.size() - 1)
+            if(i + 1 < labels.size())
                 ss << " + ";
         }
         ss << ")";
@@ -395,18 +398,15 @@ public:
     //      representation as a string
     //
     //==================================================================================//
-    string_t compute_display() const
+    double compute_display() const
     {
         auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
-            return "";
-
-        // output the roofline metric
-        std::stringstream ss;
-        auto v1 = std::accumulate(obj.first.begin(), obj.first.end() - 1, 0) /
-                  static_cast<double>(obj.second);
-        ss << v1 << ", " << obj.first.back();
-        return ss.str();
+            return 0.0;
+        double _sum = 0.0;
+        for(auto itr = begin(); itr != end(); ++itr)
+            _sum += static_cast<double>(*itr);
+        return (event_mode() == MODE::OP) ? (_sum / obj.second) : _sum;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

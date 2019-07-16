@@ -31,6 +31,9 @@ message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 
 if(SKBUILD)
     set(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
     set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
 endif()
 

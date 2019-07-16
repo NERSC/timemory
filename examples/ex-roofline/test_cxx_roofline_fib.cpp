@@ -84,7 +84,7 @@ main(int argc, char** argv)
 
     roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
 
-    if(tim::get_env("CUSTOMIZE_ROOFLINE", false))
+    if(tim::get_env("CUSTOMIZE_ROOFLINE", true))
         customize_roofline(num_threads, working_size, memory_factor);
 
     {
@@ -201,7 +201,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         op_counter->memory_accesses_per_element = 2;
         // run the operation counter kernels
         tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::cpu_ops_main<4>(*op_counter, fma_func, store_func);
+        tim::ert::cpu_ops_main<4, 5, 6, 7, 8>(*op_counter, fma_func, store_func);
         // return this data for processing
         return op_counter;
     };
