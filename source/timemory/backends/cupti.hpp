@@ -792,10 +792,10 @@ struct profiler
             for(int i = 0; i < m_num_events; ++i)
             {
                 if(print_names)
-                    ss << "(" << m_event_names[i] << ","
-                       << (ull_t) m_kernel_data[k.first].m_event_values[i] << ") ";
+                    ss << "(" << m_event_names.at(i) << ","
+                       << (ull_t) m_kernel_data.at(k.first).m_event_values.at(i) << ") ";
                 else
-                    ss << (ull_t) m_kernel_data[k.first].m_event_values[i] << " ";
+                    ss << (ull_t) m_kernel_data.at(k.first).m_event_values.at(i) << " ";
                 if(i + 1 < m_num_events)
                     ss << kernel_separator;
             }
