@@ -113,14 +113,11 @@ warmup(int64_t n)
 __global__ void
 saxpy(int64_t n, float a, float* x, float* y)
 {
-    int i = blockIdx.x * blockDim.x + threadIdx.x;
-
-    if(i < n)
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
     {
+        // y[i] = a * x[i] + y[i];
         atomicAdd(&y[i], y[i] - (a * x[i]));
     }
-    // if(i < 8)
-    //    printf("i = %li, y = %8.4e, x = %8.4e, y = %8.4e\n", i, y[i], x[i], y[i]);
 }
 //--------------------------------------------------------------------------------------//
 
@@ -158,6 +155,8 @@ void
 test_8_cupti_subset();
 void
 test_9_cupti_event();
+void
+test_10_cupti_metric();
 
 //======================================================================================//
 
@@ -184,7 +183,7 @@ main(int argc, char** argv)
 
     timing->start();
 
-    CONFIGURE_TEST_SELECTOR(9);
+    CONFIGURE_TEST_SELECTOR(10);
 
     int num_fail = 0;
     int num_test = 0;
@@ -210,6 +209,7 @@ main(int argc, char** argv)
         RUN_TEST(7, test_7_cupti_available, num_test, num_fail);
         RUN_TEST(8, test_8_cupti_subset, num_test, num_fail);
         RUN_TEST(9, test_9_cupti_event, num_test, num_fail);
+        RUN_TEST(10, test_10_cupti_metric, num_test, num_fail);
     }
     catch(std::exception& e)
     {
@@ -1236,6 +1236,42 @@ test_9_cupti_event()
 
 //======================================================================================//
 
+void
+test_10_cupti_metric()
+{
+    print_info(__FUNCTION__);
+
+    constexpr int      N = 100;
+    std::vector<float> cpu_data(N, 0);
+    float*             data;
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
+    CUDA_RUNTIME_API_CALL(
+        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
+
+    tim::cupti::metric_profiler prof;
+
+    prof.start();
+    for(int i = 0; i < 10; ++i)
+    {
+        call_kernel(data, N);
+        call_kernel2(data, N);
+    }
+    _LOG("calling sync...\n");
+    tim::cuda::device_sync();
+    prof.stop();
+
+    CUDA_RUNTIME_API_CALL(
+        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaFree(data));
+
+    printf("\n");
+    std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
+              << std::endl;
+    printf("\n");
+}
+
+//======================================================================================//
+
 #else  // defined(TIMEMORY_USE_CUPTI)
 
 //======================================================================================//
@@ -1260,6 +1296,15 @@ test_8_cupti_subset()
 
 void
 test_9_cupti_event()
+{
+    print_info(__FUNCTION__);
+    printf("CUPTI is not available...\n");
+}
+
+//======================================================================================//
+
+void
+test_10_cupti_metric()
 {
     print_info(__FUNCTION__);
     printf("CUPTI is not available...\n");

@@ -72,6 +72,12 @@
         }                                                                                \
     }
 
+#define CUPTI_ALIGN_SIZE (8)
+#define CUPTI_ALIGN_BUFFER(buffer, align)                                                \
+    (((uintptr_t)(buffer) & ((align) -1))                                                \
+         ? ((buffer) + (align) - ((uintptr_t)(buffer) & ((align) -1)))                   \
+         : (buffer))
+
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -86,6 +92,81 @@ using string_t = std::string;
 
 template <typename _Key, typename _Mapped>
 using map_t = std::map<_Key, _Mapped>;
+
+using stream_duration_t     = map_t<uint32_t, uint64_t>;
+using stream_duration_ptr_t = std::unique_ptr<stream_duration_t>;
+
+//--------------------------------------------------------------------------------------//
+
+static stream_duration_ptr_t&
+get_stream_kernel_duration()
+{
+    static thread_local stream_duration_ptr_t _instance =
+        stream_duration_ptr_t(new stream_duration_t);
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+// User data for event collection callback
+struct metric_data_t
+{
+    // the device where metric is being collected
+    CUdevice device;
+    // the set of event groups to collect for a pass
+    CUpti_EventGroupSet* eventGroups;
+    // the current number of events collected in eventIdArray and
+    // eventValueArray
+    uint32_t eventIdx;
+    // the number of entries in eventIdArray and eventValueArray
+    uint32_t numEvents;
+    // array of event ids
+    CUpti_EventID* eventIdArray;
+    // array of event values
+    uint64_t* eventValueArray;
+};
+
+//--------------------------------------------------------------------------------------//
+
+static void CUPTIAPI
+            buffer_requested(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
+{
+    uint8_t* rawBuffer;
+
+    *size          = 16 * 1024;
+    rawBuffer      = (uint8_t*) malloc(*size + CUPTI_ALIGN_SIZE);
+    *buffer        = CUPTI_ALIGN_BUFFER(rawBuffer, CUPTI_ALIGN_SIZE);
+    *maxNumRecords = 0;
+    if(*buffer == NULL)
+    {
+        throw std::runtime_error("Error: out of memory\n");
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+static void CUPTIAPI
+            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t size,
+                             size_t validSize)
+{
+    CUpti_Activity* record = nullptr;
+
+    // since we launched only 1 kernel, we should have only 1 kernel record
+    CUPTI_CALL(cuptiActivityGetNextRecord(buffer, validSize, &record));
+
+    CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
+    if(kernel->kind != CUPTI_ACTIVITY_KIND_KERNEL)
+    {
+        std::stringstream ss;
+        ss << "Error: expected kernel activity record, got "
+           << static_cast<int>(kernel->kind);
+        throw std::runtime_error(ss.str());
+    }
+
+    (*get_stream_kernel_duration())[streamId] = kernel->end - kernel->start;
+
+    free(buffer);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -492,6 +573,140 @@ print_metric(CUpti_MetricID& id, CUpti_MetricValue& value, std::ostream& s)
 
 //--------------------------------------------------------------------------------------//
 
+static void CUPTIAPI
+            get_metric_value_callback(void* userdata, CUpti_CallbackDomain domain,
+                                      CUpti_CallbackId cbid, const CUpti_CallbackData* cbInfo)
+{
+    metric_data_t* metricData = static_cast<metric_data_t*>(userdata);
+
+    // This callback is enabled only for launch so we shouldn't see
+    // anything else.
+    if((cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020) &&
+       (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000))
+    {
+        printf("%s:%d: unexpected cbid %d\n", __FILE__, __LINE__, cbid);
+        exit(-1);
+    }
+
+    // on entry, enable all the event groups being collected this pass,
+    // for metrics we collect for all instances of the event
+    if(cbInfo->callbackSite == CUPTI_API_ENTER)
+    {
+        cudaDeviceSynchronize();
+
+        CUPTI_CALL(cuptiSetEventCollectionMode(cbInfo->context,
+                                               CUPTI_EVENT_COLLECTION_MODE_KERNEL));
+
+        for(uint32_t i = 0; i < metricData->eventGroups->numEventGroups; i++)
+        {
+            uint32_t all = 1;
+            CUPTI_CALL(cuptiEventGroupSetAttribute(
+                metricData->eventGroups->eventGroups[i],
+                CUPTI_EVENT_GROUP_ATTR_PROFILE_ALL_DOMAIN_INSTANCES, sizeof(all), &all));
+            CUPTI_CALL(cuptiEventGroupEnable(metricData->eventGroups->eventGroups[i]));
+        }
+    }
+
+    // on exit, read and record event values
+    if(cbInfo->callbackSite == CUPTI_API_EXIT)
+    {
+        cudaDeviceSynchronize();
+
+        // for each group, read the event values from the group and record
+        // in metricData
+        for(uint32_t i = 0; i < metricData->eventGroups->numEventGroups; i++)
+        {
+            CUpti_EventGroup    group = metricData->eventGroups->eventGroups[i];
+            CUpti_EventDomainID groupDomain;
+            uint32_t            numEvents, numInstances, numTotalInstances;
+            CUpti_EventID*      eventIds;
+            size_t              groupDomainSize       = sizeof(groupDomain);
+            size_t              numEventsSize         = sizeof(numEvents);
+            size_t              numInstancesSize      = sizeof(numInstances);
+            size_t              numTotalInstancesSize = sizeof(numTotalInstances);
+            uint64_t *          values, normalized, sum;
+            size_t              valuesSize, eventIdsSize;
+
+            CUPTI_CALL(cuptiEventGroupGetAttribute(group,
+                                                   CUPTI_EVENT_GROUP_ATTR_EVENT_DOMAIN_ID,
+                                                   &groupDomainSize, &groupDomain));
+            CUPTI_CALL(cuptiDeviceGetEventDomainAttribute(
+                metricData->device, groupDomain,
+                CUPTI_EVENT_DOMAIN_ATTR_TOTAL_INSTANCE_COUNT, &numTotalInstancesSize,
+                &numTotalInstances));
+            CUPTI_CALL(cuptiEventGroupGetAttribute(group,
+                                                   CUPTI_EVENT_GROUP_ATTR_INSTANCE_COUNT,
+                                                   &numInstancesSize, &numInstances));
+            CUPTI_CALL(cuptiEventGroupGetAttribute(
+                group, CUPTI_EVENT_GROUP_ATTR_NUM_EVENTS, &numEventsSize, &numEvents));
+            eventIdsSize = numEvents * sizeof(CUpti_EventID);
+            eventIds     = (CUpti_EventID*) malloc(eventIdsSize);
+            CUPTI_CALL(cuptiEventGroupGetAttribute(group, CUPTI_EVENT_GROUP_ATTR_EVENTS,
+                                                   &eventIdsSize, eventIds));
+
+            valuesSize = sizeof(uint64_t) * numInstances;
+            values     = (uint64_t*) malloc(valuesSize);
+
+            for(uint32_t j = 0; j < numEvents; j++)
+            {
+                CUPTI_CALL(cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
+                                                    eventIds[j], &valuesSize, values));
+                if(metricData->eventIdx >= metricData->numEvents)
+                {
+                    fprintf(stderr,
+                            "error: too many events collected, metric expects only %d\n",
+                            (int) metricData->numEvents);
+                    exit(-1);
+                }
+
+                // sum collect event values from all instances
+                sum = 0;
+                for(uint32_t k = 0; k < numInstances; k++)
+                    sum += values[k];
+
+                // normalize the event value to represent the total number of
+                // domain instances on the device
+                normalized = (sum * numTotalInstances) / numInstances;
+
+                metricData->eventIdArray[metricData->eventIdx]    = eventIds[j];
+                metricData->eventValueArray[metricData->eventIdx] = normalized;
+                metricData->eventIdx++;
+
+                // print collected value
+                {
+                    char   eventName[128];
+                    size_t eventNameSize = sizeof(eventName) - 1;
+                    CUPTI_CALL(cuptiEventGetAttribute(eventIds[j], CUPTI_EVENT_ATTR_NAME,
+                                                      &eventNameSize, eventName));
+                    eventName[127] = '\0';
+                    printf("\t%s = %llu (", eventName, (unsigned long long) sum);
+                    if(numInstances > 1)
+                    {
+                        for(uint32_t k = 0; k < numInstances; k++)
+                        {
+                            if(k != 0)
+                                printf(", ");
+                            printf("%llu", (unsigned long long) values[k]);
+                        }
+                    }
+
+                    printf(")\n");
+                    printf("\t%s (normalized) (%llu * %u) / %u = %llu\n", eventName,
+                           (unsigned long long) sum, numTotalInstances, numInstances,
+                           (unsigned long long) normalized);
+                }
+            }
+
+            free(values);
+        }
+
+        for(uint32_t i = 0; i < metricData->eventGroups->numEventGroups; i++)
+            CUPTI_CALL(cuptiEventGroupDisable(metricData->eventGroups->eventGroups[i]));
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace impl
 
 struct result
@@ -566,6 +781,154 @@ struct result
     {
         return result(lhs) -= rhs;
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+struct metric_profiler
+{
+    metric_profiler() {}
+
+    void start(int _devNum = 0, const std::string& _metric = "ipc")
+    {
+        // printf("Usage: %s [device_num] [metric_name]\n", argv[0]);
+
+        // make sure activity is enabled before any CUDA API
+        CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
+
+        CUDA_DRIVER_API_CALL(cuInit(0));
+        CUDA_DRIVER_API_CALL(cuDeviceGetCount(&deviceCount));
+        if(deviceCount == 0)
+        {
+            fprintf(stderr, "There is no device supporting CUDA.\n");
+            return;
+        }
+
+        deviceNum = _devNum;
+        printf("CUDA Device Number: %d\n", deviceNum);
+
+        CUDA_DRIVER_API_CALL(cuDeviceGet(&device, deviceNum));
+        CUDA_DRIVER_API_CALL(cuDeviceGetName(deviceName, 32, device));
+        printf("CUDA Device Name: %s\n", deviceName);
+
+        CUDA_DRIVER_API_CALL(cuCtxCreate(&context, 0, device));
+
+        // Get the name of the metric to collect
+        metricName = _metric.c_str();
+
+        // need to collect duration of kernel execution without any event
+        // collection enabled (some metrics need kernel duration as part of
+        // calculation). The only accurate way to do this is by using the
+        // activity API.
+        // CUPTI_CALL(cuptiActivityRegisterCallbacks(buffer_requested, buffer_completed));
+        // cudaDeviceSynchronize();
+        // CUPTI_CALL(cuptiActivityFlushAll(0));
+
+        // setup launch callback for event collection
+        CUPTI_CALL(cuptiSubscribe(&subscriber,
+                                  (CUpti_CallbackFunc) impl::get_metric_value_callback,
+                                  &metricData));
+        CUPTI_CALL(cuptiEnableCallback(1, subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(1, subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+
+        // allocate space to hold all the events needed for the metric
+        CUPTI_CALL(cuptiMetricGetIdFromName(device, metricName, &metricId));
+        CUPTI_CALL(cuptiMetricGetNumEvents(metricId, &metricData.numEvents));
+        metricData.device = device;
+        metricData.eventIdArray =
+            (CUpti_EventID*) malloc(metricData.numEvents * sizeof(CUpti_EventID));
+        metricData.eventValueArray =
+            (uint64_t*) malloc(metricData.numEvents * sizeof(uint64_t));
+        metricData.eventIdx = 0;
+
+        // get the number of passes required to collect all the events
+        // needed for the metric and the event groups for each pass
+        CUPTI_CALL(cuptiMetricCreateEventGroupSets(context, sizeof(metricId), &metricId,
+                                                   &passData));
+    }
+
+    void stop()
+    {
+        // for(pass = 0; pass < passData->numSets; pass++)
+        //{
+        //    printf("Pass %u\n", pass);
+        //    metricData.eventGroups = passData->sets + pass;
+        //    runPass();
+        //}
+
+        if(metricData.eventIdx != metricData.numEvents)
+        {
+            char buffer[1024];
+            sprintf(buffer, "error: expected %u metric events, got %u\n",
+                    metricData.numEvents, metricData.eventIdx);
+            throw std::runtime_error(std::string(buffer));
+        }
+
+        uint64_t kernelDuration = 0;
+        // use all the collected events to calculate the metric value
+        CUPTI_CALL(cuptiMetricGetValue(
+            device, metricId, metricData.numEvents * sizeof(CUpti_EventID),
+            metricData.eventIdArray, metricData.numEvents * sizeof(uint64_t),
+            metricData.eventValueArray, kernelDuration, &metricValue));
+
+        // print metric value, we format based on the value kind
+        {
+            CUpti_MetricValueKind valueKind;
+            size_t                valueKindSize = sizeof(valueKind);
+            CUPTI_CALL(cuptiMetricGetAttribute(metricId, CUPTI_METRIC_ATTR_VALUE_KIND,
+                                               &valueKindSize, &valueKind));
+            switch(valueKind)
+            {
+                case CUPTI_METRIC_VALUE_KIND_DOUBLE:
+                    printf("Metric %s = %f\n", metricName, metricValue.metricValueDouble);
+                    break;
+                case CUPTI_METRIC_VALUE_KIND_UINT64:
+                    printf("Metric %s = %llu\n", metricName,
+                           (unsigned long long) metricValue.metricValueUint64);
+                    break;
+                case CUPTI_METRIC_VALUE_KIND_INT64:
+                    printf("Metric %s = %lld\n", metricName,
+                           (long long) metricValue.metricValueInt64);
+                    break;
+                case CUPTI_METRIC_VALUE_KIND_PERCENT:
+                    printf("Metric %s = %f%%\n", metricName,
+                           metricValue.metricValuePercent);
+                    break;
+                case CUPTI_METRIC_VALUE_KIND_THROUGHPUT:
+                    printf("Metric %s = %llu bytes/sec\n", metricName,
+                           (unsigned long long) metricValue.metricValueThroughput);
+                    break;
+                case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL:
+                    printf("Metric %s = utilization level %u\n", metricName,
+                           (unsigned int) metricValue.metricValueUtilizationLevel);
+                    break;
+                default:
+                {
+                    char buffer[1024];
+                    sprintf(buffer, "error: unknown value kind\n");
+                    throw std::runtime_error(std::string(buffer));
+                }
+            }
+        }
+
+        CUPTI_CALL(cuptiUnsubscribe(subscriber));
+    }
+
+private:
+    CUpti_SubscriberHandle subscriber;
+    CUcontext              context     = 0;
+    CUdevice               device      = 0;
+    int                    deviceNum   = 0;
+    int                    deviceCount = 0;
+    char                   deviceName[32];
+    const char*            metricName = "ipc";
+    CUpti_MetricID         metricId;
+    CUpti_EventGroupSets*  passData;
+    metric_data_t          metricData;
+    unsigned int           pass = 0;
+    CUpti_MetricValue      metricValue;
 };
 
 //--------------------------------------------------------------------------------------//
