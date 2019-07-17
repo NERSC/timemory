@@ -338,9 +338,9 @@ init_multiplexing()
     {
         if(!is_master_thread())
         {
-            fprintf(stderr,
-                    "Warning!! Multiplexing is not enabled because it is not the master "
-                    "thread\n");
+            // fprintf(stderr,
+            //        "Warning!! Multiplexing is not enabled because it is not the master"
+            //        " thread\n");
         }
         else if(!working())
         {
