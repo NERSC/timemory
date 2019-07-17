@@ -313,6 +313,12 @@ struct kernel_data_t
         m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
     }
 
+    kernel_data_t(const kernel_data_t&) = default;
+    kernel_data_t(kernel_data_t&&) = default;
+
+    kernel_data_t& operator=(const kernel_data_t&) = default;
+    kernel_data_t& operator=(kernel_data_t&&) = default;
+
     kernel_data_t& operator+=(const kernel_data_t& rhs)
     {
         m_event_values.resize(rhs.m_event_values.size(), 0);
