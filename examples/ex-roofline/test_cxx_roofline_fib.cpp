@@ -36,8 +36,6 @@ using float_type   = double;
 using fib_list_t   = std::vector<int64_t>;
 using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_tuple_thr =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, roofline_t>;
 using auto_list_t = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
 
 // unless specified number of threads, use the number of available cores
@@ -98,13 +96,13 @@ main(int argc, char** argv)
     //
     // initialize the storage for components that only are recorded in worker threads
     //
-    tim::manager::instance()->initialize_storage<thread_cpu_clock, thread_cpu_util>();
+    // tim::manager::instance()->initialize_storage<thread_cpu_clock, thread_cpu_util>();
 
     //
     // execute fibonacci in a thread
     //
     auto exec_fibonacci = [&](int64_t n) {
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(0, auto_tuple_thr, "fibonacci(", n, ")");
+        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(0, auto_tuple_t, "fibonacci(", n, ")");
         auto ret = fibonacci(n);
         TIMEMORY_CALIPER_APPLY(0, stop);
         printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
@@ -114,7 +112,7 @@ main(int argc, char** argv)
     // execute random_fibonacci in a thread
     //
     auto exec_random_fibonacci = [&](int64_t n) {
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(1, auto_tuple_thr, "random_fibonacci(", n, ")");
+        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(1, auto_tuple_t, "random_fibonacci(", n, ")");
         auto ret = random_fibonacci(n);
         TIMEMORY_CALIPER_APPLY(1, stop);
         printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);

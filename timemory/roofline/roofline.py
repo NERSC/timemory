@@ -169,9 +169,11 @@ def get_hotspots(op_data, ai_data):
         label      = label.replace("> [cxx] ", "")
 
         # this can arise from overflow
-        if flop < 0 or bandwidth < 0:
+        if flop <= 1.0e-3 or bandwidth <= 0.0:
             continue
-        print("{} : runtime = {}, avg = {}, proportion = {}".format(label, runtime, avg_runtime, proportion))
+        else:
+            print("{} : runtime = {}, avg = {}, proportion = {}".format(label, runtime, avg_runtime, proportion))
+            
         hotspots.append([intensity, flop, proportion, label])
     return hotspots
 
