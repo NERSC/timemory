@@ -615,6 +615,13 @@ struct profiler
         // Init device, context and setup callback
         CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
         CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
+        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
+                                  (CUpti_CallbackFunc) impl::get_value_callback,
+                                  &m_kernel_data));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
 
         CUpti_MetricID* metric_ids =
             (CUpti_MetricID*) calloc(sizeof(CUpti_MetricID), m_num_metrics);
@@ -705,14 +712,6 @@ struct profiler
         m_kernel_data[dummy_kernel_name] = dummy_data;
         free(metric_ids);
         free(event_ids);
-
-        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
-                                  (CUpti_CallbackFunc) impl::get_value_callback,
-                                  &m_kernel_data));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
     }
 
     int passes() { return m_metric_passes + m_event_passes; }
