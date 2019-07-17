@@ -771,13 +771,13 @@ struct profiler
         }
     }
 
-    template <typename stream>
-    void print_event_values(stream& s, bool print_names = true,
-                            const char* kernel_separator = "; ")
+    void print_event_values(std::ostream& os, bool print_names = true,
+                            const char* kernel_separator = "\n")
     {
         using ull_t                   = unsigned long long;
         const char* dummy_kernel_name = "^^ DUMMY ^^";
 
+        std::stringstream ss;
         for(auto const& k : m_kernel_data)
         {
             if(k.first == dummy_kernel_name)
@@ -789,24 +789,25 @@ struct profiler
             for(int i = 0; i < m_num_events; ++i)
             {
                 if(print_names)
-                    s << "(" << m_event_names[i] << ","
-                      << (ull_t) m_kernel_data[k.first].m_event_values[i] << ") ";
+                    ss << "(" << m_event_names[i] << ","
+                       << (ull_t) m_kernel_data[k.first].m_event_values[i] << ") ";
                 else
-                    s << (ull_t) m_kernel_data[k.first].m_event_values[i] << " ";
+                    ss << (ull_t) m_kernel_data[k.first].m_event_values[i] << " ";
+                if(i + 1 < m_num_events)
+                    ss << kernel_separator;
             }
-            s << kernel_separator;
         }
-        printf("\n");
+        os << ss.str() << std::endl;
     }
 
-    template <typename stream>
-    void print_metric_values(stream& s, bool print_names = true,
-                             const char* kernel_separator = "; ")
+    void print_metric_values(std::ostream& os, bool print_names = true,
+                             const char* kernel_separator = "\n")
     {
         if(m_num_metrics <= 0)
             return;
 
-        const char* dummy_kernel_name = "^^ DUMMY ^^";
+        const char*       dummy_kernel_name = "^^ DUMMY ^^";
+        std::stringstream ss;
         for(auto const& k : m_kernel_data)
         {
             if(k.first == dummy_kernel_name)
@@ -815,19 +816,20 @@ struct profiler
             for(int i = 0; i < m_num_metrics; ++i)
             {
                 if(print_names)
-                    s << "(" << m_metric_names[i] << ",";
+                    ss << "(" << m_metric_names[i] << ",";
 
                 impl::print_metric(m_metric_ids[i],
-                                   m_kernel_data[k.first].m_metric_values[i], s);
+                                   m_kernel_data[k.first].m_metric_values[i], ss);
 
                 if(print_names)
-                    s << ") ";
+                    ss << ") ";
                 else
-                    s << " ";
+                    ss << " ";
+                if(i + 1 < m_num_events)
+                    ss << kernel_separator;
             }
-            s << kernel_separator;
         }
-        printf("\n");
+        os << ss.str() << std::endl;
     }
 
     results_t get_events_and_metrics(const std::vector<std::string>& labels)
