@@ -224,26 +224,37 @@ struct kernel_data_t
         m_event_passes  = rhs.m_event_passes;
         m_current_pass  = rhs.m_current_pass;
         m_total_passes  = rhs.m_total_passes;
-        // m_pass_data = rhs.m_pass_data;
+        m_name          = rhs.m_name;
+
+        m_pass_data     = rhs.m_pass_data;
+        m_metric_values = rhs.m_metric_values;
+        m_event_values.resize(rhs.m_event_values.size(), 0);
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
     }
 
     kernel_data_t& operator+=(const kernel_data_t& rhs)
     {
-        for(uint64_t i = 0; i < m_event_values.size(); ++i)
-        {
+        m_event_values.resize(rhs.m_event_values.size(), 0);
+        for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
             m_event_values[i] += rhs.m_event_values[i];
+
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
+        for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
             m_metric_tuples[i] += rhs.m_metric_tuples[i];
-        }
+
         return *this;
     }
 
     kernel_data_t& operator-=(const kernel_data_t& rhs)
     {
-        for(uint64_t i = 0; i < m_event_values.size(); ++i)
-        {
+        m_event_values.resize(rhs.m_event_values.size(), 0);
+        for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
             m_event_values[i] -= rhs.m_event_values[i];
+
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
+        for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
             m_metric_tuples[i] -= rhs.m_metric_tuples[i];
-        }
+
         return *this;
     }
 
@@ -260,9 +271,9 @@ struct kernel_data_t
 
 //--------------------------------------------------------------------------------------//
 // CUPTI subscriber
-static CUPTIAPI void
-get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_CallbackId cbid,
-                   const CUpti_CallbackData* cbInfo)
+static void CUPTIAPI
+            get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_CallbackId cbid,
+                               const CUpti_CallbackData* cbInfo)
 {
     // This callback is enabled only for launch so we shouldn't see
     // anything else.
