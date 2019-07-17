@@ -275,6 +275,30 @@ public:
         print(ComponentTuple_t());
     }
 
+private:
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _init_storage()
+    {
+        auto ret = storage<_Tp>::instance();
+        consume_parameters(ret);
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _init_storage()
+    {
+        _init_storage<_Tp>();
+        _init_storage<_Tail...>();
+    }
+
+public:
+    template <typename... _Types>
+    void initialize_storage()
+    {
+        _init_storage<_Types...>();
+    }
+
 public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }

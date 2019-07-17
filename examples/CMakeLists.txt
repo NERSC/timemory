@@ -40,6 +40,7 @@ endif()
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-overhead)
 add_subdirectory(ex-roofline)
+add_subdirectory(ex-optional)
 
 get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 find_package(CUDA QUIET)
@@ -48,10 +49,3 @@ if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
         add_subdirectory(ex-cuda-event)
     endif()
 endif()
-
-#add_subdirectory(ex-cxx-graph)
-#add_subdirectory(ex-cxx)
-
-#if(TIMEMORY_USE_MPI AND MPI_FOUND)
-#    add_subdirectory(ex-cxx-mpi)
-#endif()

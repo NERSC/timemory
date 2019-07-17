@@ -216,7 +216,7 @@ In C++ and Python, TiMemory can be added in a single line of code:
 ```cpp
 void some_function()
 {
-    TIMEMORY_AUTO_TUPLE(tim::auto_tuple<real_clock, cpu_clock, peak_rss>, "");
+    TIMEMORY_AUTO_TUPLE((tim::auto_tuple<real_clock, cpu_clock, peak_rss>), "");
     // ...
 }
 ```
@@ -664,3 +664,172 @@ can be listed once and dropped from subsequent items in the list of `COMPONENTS`
     -sets AVX-512 compiler flags, if available
   - `timemory-extern-templates`
     - declares a subset of templates as extern to reduce compile time
+
+### Optional TiMemory Usage
+
+If you want to make TiMemory optional at compile time, it is recommended that a header is created with following contents:
+
+#### Header file
+
+Reference: `examples/ex-optional/test_optional.hpp`
+
+```cpp
+#pragma once
+
+#if defined(USE_TIMEMORY)
+
+#    include <timemory/timemory.hpp>
+
+using tim::component::cpu_clock;
+using tim::component::cpu_roofline;
+using tim::component::cpu_util;
+using tim::component::real_clock;
+using tim::component::thread_cpu_clock;
+using tim::component::thread_cpu_util;
+
+// some using statements
+using roofline_t   = cpu_roofline<double, PAPI_DP_OPS>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_tuple_thr =
+    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, roofline_t>;
+
+#else
+
+#    include <string>
+#    define TIMEMORY_AUTO_TUPLE(...)
+#    define TIMEMORY_BASIC_AUTO_TUPLE(...)
+#    define TIMEMORY_BLANK_AUTO_TUPLE(...)
+#    define TIMEMORY_AUTO_TUPLE_CALIPER(...)
+#    define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(...)
+#    define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(...)
+#    define TIMEMORY_CALIPER_APPLY(...)
+
+namespace tim
+{
+void print_env() {}
+void timemory_init(int, char**, const std::string& = "", const std::string& = "") {}
+void timemory_init(const std::string&, const std::string& = "", const std::string& = "")
+{}
+}
+
+#endif
+```
+
+#### Example implementation
+
+Reference: `examples/ex-optional/test_optional.cpp`
+
+This will enable code such as the following to be added without requiring numerous `#ifdef`/`#endif` blocks:
+
+```cpp
+
+#include "test_optional.hpp"  // file that includes optional usage
+#include <chrono>
+#include <cstdio>
+#include <thread>
+#include <vector>
+
+//--------------------------------------------------------------------------------------//
+//
+//      Declarations
+//
+//--------------------------------------------------------------------------------------//
+
+namespace impl
+{
+long fibonacci(long n);
+}
+long fibonacci(long n);
+void status();
+
+//--------------------------------------------------------------------------------------//
+//
+//      Construct a main that uses macro tricks to avoid:
+//
+//      #ifdef USE_TIMEMORY
+//          ....
+//      #endif
+//
+//--------------------------------------------------------------------------------------//
+
+int main(int argc, char** argv)
+{
+    status();
+
+    //
+    //  Dummy functions when USE_TIMEMORY not defined
+    //
+    tim::timemory_init(argc, argv);
+
+    //
+    //  Provide some work
+    //
+    std::vector<long> fibvalues;
+    for(int i = 1; i < argc; ++i) fibvalues.push_back(atol(argv[i]));
+    if(fibvalues.empty()) fibvalues.push_back(45);
+
+    //
+    // create an auto tuple accessible via a caliper integer or expand to nothing
+    //
+    TIMEMORY_AUTO_TUPLE_CALIPER(main, auto_tuple_t, "");
+    TIMEMORY_AUTO_TUPLE_CALIPER(0, auto_tuple_t, "[]");
+
+    //
+    // call <auto_tuple_t>.report_at_exit(true) or expand to nothing
+    //
+    TIMEMORY_CALIPER_APPLY(main, report_at_exit, true);
+    TIMEMORY_CALIPER_APPLY(0, report_at_exit, true);
+
+    //
+    //  Execute the work
+    //
+    for(const auto& itr : fibvalues)
+    {
+        auto ret = fibonacci(itr);
+        printf("fibonacci(%li) = %li\n", itr, ret);
+    }
+
+    //
+    // call <auto_tuple_t>.stop() or expand to nothing
+    //
+    TIMEMORY_CALIPER_APPLY(main, stop);
+
+    //
+    // sleep for 1 second so difference between two calipers
+    //
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    //
+    // call <auto_tuple_t>.stop() or expand to nothing
+    //
+    TIMEMORY_CALIPER_APPLY(0, stop);
+
+    status();
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      Implementations
+//
+//--------------------------------------------------------------------------------------//
+
+long impl::fibonacci(long n)
+{
+    return (n < 2) ? n : (impl::fibonacci(n - 1) + impl::fibonacci(n - 2));
+}
+
+long fibonacci(long n)
+{
+    TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "(", n, ")");
+    return impl::fibonacci(n);
+}
+
+void status()
+{
+#if defined(USE_TIMEMORY)
+    printf("\n#----------------- TIMEMORY is enabled  ----------------#\n\n");
+#else
+    printf("\n#----------------- TIMEMORY is disabled ----------------#\n\n");
+#endif
+}
+```

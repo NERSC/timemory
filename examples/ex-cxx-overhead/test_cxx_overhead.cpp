@@ -82,8 +82,8 @@ fibonacci(int64_t n, int64_t cutoff)
 timer_tuple_t
 run(int64_t n, bool with_timing, int64_t cutoff)
 {
-    auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
-                                        with_timing, "]");
+    auto signature = TIMEMORY_AUTO_LABEL(" [with timing = ", ((with_timing) ? " " : ""),
+                                         with_timing, "]");
     timer_tuple_t timer(signature);
     int64_t       result = 0;
     {

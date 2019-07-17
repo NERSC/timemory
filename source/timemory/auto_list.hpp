@@ -96,6 +96,9 @@ public:
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
 
+    inline void report_at_exit(bool val) { m_report_at_exit = val; }
+    inline bool report_at_exit() const { return m_report_at_exit; }
+
 public:
     template <std::size_t _N>
     typename std::tuple_element<_N, data_type>::type& get()
@@ -200,7 +203,7 @@ auto_list<Types...>::~auto_list()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.stop();
+        m_temporary_object.conditional_stop();
         m_temporary_object.pop();
 
         // report timer at exit
@@ -234,10 +237,10 @@ auto_list<Types...>::~auto_list()
     TIMEMORY_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_AUTO_LIST_OBJ(auto_list_type, ...)                                      \
-    TIMEMORY_AUTO_OBJECT_OBJ(auto_list_type, __VA_ARGS__)
+    TIMEMORY_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_BASIC_AUTO_LIST_OBJ(auto_list_type, ...)                                \
-    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_list_type, __VA_ARGS__)
+    TIMEMORY_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_DEBUG_BASIC_AUTO_LIST(auto_list_type, ...)                              \
     TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)

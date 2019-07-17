@@ -71,9 +71,9 @@ template <typename _Tp, int... EventTypes>
 struct cpu_roofline
 : public base<cpu_roofline<_Tp, EventTypes...>,
               std::pair<std::array<long long, sizeof...(EventTypes) + 1>, double>,
-              policy::initialization, policy::finalization, policy::serialization>
+              policy::global_init, policy::global_finalize, policy::serialization>
 {
-    friend struct policy::wrapper<policy::initialization, policy::finalization,
+    friend struct policy::wrapper<policy::global_init, policy::global_finalize,
                                   policy::serialization>;
 
     using size_type  = std::size_t;
@@ -81,8 +81,8 @@ struct cpu_roofline
     using data_type  = long long*;
     using value_type = std::pair<array_type, double>;
     using this_type  = cpu_roofline<_Tp, EventTypes...>;
-    using base_type  = base<this_type, value_type, policy::initialization,
-                           policy::finalization, policy::serialization>;
+    using base_type  = base<this_type, value_type, policy::global_init,
+                           policy::global_finalize, policy::serialization>;
 
     using papi_op_type                = papi_tuple<EventTypes...>;
     using papi_ai_type                = papi_tuple<PAPI_LST_INS>;
@@ -205,7 +205,7 @@ struct cpu_roofline
         return _instance;
     }
 
-    static void invoke_initialize()
+    static void invoke_global_init()
     {
         // start PAPI counters
         int op_events[] = { EventTypes... };
@@ -221,7 +221,7 @@ struct cpu_roofline
         }
     }
 
-    static void invoke_finalize()
+    static void invoke_global_finalize()
     {
         // stop PAPI counters
         std::array<long long, num_op_events> op_values;

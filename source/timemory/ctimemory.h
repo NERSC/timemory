@@ -218,8 +218,8 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_AUTO_SIGN)
-#    define TIMEMORY_AUTO_SIGN(c_str)                                                    \
+#if !defined(TIMEMORY_AUTO_LABEL)
+#    define TIMEMORY_AUTO_LABEL(c_str)                                                   \
         c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
 #endif
 

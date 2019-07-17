@@ -385,7 +385,7 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_SIGN(""));
+    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_LABEL(""));
     {
         TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
         // just record the peak rss

@@ -39,12 +39,13 @@ namespace policy
 // these are policy classes
 struct serialization
 {};
-
-// struct type_addition;
-struct initialization
+struct global_init
 {};
-
-struct finalization
+struct global_finalize
+{};
+struct thread_init
+{};
+struct thread_finalize
 {};
 
 template <typename... _Policies>
@@ -63,21 +64,38 @@ struct wrapper
         _Tp::invoke_serialize(ar, ver);
     }
 
+    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+              enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == true),
+                          int> = 0>
+    static void invoke_global_init()
+    {
+        _Tp::invoke_global_init();
+    }
+
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<initialization, typename _Polp::type>::value == true),
+        enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == true),
                     int> = 0>
-    static void invoke_initialize()
+    static void invoke_global_finalize()
     {
-        _Tp::invoke_initialize();
+        _Tp::invoke_global_finalize();
     }
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<finalization, typename _Polp::type>::value == true),
+              enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == true),
                           int> = 0>
-    static void invoke_finalize()
+    static void invoke_thread_init()
     {
-        _Tp::invoke_finalize();
+        _Tp::invoke_thread_init();
+    }
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == true),
+                    int> = 0>
+    static void invoke_thread_finalize()
+    {
+        _Tp::invoke_thread_finalize();
     }
 
     //----------------------------------------------------------------------------------//
@@ -90,17 +108,30 @@ struct wrapper
     static void invoke_serialize(_Archive&, const unsigned int)
     {}
 
+    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
+              enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),
+                          int> = 0>
+    static void invoke_global_init()
+    {}
+
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
-        enable_if_t<(is_one_of<initialization, typename _Polp::type>::value == false),
+        enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == false),
                     int> = 0>
-    static void invoke_initialize()
+    static void invoke_global_finalize()
     {}
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<finalization, typename _Polp::type>::value == false),
+              enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == false),
                           int> = 0>
-    static void invoke_finalize()
+    static void invoke_thread_init()
+    {}
+
+    template <
+        typename _Tp, typename _Polp = typename _Tp::policy_type,
+        enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == false),
+                    int> = 0>
+    static void invoke_thread_finalize()
     {}
 };
 

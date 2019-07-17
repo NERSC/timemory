@@ -79,8 +79,47 @@ namespace papi
 {
 //--------------------------------------------------------------------------------------//
 
-using tid_t    = std::thread::id;
-using string_t = std::string;
+using tid_t        = std::thread::id;
+using string_t     = std::string;
+using event_info_t = PAPI_event_info_t;
+using ulong_t      = unsigned long int;
+
+//--------------------------------------------------------------------------------------//
+
+inline ulong_t
+get_thread_index()
+{
+    static std::atomic<ulong_t> thr_counter;
+    static thread_local ulong_t thr_count = thr_counter++;
+    return thr_count;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline uint64_t
+get_papi_thread_num()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    return PAPI_thread_id();
+#else
+    static std::atomic<uint64_t> thr_counter;
+    static thread_local uint64_t thr_count = thr_counter++;
+    return thr_count;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+check_papi_thread()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    auto                               tid         = PAPI_thread_id();
+    static constexpr unsigned long int invalid_tid = static_cast<unsigned long int>(-1);
+    if(tid == invalid_tid)
+        throw std::runtime_error("PAPI_thread_id() returned unknown thread");
+#endif
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -179,6 +218,7 @@ register_thread()
     {
         int retval = PAPI_register_thread();
         working()  = check(retval, "Warning!! Failure registering thread");
+        check_papi_thread();
     }
 #endif
 }
@@ -219,6 +259,20 @@ get_event_code(const std::string& event_code_str)
 
 //--------------------------------------------------------------------------------------//
 
+inline event_info_t
+get_event_info(int evt_type)
+{
+    PAPI_event_info_t evt_info;
+#if defined(TIMEMORY_USE_PAPI)
+    PAPI_get_event_info(evt_type, &evt_info);
+#else
+    consume_parameters(std::move(evt_type));
+#endif
+    return evt_info;
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 inline void
 attach(int event_set, _Tp pid_or_tid)
@@ -235,9 +289,44 @@ attach(int event_set, _Tp pid_or_tid)
 //--------------------------------------------------------------------------------------//
 
 inline void
+init_threading()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    static bool threading_initialized = false;
+    if(is_master_thread() && !threading_initialized && working())
+    {
+        int retval = PAPI_thread_init(get_thread_index);
+        working()  = check(retval, "Warning!! Failure initializing PAPI thread support");
+        threading_initialized = true;
+    }
+    else if(!threading_initialized)
+    {
+        if(!is_master_thread())
+        {
+            fprintf(stderr,
+                    "Warning!! Thread support is not enabled because it is not the "
+                    "master thread\n");
+        }
+        else if(!working())
+        {
+            fprintf(stderr,
+                    "Warning!! Thread support is not enabled because it is not currently "
+                    "working\n");
+        }
+    }
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
+    static bool allow_multiplexing = get_env("TIMEMORY_PAPI_MULTIPLEXING", true);
+    if(!allow_multiplexing)
+        return;
+
     static bool multiplexing_initialized = false;
     if(is_master_thread() && !multiplexing_initialized && working())
     {
@@ -245,17 +334,37 @@ init_multiplexing()
         working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
         multiplexing_initialized = true;
     }
-    else if(!is_master_thread())
+    else if(multiplexing_initialized)
     {
-        fprintf(stderr,
-                "Warning!! Multiplexing is not enabled because it is not the master "
-                "thread\n");
+        if(!is_master_thread())
+        {
+            fprintf(stderr,
+                    "Warning!! Multiplexing is not enabled because it is not the master "
+                    "thread\n");
+        }
+        else if(!working())
+        {
+            fprintf(stderr,
+                    "Warning!! Multiplexing is not enabled because it is not currently "
+                    "working\n");
+        }
     }
-    else if(!working())
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+init_library()
+{
+#if defined(TIMEMORY_USE_PAPI)
+    get_master_tid();
+    if(!PAPI_is_initialized())
     {
-        fprintf(stderr,
-                "Warning!! Multiplexing is not enabled because it is not currently "
-                "working\n");
+        int retval = PAPI_library_init(PAPI_VER_CURRENT);
+        if(retval != PAPI_VER_CURRENT && retval > 0)
+            fprintf(stderr, "PAPI library version mismatch!\n");
+        working() = (retval == PAPI_VER_CURRENT);
     }
 #endif
 }
@@ -267,24 +376,12 @@ init()
 {
     // initialize the PAPI library
 #if defined(TIMEMORY_USE_PAPI)
-    if(!PAPI_is_initialized())
+    init_library();
+    init_threading();
+    init_multiplexing();
+    if(!working())
     {
-        get_master_tid();
-        int retval = PAPI_library_init(PAPI_VER_CURRENT);
-        if(retval != PAPI_VER_CURRENT && retval > 0)
-            fprintf(stderr, "PAPI library version mismatch!\n");
-        working() = (retval == PAPI_VER_CURRENT);
-        if(working())
-        {
-            retval    = PAPI_thread_init(pthread_self);
-            working() = check(retval, "Warning!! Failure thread init");
-        }
-        init_multiplexing();
-
-        if(!working())
-        {
-            fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
-        }
+        fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");
     }
     register_thread();
 #endif

@@ -36,7 +36,9 @@ using float_type   = double;
 using fib_list_t   = std::vector<int64_t>;
 using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_tuple_thr =
+    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, roofline_t>;
+using auto_list_t = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
 
 // unless specified number of threads, use the number of available cores
 #if !defined(NUM_THREADS)
@@ -82,44 +84,86 @@ main(int argc, char** argv)
             fib_values.push_back(atol(argv[i]));
     }
 
+    //
+    // override method for determining how many threads to run
+    //
     roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
 
+    //
+    // allow for customizing the roofline
+    //
     if(tim::get_env("CUSTOMIZE_ROOFLINE", true))
         customize_roofline(num_threads, working_size, memory_factor);
 
+    //
+    // initialize the storage for components that only are recorded in worker threads
+    //
+    tim::manager::instance()->initialize_storage<thread_cpu_clock, thread_cpu_util>();
+
+    //
+    // execute fibonacci in a thread
+    //
+    auto exec_fibonacci = [&](int64_t n) {
+        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(0, auto_tuple_thr, "fibonacci(", n, ")");
+        auto ret = fibonacci(n);
+        TIMEMORY_CALIPER_APPLY(0, stop);
+        printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+    };
+
+    //
+    // execute random_fibonacci in a thread
+    //
+    auto exec_random_fibonacci = [&](int64_t n) {
+        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(1, auto_tuple_thr, "random_fibonacci(", n, ")");
+        auto ret = random_fibonacci(n);
+        TIMEMORY_CALIPER_APPLY(1, stop);
+        printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
+    };
+
+    //
+    // overall timing
+    //
+    auto _main = TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_t, "overall_timer");
+    _main.report_at_exit(true);
+    real_clock total;
+    total.start();
+
+    //
+    // run fibonacci calculations
+    //
+    for(const auto& n : fib_values)
     {
-        auto_tuple_t _main("overall_timer", __LINE__, tim::language::cxx(), true);
-
-        for(const auto& n : fib_values)
-        {
-            auto label = tim::str::join("", "fibonacci(", n, ")");
-            TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto exec = [&]() {
-                auto ret = fibonacci(n);
-                printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
-            };
-            std::vector<std::thread> threads;
-            for(int64_t i = 0; i < num_threads; ++i)
-                threads.push_back(std::thread(exec));
-            for(auto& itr : threads)
-                itr.join();
-        }
-
-        for(const auto& n : fib_values)
-        {
-            auto label = tim::str::join("", "random_fibonacci(", n, ")");
-            TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, label);
-            auto exec = [&]() {
-                auto ret = random_fibonacci(n);
-                printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
-            };
-            std::vector<std::thread> threads;
-            for(int64_t i = 0; i < num_threads; ++i)
-                threads.push_back(std::thread(exec));
-            for(auto& itr : threads)
-                itr.join();
-        }
+        std::vector<std::thread> threads;
+        for(int64_t i = 0; i < num_threads; ++i)
+            threads.push_back(std::thread(exec_fibonacci, n));
+        for(auto& itr : threads)
+            itr.join();
     }
+
+    //
+    // run the random fibonacci calculations
+    //
+    for(const auto& n : fib_values)
+    {
+        std::vector<std::thread> threads;
+        for(int64_t i = 0; i < num_threads; ++i)
+            threads.push_back(std::thread(exec_random_fibonacci, n));
+        for(auto& itr : threads)
+            itr.join();
+    }
+
+    //
+    // stop the overall timing
+    //
+    _main.stop();
+
+    //
+    // overall timing
+    //
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+    total.stop();
+
+    std::cout << "Total time: " << total << std::endl;
 
     auto_list_t l(__FUNCTION__, false);
     check(l);

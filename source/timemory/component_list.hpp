@@ -217,6 +217,22 @@ public:
         apply<void>::access<apply_types>(m_data);
     }
 
+    void conditional_start()
+    {
+        // stop, if not already stopped
+        using apply_types = std::tuple<component::pointer_operator<
+            Types, component::conditional_start<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    void conditional_stop()
+    {
+        // stop, if not already stopped
+        using apply_types = std::tuple<component::pointer_operator<
+            Types, component::conditional_stop<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
+    }
+
     //----------------------------------------------------------------------------------//
     // recording
     //

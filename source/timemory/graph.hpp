@@ -373,9 +373,15 @@ public:
                       const sibling_iterator&, bool duplicate_leaves = false,
                       bool first = false);
     /// Reduce duplicate nodes
-    template <typename Predicate>
-    inline void reduce(const sibling_iterator&, const sibling_iterator&,
-                       const sibling_iterator&, sibling_iterator, const Predicate&);
+    template <
+        typename _ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
+        typename _ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
+    inline void reduce(
+        const sibling_iterator&, const sibling_iterator&, const sibling_iterator&,
+        sibling_iterator,
+        _ComparePred&& = [](sibling_iterator lhs,
+                            sibling_iterator rhs) { return (*lhs == *rhs); },
+        _ReducePred&& = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
     inline void sort(const sibling_iterator& from, const sibling_iterator& to,
@@ -1893,11 +1899,11 @@ graph<T, AllocatorT>::merge(const sibling_iterator& to1, const sibling_iterator&
 //--------------------------------------------------------------------------------------//
 
 template <typename T, typename AllocatorT>
-template <typename Predicate>
+template <typename _ComparePred, typename _ReducePred>
 void
 graph<T, AllocatorT>::reduce(const sibling_iterator& beg1, const sibling_iterator& end1,
                              const sibling_iterator& beg2, sibling_iterator end2,
-                             const Predicate& predicate)
+                             _ComparePred&& _compare, _ReducePred&& _reduce)
 {
     for(auto itr1 = beg1; itr1 != end1; ++itr1)
     {
@@ -1906,10 +1912,11 @@ graph<T, AllocatorT>::reduce(const sibling_iterator& beg1, const sibling_iterato
             // skip if same iterator
             if(itr1 == itr2)
                 continue;
-            if(*itr1 == *itr2)
+            if(_compare(itr1, itr2))
             {
-                predicate(itr1, itr2);
-                reduce(itr1.begin(), itr1.end(), itr2.begin(), itr2.end(), predicate);
+                _reduce(itr1, itr2);
+                reduce(itr1.begin(), itr1.end(), itr2.begin(), itr2.end(), _compare,
+                       _reduce);
                 this->erase(itr2);
             }
         }

@@ -143,7 +143,7 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
             return events_list;
         };
         papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
-        _papi_array = new papi_array_t(getpid(), papi_array_t::get_events_func()());
+        _papi_array                      = new papi_array_t();
         _papi_array->start();
     }
 

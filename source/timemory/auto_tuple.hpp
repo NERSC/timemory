@@ -99,6 +99,9 @@ public:
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
 
+    inline void report_at_exit(bool val) { m_report_at_exit = val; }
+    inline bool report_at_exit() const { return m_report_at_exit; }
+
 public:
     template <std::size_t _N>
     typename std::tuple_element<_N, data_type>::type& get()
@@ -189,7 +192,7 @@ auto_tuple<Types...>::~auto_tuple()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.stop();
+        m_temporary_object.conditional_stop();
         m_temporary_object.pop();
 
         // report timer at exit
@@ -213,36 +216,57 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, signature)                            \
-    TIMEMORY_BLANK_AUTO_OBJECT(auto_tuple_type, signature)
+#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
+    TIMEMORY_BLANK_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 #define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BASIC_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
+    TIMEMORY_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 #define TIMEMORY_AUTO_TUPLE(auto_tuple_type, ...)                                        \
-    TIMEMORY_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
+    TIMEMORY_OBJECT(auto_tuple_type, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TUPLE_OBJ(auto_tuple_type, ...)                                    \
-    TIMEMORY_AUTO_OBJECT_OBJ(auto_tuple_type, __VA_ARGS__)
+//--------------------------------------------------------------------------------------//
+// caliper versions
 
-#define TIMEMORY_BASIC_AUTO_TUPLE_OBJ(auto_tuple_type, ...)                              \
-    TIMEMORY_BASIC_AUTO_OBJECT_OBJ(auto_tuple_type, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
+    TIMEMORY_BLANK_CALIPER(id, auto_tuple_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
+    TIMEMORY_BASIC_CALIPER(id, auto_tuple_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                            \
+    TIMEMORY_CALIPER(id, auto_tuple_type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+// instance versions
+
+#define TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
+    TIMEMORY_BLANK_INSTANCE(auto_tuple_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
+    TIMEMORY_BASIC_INSTANCE(auto_tuple_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                               \
+    TIMEMORY_INSTANCE(auto_tuple_type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+// debug versions
 
 #define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                            \
-    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
+    TIMEMORY_DEBUG_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 #define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_DEBUG_AUTO_OBJECT(auto_tuple_type, __VA_ARGS__)
+    TIMEMORY_DEBUG_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                         \
-    TIMEMORY_BASIC_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
+    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    TIMEMORY_BASIC_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                         \
-    TIMEMORY_AUTO_TUPLE(AUTO_TYPEDEF(__LINE__), tag);
+    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    TIMEMORY_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

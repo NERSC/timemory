@@ -224,7 +224,8 @@ public:
 
         bool operator==(const graph_node& rhs) const
         {
-            return (id() == rhs.id() && depth() == rhs.depth());
+            return ((id() == rhs.id() && depth() == rhs.depth()) ||
+                    (prefix() == rhs.prefix() && depth() == rhs.depth()));
         }
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
@@ -344,10 +345,16 @@ public:
             m_data.head()    = master_instance()->data().current();
             m_data.current() = master_instance()->data().current();
             m_data.depth()   = master_instance()->data().depth();
+            ObjectType::thread_init_policy();
         }
         else
         {
-            ObjectType::initialize_policy();
+            ObjectType obj;
+            graph_node node(0, obj, 0);
+            m_data         = graph_data(node);
+            m_data.depth() = 0;
+            ObjectType::global_init_policy();
+            ObjectType::thread_init_policy();
         }
     }
 
@@ -397,9 +404,6 @@ public:
         auto _update = [&](iterator itr) {
             exists         = true;
             m_data.depth() = itr->depth();
-            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
-            //          << ", thread = " << std::this_thread::get_id() << "..."
-            //          << " updating to depth " << itr->depth() << "..." << std::endl;
             return (m_data.current() = itr);
         };
 
@@ -416,24 +420,15 @@ public:
         auto _insert_child = [&]() {
             exists       = false;
             node.depth() = m_data.depth() + 1;
-            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
-            //          << ", thread = " << std::this_thread::get_id() << "..."
-            //          << " inserting child at depth " << node.depth() << "..."
-            //          << std::endl;
-            auto itr = m_data.append_child(node);
-            // m_node_ids.insert(std::make_pair(hash_id, itr));
+            auto itr     = m_data.append_child(node);
             return itr;
         };
 
         // if first instance
-        if(!m_data.has_head())
+        if(!m_data.has_head() || (this == master_instance() && m_node_ids.size() == 0))
         {
             if(this == master_instance())
             {
-                // std::cout << "[master] storage<" << ObjectType::label() << "> = " <<
-                // this
-                //          << ", thread = " << std::this_thread::get_id() << "..."
-                //          << " creating new graph_data..." << std::endl;
                 m_data         = graph_data(node);
                 exists         = false;
                 m_data.depth() = 0;

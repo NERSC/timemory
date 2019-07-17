@@ -81,8 +81,21 @@ public:
     base& operator=(this_type&&) = default;
 
 private:
-    static void initialize_policy() { policy_type::template invoke_initialize<_Tp>(); }
-    static void finalize_policy() { policy_type::template invoke_finalize<_Tp>(); }
+    // policy section
+    static void global_init_policy() { policy_type::template invoke_global_init<_Tp>(); }
+
+    static void thread_init_policy() { policy_type::template invoke_thread_init<_Tp>(); }
+
+    static void global_finalize_policy()
+    {
+        policy_type::template invoke_global_finalize<_Tp>();
+    }
+
+    static void thread_finalize_policy()
+    {
+        policy_type::template invoke_thread_finalize<_Tp>();
+    }
+
     template <typename _Archive>
     static void serialization_policy(_Archive& ar, const unsigned int ver)
     {
