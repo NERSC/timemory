@@ -38,7 +38,10 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <iostream>
 #include <map>
+#include <sstream>
+#include <string>
 #include <thread>
 #include <unordered_map>
 #include <vector>

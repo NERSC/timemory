@@ -36,7 +36,7 @@ using float_type   = double;
 using fib_list_t   = std::vector<int64_t>;
 using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_list_t = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
 
 // unless specified number of threads, use the number of available cores
 #if !defined(NUM_THREADS)
