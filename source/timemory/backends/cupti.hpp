@@ -384,6 +384,7 @@ static void CUPTIAPI
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
     {
         _LOG("CUPTI_API_ENTER... starting callback for %s...\n", current_kernel_name);
+
         // If this is kernel name hasn't been seen before
         if(kernel_data->count(current_kernel_name) == 0)
         {
@@ -446,7 +447,7 @@ static void CUPTIAPI
     else if(cbInfo->callbackSite == CUPTI_API_EXIT)
     {
         _LOG("CUPTI_API_EXIT... starting callback for %s...\n", current_kernel_name);
-        auto& current_kernel = (*kernel_data)[current_kernel_name];
+        auto current_kernel = (*kernel_data)[current_kernel_name];
         int   current_pass   = current_kernel.m_current_pass;
 
         if(current_pass >= current_kernel.m_total_passes)
@@ -537,6 +538,7 @@ static void CUPTIAPI
             free(event_ids);
         }
 
+        (*kernel_data)[current_kernel_name] += current_kernel;
         for(uint32_t i = 0; i < pass_data.event_groups->numEventGroups; i++)
         {
             _LOG("  Disabling group %d", i);
