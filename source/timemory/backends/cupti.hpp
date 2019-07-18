@@ -301,7 +301,7 @@ static void CUPTIAPI
     std::stringstream _kernel_name_ss;
     _kernel_name_ss << cbInfo->symbolName << "_" << cbInfo->contextUid << "_"
                     << cbInfo->correlationId << "_" << cbInfo->functionName;
-    auto  current_kernel_name = _kernel_name_ss.str();
+    auto  current_kernel_name = _kernel_name_ss.str().c_str();
     auto* kernel_data         = static_cast<map_type*>(userdata);
     _LOG("... begin callback for %s...\n", current_kernel_name);
 
