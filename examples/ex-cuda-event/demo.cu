@@ -9,34 +9,40 @@
 
 template <typename T>
 __global__ void
-kernel(T begin, int size)
+kernel(T begin, int n)
 {
-    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    if(thread_id < size)
-        *(begin + thread_id) += 1;
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
+    {
+        if(i < n)
+            *(begin + i) += 1;
+    }
 }
 
 template <typename T>
 __global__ void
-kernel2(T begin, int size)
+kernel2(T begin, int n)
 {
-    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    if(thread_id < size)
-        *(begin + thread_id) += 2;
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
+    {
+        if(i < n / 2)
+            *(begin + i) += 2;
+        else if(i >= n / 2 && i < n)
+            *(begin + i) += 3;
+    }
 }
 
 template <typename T>
 void
-call_kernel(T& arg)
+call_kernel(T& arg, cudaStream_t stream = 0)
 {
-    kernel<<<1, 100>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+    kernel<<<2, 64, 0, stream>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
 }
 
 template <typename T>
 void
-call_kernel2(T& arg)
+call_kernel2(T& arg, cudaStream_t stream = 0)
 {
-    kernel2<<<1, 50>>>(thrust::raw_pointer_cast(&arg[0]), arg.size());
+    kernel2<<<64, 2, 0, stream>>>(thrust::raw_pointer_cast(&arg[0]), arg.size() / 2);
 }
 
 int
@@ -62,8 +68,7 @@ main()
         "inst_per_warp",
         "branch_efficiency",
         "warp_execution_efficiency",
-        "warp_nonpred_execution_efficiency",
-        "inst_replay_overhead",
+        "flop_count_sp",
     };
     //#endif
 
@@ -81,26 +86,37 @@ main()
     const int passes = profiler.get_passes();
     printf("Passes: %d\n", passes);
 
+    std::vector<cudaStream_t> streams(2);
+    for(auto itr : streams)
+        cudaStreamCreate(&itr);
+
     profiler.start();
-    for(int i = 0; i < 50; ++i)
+    for(int i = 0; i < 10; ++i)
     {
-        call_kernel(data);
-        cudaDeviceSynchronize();
-        call_kernel2(data);
-        cudaDeviceSynchronize();
+        printf("\n\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        call_kernel(data, streams.front());
+        call_kernel2(data, streams.back());
     }
     profiler.stop();
 
+    for(auto itr : streams)
+    {
+        cudaStreamSynchronize(itr);
+        cudaStreamDestroy(itr);
+    }
+    cudaDeviceSynchronize();
+
+    auto names = profiler.get_kernel_names();
+    printf("\n\n\nKernel Names:\n\n\n");
+    for(auto name : names)
+    {
+        printf("%s\n", name.c_str());
+    }
     printf("\n\n\nEvent Trace:\n\n\n");
     profiler.print_event_values(std::cout);
     printf("\n\n\nMetric Trace\n\n\n");
     profiler.print_metric_values(std::cout);
     std::cout << std::flush;
-    auto names = profiler.get_kernel_names();
-    for(auto name : names)
-    {
-        printf("%s\n", name.c_str());
-    }
 
     thrust::host_vector<float> h_data(data);
 

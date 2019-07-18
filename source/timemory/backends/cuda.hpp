@@ -48,6 +48,17 @@
 
 #include "timemory/utility.hpp"
 
+// this a macro so we can pre-declare
+#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
+    {                                                                                    \
+        tim::cuda::error_t err = apiFuncCall;                                            \
+        if(err != tim::cuda::success_v)                                                  \
+        {                                                                                \
+            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
+                    __FILE__, __LINE__, #apiFuncCall, tim::cuda::get_error_string(err)); \
+        }                                                                                \
+    }
+
 //--------------------------------------------------------------------------------------//
 namespace tim
 {
@@ -150,9 +161,9 @@ inline int
 device_count()
 {
 #if defined(TIMEMORY_USE_CUDA)
-    int  dc  = 0;
-    auto ret = cudaGetDeviceCount(&dc);
-    consume_parameters(ret);
+    int dc = 0;
+    if(cudaGetDeviceCount(&dc) != success_v)
+        return 0;
     return dc;
 #else
     return 0;
@@ -165,8 +176,7 @@ inline void
 set_device(int device)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    auto ret = cudaSetDevice(device);
-    consume_parameters(ret);
+    CUDA_RUNTIME_API_CALL(cudaSetDevice(device));
 #else
     consume_parameters(device);
 #endif
@@ -178,8 +188,7 @@ inline void
 device_sync()
 {
 #if defined(TIMEMORY_USE_CUDA)
-    auto ret = cudaDeviceSynchronize();
-    consume_parameters(ret);
+    CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
 #endif
 }
 
@@ -189,8 +198,7 @@ inline void
 device_reset()
 {
 #if defined(TIMEMORY_USE_CUDA)
-    auto ret = cudaDeviceReset();
-    consume_parameters(ret);
+    CUDA_RUNTIME_API_CALL(cudaDeviceReset());
 #endif
 }
 
@@ -273,7 +281,7 @@ inline void
 event_record(event_t& evt, stream_t& stream)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    cudaEventRecord(evt, stream);
+    CUDA_RUNTIME_API_CALL(cudaEventRecord(evt, stream));
 #else
     consume_parameters(evt, stream);
 #endif
@@ -285,7 +293,7 @@ inline void
 event_sync(event_t& evt)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    cudaEventSynchronize(evt);
+    CUDA_RUNTIME_API_CALL(cudaEventSynchronize(evt));
 #else
     consume_parameters(evt);
 #endif
@@ -332,8 +340,7 @@ malloc(size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
     _Tp* arr;
-    auto ret = cudaMalloc(&arr, n * sizeof(_Tp));
-    consume_parameters(ret);
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&arr, n * sizeof(_Tp)));
     return arr;
 #else
     consume_parameters(n);
@@ -357,26 +364,28 @@ free(_Tp*& arr)
 
 /// cuda memcpy
 template <typename _Tp>
-inline void
+inline error_t
 memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to, stream_t stream)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    cudaMemcpyAsync(dst, src, n * sizeof(_Tp), from_to, stream);
+    return cudaMemcpyAsync(dst, src, n * sizeof(_Tp), from_to, stream);
 #else
     consume_parameters(from_to, stream);
     std::memcpy(dst, src, n * sizeof(_Tp));
+    return success_v;
 #endif
 }
 
 /// cuda memset
 template <typename _Tp>
-inline void
+inline error_t
 memset(_Tp* dst, const int& value, size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    cudaMemset(dst, value, n * sizeof(_Tp));
+    return cudaMemset(dst, value, n * sizeof(_Tp));
 #else
-    std::memset(dst, value, n * sizeof(_Tp));
+    if(std::memset(dst, value, n * sizeof(_Tp)))
+        return success_v;
 #endif
 }
 
@@ -384,18 +393,6 @@ memset(_Tp* dst, const int& value, size_t n)
 }  // namespace cuda
 //--------------------------------------------------------------------------------------//
 }  // namespace tim
-//--------------------------------------------------------------------------------------//
-
-#define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
-    {                                                                                    \
-        tim::cuda::error_t err = apiFuncCall;                                            \
-        if(err != tim::cuda::success_v)                                                  \
-        {                                                                                \
-            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                    __FILE__, __LINE__, #apiFuncCall, tim::cuda::get_error_string(err)); \
-        }                                                                                \
-    }
-
 //--------------------------------------------------------------------------------------//
 
 // definition of cuda device query

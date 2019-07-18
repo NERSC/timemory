@@ -234,10 +234,10 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
             m_profilers[i]->stop();
             if(tmp.size() == 0)
             {
-                tmp = std::move(m_profilers[i]->get_events_and_metrics(m_labels));
+                tmp = m_profilers[i]->get_events_and_metrics(m_labels);
             } else if(tmp.size() == m_labels.size())
             {
-                auto ret = std::move(m_profilers[i]->get_events_and_metrics(m_labels));
+                auto ret = m_profilers[i]->get_events_and_metrics(m_labels);
                 for(size_t j = 0; j < m_labels.size(); ++j)
                     tmp[j] += ret[j];
             } else

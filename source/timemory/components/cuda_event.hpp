@@ -163,8 +163,8 @@ private:
     bool           m_is_synced = false;
     bool           m_is_valid  = true;
     cuda::stream_t m_stream    = 0;
-    cuda::event_t  m_start;
-    cuda::event_t  m_stop;
+    cuda::event_t  m_start     = cuda::event_t();
+    cuda::event_t  m_stop      = cuda::event_t();
 };
 
 }  // namespace component

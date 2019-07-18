@@ -963,46 +963,57 @@ test_6_mt_saxpy_async_pinned()
 #include <thrust/device_vector.h>
 
 //======================================================================================//
-
+namespace impl
+{
 template <typename T>
 __global__ void
-xxx_kernel_1_xxx(T* begin, int size)
+KERNEL_A(T* begin, int n)
 {
-    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    if(thread_id < size)
-        *(begin + thread_id) += 1;
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
+    {
+        if(i < n)
+            *(begin + i) += 2.0f * n;
+    }
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
 __global__ void
-xxx_kernel_2_xxx(T* begin, int size)
+KERNEL_B(T* begin, int n)
 {
-    const int thread_id = blockIdx.x * blockDim.x + threadIdx.x;
-    if(thread_id < size)
-        *(begin + thread_id) *= 2;
+    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
+    {
+        if(i < n / 2)
+            *(begin + i) *= 2.0f;
+        else if(i >= n / 2 && i < n)
+            *(begin + i) += 3.0f;
+    }
 }
-
+}  // namespace impl
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
 void
-call_kernel(T* arg, int size)
+KERNEL_A(T* arg, int size, tim::cuda::stream_t stream = 0)
 {
-    xxx_kernel_1_xxx<<<32, 32>>>(arg, size);
+    impl::KERNEL_A<<<2, 64, 0, stream>>>(arg, size);
 }
 
 //--------------------------------------------------------------------------------------//
 template <typename T>
 void
-call_kernel2(T* arg, int size)
+KERNEL_B(T* arg, int size, tim::cuda::stream_t stream = 0)
 {
-    xxx_kernel_2_xxx<<<32, 32>>>(arg, size);
+    impl::KERNEL_B<<<64, 2, 0, stream>>>(arg, size / 2);
 }
 
 //======================================================================================//
 #if defined(TIMEMORY_USE_CUPTI)
+
+static auto max_size = tim::get_env("MAX_SIZE", 64);
+static auto num_data = tim::get_env("NUM_SIZE", 100);
+static auto num_iter = tim::get_env("NUM_ITER", 10);
 
 void
 test_7_cupti_available()
@@ -1014,7 +1025,6 @@ test_7_cupti_available()
     CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
     auto reduce_size = [](std::vector<std::string>& arr) {
-        constexpr std::size_t max_size = 64;
         std::sort(arr.begin(), arr.end());
         if(arr.size() > max_size)
             arr.resize(max_size);
@@ -1038,31 +1048,24 @@ test_7_cupti_available()
     std::cout << "Metric names: \n\t"
               << array_to_string(metric_names, ", ", wmet, 180 / wmet) << std::endl;
 
-    constexpr int      N = 100;
-    std::vector<float> cpu_data(N, 0);
+    std::vector<float> cpu_data(num_data, 0);
     float*             data;
-    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data, cpu_data.data(), num_data * sizeof(float),
+                                     cudaMemcpyHostToDevice));
 
     tim::cupti::profiler profiler(event_names, metric_names);
-    // Get #passes required to compute all metrics and events
-    const int passes = profiler.passes();
+    const int            passes = profiler.passes();
     printf("Passes: %d\n", passes);
 
     profiler.start();
-    warmup();
-    for(int i = 0; i < 50; ++i)
+    for(int i = 0; i < num_iter; ++i)
     {
-        _LOG("calling kernel...\n");
-        call_kernel(data, N);
-        _LOG("calling sync1...\n");
-        tim::cuda::device_sync();
-        _LOG("calling kernel2...\n");
-        call_kernel2(data, N);
-        _LOG("calling sync2...\n");
-        tim::cuda::device_sync();
+        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        KERNEL_A(data, num_data);
+        KERNEL_B(data, num_data);
     }
+    tim::cuda::device_sync();
     profiler.stop();
 
     printf("Event Trace\n");
@@ -1074,8 +1077,8 @@ test_7_cupti_available()
     std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
               << std::endl;
 
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(cpu_data.data(), data, num_data * sizeof(float),
+                                     cudaMemcpyDeviceToHost));
     CUDA_RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
@@ -1090,45 +1093,39 @@ void
 test_8_cupti_subset()
 {
     print_info(__FUNCTION__);
+    tim::cuda::device_reset();
 
     CUDA_DRIVER_API_CALL(cuInit(0));
-    std::vector<std::string> event_names{
-        "active_warps",
-        "active_cycles",
-    };
+    std::vector<std::string> event_names{ "active_warps",   "active_cycles",
+                                          "global_load",    "global_store",
+                                          "gld_inst_32bit", "gst_inst_32bit" };
     std::vector<std::string> metric_names{
-        "inst_per_warp",
-        "branch_efficiency",
-        "warp_execution_efficiency",
+        "inst_per_warp",     "branch_efficiency",  "warp_execution_efficiency",
+        "flop_count_sp",     "flop_count_sp_add",  "flop_count_sp_fma",
+        "flop_count_sp_mul", "flop_sp_efficiency", "gld_efficiency",
+        "gst_efficiency"
     };
 
-    constexpr int      N = 100;
-    std::vector<float> cpu_data(N, 0);
+    std::vector<float> cpu_data(num_data, 0);
     float*             data;
-    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data, cpu_data.data(), num_data * sizeof(float),
+                                     cudaMemcpyHostToDevice));
 
     tim::cupti::profiler profiler(event_names, metric_names);
     // Get #passes required to compute all metrics and events
     const int passes = profiler.passes();
     printf("Passes: %d\n", passes);
 
-    // profiler.start();
-    warmup();
-    for(int i = 0; i < 10; ++i)
+    profiler.start();
+    for(int i = 0; i < num_iter; ++i)
     {
-        profiler.start();
-        _LOG("calling kernel...\n");
-        call_kernel(data, N);
-        _LOG("calling sync1...\n");
-        tim::cuda::device_sync();
-        _LOG("calling kernel2...\n");
-        call_kernel2(data, N);
-        _LOG("calling sync2...\n");
-        tim::cuda::device_sync();
-        profiler.stop();
+        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        KERNEL_A(data, num_data);
+        KERNEL_B(data, num_data);
     }
+    tim::cuda::device_sync();
+    profiler.stop();
 
     printf("Event Trace\n");
     profiler.print_event_values(std::cout);
@@ -1139,14 +1136,15 @@ test_8_cupti_subset()
     std::cout << "Kernel names: \n\t" << array_to_string(names, "\n\t", 16, names.size())
               << std::endl;
 
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(cpu_data.data(), data, num_data * sizeof(float),
+                                     cudaMemcpyDeviceToHost));
     CUDA_RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
     std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
               << std::endl;
     printf("\n");
+    tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -1155,6 +1153,7 @@ void
 test_9_cupti_event()
 {
     print_info(__FUNCTION__);
+    tim::cuda::device_reset();
 
     CUdevice device;
     CUDA_DRIVER_API_CALL(cuInit(0));
@@ -1180,12 +1179,16 @@ test_9_cupti_event()
 
     cupti_event::get_device_setter() = []() { return std::vector<int>({ 0 }); };
     cupti_event::get_event_setter()  = []() {
-        return std::vector<std::string>(
-            { "local_load", "local_store", "global_load", "global_store" });
+        return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
+                                          "global_store", "gld_inst_32bit",
+                                          "gst_inst_32bit" });
     };
-
     cupti_event::get_metric_setter() = []() {
-        return std::vector<std::string>({ "flop_count_dp", "flop_count_sp" });
+        return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
+                                          "warp_execution_efficiency", "flop_count_sp",
+                                          "flop_count_sp_add", "flop_count_sp_fma",
+                                          "flop_count_sp_mul", "flop_sp_efficiency",
+                                          "gld_efficiency", "gst_efficiency" });
     };
 
     using _Tp                 = double;
@@ -1198,40 +1201,36 @@ test_9_cupti_event()
         a = a * b + c;
     };
 
-    tim::ert::exec_params params(16, 64 * 64 * 64);
+    tim::ert::exec_params params(16, 64 * 64);
     auto                  op_counter = new operation_counter_t(params, 64);
 
-    constexpr int      N = 1000;
-    std::vector<float> cpu_data(N, 0);
+    std::vector<float> cpu_data(num_data, 0);
     float*             data;
-    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data, cpu_data.data(), num_data * sizeof(float),
+                                     cudaMemcpyHostToDevice));
 
+    cupti_event profiler;
+    profiler.start();
+    for(int i = 0; i < num_iter; ++i)
     {
-        // using auto_cupti_t = tim::auto_tuple<cupti_event>;
-        // TIMEMORY_BASIC_AUTO_TUPLE(auto_cupti_t, "");
-        cupti_event profiler;
-        profiler.start();
-        warmup();
-        for(int i = 0; i < 10; ++i)
-        {
-            // tim::ert::gpu_ops_main<1>(*op_counter, add_func);
-            // tim::ert::gpu_ops_main<2, 4, 8, 16, 32>(*op_counter, fma_func);
-            call_kernel(data, N);
-            tim::cuda::device_sync();
-            call_kernel2(data, N);
-            tim::cuda::device_sync();
-        }
-        profiler.stop();
-        std::cout << __FUNCTION__ << " : " << profiler << std::endl;
+        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        tim::ert::gpu_ops_main<1>(*op_counter, add_func);
+        tim::ert::gpu_ops_main<2, 4, 8>(*op_counter, fma_func);
+        std::cout << *op_counter << std::endl;
+        KERNEL_A(data, num_data);
+        KERNEL_B(data, num_data);
     }
+    tim::cuda::device_sync();
+    profiler.stop();
+    std::cout << __FUNCTION__ << " : " << profiler << std::endl;
 
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(cpu_data.data(), data, num_data * sizeof(float),
+                                     cudaMemcpyDeviceToHost));
     CUDA_RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
+    tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -1241,27 +1240,27 @@ test_10_cupti_metric()
 {
     print_info(__FUNCTION__);
 
-    constexpr int      N = 100;
-    std::vector<float> cpu_data(N, 0);
+    constexpr int      num_data = 100;
+    std::vector<float> cpu_data(num_data, 0);
     float*             data;
-    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, N * sizeof(float)));
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
+    CUDA_RUNTIME_API_CALL(cudaMalloc(&data, num_data * sizeof(float)));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(data, cpu_data.data(), num_data * sizeof(float),
+                                     cudaMemcpyHostToDevice));
 
     tim::cupti::profiler prof({ "gst_inst_32bit" }, { "flop_count_sp" });
 
     prof.start();
     for(int i = 0; i < 10; ++i)
     {
-        call_kernel(data, N);
-        call_kernel2(data, N);
+        KERNEL_A(data, num_data);
+        KERNEL_B(data, num_data);
     }
     _LOG("calling sync...\n");
     tim::cuda::device_sync();
     prof.stop();
 
-    CUDA_RUNTIME_API_CALL(
-        cudaMemcpy(cpu_data.data(), data, N * sizeof(float), cudaMemcpyDeviceToHost));
+    CUDA_RUNTIME_API_CALL(cudaMemcpy(cpu_data.data(), data, num_data * sizeof(float),
+                                     cudaMemcpyDeviceToHost));
     CUDA_RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");

@@ -349,8 +349,7 @@ public:
         }
         else
         {
-            ObjectType obj;
-            graph_node node(0, obj, 0);
+            graph_node node(0, ObjectType(), 0);
             m_data         = graph_data(node);
             m_data.depth() = 0;
             ObjectType::global_init_policy();
