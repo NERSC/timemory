@@ -21,7 +21,8 @@ find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 target_link_libraries(${EXE_NAME} timemory-cuda-event-example)
 target_compile_options(${EXE_NAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+  $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+target_compile_definitions(${EXE_NAME} PRIVATE $<$<CONFIG:Debug>:DEBUG>)
 install(TARGETS ${EXE_NAME} DESTINATION bin)
 
 if(USE_CUPTI)
