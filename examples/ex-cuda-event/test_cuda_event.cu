@@ -1248,7 +1248,7 @@ test_10_cupti_metric()
     CUDA_RUNTIME_API_CALL(
         cudaMemcpy(data, cpu_data.data(), N * sizeof(float), cudaMemcpyHostToDevice));
 
-    tim::cupti::metric_profiler prof;
+    tim::cupti::profiler prof({"gst_inst_32bit"}, {"flop_count_sp"});
 
     prof.start();
     for(int i = 0; i < 10; ++i)
