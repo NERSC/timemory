@@ -761,7 +761,7 @@ struct profiler
                 {
                     fprintf(stderr, "Metric value retrieval failed for metric %s\n",
                             m_metric_names.at(i).c_str());
-                    return;
+                    continue;
                 }
                 k.second.m_metric_values.push_back(metric_value);
                 k.second.m_metric_tuples.push_back(
@@ -811,8 +811,11 @@ struct profiler
 
             for(int i = 0; i < m_num_events; ++i)
             {
+                if(i < m_event_names.size() || i < k.second.m_event_values.size())
+                    continue;
+
                 if(print_names)
-                    ss << "(" << m_event_names.at(i) << ","
+                    ss << "  (" << m_event_names.at(i) << ","
                        << (ull_t) k.second.m_event_values.at(i) << ") ";
                 else
                     ss << (ull_t) k.second.m_event_values.at(i) << " ";
@@ -838,8 +841,10 @@ struct profiler
 
             for(int i = 0; i < m_num_metrics; ++i)
             {
+                if(i < m_metric_names.size() || i < k.second.m_metric_values.size())
+                    continue;
                 if(print_names)
-                    ss << "(" << m_metric_names.at(i) << ",";
+                    ss << "  (" << m_metric_names.at(i) << ",";
 
                 impl::print_metric(m_metric_ids.at(i), k.second.m_metric_values.at(i),
                                    ss);
@@ -878,6 +883,8 @@ struct profiler
                 continue;
             for(int i = 0; i < m_num_events; ++i)
             {
+                if(i < m_event_names.size())
+                    continue;
                 std::string evt_name  = m_event_names.at(i).c_str();
                 auto        label_idx = get_label_index(evt_name);
                 if(label_idx < 0 || i < k.second.m_event_values.size())
@@ -888,6 +895,8 @@ struct profiler
 
             for(int i = 0; i < m_num_metrics; ++i)
             {
+                if(i < m_metric_names.size())
+                    continue;
                 std::string met_name  = m_metric_names.at(i).c_str();
                 auto        label_idx = get_label_index(met_name);
                 if(label_idx < 0 || i < k.second.m_metric_values.size())
