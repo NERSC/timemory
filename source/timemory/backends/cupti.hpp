@@ -382,8 +382,12 @@ static void CUPTIAPI
 
     using map_type = map_t<string_t, kernel_data_t>;
 
-    auto  current_kernel_name = _current_kernel_name;
-    auto* kernel_data         = static_cast<map_type*>(userdata);
+    std::stringstream _kernel_name_ss;
+    _kernel_name_ss << cbInfo->symbolName << "_" << cbInfo->contextUid << "_"
+                    << cbInfo->correlationId << "_" << cbInfo->functionName;
+    auto current_kernel_name = _kernel_name_ss.str();
+
+    auto* kernel_data = static_cast<map_type*>(userdata);
     _LOG("... begin callback for %s...\n", current_kernel_name);
 
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
@@ -396,10 +400,10 @@ static void CUPTIAPI
             _LOG("New kernel encountered: %s", current_kernel_name);
 
             const char*   dummy_kernel_name = "^^ DUMMY ^^";
-            kernel_data_t dummy             = (*kernel_data)[dummy_kernel_name];
-            kernel_data_t k_data            = dummy;
-            k_data.m_name                   = current_kernel_name;
-            auto& pass_data                 = k_data.m_pass_data;
+            kernel_data_t k_data            = (*kernel_data)[dummy_kernel_name];
+            // kernel_data_t k_data            = dummy;
+            k_data.m_name   = current_kernel_name;
+            auto& pass_data = k_data.m_pass_data;
 
             CUPTI_CALL(cuptiSetEventCollectionMode(cbInfo->context,
                                                    CUPTI_EVENT_COLLECTION_MODE_KERNEL));
