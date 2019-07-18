@@ -304,7 +304,7 @@ static void CUPTIAPI
     _kernel_name_ss << std::string(_sym_name) << "_" << cbInfo->contextUid << "_"
                     << cbInfo->correlationId << "_" << std::string(_func_name);
     auto len = _kernel_name_ss.str().length();
-    const char* current_kernel_name = new char[len + 1];
+    char* current_kernel_name = new char[len + 1];
     memcpy(current_kernel_name, _kernel_name_ss.str().c_str(), len * sizeof(char));
     current_kernel_name[len] = '\0';
 
