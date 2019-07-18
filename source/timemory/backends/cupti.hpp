@@ -240,11 +240,11 @@ struct kernel_data_t
     {
         m_event_values.resize(rhs.m_event_values.size(), 0);
         for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
-            m_event_values[i] += rhs.m_event_values[i];
+            m_event_values.at(i) += rhs.m_event_values.at(i);
 
         m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
         for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
-            m_metric_tuples[i] += rhs.m_metric_tuples[i];
+            m_metric_tuples.at(i) += rhs.m_metric_tuples.at(i);
 
         return *this;
     }
@@ -253,11 +253,11 @@ struct kernel_data_t
     {
         m_event_values.resize(rhs.m_event_values.size(), 0);
         for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
-            m_event_values[i] -= rhs.m_event_values[i];
+            m_event_values.at(i) -= rhs.m_event_values.at(i);
 
         m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
         for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
-            m_metric_tuples[i] -= rhs.m_metric_tuples[i];
+            m_metric_tuples.at(i) -= rhs.m_metric_tuples.at(i);
 
         return *this;
     }
@@ -299,25 +299,23 @@ static void CUPTIAPI
     using map_type = map_t<string_t, kernel_data_t>;
 
     std::stringstream _kernel_name_ss;
-    const char* _sym_name = cbInfo->symbolName;
-    const char* _func_name = cbInfo->functionName;
+    const char*       _sym_name  = cbInfo->symbolName;
+    const char*       _func_name = cbInfo->functionName;
     _kernel_name_ss << std::string(_sym_name) << "_" << cbInfo->contextUid << "_"
                     << cbInfo->correlationId << "_" << std::string(_func_name);
-    auto len = _kernel_name_ss.str().length();
-    char* current_kernel_name = new char[len + 1];
-    memcpy(current_kernel_name, _kernel_name_ss.str().c_str(), len * sizeof(char));
-    current_kernel_name[len] = '\0';
+    auto current_kernel_name = _kernel_name_ss.str();
 
-    auto* kernel_data         = static_cast<map_type*>(userdata);
-    _LOG("... begin callback for %s...\n", current_kernel_name);
+    auto* kernel_data = static_cast<map_type*>(userdata);
+    _LOG("... begin callback for %s...\n", current_kernel_name.c_str());
 
     if(cbInfo->callbackSite == CUPTI_API_ENTER)
     {
-        _LOG("CUPTI_API_ENTER... starting callback for %s...\n", current_kernel_name);
+        _LOG("CUPTI_API_ENTER... starting callback for %s...\n",
+             current_kernel_name.c_str());
         // If this is kernel name hasn't been seen before
         if(kernel_data->count(current_kernel_name) == 0)
         {
-            _LOG("New kernel encountered: %s", current_kernel_name);
+            _LOG("New kernel encountered: %s", current_kernel_name.c_str());
 
             const char*   dummy_kernel_name = "^^ DUMMY ^^";
             kernel_data_t dummy             = (*kernel_data)[dummy_kernel_name];
@@ -353,7 +351,7 @@ static void CUPTIAPI
             if(current_pass >= current_kernel.m_total_passes)
                 return;
 
-            _LOG("Current pass for %s: %d", current_kernel_name, current_pass);
+            _LOG("Current pass for %s: %d", current_kernel_name.c_str(), current_pass);
 
             CUPTI_CALL(cuptiSetEventCollectionMode(cbInfo->context,
                                                    CUPTI_EVENT_COLLECTION_MODE_KERNEL));
@@ -371,19 +369,19 @@ static void CUPTIAPI
                     pass_data[current_pass].event_groups->eventGroups[i]));
             }
         }
-        _LOG("CUPTI_API_ENTER... ending callback for %s...\n", current_kernel_name);
+        _LOG("CUPTI_API_ENTER... ending callback for %s...\n",
+             current_kernel_name.c_str());
     }
     else if(cbInfo->callbackSite == CUPTI_API_EXIT)
     {
-        _LOG("CUPTI_API_EXIT... starting callback for %s...\n", current_kernel_name);
+        _LOG("CUPTI_API_EXIT... starting callback for %s...\n",
+             current_kernel_name.c_str());
         auto& current_kernel = (*kernel_data)[current_kernel_name];
         int   current_pass   = current_kernel.m_current_pass;
 
         if(current_pass >= current_kernel.m_total_passes)
-        {
-            delete [] current_kernel_name;
             return;
-        }
+
         auto& pass_data = current_kernel.m_pass_data[current_pass];
 
         for(uint32_t i = 0; i < pass_data.event_groups->numEventGroups; i++)
@@ -475,10 +473,10 @@ static void CUPTIAPI
             CUPTI_CALL(cuptiEventGroupDisable(pass_data.event_groups->eventGroups[i]));
         }
         ++(*kernel_data)[current_kernel_name].m_current_pass;
-        _LOG("CUPTI_API_EXIT... ending callback for %s...\n", current_kernel_name);
+        _LOG("CUPTI_API_EXIT... ending callback for %s...\n",
+             current_kernel_name.c_str());
     }
-    _LOG("... ending callback for %s...\n", current_kernel_name);
-    delete [] current_kernel_name;
+    _LOG("... ending callback for %s...\n", current_kernel_name.c_str());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -601,10 +599,7 @@ struct profiler
         init();
     }
 
-    ~profiler()
-    {
-        CUDA_DRIVER_API_CALL(cuCtxDestroy(m_context));
-    }
+    ~profiler() { CUDA_DRIVER_API_CALL(cuCtxDestroy(m_context)); }
 
     void init()
     {
@@ -635,7 +630,7 @@ struct profiler
             (CUpti_MetricID*) calloc(sizeof(CUpti_MetricID), m_num_metrics);
         for(int i = 0; i < m_num_metrics; ++i)
         {
-            CUPTI_CALL(cuptiMetricGetIdFromName(m_device, m_metric_names[i].c_str(),
+            CUPTI_CALL(cuptiMetricGetIdFromName(m_device, m_metric_names.at(i).c_str(),
                                                 &metric_ids[i]));
         }
 
@@ -643,7 +638,7 @@ struct profiler
             (CUpti_EventID*) calloc(sizeof(CUpti_EventID), m_num_events);
         for(int i = 0; i < m_num_events; ++i)
         {
-            CUPTI_CALL(cuptiEventGetIdFromName(m_device, m_event_names[i].c_str(),
+            CUPTI_CALL(cuptiEventGetIdFromName(m_device, m_event_names.at(i).c_str(),
                                                &event_ids[i]));
         }
 
@@ -695,8 +690,8 @@ struct profiler
                 _LOG("  Event Group %d, #Events = %d", j, num_events);
                 total_events += num_events;
             }
-            pass_data[i].event_groups = m_metric_pass_data->sets + i;
-            pass_data[i].num_events   = total_events;
+            pass_data.at(i).event_groups = m_metric_pass_data->sets + i;
+            pass_data.at(i).num_events   = total_events;
         }
 
         for(int i = 0; i < m_event_passes; ++i)
@@ -739,8 +734,8 @@ struct profiler
             int total_events = 0;
             for(int i = 0; i < m_metric_passes; ++i)
             {
-                // total_events += m_metric_data[i].num_events;
-                total_events += data[i].num_events;
+                // total_events += m_metric_data.at(i).num_events;
+                total_events += data.at(i).num_events;
             }
             CUpti_MetricValue metric_value;
             CUpti_EventID*    event_ids    = new CUpti_EventID[total_events];
@@ -749,28 +744,28 @@ struct profiler
             int running_sum = 0;
             for(int i = 0; i < m_metric_passes; ++i)
             {
-                std::copy(data[i].event_ids.begin(), data[i].event_ids.end(),
+                std::copy(data.at(i).event_ids.begin(), data.at(i).event_ids.end(),
                           event_ids + running_sum);
-                std::copy(data[i].event_values.begin(), data[i].event_values.end(),
+                std::copy(data.at(i).event_values.begin(), data.at(i).event_values.end(),
                           event_values + running_sum);
-                running_sum += data[i].num_events;
+                running_sum += data.at(i).num_events;
             }
 
             for(int i = 0; i < m_num_metrics; ++i)
             {
                 CUptiResult _status = cuptiMetricGetValue(
-                    m_device, m_metric_ids[i], total_events * sizeof(CUpti_EventID),
+                    m_device, m_metric_ids.at(i), total_events * sizeof(CUpti_EventID),
                     event_ids, total_events * sizeof(uint64_t), event_values, 0,
                     &metric_value);
                 if(_status != CUPTI_SUCCESS)
                 {
                     fprintf(stderr, "Metric value retrieval failed for metric %s\n",
-                            m_metric_names[i].c_str());
+                            m_metric_names.at(i).c_str());
                     return;
                 }
                 k.second.m_metric_values.push_back(metric_value);
                 k.second.m_metric_tuples.push_back(
-                    impl::get_metric_tuple(m_metric_ids[i], metric_value));
+                    impl::get_metric_tuple(m_metric_ids.at(i), metric_value));
             }
 
             delete[] event_ids;
@@ -779,15 +774,15 @@ struct profiler
             map_t<CUpti_EventID, uint64_t> event_map;
             for(int i = m_metric_passes; i < (m_metric_passes + m_event_passes); ++i)
             {
-                for(uint32_t j = 0; j < data[i].num_events; ++j)
+                for(uint32_t j = 0; j < data.at(i).num_events; ++j)
                 {
-                    event_map[data[i].event_ids[j]] = data[i].event_values[j];
+                    event_map[data.at(i).event_ids[j]] = data.at(i).event_values[j];
                 }
             }
 
             for(int i = 0; i < m_num_events; ++i)
             {
-                k.second.m_event_values.push_back(event_map[m_event_ids[i]]);
+                k.second.m_event_values.push_back(event_map[m_event_ids.at(i)]);
             }
         }
 
@@ -806,7 +801,7 @@ struct profiler
         const char* dummy_kernel_name = "^^ DUMMY ^^";
 
         std::stringstream ss;
-        for(auto const& k : m_kernel_data)
+        for(auto& k : m_kernel_data)
         {
             if(k.first == dummy_kernel_name)
                 continue;
@@ -818,9 +813,9 @@ struct profiler
             {
                 if(print_names)
                     ss << "(" << m_event_names.at(i) << ","
-                       << (ull_t) m_kernel_data.at(k.first).m_event_values.at(i) << ") ";
+                       << (ull_t) k.second.m_event_values.at(i) << ") ";
                 else
-                    ss << (ull_t) m_kernel_data.at(k.first).m_event_values.at(i) << " ";
+                    ss << (ull_t) k.second.m_event_values.at(i) << " ";
                 if(i + 1 < m_num_events)
                     ss << kernel_separator;
             }
@@ -836,7 +831,7 @@ struct profiler
 
         const char*       dummy_kernel_name = "^^ DUMMY ^^";
         std::stringstream ss;
-        for(auto const& k : m_kernel_data)
+        for(auto& k : m_kernel_data)
         {
             if(k.first == dummy_kernel_name)
                 continue;
@@ -844,10 +839,10 @@ struct profiler
             for(int i = 0; i < m_num_metrics; ++i)
             {
                 if(print_names)
-                    ss << "(" << m_metric_names[i] << ",";
+                    ss << "(" << m_metric_names.at(i) << ",";
 
-                impl::print_metric(m_metric_ids[i],
-                                   m_kernel_data[k.first].m_metric_values[i], ss);
+                impl::print_metric(m_metric_ids.at(i), k.second.m_metric_values.at(i),
+                                   ss);
 
                 if(print_names)
                     ss << ") ";
@@ -871,37 +866,35 @@ struct profiler
         auto        get_label_index   = [&](const std::string& key) -> int64_t {
             for(int64_t i = 0; i < static_cast<int64_t>(labels.size()); ++i)
             {
-                if(key == labels[i])
+                if(key == labels.at(i))
                     return i;
             }
             return -1;
         };
 
-        for(auto const& k : m_kernel_data)
+        for(auto& k : m_kernel_data)
         {
             if(k.first == dummy_kernel_name)
                 continue;
             for(int i = 0; i < m_num_events; ++i)
             {
-                std::string evt_name  = m_event_names[i].c_str();
+                std::string evt_name  = m_event_names.at(i).c_str();
                 auto        label_idx = get_label_index(evt_name);
-                if(label_idx < 0)
+                if(label_idx < 0 || i < k.second.m_event_values.size())
                     continue;
-                auto value = static_cast<uint64_t>(
-                    m_kernel_data.find(k.first)->second.m_event_values[i]);
+                auto value = static_cast<uint64_t>(k.second.m_event_values.at(i));
                 kern_data[label_idx] = result(evt_name, value, true);
             }
 
             for(int i = 0; i < m_num_metrics; ++i)
             {
-                std::string met_name  = m_metric_names[i].c_str();
+                std::string met_name  = m_metric_names.at(i).c_str();
                 auto        label_idx = get_label_index(met_name);
-                if(label_idx < 0)
+                if(label_idx < 0 || i < k.second.m_metric_values.size())
                     continue;
-                auto idx = impl::get_metric_tuple_index(m_metric_ids[i]);
-                auto ret = impl::get_metric_tuple(
-                    m_metric_ids[i],
-                    m_kernel_data.find(k.first)->second.m_metric_values[i]);
+                auto idx = impl::get_metric_tuple_index(m_metric_ids.at(i));
+                auto ret = impl::get_metric_tuple(m_metric_ids.at(i),
+                                                  k.second.m_metric_values.at(i));
                 switch(idx)
                 {
                     case 0:
@@ -935,20 +928,23 @@ struct profiler
 
             for(int i = 0; i < m_num_events; ++i)
             {
+                if(i < k.second.m_event_values.size())
+                    continue;
                 if(print_names)
-                    s << "(" << m_event_names[i] << ","
-                      << (ull_t) m_kernel_data[k.first].m_event_values[i] << ") ";
+                    s << "(" << m_event_names.at(i) << ","
+                      << (ull_t) k.second.m_event_values.at(i) << ") ";
                 else
-                    s << (ull_t) m_kernel_data[k.first].m_event_values[i] << " ";
+                    s << (ull_t) k.second.m_event_values.at(i) << " ";
             }
 
             for(int i = 0; i < m_num_metrics; ++i)
             {
                 if(print_names)
-                    s << "(" << m_metric_names[i] << ",";
+                    s << "(" << m_metric_names.at(i) << ",";
 
-                impl::print_metric(m_metric_ids[i],
-                                   m_kernel_data[k.first].m_metric_values[i], s);
+                if(i < k.second.m_metric_values.size())
+                    continue;
+                impl::print_metric(m_metric_ids.at(i), k.second.m_metric_values.at(i), s);
 
                 if(print_names)
                     s << ") ";
@@ -1055,8 +1051,9 @@ available_metrics(CUdevice device)
         CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_NAME,
                                            &size, (void*) &metricName));
         size = sizeof(CUpti_MetricValueKind);
-        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i], CUPTI_METRIC_ATTR_VALUE_KIND,
-                                           &size, (void*) &metricKind));
+        CUPTI_CALL(cuptiMetricGetAttribute(metricIdArray[i],
+                                           CUPTI_METRIC_ATTR_VALUE_KIND, &size,
+                                           (void*) &metricKind));
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
@@ -1122,8 +1119,8 @@ available_events(CUdevice device)
     for(uint32_t i = 0; i < totalEvents; i++)
     {
         size = __CUPTI_PROFILER_NAME_SHORT;
-        CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME, &size,
-                                          eventName));
+        CUPTI_CALL(cuptiEventGetAttribute(eventIdArray[i], CUPTI_EVENT_ATTR_NAME,
+                                          &size, eventName));
         event_names.push_back(eventName);
     }
     free(domainIdArray);
