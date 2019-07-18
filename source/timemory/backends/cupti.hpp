@@ -380,8 +380,10 @@ static void CUPTIAPI
         int   current_pass   = current_kernel.m_current_pass;
 
         if(current_pass >= current_kernel.m_total_passes)
+        {
+            delete [] current_kernel_name;
             return;
-
+        }
         auto& pass_data = current_kernel.m_pass_data[current_pass];
 
         for(uint32_t i = 0; i < pass_data.event_groups->numEventGroups; i++)
@@ -476,6 +478,7 @@ static void CUPTIAPI
         _LOG("CUPTI_API_EXIT... ending callback for %s...\n", current_kernel_name);
     }
     _LOG("... ending callback for %s...\n", current_kernel_name);
+    delete [] current_kernel_name;
 }
 
 //--------------------------------------------------------------------------------------//
