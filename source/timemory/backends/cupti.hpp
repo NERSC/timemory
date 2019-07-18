@@ -299,9 +299,15 @@ static void CUPTIAPI
     using map_type = map_t<string_t, kernel_data_t>;
 
     std::stringstream _kernel_name_ss;
-    _kernel_name_ss << cbInfo->symbolName << "_" << cbInfo->contextUid << "_"
-                    << cbInfo->correlationId << "_" << cbInfo->functionName;
-    auto  current_kernel_name = _kernel_name_ss.str().c_str();
+    const char* _sym_name = cbInfo->symbolName;
+    const char* _func_name = cbInfo->functionName;
+    _kernel_name_ss << std::string(_sym_name) << "_" << cbInfo->contextUid << "_"
+                    << cbInfo->correlationId << "_" << std::string(_func_name);
+    auto len = _kernel_name_ss.str().length();
+    const char* current_kernel_name = new char[len + 1];
+    memcpy(current_kernel_name, _kernel_name_ss.str().c_str(), len * sizeof(char));
+    current_kernel_name[len] = '\0';
+
     auto* kernel_data         = static_cast<map_type*>(userdata);
     _LOG("... begin callback for %s...\n", current_kernel_name);
 
