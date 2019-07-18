@@ -594,12 +594,6 @@ struct profiler
 
     ~profiler()
     {
-        // Disable callback and unsubscribe
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
-        CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
         CUDA_DRIVER_API_CALL(cuCtxDestroy(m_context));
     }
 
@@ -787,6 +781,13 @@ struct profiler
                 k.second.m_event_values.push_back(event_map[m_event_ids[i]]);
             }
         }
+
+        // Disable callback and unsubscribe
+        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+        CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
     }
 
     void print_event_values(std::ostream& os, bool print_names = true,
