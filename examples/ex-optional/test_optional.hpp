@@ -32,15 +32,18 @@
 using tim::component::cpu_clock;
 using tim::component::cpu_roofline;
 using tim::component::cpu_util;
+using tim::component::current_rss;
+using tim::component::peak_rss;
 using tim::component::real_clock;
 using tim::component::thread_cpu_clock;
 using tim::component::thread_cpu_util;
 
 // some using statements
-using roofline_t   = cpu_roofline<double, PAPI_DP_OPS>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_tuple_thr =
-    tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, roofline_t>;
+using roofline_t = cpu_roofline<double, PAPI_DP_OPS>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, roofline_t>;
+using auto_tuple_thr = tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util,
+                                       peak_rss, current_rss, roofline_t>;
 
 #else
 

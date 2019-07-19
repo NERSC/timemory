@@ -117,6 +117,53 @@ struct ordering_priority<cuda_event> : std::integral_constant<int16_t, -1>
 {};
 
 //--------------------------------------------------------------------------------------//
+// if not UNIX (i.e. Windows)
+//
+#if !defined(_UNIX)
+
+template <>
+struct impl_available<stack_rss> : std::false_type
+{};
+
+template <>
+struct impl_available<data_rss> : std::false_type
+{};
+
+template <>
+struct impl_available<num_io_in> : std::false_type
+{};
+
+template <>
+struct impl_available<num_io_out> : std::false_type
+{};
+
+template <>
+struct impl_available<num_major_page_faults> : std::false_type
+{};
+
+template <>
+struct impl_available<num_minor_page_faults> : std::false_type
+{};
+
+template <>
+struct impl_available<num_msg_recv> : std::false_type
+{};
+
+template <>
+struct impl_available<num_msg_sent> : std::false_type
+{};
+
+template <>
+struct impl_available<num_signals> : std::false_type
+{};
+
+template <>
+struct impl_available<num_swap> : std::false_type
+{};
+
+#endif
+
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
 //
 #if !defined(TIMEMORY_USE_PAPI)
