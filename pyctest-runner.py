@@ -324,6 +324,15 @@ def run_pyctest():
     pyctest.test(construct_name("test_cxx_tuple"), construct_command(["./test_cxx_tuple"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
 
+    pyctest.test(construct_name("test_cxx_roofline"), construct_command(["./test_cxx_roofline"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test_optional_on"), construct_command(["./test_optional_on"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test_optional_off"), construct_command(["./test_optional_off"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(
         pyctest.BINARY_DIRECTORY, "examples"))

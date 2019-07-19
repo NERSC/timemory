@@ -345,33 +345,19 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-if(CMAKE_CXX_COMPILER_IS_GNU)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     find_library(GCOV_LIBRARY gcov QUIET)
 
-    if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
-        add_target_flag(timemory-coverage "-fprofile-arcs" "-ftest-coverage")
-        if(cxx_ftest_coverage)
-            # set(CMAKE_EXE_LINKER_FLAGS_DEBUG_INIT "-ftest-coverage -fprofile-arcs" CACHE STRING "")
-            if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-                target_link_options(timemory-coverage INTERFACE "-ftest-coverage;-fprofile-arcs")
-            else()
-                set_target_properties(timemory-coverage PROPERTIES
-                    INTERFACE_LINK_OPTIONS "-ftest-coverage;-fprofile-arcs")
-            endif()
-        endif()
+    add_target_flag(timemory-coverage "-O0" "-g" "--coverage")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+        target_link_options(timemory-coverage INTERFACE --coverage)
+    else()
+        target_link_libraries(timemory-coverage INTERFACE --coverage)
     endif()
 
-    if(GCOV_LIBRARY)
-        target_link_libraries(timemory-coverage INTERFACE ${COVERAGE_LIBRARY})
-    elseif(CMAKE_CXX_COMPILER_IS_GNU)
-        target_link_libraries(timemory-coverage INTERFACE gcov)
-    else()
-        inform_empty_interface(timemory-coverage "coverage")
-        set(TIMEMORY_USE_COVERAGE OFF)
-    endif()
 else()
-    set(TIMEMORY_USE_COVERAGE OFF)
     inform_empty_interface(timemory-coverage "coverage")
+    set(TIMEMORY_USE_COVERAGE OFF)
 endif()
 
 

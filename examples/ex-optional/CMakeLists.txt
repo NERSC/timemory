@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 project(TiMemory-Optional-Example LANGUAGES C CXX)
 
-find_package(TiMemory REQUIRED COMPONENTS compile-options)
+find_package(TiMemory REQUIRED COMPONENTS compile-options analysis-tools)
 
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 
