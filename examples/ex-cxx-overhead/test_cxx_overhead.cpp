@@ -25,6 +25,7 @@
 
 #include <cstdint>
 
+#include <timemory/signal_detection.hpp>
 #include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
 
@@ -38,8 +39,7 @@ using auto_tuple_t =
                     tim::component::user_clock>;
 using timer_tuple_t = typename auto_tuple_t::component_type;
 
-using papi_tuple_t =
-    papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LD_INS, PAPI_SR_INS, PAPI_LST_INS>;
+using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     current_rss, priority_context_switch, voluntary_context_switch,
@@ -82,13 +82,14 @@ fibonacci(int64_t n, int64_t cutoff)
 timer_tuple_t
 run(int64_t n, bool with_timing, int64_t cutoff)
 {
-    auto signature = TIMEMORY_AUTO_SIGN(" [with timing = ", ((with_timing) ? " " : ""),
-                                        with_timing, "]");
+    auto signature = TIMEMORY_AUTO_LABEL(" [with timing = ", ((with_timing) ? " " : ""),
+                                         with_timing, "]");
     timer_tuple_t timer(signature);
     int64_t       result = 0;
     {
         auto auto_timer = timer_tuple_t::auto_type(timer, __LINE__);
         result          = (with_timing) ? fibonacci(n, cutoff) : fibonacci(n);
+        auto_timer.stop();
     }
     print_result(signature, result);
     return timer;
@@ -107,6 +108,7 @@ main(int argc, char** argv)
     // heap-profiler will take a long timer if enabled
     tim::settings::json_output() = true;
 #endif
+    tim::print_env();
 
     // default calc: fibonacci(43)
     int nfib = 43;
@@ -118,7 +120,7 @@ main(int argc, char** argv)
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
-    std::cout << "Running fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")..."
+    std::cout << "\nRunning fibonacci(n = " << nfib << ", cutoff = " << cutoff << ")...\n"
               << std::endl;
     tim::consume_parameters(tim::manager::instance());
     tim::auto_tuple<>          empty_test("test");
@@ -145,6 +147,18 @@ main(int argc, char** argv)
     for(auto& itr : timer_list)
         std::cout << "\t" << itr << std::endl;
 
-    tim::print_env();
-    return 0;
+    auto l1_size  = tim::ert::cache_size::get<1>();
+    auto l2_size  = tim::ert::cache_size::get<2>();
+    auto l3_size  = tim::ert::cache_size::get<3>();
+    auto max_size = tim::ert::cache_size::get_max();
+    std::cout << "\n[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
+              << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
+              << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte)
+              << " KB, max cache size: " << (max_size / tim::units::kilobyte) << " KB\n"
+              << std::endl;
+
+    int64_t rc_size = tim::storage<real_clock>::instance()->size();
+    int64_t ex_size = (nlaps / auto_tuple_t::size()) + 3;
+    printf("Expected size: %li, actual size: %li\n", (long) ex_size, (long) rc_size);
+    return (rc_size == ex_size) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

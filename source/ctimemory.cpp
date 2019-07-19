@@ -42,9 +42,10 @@
 #include "timemory/timemory.hpp"
 #include "timemory/utility.hpp"
 
-EXTERN_C_BEGIN
+extern "C"
+{
 #include "timemory/ctimemory.h"
-EXTERN_C_END
+}
 
 using namespace tim::component;
 

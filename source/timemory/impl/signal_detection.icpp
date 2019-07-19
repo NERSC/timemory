@@ -29,7 +29,6 @@
  *
  */
 
-#include "timemory/signal_detection.hpp"
 #include <cstdlib>
 #include <sstream>
 #include <string>

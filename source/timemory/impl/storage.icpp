@@ -100,12 +100,16 @@ tim::storage<ObjectType>::merge(this_type* itr)
     if(_merged)
     {
         using predicate_type = decltype(_this_beg);
-        auto _reduce         = [](predicate_type lhs, predicate_type rhs) {
+        auto _compare        = [](predicate_type lhs, predicate_type rhs) {
+            return ((lhs->id() == rhs->id() && lhs->depth() == rhs->depth()) ||
+                    (lhs->prefix() == rhs->prefix() && lhs->depth() == rhs->depth()));
+        };
+        auto _reduce = [](predicate_type lhs, predicate_type rhs) {
             tim::details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
         };
         _this_beg = graph().begin();
         _this_end = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
+        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare, _reduce);
     }
     else
     {
@@ -113,7 +117,6 @@ tim::storage<ObjectType>::merge(this_type* itr)
         std::cerr << "Failure to merge graphs!" << std::endl;
         auto g = graph();
         graph().insert_subgraph_after(m_data.current(), itr->data().head());
-        // itr->graph()
     }
 }
 
@@ -128,11 +131,13 @@ tim::storage<ObjectType>::print()
     if(!singleton_t::is_master(this))
     {
         singleton_t::master_instance()->merge(this);
+        ObjectType::thread_finalize_policy();
     }
     else if(settings::auto_output())
     {
         merge();
-        ObjectType::finalize_policy();
+        ObjectType::thread_finalize_policy();
+        ObjectType::global_finalize_policy();
 
         // disable gperf if profiling
         try
@@ -145,6 +150,8 @@ tim::storage<ObjectType>::print()
 #if defined(TIMEMORY_USE_GPERF)
             std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
                       << ". Continuing..." << std::endl;
+#else
+            consume_parameters(e);
 #endif
         }
 
@@ -154,43 +161,30 @@ tim::storage<ObjectType>::print()
             return;
         }
 
-        // auto _manager = tim::manager::master_instance();
-        /*
-        using predicate_type = decltype(graph().begin());
-        auto _reduce   = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-        auto _this_beg = graph().begin();
-        auto _this_end = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _reduce);
-        */
+        // auto _this_beg = m_data.graph().begin();
+        // auto _this_end = m_data.graph().end();
+        // m_data.graph().reduce(_this_beg, _this_end, _this_beg, _this_end);
 
         auto _compute_modified_prefix = [](const graph_node& itr) {
-            std::string _prefix = itr.prefix();  // + std::to_string(itr.id());
+            std::string _prefix = itr.prefix();
             if(itr.depth() < 1)
                 return _prefix;
 
             // fix up the prefix based on the actual depth
             auto _ebracket = _prefix.find("]");
             auto _boffset  = _prefix.find("|_");
-            // printf("ebracket = %i, boffset = %i, depth = %i\n", (int) _ebracket,
-            //       (int) _boffset, (int) itr.depth());
 
             if(_boffset == std::string::npos)
             {
-                // printf("inserting '|_' into '%s'\n", _prefix.c_str());
                 _prefix.insert(_ebracket + 2, "|_");
             }
             else
             {
                 int _diff = (_boffset - (_ebracket + 2));
                 int _expd = 2 * (itr.depth() - 1);
-                // printf("diff = %i, expd = %i\n", (int) _diff, (int) _expd);
-
-                //_prefix.insert(_ebracket + 2, "  ");
                 if(_expd > _diff)
                 {
                     int ninsert = (_expd - _diff);
-                    // printf("inserting %i values from '%s'\n", ninsert,
-                    // _prefix.c_str());
                     for(auto i = 0; i < ninsert; ++i)
                     {
                         _prefix.insert(_ebracket + 1, " ");
@@ -199,7 +193,6 @@ tim::storage<ObjectType>::print()
                 else if(_diff > _expd)
                 {
                     int nstrip = (_diff - _expd);
-                    // printf("stripping %i values from '%s'\n", nstrip, _prefix.c_str());
                     for(auto i = 0; i < nstrip; ++i)
                     {
                         _prefix = _prefix.erase(_ebracket + 1, 1);
@@ -230,10 +223,9 @@ tim::storage<ObjectType>::print()
             component::print<ObjectType>(_obj, _mss, false);
         }
 
-        // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
-        //          << ", thread = " << std::this_thread::get_id() << "..." << std::endl;
         if(settings::file_output() && _oss.str().length() > 0)
         {
+            printf("\n");
             auto label = ObjectType::label();
             //--------------------------------------------------------------------------//
             // output to text
@@ -277,8 +269,9 @@ tim::storage<ObjectType>::print()
 
         if(settings::cout_output() && _oss.str().length() > 0)
         {
+            printf("\n");
             auto_lock_t l(type_mutex<decltype(std::cout)>());
-            std::cout << _oss.str() << std::endl;
+            std::cout << _oss.str() << std::flush;
         }
 
         instance_count().store(0);

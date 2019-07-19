@@ -32,6 +32,10 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
+#if defined(TIMEMORY_USE_LIBEXPLAIN)
+#    include <libexplain/execvp.h>
+#endif
+
 #if defined(_UNIX)
 #    include <unistd.h>
 #endif
@@ -54,15 +58,19 @@
 #endif
 
 #if !defined(PAPI_NUM_COUNTERS)
-#    define PAPI_NUM_COUNTERS 8
+#    define PAPI_NUM_COUNTERS 32
 #endif
+
+template <typename _Tp>
+using vector_t = std::vector<_Tp>;
+using string_t = std::string;
 
 using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
-// papi event set 0 with 4 counters
+// papi event set 0 with PAPI_NUM_COUNTERS (4) counters
 //
-using papi_array_t = papi_array<0, PAPI_NUM_COUNTERS>;
+using papi_array_t = papi_array<PAPI_NUM_COUNTERS>;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -78,7 +86,7 @@ using comp_tuple_t =
 bool&
 papi_enabled()
 {
-    static bool _instance = false;
+    static bool _instance = tim::get_env("TIMEM_PAPI", false);
     return _instance;
 }
 
@@ -118,7 +126,26 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     tim::get_rusage_type() = RUSAGE_CHILDREN;
     comp_tuple_t measure("total execution time", tim::language(command().c_str()));
     if(getpid() != getppid() + 1)
+    {
         measure.start();
+    }
+
+    papi_array_t* _papi_array = nullptr;
+    if(papi_enabled())
+    {
+        tim::papi::init();
+        papi_array_t::get_events_func() = [&]() {
+            auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
+            vector_t<string_t> events_str_list = tim::delimit(events_str);
+            vector_t<int>      events_list;
+            for(const auto& itr : events_str_list)
+                events_list.push_back(tim::papi::get_event_code(itr));
+            return events_list;
+        };
+        papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
+        _papi_array                      = new papi_array_t();
+        _papi_array->start();
+    }
 
     if(waitpid(pid, &status, 0) > 0)
     {
@@ -154,6 +181,16 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
         measure.stop();
         std::stringstream _oss;
         _oss << "\n" << measure << std::flush;
+
+        if(_papi_array)
+        {
+            papi_array_t::get_label() = "";
+            _papi_array->stop();
+            _oss << "\n"
+                 << tim::language(command().c_str())
+                 << " hardware counters : " << (*_papi_array) << std::flush;
+            delete _papi_array;
+        }
 
         if(tim::settings::file_output())
         {
@@ -201,17 +238,22 @@ getcharptr(const std::string& str)
 
 //--------------------------------------------------------------------------------------//
 
+void
+explain(int ret, const char* pathname, char** argv)
+{
+#if defined(TIMEMORY_USE_LIBEXPLAIN)
+    if(ret < 0)
+        fprintf(stderr, "%s\n", explain_execvp(pathname, argv));
+#else
+    tim::consume_parameters(ret, pathname, argv);
+#endif
+}
+//--------------------------------------------------------------------------------------//
+
 declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 {
     if(argc < 2)
         exit(0);
-
-    if(papi_enabled())
-    {
-#if defined(TIMEMORY_USE_PAPI)
-        PAPI_attach(0, getpid());
-#endif
-    }
 
     // the argv list first argument should point to filename associated
     // with file being executed the array pointer must be terminated by
@@ -237,8 +279,15 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
                 argv_shell_list[i + 2] = argv_list[i];
             argv_shell_list[argc_shell - 1] = nullptr;
             ret                             = execvp(argv_shell_list[0], argv_shell_list);
+            explain(ret, argv_shell_list[0], argv_shell_list);
+        }
+        else
+        {
+            fprintf(stderr, "getusershell failed!\n");
         }
     }
+
+    explain(ret, argv_list[0], argv_list);
 
     exit(0);
 }

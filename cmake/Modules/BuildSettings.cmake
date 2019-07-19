@@ -57,13 +57,12 @@ endif()
 #----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
     add_flag_if_avail("-finline-functions")
-    add_flag_if_avail("-finline-limit=4096")
-    # add_flag_if_avail("-funroll-loops")
-    # add_flag_if_avail("-ftree-vectorize")
-    # add_flag_if_avail("-ftree-loop-optimize")
-    # add_flag_if_avail("-ftree-loop-vectorize")
+    add_flag_if_avail("-funroll-loops")
+    add_flag_if_avail("-ftree-vectorize")
+    add_flag_if_avail("-ftree-loop-optimize")
+    add_flag_if_avail("-ftree-loop-vectorize")
 else()
     add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 endif()
@@ -84,19 +83,33 @@ endif()
 #----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
+add_interface_library(timemory-vector)
 add_interface_library(timemory-arch)
 add_interface_library(timemory-avx512)
 target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
-
 if(TIMEMORY_USE_ARCH)
     target_link_libraries(timemory-compile-options INTERFACE timemory-arch)
 endif()
+# always provide vectorization width
+target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 
 find_package(CpuArch)
 
 if(CpuArch_FOUND)
 
+    set(_VEC_SET OFF)
     foreach(_ARCH ${CpuArch_FEATURES})
+
+        if(NOT _VEC_SET)
+            if("${_ARCH}" MATCHES ".*avx512.*" OR "${_ARCH}" MATCHES ".*AVX512.*")
+                target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=512)
+                set(_VEC_SET ON)
+            elseif("${_ARCH}" MATCHES ".*avx.*" OR "${_ARCH}" MATCHES ".*AVX.*")
+                target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=256)
+                set(_VEC_SET ON)
+            endif()
+        endif()
+
         # intel compiler
         if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
             add_target_flag_if_avail(timemory-arch "-x${_ARCH}")
@@ -107,6 +120,9 @@ if(CpuArch_FOUND)
         endif()
     endforeach()
 
+    if(NOT _VEC_SET)
+        target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=128)
+    endif()
 endif()
 
 if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)

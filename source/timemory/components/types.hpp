@@ -84,14 +84,16 @@ struct priority_context_switch;
 struct cuda_event;
 
 // papi
-template <int EventSet, int... EventTypes>
+template <int... EventTypes>
 struct papi_tuple;
 
-template <int EventSet, std::size_t NumEvent>
+template <std::size_t MaxNumEvents>
 struct papi_array;
 
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
+
+struct cupti_event;
 
 }  // component
 
@@ -102,7 +104,7 @@ namespace component
 {
 // operators
 template <typename _Tp>
-struct construct;
+struct init_storage;
 
 template <typename _Tp>
 struct live_count;
@@ -230,6 +232,9 @@ private:
 
 template <typename... Types>
 class component_tuple;
+
+template <typename... Types>
+class component_list;
 
 //--------------------------------------------------------------------------------------//
 //  category configurations

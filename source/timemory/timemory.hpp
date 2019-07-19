@@ -30,25 +30,15 @@
 
 #pragma once
 
-#include "timemory/apply.hpp"
 #include "timemory/auto_list.hpp"
 #include "timemory/auto_macros.hpp"
 #include "timemory/auto_timer.hpp"
-#include "timemory/component_list.hpp"
-#include "timemory/component_tuple.hpp"
 #include "timemory/components.hpp"
 #include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/settings.hpp"
-#include "timemory/signal_detection.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility.hpp"
-
-// CUPTI does not have a dummy API
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/cupti.hpp"
-#endif
 
 #if defined(TIMEMORY_EXTERN_INIT)
 #    include "timemory/storage.hpp"

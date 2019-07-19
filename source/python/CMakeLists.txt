@@ -25,15 +25,16 @@ file(GLOB_RECURSE pybind_headers ${CMAKE_CURRENT_LIST_DIR}/pybind11/include/*.h)
 #----------------------------------------------------------------------------
 # PyBind11
 #
-add_library(libtimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libtimemory.cpp
-    ${CMAKE_CURRENT_LIST_DIR}/libtimemory.hpp ${pybind_headers})
+add_library(libpytimemory MODULE ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.cpp
+    ${CMAKE_CURRENT_LIST_DIR}/libpytimemory.hpp ${pybind_headers})
 
-target_include_directories(libtimemory SYSTEM PUBLIC
+target_include_directories(libpytimemory SYSTEM PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_LIST_DIR}/pybind11/include>)
 
-target_link_libraries(libtimemory PUBLIC
+target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
+    ${TIMEMORY_LINK_LIB}
     timemory-compile-options
     timemory-analysis-tools
     timemory-cuda
@@ -46,14 +47,14 @@ if(TIMEMORY_USE_CUDA)
 endif()
 
 if(TIMEMORY_USE_EXTERN_INIT)
-    target_link_libraries(libtimemory PUBLIC timemory-extern-init)
+    target_link_libraries(libpytimemory PUBLIC timemory-extern-init)
 endif()
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_link_libraries(libtimemory PUBLIC timemory-extern-templates)
+    target_link_libraries(libpytimemory PUBLIC timemory-extern-templates)
 endif()
 
-set_target_properties(libtimemory PROPERTIES
+set_target_properties(libpytimemory PROPERTIES
     PREFIX ""
     SUFFIX "${PYTHON_MODULE_EXTENSION}"
     LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
@@ -62,7 +63,7 @@ set_target_properties(libtimemory PROPERTIES
     PDB_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/timemory
     ${EXTRA_PROPERTIES})
 
-foreach(_SUBMODULE plotting mpi_support util ert)
+foreach(_SUBMODULE plotting mpi_support util ert roofline)
     set(SOURCE_DIR ${PROJECT_SOURCE_DIR}/timemory/${_SUBMODULE})
     set(BINARY_DIR ${CMAKE_BINARY_DIR}/timemory/${_SUBMODULE})
 
@@ -151,7 +152,7 @@ foreach(PYLIB_SUBMODULE options units signals)
 endforeach()
 
 # Python library target (linked to static target)
-install(TARGETS libtimemory
+install(TARGETS libpytimemory
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}
     COMPONENT python)
 

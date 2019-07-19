@@ -23,6 +23,7 @@ file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
 file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
 file(GLOB cxx_headers_impl          ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
 file(GLOB cxx_headers_comp          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_backend       ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
@@ -45,7 +46,8 @@ add_subdirectory(timemory)
 # directly compile sources
 set(C_LIBRARY_SOURCES    ${c_sources}        ${c_headers})
 set(CXX_LIBRARY_SOURCES  ${cxx_sources}      ${cxx_headers}      ${cxx_headers_ert}
-                         ${cxx_headers_comp} ${cxx_headers_impl} ${cereal_headers})
+                         ${cxx_headers_comp} ${cxx_headers_impl} ${cxx_headers_backend}
+                         ${cereal_headers})
 
 
 #----------------------------------------------------------------------------------------#
@@ -75,6 +77,12 @@ build_library(
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     LINK_LIBRARIES      timemory-headers timemory-compile-options)
 
+if(WIN32)
+    # make sure on Windows, static is built first. There is something weird
+    # happening here when built in parallel...
+    add_dependencies(timemory-cxx-shared timemory-cxx-static)
+endif()
+
 add_interface_library(timemory-cxx)
 target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
 
@@ -83,8 +91,13 @@ target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options timem
 target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options timemory-analysis-tools)
 
 if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    if(NOT WIN32)
+        target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+        target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+    else()
+        message(WARNING "Building extern templates is not currently supported on Windows")
+        set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+    endif()
 endif()
 
 if(WIN32)
@@ -163,6 +176,10 @@ install(FILES ${cxx_headers_comp}
 
 install(FILES ${cxx_headers_ert}
     DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/ert
+    COMPONENT development)
+
+install(FILES ${cxx_headers_backend}
+    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/backends
     COMPONENT development)
 
 # Install the export set for use with the install-tree

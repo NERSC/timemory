@@ -26,6 +26,8 @@
 #include <chrono>
 #include <iostream>
 #include <thread>
+
+#include <timemory/signal_detection.hpp>
 #include <timemory/timemory.hpp>
 
 #include "kernel.hpp"
@@ -33,7 +35,7 @@
 using namespace tim::component;
 
 using roofline_t   = cpu_roofline<double, PAPI_DP_OPS>;
-using papi_tup_t   = papi_tuple<0, PAPI_DP_OPS>;
+using papi_tup_t   = papi_tuple<PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 
@@ -41,7 +43,8 @@ int
 main(int argc, char** argv)
 {
     // STEP 4: configure output and parse env  (optional)
-    tim::settings::precision() = 6;
+    tim::settings::json_output() = true;
+    tim::settings::precision()   = 6;
     tim::timemory_init(argc, argv);
     tim::print_env();
     std::cout << std::endl;

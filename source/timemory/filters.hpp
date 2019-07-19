@@ -94,125 +94,45 @@ struct tuple_filter_if<Predicate, std::tuple<Ts...>>
 template <template <typename> class Predicate, typename Sequence>
 using tuple_type_filter = typename tuple_filter_if<Predicate, Sequence>::type;
 
-//======================================================================================//
-//
-//      component_list
-//
-//======================================================================================//
-
-template <typename...>
-struct component_list_concat
-{
-};
-
-template <>
-struct component_list_concat<>
-{
-    using type = component_list<>;
-};
-
-template <typename... Ts>
-struct component_list_concat<component_list<Ts...>>
-{
-    using type = component_list<Ts...>;
-};
-
-template <typename... Ts0, typename... Ts1, typename... Rest>
-struct component_list_concat<component_list<Ts0...>, component_list<Ts1...>, Rest...>
-: component_list_concat<component_list<Ts0..., Ts1...>, Rest...>
-{
-};
-
-template <typename... Ts>
-using component_list_concat_t = typename component_list_concat<Ts...>::type;
-
 //--------------------------------------------------------------------------------------//
-
+//
+// sort types
+//
+//--------------------------------------------------------------------------------------//
+/*
 template <bool>
-struct component_list_filter_if_result
+struct tuple_sort_result
 {
     template <typename T>
-    using type = component_list<T>;
+    using type = std::tuple<T>;
+
+    template <typename T, typename U>
+    using type = std::tuple<T, U>;
 };
 
 template <>
-struct component_list_filter_if_result<false>
+struct tuple_sort_result<false>
 {
     template <typename T>
-    using type = component_list<>;
+    using type = std::tuple<T>;
+
+    template <typename T, typename U>
+    using type = std::tuple<U, T>;
 };
 
 template <template <typename> class Predicate, typename Sequence>
-struct component_list_filter_if;
+struct tuple_sort_if;
 
-template <template <typename> class Predicate, typename... Ts>
-struct component_list_filter_if<Predicate, component_list<Ts...>>
+template <template <typename> class Predicate, typename T, typename... Ts>
+struct tuple_sort_if<Predicate, std::tuple<T, Ts...>>
 {
-    using type = component_list_concat_t<typename component_list_filter_if_result<
-        Predicate<Ts>::value>::template type<Ts>...>;
+    using type = tuple_concat_t<
+        typename tuple_sort_result<Predicate<Ts>::value>::template type<Ts>...>;
 };
 
 template <template <typename> class Predicate, typename Sequence>
-using list_type_filter =
-    typename details::component_list_filter_if<Predicate, Sequence>::type;
-
-//======================================================================================//
-//
-//      component_tuple
-//
-//======================================================================================//
-
-template <typename... _Tp>
-struct component_tuple_concat
-{
-    using type = component_tuple<_Tp...>;
-};
-
-template <typename... _Tp>
-struct component_tuple_concat<component_tuple<_Tp...>>
-{
-    using type = component_tuple<_Tp...>;
-};
-
-template <typename... _Tp0, typename... _Tp1, typename... Rest>
-struct component_tuple_concat<component_tuple<_Tp0...>, component_tuple<_Tp1...>, Rest...>
-: component_tuple_concat<component_tuple<_Tp0..., _Tp1...>, Rest...>
-{
-};
-
-template <typename... _Tp>
-using component_tuple_concat_t = typename component_tuple_concat<_Tp...>::type;
-
-//--------------------------------------------------------------------------------------//
-
-template <bool>
-struct component_tuple_filter_if_result
-{
-    template <typename _Tp>
-    using type = component_tuple<_Tp>;
-};
-
-template <>
-struct component_tuple_filter_if_result<false>
-{
-    template <typename _Tp>
-    using type = component_tuple<>;
-};
-
-template <template <typename> class Predicate, typename Sequence>
-struct component_tuple_filter_if;
-
-template <template <typename> class Predicate, typename... _Tp>
-struct component_tuple_filter_if<Predicate, component_tuple<_Tp...>>
-{
-    using type = component_tuple_concat_t<typename component_tuple_filter_if_result<
-        Predicate<_Tp>::value>::template type<_Tp>...>;
-};
-
-template <template <typename> class Predicate, typename Sequence>
-using component_tuple_type_filter = component_tuple_filter_if<Predicate, Sequence>;
-
-//--------------------------------------------------------------------------------------//
+using tuple_type_sort = typename tuple_sort_if<Predicate, Sequence>::type;
+*/
 
 }  // namespace details
 
@@ -226,24 +146,4 @@ template <typename... Types>
 using implemented_tuple =
     details::tuple_type_filter<component::impl_available, std::tuple<Types...>>;
 
-//======================================================================================//
-//
-//      component_list
-//
-//======================================================================================//
-
-template <typename... Types>
-using implemented_component_list =
-    details::list_type_filter<component::impl_available, component_list<Types...>>;
-
-//======================================================================================//
-//
-//      component_tuple
-//
-//======================================================================================//
-
-template <typename... Types>
-using implemented_component_tuple =
-    typename details::component_tuple_type_filter<component::impl_available,
-                                                  component_tuple<Types...>>::type;
-}
+}  // namespace tim

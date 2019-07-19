@@ -42,7 +42,7 @@
 #include <stdexcept>
 
 // TiMemory headers
-#include "timemory/mpi.hpp"
+#include "timemory/backends/mpi.hpp"
 
 //--------------------------------------------------------------------------------------//
 

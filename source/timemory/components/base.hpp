@@ -24,9 +24,9 @@
 
 #pragma once
 
+#include "timemory/components/policy.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/policy.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 
@@ -42,7 +42,7 @@ struct base : public tim::counted_object<_Tp>
     //
     friend class storage<_Tp>;
 
-    friend struct construct<_Tp>;
+    friend struct init_storage<_Tp>;
     friend struct live_count<_Tp>;
     friend struct set_prefix<_Tp>;
     friend struct insert_node<_Tp>;
@@ -64,10 +64,6 @@ struct base : public tim::counted_object<_Tp>
     template <typename _Up, typename Archive>
     friend struct serialization;
 
-    // template <typename _Up, typename _Op>
-    // friend struct pointer_operator<_Up, _Op>;
-    // friend struct pointer_deleter<_Tp>;
-
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:
@@ -85,8 +81,21 @@ public:
     base& operator=(this_type&&) = default;
 
 private:
-    static void initialize_policy() { policy_type::template invoke_initialize<_Tp>(); }
-    static void finalize_policy() { policy_type::template invoke_finalize<_Tp>(); }
+    // policy section
+    static void global_init_policy() { policy_type::template invoke_global_init<_Tp>(); }
+
+    static void thread_init_policy() { policy_type::template invoke_thread_init<_Tp>(); }
+
+    static void global_finalize_policy()
+    {
+        policy_type::template invoke_global_finalize<_Tp>();
+    }
+
+    static void thread_finalize_policy()
+    {
+        policy_type::template invoke_thread_finalize<_Tp>();
+    }
+
     template <typename _Archive>
     static void serialization_policy(_Archive& ar, const unsigned int ver)
     {

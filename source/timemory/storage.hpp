@@ -37,9 +37,9 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/apply.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/utility.hpp"
@@ -57,6 +57,10 @@
 
 namespace tim
 {
+namespace cupti
+{
+struct result;
+}
 namespace details
 {
 template <typename StorageType>
@@ -149,6 +153,11 @@ struct type_id
     {
         return "float_array_pair";
     }
+
+    static std::string value(const std::vector<cupti::result>&)
+    {
+        return "result_vector";
+    }
 };
 
 //======================================================================================//
@@ -215,7 +224,8 @@ public:
 
         bool operator==(const graph_node& rhs) const
         {
-            return (id() == rhs.id() && depth() == rhs.depth());
+            return ((id() == rhs.id() && depth() == rhs.depth()) ||
+                    (prefix() == rhs.prefix() && depth() == rhs.depth()));
         }
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
@@ -335,10 +345,15 @@ public:
             m_data.head()    = master_instance()->data().current();
             m_data.current() = master_instance()->data().current();
             m_data.depth()   = master_instance()->data().depth();
+            ObjectType::thread_init_policy();
         }
         else
         {
-            ObjectType::initialize_policy();
+            graph_node node(0, ObjectType(), 0);
+            m_data         = graph_data(node);
+            m_data.depth() = 0;
+            ObjectType::global_init_policy();
+            ObjectType::thread_init_policy();
         }
     }
 
@@ -363,7 +378,7 @@ public:
     }
 
     void print();
-    bool empty() const { return (m_node_ids.size() == 0); }
+    bool empty() const { return (m_data.graph().size() == 0); }
 
     const graph_data& data() const { return m_data; }
     const graph_t&    graph() const { return m_data.graph(); }
@@ -372,6 +387,8 @@ public:
     graph_data& data() { return m_data; }
     iterator&   current() { return m_data.current(); }
     graph_t&    graph() { return m_data.graph(); }
+
+    inline size_t size() const { return m_data.graph().size(); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -386,9 +403,6 @@ public:
         auto _update = [&](iterator itr) {
             exists         = true;
             m_data.depth() = itr->depth();
-            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
-            //          << ", thread = " << std::this_thread::get_id() << "..."
-            //          << " updating to depth " << itr->depth() << "..." << std::endl;
             return (m_data.current() = itr);
         };
 
@@ -405,24 +419,15 @@ public:
         auto _insert_child = [&]() {
             exists       = false;
             node.depth() = m_data.depth() + 1;
-            // std::cout << "[master] storage<" << ObjectType::label() << "> = " << this
-            //          << ", thread = " << std::this_thread::get_id() << "..."
-            //          << " inserting child at depth " << node.depth() << "..."
-            //          << std::endl;
-            auto itr = m_data.append_child(node);
-            // m_node_ids.insert(std::make_pair(hash_id, itr));
+            auto itr     = m_data.append_child(node);
             return itr;
         };
 
         // if first instance
-        if(!m_data.has_head())
+        if(!m_data.has_head() || (this == master_instance() && m_node_ids.size() == 0))
         {
             if(this == master_instance())
             {
-                // std::cout << "[master] storage<" << ObjectType::label() << "> = " <<
-                // this
-                //          << ", thread = " << std::this_thread::get_id() << "..."
-                //          << " creating new graph_data..." << std::endl;
                 m_data         = graph_data(node);
                 exists         = false;
                 m_data.depth() = 0;

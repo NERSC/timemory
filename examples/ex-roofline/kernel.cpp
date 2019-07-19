@@ -7,10 +7,10 @@
 #include <sys/time.h>
 
 #define ERT_ALIGN 64
-#define ERT_FLOP 128
-#define ERT_TRIALS_MIN 100
-#define ERT_WORKING_SET_MIN 10
-#define ERT_MEMORY_MAX 64 * 64 * 64
+#define ERT_FLOP 8
+#define ERT_TRIALS_MIN tim::ert::cache_size::get<1>() / 16
+#define ERT_WORKING_SET_MIN tim::ert::cache_size::get<1>() / 16
+#define ERT_MEMORY_MAX tim::ert::cache_size::get<3>() * 4
 
 double
 getTime()
@@ -46,11 +46,11 @@ initialize(uint64_t nsize, double* __restrict__ A, double value)
 }
 
 void
-kernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ A, int* bytes_per_elem,
-       int* mem_accesses_per_elem)
+kernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ A, int* bytes_per_element,
+       int* memory_accesses_per_element)
 {
-    *bytes_per_elem        = sizeof(*A);
-    *mem_accesses_per_elem = 2;
+    *bytes_per_element           = sizeof(*A);
+    *memory_accesses_per_element = 2;
 
 #ifdef ERT_INTEL
     __assume_aligned(A, ERT_ALIGN);
@@ -180,8 +180,8 @@ ert_main(int, char**)
         double   startTime, endTime;
         uint64_t n, nNew;
         uint64_t t;
-        int      bytes_per_elem;
-        int      mem_accesses_per_elem;
+        int      bytes_per_element;
+        int      memory_accesses_per_element;
 
         n = ERT_WORKING_SET_MIN;
         while(n <= nsize)
@@ -217,7 +217,7 @@ ert_main(int, char**)
                     rl->start();
                 }
 
-                kernel(n, t, &buf[nid], &bytes_per_elem, &mem_accesses_per_elem);
+                kernel(n, t, &buf[nid], &bytes_per_element, &memory_accesses_per_element);
 
 #ifdef ERT_OPENMP
 #    pragma omp barrier
@@ -238,8 +238,8 @@ ert_main(int, char**)
                     rl->stop();
                     double   seconds          = (double) (endTime - startTime);
                     uint64_t working_set_size = n * nthreads * nprocs;
-                    uint64_t total_bytes =
-                        t * working_set_size * bytes_per_elem * mem_accesses_per_elem;
+                    uint64_t total_bytes      = t * working_set_size * bytes_per_element *
+                                           memory_accesses_per_element;
                     uint64_t total_flops = t * working_set_size * ERT_FLOP;
 
                     // nsize; trials; microseconds; bytes; single thread bandwidth; total
@@ -251,7 +251,7 @@ ert_main(int, char**)
                                        ert_flops_per_sec * 100.;
                     printf("%8" PRIu64 "%6" PRIu64 " %12.4e %10" PRIu64 " %10" PRIu64
                            " flops/sec: %8.0f (ERT), %8.0f (TiM), err: %5.2f %s\n",
-                           working_set_size * bytes_per_elem, t, seconds,  //* 1000000,
+                           working_set_size * bytes_per_element, t, seconds,  //* 1000000,
                            total_bytes, total_flops, ert_flops_per_sec, tim_flops_per_sec,
                            perc_error, "%");
                     delete rl;

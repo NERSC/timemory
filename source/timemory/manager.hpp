@@ -38,7 +38,6 @@
 #include "timemory/apply.hpp"
 #include "timemory/graph.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/singleton.hpp"
 #include "timemory/storage.hpp"
@@ -85,7 +84,7 @@ struct manager_deleter;
 
 //--------------------------------------------------------------------------------------//
 
-tim_api class manager
+class manager
 {
 public:
     using this_type     = manager;
@@ -274,6 +273,30 @@ public:
     static void print()
     {
         print(ComponentTuple_t());
+    }
+
+private:
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _init_storage()
+    {
+        auto ret = storage<_Tp>::instance();
+        consume_parameters(ret);
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _init_storage()
+    {
+        _init_storage<_Tp>();
+        _init_storage<_Tail...>();
+    }
+
+public:
+    template <typename... _Types>
+    void initialize_storage()
+    {
+        _init_storage<_Types...>();
     }
 
 public:

@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-#include "libtimemory.hpp"
+#include "libpytimemory.hpp"
 #include "timemory/settings.hpp"
 #include <pybind11/pybind11.h>
 
@@ -31,7 +31,7 @@
 //  Python wrappers
 //======================================================================================//
 
-PYBIND11_MODULE(libtimemory, tim)
+PYBIND11_MODULE(libpytimemory, tim)
 {
     //----------------------------------------------------------------------------------//
     using pytim::string_t;
@@ -215,7 +215,7 @@ PYBIND11_MODULE(libtimemory, tim)
 
     //==================================================================================//
     //
-    //                  MAIN libtimemory MODULE (part 1)
+    //                  MAIN libpytimemory MODULE (part 1)
     //
     //==================================================================================//
     tim.def("report", report, "Print the data", py::arg("filename") = "");
@@ -536,7 +536,7 @@ PYBIND11_MODULE(libtimemory, tim)
 
     //==================================================================================//
     //
-    //                      MAIN libtimemory MODULE (part 2)
+    //                      MAIN libpytimemory MODULE (part 2)
     //
     //==================================================================================//
 

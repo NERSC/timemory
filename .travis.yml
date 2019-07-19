@@ -251,7 +251,7 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
@@ -263,4 +263,5 @@ install:
 
 script:
     - python setup.py install
+    - python -c "import timemory; print(timemory.__file__)"
     - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"

@@ -1,8 +1,6 @@
 ##########################################################################################
-
 #       CMake settings
 ##########################################################################################
-
 
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
@@ -33,6 +31,9 @@ message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
 
 if(SKBUILD)
     set(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
     set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
 endif()
 

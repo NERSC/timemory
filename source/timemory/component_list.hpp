@@ -43,10 +43,11 @@
 #include <string>
 
 #include "timemory/apply.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
+#include "timemory/filters.hpp"
 #include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
 #include "timemory/serializer.hpp"
 #include "timemory/storage.hpp"
 
@@ -78,7 +79,7 @@ class component_list
 public:
     using size_type      = int64_t;
     using this_type      = component_list<Types...>;
-    using data_type      = std::tuple<Types*...>;
+    using data_type      = tim::implemented_tuple<Types*...>;
     using reference_type = std::tuple<Types...>;
     using string_hash    = std::hash<string_t>;
     using counter_type   = tim::counted_object<this_type>;
@@ -142,6 +143,14 @@ public:
     component_list& operator=(const component_list&) = delete;
     component_list(component_list&&)                 = default;
     component_list& operator=(component_list&&) = default;
+
+    component_list clone(const int64_t& nhash, bool store)
+    {
+        component_list tmp(*this);
+        tmp.m_hash  = nhash;
+        tmp.m_store = store;
+        return tmp;
+    }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -208,49 +217,21 @@ public:
         apply<void>::access<apply_types>(m_data);
     }
 
-    //----------------------------------------------------------------------------------//
-    // conditional start/stop functions
-    /*void conditional_start()
+    void conditional_start()
     {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
+        // start, if not already started
         using apply_types = std::tuple<
             component::pointer_operator<Types, component::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data, increment);
+        apply<void>::access<apply_types>(m_data);
     }
 
     void conditional_stop()
     {
+        // stop, if not already stopped
         using apply_types = std::tuple<
             component::pointer_operator<Types, component::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
-
-    //----------------------------------------------------------------------------------//
-    // pause/resume functions (typically for printing)
-    void pause()
-    {
-        auto increment = [&](bool did_start) {
-            if(did_start)
-                ++m_laps;
-        };
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data, increment);
-    }
-
-    void resume()
-    {
-        auto decrement = [&](bool did_stop) {
-            if(did_stop)
-                --m_laps;
-        };
-        using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
-        apply<void>::access<apply_types>(m_data, decrement);
-    }*/
 
     //----------------------------------------------------------------------------------//
     // recording
@@ -265,24 +246,6 @@ public:
         }
         return *this;
     }
-
-    /*this_type& record(const this_type& rhs)
-    {
-        if(this != &rhs)
-            ++m_laps;
-        auto c_data = std::move(rhs.m_data);
-        {
-            using apply_types = std::tuple<
-                component::pointer_operator<Types, component::record<Types>>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
-        {
-            using apply_types = std::tuple<
-                component::pointer_operator<Types, component::minus<Types>>...>;
-            apply<void>::access2<apply_types>(m_data, c_data);
-        }
-        return *this;
-    }*/
 
     //----------------------------------------------------------------------------------//
     void reset()
@@ -601,167 +564,6 @@ protected:
         }
         return _instance.load();
     }
-
-private:
-    void init_manager();
-};
-
-//--------------------------------------------------------------------------------------//
-// empty component tuple overload -- required because of std::array operations
-//
-template <>
-class component_list<>
-{
-    static const std::size_t num_elements = 0;
-
-public:
-    using size_type   = int64_t;
-    using this_type   = component_list<>;
-    using data_type   = std::tuple<>;
-    using string_hash = std::hash<string_t>;
-
-public:
-    explicit component_list()             = default;
-    ~component_list()                     = default;
-    component_list(const component_list&) = default;
-    component_list(component_list&&)      = default;
-
-    component_list(const string_t&, const string_t& = "", const int64_t& = 0,
-                   const int64_t& = 0, bool = true)
-    {
-    }
-    explicit component_list(const string_t&, const bool&, const string_t& = "",
-                            const int64_t& = 0, const int64_t& = 0)
-    {
-    }
-
-    component_list& operator=(const component_list&) = default;
-    component_list& operator=(component_list&&) = default;
-
-public:
-    static constexpr std::size_t size() { return num_elements; }
-    inline void                  push() {}
-    inline void                  pop() {}
-    void                         measure() {}
-    void                         start() {}
-    void                         stop() {}
-    void                         reset() {}
-    this_type&                   record() { return *this; }
-    this_type&                   record(const this_type&) { return *this; }
-    this_type&                   operator-=(const this_type&) { return *this; }
-    this_type&                   operator-=(this_type&) { return *this; }
-    this_type&                   operator+=(const this_type&) { return *this; }
-    this_type&                   operator+=(this_type&) { return *this; }
-
-    template <typename _Op>
-    this_type& operator-=(_Op&&)
-    {
-        return *this;
-    }
-    template <typename _Op>
-    this_type& operator+=(_Op&&)
-    {
-        return *this;
-    }
-    template <typename _Op>
-    this_type& operator*=(_Op&&)
-    {
-        return *this;
-    }
-    template <typename _Op>
-    this_type& operator/=(_Op&&)
-    {
-        return *this;
-    }
-    friend this_type operator+(const this_type& lhs, const this_type&)
-    {
-        return this_type(lhs);
-    }
-    friend this_type operator-(const this_type& lhs, const this_type&)
-    {
-        return this_type(lhs);
-    }
-    template <typename _Op>
-    friend this_type operator*(const this_type& lhs, _Op&&)
-    {
-        return this_type(lhs);
-    }
-
-    template <typename _Op>
-    friend this_type operator/(const this_type& lhs, _Op&&)
-    {
-        return this_type(lhs);
-    }
-    friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
-    template <typename Archive>
-    void serialize(Archive&, const unsigned int)
-    {
-    }
-    inline void report(std::ostream&, bool, bool) const {}
-    static void print_storage() {}
-
-public:
-    inline data_type&       data() { return m_data; }
-    inline const data_type& data() const { return m_data; }
-    inline int64_t          laps() const { return m_laps; }
-
-public:
-    // get member functions taking either an integer or a type
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
-    _Tp& get()
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
-    _Tp& get()
-    {
-        return std::get<index_of<_Tp*, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
-    const _Tp& get() const
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
-    const _Tp& get() const
-    {
-        return std::get<index_of<_Tp*, data_type>::value>(m_data);
-    }
-
-protected:
-    // protected member functions
-    data_type&       get_data() { return m_data; }
-    const data_type& get_data() const { return m_data; }
-
-protected:
-    // objects
-    bool      m_store      = false;
-    bool      m_is_pushed  = false;
-    int64_t   m_laps       = 0;
-    int64_t   m_count      = 0;
-    int64_t   m_hash       = 0;
-    data_type m_data       = data_type();
-    string_t  m_identifier = "";
-
-protected:
-    string_t       get_prefix() { return ""; }
-    void           compute_identifier(const string_t&, const string_t&) {}
-    static int64_t output_width(int64_t width = 0) { return width; }
 
 private:
     void init_manager();

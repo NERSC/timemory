@@ -21,11 +21,11 @@ initialize(uint64_t nsize, double* __restrict__ array, double value);
 #ifdef ERT_GPU
 void
 gpuKernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ array,
-          int* bytes_per_elem, int* mem_accesses_per_elem);
+          int* bytes_per_element, int* memory_accesses_per_element);
 #else
 void
-kernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ array, int* bytes_per_elem,
-       int* mem_accesses_per_elem);
+kernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ array,
+       int* bytes_per_element, int* memory_accesses_per_element);
 #endif
 
 int
