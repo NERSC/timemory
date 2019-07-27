@@ -22,6 +22,7 @@ add_interface_library(timemory-mpi)
 add_interface_library(timemory-threading)
 
 add_interface_library(timemory-papi)
+add_interface_library(timemory-papi-static)
 add_interface_library(timemory-cuda)
 add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
@@ -38,6 +39,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-mpi
     timemory-threading
     timemory-papi
+    timemory-papi-static
     timemory-cuda
     timemory-cupti
     timemory-coverage
@@ -330,9 +332,11 @@ endif()
 find_package(PAPI QUIET)
 
 if(PAPI_FOUND)
-    target_include_directories(timemory-papi INTERFACE ${PAPI_INCLUDE_DIRS})
-    target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
+    target_link_libraries(timemory-papi INTERFACE papi-shared)
+    target_link_libraries(timemory-papi-static INTERFACE papi-static)
+    cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
     target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
+    target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI")

@@ -46,13 +46,13 @@ endif()
 #
 add_library(timem-papi INTERFACE)
 if(PAPI_FOUND)
-    target_compile_definitions(timem-papi INTERFACE TIMEMORY_USE_PAPI)
-    target_include_directories(timem-papi INTERFACE ${PAPI_INCLUDE_DIRS})
-    if(PAPI_STATIC_LIBRARY AND PAPI_pfm_LIBRARY)
-        target_link_libraries(timem-papi INTERFACE ${PAPI_STATIC_LIBRARY} ${PAPI_pfm_LIBRARY})
-    else()
-        target_link_libraries(timem-papi INTERFACE ${PAPI_LIBRARIES})
-    endif()
+    #target_compile_definitions(timem-papi INTERFACE TIMEMORY_USE_PAPI)
+    #target_include_directories(timem-papi INTERFACE ${PAPI_INCLUDE_DIRS})
+    #if(TARGET timemory-papi-static)
+    #    target_link_libraries(timem-papi INTERFACE timemory-papi-static)
+    #else()
+        target_link_libraries(timem-papi INTERFACE timemory-papi)
+    #endif()
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -67,6 +67,8 @@ target_link_libraries(timem PRIVATE
     timem-papi
     timem-libexplain)
 
+#set_target_properties(timem PROPERTIES POSITION_INDEPENDENT_CODE OFF)
+  
 # timem installation
 install(TARGETS timem
     DESTINATION ${TIMEMORY_INSTALL_BINDIR}
