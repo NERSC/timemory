@@ -258,7 +258,7 @@ install:
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
     - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE}
     - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=cpu
-    - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=heap
+    # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=heap
     - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=Debug          --coverage
 
 after_success:
