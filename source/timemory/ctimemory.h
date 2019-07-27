@@ -141,7 +141,10 @@ enum TIMEMORY_COMPONENT
     NUM_SIGNALS,
     VOLUNTARY_CONTEXT_SWITCH,
     PRIORITY_CONTEXT_SWITCH,
-    CUDA_EVENT
+    CUDA_EVENT,
+    PAPI_ARRAY,
+    CPU_ROOFLINE_SP,  // single-precision cpu_roofline
+    CPU_ROOFLINE_DP   // double-precision cpu_roofline
 };
 
 //======================================================================================//

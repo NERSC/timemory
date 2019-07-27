@@ -74,16 +74,16 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     add_option(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard" ON)
 
     # extensions
-    add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu++11)" OFF)
+    add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
     add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)" OFF)
     add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)" OFF)
 
 else()
     add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
-    add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu++11)")
     add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
-    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)")
     add_feature(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard")
+    add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
+    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)")
     add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)")
 endif()
 

@@ -47,18 +47,16 @@ extern "C"
 #include "timemory/ctimemory.h"
 }
 
+#if !defined(TIMEMORY_CPU_COUNTERS)
+#    define TIMEMORY_CPU_COUNTERS 32
+#endif
+
 using namespace tim::component;
 
 using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
 
-using all_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
-                    monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
-                    thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
-                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
-                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                    voluntary_context_switch, priority_context_switch>;
+using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
 
 using auto_list_t =
     tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
@@ -66,193 +64,18 @@ using auto_list_t =
                    thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch, cuda_event>;
-
-//======================================================================================//
-//
-//                      C++ extern template instantiation
-//
-//======================================================================================//
-
-#if defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-
-//--------------------------------------------------------------------------------------//
-//  category configurations
-//
-
-// rusage_components_t
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::current_rss, tim::component::peak_rss, tim::component::stack_rss,
-    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
-    tim::component::num_io_out, tim::component::num_minor_page_faults,
-    tim::component::num_major_page_faults, tim::component::num_msg_sent,
-    tim::component::num_msg_recv, tim::component::num_signals,
-    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
-
-// timing_components_t
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
-    tim::component::cpu_clock, tim::component::monotonic_clock,
-    tim::component::monotonic_raw_clock, tim::component::thread_cpu_clock,
-    tim::component::process_cpu_clock, tim::component::cpu_util,
-    tim::component::thread_cpu_util, tim::component::process_cpu_util)
-
-//--------------------------------------------------------------------------------------//
-//  standard configurations
-//
-
-// standard_rusage_t
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::current_rss, tim::component::peak_rss,
-                                  tim::component::num_io_in, tim::component::num_io_out,
-                                  tim::component::num_minor_page_faults,
-                                  tim::component::num_major_page_faults,
-                                  tim::component::priority_context_switch,
-                                  tim::component::voluntary_context_switch)
-
-// standard_timing_t
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::user_clock,
-                                  tim::component::system_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util)
-
-//--------------------------------------------------------------------------------------//
-// auto_timer_t
-//
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::user_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::user_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util, tim::component::current_rss,
-                                  tim::component::peak_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util, tim::component::current_rss,
-                                  tim::component::peak_rss)
-
-//--------------------------------------------------------------------------------------//
-// all_tuple_t
-//
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
-    tim::component::cpu_clock, tim::component::monotonic_clock,
-    tim::component::monotonic_raw_clock, tim::component::thread_cpu_clock,
-    tim::component::process_cpu_clock, tim::component::cpu_util,
-    tim::component::thread_cpu_util, tim::component::process_cpu_util,
-    tim::component::current_rss, tim::component::peak_rss, tim::component::stack_rss,
-    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
-    tim::component::num_io_out, tim::component::num_minor_page_faults,
-    tim::component::num_major_page_faults, tim::component::num_msg_sent,
-    tim::component::num_msg_recv, tim::component::num_signals,
-    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
-
-//--------------------------------------------------------------------------------------//
-// miscellaneous
-//
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::system_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::user_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::monotonic_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::monotonic_raw_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::process_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::process_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::current_rss)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::stack_rss)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::data_rss)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_swap)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_io_in)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_io_out)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_minor_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_major_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_msg_sent)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_msg_recv)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::num_signals)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::voluntary_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::priority_context_switch)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::user_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock, tim::component::cpu_clock,
-                                  tim::component::cpu_util, tim::component::peak_rss,
-                                  tim::component::current_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::thread_cpu_util,
-                                  tim::component::process_cpu_clock,
-                                  tim::component::process_cpu_util,
-                                  tim::component::peak_rss, tim::component::current_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::peak_rss, tim::component::current_rss, tim::component::stack_rss,
-    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
-    tim::component::num_io_out, tim::component::num_minor_page_faults,
-    tim::component::num_major_page_faults, tim::component::num_msg_sent,
-    tim::component::num_msg_recv, tim::component::num_signals,
-    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::real_clock, tim::component::system_clock, tim::component::user_clock,
-    tim::component::cpu_clock, tim::component::cpu_util, tim::component::thread_cpu_clock,
-    tim::component::thread_cpu_util, tim::component::process_cpu_clock,
-    tim::component::process_cpu_util, tim::component::monotonic_clock,
-    tim::component::monotonic_raw_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::user_clock, tim::component::cpu_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::process_cpu_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::thread_cpu_util,
-                                  tim::component::process_cpu_clock,
-                                  tim::component::process_cpu_util,
-                                  tim::component::peak_rss, tim::component::current_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::real_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::process_cpu_util)
-
-#    if defined(TIMEMORY_USE_CUDA)
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_clock,
-                                  tim::component::cuda_event)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::thread_cpu_clock,
-                                  tim::component::thread_cpu_util,
-                                  tim::component::cuda_event)
-#    endif
-
-#endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+                   voluntary_context_switch, priority_context_switch, cuda_event,
+                   papi_array_t, cpu_dp_roofline, cpu_sp_roofline>;
 
 //======================================================================================//
 //
 //                      C++ interface
 //
 //======================================================================================//
+
 #if defined(TIMEMORY_BUILD_C)
+
+//======================================================================================//
 
 extern "C" tim_api int
 cxx_timemory_enabled(void)
@@ -315,6 +138,9 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
             case VOLUNTARY_CONTEXT_SWITCH: obj->init<voluntary_context_switch>(); break;
             case PRIORITY_CONTEXT_SWITCH: obj->init<priority_context_switch>(); break;
             case CUDA_EVENT: obj->init<cuda_event>(); break;
+            case PAPI_ARRAY: obj->init<papi_array_t>(); break;
+            case CPU_ROOFLINE_DP: obj->init<cpu_dp_roofline>(); break;
+            case CPU_ROOFLINE_SP: obj->init<cpu_sp_roofline>(); break;
         }
     }
     obj->push();
@@ -365,95 +191,9 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
     sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
 }
-#endif
 
 //======================================================================================//
-#if defined(TIMEMORY_EXTERN_INIT)
-namespace tim
-{
-std::atomic<int32_t>&
-manager::f_manager_instance_count()
-{
-    static std::atomic<int32_t> instance;
-    return instance;
-}
+
+#endif  // TIMEMORY_BUILD_C
 
 //======================================================================================//
-// get either master or thread-local instance
-//
-manager::pointer
-manager::instance()
-{
-    return details::manager_singleton().instance();
-}
-
-//======================================================================================//
-// get master instance
-//
-manager::pointer
-manager::master_instance()
-{
-    return details::manager_singleton().master_instance();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_instance()
-{
-    return details::manager_singleton().instance_ptr();
-}
-
-//======================================================================================//
-// static function
-manager::pointer
-manager::noninit_master_instance()
-{
-    return details::manager_singleton().master_instance_ptr();
-}
-
-//======================================================================================//
-// function for storage
-/*
-template <typename _Tp>
-details::storage_singleton_t<_Tp>&
-get_storage_singleton()
-{
-    using _single_t                         = details::storage_singleton_t<_Tp>;
-    static _single_t _instance = _single_t::instance();
-    return _instance;
-}
-*/
-}  // namespace tim
-
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(real_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(system_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(user_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(monotonic_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(monotonic_raw_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(thread_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(process_cpu_clock)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(thread_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(process_cpu_util)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(current_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(peak_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(stack_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(data_rss)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_swap)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_io_in)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_io_out)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_minor_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_major_page_faults)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_msg_sent)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_msg_recv)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(num_signals)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(voluntary_context_switch)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(priority_context_switch)
-
-#    if defined(TIMEMORY_USE_CUDA)
-TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cuda_event)
-#    endif
-
-#endif  // defined(TIMEMORY_EXTERN_INIT

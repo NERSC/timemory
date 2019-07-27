@@ -292,6 +292,15 @@ public:
         const_iterator cbegin() const { return m_graph.cbegin(); }
         const_iterator cend() const { return m_graph.cend(); }
 
+        inline void clear()
+        {
+            m_has_head = false;
+            m_depth    = 0;
+            m_graph.clear();
+            m_current = nullptr;
+            m_head    = nullptr;
+        }
+
         inline void reset()
         {
             m_graph.erase_children(m_head);
@@ -557,11 +566,11 @@ public:
     template <typename Archive>
     void serialize(Archive&, const unsigned int);
 
-    // tim::component::array_serialization<ObjectType>::type == TRUE
+    // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
     void serialize(std::true_type, Archive&, const unsigned int);
 
-    // tim::component::array_serialization<ObjectType>::type == FALSE
+    // tim::trait::array_serialization<ObjectType>::type == FALSE
     template <typename Archive>
     void serialize(std::false_type, Archive&, const unsigned int);
 };

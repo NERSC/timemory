@@ -49,9 +49,7 @@ install(
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION
-        ${TIMEMORY_INSTALL_CMAKEDIR}
-    COMPONENT
-        development)
+        ${TIMEMORY_INSTALL_CMAKEDIR})
 
 # only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")

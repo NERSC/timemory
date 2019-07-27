@@ -66,8 +66,6 @@ class auto_list;
 //
 template <typename... Types>
 class component_list
-: public tim::counted_object<component_list<Types...>>
-, public tim::hashed_object<component_list<Types...>>
 {
     static const std::size_t num_elements = sizeof...(Types);
 
@@ -94,13 +92,10 @@ public:
     explicit component_list(const string_t& key, const bool& store,
                             const language_t& lang = language_t::cxx(),
                             const int64_t& ncount = 0, const int64_t& nhash = 0)
-    : counter_type()
-    , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
-                   (counter_type::live() + hashed_type::live() + ncount + nhash)))
-    , m_store(store)
+    : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash(nhash)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_key(key)
     , m_lang(lang)
     , m_identifier("")
@@ -113,13 +108,10 @@ public:
     component_list(const string_t& key, const language_t& lang = language_t::cxx(),
                    const int64_t& ncount = 0, const int64_t& nhash = 0,
                    bool store = false)
-    : counter_type()
-    , hashed_type((string_hash()(key) + static_cast<int64_t>(lang) +
-                   (counter_type::live() + hashed_type::live() + ncount + nhash)))
-    , m_store(store)
+    : m_store(store)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash(nhash)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_key(key)
     , m_lang(lang)
     , m_identifier("")
@@ -132,17 +124,50 @@ public:
     ~component_list()
     {
         pop();
-        using deleter_types = std::tuple<component::pointer_deleter<Types>...>;
+        using deleter_types = std::tuple<operation::pointer_deleter<Types>...>;
         apply<void>::access<deleter_types>(m_data);
     }
 
     //------------------------------------------------------------------------//
     //      Copy construct and assignment
     //------------------------------------------------------------------------//
-    component_list(const component_list&) = delete;
-    component_list& operator=(const component_list&) = delete;
-    component_list(component_list&&)                 = default;
+    component_list(component_list&&) = default;
     component_list& operator=(component_list&&) = default;
+
+    component_list(const component_list& rhs)
+    : m_store(rhs.m_store)
+    , m_is_pushed(rhs.m_is_pushed)
+    , m_laps(rhs.m_laps)
+    , m_count(rhs.m_count)
+    , m_hash(rhs.m_hash)
+    , m_key(rhs.m_key)
+    , m_lang(rhs.m_lang)
+    , m_identifier(rhs.m_identifier)
+    {
+        apply<void>::set_value(m_data, nullptr);
+        using apply_types = std::tuple<operation::copy<Types>...>;
+        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+    }
+
+    component_list& operator=(const component_list& rhs)
+    {
+        using deleter_types = std::tuple<operation::pointer_deleter<Types>...>;
+        using copy_types    = std::tuple<operation::copy<Types>...>;
+        if(this != &rhs)
+        {
+            m_store      = rhs.m_store;
+            m_is_pushed  = rhs.m_is_pushed;
+            m_laps       = rhs.m_laps;
+            m_count      = rhs.m_count;
+            m_hash       = rhs.m_hash;
+            m_key        = rhs.m_key;
+            m_lang       = std::move(language_t(rhs.m_lang));
+            m_identifier = rhs.m_identifier;
+            apply<void>::access<deleter_types>(m_data);
+            apply<void>::access2<copy_types>(m_data, rhs.m_data);
+        }
+        return *this;
+    }
 
     component_list clone(const int64_t& nhash, bool store)
     {
@@ -165,7 +190,7 @@ public:
         if(m_store && !m_is_pushed)
         {
             using insert_types = std::tuple<
-                component::pointer_operator<Types, component::insert_node<Types>>...>;
+                operation::pointer_operator<Types, operation::insert_node<Types>>...>;
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
@@ -180,7 +205,7 @@ public:
         if(m_store && m_is_pushed)
         {
             using apply_types = std::tuple<
-                component::pointer_operator<Types, component::pop_node<Types>>...>;
+                operation::pointer_operator<Types, operation::pop_node<Types>>...>;
             // set the current node to the parent node
             apply<void>::access<apply_types>(m_data);
             // avoid pushing/popping when already pushed/popped
@@ -193,7 +218,7 @@ public:
     void measure()
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::measure<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -202,7 +227,7 @@ public:
     void start()
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::start<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::start<Types>>...>;
         // increment laps
         ++m_laps;
         // start components
@@ -212,7 +237,7 @@ public:
     void stop()
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::stop<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::stop<Types>>...>;
         // stop components
         apply<void>::access<apply_types>(m_data);
     }
@@ -221,7 +246,7 @@ public:
     {
         // start, if not already started
         using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_start<Types>>...>;
+            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -229,7 +254,7 @@ public:
     {
         // stop, if not already stopped
         using apply_types = std::tuple<
-            component::pointer_operator<Types, component::conditional_stop<Types>>...>;
+            operation::pointer_operator<Types, operation::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data);
     }
 
@@ -241,7 +266,7 @@ public:
         ++m_laps;
         {
             using apply_types = std::tuple<
-                component::pointer_operator<Types, component::record<Types>>...>;
+                operation::pointer_operator<Types, operation::record<Types>>...>;
             apply<void>::access<apply_types>(m_data);
         }
         return *this;
@@ -251,7 +276,7 @@ public:
     void reset()
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::reset<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::reset<Types>>...>;
         apply<void>::access<apply_types>(m_data);
         m_laps = 0;
     }
@@ -262,7 +287,7 @@ public:
     this_type& operator-=(const this_type& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -271,7 +296,7 @@ public:
     this_type& operator-=(this_type& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
@@ -280,7 +305,7 @@ public:
     this_type& operator+=(const this_type& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -289,7 +314,7 @@ public:
     this_type& operator+=(this_type& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
         apply<void>::access2<apply_types>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
@@ -302,7 +327,7 @@ public:
     this_type& operator-=(_Op&& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::minus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -311,7 +336,7 @@ public:
     this_type& operator+=(_Op&& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::plus<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -320,7 +345,7 @@ public:
     this_type& operator*=(_Op&& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::multiply<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::multiply<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -329,7 +354,7 @@ public:
     this_type& operator/=(_Op&& rhs)
     {
         using apply_types =
-            std::tuple<component::pointer_operator<Types, component::divide<Types>>...>;
+            std::tuple<operation::pointer_operator<Types, operation::divide<Types>>...>;
         apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
@@ -368,14 +393,14 @@ public:
     {
         {
             // stop, if not already stopped
-            using apply_types = std::tuple<component::pointer_operator<
-                Types, component::conditional_stop<Types>>...>;
+            using apply_types = std::tuple<operation::pointer_operator<
+                Types, operation::conditional_stop<Types>>...>;
             apply<void>::access<apply_types>(obj.m_data);
         }
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         {
-            using apply_types = std::tuple<component::print<Types>...>;
+            using apply_types = std::tuple<operation::print<Types>...>;
             apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
                                                           false);
         }
@@ -391,8 +416,8 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<component::pointer_operator<
-            Types, component::serialization<Types, Archive>>...>;
+        using apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::serialization<Types, Archive>>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
@@ -417,9 +442,10 @@ public:
         os << ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
     static void print_storage()
     {
-        apply<void>::type_access<component::print_storage, reference_type>();
+        apply<void>::type_access<operation::print_storage, reference_type>();
     }
 
 public:
@@ -475,6 +501,21 @@ public:
     const _Tp* get() const
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    template <typename _Tp, typename... _Args,
+              tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
+    void init(_Args&&... _args)
+    {
+        auto&& _obj = get<_Tp>();
+        _obj        = new _Tp(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename... _Args,
+              tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
+    void init(_Args&&...)
+    {
     }
 
 protected:

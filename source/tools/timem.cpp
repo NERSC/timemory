@@ -75,11 +75,10 @@ using papi_array_t = papi_array<PAPI_NUM_COUNTERS>;
 //--------------------------------------------------------------------------------------//
 //
 //
-using comp_tuple_t =
-    tim::details::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock,
-                                         cpu_util, peak_rss, num_minor_page_faults,
-                                         num_major_page_faults, voluntary_context_switch,
-                                         priority_context_switch>;
+using comp_tuple_t = tim::details::custom_component_tuple<
+    real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
+    num_minor_page_faults, num_major_page_faults, num_signals, voluntary_context_switch,
+    priority_context_switch>;
 
 //--------------------------------------------------------------------------------------//
 

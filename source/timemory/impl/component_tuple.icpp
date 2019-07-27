@@ -46,7 +46,7 @@ public:
     {
         {
             // stop, if not already stopped
-            using apply_types = std::tuple<component::conditional_stop<Types>...>;
+            using apply_types = std::tuple<operation::conditional_stop<Types>...>;
             apply<void>::access<apply_types>(obj.m_data);
         }
         std::stringstream ss_prefix;

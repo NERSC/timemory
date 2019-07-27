@@ -61,12 +61,12 @@ const int64_t gigabyte = 1024 * megabyte;
 const int64_t terabyte = 1024 * gigabyte;
 const int64_t petabyte = 1024 * terabyte;
 
-const double Bi  = 1.0;
-const double KiB = 1024.0 * Bi;
-const double MiB = 1024.0 * KiB;
-const double GiB = 1024.0 * MiB;
-const double TiB = 1024.0 * GiB;
-const double PiB = 1024.0 * TiB;
+const float Bi  = 1.0;
+const float KiB = 1024.0 * Bi;
+const float MiB = 1024.0 * KiB;
+const float GiB = 1024.0 * MiB;
+const float TiB = 1024.0 * GiB;
+const float PiB = 1024.0 * TiB;
 
 #if defined(_UNIX)
 #    if defined(_LINUX)

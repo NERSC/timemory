@@ -69,13 +69,20 @@ extern "C"
 #include "timemory/ctimemory.h"
 }
 
+#if !defined(TIMEMORY_CPU_COUNTERS)
+#    define TIMEMORY_CPU_COUNTERS 32
+#endif
+
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
+using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
+
 using auto_timer_t =
     tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+
 using auto_usage_t =
     tim::auto_tuple<current_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                     voluntary_context_switch, priority_context_switch>;
@@ -85,7 +92,8 @@ using auto_list_t =
                    thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch, cuda_event>;
+                   voluntary_context_switch, priority_context_switch, cuda_event,
+                   papi_array_t, cpu_dp_roofline, cpu_sp_roofline>;
 
 using tim_timer_t       = typename auto_timer_t::component_type;
 using rss_usage_t       = typename auto_usage_t::component_type;
@@ -297,56 +305,35 @@ create_component_list(std::string obj_tag, int lineno, const tim::language& lang
         TIMEMORY_COMPONENT component = static_cast<TIMEMORY_COMPONENT>(components[i]);
         switch(component)
         {
-            case WALL_CLOCK: obj->get<real_clock>() = new real_clock(); break;
-            case SYS_CLOCK: obj->get<system_clock>() = new system_clock(); break;
-            case USER_CLOCK: obj->get<user_clock>() = new user_clock(); break;
-            case CPU_CLOCK: obj->get<cpu_clock>() = new cpu_clock(); break;
-            case MONOTONIC_CLOCK:
-                obj->get<monotonic_clock>() = new monotonic_clock();
-                break;
-            case MONOTONIC_RAW_CLOCK:
-                obj->get<monotonic_raw_clock>() = new monotonic_raw_clock();
-                break;
-            case THREAD_CPU_CLOCK:
-                obj->get<thread_cpu_clock>() = new thread_cpu_clock();
-                break;
-            case PROCESS_CPU_CLOCK:
-                obj->get<process_cpu_clock>() = new process_cpu_clock();
-                break;
-            case CPU_UTIL: obj->get<cpu_util>() = new cpu_util(); break;
-            case THREAD_CPU_UTIL:
-                obj->get<thread_cpu_util>() = new thread_cpu_util();
-                break;
-            case PROCESS_CPU_UTIL:
-                obj->get<process_cpu_util>() = new process_cpu_util();
-                break;
-            case CURRENT_RSS: obj->get<current_rss>() = new current_rss(); break;
-            case PEAK_RSS: obj->get<peak_rss>() = new peak_rss(); break;
-            case STACK_RSS: obj->get<stack_rss>() = new stack_rss(); break;
-            case DATA_RSS: obj->get<data_rss>() = new data_rss(); break;
-            case NUM_SWAP: obj->get<num_swap>() = new num_swap(); break;
-            case NUM_IO_IN: obj->get<num_io_in>() = new num_io_in(); break;
-            case NUM_IO_OUT: obj->get<num_io_out>() = new num_io_out(); break;
-            case NUM_MINOR_PAGE_FAULTS:
-                obj->get<num_minor_page_faults>() = new num_minor_page_faults();
-                break;
-            case NUM_MAJOR_PAGE_FAULTS:
-                obj->get<num_major_page_faults>() = new num_major_page_faults();
-                break;
-            case NUM_MSG_SENT: obj->get<num_msg_sent>() = new num_msg_sent(); break;
-            case NUM_MSG_RECV: obj->get<num_msg_recv>() = new num_msg_recv(); break;
-            case NUM_SIGNALS: obj->get<num_signals>() = new num_signals(); break;
-            case VOLUNTARY_CONTEXT_SWITCH:
-                obj->get<voluntary_context_switch>() = new voluntary_context_switch();
-                break;
-            case PRIORITY_CONTEXT_SWITCH:
-                obj->get<priority_context_switch>() = new priority_context_switch();
-                break;
-            case CUDA_EVENT:
-#if defined(TIMEMORY_USE_CUDA)
-                obj->get<cuda_event>() = new cuda_event();
-#endif
-                break;
+            case WALL_CLOCK: obj->init<real_clock>(); break;
+            case SYS_CLOCK: obj->init<system_clock>(); break;
+            case USER_CLOCK: obj->init<user_clock>(); break;
+            case CPU_CLOCK: obj->init<cpu_clock>(); break;
+            case MONOTONIC_CLOCK: obj->init<monotonic_clock>(); break;
+            case MONOTONIC_RAW_CLOCK: obj->init<monotonic_raw_clock>(); break;
+            case THREAD_CPU_CLOCK: obj->init<thread_cpu_clock>(); break;
+            case PROCESS_CPU_CLOCK: obj->init<process_cpu_clock>(); break;
+            case CPU_UTIL: obj->init<cpu_util>(); break;
+            case THREAD_CPU_UTIL: obj->init<thread_cpu_util>(); break;
+            case PROCESS_CPU_UTIL: obj->init<process_cpu_util>(); break;
+            case CURRENT_RSS: obj->init<current_rss>(); break;
+            case PEAK_RSS: obj->init<peak_rss>(); break;
+            case STACK_RSS: obj->init<stack_rss>(); break;
+            case DATA_RSS: obj->init<data_rss>(); break;
+            case NUM_SWAP: obj->init<num_swap>(); break;
+            case NUM_IO_IN: obj->init<num_io_in>(); break;
+            case NUM_IO_OUT: obj->init<num_io_out>(); break;
+            case NUM_MINOR_PAGE_FAULTS: obj->init<num_minor_page_faults>(); break;
+            case NUM_MAJOR_PAGE_FAULTS: obj->init<num_major_page_faults>(); break;
+            case NUM_MSG_SENT: obj->init<num_msg_sent>(); break;
+            case NUM_MSG_RECV: obj->init<num_msg_recv>(); break;
+            case NUM_SIGNALS: obj->init<num_signals>(); break;
+            case VOLUNTARY_CONTEXT_SWITCH: obj->init<voluntary_context_switch>(); break;
+            case PRIORITY_CONTEXT_SWITCH: obj->init<priority_context_switch>(); break;
+            case CUDA_EVENT: obj->init<cuda_event>(); break;
+            case PAPI_ARRAY: obj->init<papi_array_t>(); break;
+            case CPU_ROOFLINE_DP: obj->init<cpu_dp_roofline>(); break;
+            case CPU_ROOFLINE_SP: obj->init<cpu_sp_roofline>(); break;
         }
     }
     return obj;

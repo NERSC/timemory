@@ -57,7 +57,7 @@ reduce_merge(_Pred lhs, _Pred rhs)
 }
 /*
 template <typename _Pred, typename _Tp,
-          enable_if_t<(tim::component::record_max<_Tp>::value == true), int> = 0>
+          enable_if_t<(tim::trait::record_max<_Tp>::value == true), int> = 0>
 void
 reduce_merge(_Pred lhs, _Pred rhs)
 {
@@ -218,9 +218,9 @@ tim::storage<ObjectType>::print()
             auto _prefix = _compute_modified_prefix(itr);
             auto _laps   = _obj.laps;
             auto _depth  = itr.depth();
-            component::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _width,
+            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _width,
                                          true);
-            component::print<ObjectType>(_obj, _mss, false);
+            operation::print<ObjectType>(_obj, _mss, false);
         }
 
         if(settings::file_output() && _oss.str().length() > 0)
@@ -360,7 +360,7 @@ template <typename Archive>
 void
 tim::storage<ObjectType>::serialize(Archive& ar, const unsigned int version)
 {
-    typename tim::component::array_serialization<ObjectType>::type type;
+    typename tim::trait::array_serialization<ObjectType>::type type;
     serialize<Archive>(type, ar, version);
 }
 

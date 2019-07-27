@@ -34,13 +34,13 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   Add the examples
 #
+add_subdirectory(ex-optional)
 if(TIMEMORY_BUILD_C OR TIMEMORY_C_LIBRARY)
     add_subdirectory(ex-c)
 endif()
 add_subdirectory(ex-cxx-tuple)
 add_subdirectory(ex-cxx-overhead)
-add_subdirectory(ex-roofline)
-add_subdirectory(ex-optional)
+add_subdirectory(ex-cpu-roofline)
 
 get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
 find_package(CUDA QUIET)

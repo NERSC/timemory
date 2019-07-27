@@ -71,5 +71,4 @@ target_link_libraries(timem PRIVATE
   
 # timem installation
 install(TARGETS timem
-    DESTINATION ${TIMEMORY_INSTALL_BINDIR}
-    COMPONENT development)
+    DESTINATION ${TIMEMORY_INSTALL_BINDIR})

@@ -80,10 +80,12 @@ endfunction()
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
 if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
-
+# include threading because of rooflines
+target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -491,16 +493,14 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-        if(CUDA_rt_LIBRARY)
-            target_link_libraries(timemory-cudart INTERFACE
-                ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
+        target_link_libraries(timemory-cudart INTERFACE
+            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
-            target_link_libraries(timemory-cudart-device INTERFACE
-                ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
+        target_link_libraries(timemory-cudart-device INTERFACE
+            ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
 
-            target_link_libraries(timemory-cudart-static INTERFACE
-                ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
-        endif()
+        target_link_libraries(timemory-cudart-static INTERFACE
+            ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
     else()
         inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)

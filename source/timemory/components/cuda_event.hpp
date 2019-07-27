@@ -65,13 +65,18 @@ struct cuda_event : public base<cuda_event, float>
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
 
-    cuda_event(cuda::stream_t _stream = 0)
+    explicit cuda_event(cuda::stream_t _stream = 0)
     : m_stream(_stream)
     {
         m_is_valid = (cuda::event_create(m_start) && cuda::event_create(m_stop));
     }
 
     ~cuda_event() {}
+
+    cuda_event(const cuda_event&) = default;
+    cuda_event(cuda_event&&)      = default;
+    cuda_event& operator=(const cuda_event&) = default;
+    cuda_event& operator=(cuda_event&&) = default;
 
     float compute_display() const
     {

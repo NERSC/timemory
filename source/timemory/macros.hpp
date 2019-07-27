@@ -218,11 +218,15 @@
 
 #define TIMEMORY_DECLARE_EXTERN_TUPLE(...)                                               \
     extern template class tim::auto_tuple<__VA_ARGS__>;                                  \
-    extern template class tim::component_tuple<__VA_ARGS__>;
+    extern template class tim::component_tuple<__VA_ARGS__>;                             \
+    extern template class tim::auto_list<__VA_ARGS__>;                                   \
+    extern template class tim::component_list<__VA_ARGS__>;
 
 #define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)                                           \
     template class tim::auto_tuple<__VA_ARGS__>;                                         \
-    template class tim::component_tuple<__VA_ARGS__>;
+    template class tim::component_tuple<__VA_ARGS__>;                                    \
+    template class tim::auto_list<__VA_ARGS__>;                                          \
+    template class tim::component_list<__VA_ARGS__>;
 
 #define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
 

@@ -5,11 +5,6 @@
 #include <cstdint>
 #include <timemory/timemory.hpp>
 
-#ifdef ERT_GPU
-extern int gpu_blocks;
-extern int gpu_threads;
-#endif
-
 #if defined(MACROS)
 #    define KERNEL1(a, b, c) ((a) = (b) + (c))
 #    define KERNEL2(a, b, c) ((a) = (a) * (b) + (c))
@@ -18,15 +13,9 @@ extern int gpu_threads;
 void
 initialize(uint64_t nsize, double* __restrict__ array, double value);
 
-#ifdef ERT_GPU
-void
-gpuKernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ array,
-          int* bytes_per_element, int* memory_accesses_per_element);
-#else
 void
 kernel(uint64_t nsize, uint64_t ntrials, double* __restrict__ array,
        int* bytes_per_element, int* memory_accesses_per_element);
-#endif
 
 int
 ert_main(int argc, char** argv);

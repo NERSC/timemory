@@ -6,11 +6,25 @@
 
 #include <sys/time.h>
 
-#define ERT_ALIGN 64
-#define ERT_FLOP 8
-#define ERT_TRIALS_MIN tim::ert::cache_size::get<1>() / 16
-#define ERT_WORKING_SET_MIN tim::ert::cache_size::get<1>() / 16
-#define ERT_MEMORY_MAX tim::ert::cache_size::get<3>() * 4
+#if !(ERT_ALIGN > 0)
+#    define ERT_ALIGN 64
+#endif
+
+#if !(ERT_FLOP > 0)
+#    define ERT_FLOP 8
+#endif
+
+#if !(ERT_TRIALS_MIN > 0)
+#    define ERT_TRIALS_MIN tim::ert::cache_size::get<1>() / 16
+#endif
+
+#if !(ERT_WORKING_SET_MIN > 0)
+#    define ERT_WORKING_SET_MIN tim::ert::cache_size::get<1>() / 16
+#endif
+
+#if !(ERT_MEMORY_MAX > 0)
+#    define ERT_MEMORY_MAX tim::ert::cache_size::get<3>() * 4
+#endif
 
 double
 getTime()

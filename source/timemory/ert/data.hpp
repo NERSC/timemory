@@ -312,10 +312,10 @@ public:
     }
 
     thread_barrier(const thread_barrier&) = delete;
-    thread_barrier(thread_barrier&&)      = default;
+    thread_barrier(thread_barrier&&)      = delete;
 
     thread_barrier& operator=(const thread_barrier&) = delete;
-    thread_barrier& operator=(thread_barrier&&) = default;
+    thread_barrier& operator=(thread_barrier&&) = delete;
 
     size_type size() const { return m_num_threads; }
 

@@ -100,7 +100,7 @@ struct cupti_event;
 //======================================================================================//
 //  components that provide the invocation (i.e. WHAT the components need to do)
 //
-namespace component
+namespace operation
 {
 // operators
 template <typename _Tp>
@@ -160,6 +160,9 @@ struct print_storage;
 template <typename _Tp, typename _Archive>
 struct serialization;
 
+template <typename _Tp>
+struct copy;
+
 template <typename _Tp, typename _Op>
 struct pointer_operator;
 
@@ -215,13 +218,19 @@ public:
     , m_descript(m_lang)
     {}
 
+    language(const language&) = default;
+    language(language&&)      = default;
+
+    language& operator=(const language& rhs) = default;
+    language& operator=(language&&) = default;
+
     constexpr static language c() { return language(type::C); }
     constexpr static language cxx() { return language(type::CXX); }
     constexpr static language pyc() { return language(type::PYTHON); }
 
 private:
-    type              m_type;
-    const char* const m_descript = nullptr;
+    type        m_type;
+    const char* m_descript = nullptr;
 };
 
 //--------------------------------------------------------------------------------------//

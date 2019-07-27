@@ -81,6 +81,23 @@ public:
     using language_t  = tim::language;
 
 public:
+    // operation types
+    using op_insert_node_t = tim::operation_tuple<operation::insert_node, Types...>;
+    using op_pop_node_t    = tim::operation_tuple<operation::pop_node, Types...>;
+    using op_measure_t     = tim::operation_tuple<operation::measure, Types...>;
+    using op_start_t       = tim::operation_tuple<operation::start, Types...>;
+    using op_stop_t        = tim::operation_tuple<operation::stop, Types...>;
+    using op_cond_start_t  = tim::operation_tuple<operation::conditional_start, Types...>;
+    using op_cond_stop_t   = tim::operation_tuple<operation::conditional_stop, Types...>;
+    using op_record_t      = tim::operation_tuple<operation::record, Types...>;
+    using op_reset_t       = tim::operation_tuple<operation::reset, Types...>;
+    using op_plus_t        = tim::operation_tuple<operation::plus, Types...>;
+    using op_minus_t       = tim::operation_tuple<operation::minus, Types...>;
+    using op_multiply_t    = tim::operation_tuple<operation::multiply, Types...>;
+    using op_divide_t      = tim::operation_tuple<operation::divide, Types...>;
+    using op_print_t       = tim::operation_tuple<operation::print, Types...>;
+
+public:
     using auto_type = auto_tuple<Types...>;
 
 public:
@@ -166,11 +183,10 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
-            using insert_types = std::tuple<component::insert_node<Types>...>;
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<insert_types>(m_data, m_identifier, m_hash);
+            apply<void>::access<op_insert_node_t>(m_data, m_identifier, m_hash);
         }
     }
 
@@ -180,9 +196,8 @@ public:
     {
         if(m_store && m_is_pushed)
         {
-            using apply_types = std::tuple<component::pop_node<Types>...>;
             // set the current node to the parent node
-            apply<void>::access<apply_types>(m_data);
+            apply<void>::access<op_pop_node_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = false;
         }
@@ -190,42 +205,34 @@ public:
 
     //----------------------------------------------------------------------------------//
     // measure functions
-    void measure()
-    {
-        using apply_types = std::tuple<component::measure<Types>...>;
-        apply<void>::access<apply_types>(m_data);
-    }
+    void measure() { apply<void>::access<op_measure_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
-        using apply_types = std::tuple<component::start<Types>...>;
         // increment laps
         ++m_laps;
         // start components
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<op_start_t>(m_data);
     }
 
     void stop()
     {
-        using apply_types = std::tuple<component::stop<Types>...>;
         // stop components
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<op_stop_t>(m_data);
     }
 
     void conditional_start()
     {
         // start, if not already started
-        using apply_types = std::tuple<component::conditional_start<Types>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<op_cond_start_t>(m_data);
     }
 
     void conditional_stop()
     {
         // stop, if not already stopped
-        using apply_types = std::tuple<component::conditional_stop<Types>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<op_cond_stop_t>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -234,18 +241,14 @@ public:
     this_type& record()
     {
         ++m_laps;
-        {
-            using apply_types = std::tuple<component::record<Types>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
+        apply<void>::access<op_record_t>(m_data);
         return *this;
     }
 
     //----------------------------------------------------------------------------------//
     void reset()
     {
-        using apply_types = std::tuple<component::reset<Types>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<op_reset_t>(m_data);
         m_laps = 0;
     }
 
@@ -254,32 +257,28 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<op_minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<op_minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<op_plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<op_plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
@@ -290,32 +289,28 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::minus<Types>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<op_minus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::plus<Types>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<op_plus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::multiply<Types>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<op_multiply_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        using apply_types = std::tuple<component::divide<Types>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<op_divide_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
@@ -351,18 +346,12 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        {
-            // stop, if not already stopped
-            using apply_types = std::tuple<component::conditional_stop<Types>...>;
-            apply<void>::access<apply_types>(obj.m_data);
-        }
+        // stop, if not already stopped
+        apply<void>::access<op_cond_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
-        {
-            using apply_types = std::tuple<component::print<Types>...>;
-            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                          false);
-        }
+        apply<void>::access_with_indices<op_print_t>(obj.m_data, std::ref(ss_data),
+                                                     false);
         obj.update_identifier();
         ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
         os << ss_prefix.str() << ss_data.str();
@@ -375,7 +364,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<component::serialization<Types, Archive>...>;
+        using apply_types = std::tuple<operation::serialization<Types, Archive>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
@@ -390,10 +379,8 @@ public:
         consume_parameters(std::move(ign_cutoff));
         std::stringstream ss;
         ss << *this;
-
         if(endline)
             ss << std::endl;
-
         // ensure thread-safety
         tim::auto_lock_t lock(tim::type_mutex<std::iostream>());
         // output to ostream
@@ -403,7 +390,7 @@ public:
     //----------------------------------------------------------------------------------//
     static void print_storage()
     {
-        apply<void>::type_access<component::print_storage, data_type>();
+        apply<void>::type_access<operation::print_storage, data_type>();
     }
 
 public:
@@ -541,7 +528,7 @@ private:
     void init_manager();
     void init_storage()
     {
-        apply<void>::type_access<component::init_storage, data_type>();
+        apply<void>::type_access<operation::init_storage, data_type>();
     }
 };
 

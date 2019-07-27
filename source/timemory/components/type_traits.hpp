@@ -35,7 +35,7 @@
 
 namespace tim
 {
-namespace component
+namespace trait
 {
 //--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should
@@ -69,7 +69,7 @@ struct ordering_priority : std::integral_constant<int16_t, 0>
 {};
 
 //--------------------------------------------------------------------------------------//
-}  // component
+}  // trait
 }  // tim
 
 //======================================================================================//
@@ -80,40 +80,40 @@ struct ordering_priority : std::integral_constant<int16_t, 0>
 
 namespace tim
 {
-namespace component
+namespace trait
 {
 //--------------------------------------------------------------------------------------//
 //
 template <>
-struct record_max<peak_rss> : std::true_type
+struct record_max<component::peak_rss> : std::true_type
 {};
 
 template <>
-struct record_max<current_rss> : std::true_type
+struct record_max<component::current_rss> : std::true_type
 {};
 
 template <>
-struct record_max<stack_rss> : std::true_type
+struct record_max<component::stack_rss> : std::true_type
 {};
 
 template <>
-struct record_max<data_rss> : std::true_type
+struct record_max<component::data_rss> : std::true_type
 {};
 
 template <int... EventTypes>
-struct array_serialization<papi_tuple<EventTypes...>> : std::true_type
+struct array_serialization<component::papi_tuple<EventTypes...>> : std::true_type
 {};
 
 template <std::size_t MaxNumEvents>
-struct array_serialization<papi_array<MaxNumEvents>> : std::true_type
+struct array_serialization<component::papi_array<MaxNumEvents>> : std::true_type
 {};
 
 template <>
-struct array_serialization<cupti_event> : std::true_type
+struct array_serialization<component::cupti_event> : std::true_type
 {};
 
 template <>
-struct ordering_priority<cuda_event> : std::integral_constant<int16_t, -1>
+struct ordering_priority<component::cuda_event> : std::integral_constant<int16_t, -1>
 {};
 
 //--------------------------------------------------------------------------------------//
@@ -122,43 +122,43 @@ struct ordering_priority<cuda_event> : std::integral_constant<int16_t, -1>
 #if !defined(_UNIX)
 
 template <>
-struct impl_available<stack_rss> : std::false_type
+struct impl_available<component::stack_rss> : std::false_type
 {};
 
 template <>
-struct impl_available<data_rss> : std::false_type
+struct impl_available<component::data_rss> : std::false_type
 {};
 
 template <>
-struct impl_available<num_io_in> : std::false_type
+struct impl_available<component::num_io_in> : std::false_type
 {};
 
 template <>
-struct impl_available<num_io_out> : std::false_type
+struct impl_available<component::num_io_out> : std::false_type
 {};
 
 template <>
-struct impl_available<num_major_page_faults> : std::false_type
+struct impl_available<component::num_major_page_faults> : std::false_type
 {};
 
 template <>
-struct impl_available<num_minor_page_faults> : std::false_type
+struct impl_available<component::num_minor_page_faults> : std::false_type
 {};
 
 template <>
-struct impl_available<num_msg_recv> : std::false_type
+struct impl_available<component::num_msg_recv> : std::false_type
 {};
 
 template <>
-struct impl_available<num_msg_sent> : std::false_type
+struct impl_available<component::num_msg_sent> : std::false_type
 {};
 
 template <>
-struct impl_available<num_signals> : std::false_type
+struct impl_available<component::num_signals> : std::false_type
 {};
 
 template <>
-struct impl_available<num_swap> : std::false_type
+struct impl_available<component::num_swap> : std::false_type
 {};
 
 #endif
@@ -169,15 +169,15 @@ struct impl_available<num_swap> : std::false_type
 #if !defined(TIMEMORY_USE_PAPI)
 
 template <int... EventTypes>
-struct impl_available<papi_tuple<EventTypes...>> : std::false_type
+struct impl_available<component::papi_tuple<EventTypes...>> : std::false_type
 {};
 
 template <std::size_t MaxNumEvents>
-struct impl_available<papi_array<MaxNumEvents>> : std::false_type
+struct impl_available<component::papi_array<MaxNumEvents>> : std::false_type
 {};
 
 template <typename _Tp, int... EventTypes>
-struct impl_available<cpu_roofline<_Tp, EventTypes...>> : std::false_type
+struct impl_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_type
 {};
 
 #endif  // TIMEMORY_USE_PAPI
@@ -188,7 +188,7 @@ struct impl_available<cpu_roofline<_Tp, EventTypes...>> : std::false_type
 #if !defined(TIMEMORY_USE_CUDA)
 
 template <>
-struct impl_available<cuda_event> : std::false_type
+struct impl_available<component::cuda_event> : std::false_type
 {};
 
 #endif  // TIMEMORY_USE_CUDA
@@ -199,7 +199,7 @@ struct impl_available<cuda_event> : std::false_type
 #if !defined(TIMEMORY_USE_CUPTI)
 
 template <>
-struct impl_available<cupti_event> : std::false_type
+struct impl_available<component::cupti_event> : std::false_type
 {};
 
 #endif  // TIMEMORY_USE_CUPTI

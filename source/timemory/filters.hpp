@@ -31,7 +31,7 @@
 
 namespace tim
 {
-namespace details
+namespace impl
 {
 //======================================================================================//
 //
@@ -66,12 +66,16 @@ template <typename... Ts>
 using tuple_concat_t = typename tuple_concat<Ts...>::type;
 
 //--------------------------------------------------------------------------------------//
-
+// filter if result
+//
 template <bool>
 struct tuple_filter_if_result
 {
     template <typename T>
     using type = std::tuple<T>;
+
+    template <template <typename...> class Wrapper, typename T, typename... Tail>
+    using wrapped_type = std::tuple<Wrapper<T, Tail...>>;
 };
 
 template <>
@@ -79,8 +83,14 @@ struct tuple_filter_if_result<false>
 {
     template <typename T>
     using type = std::tuple<>;
+
+    template <template <typename...> class Wrapper, typename T, typename... Tail>
+    using wrapped_type = std::tuple<>;
 };
 
+//--------------------------------------------------------------------------------------//
+// filter if
+//
 template <template <typename> class Predicate, typename Sequence>
 struct tuple_filter_if;
 
@@ -91,8 +101,34 @@ struct tuple_filter_if<Predicate, std::tuple<Ts...>>
         typename tuple_filter_if_result<Predicate<Ts>::value>::template type<Ts>...>;
 };
 
+//--------------------------------------------------------------------------------------//
+// tuple_type_filter
+//
 template <template <typename> class Predicate, typename Sequence>
 using tuple_type_filter = typename tuple_filter_if<Predicate, Sequence>::type;
+
+//--------------------------------------------------------------------------------------//
+// wrapped filter if
+//
+template <template <typename> class Predicate, template <typename...> class Wrapper,
+          typename Sequence>
+struct wrapped_tuple_filter_if;
+
+template <template <typename> class Predicate, template <typename...> class Wrapper,
+          typename... Ts>
+struct wrapped_tuple_filter_if<Predicate, Wrapper, std::tuple<Ts...>>
+{
+    using type = tuple_concat_t<typename tuple_filter_if_result<
+        Predicate<Ts>::value>::template wrapped_type<Wrapper, Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+// wrapped_tuple_type_filter
+//
+template <template <typename> class Predicate, template <typename...> class Wrapper,
+          typename Sequence>
+using wrapped_tuple_type_filter =
+    typename wrapped_tuple_filter_if<Predicate, Wrapper, Sequence>::type;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -134,7 +170,7 @@ template <template <typename> class Predicate, typename Sequence>
 using tuple_type_sort = typename tuple_sort_if<Predicate, Sequence>::type;
 */
 
-}  // namespace details
+}  // namespace impl
 
 //======================================================================================//
 //
@@ -144,6 +180,10 @@ using tuple_type_sort = typename tuple_sort_if<Predicate, Sequence>::type;
 
 template <typename... Types>
 using implemented_tuple =
-    details::tuple_type_filter<component::impl_available, std::tuple<Types...>>;
+    impl::tuple_type_filter<trait::impl_available, std::tuple<Types...>>;
+
+template <template <typename...> class Wrapper, typename... Types>
+using operation_tuple =
+    impl::wrapped_tuple_type_filter<trait::impl_available, Wrapper, std::tuple<Types...>>;
 
 }  // namespace tim

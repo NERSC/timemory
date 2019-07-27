@@ -244,8 +244,9 @@ get_max_threads()
 template <typename _Container = std::vector<std::string>,
           typename _Predicate = std::function<string_t(string_t)>>
 inline _Container
-delimit(const string_t& line, const string_t& delimiters = ",; ",
-        _Predicate&& predicate = [](string_t s) -> string_t { return s; })
+delimit(
+    const string_t& line, const string_t& delimiters = ",; ",
+    _Predicate&& predicate = [](string_t s) -> string_t { return s; })
 {
     auto _get_first_not_of = [&delimiters](const string_t& _string, const size_t& _beg) {
         return _string.find_first_not_of(delimiters, _beg);
@@ -472,8 +473,9 @@ delimit(std::string _str, const std::string& _delims)
 //  delimit line : e.g. delimit_line("a B\t c", " \t") --> { "a", "B", "c"}
 template <typename _Func>
 inline str_list_t
-delimit(std::string _str, const std::string& _delims,
-        const _Func& strop = [](const std::string& s) { return s; })
+delimit(
+    std::string _str, const std::string& _delims,
+    const _Func& strop = [](const std::string& s) { return s; })
 {
     str_list_t _list;
     while(_str.length() > 0)

@@ -62,10 +62,10 @@ struct peak_rss : public base<peak_rss>
     static std::string descript() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_peak_rss(); }
-    double             compute_display() const
+    float              compute_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<double>(base_type::get_unit());
+        return val / static_cast<float>(base_type::get_unit());
     }
     void start()
     {
@@ -101,10 +101,10 @@ struct current_rss : public base<current_rss>
     static std::string descript() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_current_rss(); }
-    double             compute_display() const
+    float              compute_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<double>(base_type::get_unit());
+        return val / static_cast<float>(base_type::get_unit());
     }
     void start()
     {
@@ -141,10 +141,10 @@ struct stack_rss : public base<stack_rss>
     static std::string descript() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
-    double             compute_display() const
+    float              compute_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<double>(base_type::get_unit());
+        return val / static_cast<float>(base_type::get_unit());
     }
     void start()
     {
@@ -179,10 +179,10 @@ struct data_rss : public base<data_rss>
     static std::string descript() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
-    double             compute_display() const
+    float              compute_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<double>(base_type::get_unit());
+        return val / static_cast<float>(base_type::get_unit());
     }
     void start()
     {
