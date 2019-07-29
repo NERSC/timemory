@@ -47,16 +47,10 @@ extern "C"
 #include "timemory/ctimemory.h"
 }
 
-#if !defined(TIMEMORY_CPU_COUNTERS)
-#    define TIMEMORY_CPU_COUNTERS 32
-#endif
-
 using namespace tim::component;
 
 using auto_timer_t =
     tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
-
-using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
 
 using auto_list_t =
     tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,

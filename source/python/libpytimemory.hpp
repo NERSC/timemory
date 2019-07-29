@@ -78,8 +78,6 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
-
 using auto_timer_t =
     tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util>;
 

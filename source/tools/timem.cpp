@@ -57,20 +57,11 @@
 #    define declare_attribute(attr) __declspec(attr)
 #endif
 
-#if !defined(PAPI_NUM_COUNTERS)
-#    define PAPI_NUM_COUNTERS 32
-#endif
-
 template <typename _Tp>
 using vector_t = std::vector<_Tp>;
 using string_t = std::string;
 
 using namespace tim::component;
-
-//--------------------------------------------------------------------------------------//
-// papi event set 0 with PAPI_NUM_COUNTERS (4) counters
-//
-using papi_array_t = papi_array<PAPI_NUM_COUNTERS>;
 
 //--------------------------------------------------------------------------------------//
 //

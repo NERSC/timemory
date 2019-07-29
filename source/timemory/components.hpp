@@ -85,7 +85,7 @@ namespace tim
 //
 namespace component
 {
-using papi_array_t = component::papi_array<TIMEMORY_CPU_COUNTERS>;
+using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
 }  // namespace component
 
 //--------------------------------------------------------------------------------------//
