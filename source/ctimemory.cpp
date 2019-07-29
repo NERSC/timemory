@@ -65,7 +65,7 @@ using auto_list_t =
                    data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
                    num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
                    voluntary_context_switch, priority_context_switch, cuda_event,
-                   papi_array_t, cpu_dp_roofline, cpu_sp_roofline>;
+                   papi_array_t, cpu_roofline_dp_flops, cpu_roofline_sp_flops>;
 
 //======================================================================================//
 //
@@ -107,42 +107,9 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
     auto        obj = new auto_list_t(key_tag, lineno, tim::language::c(), false);
     obj->stop();
     obj->reset();
-    for(int i = 0; i < num_components; ++i)
-    {
-        TIMEMORY_COMPONENT component = static_cast<TIMEMORY_COMPONENT>(components[i]);
-        switch(component)
-        {
-            case WALL_CLOCK: obj->init<real_clock>(); break;
-            case SYS_CLOCK: obj->init<system_clock>(); break;
-            case USER_CLOCK: obj->init<user_clock>(); break;
-            case CPU_CLOCK: obj->init<cpu_clock>(); break;
-            case MONOTONIC_CLOCK: obj->init<monotonic_clock>(); break;
-            case MONOTONIC_RAW_CLOCK: obj->init<monotonic_raw_clock>(); break;
-            case THREAD_CPU_CLOCK: obj->init<thread_cpu_clock>(); break;
-            case PROCESS_CPU_CLOCK: obj->init<process_cpu_clock>(); break;
-            case CPU_UTIL: obj->init<cpu_util>(); break;
-            case THREAD_CPU_UTIL: obj->init<thread_cpu_util>(); break;
-            case PROCESS_CPU_UTIL: obj->init<process_cpu_util>(); break;
-            case CURRENT_RSS: obj->init<current_rss>(); break;
-            case PEAK_RSS: obj->init<peak_rss>(); break;
-            case STACK_RSS: obj->init<stack_rss>(); break;
-            case DATA_RSS: obj->init<data_rss>(); break;
-            case NUM_SWAP: obj->init<num_swap>(); break;
-            case NUM_IO_IN: obj->init<num_io_in>(); break;
-            case NUM_IO_OUT: obj->init<num_io_out>(); break;
-            case NUM_MINOR_PAGE_FAULTS: obj->init<num_minor_page_faults>(); break;
-            case NUM_MAJOR_PAGE_FAULTS: obj->init<num_major_page_faults>(); break;
-            case NUM_MSG_SENT: obj->init<num_msg_sent>(); break;
-            case NUM_MSG_RECV: obj->init<num_msg_recv>(); break;
-            case NUM_SIGNALS: obj->init<num_signals>(); break;
-            case VOLUNTARY_CONTEXT_SWITCH: obj->init<voluntary_context_switch>(); break;
-            case PRIORITY_CONTEXT_SWITCH: obj->init<priority_context_switch>(); break;
-            case CUDA_EVENT: obj->init<cuda_event>(); break;
-            case PAPI_ARRAY: obj->init<papi_array_t>(); break;
-            case CPU_ROOFLINE_DP: obj->init<cpu_dp_roofline>(); break;
-            case CPU_ROOFLINE_SP: obj->init<cpu_sp_roofline>(); break;
-        }
-    }
+    std::vector<int> _components(num_components);
+    std::memcpy(_components.data(), components, num_components * sizeof(int));
+    tim::initialize(*obj, _components);
     obj->push();
     obj->start();
     return static_cast<void*>(obj);

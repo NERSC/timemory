@@ -22,9 +22,9 @@
 //  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 //  IN THE SOFTWARE.
 
-/** \file timemory.hpp
- * \headerfile timemory.hpp "timemory/timemory.hpp"
- * All-inclusive timemory header
+/** \file cuda.hpp
+ * \headerfile cuda.hpp "timemory/templates/cuda.hpp"
+ * Extern template declarations that include CUDA
  *
  */
 

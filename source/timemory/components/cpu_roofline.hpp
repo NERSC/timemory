@@ -453,8 +453,8 @@ public:
 //--------------------------------------------------------------------------------------//
 // Shorthand aliases for common roofline types
 //
-using cpu_sp_roofline = cpu_roofline<float, PAPI_SP_OPS>;
-using cpu_dp_roofline = cpu_roofline<double, PAPI_DP_OPS>;
+using cpu_roofline_sp_flops = cpu_roofline<float, PAPI_SP_OPS>;
+using cpu_roofline_dp_flops = cpu_roofline<double, PAPI_DP_OPS>;
 
 // TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
 // accesses/reads/writes/etc.

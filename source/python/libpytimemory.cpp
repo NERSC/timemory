@@ -93,8 +93,8 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("priority_context_switch", PRIORITY_CONTEXT_SWITCH)
         .value("cuda_event", CUDA_EVENT)
         .value("papi_array", PAPI_ARRAY)
-        .value("cpu_sp_roofline", CPU_ROOFLINE_SP)
-        .value("cpu_dp_roofline", CPU_ROOFLINE_DP);
+        .value("cpu_roofline_sp_flops", CPU_ROOFLINE_SP_FLOPS)
+        .value("cpu_roofline_dp_flops", CPU_ROOFLINE_DP_FLOPS);
 
     //==================================================================================//
     //
