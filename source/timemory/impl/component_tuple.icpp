@@ -25,67 +25,6 @@
 #include "timemory/filters.hpp"
 #include "timemory/manager.hpp"
 
-namespace tim
-{
-namespace details
-{
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-class custom_component_tuple : public tim::component_tuple<Types...>
-{
-public:
-    custom_component_tuple(const string_t& key, const language& lang)
-    : component_tuple<Types...>(key, lang, 0, 0)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    friend std::ostream& operator<<(std::ostream&                           os,
-                                    const custom_component_tuple<Types...>& obj)
-    {
-        {
-            // stop, if not already stopped
-            using apply_types = std::tuple<operation::conditional_stop<Types>...>;
-            apply<void>::access<apply_types>(obj.m_data);
-        }
-        std::stringstream ss_prefix;
-        std::stringstream ss_data;
-        {
-            using apply_types = std::tuple<custom_print<Types>...>;
-            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                          false);
-        }
-        ss_prefix << std::setw(obj.output_width()) << std::left << obj.m_identifier
-                  << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        return os;
-    }
-
-protected:
-    //----------------------------------------------------------------------------------//
-    template <typename _Tp>
-    struct custom_print
-    {
-        using value_type = typename _Tp::value_type;
-        using base_type  = tim::component::base<_Tp, value_type>;
-
-        custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj,
-                     std::ostream& os, bool /*endline*/)
-        {
-            std::stringstream ss;
-            if(_N == 0)
-                ss << std::endl;
-            ss << "    " << obj << std::endl;
-            os << ss.str();
-        }
-    };
-};
-
-}  // namespace details
-
-}  // namespace tim
-
 //======================================================================================//
 
 template <typename... Types>

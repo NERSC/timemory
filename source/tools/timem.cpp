@@ -64,12 +64,72 @@ using string_t = std::string;
 using namespace tim::component;
 
 //--------------------------------------------------------------------------------------//
+// create a custom component tuple printer
+//
+namespace tim
+{
+//----------------------------------------------------------------------------------//
+template <typename _Tp>
+struct custom_print
+{
+    using value_type = typename _Tp::value_type;
+    using base_type  = component::base<_Tp, value_type>;
+
+    custom_print(std::size_t _N, std::size_t /*_Ntot*/, base_type& obj, std::ostream& os,
+                 bool /*endline*/)
+    {
+        std::stringstream ss;
+        if(_N == 0)
+            ss << std::endl;
+        ss << "    " << obj << std::endl;
+        os << ss.str();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... Types>
+class custom_component_tuple : public component_tuple<Types...>
+{
+    using apply_stop  = operation_tuple<operation::conditional_stop, Types...>;
+    using apply_print = operation_tuple<custom_print, Types...>;
+
+public:
+    custom_component_tuple(const string_t& key, const language& lang)
+    : component_tuple<Types...>(key, lang, 0, 0)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    friend std::ostream& operator<<(std::ostream&                           os,
+                                    const custom_component_tuple<Types...>& obj)
+    {
+        std::stringstream ssp;
+        std::stringstream ssd;
+        auto&&            data  = obj.m_data;
+        auto&&            ident = obj.m_identifier;
+        auto&&            width = obj.output_width();
+
+        apply<void>::access<apply_stop>(data);
+        apply<void>::access_with_indices<apply_print>(data, std::ref(ssd), false);
+
+        ssp << std::setw(width) << std::left << ident << " : ";
+        os << ssp.str() << ssd.str();
+
+        return os;
+    }
+};
+
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
 //
 //
-using comp_tuple_t = tim::details::custom_component_tuple<
-    real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
-    num_minor_page_faults, num_major_page_faults, num_signals, voluntary_context_switch,
-    priority_context_switch>;
+using comp_tuple_t =
+    tim::custom_component_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util,
+                                peak_rss, num_io_in, num_io_out, num_minor_page_faults,
+                                num_major_page_faults, num_signals,
+                                voluntary_context_switch, priority_context_switch>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -77,6 +137,33 @@ bool&
 papi_enabled()
 {
     static bool _instance = tim::get_env("TIMEM_PAPI", false);
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+comp_tuple_t*&
+get_measure()
+{
+    static comp_tuple_t* _instance = nullptr;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+papi_array_t*&
+get_papi_array()
+{
+    static papi_array_t* _instance = nullptr;
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+bool
+use_shell()
+{
+    static bool _instance = tim::get_env("TIMEM_USE_SHELL", false);
     return _instance;
 }
 
@@ -99,7 +186,8 @@ declare_attribute(noreturn) void failed_fork()
 
 //--------------------------------------------------------------------------------------//
 
-declare_attribute(noreturn) void parent_process(pid_t pid)
+void
+parent_process(pid_t pid)
 {
     // a positive number is returned for the pid of parent process
     // getppid() returns process id of parent of calling process
@@ -112,33 +200,14 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
     // used here
 
     int status;
-    int ret                = 0;
-    tim::get_rusage_type() = RUSAGE_CHILDREN;
-    comp_tuple_t measure("total execution time", tim::language(command().c_str()));
-    if(getpid() != getppid() + 1)
-    {
-        measure.start();
-    }
-
-    papi_array_t* _papi_array = nullptr;
-    if(papi_enabled())
-    {
-        tim::papi::init();
-        papi_array_t::get_events_func() = [&]() {
-            auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
-            vector_t<string_t> events_str_list = tim::delimit(events_str);
-            vector_t<int>      events_list;
-            for(const auto& itr : events_str_list)
-                events_list.push_back(tim::papi::get_event_code(itr));
-            return events_list;
-        };
-        papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
-        _papi_array                      = new papi_array_t();
-        _papi_array->start();
-    }
+    int ret = 0;
 
     if(waitpid(pid, &status, 0) > 0)
     {
+        get_measure()->stop();
+        if(get_papi_array())
+            get_papi_array()->stop();
+
         if(WIFEXITED(status) && !WEXITSTATUS(status))
         {
             ret = 0;
@@ -166,56 +235,50 @@ declare_attribute(noreturn) void parent_process(pid_t pid)
         printf("waitpid() failed\n");
     }
 
-    if(getpid() != getppid() + 1)
+    std::stringstream _oss;
+    _oss << "\n" << *get_measure() << std::flush;
+
+    if(get_papi_array())
     {
-        measure.stop();
-        std::stringstream _oss;
-        _oss << "\n" << measure << std::flush;
-
-        if(_papi_array)
-        {
-            papi_array_t::get_label() = "";
-            _papi_array->stop();
-            _oss << "\n"
-                 << tim::language(command().c_str())
-                 << " hardware counters : " << (*_papi_array) << std::flush;
-            delete _papi_array;
-        }
-
-        if(tim::settings::file_output())
-        {
-            std::string label = "timem";
-            if(tim::settings::text_output())
-            {
-                auto fname = tim::settings::compose_output_filename(label, ".txt");
-                std::ofstream ofs(fname.c_str());
-                if(ofs)
-                {
-                    printf("[timem]> Outputting '%s'...\n", fname.c_str());
-                    ofs << _oss.str();
-                    ofs.close();
-                }
-                else
-                {
-                    std::cout << "[timem]>  opening output file '" << fname << "'...\n";
-                    std::cout << _oss.str();
-                }
-            }
-
-            if(tim::settings::json_output())
-            {
-                auto jname = tim::settings::compose_output_filename(label, ".json");
-                printf("[timem]> Outputting '%s'...\n", jname.c_str());
-                serialize_storage(jname, measure);
-            }
-        }
-        else
-        {
-            std::cout << _oss.str();
-        }
+        papi_array_t::get_label() = "";
+        _oss << "\n"
+             << tim::language(command().c_str())
+             << " hardware counters : " << (*get_papi_array()) << std::flush;
+        delete get_papi_array();
+        get_papi_array() = nullptr;
     }
 
-    exit(ret);
+    if(tim::settings::file_output())
+    {
+        std::string label = "timem";
+        if(tim::settings::text_output())
+        {
+            auto          fname = tim::settings::compose_output_filename(label, ".txt");
+            std::ofstream ofs(fname.c_str());
+            if(ofs)
+            {
+                printf("[timem]> Outputting '%s'...\n", fname.c_str());
+                ofs << _oss.str();
+                ofs.close();
+            }
+            else
+            {
+                std::cout << "[timem]>  opening output file '" << fname << "'...\n";
+                std::cout << _oss.str();
+            }
+        }
+
+        if(tim::settings::json_output())
+        {
+            auto jname = tim::settings::compose_output_filename(label, ".json");
+            printf("[timem]> Outputting '%s'...\n", jname.c_str());
+            serialize_storage(jname, *get_measure());
+        }
+    }
+    else
+    {
+        std::cout << _oss.str();
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -254,30 +317,71 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
         argv_list[i] = argv[i + 1];
     argv_list[argc - 1] = nullptr;
 
-    // launch the child
-    int ret = execvp(argv_list[0], argv_list);
-    if(ret < 0)
-    {
-        uint64_t argc_shell    = argc + 2;
-        char** argv_shell_list = static_cast<char**>(malloc(sizeof(char*) * argc_shell));
-        char*  _shell          = getusershell();
+    // launches the command with the shell, this is the default because it
+    // enables aliases
+    auto launch_using_shell = [=]() {
+        int      ret        = -1;
+        uint64_t argc_extra = 3;
+        uint64_t argc_shell = argc + argc_extra;
+        char**   argv_shell_list =
+            static_cast<char**>(malloc(sizeof(char*) * argc_shell + 1));
+        char* _shell = getusershell();
+        printf("using shell: %s\n", _shell);
         if(_shell)
         {
-            argv_shell_list[0] = _shell;
-            argv_shell_list[1] = getcharptr("-c");
+            argv_shell_list[0]        = _shell;
+            char interactive_option[] = "-i";
+            char command_option[]     = "-c";
+            argv_shell_list[1]        = interactive_option;
+            argv_shell_list[2]        = command_option;
             for(uint64_t i = 0; i < argc - 1; ++i)
-                argv_shell_list[i + 2] = argv_list[i];
-            argv_shell_list[argc_shell - 1] = nullptr;
-            ret                             = execvp(argv_shell_list[0], argv_shell_list);
+            {
+                auto  len = strlen(argv_list[i]);
+                char* var = static_cast<char*>(malloc(sizeof(char) * (len + 1)));
+                strcpy(var, argv_list[i]);
+                argv_shell_list[i + argc_extra] = var;
+            }
+            argv_shell_list[argc_shell] = nullptr;
+            ret                         = execvp(argv_shell_list[0], argv_shell_list);
             explain(ret, argv_shell_list[0], argv_shell_list);
         }
         else
         {
             fprintf(stderr, "getusershell failed!\n");
         }
-    }
+        free(argv_shell_list);
+        return ret;
+    };
 
-    explain(ret, argv_list[0], argv_list);
+    // this will launch the process and inherit the environment but aliases will not
+    // be available
+    auto launch_without_shell = [=]() {
+        int ret = execvp(argv_list[0], argv_list);
+        // explain error if enabled
+        explain(ret, argv_list[0], argv_list);
+        return ret;
+    };
+
+    // default return code
+    int ret = -1;
+
+    // determine if the shell should be tested first
+    bool try_shell = use_shell();
+
+    if(try_shell)
+    {
+        // launch the command with shell. If that fails, launch without shell
+        ret = launch_using_shell();
+        if(ret < 0)
+            ret = launch_without_shell();
+    }
+    else
+    {
+        // launch the command without shell. If that fails, launch with shell
+        ret = launch_without_shell();
+        if(ret < 0)
+            ret = launch_using_shell();
+    }
 
     exit(0);
 }
@@ -287,6 +391,9 @@ declare_attribute(noreturn) void child_process(uint64_t argc, char** argv)
 int
 main(int argc, char** argv)
 {
+    // disable banner if not specified
+    setenv("TIMEMORY_BANNER", "OFF", 0);
+
     // set some defaults
     tim::settings::file_output() = false;
     tim::settings::scientific()  = false;
@@ -313,12 +420,36 @@ main(int argc, char** argv)
     {
         command() = "[" + std::string(const_cast<const char*>(argv[0])) + "]";
         tim::get_rusage_type() = RUSAGE_CHILDREN;
-        comp_tuple_t measure("total execution time", tim::language(command().c_str()));
-        measure.start();
-        measure.stop();
-        std::cout << "\n" << measure << std::flush;
+        get_measure() =
+            new comp_tuple_t("total execution time", tim::language(command().c_str()));
+        get_measure()->start();
+        get_measure()->stop();
+        std::cout << "\n" << *get_measure() << std::flush;
         exit(EXIT_SUCCESS);
     }
+
+    tim::get_rusage_type() = RUSAGE_CHILDREN;
+    get_measure() =
+        new comp_tuple_t("total execution time", tim::language(command().c_str()));
+
+    if(papi_enabled())
+    {
+        tim::papi::init();
+        papi_array_t::get_events_func() = [&]() {
+            auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
+            vector_t<string_t> events_str_list = tim::delimit(events_str);
+            vector_t<int>      events_list;
+            for(const auto& itr : events_str_list)
+                events_list.push_back(tim::papi::get_event_code(itr));
+            return events_list;
+        };
+        papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
+        get_papi_array()                 = new papi_array_t();
+    }
+
+    get_measure()->start();
+    if(get_papi_array())
+        get_papi_array()->start();
 
     pid_t pid = fork();
 
@@ -331,8 +462,11 @@ main(int argc, char** argv)
     {
         child_process(nargs, argv);
     }
-    else
+    else  // means parent process
     {
-        parent_process(pid);  // means parent process
+        parent_process(pid);
     }
+
+    delete get_measure();
+    delete get_papi_array();
 }

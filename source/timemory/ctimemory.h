@@ -149,10 +149,41 @@ enum TIMEMORY_COMPONENT
 
 //======================================================================================//
 //
+//      C struct for settings
+//
+//======================================================================================//
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+    typedef struct
+    {
+        int enabled;
+        int auto_output;
+        int file_output;
+        int text_output;
+        int json_output;
+        int cout_output;
+        int precision;
+        int width;
+        int scientific;
+        // skipping remainder
+    } timemory_settings;
+
+#if defined(__cplusplus)
+}
+#endif
+
+//======================================================================================//
+//
 //      C function declaration
 //
 //======================================================================================//
 
+tim_api extern void
+c_timemory_init(int argc, char** argv, timemory_settings);
 tim_api extern int
 c_timemory_enabled(void);
 tim_api extern void*
@@ -231,6 +262,10 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 #if !defined(__cplusplus)
 
 //--------------------------------------------------------------------------------------//
+#    define TIMEMORY_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };
+#    define TIMEMORY_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings);
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(c_str)
  *
  * Usage:
@@ -286,6 +321,25 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
             c_timemory_create_auto_tuple(                                                \
                 c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
                 __LINE__, __VA_NARG__(__VA_ARGS__), __VA_ARGS__)
+#    endif
+
+//--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          void* timer = new TIMEMORY_BLANK_AUTO_TUPLE("id", WALL_CLOCK, CPU_CLOCK);
+ *          ...
+ *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *      }
+ *
+ */
+#    if !defined(TIMEMORY_BLANK_AUTO_TUPLE)
+#        define TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)                                    \
+            c_timemory_create_auto_tuple(c_str, __LINE__, __VA_NARG__(__VA_ARGS__),      \
+                                         __VA_ARGS__)
 #    endif
 
 //--------------------------------------------------------------------------------------//

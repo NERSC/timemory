@@ -115,8 +115,11 @@ inline manager::manager()
 
     if(m_instance_count == 0)
     {
-        printf("############## tim::%s initialized [%i] #############\n\n", __FUNCTION__,
-               m_instance_count);
+        if(get_env("TIMEMORY_BANNER", true))
+            printf(
+                "#--------------------- tim::manager initialized [%i] "
+                "---------------------#\n\n",
+                m_instance_count);
     }
 
     if(singleton_t::master_instance_ptr() && singleton_t::instance_ptr())

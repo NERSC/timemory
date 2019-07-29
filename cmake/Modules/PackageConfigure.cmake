@@ -82,4 +82,6 @@ if(TIMEMORY_USE_GPERF)
         configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gperf-${_TYPE}-profile.sh
             ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
     endforeach()
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gprof2dot.py
+        ${CMAKE_BINARY_DIR}/gprof2dot.py COPYONLY)
 endif()

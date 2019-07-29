@@ -62,6 +62,8 @@ add_executable(timem timem.cpp)
 
 target_link_libraries(timem PRIVATE
     timemory-compile-options
+    timemory-arch
+    timemory-vector
     timemory-headers
     timemory-cxx-static
     timem-papi

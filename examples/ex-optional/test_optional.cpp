@@ -66,7 +66,7 @@ int main(int argc, char** argv)
     //
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i) fibvalues.push_back(atol(argv[i]));
-    if(fibvalues.empty()) fibvalues.push_back(45);
+    if(fibvalues.empty()) fibvalues.push_back(43);
 
     //
     // create an auto tuple accessible via a caliper integer or expand to nothing

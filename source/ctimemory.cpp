@@ -71,6 +71,33 @@ using auto_list_t =
 
 //======================================================================================//
 
+extern "C" tim_api void
+cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
+{
+#    define PROCESS_SETTING(variable, type)                                              \
+        if(_settings.variable >= 0)                                                      \
+        {                                                                                \
+            tim::settings::variable() = static_cast<type>(_settings.variable);           \
+        }
+
+    PROCESS_SETTING(enabled, bool);
+    PROCESS_SETTING(auto_output, bool);
+    PROCESS_SETTING(file_output, bool);
+    PROCESS_SETTING(text_output, bool);
+    PROCESS_SETTING(json_output, bool);
+    PROCESS_SETTING(cout_output, bool);
+    PROCESS_SETTING(scientific, bool);
+    PROCESS_SETTING(precision, int);
+    PROCESS_SETTING(width, int);
+
+    if(argv && argc > 0)
+        tim::timemory_init(argc, argv);
+
+#    undef PROCESS_SETTING
+}
+
+//======================================================================================//
+
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
@@ -127,6 +154,7 @@ cxx_timemory_delete_auto_tuple(void* ctuple)
 {
     auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
     obj->stop();
+    obj->pop();
     delete obj;
     ctuple = nullptr;
     return ctuple;

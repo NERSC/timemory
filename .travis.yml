@@ -30,6 +30,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -51,6 +53,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
@@ -72,6 +76,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -92,6 +98,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -114,6 +122,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -140,6 +150,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -161,6 +173,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
     # GCC 7
@@ -182,6 +196,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -202,6 +218,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -224,6 +242,8 @@ matrix:
             - papi-tools
             - libgoogle-perftools-dev
             - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -261,6 +281,11 @@ install:
     # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=heap
     - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=Debug          --coverage
 
+script:
+    - python setup.py install
+    - python -c "import timemory; print(timemory.__file__)"
+    - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+
 after_success:
     # Create lcov report
     # capture coverage info
@@ -273,8 +298,3 @@ after_success:
     # Uploading to CodeCov
     # '-f' specifies file(s) to use and disables manual coverage gathering and file search which has already been done above
     - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
-
-script:
-    - python setup.py install
-    - python -c "import timemory; print(timemory.__file__)"
-    - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"

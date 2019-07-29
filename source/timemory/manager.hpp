@@ -256,8 +256,11 @@ public:
         {
             ptr->print(false, false);
             count = ptr->instance_count();
-            printf("\n\n############## tim::~manager destroyed [%i] ##############\n",
-                   count);
+            if(get_env("TIMEMORY_BANNER", true))
+                printf(
+                    "\n\n#---------------------- tim::manager destroyed [%i] "
+                    "----------------------#\n",
+                    count);
             delete ptr;
         }
         tim::papi::shutdown();
