@@ -67,6 +67,10 @@ struct peak_rss : public base<peak_rss>
         auto val = (is_transient) ? accum : value;
         return val / static_cast<float>(base_type::get_unit());
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -105,6 +109,10 @@ struct current_rss : public base<current_rss>
     {
         auto val = (is_transient) ? accum : value;
         return val / static_cast<float>(base_type::get_unit());
+    }
+    float get() const
+    {
+        return compute_display();
     }
     void start()
     {
@@ -146,6 +154,10 @@ struct stack_rss : public base<stack_rss>
         auto val = (is_transient) ? accum : value;
         return val / static_cast<float>(base_type::get_unit());
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -184,6 +196,10 @@ struct data_rss : public base<data_rss>
         auto val = (is_transient) ? accum : value;
         return val / static_cast<float>(base_type::get_unit());
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -220,6 +236,10 @@ struct num_swap : public base<num_swap>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -255,6 +275,10 @@ struct num_io_in : public base<num_io_in>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -289,6 +313,10 @@ struct num_io_out : public base<num_io_out>
     {
         auto val = (is_transient) ? accum : value;
         return val;
+    }
+    float get() const
+    {
+        return compute_display();
     }
     void start()
     {
@@ -326,6 +354,10 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -360,6 +392,10 @@ struct num_major_page_faults : public base<num_major_page_faults>
     {
         auto val = (is_transient) ? accum : value;
         return val;
+    }
+    float get() const
+    {
+        return compute_display();
     }
     void start()
     {
@@ -396,6 +432,10 @@ struct num_msg_sent : public base<num_msg_sent>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -431,6 +471,10 @@ struct num_msg_recv : public base<num_msg_recv>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -465,6 +509,10 @@ struct num_signals : public base<num_signals>
     {
         auto val = (is_transient) ? accum : value;
         return val;
+    }
+    float get() const
+    {
+        return compute_display();
     }
     void start()
     {
@@ -503,6 +551,10 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         auto val = (is_transient) ? accum : value;
         return val;
     }
+    float get() const
+    {
+        return compute_display();
+    }
     void start()
     {
         set_started();
@@ -539,6 +591,10 @@ struct priority_context_switch : public base<priority_context_switch>
     {
         auto val = (is_transient) ? accum : value;
         return val;
+    }
+    float get() const
+    {
+        return compute_display();
     }
     void start()
     {

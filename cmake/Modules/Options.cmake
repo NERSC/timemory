@@ -108,6 +108,8 @@ add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
     "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" OFF)
+add_option(TIMEMORY_BUILD_GTEST
+    "Enable GoogleTest" OFF)
 
 # Features
 

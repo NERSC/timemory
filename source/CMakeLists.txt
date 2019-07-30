@@ -1,19 +1,5 @@
 
 #----------------------------------------------------------------------------------------#
-#   configuration
-#----------------------------------------------------------------------------------------#
-
-include(MacroUtilities)
-include(Options)
-include(Compilers)
-include(GNUInstallDirs)
-include(ProjectSettings)
-include(BuildSettings)
-include(Packages)
-include(ClangFormat)
-include(CMakeParseArguments)
-
-#----------------------------------------------------------------------------------------#
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 #
@@ -285,3 +271,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 include(PackageConfigure)
+
+#----------------------------------------------------------------------------------------#
+#   Unit tests
+#----------------------------------------------------------------------------------------#
+
+add_subdirectory(tests)

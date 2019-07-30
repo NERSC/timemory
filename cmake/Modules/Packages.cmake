@@ -1,6 +1,11 @@
 # include guard
 include_guard(DIRECTORY)
 
+# placeholder folder PyCTest testing which will write it's own CTestTestfile.cmake
+# this MUST come before "enable_testing"
+add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+enable_testing()
+
 ##########################################################################################
 #
 #                       External Packages are found here
@@ -63,6 +68,8 @@ if(TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-coverage)
 endif()
 
+# not exported
+add_library(timemory-google-test INTERFACE)
 
 function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     message(STATUS
@@ -125,15 +132,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+#set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
+
 checkout_git_submodule(RECURSIVE
     RELATIVE_PATH source/cereal
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-
-set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
-# this gets annoying
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
 
 # add cereal
 add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
@@ -142,12 +145,30 @@ target_include_directories(timemory-cereal INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
-
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                           Google Test
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_BUILD_GTEST)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH source/google-test
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+    # add google-test
+    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest" FORCE)
+    set(BUILD_GMOCK ON CACHE BOOL "Build gmock" FORCE)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/source/google-test)
+    target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
+    target_include_directories(timemory-google-test INTERFACE
+        ${PROJECT_SOURCE_DIR}/google-test/googletest/include
+        ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
+endif()
 
 
 #----------------------------------------------------------------------------------------#

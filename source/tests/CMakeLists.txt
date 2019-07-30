@@ -1,0 +1,8 @@
+
+unset(CMAKE_RUNTIME_OUTPUT_DIRECTORY )
+
+add_googletest(timing_tests
+    DISCOVER_TESTS
+    SOURCES         timing_tests.cpp
+    LINK_LIBRARIES  timemory-headers
+)
