@@ -40,6 +40,10 @@ static const float   peak_tolerance = 5;
 static const float   curr_tolerance = 5;
 static const int64_t nelements      = 5000000;
 
+#define CHECK_AVAILABLE(type) \
+    if(!tim::trait::impl_available< type >::value)\
+        return;
+
 //--------------------------------------------------------------------------------------//
 namespace details
 {
@@ -105,13 +109,13 @@ protected:
 
 TEST_F(rusage_tests, peak_rss)
 {
+    CHECK_AVAILABLE(peak_rss);
     peak_rss peak;
     peak.start();
     std::vector<int64_t> v(nelements, 42);
     long                 nfib = details::random_entry(v);
     auto                 ret  = details::fibonacci(nfib);
     peak.stop();
-
 
     auto tot_size = nelements * sizeof(int64_t) / tim::units::megabyte;
 
@@ -126,6 +130,7 @@ TEST_F(rusage_tests, peak_rss)
 
 TEST_F(rusage_tests, current_rss)
 {
+    CHECK_AVAILABLE(current_rss);
     current_rss curr;
     curr.start();
     std::vector<int64_t> v(nelements, 42);

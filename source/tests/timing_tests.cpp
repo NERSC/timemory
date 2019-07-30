@@ -35,6 +35,11 @@ using condvar_t = std::condition_variable;
 
 static const float util_tolerance  = 2.5f;
 static const float timer_tolerance = 0.01f;
+
+#define CHECK_AVAILABLE(type) \
+    if(!tim::trait::impl_available< type >::value)\
+        return;
+
 //--------------------------------------------------------------------------------------//
 namespace details
 {
@@ -88,6 +93,7 @@ protected:
 
 TEST_F(timing_tests, wall_timer)
 {
+    CHECK_AVAILABLE(wall_clock);
     wall_clock obj;
     obj.start();
     details::do_sleep(1000);
@@ -100,6 +106,7 @@ TEST_F(timing_tests, wall_timer)
 
 TEST_F(timing_tests, monotonic_timer)
 {
+    CHECK_AVAILABLE(monotonic_clock);
     monotonic_clock obj;
     obj.start();
     details::do_sleep(1000);
@@ -112,6 +119,7 @@ TEST_F(timing_tests, monotonic_timer)
 
 TEST_F(timing_tests, monotonic_raw_timer)
 {
+    CHECK_AVAILABLE(monotonic_raw_clock);
     monotonic_raw_clock obj;
     obj.start();
     details::do_sleep(1000);
@@ -124,6 +132,7 @@ TEST_F(timing_tests, monotonic_raw_timer)
 
 TEST_F(timing_tests, system_timer)
 {
+    CHECK_AVAILABLE(system_clock);
     system_clock obj;
     obj.start();
     std::thread t(details::do_sleep, 1000);
@@ -137,6 +146,7 @@ TEST_F(timing_tests, system_timer)
 
 TEST_F(timing_tests, user_timer)
 {
+    CHECK_AVAILABLE(user_clock);
     user_clock obj;
     obj.start();
     std::thread t(details::do_sleep, 1000);
@@ -150,6 +160,7 @@ TEST_F(timing_tests, user_timer)
 
 TEST_F(timing_tests, cpu_timer)
 {
+    CHECK_AVAILABLE(cpu_clock);
     cpu_clock obj;
     obj.start();
     details::consume(1000);
@@ -162,6 +173,7 @@ TEST_F(timing_tests, cpu_timer)
 
 TEST_F(timing_tests, cpu_utilization)
 {
+    CHECK_AVAILABLE(cpu_util);
     cpu_util obj;
     obj.start();
     details::consume(750);
@@ -175,6 +187,7 @@ TEST_F(timing_tests, cpu_utilization)
 
 TEST_F(timing_tests, thread_cpu_timer)
 {
+    CHECK_AVAILABLE(thread_cpu_clock);
     thread_cpu_clock obj;
     obj.start();
     std::thread t(details::fibonacci, 43);
@@ -188,6 +201,7 @@ TEST_F(timing_tests, thread_cpu_timer)
 
 TEST_F(timing_tests, thread_cpu_utilization)
 {
+    CHECK_AVAILABLE(thread_cpu_util);
     thread_cpu_util obj;
     obj.start();
     std::thread t(details::consume, 2000);
@@ -203,6 +217,7 @@ TEST_F(timing_tests, thread_cpu_utilization)
 
 TEST_F(timing_tests, process_cpu_timer)
 {
+    CHECK_AVAILABLE(process_cpu_clock);
     process_cpu_clock obj;
     obj.start();
     details::consume(1000);
@@ -215,6 +230,7 @@ TEST_F(timing_tests, process_cpu_timer)
 
 TEST_F(timing_tests, process_cpu_utilization)
 {
+    CHECK_AVAILABLE(process_cpu_util);
     process_cpu_util obj;
     obj.start();
     std::thread t(details::consume, 2000);

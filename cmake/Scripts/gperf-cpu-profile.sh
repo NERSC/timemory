@@ -15,8 +15,14 @@ mkdir -p ${DIR}
 # rendering settings
 : ${INTERACTIVE:=0}
 : ${IMG_FORMAT:="jpeg"}
-: ${DOT_ARGS:='-Gsize=12,16\! -Gdpi=100'}
+: ${DOT_ARGS:='-Gsize=24,24\! -Gdpi=200'}
 : ${PPROF_ARGS:="--no_strip_temp --lines"}
+
+run-verbose()
+{
+    echo "${@}" 1>&2
+    eval ${@}
+}
 
 while [ -z "${GPERF_PROFILE}" ]
 do
@@ -100,22 +106,22 @@ if [ -f "${GPERF_PROFILE}" ]; then
     : ${PPROF:=$(which google-pprof)}
     : ${PPROF:=$(which pprof)}
     if [ -n "${PPROF}" ]; then
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.txt
-        eval ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt
+        run-verbose ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.txt
+        run-verbose ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt
         # if dot is available
         if [ -n "$(which dot)" ]; then
-            eval ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
-            dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.${IMG_FORMAT}
+            run-verbose ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
+            run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.${IMG_FORMAT}
             echo-dart-measurement ${GPERF_PROFILE}.${IMG_FORMAT} ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.${IMG_FORMAT}
             if [ -f ./gprof2dot.py ]; then
-                eval ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
-                python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
-                dot ${DOT_ARGS} -Tpng ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.png
-                echo-dart-measurement ${GPERF_PROFILE}.callgrind png ${PWD}/${GPERF_PROFILE}.callgrind.png
+                run-verbose ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
+                run-verbose python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
+                run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
+                echo-dart-measurement ${GPERF_PROFILE}.callgrind ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
             fi
         fi
         if [ "${INTERACTIVE}" -gt 0 ]; then
-            eval ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}
+            run-verbose ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}
         fi
     else
         echo -e "google-pprof/pprof not found!"
