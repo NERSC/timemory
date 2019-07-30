@@ -72,7 +72,7 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 27;
+    int cutoff = nfib - 20;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 

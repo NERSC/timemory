@@ -321,23 +321,35 @@ def run_pyctest():
     # create tests
     #
     if not args.no_c:
-        pyctest.test(construct_name("test_c_timing"), construct_command(["./test_c_timing"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+        pyctest.test(construct_name("test_c_timing"),
+                     construct_command(["./test_c_timing"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_overhead"), construct_command(["./test_cxx_overhead"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_cxx_overhead"),
+                 construct_command(["./test_cxx_overhead"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_tuple"), construct_command(["./test_cxx_tuple"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_cxx_tuple"),
+                 construct_command(["./test_cxx_tuple"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
 
-    pyctest.test(construct_name("test_cpu_roofline"), construct_command(["./test_cpu_roofline"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_cpu_roofline"),
+                 construct_command(["./test_cpu_roofline"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_optional_on"), construct_command(["./test_optional_on"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_optional_on"),
+                 construct_command(["./test_optional_on"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.test("test_optional_off", ["./test_optional_off"],
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(

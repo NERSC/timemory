@@ -4,14 +4,19 @@ EXE=$(basename ${1})
 DIR=cpu.prof.${EXE}
 mkdir -p ${DIR}
 
+# gperf settings
 : ${N:=0}
 : ${GPERF_PROFILE:=""}
 : ${GPERF_PROFILE_BASE:=${DIR}/gperf}
-: ${PPROF_ARGS:="--no_strip_temp --lines"}
 : ${MALLOCSTATS:=1}
 : ${CPUPROFILE_FREQUENCY:=500}
-: ${INTERACTIVE:=0}
 : ${CPUPROFILE_REALTIME:=1}
+
+# rendering settings
+: ${INTERACTIVE:=0}
+: ${IMG_FORMAT:="jpeg"}
+: ${DOT_ARGS:='-Gsize=12,16\! -Gdpi=100'}
+: ${PPROF_ARGS:="--no_strip_temp --lines"}
 
 while [ -z "${GPERF_PROFILE}" ]
 do
@@ -100,12 +105,12 @@ if [ -f "${GPERF_PROFILE}" ]; then
         # if dot is available
         if [ -n "$(which dot)" ]; then
             eval ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
-            dot -Tjpeg ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.jpeg
-            echo-dart-measurement ${GPERF_PROFILE}.jpeg jpeg ${PWD}/${GPERF_PROFILE}.jpeg
+            dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.${IMG_FORMAT}
+            echo-dart-measurement ${GPERF_PROFILE}.${IMG_FORMAT} ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.${IMG_FORMAT}
             if [ -f ./gprof2dot.py ]; then
                 eval ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
                 python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
-                dot -Tpng ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.png
+                dot ${DOT_ARGS} -Tpng ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.png
                 echo-dart-measurement ${GPERF_PROFILE}.callgrind png ${PWD}/${GPERF_PROFILE}.callgrind.png
             fi
         fi
