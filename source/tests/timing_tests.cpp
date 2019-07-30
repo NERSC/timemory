@@ -29,11 +29,11 @@
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;
-using mutex_t = std::mutex;
-using lock_t = std::unique_lock<mutex_t>;
+using mutex_t   = std::mutex;
+using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
-static const float util_tolerance = 2.5f;
+static const float util_tolerance  = 2.5f;
 static const float timer_tolerance = 0.01f;
 //--------------------------------------------------------------------------------------//
 namespace details
@@ -53,7 +53,8 @@ fibonacci(long n)
 }
 
 // this function consumes approximately "t" milliseconds of cpu time
-void consume(long n)
+void
+consume(long n)
 {
     // a mutex held by one lock
     mutex_t mutex;
@@ -76,10 +77,11 @@ void consume(long n)
 class timing_tests : public ::testing::Test
 {
 protected:
-  void SetUp() override {
-      tim::settings::precision() = 9;
-      tim::settings::process();
-  }
+    void SetUp() override
+    {
+        tim::settings::precision() = 9;
+        tim::settings::process();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

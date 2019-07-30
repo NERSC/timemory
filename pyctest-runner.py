@@ -336,7 +336,7 @@ def run_pyctest():
     pyctest.test(construct_name("test_optional_on"), construct_command(["./test_optional_on"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_optional_off"), construct_command(["./test_optional_off"], args),
+    pyctest.test("test_optional_off", ["./test_optional_off"],
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)

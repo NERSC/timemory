@@ -100,14 +100,14 @@ if [ -f "${GPERF_PROFILE}" ]; then
         # if dot is available
         if [ -n "$(which dot)" ]; then
             eval ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
-            dot -Tpng ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.png
-            echo-dart-measurement ${GPERF_PROFILE}.dot png ${PWD}/${GPERF_PROFILE}.png
-            #if [ -f ./gprof2dot.py ]; then
-            #    eval ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
-            #    python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
-            #    dot -Tpng ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.png
-            #    echo-dart-measurement ${GPERF_PROFILE}.callgrind png ${PWD}/${GPERF_PROFILE}.callgrind.png
-            #fi
+            dot -Tjpeg ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.jpeg
+            echo-dart-measurement ${GPERF_PROFILE}.jpeg jpeg ${PWD}/${GPERF_PROFILE}.jpeg
+            if [ -f ./gprof2dot.py ]; then
+                eval ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
+                python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
+                dot -Tpng ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.png
+                echo-dart-measurement ${GPERF_PROFILE}.callgrind png ${PWD}/${GPERF_PROFILE}.callgrind.png
+            fi
         fi
         if [ "${INTERACTIVE}" -gt 0 ]; then
             eval ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}

@@ -6,3 +6,9 @@ add_googletest(timing_tests
     SOURCES         timing_tests.cpp
     LINK_LIBRARIES  timemory-headers
 )
+
+add_googletest(rusage_tests
+    DISCOVER_TESTS
+    SOURCES         rusage_tests.cpp
+    LINK_LIBRARIES  timemory-headers
+)
