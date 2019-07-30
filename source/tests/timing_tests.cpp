@@ -33,7 +33,7 @@ using mutex_t = std::mutex;
 using lock_t = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
-static const float util_tolerance = 1.0f;
+static const float util_tolerance = 2.5f;
 static const float timer_tolerance = 0.01f;
 //--------------------------------------------------------------------------------------//
 namespace details

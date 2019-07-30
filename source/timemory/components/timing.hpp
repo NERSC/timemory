@@ -234,7 +234,7 @@ struct monotonic_clock : public base<monotonic_clock>
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
-    static std::string label() { return "mono"; }
+    static std::string label() { return "monotonic_clock"; }
     static std::string descript() { return "monotonic time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
@@ -278,7 +278,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
-    static std::string label() { return "raw_mono"; }
+    static std::string label() { return "monotonic_raw_clock"; }
     static std::string descript() { return "monotonic raw time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
