@@ -26,13 +26,13 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
-#include "timemory/mpl/policy.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
-#include "timemory/utility/macros.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <memory>

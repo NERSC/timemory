@@ -27,8 +27,8 @@
 #include <iostream>
 #include <thread>
 
-#include <timemory/utility/signals.hpp>
 #include <timemory/timemory.hpp>
+#include <timemory/utility/signals.hpp>
 
 #include "kernel.hpp"
 

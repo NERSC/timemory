@@ -25,9 +25,9 @@
 
 #include <cstdint>
 
+#include <timemory/timemory.hpp>
 #include <timemory/utility/signals.hpp>
 #include <timemory/utility/testing.hpp>
-#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 static int64_t nlaps = 0;

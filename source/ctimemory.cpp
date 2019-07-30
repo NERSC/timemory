@@ -32,11 +32,11 @@
 
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/utility.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/utility/singleton.hpp"
+#include "timemory/utility/utility.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
 #include "timemory/variadic/component_list.hpp"

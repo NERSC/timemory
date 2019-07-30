@@ -33,8 +33,8 @@
 
 #include "timemory/components.hpp"
 #include "timemory/components/base.hpp"
-#include "timemory/mpl/type_traits.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/serializer.hpp"
 
 #include <iostream>

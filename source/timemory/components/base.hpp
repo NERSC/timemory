@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "timemory/mpl/policy.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"

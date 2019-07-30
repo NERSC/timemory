@@ -24,8 +24,8 @@
 
 #pragma once
 
-#include "timemory/mpl/type_traits.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/type_traits.hpp"
 
 #include <tuple>
 

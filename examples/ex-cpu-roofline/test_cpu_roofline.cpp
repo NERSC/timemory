@@ -27,9 +27,9 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <timemory/timemory.hpp>
 #include <timemory/utility/signals.hpp>
 #include <timemory/utility/testing.hpp>
-#include <timemory/timemory.hpp>
 
 using namespace tim::component;
 using float_type   = double;

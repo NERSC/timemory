@@ -29,8 +29,8 @@
  *
  */
 
-#include "timemory/utility/macros.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -476,9 +476,9 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-#include "timemory/variadic/component_tuple.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/utility/storage.hpp"
+#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
 

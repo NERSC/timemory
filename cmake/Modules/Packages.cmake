@@ -161,8 +161,8 @@ if(TIMEMORY_BUILD_GTEST)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # add google-test
-    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest" FORCE)
-    set(BUILD_GMOCK ON CACHE BOOL "Build gmock" FORCE)
+    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
+    set(BUILD_GMOCK ON CACHE BOOL "Build gmock")
     add_subdirectory(${PROJECT_SOURCE_DIR}/source/google-test)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
     target_include_directories(timemory-google-test INTERFACE

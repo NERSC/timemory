@@ -29,19 +29,45 @@
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;
+using mutex_t = std::mutex;
+using lock_t = std::unique_lock<mutex_t>;
+using condvar_t = std::condition_variable;
 
+static const float util_tolerance = 1.0f;
+static const float timer_tolerance = 0.01f;
 //--------------------------------------------------------------------------------------//
 namespace details
 {
+// this function consumes approximately "n" milliseconds of real time
 void
-do_sleep(int n)
+do_sleep(long n)
 {
-    std::this_thread::sleep_for(std::chrono::seconds(n));
+    std::this_thread::sleep_for(std::chrono::milliseconds(n));
 }
+
+// this function consumes an unknown number of cpu resources
 long
 fibonacci(long n)
 {
     return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
+}
+
+// this function consumes approximately "t" milliseconds of cpu time
+void consume(long n)
+{
+    // a mutex held by one lock
+    mutex_t mutex;
+    // acquire lock
+    lock_t hold_lk(mutex);
+    // associate but defer
+    lock_t try_lk(mutex, std::defer_lock);
+    // get current time
+    auto now = std::chrono::system_clock::now();
+    // get elapsed
+    auto until = now + std::chrono::milliseconds(n);
+    // try until time point
+    while(std::chrono::system_clock::now() < until)
+        try_lk.try_lock();
 }
 }  // namespace details
 
@@ -49,6 +75,11 @@ fibonacci(long n)
 
 class timing_tests : public ::testing::Test
 {
+protected:
+  void SetUp() override {
+      tim::settings::precision() = 9;
+      tim::settings::process();
+  }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -57,9 +88,34 @@ TEST_F(timing_tests, wall_timer)
 {
     wall_clock obj;
     obj.start();
-    details::do_sleep(1);
+    details::do_sleep(1000);
     obj.stop();
-    ASSERT_NEAR(1.0f, obj.get(), 1.0e-2);
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, monotonic_timer)
+{
+    monotonic_clock obj;
+    obj.start();
+    details::do_sleep(1000);
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, monotonic_raw_timer)
+{
+    monotonic_raw_clock obj;
+    obj.start();
+    details::do_sleep(1000);
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -68,10 +124,11 @@ TEST_F(timing_tests, system_timer)
 {
     system_clock obj;
     obj.start();
-    std::thread t(details::do_sleep, 1);
+    std::thread t(details::do_sleep, 1000);
     t.join();
     obj.stop();
-    ASSERT_NEAR(0.0f, obj.get(), 1.0e-2);
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -80,10 +137,11 @@ TEST_F(timing_tests, user_timer)
 {
     user_clock obj;
     obj.start();
-    std::thread t(details::do_sleep, 1);
+    std::thread t(details::do_sleep, 1000);
     t.join();
     obj.stop();
-    ASSERT_NEAR(0.0f, obj.get(), 1.0e-2);
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -92,10 +150,23 @@ TEST_F(timing_tests, cpu_timer)
 {
     cpu_clock obj;
     obj.start();
-    std::thread t(details::do_sleep, 1);
-    t.join();
+    details::consume(1000);
     obj.stop();
-    ASSERT_NEAR(0.0f, obj.get(), 1.0e-2);
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, cpu_utilization)
+{
+    cpu_util obj;
+    obj.start();
+    details::consume(750);
+    details::do_sleep(250);
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(75.0f, obj.get(), util_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -104,10 +175,53 @@ TEST_F(timing_tests, thread_cpu_timer)
 {
     thread_cpu_clock obj;
     obj.start();
-    std::thread t(details::fibonacci, 40);
+    std::thread t(details::fibonacci, 43);
     t.join();
     obj.stop();
-    ASSERT_NEAR(0.0f, obj.get(), 1.0e-2);
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, thread_cpu_utilization)
+{
+    thread_cpu_util obj;
+    obj.start();
+    std::thread t(details::consume, 2000);
+    details::consume(1000);
+    details::do_sleep(1000);
+    t.join();
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(50.0f, obj.get(), util_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, process_cpu_timer)
+{
+    process_cpu_clock obj;
+    obj.start();
+    details::consume(1000);
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(timing_tests, process_cpu_utilization)
+{
+    process_cpu_util obj;
+    obj.start();
+    std::thread t(details::consume, 2000);
+    details::consume(1000);
+    details::do_sleep(1000);
+    t.join();
+    obj.stop();
+    std::cout << "[" << __FUNCTION__ << "]> result: " << obj << std::endl;
+    ASSERT_NEAR(150.0f, obj.get(), util_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//

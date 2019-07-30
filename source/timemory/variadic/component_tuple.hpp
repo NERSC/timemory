@@ -42,12 +42,12 @@
 #include <iostream>
 #include <string>
 
-#include "timemory/mpl/apply.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
-#include "timemory/utility/macros.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
 

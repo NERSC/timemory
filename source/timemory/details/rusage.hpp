@@ -29,8 +29,8 @@
  */
 
 #include "timemory/backends/rusage.hpp"
-#include "timemory/utility/macros.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
 
 //======================================================================================//
 

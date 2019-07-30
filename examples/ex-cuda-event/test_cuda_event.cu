@@ -36,9 +36,9 @@
 #include <vector>
 
 #include <timemory/ert/kernels.hpp>
+#include <timemory/timemory.hpp>
 #include <timemory/utility/signals.hpp>
 #include <timemory/utility/testing.hpp>
-#include <timemory/timemory.hpp>
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/components/cupti_event.hpp"

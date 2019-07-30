@@ -35,8 +35,8 @@
 
 #pragma once
 
-#include "timemory/variadic/macros.hpp"
 #include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/variadic/macros.hpp"
 
 namespace tim
 {

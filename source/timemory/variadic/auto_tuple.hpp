@@ -41,11 +41,11 @@
 #include <cstdint>
 #include <string>
 
-#include "timemory/variadic/macros.hpp"
-#include "timemory/variadic/component_tuple.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
+#include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/macros.hpp"
 
 namespace tim
 {

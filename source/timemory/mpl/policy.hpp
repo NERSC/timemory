@@ -38,15 +38,20 @@ namespace policy
 {
 // these are policy classes
 struct serialization
-{};
+{
+};
 struct global_init
-{};
+{
+};
 struct global_finalize
-{};
+{
+};
 struct thread_init
-{};
+{
+};
 struct thread_finalize
-{};
+{
+};
 
 template <typename... _Policies>
 struct wrapper
@@ -106,33 +111,38 @@ struct wrapper
         enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_serialize(_Archive&, const unsigned int)
-    {}
+    {
+    }
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),
                           int> = 0>
     static void invoke_global_init()
-    {}
+    {
+    }
 
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<global_finalize, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_global_finalize()
-    {}
+    {
+    }
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<thread_init, typename _Polp::type>::value == false),
                           int> = 0>
     static void invoke_thread_init()
-    {}
+    {
+    }
 
     template <
         typename _Tp, typename _Polp = typename _Tp::policy_type,
         enable_if_t<(is_one_of<thread_finalize, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_thread_finalize()
-    {}
+    {
+    }
 };
 
 }  // namespace policy

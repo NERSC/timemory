@@ -36,8 +36,8 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/mpl/apply.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/mpl/apply.hpp"
 #include "timemory/utility/graph.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
