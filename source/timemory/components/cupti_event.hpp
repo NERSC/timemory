@@ -166,6 +166,22 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
         return ss.str();
     }
 
+    std::vector<double> get() const
+    {
+        std::vector<double> values;
+        const auto&         _data = (is_transient) ? accum : value;
+        for(auto itr : _data)
+        {
+            switch(itr.index)
+            {
+                case 0: values.push_back(std::get<0>(obj.data)); break;
+                case 1: values.push_back(std::get<1>(obj.data)); break;
+                case 2: values.push_back(std::get<2>(obj.data)); break;
+            }
+        }
+        return values;
+    }
+
     template <typename _Tp>
     using array_t = std::vector<_Tp>;
 

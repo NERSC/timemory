@@ -28,11 +28,11 @@
  */
 
 #include "timemory/components.hpp"
-#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/singleton.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/singleton.hpp"
+#include "timemory/utility/utility.hpp"
 
 using namespace tim::component;
 

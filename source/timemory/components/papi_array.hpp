@@ -27,9 +27,9 @@
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/storage.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/storage.hpp"
 #include "timemory/units.hpp"
 
 //======================================================================================//
@@ -149,9 +149,17 @@ struct papi_array
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        if(event_count::is_master())
-            tim::papi::read(event_set(), read_value.data());
+        tim::papi::read(event_set(), read_value.data());
         return read_value;
+    }
+
+    std::vector<double> get() const
+    {
+        std::vector<double> values;
+        auto&               _data = (is_transient) ? accum : value;
+        for(auto& itr : _data)
+            values.push_back(itr);
+        return values;
     }
 
     //----------------------------------------------------------------------------------//

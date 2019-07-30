@@ -27,7 +27,7 @@
 #include "timemory/backends/clocks.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/storage.hpp"
+#include "timemory/utility/storage.hpp"
 #include "timemory/units.hpp"
 
 //======================================================================================//
@@ -67,10 +67,7 @@ struct real_clock : public base<real_clock>
                                   base_type::get_unit());
     }
 
-    float get() const
-    {
-        return compute_display();
-    }
+    float get() const { return compute_display(); }
 
     void start()
     {
@@ -121,11 +118,8 @@ struct system_clock : public base<system_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -167,11 +161,8 @@ struct user_clock : public base<user_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -213,11 +204,8 @@ struct cpu_clock : public base<cpu_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -259,11 +247,8 @@ struct monotonic_clock : public base<monotonic_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -306,11 +291,8 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -351,11 +333,8 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -395,11 +374,8 @@ struct process_cpu_clock : public base<process_cpu_clock>
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
     }
-    float get() const
-    {
-        return compute_display();
-    }
-    void start()
+    float get() const { return compute_display(); }
+    void  start()
     {
         set_started();
         value = record();
@@ -450,10 +426,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
         return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
     }
     float serialization() { return compute_display(); }
-    float get() const
-    {
-        return compute_display();
-    }
+    float get() const { return compute_display(); }
     void  start()
     {
         set_started();
@@ -526,10 +499,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
         return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
     }
     float serialization() { return compute_display(); }
-    float get() const
-    {
-        return compute_display();
-    }
+    float get() const { return compute_display(); }
     void  start()
     {
         set_started();
@@ -602,10 +572,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
         return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
     }
     float serialization() { return compute_display(); }
-    float get() const
-    {
-        return compute_display();
-    }
+    float get() const { return compute_display(); }
     void  start()
     {
         set_started();

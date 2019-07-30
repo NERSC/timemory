@@ -86,6 +86,13 @@ struct cuda_event : public base<cuda_event, float>
                                   base_type::get_unit());
     }
 
+    float get() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
+                                  base_type::get_unit());
+    }
+
     void start()
     {
         set_started();

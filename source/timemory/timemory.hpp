@@ -30,18 +30,18 @@
 
 #pragma once
 
-#include "timemory/auto_list.hpp"
-#include "timemory/auto_macros.hpp"
-#include "timemory/auto_timer.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/auto_timer.hpp"
 #include "timemory/components.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
 
 #if defined(TIMEMORY_EXTERN_INIT)
-#    include "timemory/storage.hpp"
+#    include "timemory/utility/storage.hpp"
 #endif
 
 #include "timemory/ctimemory.h"

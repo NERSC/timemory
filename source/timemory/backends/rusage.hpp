@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <string>
 
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 //======================================================================================//
 
@@ -115,4 +115,4 @@ get_num_priority_context_switch();
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/rusage.icpp"
+#include "timemory/details/rusage.hpp"

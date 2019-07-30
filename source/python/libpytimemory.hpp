@@ -51,16 +51,16 @@
 #include "pybind11/pytypes.h"
 #include "pybind11/stl.h"
 
-#include "timemory/auto_list.hpp"
-#include "timemory/auto_timer.hpp"
-#include "timemory/auto_tuple.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/component_list.hpp"
-#include "timemory/component_tuple.hpp"
-#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/signal_detection.hpp"
 #include "timemory/timemory.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_timer.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/variadic/component_list.hpp"
+#include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
 

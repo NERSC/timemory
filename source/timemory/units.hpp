@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdint>
 #include <ratio>

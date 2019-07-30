@@ -27,8 +27,8 @@
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
+#include <timemory/utility/signals.hpp>
+#include <timemory/utility/testing.hpp>
 #include <timemory/timemory.hpp>
 
 using namespace tim::component;

@@ -30,17 +30,17 @@
  *
  */
 
-#include "timemory/auto_list.hpp"
-#include "timemory/auto_tuple.hpp"
-#include "timemory/component_list.hpp"
-#include "timemory/component_tuple.hpp"
-#include "timemory/macros.hpp"
 #include "timemory/manager.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/signal_detection.hpp"
-#include "timemory/singleton.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/signals.hpp"
+#include "timemory/utility/singleton.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
+#include "timemory/variadic/component_list.hpp"
+#include "timemory/variadic/component_tuple.hpp"
 
 extern "C"
 {

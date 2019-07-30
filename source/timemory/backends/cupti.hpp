@@ -31,8 +31,8 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <cassert>
 #include <cstdint>

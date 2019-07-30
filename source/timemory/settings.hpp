@@ -32,7 +32,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -146,10 +146,10 @@ tim::settings::toupper(std::string str)
 //======================================================================================//
 
 #include "timemory/backends/mpi.hpp"
-#include "timemory/component_operations.hpp"
 #include "timemory/components.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
@@ -516,6 +516,6 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/storage.icpp"
+#include "timemory/details/storage.hpp"
 
 //--------------------------------------------------------------------------------------//

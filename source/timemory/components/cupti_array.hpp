@@ -26,9 +26,9 @@
 
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/storage.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/storage.hpp"
 #include "timemory/units.hpp"
 
 //======================================================================================//

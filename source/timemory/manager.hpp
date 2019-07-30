@@ -35,13 +35,14 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/apply.hpp"
-#include "timemory/graph.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/singleton.hpp"
-#include "timemory/storage.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/backends/papi.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/utility/graph.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/singleton.hpp"
+#include "timemory/utility/storage.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -451,4 +452,4 @@ manager_singleton()
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/manager.icpp"
+#include "timemory/details/manager.hpp"

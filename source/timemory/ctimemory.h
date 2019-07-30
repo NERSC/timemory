@@ -223,43 +223,41 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 #endif
 
 //--------------------------------------------------------------------------------------//
+// only define for C
+#if !defined(__cplusplus)
 
-#if !defined(__FUNCTION__) && defined(__func__)
-#    define __FUNCTION__ __func__
-#endif
+#    if !defined(__FUNCTION__) && defined(__func__)
+#        define __FUNCTION__ __func__
+#    endif
 
-#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#    define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
-#else
-#    define __TIMEMORY_FUNCTION__ __FUNCTION__
-#endif
+#    if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#        define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
+#    else
+#        define __TIMEMORY_FUNCTION__ __FUNCTION__
+#    endif
 
 // stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
-#if !defined(TIMEMORY_STRINGIZE)
-#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
-#endif
+#    if !defined(TIMEMORY_STRINGIZE)
+#        define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#    endif
 
 // actual stringifying
-#if !defined(TIMEMORY_STRINGIZE2)
-#    define TIMEMORY_STRINGIZE2(X) #    X
-#endif
+#    if !defined(TIMEMORY_STRINGIZE2)
+#        define TIMEMORY_STRINGIZE2(X) #        X
+#    endif
 
 // stringify the __LINE__ macro
-#if !defined(TIMEMORY_LINE_STRING)
-#    define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
-#endif
+#    if !defined(TIMEMORY_LINE_STRING)
+#        define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#    endif
 
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_AUTO_LABEL)
-#    define TIMEMORY_AUTO_LABEL(c_str)                                                   \
-        c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
-#endif
-
-//--------------------------------------------------------------------------------------//
-// only define for C
-#if !defined(__cplusplus)
+#    if !defined(TIMEMORY_AUTO_LABEL)
+#        define TIMEMORY_AUTO_LABEL(c_str)                                               \
+            c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
+#    endif
 
 //--------------------------------------------------------------------------------------//
 #    define TIMEMORY_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };

@@ -33,7 +33,7 @@
 
 // general components
 #include "timemory/components/cuda_event.hpp"
-#include "timemory/components/resource_usage.hpp"
+#include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
 // hardware counter components
@@ -66,7 +66,7 @@
 #    define TIMEMORY_GPU_COUNTERS 32
 #endif
 
-#include "timemory/apply.hpp"
+#include "timemory/mpl/apply.hpp"
 
 extern "C"
 {

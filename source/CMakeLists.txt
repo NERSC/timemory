@@ -4,21 +4,31 @@
 # - headers are included so they will show up in IDEs
 #
 file(GLOB c_headers                 ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_variadic      ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
+file(GLOB cxx_headers_backends      ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
-file(GLOB cxx_headers_impl          ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
-file(GLOB cxx_headers_comp          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
-file(GLOB cxx_headers_backend       ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
+file(GLOB cxx_headers_details       ${CMAKE_CURRENT_LIST_DIR}/timemory/details/*.hpp)
+file(GLOB cxx_headers_components    ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_templates     ${CMAKE_CURRENT_LIST_DIR}/timemory/templates/*.hpp)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/cxx.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp)
-file(GLOB cuda_sources              ${CMAKE_CURRENT_LIST_DIR}/cuda.cpp)
+file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 
+file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
+file(GLOB cuda_sources              ${CMAKE_CURRENT_LIST_DIR}/cuda_extern.cpp)
+
+# all the headers
+set(timemory_headers
+    ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
+    ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
+    ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_templates}
+    ${cxx_headers_utility})
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -34,10 +44,8 @@ add_subdirectory(timemory)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES    ${c_sources}        ${c_headers})
-set(CXX_LIBRARY_SOURCES  ${cxx_sources}      ${cxx_headers}      ${cxx_headers_templates}
-                         ${cxx_headers_comp} ${cxx_headers_impl} ${cxx_headers_backend}
-                         ${cxx_headers_ert}  ${cereal_headers})
+set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
+set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
 set(CUDA_LIBRARY_SOURCES ${cuda_sources})
 
 
@@ -208,23 +216,15 @@ install(
     EXPORT ${PROJECT_NAME}LibraryDepends)
 
 # C/C++ development headers
-install(FILES ${cxx_headers} ${c_headers}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory)
+macro(INSTALL_HEADER_FILES)
+    foreach(_header ${ARGN})
+        file(RELATIVE_PATH _relative ${CMAKE_CURRENT_LIST_DIR} ${_header})
+        get_filename_component(_destpath ${_relative} DIRECTORY)
+        install(FILES ${_header} DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/${_destpath})
+    endforeach()
+endmacro()
 
-install(FILES ${cxx_headers_impl}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/impl)
-
-install(FILES ${cxx_headers_comp}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/components)
-
-install(FILES ${cxx_headers_ert}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/ert)
-
-install(FILES ${cxx_headers_backend}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/backends)
-
-install(FILES ${cxx_headers_templates}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/templates)
+install_header_files(${timemory_headers})
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends

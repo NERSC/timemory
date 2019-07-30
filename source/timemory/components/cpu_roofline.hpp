@@ -26,12 +26,12 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
-#include "timemory/components/policy.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 #include "timemory/units.hpp"
 
 #include <array>
@@ -347,6 +347,8 @@ struct cpu_roofline
             _sum += static_cast<double>(*itr);
         return _sum;
     }
+
+    double get() const { return get_counted() / get_elapsed(); }
 
     void start()
     {

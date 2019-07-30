@@ -20,6 +20,9 @@ endif()
 #   If we are building as a standalone project or as part of source/build tree
 #
 if(STANDALONE)
+    set(TIMEMORY_SKIP_INTERFACE_LIBRARY ON)
+    find_package(TiMemory REQUIRED)
+    unset(TIMEMORY_SKIP_INTERFACE_LIBRARY)
     option(TIMEMORY_USE_MPI "Enable MPI usage" ON)
     if(TIMEMORY_USE_MPI)
         find_package(MPI)
@@ -35,7 +38,7 @@ endif()
 #   Add the examples
 #
 add_subdirectory(ex-optional)
-if(TIMEMORY_BUILD_C OR TIMEMORY_C_LIBRARY)
+if(TIMEMORY_BUILD_C OR TARGET timemory-c-shared)
     add_subdirectory(ex-c)
 endif()
 add_subdirectory(ex-cxx-tuple)
@@ -43,8 +46,7 @@ add_subdirectory(ex-cxx-overhead)
 add_subdirectory(ex-cpu-roofline)
 
 get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
-find_package(CUDA QUIET)
-if("CUDA" IN_LIST LANGUAGES AND CUDA_FOUND)
+if("CUDA" IN_LIST LANGUAGES AND CMAKE_CUDA_COMPILER)
     if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
         add_subdirectory(ex-cuda-event)
     endif()

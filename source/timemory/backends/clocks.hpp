@@ -46,8 +46,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #if defined(_UNIX)
 

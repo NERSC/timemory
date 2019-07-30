@@ -21,9 +21,9 @@ get_timer(const char* func)
 void*
 get_fibonacci_timer(const char* func, long n)
 {
-    // char* buffer = (char*) (malloc(64 * sizeof(char)));
-    // sprintf(buffer, "%s[%li]", func, n);
-    return TIMEMORY_BLANK_AUTO_TUPLE(func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
+    char* buffer = (char*) (malloc(64 * sizeof(char)));
+    sprintf(buffer, "%s[%li]", func, n);
+    return TIMEMORY_BLANK_AUTO_TUPLE(buffer, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
 }
 
 //======================================================================================//

@@ -27,7 +27,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components/timing.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <atomic>
