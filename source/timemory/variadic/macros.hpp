@@ -81,7 +81,7 @@ using str = tim::apply<std::string>;
 //
 #    define _LINE_STRING priv::apply::join("", __LINE__)
 #    define _AUTO_NAME_COMBINE(X, Y) X##Y
-#    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(macro_auto_timer, Y)
+#    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(_tim_auto_variable, Y)
 #    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(typedef_auto_tuple, Y)
 //
 // helper macro for "__FUNCTION__@'__FILE__':__LINE__" tagging

@@ -63,17 +63,8 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal
         ${PROJECT_SOURCE_DIR}/source/python/pybind11)
 
-    include(Documentation)
-
-    if(TIMEMORY_DOXYGEN_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
-        Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif()
-
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
     add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
-    print_features()
 
 endif()
 

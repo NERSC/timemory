@@ -40,8 +40,8 @@ static const float   peak_tolerance = 5;
 static const float   curr_tolerance = 5;
 static const int64_t nelements      = 5000000;
 
-#define CHECK_AVAILABLE(type) \
-    if(!tim::trait::impl_available< type >::value)\
+#define CHECK_AVAILABLE(type)                                                            \
+    if(!tim::trait::impl_available<type>::value)                                         \
         return;
 
 //--------------------------------------------------------------------------------------//

@@ -108,5 +108,19 @@ add_subdirectory(source)
 set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
 add_subdirectory(examples)
 
-# include(GoogleTest)
-# gtest_discover_tests()
+#----------------------------------------------------------------------------------------#
+#   Documentation
+#----------------------------------------------------------------------------------------#
+
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
+    include(Documentation)
+
+    if(TIMEMORY_DOXYGEN_DOCS)
+        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        Generate_Documentation(Doxyfile.${PROJECT_NAME})
+        SET(CMAKE_INSTALL_MESSAGE LAZY)
+    endif()
+
+    print_features()
+endif()

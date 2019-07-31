@@ -227,36 +227,57 @@ auto_list<Types...>::~auto_list()
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_LIST(auto_list_type, signature)                              \
-    TIMEMORY_BLANK_AUTO_OBJECT(auto_list_type, signature)
+#define TIMEMORY_BLANK_AUTO_LIST(auto_list_type, ...)                                    \
+    TIMEMORY_BLANK_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_BASIC_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+    TIMEMORY_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_AUTO_LIST(auto_list_type, ...)                                          \
-    TIMEMORY_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+    TIMEMORY_OBJECT(auto_list_type, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_LIST_OBJ(auto_list_type, ...)                                      \
-    TIMEMORY_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+//--------------------------------------------------------------------------------------//
+// caliper versions
 
-#define TIMEMORY_BASIC_AUTO_LIST_OBJ(auto_list_type, ...)                                \
-    TIMEMORY_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
+    TIMEMORY_BLANK_CALIPER(id, auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
+    TIMEMORY_BASIC_CALIPER(id, auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_LIST_CALIPER(id, auto_list_type, ...)                              \
+    TIMEMORY_CALIPER(id, auto_list_type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+// instance versions
+
+#define TIMEMORY_BLANK_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
+    TIMEMORY_BLANK_INSTANCE(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_BASIC_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
+    TIMEMORY_BASIC_INSTANCE(auto_list_type, __VA_ARGS__)
+
+#define TIMEMORY_AUTO_LIST_INSTANCE(auto_list_type, ...)                                 \
+    TIMEMORY_INSTANCE(auto_list_type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+// debug versions
 
 #define TIMEMORY_DEBUG_BASIC_AUTO_LIST(auto_list_type, ...)                              \
-    TIMEMORY_DEBUG_BASIC_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+    TIMEMORY_DEBUG_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
 
 #define TIMEMORY_DEBUG_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_DEBUG_AUTO_OBJECT(auto_list_type, __VA_ARGS__)
+    TIMEMORY_DEBUG_OBJECT(auto_list_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
-    using AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                          \
-    TIMEMORY_BASIC_AUTO_LIST(AUTO_TYPEDEF(__LINE__), tag);
+    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    TIMEMORY_BASIC_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
-    using AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                          \
-    TIMEMORY_AUTO_LIST(AUTO_TYPEDEF(__LINE__), tag);
+    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    TIMEMORY_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//
