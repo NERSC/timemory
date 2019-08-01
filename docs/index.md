@@ -16,10 +16,11 @@ C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities
 
 ## Table of contents
 
-1. [About](/about) -- About the TiMemory project
-2. [Features](/features) -- Feature support in TiMemory
-3. [Installation](/installation) -- How to install TiMemory
-4. [Project Integration](/integrating) -- How to integrate TiMemory into another project
-5. [Components](/components) -- Available components in TiMemory
-6. [Getting Started](/getting_started) -- How to get started using TiMemory
-7. [Runtime Overhead](/overhead) -- Runtime overhead of TiMemory
+1. [About](about) -- About the TiMemory project
+2. [Features](features) -- Feature support in TiMemory
+3. [Installation](installation) -- How to install TiMemory
+4. [Project Integration](integrating) -- How to integrate TiMemory into another project
+5. [Components](components) -- Available components in TiMemory
+6. [Getting Started](getting_started) -- How to get started using TiMemory
+7. [Runtime Overhead](overhead) -- Runtime overhead of TiMemory
+8. [Doxygen Documentation](doxygen-docs) -- Doxygen source code documentation
