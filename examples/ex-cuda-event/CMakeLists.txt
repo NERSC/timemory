@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+# this is for internal use
+if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory")
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(NOT "CUDA" IN_LIST LANGUAGES OR NOT CMAKE_CUDA_COMPILER OR NOT TIMEMORY_USE_CUDA)
+        return()
+    endif()
+endif()
+
 project(TiMemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 
 set(EXE_NAME test_cuda_event)

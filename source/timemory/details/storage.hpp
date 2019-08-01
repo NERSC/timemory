@@ -36,6 +36,7 @@
 #include <map>
 #include <stdexcept>
 #include <thread>
+#include <numeric>
 
 //======================================================================================//
 
@@ -101,6 +102,12 @@ template <typename _Tp, typename... _ExtraArgs,
 void
 print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
 {
+    // negative values appear when multiple threads are involved.
+    // This needs to be addressed
+    for(size_t i = 0; i < obj.size(); ++i)
+        if(obj[i] < 0.0 || !std::isfinite(obj[i]))
+            return;
+
     std::stringstream ss;
     ss << "(exclusive: ";
     for(size_t i = 0; i < obj.size(); ++i)
@@ -118,6 +125,11 @@ template <typename _Tp,
 void
 print_percentage(std::ostream& os, const _Tp& obj)
 {
+    // negative values appear when multiple threads are involved.
+    // This needs to be addressed
+    if(obj < 0.0 || !std::isfinite(obj))
+        return;
+
     std::stringstream ss;
     ss << "(exclusive: ";
     ss << std::setprecision(1) << std::fixed << std::setw(5) << obj;
@@ -237,6 +249,11 @@ tim::storage<ObjectType>::print()
 
             if(_boffset == std::string::npos)
             {
+                for(int64_t _i = 0; _i < itr.depth() - 1; ++_i)
+                {
+                    _prefix.insert(_ebracket + 2, "  ");
+                    _ebracket += 2;
+                }
                 _prefix.insert(_ebracket + 2, "|_");
             }
             else

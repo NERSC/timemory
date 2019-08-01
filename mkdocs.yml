@@ -1,0 +1,24 @@
+site_name: TiMemory
+nav:
+    - Home: index.md
+    - About: about.md
+    - Features: features.md
+    - Installation: installation.md
+    - Integrating: integrating.md
+    - Components: components.md
+    - Getting Started: getting_started.md
+    - Overhead: overhead.md
+    - Doxygen: html/index.html
+
+#theme: readthedocs
+#theme: bootswatch
+#theme: windmill
+#theme: moonstone
+#theme: ivory
+#theme: alabaster
+
+#theme: nature
+theme: cinder
+#theme: inspired
+#theme: cluster
+#theme: juice

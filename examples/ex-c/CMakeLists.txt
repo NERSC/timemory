@@ -1,5 +1,10 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+# this is for internal use
+if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory" AND NOT TIMEMORY_BUILD_C)
+    return()
+endif()
+
 project(TiMemory-C-Example LANGUAGES C)
 
 set(EXE_NAME test_c_timing)

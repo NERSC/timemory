@@ -1,0 +1,17 @@
+name: docs
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.6
+  - cmake
+  - curl
+  - doxygen
+  - git
+  - graphviz
+  - matplotlib
+  - numpy
+  - openssl
+  - pillow
+  - pip
+  - setuptools

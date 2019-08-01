@@ -233,20 +233,24 @@ tim::settings::process()
         if(_unit.length() == 0)
             return return_type("MB", tim::units::megabyte);
 
-        using inner            = std::tuple<string_t, string_t, string_t, int64_t>;
+        using inner            = std::tuple<string_t, string_t, int64_t>;
         using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = { inner("byte", "B", "Bi", tim::units::byte),
-                                   inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
-                                   inner("megabyte", "MB", "MiB", tim::units::megabyte),
-                                   inner("gigabyte", "GB", "GiB", tim::units::gigabyte),
-                                   inner("terabyte", "TB", "TiB", tim::units::terabyte),
-                                   inner("petabyte", "PB", "PiB", tim::units::petabyte) };
+        pair_vector_t matching = { inner("byte", "B", tim::units::byte),
+                                   inner("kilobyte", "KB", tim::units::kilobyte),
+                                   inner("megabyte", "MB", tim::units::megabyte),
+                                   inner("gigabyte", "GB", tim::units::gigabyte),
+                                   inner("terabyte", "TB", tim::units::terabyte),
+                                   inner("petabyte", "PB", tim::units::petabyte),
+                                   inner("kibibyte", "KiB", tim::units::KiB),
+                                   inner("mebibyte", "MiB", tim::units::MiB),
+                                   inner("gibibyte", "GiB", tim::units::GiB),
+                                   inner("tebibyte", "TiB", tim::units::TiB),
+                                   inner("pebibyte", "PiB", tim::units::PiB) };
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
-               _unit == tolower(std::get<2>(itr)))
-                return return_type(std::get<1>(itr), std::get<3>(itr));
+            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)))
+                return return_type(std::get<1>(itr), std::get<2>(itr));
         std::cerr << "Warning!! No memory unit matching \"" << _unit
                   << "\". Using default..." << std::endl;
         return return_type("MB", tim::units::megabyte);
@@ -271,10 +275,12 @@ tim::settings::process()
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
-               _unit == (tolower(std::get<0>(itr)) + "ec") ||
-               _unit == (tolower(std::get<1>(itr)) + "s"))
-                return return_type(std::get<0>(itr), std::get<2>(itr));
+            if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
+               _unit == (std::get<0>(itr) + "ec") ||
+               _unit == (std::get<1>(itr) + "s"))
+            {
+                return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
+            }
         std::cerr << "Warning!! No timing unit matching \"" << _unit
                   << "\". Using default..." << std::endl;
         return return_type("sec", tim::units::sec);
