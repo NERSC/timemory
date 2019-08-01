@@ -1,7 +1,7 @@
 ################################################################################
 #   Build stage 1
 ################################################################################
-ARG BASE_IMG=ubuntu
+ARG BASE_IMG=nvidia/cuda
 ARG BASE_TAG=latest
 FROM ${BASE_IMG}:${BASE_TAG} as builder
 
@@ -17,10 +17,9 @@ ENV DEBIAN_FRONTEND noninteractive
 WORKDIR /tmp
 
 # build and env args used by package-manager
-ARG COMPILER_TYPE
-ARG COMPILER_VERSION
-ENV COMPILER_TYPE ${COMPILER_TYPE}
-ENV COMPILER_VERSION ${COMPILER_VERSION}
+ARG COMPILER_TYPE=gcc
+ARG COMPILER_VERSION=8.0
+ARG ENABLE_DISPLAY=1
 
 # package-manager configuration
 COPY ./config/apt.sh /tmp/apt.sh

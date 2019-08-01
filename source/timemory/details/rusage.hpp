@@ -103,7 +103,11 @@ tim::get_current_rss()
     mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
     if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
                  &infoCount) != KERN_SUCCESS)
-        return static_cast<int64_t>(0); /* Can't access? */
+    {
+        fprintf(stderr, "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
+                __FUNCTION__, __FILE__, __LINE__);
+        return static_cast<int64_t>(0);
+    }
     // Darwin reports in bytes
     return static_cast<int64_t>(info.resident_size);
 
@@ -114,7 +118,7 @@ tim::get_current_rss()
     if(fp && fscanf(fp, "%*s%ld", &rss) == 1)
     {
         fclose(fp);
-        return static_cast<int64_t>(rss * units::page_size);
+        return static_cast<int64_t>(rss * units::get_page_size());
     }
 
     if(fp)

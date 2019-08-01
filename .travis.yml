@@ -276,9 +276,9 @@ install:
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE}
-    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --no-py --profile=cpu
-    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=Debug          --no-py --coverage
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --no-py --profile=cpu -- -VV
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=Debug          --no-py --coverage -- -VV
     # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=heap
 
 script:

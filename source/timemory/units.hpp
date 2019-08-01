@@ -81,14 +81,35 @@ const int64_t GiB = 1024 * MiB;
 const int64_t TiB = 1024 * GiB;
 const int64_t PiB = 1024 * TiB;
 
-#if defined(_UNIX)
-#    if defined(_LINUX)
-const int64_t page_size = ::sysconf(_SC_PAGESIZE);
-#    endif
+#if defined(_LINUX)
+
+inline int64_t
+get_page_size()
+{
+    return ::sysconf(_SC_PAGESIZE);
+}
 const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
-#else
-const int64_t page_size      = 1;
+
+#elif defined(_MACOS)
+
+inline int64_t
+get_page_size()
+{
+    return getpagesize();
+}
+const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+
+#elif defined(_WINDOWS)
+
+inline int64_t
+get_page_size()
+{
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    return sysInfo.dwPageSize;
+}
 const int64_t clocks_per_sec = CLOCKS_PER_SEC;
+
 #endif
 
 //--------------------------------------------------------------------------------------//
