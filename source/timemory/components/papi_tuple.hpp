@@ -27,9 +27,9 @@
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/storage.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -258,6 +258,15 @@ public:
                 ss << ", ";
         }
         return ss.str();
+    }
+
+    std::vector<double> get() const
+    {
+        std::vector<double> values;
+        auto&               _data = (is_transient) ? accum : value;
+        for(auto& itr : _data)
+            values.push_back(itr);
+        return values;
     }
 
     //----------------------------------------------------------------------------------//

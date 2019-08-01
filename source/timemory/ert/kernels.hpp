@@ -24,11 +24,11 @@
 
 #pragma once
 
-#include "timemory/apply.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/ert/data.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <cstdint>
 #include <functional>

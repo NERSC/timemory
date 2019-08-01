@@ -46,8 +46,8 @@
 #include <unordered_map>
 #include <vector>
 
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #if defined(_UNIX)
 
@@ -150,9 +150,9 @@ clock_gettime(clockid_t, struct timespec* tv)
 {
     LARGE_INTEGER        t;
     FILETIME             f;
-    double               microseconds;
+    float                microseconds;
     static LARGE_INTEGER offset;
-    static double        frequencyToMicroseconds;
+    static float         frequencyToMicroseconds;
     static int           initialized           = 0;
     static BOOL          usePerformanceCounter = 0;
 
@@ -164,7 +164,7 @@ clock_gettime(clockid_t, struct timespec* tv)
         if(usePerformanceCounter)
         {
             QueryPerformanceCounter(&offset);
-            frequencyToMicroseconds = (double) performanceFrequency.QuadPart / 1000000.;
+            frequencyToMicroseconds = (float) performanceFrequency.QuadPart / 1000000.;
         }
         else
         {
@@ -183,7 +183,7 @@ clock_gettime(clockid_t, struct timespec* tv)
     }
 
     t.QuadPart -= offset.QuadPart;
-    microseconds = (double) t.QuadPart / frequencyToMicroseconds;
+    microseconds = (float) t.QuadPart / frequencyToMicroseconds;
     t.QuadPart   = microseconds;
     tv->tv_sec   = t.QuadPart / 1000000;
     tv->tv_nsec  = t.QuadPart % 1000000;
@@ -294,7 +294,7 @@ clock_tick()
 
 //--------------------------------------------------------------------------------------//
 // general struct for the differnt clock_gettime functions
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_now(clockid_t clock_id)
 {
@@ -311,23 +311,22 @@ get_clock_now(clockid_t clock_id)
 //--------------------------------------------------------------------------------------//
 // the system's real time (i.e. wall time) clock, expressed as the amount of time since
 // the epoch.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_real_now()
 {
-    using clock_type    = std::chrono::high_resolution_clock;
+    using clock_type    = std::chrono::steady_clock;
     using duration_type = std::chrono::duration<clock_type::rep, Precision>;
 
     // return get_clock_now<_Tp, Precision>(CLOCK_REALTIME);
-    return std::chrono::duration_cast<duration_type>(
-               std::chrono::high_resolution_clock::now().time_since_epoch())
+    return std::chrono::duration_cast<duration_type>(clock_type::now().time_since_epoch())
         .count();
 }
 
 //--------------------------------------------------------------------------------------//
 // clock that increments monotonically, tracking the time since an arbitrary point,
 // and will continue to increment while the system is asleep.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_monotonic_now()
 {
@@ -338,7 +337,7 @@ get_clock_monotonic_now()
 // clock that increments monotonically, tracking the time since an arbitrary point like
 // CLOCK_MONOTONIC.  However, this clock is unaffected by frequency or time adjustments.
 // It should not be compared to other system time sources.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_monotonic_raw_now()
 {
@@ -350,7 +349,7 @@ get_clock_monotonic_raw_now()
 // threads)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // thread.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_thread_now()
 {
@@ -361,7 +360,7 @@ get_clock_thread_now()
 // this clock measures the CPU time within the current process (excludes child processes)
 // clock that tracks the amount of CPU (in user- or kernel-mode) used by the calling
 // process.
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_process_now()
 {
@@ -374,7 +373,7 @@ get_clock_process_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in user-mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_user_now()
 {
@@ -390,7 +389,7 @@ get_clock_user_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in kernel-mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_system_now()
 {
@@ -405,7 +404,7 @@ get_clock_system_now()
 // units are reported in number of clock ticks per second
 //
 // this function extracts only the CPU time spent in both user- and kernel- mode
-template <typename _Tp = double, typename Precision = std::ratio<1>>
+template <typename _Tp = float, typename Precision = std::ratio<1>>
 _Tp
 get_clock_cpu_now()
 {

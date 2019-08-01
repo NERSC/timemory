@@ -24,8 +24,10 @@
 //
 
 #include "test_optional.hpp"  // file that includes optional usage
+#include <algorithm>
 #include <chrono>
 #include <cstdio>
+#include <cstdlib>
 #include <thread>
 #include <vector>
 
@@ -56,6 +58,18 @@ int main(int argc, char** argv)
 {
     status();
 
+    // setenv when available
+#if(_POSIX_C_SOURCE >= 200112L) || defined(_BSD_SOURCE) || defined(_UNIX)
+    setenv("TIMEMORY_TIMING_UNITS", "us", 0);
+    setenv("TIMEMORY_MEMORY_UNITS", "kb", 0);
+    setenv("TIMEMORY_TIMING_WIDTH", "12", 0);
+    setenv("TIMEMORY_MEMORY_WIDTH", "12", 0);
+    setenv("TIMEMORY_TIMING_PRECISION", "3", 0);
+    setenv("TIMEMORY_MEMORY_PRECISION", "3", 0);
+    setenv("TIMEMORY_TIMING_SCIENTIFIC", "OFF", 0);
+    setenv("TIMEMORY_MEMORY_SCIENTIFIC", "OFF", 0);
+#endif
+
     //
     //  Dummy functions when USE_TIMEMORY not defined
     //
@@ -66,7 +80,12 @@ int main(int argc, char** argv)
     //
     std::vector<long> fibvalues;
     for(int i = 1; i < argc; ++i) fibvalues.push_back(atol(argv[i]));
-    if(fibvalues.empty()) fibvalues.push_back(45);
+    if(fibvalues.empty())
+    {
+        fibvalues.resize(44);
+        long n = 0;
+        std::generate_n(fibvalues.data(), fibvalues.size(), [&]() { return ++n; });
+    }
 
     //
     // create an auto tuple accessible via a caliper integer or expand to nothing
@@ -92,7 +111,7 @@ int main(int argc, char** argv)
     //
     // call <auto_tuple_t>.stop() or expand to nothing
     //
-    TIMEMORY_CALIPER_APPLY(main, stop);
+    TIMEMORY_CALIPER_APPLY(0, stop);
 
     //
     // sleep for 1 second so difference between two calipers
@@ -102,7 +121,7 @@ int main(int argc, char** argv)
     //
     // call <auto_tuple_t>.stop() or expand to nothing
     //
-    TIMEMORY_CALIPER_APPLY(0, stop);
+    TIMEMORY_CALIPER_APPLY(main, stop);
 
     status();
 }

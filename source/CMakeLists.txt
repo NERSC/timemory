@@ -1,34 +1,34 @@
 
 #----------------------------------------------------------------------------------------#
-#   configuration
-#----------------------------------------------------------------------------------------#
-
-include(MacroUtilities)
-include(Options)
-include(Compilers)
-include(GNUInstallDirs)
-include(ProjectSettings)
-include(BuildSettings)
-include(Packages)
-include(ClangFormat)
-include(CMakeParseArguments)
-
-#----------------------------------------------------------------------------------------#
 # Locate sources and headers for this project
 # - headers are included so they will show up in IDEs
 #
 file(GLOB c_headers                 ${CMAKE_CURRENT_LIST_DIR}/timemory/*.h)
-file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_headers               ${CMAKE_CURRENT_LIST_DIR}/timemory/*.hpp)
+file(GLOB cxx_headers_variadic      ${CMAKE_CURRENT_LIST_DIR}/timemory/variadic/*.hpp)
+file(GLOB cxx_headers_backends      ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
 file(GLOB cxx_headers_ert           ${CMAKE_CURRENT_LIST_DIR}/timemory/ert/*.hpp)
-file(GLOB cxx_headers_impl          ${CMAKE_CURRENT_LIST_DIR}/timemory/impl/*.icpp)
-file(GLOB cxx_headers_comp          ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
-file(GLOB cxx_headers_backend       ${CMAKE_CURRENT_LIST_DIR}/timemory/backends/*.hpp)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
+file(GLOB cxx_headers_details       ${CMAKE_CURRENT_LIST_DIR}/timemory/details/*.hpp)
+file(GLOB cxx_headers_components    ${CMAKE_CURRENT_LIST_DIR}/timemory/components/*.hpp)
+file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
+file(GLOB cxx_headers_templates     ${CMAKE_CURRENT_LIST_DIR}/timemory/templates/*.hpp)
+file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 
+file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
+file(GLOB cuda_sources              ${CMAKE_CURRENT_LIST_DIR}/cuda_extern.cpp)
+
+# all the headers
+set(timemory_headers
+    ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
+    ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
+    ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_templates}
+    ${cxx_headers_utility})
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -44,10 +44,9 @@ add_subdirectory(timemory)
 # build library setup
 #
 # directly compile sources
-set(C_LIBRARY_SOURCES    ${c_sources}        ${c_headers})
-set(CXX_LIBRARY_SOURCES  ${cxx_sources}      ${cxx_headers}      ${cxx_headers_ert}
-                         ${cxx_headers_comp} ${cxx_headers_impl} ${cxx_headers_backend}
-                         ${cereal_headers})
+set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
+set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
+set(CUDA_LIBRARY_SOURCES ${cuda_sources})
 
 
 #----------------------------------------------------------------------------------------#
@@ -75,16 +74,13 @@ build_library(
     OUTPUT_DIR          ${PROJECT_BINARY_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    LINK_LIBRARIES      timemory-headers timemory-compile-options)
+    LINK_LIBRARIES      timemory-headers)
 
 if(WIN32)
     # make sure on Windows, static is built first. There is something weird
     # happening here when built in parallel...
     add_dependencies(timemory-cxx-shared timemory-cxx-static)
 endif()
-
-add_interface_library(timemory-cxx)
-target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
 
 # private compile options
 target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options timemory-analysis-tools)
@@ -105,6 +101,62 @@ if(WIN32)
     target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
 endif()
 
+
+#----------------------------------------------------------------------------------------#
+# build the CUDA libraries
+#
+if(TIMEMORY_USE_CUDA)
+
+    build_library(
+        PIC
+        TYPE                SHARED
+        TARGET_NAME         timemory-cuda-shared
+        OUTPUT_NAME         cutimemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CUDA
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${CUDA_LIBRARY_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS
+        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart)
+
+    build_library(
+        TYPE                STATIC
+        TARGET_NAME         timemory-cuda-static
+        OUTPUT_NAME         cutimemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CUDA
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${CUDA_LIBRARY_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart-static)
+
+    if(WIN32)
+        # make sure on Windows, static is built first. There is something weird
+        # happening here when built in parallel...
+        add_dependencies(timemory-cuda-shared timemory-cuda-static)
+    endif()
+
+    # private compile options
+    target_link_libraries(timemory-cuda-shared PRIVATE timemory-compile-options timemory-analysis-tools)
+    target_link_libraries(timemory-cuda-static PRIVATE timemory-compile-options timemory-analysis-tools)
+
+    if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+        if(NOT WIN32)
+            target_compile_definitions(timemory-cuda-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+            target_compile_definitions(timemory-cuda-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
+        else()
+            message(WARNING "Building extern templates is not currently supported on Windows")
+            set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
+        endif()
+    endif()
+
+    if(WIN32)
+        target_compile_definitions(timemory-cuda-shared PRIVATE _TIMEMORY_DLL)
+        target_compile_definitions(timemory-cuda-static PUBLIC  _TIMEMORY_ARCHIVE)
+    endif()
+
+endif()
 
 #----------------------------------------------------------------------------------------#
 # build the C libraries
@@ -137,9 +189,6 @@ if(TIMEMORY_BUILD_C)
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
         LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-cxx-static)
 
-    add_interface_library(timemory-c)
-    target_link_libraries(timemory-c INTERFACE timemory-c-shared)
-
     target_link_libraries(timemory-c-shared PRIVATE timemory-analysis-tools)
     target_link_libraries(timemory-c-static PRIVATE timemory-analysis-tools)
 
@@ -156,27 +205,20 @@ endif()
 
 # C/C++ compiled libraries
 install(
-    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES}
+    TARGETS ${TIMEMORY_COMPILED_LIBRARIES}
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
-    EXPORT ${PROJECT_NAME}LibraryDepends
-    COMPONENT development)
+    EXPORT ${PROJECT_NAME}LibraryDepends)
 
 # C/C++ development headers
-install(FILES ${cxx_headers} ${c_headers}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory
-    COMPONENT development)
+macro(INSTALL_HEADER_FILES)
+    foreach(_header ${ARGN})
+        file(RELATIVE_PATH _relative ${CMAKE_CURRENT_LIST_DIR} ${_header})
+        get_filename_component(_destpath ${_relative} DIRECTORY)
+        install(FILES ${_header} DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/${_destpath})
+    endforeach()
+endmacro()
 
-install(FILES ${cxx_headers_impl}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/impl
-    COMPONENT development)
-
-install(FILES ${cxx_headers_comp}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/components
-    COMPONENT development)
-
-install(FILES ${cxx_headers_ert}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/ert
-    COMPONENT development)
+install_header_files(${timemory_headers})
 
 install(FILES ${cxx_headers_backend}
     DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/backends
@@ -184,8 +226,7 @@ install(FILES ${cxx_headers_backend}
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}LibraryDepends
-    DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
-    COMPONENT development)
+    DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
 
 export(
     TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES}
@@ -217,7 +258,6 @@ if(TIMEMORY_BUILD_PYTHON AND NOT SKBUILD)
 
     install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
         DESTINATION ${TIMEMORY_INSTALL_BINDIR}
-        COMPONENT development
         PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ
@@ -229,3 +269,9 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 include(PackageConfigure)
+
+#----------------------------------------------------------------------------------------#
+#   Unit tests
+#----------------------------------------------------------------------------------------#
+
+add_subdirectory(tests)

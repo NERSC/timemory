@@ -27,7 +27,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components/timing.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <atomic>
@@ -312,10 +312,10 @@ public:
     }
 
     thread_barrier(const thread_barrier&) = delete;
-    thread_barrier(thread_barrier&&)      = default;
+    thread_barrier(thread_barrier&&)      = delete;
 
     thread_barrier& operator=(const thread_barrier&) = delete;
-    thread_barrier& operator=(thread_barrier&&) = default;
+    thread_barrier& operator=(thread_barrier&&) = delete;
 
     size_type size() const { return m_num_threads; }
 

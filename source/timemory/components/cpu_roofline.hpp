@@ -31,8 +31,19 @@
 #include "timemory/components/types.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
-#include "timemory/macros.hpp"
+#include "timemory/mpl/policy.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
+
+#include <array>
+#include <memory>
+#include <numeric>
+#include <utility>
+
+// default vectorization width
+#if !defined(TIMEMORY_VEC)
+#    define TIMEMORY_VEC 256
+#endif
 
 #include <array>
 #include <memory>
@@ -348,6 +359,8 @@ struct cpu_roofline
         return _sum;
     }
 
+    double get() const { return get_counted() / get_elapsed(); }
+
     void start()
     {
         set_started();
@@ -453,8 +466,8 @@ public:
 //--------------------------------------------------------------------------------------//
 // Shorthand aliases for common roofline types
 //
-using cpu_roofline_sflops = cpu_roofline<float, PAPI_SP_OPS>;
-using cpu_roofline_dflops = cpu_roofline<double, PAPI_DP_OPS>;
+using cpu_roofline_sp_flops = cpu_roofline<float, PAPI_SP_OPS>;
+using cpu_roofline_dp_flops = cpu_roofline<double, PAPI_DP_OPS>;
 
 // TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
 // accesses/reads/writes/etc.

@@ -141,8 +141,40 @@ enum TIMEMORY_COMPONENT
     NUM_SIGNALS,
     VOLUNTARY_CONTEXT_SWITCH,
     PRIORITY_CONTEXT_SWITCH,
-    CUDA_EVENT
+    CUDA_EVENT,
+    PAPI_ARRAY,
+    CPU_ROOFLINE_SP_FLOPS,  // single-precision cpu_roofline
+    CPU_ROOFLINE_DP_FLOPS   // double-precision cpu_roofline
 };
+
+//======================================================================================//
+//
+//      C struct for settings
+//
+//======================================================================================//
+
+#if defined(__cplusplus)
+extern "C"
+{
+#endif
+
+    typedef struct
+    {
+        int enabled;
+        int auto_output;
+        int file_output;
+        int text_output;
+        int json_output;
+        int cout_output;
+        int precision;
+        int width;
+        int scientific;
+        // skipping remainder
+    } timemory_settings;
+
+#if defined(__cplusplus)
+}
+#endif
 
 //======================================================================================//
 //
@@ -150,6 +182,8 @@ enum TIMEMORY_COMPONENT
 //
 //======================================================================================//
 
+tim_api extern void
+c_timemory_init(int argc, char** argv, timemory_settings);
 tim_api extern int
 c_timemory_enabled(void);
 tim_api extern void*
@@ -189,43 +223,45 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 #endif
 
 //--------------------------------------------------------------------------------------//
+// only define for C
+#if !defined(__cplusplus)
 
-#if !defined(__FUNCTION__) && defined(__func__)
-#    define __FUNCTION__ __func__
-#endif
+#    if !defined(__FUNCTION__) && defined(__func__)
+#        define __FUNCTION__ __func__
+#    endif
 
-#if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#    define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
-#else
-#    define __TIMEMORY_FUNCTION__ __FUNCTION__
-#endif
+#    if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#        define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
+#    else
+#        define __TIMEMORY_FUNCTION__ __FUNCTION__
+#    endif
 
 // stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
-#if !defined(TIMEMORY_STRINGIZE)
-#    define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
-#endif
+#    if !defined(TIMEMORY_STRINGIZE)
+#        define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#    endif
 
 // actual stringifying
-#if !defined(TIMEMORY_STRINGIZE2)
-#    define TIMEMORY_STRINGIZE2(X) #    X
-#endif
+#    if !defined(TIMEMORY_STRINGIZE2)
+#        define TIMEMORY_STRINGIZE2(X) #        X
+#    endif
 
 // stringify the __LINE__ macro
-#if !defined(TIMEMORY_LINE_STRING)
-#    define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
-#endif
+#    if !defined(TIMEMORY_LINE_STRING)
+#        define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#    endif
 
 //--------------------------------------------------------------------------------------//
 //
-#if !defined(TIMEMORY_AUTO_LABEL)
-#    define TIMEMORY_AUTO_LABEL(c_str)                                                   \
-        c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
-#endif
+#    if !defined(TIMEMORY_AUTO_LABEL)
+#        define TIMEMORY_AUTO_LABEL(c_str)                                               \
+            c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
+#    endif
 
 //--------------------------------------------------------------------------------------//
-// only define for C
-#if !defined(__cplusplus)
+#    define TIMEMORY_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };
+#    define TIMEMORY_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings);
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(c_str)
@@ -283,6 +319,25 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
             c_timemory_create_auto_tuple(                                                \
                 c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
                 __LINE__, __VA_NARG__(__VA_ARGS__), __VA_ARGS__)
+#    endif
+
+//--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          void* timer = new TIMEMORY_BLANK_AUTO_TUPLE("id", WALL_CLOCK, CPU_CLOCK);
+ *          ...
+ *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *      }
+ *
+ */
+#    if !defined(TIMEMORY_BLANK_AUTO_TUPLE)
+#        define TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)                                    \
+            c_timemory_create_auto_tuple(c_str, __LINE__, __VA_NARG__(__VA_ARGS__),      \
+                                         __VA_ARGS__)
 #    endif
 
 //--------------------------------------------------------------------------------------//

@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -46,7 +46,7 @@
 #    include <cupti.h>
 #endif
 
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
 
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
@@ -396,4 +396,4 @@ memset(_Tp* dst, const int& value, size_t n)
 //--------------------------------------------------------------------------------------//
 
 // definition of cuda device query
-#include "timemory/impl/cuda.icpp"
+#include "timemory/details/cuda.hpp"

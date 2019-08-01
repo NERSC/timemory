@@ -49,9 +49,7 @@ install(
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION
-        ${TIMEMORY_INSTALL_CMAKEDIR}
-    COMPONENT
-        development)
+        ${TIMEMORY_INSTALL_CMAKEDIR})
 
 # only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
@@ -65,17 +63,8 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal
         ${PROJECT_SOURCE_DIR}/source/python/pybind11)
 
-    include(Documentation)
-
-    if(TIMEMORY_DOXYGEN_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
-        Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif()
-
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
     add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
-    print_features()
 
 endif()
 
@@ -84,4 +73,6 @@ if(TIMEMORY_USE_GPERF)
         configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gperf-${_TYPE}-profile.sh
             ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
     endforeach()
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gprof2dot.py
+        ${CMAKE_BINARY_DIR}/gprof2dot.py COPYONLY)
 endif()

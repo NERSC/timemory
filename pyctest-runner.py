@@ -66,6 +66,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-c", help="TIMEMORY_BUILD_C=OFF",
                         default=False, action='store_true')
+    parser.add_argument("--no-gtest", help="TIMEMORY_BUILD_GTEST=OFF",
+                        default=False, action='store_true')
     parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
                         default=False, action='store_true')
 
@@ -133,8 +135,10 @@ def run_pyctest():
     #   build specifications
     #
     build_opts = {
-        "TIMEMORY_BUILD_PYTHON": "ON",
         "TIMEMORY_BUILD_C": "ON",
+        "TIMEMORY_BUILD_GTEST": "ON",
+        "TIMEMORY_BUILD_PYTHON": "ON",
+        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON",
         "TIMEMORY_USE_MPI": "ON",
         "TIMEMORY_USE_PAPI": "ON",
         "TIMEMORY_USE_ARCH": "OFF",
@@ -143,7 +147,6 @@ def run_pyctest():
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
-        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON",
     }
 
     test_name_suffix = ""
@@ -153,6 +156,9 @@ def run_pyctest():
         build_opts["USE_EXTERN_TEMPLATES"] = "OFF"
     else:
         build_opts["USE_EXTERN_TEMPLATES"] = "ON"
+
+    if args.no_gtest:
+        build_opts["TIMEMORY_BUILD_GTEST"] = "OFF"
 
     if args.no_c:
         build_opts["TIMEMORY_BUILD_C"] = "OFF"
@@ -315,18 +321,40 @@ def run_pyctest():
     # create tests
     #
     if not args.no_c:
-        pyctest.test(construct_name("test_c_timing"), construct_command(["./test_c_timing"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+        pyctest.test(construct_name("test_c_timing"),
+                     construct_command(["./test_c_timing"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_overhead"), construct_command(["./test_cxx_overhead"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_cxx_overhead"),
+                 construct_command(["./test_cxx_overhead"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_tuple"), construct_command(["./test_cxx_tuple"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test_cxx_tuple"),
+                 construct_command(["./test_cxx_tuple"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
+
+    pyctest.test(construct_name("test_cpu_roofline"),
+                 construct_command(["./test_cpu_roofline"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test_optional_on"),
+                 construct_command(["./test_optional_on"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test("test_optional_off", ["./test_optional_off"],
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(
-        pyctest.BINARY_DIRECTORY, "examples"))
+        pyctest.BINARY_DIRECTORY, "tests"))
     pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)
 
 

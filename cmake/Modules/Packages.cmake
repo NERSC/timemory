@@ -1,6 +1,11 @@
 # include guard
 include_guard(DIRECTORY)
 
+# placeholder folder PyCTest testing which will write it's own CTestTestfile.cmake
+# this MUST come before "enable_testing"
+add_subdirectory(${PROJECT_SOURCE_DIR}/tests)
+enable_testing()
+
 ##########################################################################################
 #
 #                       External Packages are found here
@@ -22,6 +27,7 @@ add_interface_library(timemory-mpi)
 add_interface_library(timemory-threading)
 
 add_interface_library(timemory-papi)
+add_interface_library(timemory-papi-static)
 add_interface_library(timemory-cuda)
 add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
@@ -38,6 +44,7 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-mpi
     timemory-threading
     timemory-papi
+    timemory-papi-static
     timemory-cuda
     timemory-cupti
     timemory-coverage
@@ -61,6 +68,8 @@ if(TIMEMORY_USE_COVERAGE)
     target_link_libraries(timemory-analysis-tools INTERFACE timemory-coverage)
 endif()
 
+# not exported
+add_library(timemory-google-test INTERFACE)
 
 function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
     message(STATUS
@@ -78,10 +87,12 @@ endfunction()
 target_include_directories(timemory-headers INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+
 if(TIMEMORY_LINK_RT)
     target_link_libraries(timemory-headers INTERFACE rt)
 endif()
-
+# include threading because of rooflines
+target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #
@@ -121,15 +132,11 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
+#set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
+
 checkout_git_submodule(RECURSIVE
     RELATIVE_PATH source/cereal
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
-
-set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
-# this gets annoying
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
 
 # add cereal
 add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
@@ -138,12 +145,30 @@ target_include_directories(timemory-cereal INTERFACE
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
-set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ${DEV_WARNINGS} CACHE BOOL
-    "Suppress Warnings that are meant for the author of the CMakeLists.txt files"
-    FORCE)
-
 # timemory-headers always provides timemory-cereal
 target_link_libraries(timemory-headers INTERFACE timemory-cereal)
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                           Google Test
+#
+#----------------------------------------------------------------------------------------#
+
+if(TIMEMORY_BUILD_GTEST)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH source/google-test
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+
+    # add google-test
+    set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
+    set(BUILD_GMOCK ON CACHE BOOL "Build gmock")
+    add_subdirectory(${PROJECT_SOURCE_DIR}/source/google-test)
+    target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
+    target_include_directories(timemory-google-test INTERFACE
+        ${PROJECT_SOURCE_DIR}/google-test/googletest/include
+        ${PROJECT_SOURCE_DIR}/google-test/googlemock/include)
+endif()
 
 
 #----------------------------------------------------------------------------------------#
@@ -330,9 +355,11 @@ endif()
 find_package(PAPI QUIET)
 
 if(PAPI_FOUND)
-    target_include_directories(timemory-papi INTERFACE ${PAPI_INCLUDE_DIRS})
-    target_link_libraries(timemory-papi INTERFACE ${PAPI_LIBRARIES})
+    target_link_libraries(timemory-papi INTERFACE papi-shared)
+    target_link_libraries(timemory-papi-static INTERFACE papi-static)
+    cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
     target_compile_definitions(timemory-papi INTERFACE TIMEMORY_USE_PAPI)
+    target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
     inform_empty_interface(timemory-papi "PAPI")
@@ -345,33 +372,19 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-if(CMAKE_CXX_COMPILER_IS_GNU)
+if(CMAKE_CXX_COMPILER_ID MATCHES "GNU|Clang")
     find_library(GCOV_LIBRARY gcov QUIET)
 
-    if(GCOV_LIBRARY OR CMAKE_CXX_COMPILER_IS_GNU)
-        add_target_flag(timemory-coverage "-fprofile-arcs" "-ftest-coverage")
-        if(cxx_ftest_coverage)
-            # set(CMAKE_EXE_LINKER_FLAGS_DEBUG_INIT "-ftest-coverage -fprofile-arcs" CACHE STRING "")
-            if(NOT CMAKE_VERSION VERSION_LESS 3.13)
-                target_link_options(timemory-coverage INTERFACE "-ftest-coverage;-fprofile-arcs")
-            else()
-                set_target_properties(timemory-coverage PROPERTIES
-                    INTERFACE_LINK_OPTIONS "-ftest-coverage;-fprofile-arcs")
-            endif()
-        endif()
+    add_target_flag(timemory-coverage "-O0" "-g" "--coverage")
+    if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.13)
+        target_link_options(timemory-coverage INTERFACE --coverage)
+    else()
+        target_link_libraries(timemory-coverage INTERFACE --coverage)
     endif()
 
-    if(GCOV_LIBRARY)
-        target_link_libraries(timemory-coverage INTERFACE ${COVERAGE_LIBRARY})
-    elseif(CMAKE_CXX_COMPILER_IS_GNU)
-        target_link_libraries(timemory-coverage INTERFACE gcov)
-    else()
-        inform_empty_interface(timemory-coverage "coverage")
-        set(TIMEMORY_USE_COVERAGE OFF)
-    endif()
 else()
-    set(TIMEMORY_USE_COVERAGE OFF)
     inform_empty_interface(timemory-coverage "coverage")
+    set(TIMEMORY_USE_COVERAGE OFF)
 endif()
 
 
@@ -501,16 +514,14 @@ if(TIMEMORY_USE_CUDA)
         target_include_directories(timemory-cuda INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
-        if(CUDA_rt_LIBRARY)
-            target_link_libraries(timemory-cudart INTERFACE
-                ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
+        target_link_libraries(timemory-cudart INTERFACE
+            ${CUDA_CUDART_LIBRARY} ${CUDA_rt_LIBRARY})
 
-            target_link_libraries(timemory-cudart-device INTERFACE
-                ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
+        target_link_libraries(timemory-cudart-device INTERFACE
+            ${CUDA_cudadevrt_LIBRARY} ${CUDA_rt_LIBRARY})
 
-            target_link_libraries(timemory-cudart-static INTERFACE
-                ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
-        endif()
+        target_link_libraries(timemory-cudart-static INTERFACE
+            ${CUDA_cudart_static_LIBRARY} ${CUDA_rt_LIBRARY})
     else()
         inform_empty_interface(timemory-cuda "CUDA")
         set(TIMEMORY_USE_CUDA OFF)

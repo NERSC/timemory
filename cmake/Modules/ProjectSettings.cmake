@@ -4,8 +4,6 @@ include_guard(DIRECTORY)
 #
 # Project settings
 #
-
-
 if("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release CACHE STRING "Build type" FORCE)
 endif()

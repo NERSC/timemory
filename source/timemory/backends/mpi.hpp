@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <algorithm>
 #include <cstdint>
@@ -45,7 +45,7 @@
 #    define MPI_COMM_WORLD 0
 #endif
 
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
 
 namespace tim
 {

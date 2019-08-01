@@ -30,6 +30,8 @@
 //======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
+extern void
+cxx_timemory_init(int, char**, timemory_settings);
 extern int
 cxx_timemory_enabled(void);
 extern void*
@@ -44,6 +46,14 @@ extern const char*
 cxx_timemory_string_combine(const char*, const char*);
 extern const char*
 cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
+
+//======================================================================================//
+
+void
+c_timemory_init(int argc, char** argv, timemory_settings _settings)
+{
+    cxx_timemory_init(argc, argv, _settings);
+}
 
 //======================================================================================//
 

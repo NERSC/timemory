@@ -14,6 +14,11 @@ endif()
 
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
+# this gets annoying
+if(TIMEMORY_BUILD_GTEST)
+    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
+        "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   versioning
@@ -77,8 +82,26 @@ foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
 endforeach()
 
 #----------------------------------------------------------------------------------------#
+#   configuration
+#----------------------------------------------------------------------------------------#
+
+include(MacroUtilities)
+include(Options)
+include(Compilers)
+include(GNUInstallDirs)
+include(ProjectSettings)
+include(BuildSettings)
+include(Packages)
+include(ClangFormat)
+include(CMakeParseArguments)
+
+#----------------------------------------------------------------------------------------#
 #   TiMemory source
 #----------------------------------------------------------------------------------------#
+
+install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
+    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+    EXPORT ${PROJECT_NAME}LibraryDepends)
 
 add_subdirectory(source)
 
@@ -88,4 +111,20 @@ add_subdirectory(source)
 
 set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
 add_subdirectory(examples)
-enable_testing()
+
+#----------------------------------------------------------------------------------------#
+#   Documentation
+#----------------------------------------------------------------------------------------#
+
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
+    include(Documentation)
+
+    if(TIMEMORY_DOXYGEN_DOCS)
+        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        Generate_Documentation(Doxyfile.${PROJECT_NAME})
+        SET(CMAKE_INSTALL_MESSAGE LAZY)
+    endif()
+
+    print_features()
+endif()

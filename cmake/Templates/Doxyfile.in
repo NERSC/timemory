@@ -123,13 +123,16 @@ FILE_PATTERNS          = *.h \
                          *.tcc \
                          *.py
 RECURSIVE              = YES
-EXCLUDE                = @EXCLUDE_LIST@ serializer.hpp
+EXCLUDE                = @EXCLUDE_LIST@
 EXCLUDE_SYMLINKS       = YES
 EXCLUDE_PATTERNS       = */.svn/* \
                          *UnitTest* \
                          *gtest* \
                          */.git/* \
+                         @PROJECT_SOURCE_DIR@/examples/broken* \
+                         @PROJECT_SOURCE_DIR@/source/tests/* \
                          @PROJECT_SOURCE_DIR@/source/cereal/* \
+                         @PROJECT_SOURCE_DIR@/source/google-test/* \
                          @PROJECT_SOURCE_DIR@/source/python/pybind11/*
 EXCLUDE_SYMBOLS        =
 EXAMPLE_PATH           = @PROJECT_SOURCE_DIR@/examples @PROJECT_SOURCE_DIR@/timemory
@@ -140,7 +143,7 @@ EXAMPLE_PATTERNS       = *.hh \
                          *.py \
                          *.txt
 EXAMPLE_RECURSIVE      = YES
-IMAGE_PATH             = @PROJECT_SOURCE_DIR@/images
+IMAGE_PATH             = # @PROJECT_SOURCE_DIR@/images
 INPUT_FILTER           =
 FILTER_PATTERNS        =
 FILTER_SOURCE_FILES    = NO
@@ -174,8 +177,8 @@ HTML_HEADER            =
 HTML_FOOTER            =
 HTML_STYLESHEET        =
 HTML_EXTRA_STYLESHEET  =
-HTML_EXTRA_FILES       = @PROJECT_SOURCE_DIR@/images/memory.png \
-                         @PROJECT_SOURCE_DIR@/images/timing.png
+HTML_EXTRA_FILES       = # @PROJECT_SOURCE_DIR@/images/memory.png \
+                         # @PROJECT_SOURCE_DIR@/images/timing.png
 HTML_COLORSTYLE_HUE    = 220
 HTML_COLORSTYLE_SAT    = 100
 HTML_COLORSTYLE_GAMMA  = 80

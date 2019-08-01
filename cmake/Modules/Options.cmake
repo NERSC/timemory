@@ -74,16 +74,16 @@ if(${PROJECT_NAME}_MASTER_PROJECT OR TIMEMORY_LANGUAGE_STANDARDS)
     add_option(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard" ON)
 
     # extensions
-    add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu++11)" OFF)
+    add_option(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)" OFF)
     add_option(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)" OFF)
     add_option(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)" OFF)
 
 else()
     add_feature(CMAKE_C_STANDARD_REQUIRED "Require C language standard")
-    add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu++11)")
     add_feature(CMAKE_CXX_STANDARD_REQUIRED "Require C++ language standard")
-    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)")
     add_feature(CMAKE_CUDA_STANDARD_REQUIRED "Require C++ language standard")
+    add_feature(CMAKE_C_EXTENSIONS "C language standard extensions (e.g. gnu11)")
+    add_feature(CMAKE_CXX_EXTENSIONS "C++ language standard (e.g. gnu++11)")
     add_feature(CMAKE_CUDA_EXTENSIONS "CUDA language standard (e.g. gnu++11)")
 endif()
 
@@ -108,6 +108,8 @@ add_option(TIMEMORY_BUILD_EXTERN_TEMPLATES
     "Pre-compile list of templates for extern" ${${PROJECT_NAME}_MASTER_PROJECT})
 add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" OFF)
+add_option(TIMEMORY_BUILD_GTEST
+    "Enable GoogleTest" OFF)
 
 # Features
 
@@ -140,6 +142,13 @@ add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CUPTI
     "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA} ${_FEATURE})
+
+# disable these for Debug builds
+if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+    set(TIMEMORY_BUILD_LTO OFF)
+    set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS OFF)
+    set(TIMEMORY_USE_ARCH OFF)
+endif()
 
 add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)

@@ -26,9 +26,10 @@
 
 #include "timemory/components/policy.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/storage.hpp"
+#include "timemory/mpl/policy.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/storage.hpp"
 
 //======================================================================================//
 
@@ -42,27 +43,28 @@ struct base : public tim::counted_object<_Tp>
     //
     friend class storage<_Tp>;
 
-    friend struct init_storage<_Tp>;
-    friend struct live_count<_Tp>;
-    friend struct set_prefix<_Tp>;
-    friend struct insert_node<_Tp>;
-    friend struct pop_node<_Tp>;
-    friend struct record<_Tp>;
-    friend struct reset<_Tp>;
-    friend struct measure<_Tp>;
-    friend struct start<_Tp>;
-    friend struct stop<_Tp>;
-    friend struct conditional_start<_Tp>;
-    friend struct conditional_stop<_Tp>;
-    friend struct minus<_Tp>;
-    friend struct plus<_Tp>;
-    friend struct multiply<_Tp>;
-    friend struct divide<_Tp>;
-    friend struct print<_Tp>;
-    friend struct print_storage<_Tp>;
+    friend struct operation::init_storage<_Tp>;
+    friend struct operation::live_count<_Tp>;
+    friend struct operation::set_prefix<_Tp>;
+    friend struct operation::insert_node<_Tp>;
+    friend struct operation::pop_node<_Tp>;
+    friend struct operation::record<_Tp>;
+    friend struct operation::reset<_Tp>;
+    friend struct operation::measure<_Tp>;
+    friend struct operation::start<_Tp>;
+    friend struct operation::stop<_Tp>;
+    friend struct operation::conditional_start<_Tp>;
+    friend struct operation::conditional_stop<_Tp>;
+    friend struct operation::minus<_Tp>;
+    friend struct operation::plus<_Tp>;
+    friend struct operation::multiply<_Tp>;
+    friend struct operation::divide<_Tp>;
+    friend struct operation::print<_Tp>;
+    friend struct operation::print_storage<_Tp>;
+    friend struct operation::copy<_Tp>;
 
     template <typename _Up, typename Archive>
-    friend struct serialization;
+    friend struct operation::serialization;
 
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 

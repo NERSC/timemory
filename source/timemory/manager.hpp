@@ -35,13 +35,14 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/apply.hpp"
-#include "timemory/graph.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/singleton.hpp"
-#include "timemory/storage.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/backends/papi.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/utility/graph.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/singleton.hpp"
+#include "timemory/utility/storage.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -256,8 +257,11 @@ public:
         {
             ptr->print(false, false);
             count = ptr->instance_count();
-            printf("\n\n############## tim::~manager destroyed [%i] ##############\n",
-                   count);
+            if(get_env("TIMEMORY_BANNER", true))
+                printf(
+                    "\n\n#---------------------- tim::manager destroyed [%i] "
+                    "----------------------#\n",
+                    count);
             delete ptr;
         }
         tim::papi::shutdown();
@@ -292,11 +296,34 @@ private:
         _init_storage<_Tail...>();
     }
 
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _clear()
+    {
+        auto ret = storage<_Tp>::instance();
+        ret->data().clear();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _clear()
+    {
+        auto ret = storage<_Tp>::instance();
+        ret->data().clear();
+        _clear<_Tail...>();
+    }
+
 public:
     template <typename... _Types>
     void initialize_storage()
     {
         _init_storage<_Types...>();
+    }
+
+    template <template <typename...> class Obj, typename... _Types>
+    void clear(const Obj<_Types...>&)
+    {
+        _clear<_Types...>();
     }
 
 public:
@@ -425,4 +452,4 @@ manager_singleton()
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/manager.icpp"
+#include "timemory/details/manager.hpp"

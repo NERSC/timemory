@@ -134,6 +134,87 @@ FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 ENDFUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 
 
+#------------------------------------------------------------------------------#
+# macro for creating a library target
+#
+FUNCTION(CREATE_EXECUTABLE)
+    # for include dirs, compile flags, definitions, etc. --> use INTERFACE libs
+    # and add them to "LINK_LIBRARIES"
+    # list of arguments taking multiple values
+    set(multival_args
+        HEADERS SOURCES PROPERTIES LINK_LIBRARIES INSTALL_DESTINATION)
+
+    # parse args
+    cmake_parse_arguments(EXE
+        "INSTALL"                    # options
+        "TARGET_NAME;"               # single value args
+        "${multival_args}"           # multiple value args
+        ${ARGN})
+
+    # create library
+    add_executable(${EXE_TARGET_NAME} ${EXE_SOURCES} ${EXE_HEADERS})
+
+    # link library
+    target_link_libraries(${EXE_TARGET_NAME} ${EXE_LINK_LIBRARIES})
+
+    # target properties
+    if(NOT "${EXE_PROPERTIES}" STREQUAL "")
+        set_target_properties(${EXE_TARGET_NAME} PROPERTIES ${EXE_PROPERTIES})
+    endif()
+
+    if(EXE_INSTALL AND NOT EXE_INSTALL_DESTINATION)
+        set(EXE_INSTALL_DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+
+    # Install the exe
+    if(EXE_INSTALL_DESTINATION)
+        install(TARGETS ${EXE_TARGET_NAME} DESTINATION ${EXE_INSTALL_DESTINATION})
+    endif()
+ENDFUNCTION()
+
+#------------------------------------------------------------------------------#
+# macro add_googletest()
+#
+# Adds a unit test and links against googletest. Additional arguments are linked
+# against the test.
+#
+FUNCTION(ADD_GOOGLETEST TEST_NAME)
+    if(NOT TIMEMORY_BUILD_GTEST)
+        return()
+    endif()
+    include(GoogleTest)
+    # list of arguments taking multiple values
+    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS)
+    # parse args
+    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
+
+    CREATE_EXECUTABLE(
+        TARGET_NAME     ${TEST_NAME}
+        OUTPUT_NAME     ${TEST_NAME}
+        SOURCES         ${TEST_SOURCES}
+        LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
+        PROPERTIES      "${TEST_PROPERTIES}")
+
+    if("${TEST_COMMAND}" STREQUAL "")
+        set(TEST_COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    endif()
+
+    if(TEST_DISCOVER_TESTS)
+        GTEST_DISCOVER_TESTS(${TEST_NAME}
+            ${TEST_OPTIONS})
+    elseif(TEST_ADD_TESTS)
+        GTEST_ADD_TESTS(TARGET ${TEST_NAME}
+            ${TEST_OPTIONS})
+    else()
+        ADD_TEST(
+            NAME                ${TEST_NAME}
+            COMMAND             ${TEST_COMMAND}
+            WORKING_DIRECTORY   ${CMAKE_CURRENT_LIST_DIR}
+            ${TEST_OPTIONS})
+    endif()
+
+ENDFUNCTION()
+
 #----------------------------------------------------------------------------------------#
 # macro CHECKOUT_GIT_SUBMODULE()
 #
@@ -295,7 +376,7 @@ macro(BUILD_LIBRARY)
     # link libraries
     target_link_libraries(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_LINK_LIBRARIES})
-    
+
     # other properties
     set_target_properties(
         ${LIBRARY_TARGET_NAME}      PROPERTIES

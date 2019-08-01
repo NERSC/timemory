@@ -30,8 +30,8 @@
 
 #pragma once
 
-#include "timemory/macros.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 #include <cassert>
 #include <cstdint>
@@ -49,7 +49,7 @@
 #        include <pthread.h>
 #    endif
 #else
-#    include "timemory/impl/papi_defs.icpp"
+#    include "timemory/details/papi_defs.hpp"
 #endif
 
 // int EventSet = PAPI_NULL;

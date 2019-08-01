@@ -34,9 +34,9 @@
 #include <unordered_map>
 #include <vector>
 
-#include <timemory/signal_detection.hpp>
-#include <timemory/testing.hpp>
 #include <timemory/timemory.hpp>
+#include <timemory/utility/signals.hpp>
+#include <timemory/utility/testing.hpp>
 
 using namespace tim::component;
 
@@ -295,9 +295,11 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    using pair_t = std::pair<std::string, measurement_t>;
+    using pair_t  = std::pair<std::string, measurement_t>;
+    using mutex_t = std::mutex;
+    using lock_t  = std::unique_lock<mutex_t>;
 
-    static std::mutex    mtx;
+    mutex_t              mtx;
     std::deque<pair_t>   measurements;
     measurement_t        runtime("");
     printed_t            runtime_printed("");
@@ -313,12 +315,12 @@ test_2_timing()
             _tm.start();
             ret += time_fibonacci(n);
             _tm.stop();
-            mtx.lock();
+
+            lock_t            lk(mtx);
             std::stringstream ss;
             ss << "fibonacci(" << n << ")";
             measurements.push_back(pair_t(ss.str(), _tm));
             lambda_ss << "thread fibonacci(" << n << "): " << _tm << std::endl;
-            mtx.unlock();
         };
 
         runtime_printed.start();

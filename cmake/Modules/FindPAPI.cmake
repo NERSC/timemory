@@ -152,6 +152,15 @@ find_package_handle_standard_args(PAPI DEFAULT_MSG
 #----------------------------------------------------------------------------------------#
 
 if(PAPI_FOUND)
+    add_library(papi-shared INTERFACE)
+    add_library(papi-static INTERFACE)
+    target_link_libraries(papi-shared INTERFACE ${PAPI_LIBRARY})
+    if(PAPI_pfm_LIBRARY)
+        target_link_libraries(papi-shared INTERFACE ${PAPI_pfm_LIBRARY})
+    endif()
+    target_link_libraries(papi-static INTERFACE ${PAPI_STATIC_LIBRARY})
+    target_include_directories(papi-shared INTERFACE ${PAPI_INCLUDE_DIR})
+    target_include_directories(papi-static INTERFACE ${PAPI_INCLUDE_DIR})
     get_filename_component(PAPI_INCLUDE_DIRS
         ${PAPI_INCLUDE_DIR} REALPATH)
     get_filename_component(PAPI_LIBRARIES
