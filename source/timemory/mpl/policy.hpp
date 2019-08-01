@@ -111,13 +111,8 @@ struct wrapper
         enable_if_t<(is_one_of<serialization, typename _Polp::type>::value == false),
                     int> = 0>
     static void invoke_serialize(_Archive&, const unsigned int)
-    {}
-
-    template <typename _Tp, typename _Polp = typename _Tp::policy_type,
-              enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),
-                          int> = 0>
-    static void invoke_global_init()
-    {}
+    {
+    }
 
     template <typename _Tp, typename _Polp = typename _Tp::policy_type,
               enable_if_t<(is_one_of<global_init, typename _Polp::type>::value == false),

@@ -34,9 +34,9 @@
 #include "timemory/settings.hpp"
 
 #include <map>
+#include <numeric>
 #include <stdexcept>
 #include <thread>
-#include <numeric>
 
 //======================================================================================//
 

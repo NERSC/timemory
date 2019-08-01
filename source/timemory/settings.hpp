@@ -276,8 +276,7 @@ tim::settings::process()
         _unit = tolower(_unit);
         for(const auto& itr : matching)
             if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
-               _unit == (std::get<0>(itr) + "ec") ||
-               _unit == (std::get<1>(itr) + "s"))
+               _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
             {
                 return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
             }

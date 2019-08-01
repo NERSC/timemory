@@ -26,7 +26,6 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/components/base.hpp"
-#include "timemory/components/policy.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/ert/data.hpp"

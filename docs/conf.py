@@ -51,7 +51,7 @@ if os.path.exists(_doxdir):
     shutil.rmtree(_doxdir)
 shutil.copytree(_doxbin, _doxdir)
 
-install('cinder')
+install('mkdocs-cinder')
 os.chdir(_srcdir)
 sp.run(["mkdocs", "build"])
 os.chdir(_docdir)
