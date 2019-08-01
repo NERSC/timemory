@@ -340,7 +340,8 @@ def run_pyctest():
     pyctest.test(construct_name("test_cpu_roofline"),
                  construct_command(["./test_cpu_roofline"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
 
     pyctest.test(construct_name("test_optional_on"),
                  construct_command(["./test_optional_on"], args),

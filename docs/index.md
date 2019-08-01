@@ -4,6 +4,7 @@ C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities
 
 [![Build Status](https://travis-ci.org/jrmadsen/TiMemory.svg?branch=master)](https://travis-ci.org/jrmadsen/TiMemory)
 [![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory)
+[![codecov](https://codecov.io/gh/jrmadsen/TiMemory/branch/master/graph/badge.svg)](https://codecov.io/gh/jrmadsen/TiMemory)
 
 [TiMemory on GitHub (Source code)](https://github.com/jrmadsen/TiMemory)
 

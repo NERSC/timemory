@@ -8,7 +8,7 @@ nav:
     - Components: components.md
     - Getting Started: getting_started.md
     - Overhead: overhead.md
-    - Doxygen: html/index.html
+    - Doxygen: doxygen-docs/index.html
 
 #theme: readthedocs
 #theme: bootswatch

@@ -12,8 +12,6 @@
 
 [TiMemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
 
-[TiMemory Release Notes](https://jrmadsen.github.io/TiMemory/ReleaseNotes.html)
-
 ### Overview
 
 TiMemory is generic C++11 template library providing a variety of [performance components](#Components)

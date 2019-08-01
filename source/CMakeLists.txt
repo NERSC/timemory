@@ -82,9 +82,6 @@ if(WIN32)
     add_dependencies(timemory-cxx-shared timemory-cxx-static)
 endif()
 
-add_interface_library(timemory-cxx)
-target_link_libraries(timemory-cxx INTERFACE timemory-cxx-shared)
-
 # private compile options
 target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options timemory-analysis-tools)
 target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options timemory-analysis-tools)
@@ -192,9 +189,6 @@ if(TIMEMORY_BUILD_C)
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
         LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-cxx-static)
 
-    add_interface_library(timemory-c)
-    target_link_libraries(timemory-c INTERFACE timemory-c-shared)
-
     target_link_libraries(timemory-c-shared PRIVATE timemory-analysis-tools)
     target_link_libraries(timemory-c-static PRIVATE timemory-analysis-tools)
 
@@ -211,7 +205,7 @@ endif()
 
 # C/C++ compiled libraries
 install(
-    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES}
+    TARGETS ${TIMEMORY_COMPILED_LIBRARIES}
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}LibraryDepends)
 

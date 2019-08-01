@@ -99,6 +99,10 @@ include(CMakeParseArguments)
 #   TiMemory source
 #----------------------------------------------------------------------------------------#
 
+install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
+    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+    EXPORT ${PROJECT_NAME}LibraryDepends)
+
 add_subdirectory(source)
 
 #----------------------------------------------------------------------------------------#
