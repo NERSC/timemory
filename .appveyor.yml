@@ -101,7 +101,7 @@ build_script:
     -DTIMEMORY_BUILD_C=OFF
     -DTIMEMORY_BUILD_PYTHON=ON
     -DTIMEMORY_BUILD_EXAMPLES=ON
-    -DTIMEMORY_BUILD_GTEST=ON
+    -DTIMEMORY_BUILD_GTEST=OFF
     -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
     -DMPI_CXX_INCLUDE_PATH="C:\Program Files (x86)\Microsoft SDKs\MPI\Include"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
