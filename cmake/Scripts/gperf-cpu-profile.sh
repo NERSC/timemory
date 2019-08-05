@@ -15,8 +15,9 @@ mkdir -p ${DIR}
 # rendering settings
 : ${INTERACTIVE:=0}
 : ${IMG_FORMAT:="jpeg"}
-: ${DOT_ARGS:='-Gsize=24,24\! -Gdpi=200'}
-: ${PPROF_ARGS:="--no_strip_temp --lines"}
+#: ${DOT_ARGS:='-Gsize=24,24\! -Gdpi=200'}
+: ${DOT_ARGS:=""}
+: ${PPROF_ARGS:="--no_strip_temp --functions"}
 
 run-verbose()
 {

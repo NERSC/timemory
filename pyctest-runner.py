@@ -68,6 +68,9 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-gtest", help="TIMEMORY_BUILD_GTEST=OFF",
                         default=False, action='store_true')
+    parser.add_argument("--extra-optimizations",
+                        help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
+                        default=False, action='store_true')
     parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
                         default=False, action='store_true')
 
@@ -139,6 +142,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_GTEST": "ON",
         "TIMEMORY_BUILD_PYTHON": "ON",
         "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON",
+        "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "OFF",
         "TIMEMORY_USE_MPI": "ON",
         "TIMEMORY_USE_PAPI": "ON",
         "TIMEMORY_USE_ARCH": "OFF",
@@ -148,8 +152,6 @@ def run_pyctest():
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
-
-    test_name_suffix = ""
 
     if args.no_extern_templates:
         build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "OFF"
@@ -172,6 +174,10 @@ def run_pyctest():
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
         pyctest.BUILD_NAME = "{} PY-{}".format(pyctest.BUILD_NAME, pyver)
 
+    if args.extra_optimizations:
+        build_opts["TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS"] = "ON"
+        pyctest.BUILD_NAME = "{} OPT".format(pyctest.BUILD_NAME)
+
     if args.no_mpi:
         build_opts["TIMEMORY_USE_MPI"] = "OFF"
     else:
@@ -183,7 +189,7 @@ def run_pyctest():
         pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
 
     if args.arch:
-        test_name_suffix += "-arch"
+        pyctest.BUILD_NAME = "{} ARCH".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
 
     if args.cuda:
@@ -198,9 +204,12 @@ def run_pyctest():
             warnings.warn(
                 "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
             pyctest.BUILD_TYPE = "RelWithDebInfo"
+        pyctest.BUILD_NAME = "{} {}".format(
+            pyctest.BUILD_NAME, args.profile.upper())
 
     if args.sanitizer is not None:
-        test_name_suffix += "-{}-sanitizer".format(args.sanitizer)
+        pyctest.BUILD_NAME = "{} {}SAN".format(
+            pyctest.BUILD_NAME, args.sanitizer.upper()[0])
         build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
@@ -212,7 +221,7 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            test_name_suffix += "-coverage"
+            pyctest.BUILD_NAME = "{} COV".format(pyctest.BUILD_NAME)
             if pyctest.BUILD_TYPE != "Debug":
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
@@ -277,13 +286,7 @@ def run_pyctest():
     # construct a command
     #
     def construct_name(test_name):
-        test_name = test_name.replace("_", "-")
-        if args.profile is not None:
-            if args.profile == "cpu":
-                return "{}{}-{}".format(test_name, test_name_suffix, "gperf-cpu")
-            elif args.profile == "heap":
-                return "{}{}-{}".format(test_name, test_name_suffix, "gperf-heap")
-        return "{}{}".format(test_name, test_name_suffix)
+        return test_name.replace("_", "-")
 
     #--------------------------------------------------------------------------#
     # construct a command
