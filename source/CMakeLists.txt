@@ -246,6 +246,10 @@ if(TIMEMORY_BUILD_PYTHON)
     add_subdirectory(python)
 endif()
 
+#----------------------------------------------------------------------------------------#
+# Preload library tool
+#
+add_subdirectory(preload)
 
 #----------------------------------------------------------------------------------------#
 # install the plotting.py module as a Python executable

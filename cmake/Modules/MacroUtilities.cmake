@@ -323,6 +323,18 @@ macro(BUILD_LIBRARY)
     cmake_parse_arguments(
         LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
 
+    if("${LIBRARY_LANGUAGE}" STREQUAL "")
+        set(LIBRARY_LANGUAGE CXX)
+    endif()
+
+    if("${LIBRARY_LINKER_LANGUAGE}" STREQUAL "")
+        set(LIBRARY_LINKER_LANGUAGE CXX)
+    endif()
+
+    if("${LIBRARY_OUTPUT_DIR}" STREQUAL "")
+        set(LIBRARY_OUTPUT_DIR ${PROJECT_BINARY_DIR})
+    endif()
+
     if(NOT WIN32 AND NOT XCODE)
         list(APPEND LIBRARY_EXTRA_PROPERTIES
             VERSION                     ${PROJECT_VERSION}
