@@ -183,7 +183,7 @@ def run_pyctest():
         pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
 
     if args.arch:
-        test_name_suffix += "_arch"
+        test_name_suffix += "-arch"
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
 
     if args.cuda:
@@ -200,7 +200,7 @@ def run_pyctest():
             pyctest.BUILD_TYPE = "RelWithDebInfo"
 
     if args.sanitizer is not None:
-        test_name_suffix += "_{}-sanitizer".format(args.sanitizer)
+        test_name_suffix += "-{}-sanitizer".format(args.sanitizer)
         build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
@@ -212,7 +212,7 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            test_name_suffix += "_coverage"
+            test_name_suffix += "-coverage"
             if pyctest.BUILD_TYPE != "Debug":
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
@@ -277,11 +277,12 @@ def run_pyctest():
     # construct a command
     #
     def construct_name(test_name):
+        test_name = test_name.replace("_", "-")
         if args.profile is not None:
             if args.profile == "cpu":
-                return "{}{}_{}".format(test_name, test_name_suffix, "gperf-cpu")
+                return "{}{}-{}".format(test_name, test_name_suffix, "gperf-cpu")
             elif args.profile == "heap":
-                return "{}{}_{}".format(test_name, test_name_suffix, "gperf-heap")
+                return "{}{}-{}".format(test_name, test_name_suffix, "gperf-heap")
         return "{}{}".format(test_name, test_name_suffix)
 
     #--------------------------------------------------------------------------#
@@ -321,40 +322,45 @@ def run_pyctest():
     # create tests
     #
     if not args.no_c:
-        pyctest.test(construct_name("test_c_timing"),
+        pyctest.test(construct_name("test-c-timing"),
                      construct_command(["./test_c_timing"], args),
                      {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
                       "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_overhead"),
-                 construct_command(["./test_cxx_overhead"], args),
+    pyctest.test("test-optional-off", ["./test_optional_off"],
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
                   "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_cxx_tuple"),
+    pyctest.test(construct_name("test-optional-on"),
+                 construct_command(["./test_optional_on"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test-cxx-basic"),
+                 construct_command(["./test_cxx_basic"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test-cxx-tuple"),
                  construct_command(["./test_cxx_tuple"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
                   "LABELS": pyctest.PROJECT_NAME,
                   "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
 
-    pyctest.test(construct_name("test_cpu_roofline"),
-                 construct_command(["./test_cpu_roofline"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME,
-                  "TIMEOUT": "300"})
+    if not args.coverage and not pyctest.BUILD_TYPE == "Debug":
+        pyctest.test(construct_name("test-cxx-overhead"),
+                     construct_command(["./test_cxx_overhead"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME})
 
-    pyctest.test(construct_name("test_optional_on"),
-                 construct_command(["./test_optional_on"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
-
-    pyctest.test("test_optional_off", ["./test_optional_off"],
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                  "LABELS": pyctest.PROJECT_NAME})
+        pyctest.test(construct_name("test-cpu-roofline"),
+                     construct_command(["./test_cpu_roofline"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME,
+                      "TIMEOUT": "300"})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
-    pyctest.generate_test_file(os.path.join(
-        pyctest.BINARY_DIRECTORY, "tests"))
+    pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))
     pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)
 
 
