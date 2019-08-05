@@ -431,7 +431,7 @@ public:
 
     void destroy_buffer(_Tp* buffer) { free_aligned(buffer); }
 
-    counter_type&& get_counter() const { return std::move(create_counter()); }
+    counter_type get_counter() const { return create_counter(); }
 
     inline void record(counter_type& _counter, int n, int t, uint64_t nops)
     {

@@ -73,16 +73,16 @@ cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Int
     constexpr size_t MOD_REP = _Nrep % 2;
     // static_assert(_Nrep % 2 == 0, "Error! Unrolling an odd number is not supported");
 
-    _Tp alpha = 0.5;
+    _Tp alpha = static_cast<_Tp>(0.5);
     for(_Intp j = 0; j < ntrials; ++j)
     {
         for(_Intp i = 0; i < nsize; ++i)
         {
-            _Tp beta = 0.8;
+            _Tp beta = static_cast<_Tp>(0.8);
             apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
             store_func(A[i], beta);
         }
-        alpha *= (1.0 - 1.0e-8);
+        alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
     }
 }
 

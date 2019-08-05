@@ -40,6 +40,13 @@
 #    include <unistd.h>
 #endif
 
+#if defined(_WINDOWS)
+// clang-format off
+#    include <windows.h>
+#    include <sysinfoapi.h>
+// clang-format on
+#endif
+
 namespace tim
 {
 //--------------------------------------------------------------------------------------//

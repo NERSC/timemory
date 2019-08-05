@@ -27,17 +27,12 @@
 #include <thread>
 #include <timemory/timemory.hpp>
 
-namespace tim
-{
-using namespace component;
-}
+using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple<tim::real_clock>;
-using auto_tuple_t =
-    tim::auto_tuple<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>;
+using real_tuple_t = tim::auto_tuple<real_clock>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using auto_list_t =
-    tim::auto_list<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>;
+using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss>;
 
 void
 some_func();
@@ -53,7 +48,7 @@ main(int argc, char** argv)
 {
     // runtime customization of auto_list_t initialization
     auto_list_t::get_initializer() = [](auto_list_t& al) {
-        al.initialize<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>();
+        al.initialize<real_clock, cpu_clock, cpu_util, peak_rss>();
         al.report_at_exit(true);
     };
 
