@@ -228,25 +228,43 @@ tim::storage<ObjectType>::print()
 #endif
         }
 
+        int64_t _min = std::numeric_limits<int64_t>::max();
+        for(const auto& itr : m_data.graph())
+            _min = std::min<int64_t>(itr.depth(), _min);
+
+        if(!(_min < 0))
+        {
+            for(auto& itr : m_data.graph())
+                itr.depth() -= 1;
+        }
+
         if(!settings::file_output() && !settings::cout_output())
         {
             instance_count().store(0);
             return;
         }
 
-        // auto _this_beg = m_data.graph().begin();
-        // auto _this_end = m_data.graph().end();
-        // m_data.graph().reduce(_this_beg, _this_end, _this_beg, _this_end);
-
+        // fix up the prefix based on the actual depth
         auto _compute_modified_prefix = [](const graph_node& itr) {
             std::string _prefix = itr.prefix();
-            if(itr.depth() < 1)
-                return _prefix;
-
-            // fix up the prefix based on the actual depth
             auto _ebracket = _prefix.find("]");
             auto _boffset  = _prefix.find("|_");
 
+            // if depth == 0
+            if(itr.depth() < 1)
+            {
+                // account for |_ in the prefix
+                if(_boffset != std::string::npos)
+                {
+                    auto _beg =
+                        (_ebracket != std::string::npos) ? (_ebracket + 2) : _boffset;
+                    auto _len = (_boffset + 2) - _beg;
+                    _prefix   = _prefix.erase(_beg, _len);
+                }
+                return _prefix;
+            }
+
+            // if |_ found
             if(_boffset == std::string::npos)
             {
                 for(int64_t _i = 0; _i < itr.depth() - 1; ++_i)
@@ -256,10 +274,11 @@ tim::storage<ObjectType>::print()
                 }
                 _prefix.insert(_ebracket + 2, "|_");
             }
-            else
+            else // if |_ not found
             {
                 int _diff = (_boffset - (_ebracket + 2));
                 int _expd = 2 * (itr.depth() - 1);
+                // if indent is less than depth
                 if(_expd > _diff)
                 {
                     int ninsert = (_expd - _diff);
@@ -268,6 +287,7 @@ tim::storage<ObjectType>::print()
                         _prefix.insert(_ebracket + 1, " ");
                     }
                 }
+                // if indent is more than depth
                 else if(_diff > _expd)
                 {
                     int nstrip = (_diff - _expd);
@@ -283,31 +303,26 @@ tim::storage<ObjectType>::print()
         m_data.current()   = m_data.head();
         int64_t _width     = ObjectType::get_width();
         int64_t _max_depth = 0;
+        // find the max width
         for(const auto& itr : m_data.graph())
         {
+            if(itr.depth() < 0)
+                continue;
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
             _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
         }
 
+        // return type of get() function
         using get_return_type = decltype(std::declval<const ObjectType>().get());
-
-        /*
-        std::map<int64_t, get_return_type> exclusive_values;
-        for(const auto& itr : m_data.graph())
-        {
-            if(exclusive_values.find(itr.depth()) == exclusive_values.end())
-                exclusive_values[itr.depth()] = itr.obj().get();
-            else
-                tim::details::combine(exclusive_values.find(itr.depth())->second,
-                                      itr.obj().get());
-        }*/
 
         std::stringstream _oss;
         // std::stringstream _mss;
         for(auto pitr = m_data.graph().begin(); pitr != m_data.graph().end(); ++pitr)
         {
-            auto              itr = *pitr;
+            auto itr = *pitr;
+            if(itr.depth() < 0)
+                continue;
             std::stringstream _pss;
             // if we are not at the bottom of the call stack (i.e. completely inclusive)
             if(itr.depth() < _max_depth)

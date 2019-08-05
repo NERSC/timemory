@@ -216,6 +216,12 @@ public:
         {
         }
 
+        graph_node(const int64_t& _id, const ObjectType& _obj, const string_t& _tag,
+                   int64_t _depth)
+        : base_type(_id, _obj, _tag, _depth)
+        {
+        }
+
         ~graph_node() {}
         // explicit graph_node(const this_type&) = default;
         // explicit graph_node(this_type&&)      = default;
@@ -358,9 +364,10 @@ public:
         }
         else
         {
-            graph_node node(0, ObjectType(), 0);
+            graph_node node(0, ObjectType(), "> [tot] total", 0);
             m_data         = graph_data(node);
             m_data.depth() = 0;
+            m_node_ids.insert(std::make_pair(0, m_data.current()));
             ObjectType::global_init_policy();
             ObjectType::thread_init_policy();
         }

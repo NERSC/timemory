@@ -43,3 +43,5 @@ build_library(
 
 install(TARGETS timemory-preload-shared timemory-preload-static
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR})
+
+add_subdirectory(tests)
