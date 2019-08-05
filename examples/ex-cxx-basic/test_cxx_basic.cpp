@@ -23,24 +23,40 @@
 // SOFTWARE.
 //
 
+#include <chrono>
+#include <thread>
 #include <timemory/timemory.hpp>
 
-using real_tuple_t = tim::auto_tuple<tim::component::real_clock>;
-using auto_tuple_t =
-    tim::auto_tuple<tim::component::real_clock, tim::component::cpu_clock,
-                    tim::component::cpu_util, tim::component::peak_rss>;
-using comp_tuple_t = typename auto_tuple_t::component_type;
-
-intmax_t
-fibonacci(intmax_t n)
+namespace tim
 {
-    TIMEMORY_BASIC_AUTO_TUPLE(real_tuple_t, "");
-    return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
+using namespace component;
 }
+
+using real_tuple_t = tim::auto_tuple<tim::real_clock>;
+using auto_tuple_t =
+    tim::auto_tuple<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>;
+using comp_tuple_t = typename auto_tuple_t::component_type;
+using auto_list_t =
+    tim::auto_list<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>;
+
+void
+some_func();
+void
+another_func();
+intmax_t
+fibonacci(intmax_t n);
+
+//======================================================================================//
 
 int
 main(int argc, char** argv)
 {
+    // runtime customization of auto_list_t initialization
+    auto_list_t::get_initializer() = [](auto_list_t& al) {
+        al.initialize<tim::real_clock, tim::cpu_clock, tim::cpu_util, tim::peak_rss>();
+        al.report_at_exit(true);
+    };
+
     tim::settings::timing_units()      = "sec";
     tim::settings::timing_width()      = 12;
     tim::settings::timing_precision()  = 6;
@@ -63,9 +79,35 @@ main(int argc, char** argv)
         auto ret = fibonacci(n);
         // manually stop the auto_tuple_t
         TIMEMORY_CALIPER_APPLY(fib, stop);
-        printf("\nfibonacci(%i) = %li\n", n, ret);
+        printf("\nfibonacci(%i) = %li\n", n, (long int) ret);
     }
     // stop and print
     main.stop();
     std::cout << "\n" << main << std::endl;
+
+    some_func();
+    another_func();
+}
+
+//======================================================================================//
+
+intmax_t
+fibonacci(intmax_t n)
+{
+    TIMEMORY_BASIC_AUTO_TUPLE(real_tuple_t, "");
+    return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
+}
+
+void
+some_func()
+{
+    auto_tuple_t at("some_func", __LINE__);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+}
+
+void
+another_func()
+{
+    auto_list_t al("another_func", __LINE__);
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

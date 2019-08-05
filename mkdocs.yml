@@ -7,6 +7,8 @@ nav:
     - Integrating: integrating.md
     - Components: components.md
     - Getting Started: getting_started.md
+    - Customization: customization.md
+    - Roofline: roofline.md
     - Overhead: overhead.md
     - Doxygen: doxygen-docs/index.html
 

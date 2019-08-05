@@ -87,24 +87,49 @@ file of the source code within the `customize_roofline` function.
 | cpu_roofline_dp_flops | `cpu_roofline<double, PAPI_DP_OPS>` | Rate of double-precision FLOP/s |
 | cpu_roofline_sp_flops | `cpu_roofline<float, PAPI_SP_OPS>`  | Rate of single-precision FLOP/s |
 
-### Generating Roofline Plot
+## Variadic Component Wrappers
 
-Currently, some hardware counters cannot be accumulated in a single-pass and as a result, the application must be executed twice to generate a roofline plot:
+All the components listed above can be used directly but it is recommended to use the variadic wrapper types.
+The variadic wrapper types provide bulk operations on all the specified types, e.g. `start()` member function
+that calls `start()` on all the specified types.
 
-```bash
-export TIMEMORY_JSON_OUTPUT=ON
-TIMEMORY_ROOFLINE_MODE=op ./test_cxx_roofline
-TIMEMORY_ROOFLINE_MODE=ai ./test_cxx_roofline
-python -m timemory.roofline \
-    -ai timemory-test-cxx-roofline-output/cpu_roofline_ai.json \
-    -op timemory-test-cxx-roofline-output/cpu_roofline_op.json \
-    -d
+| Type                   | Description                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------- |
+| `component_tuple<...>` |                                                                                                    |
+| `component_list<...>`  | Specified types are wrapped into pointers and initially null. Operations applied to non-null types |
+| `auto_tuple<...>`      | `component_tuple<...>` + auto start/stop via scope                                                 |
+| `auto_list<...>`       | `component_list<...>` + auto start/stop via scope                                                  |
+
+### Example
+
+```cpp
+#include <timemory/timemory.hpp>
+#include <thread>
+#include <chrono>
+
+using namespace tim::component;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
+using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss>;
+
+void some_func()
+{
+    auto_tuple_t at("some_func");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+void another_func()
+{
+    auto_list_t al("another_func");
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+}
+
+int main()
+{
+    // runtime customization of auto_list_t
+    auto_list_t::get_initializer() = [](auto_list_t& al)
+    { al.initialize<real_clock, cpu_clock, cpu_util, peak_rss>(); };
+
+    some_func();
+    another_func();
+}
 ```
-
-- `-ai ...`
-    - JSON output containing the hardware counters for arithmetic intensity
-- `-op ...`
-    - JSON output containing the hardware counters for operations-per-second
-- `-d` (optional)
-    - interactive display
-

@@ -10,7 +10,7 @@ with a negligible amount of overhead.
 TiMemory is not intended to replace profiling tools such as Intel's VTune, GProf, etc. -- instead,
 it complements them by enabling one to verify timing and memory usage without the overhead of the profiler.
 
-## Development
+## Credits
 
 TiMemory is actively maintained by NERSC at Lawrence Berkeley National Laboratory
 

@@ -76,3 +76,27 @@ $ ./timem sleep 5
                2 vol_cxt_swch
                5 prio_cxt_swch
 ```
+
+## Signal Detection
+
+TiMemory provides a facility for catching signals and printing out a backtrace when the signals are raised:
+
+```cpp
+tim::enable_signal_detection({ SIGHUP, SIGINT, SIGQUIT, SIGABRT });
+// ...
+tim::disable_signal_detection();
+```
+
+## Cache Information
+
+TiMemory provides method on Linux, Windows, and macOS to query the size of L1, L2, and L3 cache.
+A `get_max()` function is provided for convenience as some systems (e.g. KNL) do not have an L3 cache.
+
+> Namespace: `tim::ert::cache_size`
+
+| Cache level | Function(s)                                                      |
+| ----------- | ---------------------------------------------------------------- |
+| L1          | `tim::ert::cache_size::get(1)`, `tim::ert::cache_size::get<1>()` |
+| L2          | `tim::ert::cache_size::get(2)`, `tim::ert::cache_size::get<2>()` |
+| L3          | `tim::ert::cache_size::get(3)`, `tim::ert::cache_size::get<3>()` |
+| max         | `tim::ert::cache_size::get_max()`                                |

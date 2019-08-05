@@ -56,7 +56,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
     # GCC 7
     - os: linux
       dist: xenial
@@ -176,7 +176,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
     # GCC 7
     - os: linux
       dist: xenial
@@ -274,7 +274,7 @@ install:
     - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
-    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
+    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
     - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
     - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --no-py --profile=cpu -- -VV

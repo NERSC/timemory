@@ -84,9 +84,12 @@ public:
     using counter_void   = tim::counted_object<void>;
     using hashed_type    = tim::hashed_object<this_type>;
     using language_t     = tim::language;
+    using init_func_t    = std::function<void(this_type&)>;
 
 public:
     using auto_type = auto_list<Types...>;
+    // using op_count_t = tim::operation_tuple<operation::pointer_counter, Types...>;
+    using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
     explicit component_list(const string_t& key, const bool& store,
@@ -103,6 +106,7 @@ public:
         apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, lang);
         init_manager();
+        get_initializer()(*this);
     }
 
     component_list(const string_t& key, const language_t& lang = language_t::cxx(),
@@ -119,6 +123,7 @@ public:
         apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, lang);
         init_manager();
+        get_initializer()(*this);
     }
 
     ~component_list()
@@ -184,10 +189,20 @@ public:
     static constexpr std::size_t size() { return num_elements; }
 
     //----------------------------------------------------------------------------------//
+    // function for default initialization
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
     // insert into graph
     inline void push()
     {
-        if(m_store && !m_is_pushed)
+        uint64_t count = 0;
+        apply<void>::access<op_count_t>(m_data, std::ref(count));
+        if(m_store && !m_is_pushed && count > 0)
         {
             using insert_types = std::tuple<
                 operation::pointer_operator<Types, operation::insert_node<Types>>...>;
@@ -226,12 +241,18 @@ public:
     // start/stop functions
     void start()
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::start<Types>>...>;
-        // increment laps
-        ++m_laps;
+        using apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
+        bool _incremented    = false;
+        auto _increment_laps = [&](bool _started) {
+            if(_started && !_incremented)
+            {
+                ++m_laps;
+                _incremented = true;
+            }
+        };
         // start components
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<apply_types>(m_data, _increment_laps);
     }
 
     void stop()

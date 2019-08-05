@@ -94,6 +94,8 @@ Table of Contents
    integrating
    components
    getting_started
+   customization
+   roofline
    overhead
    doxygen-docs
 

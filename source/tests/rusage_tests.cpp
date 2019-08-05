@@ -46,7 +46,7 @@ static current_rss curr;
 static auto        tot_size = nelements * sizeof(int64_t) / memory_unit.first;
 
 #define CHECK_AVAILABLE(type)                                                            \
-    if(!tim::trait::impl_available<type>::value)                                         \
+    if(!tim::trait::is_available<type>::value)                                           \
         return;
 
 //--------------------------------------------------------------------------------------//

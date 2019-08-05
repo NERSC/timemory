@@ -81,18 +81,20 @@ template <typename _Tp, int... EventTypes>
 struct cpu_roofline
 : public base<cpu_roofline<_Tp, EventTypes...>,
               std::pair<std::array<long long, sizeof...(EventTypes) + 1>, double>,
-              policy::thread_init, policy::thread_finalize, policy::serialization>
+              policy::thread_init, policy::thread_finalize, policy::global_finalize,
+              policy::serialization>
 {
     friend struct policy::wrapper<policy::thread_init, policy::thread_finalize,
-                                  policy::serialization>;
+                                  policy::global_finalize, policy::serialization>;
 
     using size_type  = std::size_t;
     using array_type = std::array<long long, sizeof...(EventTypes) + 1>;
     using data_type  = long long*;
     using value_type = std::pair<array_type, double>;
     using this_type  = cpu_roofline<_Tp, EventTypes...>;
-    using base_type  = base<this_type, value_type, policy::thread_init,
-                           policy::thread_finalize, policy::serialization>;
+    using base_type =
+        base<this_type, value_type, policy::thread_init, policy::thread_finalize,
+             policy::global_finalize, policy::serialization>;
 
     using papi_op_type                = papi_tuple<EventTypes...>;
     using papi_ai_type                = papi_tuple<PAPI_LST_INS>;
@@ -163,7 +165,8 @@ struct cpu_roofline
     static operation_uint64_function_t& get_finalize_threads_function()
     {
         static operation_uint64_function_t _instance = []() -> uint64_t {
-            return std::thread::hardware_concurrency();
+            return get_env<uint64_t>("TIMEMORY_ROOFLINE_NUM_THREADS",
+                                     std::thread::hardware_concurrency());
         };
         return _instance;
     }
@@ -247,7 +250,10 @@ struct cpu_roofline
         tim::papi::remove_events(ai_event_set(), ai_events, num_ai_events);
         tim::papi::destroy_event_set(op_event_set());
         tim::papi::destroy_event_set(ai_event_set());
+    }
 
+    static void invoke_global_finalize()
+    {
         // run roofline peak generation
         auto  op_counter_func = get_finalize_function();
         auto* op_counter      = op_counter_func();

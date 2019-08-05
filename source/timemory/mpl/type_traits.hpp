@@ -58,7 +58,7 @@ struct array_serialization : std::false_type
 /// trait that signifies that an implementation (e.g. PAPI) is available
 ///
 template <typename _Tp>
-struct impl_available : std::true_type
+struct is_available : std::true_type
 {
 };
 
@@ -134,52 +134,52 @@ struct ordering_priority<component::cuda_event> : std::integral_constant<int16_t
 #if !defined(_UNIX)
 
 template <>
-struct impl_available<component::stack_rss> : std::false_type
+struct is_available<component::stack_rss> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::data_rss> : std::false_type
+struct is_available<component::data_rss> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_io_in> : std::false_type
+struct is_available<component::num_io_in> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_io_out> : std::false_type
+struct is_available<component::num_io_out> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_major_page_faults> : std::false_type
+struct is_available<component::num_major_page_faults> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_minor_page_faults> : std::false_type
+struct is_available<component::num_minor_page_faults> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_msg_recv> : std::false_type
+struct is_available<component::num_msg_recv> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_msg_sent> : std::false_type
+struct is_available<component::num_msg_sent> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_signals> : std::false_type
+struct is_available<component::num_signals> : std::false_type
 {
 };
 
 template <>
-struct impl_available<component::num_swap> : std::false_type
+struct is_available<component::num_swap> : std::false_type
 {
 };
 
@@ -191,17 +191,17 @@ struct impl_available<component::num_swap> : std::false_type
 #if !defined(TIMEMORY_USE_PAPI)
 
 template <int... EventTypes>
-struct impl_available<component::papi_tuple<EventTypes...>> : std::false_type
+struct is_available<component::papi_tuple<EventTypes...>> : std::false_type
 {
 };
 
 template <std::size_t MaxNumEvents>
-struct impl_available<component::papi_array<MaxNumEvents>> : std::false_type
+struct is_available<component::papi_array<MaxNumEvents>> : std::false_type
 {
 };
 
 template <typename _Tp, int... EventTypes>
-struct impl_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_type
+struct is_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_type
 {
 };
 
@@ -213,7 +213,7 @@ struct impl_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_
 #if !defined(TIMEMORY_USE_CUDA)
 
 template <>
-struct impl_available<component::cuda_event> : std::false_type
+struct is_available<component::cuda_event> : std::false_type
 {
 };
 
@@ -225,7 +225,7 @@ struct impl_available<component::cuda_event> : std::false_type
 #if !defined(TIMEMORY_USE_CUPTI)
 
 template <>
-struct impl_available<component::cupti_event> : std::false_type
+struct is_available<component::cupti_event> : std::false_type
 {
 };
 

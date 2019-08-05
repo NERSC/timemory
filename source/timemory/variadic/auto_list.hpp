@@ -68,6 +68,7 @@ public:
     using base_type      = component_type;
     using language_t     = tim::language;
     using tuple_type     = implemented_tuple<Types...>;
+    using init_func_t    = std::function<void(this_type&)>;
 
 public:
     inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
@@ -138,6 +139,27 @@ public:
     {
     }
 
+    template <typename _Tp, typename... _Tail,
+              tim::enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              tim::enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+        this->initialize<_Tail...>();
+    }
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type&) {};
+        return _instance;
+    }
+
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -169,6 +191,8 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
 {
     if(m_enabled)
     {
+        get_initializer()(*this);
+        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -190,6 +214,7 @@ auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
 {
     if(m_enabled)
     {
+        get_initializer()(*this);
         m_temporary_object.push();
         m_temporary_object.start();
     }

@@ -180,10 +180,10 @@ using tuple_type_sort = typename tuple_sort_if<Predicate, Sequence>::type;
 
 template <typename... Types>
 using implemented_tuple =
-    impl::tuple_type_filter<trait::impl_available, std::tuple<Types...>>;
+    impl::tuple_type_filter<trait::is_available, std::tuple<Types...>>;
 
 template <template <typename...> class Wrapper, typename... Types>
 using operation_tuple =
-    impl::wrapped_tuple_type_filter<trait::impl_available, Wrapper, std::tuple<Types...>>;
+    impl::wrapped_tuple_type_filter<trait::is_available, Wrapper, std::tuple<Types...>>;
 
 }  // namespace tim

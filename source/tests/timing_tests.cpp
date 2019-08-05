@@ -37,7 +37,7 @@ static const float util_tolerance  = 2.5f;
 static const float timer_tolerance = 0.01f;
 
 #define CHECK_AVAILABLE(type)                                                            \
-    if(!tim::trait::impl_available<type>::value)                                         \
+    if(!tim::trait::is_available<type>::value)                                           \
         return;
 
 //--------------------------------------------------------------------------------------//
