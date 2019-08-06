@@ -200,7 +200,8 @@ auto_tuple<Types...>::~auto_tuple()
         {
             std::stringstream ss;
             ss << m_temporary_object;
-            std::cout << ss.str() << std::endl;
+            if(ss.str().length() > 0)
+                std::cout << ss.str() << std::endl;
         }
 
         if(m_reference_object)
