@@ -61,19 +61,6 @@ extern "C"
 TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event)
 
 //--------------------------------------------------------------------------------------//
-//  category configurations
-//
-
-// timing_components_t
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::cuda_event, tim::component::real_clock, tim::component::system_clock,
-    tim::component::user_clock, tim::component::cpu_clock,
-    tim::component::monotonic_clock, tim::component::monotonic_raw_clock,
-    tim::component::thread_cpu_clock, tim::component::process_cpu_clock,
-    tim::component::cpu_util, tim::component::thread_cpu_util,
-    tim::component::process_cpu_util)
-
-//--------------------------------------------------------------------------------------//
 //  standard configurations
 //
 
@@ -146,29 +133,5 @@ TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event, tim::component::re
                                   tim::component::process_cpu_clock,
                                   tim::component::process_cpu_util,
                                   tim::component::peak_rss, tim::component::current_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(
-    tim::component::cuda_event, tim::component::real_clock, tim::component::system_clock,
-    tim::component::user_clock, tim::component::cpu_clock, tim::component::cpu_util,
-    tim::component::thread_cpu_clock, tim::component::thread_cpu_util,
-    tim::component::process_cpu_clock, tim::component::process_cpu_util,
-    tim::component::monotonic_clock, tim::component::monotonic_raw_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event, tim::component::real_clock,
-                                  tim::component::system_clock,
-                                  tim::component::user_clock, tim::component::cpu_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::process_cpu_clock)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event, tim::component::real_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::thread_cpu_util,
-                                  tim::component::process_cpu_clock,
-                                  tim::component::process_cpu_util,
-                                  tim::component::peak_rss, tim::component::current_rss)
-
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event, tim::component::real_clock,
-                                  tim::component::thread_cpu_clock,
-                                  tim::component::process_cpu_util)
 
 #endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)

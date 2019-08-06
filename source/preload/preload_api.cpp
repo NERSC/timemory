@@ -110,6 +110,16 @@ timemory_finalize_library()
     for(auto& itr : record_map)
         delete itr.second;
     record_map.clear();
+
+    // PGI and Intel compilers don't respect destruction order
+#if defined(__PGI) || defined(__INTEL_COMPILER)
+    tim::settings::auto_output() = false;
+#endif
+
+    // Compensate for Intel compiler not allowing auto output
+#if defined(__INTEL_COMPILER)
+    auto_list_t::component_type::print_storage();
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

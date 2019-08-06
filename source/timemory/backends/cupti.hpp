@@ -92,8 +92,11 @@ namespace cupti
 
 using string_t = std::string;
 template <typename _Key, typename _Mapped>
-using map_t                 = std::map<_Key, _Mapped>;
-using strvec_t              = std::vector<string_t>;
+using map_t    = std::map<_Key, _Mapped>;
+using strvec_t = std::vector<string_t>;
+
+//--------------------------------------------------------------------------------------//
+/*
 using stream_duration_t     = map_t<uint32_t, uint64_t>;
 using stream_duration_ptr_t = std::unique_ptr<stream_duration_t>;
 
@@ -127,9 +130,10 @@ static void CUPTIAPI
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            buffer_completed(CUcontext /* ctx */, uint32_t streamId, uint8_t* buffer, size_t /* size */,
-                             size_t validSize)
+            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer,
+                             size_t size , size_t validSize)
 {
+    consume_parameters(ctx, size);
     CUpti_Activity* record = nullptr;
 
     // since we launched only 1 kernel, we should have only 1 kernel record
@@ -148,7 +152,7 @@ static void CUPTIAPI
 
     free(buffer);
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 namespace impl
@@ -1008,7 +1012,7 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-static strvec_t
+inline strvec_t
 available_metrics(CUdevice device)
 {
     strvec_t              metric_names;
@@ -1056,7 +1060,7 @@ available_metrics(CUdevice device)
 
 //--------------------------------------------------------------------------------------//
 
-static strvec_t
+inline strvec_t
 available_events(CUdevice device)
 {
     strvec_t             event_names;

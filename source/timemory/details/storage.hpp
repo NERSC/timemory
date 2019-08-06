@@ -246,9 +246,9 @@ tim::storage<ObjectType>::print()
 
         // fix up the prefix based on the actual depth
         auto _compute_modified_prefix = [](const graph_node& itr) {
-            std::string _prefix = itr.prefix();
-            auto _ebracket = _prefix.find("]");
-            auto _boffset  = _prefix.find("|_");
+            std::string _prefix   = itr.prefix();
+            auto        _ebracket = _prefix.find("]");
+            auto        _boffset  = _prefix.find("|_");
 
             // if depth == 0
             if(itr.depth() < 1)
@@ -274,7 +274,7 @@ tim::storage<ObjectType>::print()
                 }
                 _prefix.insert(_ebracket + 2, "|_");
             }
-            else // if |_ not found
+            else  // if |_ not found
             {
                 int _diff = (_boffset - (_ebracket + 2));
                 int _expd = 2 * (itr.depth() - 1);

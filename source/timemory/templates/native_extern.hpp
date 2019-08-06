@@ -28,30 +28,37 @@
  *
  */
 
-#include "timemory/timemory.hpp"
+#include "timemory/components.hpp"
+#include "timemory/utility/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
-//  category configurations
+// individual
 //
-
-// rusage_components_t
-TIMEMORY_DECLARE_EXTERN_TUPLE(
-    tim::component::current_rss, tim::component::peak_rss, tim::component::stack_rss,
-    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
-    tim::component::num_io_out, tim::component::num_minor_page_faults,
-    tim::component::num_major_page_faults, tim::component::num_msg_sent,
-    tim::component::num_msg_recv, tim::component::num_signals,
-    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
-
-// timing_components_t
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock, tim::component::cpu_clock,
-                              tim::component::monotonic_clock,
-                              tim::component::monotonic_raw_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::process_cpu_clock, tim::component::cpu_util,
-                              tim::component::thread_cpu_util,
-                              tim::component::process_cpu_util)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::system_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::user_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::cpu_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::monotonic_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::monotonic_raw_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::thread_cpu_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::process_cpu_clock)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::cpu_util)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::process_cpu_util)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::thread_cpu_util)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::peak_rss)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::current_rss)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::stack_rss)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::data_rss)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_swap)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_io_in)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_io_out)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_minor_page_faults)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_major_page_faults)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_msg_sent)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_msg_recv)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_signals)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::voluntary_context_switch)
+TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::priority_context_switch)
 
 //--------------------------------------------------------------------------------------//
 //  standard configurations
@@ -107,32 +114,6 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(
 // miscellaneous
 //
 
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::system_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::user_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::cpu_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::monotonic_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::monotonic_raw_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::thread_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::process_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::cpu_util)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::process_cpu_util)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::thread_cpu_util)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::peak_rss)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::current_rss)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::stack_rss)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::data_rss)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_swap)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_io_in)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_io_out)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_minor_page_faults)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_major_page_faults)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_msg_sent)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_msg_recv)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_signals)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::voluntary_context_switch)
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::priority_context_switch)
-
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock)
 
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock,
@@ -151,72 +132,5 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system
                               tim::component::process_cpu_clock,
                               tim::component::process_cpu_util, tim::component::peak_rss,
                               tim::component::current_rss)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(
-    tim::component::peak_rss, tim::component::current_rss, tim::component::stack_rss,
-    tim::component::data_rss, tim::component::num_swap, tim::component::num_io_in,
-    tim::component::num_io_out, tim::component::num_minor_page_faults,
-    tim::component::num_major_page_faults, tim::component::num_msg_sent,
-    tim::component::num_msg_recv, tim::component::num_signals,
-    tim::component::voluntary_context_switch, tim::component::priority_context_switch)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock, tim::component::cpu_clock,
-                              tim::component::cpu_util, tim::component::thread_cpu_clock,
-                              tim::component::thread_cpu_util,
-                              tim::component::process_cpu_clock,
-                              tim::component::process_cpu_util,
-                              tim::component::monotonic_clock,
-                              tim::component::monotonic_raw_clock)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock, tim::component::cpu_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::process_cpu_clock)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::thread_cpu_util,
-                              tim::component::process_cpu_clock,
-                              tim::component::process_cpu_util, tim::component::peak_rss,
-                              tim::component::current_rss)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::process_cpu_util)
-
-#endif  // defined(TIMEMORY_EXTERN_TEMPLATES)
-
-//======================================================================================//
-
-#if defined(TIMEMORY_EXTERN_INIT)
-
-TIMEMORY_DECLARE_EXTERN_STORAGE(real_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(system_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(user_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(monotonic_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(monotonic_raw_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(thread_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(process_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(thread_cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(process_cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(current_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(peak_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(stack_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(data_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_swap)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_io_in)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_io_out)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_minor_page_faults)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_major_page_faults)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_msg_sent)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_msg_recv)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_signals)
-TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
-TIMEMORY_DECLARE_EXTERN_STORAGE(priority_context_switch)
-
-#endif
 
 //======================================================================================//

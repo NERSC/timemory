@@ -20,14 +20,20 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
         ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp
         ${PROJECT_SOURCE_DIR}/source/timemory/*.icpp)
+    file(GLOB tests
+        ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.cpp)
     file(GLOB sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
         ${PROJECT_SOURCE_DIR}/source/tools/*.hpp
         ${PROJECT_SOURCE_DIR}/source/tools/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/python/*.hpp
         ${PROJECT_SOURCE_DIR}/source/python/*.cpp
-        ${PROJECT_SOURCE_DIR}/source/python/*.hpp)
+        ${PROJECT_SOURCE_DIR}/source/preload/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/preload/*.cpp)
     if(TIMEMORY_BUILD_EXAMPLES)
         file(GLOB_RECURSE examples
             ${PROJECT_SOURCE_DIR}/examples/ex-*/*.h
@@ -46,7 +52,10 @@ if(CLANG_FORMATTER)
     endif()
 
     add_custom_target(${FORMAT_NAME}
-        COMMAND ${CLANG_FORMATTER} -i ${headers} ${sources} ${examples}
+        COMMAND ${CLANG_FORMATTER} -i ${headers}
+        COMMAND ${CLANG_FORMATTER} -i ${sources}
+        COMMAND ${CLANG_FORMATTER} -i ${examples}
+        COMMAND ${CLANG_FORMATTER} -i ${tests}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running '${CLANG_FORMATTER}'..."
         SOURCES ${headers} ${sources} ${examples})
