@@ -30,10 +30,12 @@
 //======================================================================================//
 // declaration of C++ defined functions (timemory/auto_timer.hpp)
 
+extern void
+cxx_timemory_init(int, char**, timemory_settings);
 extern int
 cxx_timemory_enabled(void);
 extern void*
-cxx_timemory_create_auto_timer(const char*, int, const char*, int);
+cxx_timemory_create_auto_timer(const char*, int, int);
 extern void*
 cxx_timemory_create_auto_tuple(const char*, int, int, const int*);
 extern void*
@@ -44,6 +46,14 @@ extern const char*
 cxx_timemory_string_combine(const char*, const char*);
 extern const char*
 cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
+
+//======================================================================================//
+
+void
+c_timemory_init(int argc, char** argv, timemory_settings _settings)
+{
+    cxx_timemory_init(argc, argv, _settings);
+}
 
 //======================================================================================//
 
@@ -58,9 +68,8 @@ c_timemory_enabled(void)
 void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
 {
-    return (cxx_timemory_enabled())
-               ? cxx_timemory_create_auto_timer(tag, lineno, "_c_", false)
-               : NULL;
+    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno, false)
+                                    : NULL;
 }
 
 //======================================================================================//
@@ -110,7 +119,7 @@ c_timemory_string_combine(const char* _a, const char* _b)
 //======================================================================================//
 
 const char*
-c_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
+c_timemory_auto_str(const char* _a, const char* _b, const char* _c, int _d)
 {
     return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
 }

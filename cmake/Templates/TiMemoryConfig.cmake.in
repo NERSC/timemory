@@ -1,11 +1,17 @@
 
+# cmake_policy(SET CMP0057 NEW)
+
+if(CMAKE_VERSION VERSION_LESS 3.10)
+    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
+endif()
+
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
 @PACKAGE_INIT@
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Settings
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 set(TIMEMORY_PYTHON_BINDINGS @TIMEMORY_BUILD_PYTHON@)
 if(NOT DEFINED @PROJECT_NAME@_DIR)
     set(@PROJECT_NAME@_DIR ${CMAKE_CURRENT_LIST_DIR})
@@ -18,39 +24,44 @@ set(@PROJECT_NAME@_CXX_COMPILE_OPTIONS @PROJECT_CXX_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_CUDA_COMPILE_OPTIONS @PROJECT_CUDA_COMPILE_OPTIONS@)
 set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 
-# link options
-set(@PROJECT_NAME@_C_LINK_OPTIONS @PROJECT_C_LINK_OPTIONS@)
-set(@PROJECT_NAME@_CXX_LINK_OPTIONS @PROJECT_CXX_LINK_OPTIONS@)
-set(@PROJECT_NAME@_CUDA_LINK_OPTIONS @PROJECT_CUDA_LINK_OPTIONS@)
-
 # installed and interface libraries
-set(@PROJECT_NAME@_INSTALLED_LIBRARIES @INSTALL_LIBRARIES@)
-set(@PROJECT_NAME@_INTERFACE_LIBRARIES @INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
+set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
-# language standards
-set(CMAKE_C_STANDARD @CMAKE_C_STANDARD@ CACHE STRING "")
-set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "")
-set(CMAKE_CUDA_STANDARD @CMAKE_CUDA_STANDARD@ CACHE STRING "")
+if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
+    # language standards
+    set(CMAKE_C_STANDARD @CMAKE_C_STANDARD@ CACHE STRING "")
+    set(CMAKE_CXX_STANDARD @CMAKE_CXX_STANDARD@ CACHE STRING "")
+    set(CMAKE_CUDA_STANDARD @CMAKE_CUDA_STANDARD@ CACHE STRING "")
 
-# language standard required
-set(CMAKE_C_STANDARD_REQUIRED @CMAKE_C_STANDARD_REQUIRED@ CACHE BOOL "")
-set(CMAKE_CXX_STANDARD_REQUIRED @CMAKE_CXX_STANDARD_REQUIRED@ CACHE BOOL "")
-set(CMAKE_CUDA_STANDARD_REQUIRED @CMAKE_CUDA_STANDARD_REQUIRED@ CACHE BOOL "")
+    # language standard required
+    set(CMAKE_C_STANDARD_REQUIRED @CMAKE_C_STANDARD_REQUIRED@ CACHE BOOL "")
+    set(CMAKE_CXX_STANDARD_REQUIRED @CMAKE_CXX_STANDARD_REQUIRED@ CACHE BOOL "")
+    set(CMAKE_CUDA_STANDARD_REQUIRED @CMAKE_CUDA_STANDARD_REQUIRED@ CACHE BOOL "")
 
-# language extensions
-set(CMAKE_C_EXTENSIONS @CMAKE_C_EXTENSIONS@ CACHE BOOL "")
-set(CMAKE_CXX_EXTENSIONS @CMAKE_CXX_EXTENSIONS@ CACHE BOOL "")
-set(CMAKE_CUDA_EXTENSIONS @CMAKE_CUDA_EXTENSIONS@ CACHE BOOL "")
-
-#------------------------------------------------------------------------------#
-#   Determine install tree or build tree
-#------------------------------------------------------------------------------#
-set(_TIMEMORY_INSTALL_TREE ON)
-if("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
-    set(_TIMEMORY_INSTALL_TREE OFF) # build tree
+    # language extensions
+    set(CMAKE_C_EXTENSIONS @CMAKE_C_EXTENSIONS@ CACHE BOOL "")
+    set(CMAKE_CXX_EXTENSIONS @CMAKE_CXX_EXTENSIONS@ CACHE BOOL "")
+    set(CMAKE_CUDA_EXTENSIONS @CMAKE_CUDA_EXTENSIONS@ CACHE BOOL "")
 endif()
 
-if(_TIMEMORY_INSTALL_TREE)
+# languages
+set(TIMEMORY_LANGUAGES CXX)
+
+if(TIMEMORY_C_LIBRARY)
+    list(APPEND TIMEMORY_LANGUAGES C)
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   Determine install tree or build tree
+#----------------------------------------------------------------------------------------#
+set(TIMEMORY_INSTALL_TREE ON)
+if("${CMAKE_SOURCE_DIR}" STREQUAL "@CMAKE_SOURCE_DIR@")
+    set(TIMEMORY_INSTALL_TREE OFF) # build tree
+endif()
+
+if(TIMEMORY_INSTALL_TREE)
 
     set_and_check(@PROJECT_NAME@_INCLUDE_DIR "@PACKAGE_INCLUDE_INSTALL_DIR@")
     set_and_check(@PROJECT_NAME@_LIB_DIR "@PACKAGE_LIB_INSTALL_DIR@")
@@ -77,66 +88,13 @@ if(_TIMEMORY_INSTALL_TREE)
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
     check_required_components(@PROJECT_NAME@)
 
-    #--------------------------------------------------------------------------#
-    #   try to get imported location
-    #--------------------------------------------------------------------------#
-
-    set(IMPORTED_LOCATION_BUILD )
-    string(TOUPPER "${@PROJECT_NAME@_BUILD_TYPE}" _BUILD_TYPE)
-    if("${@PROJECT_NAME@_BUILD_TYPE}" MATCHES "${CMAKE_CONFIGURATION_TYPES}")
-        set(IMPORTED_LOCATION_BUILD IMPORTED_LOCATION_${_BUILD_TYPE})
-    endif()
-
-    set(LOCATIONS IMPORTED_LOCATION
-        ${IMPORTED_LOCATION_BUILD}
-        IMPORTED_LOCATION_RELEASE
-        IMPORTED_LOCATION_RELWITHDEBINFO
-        IMPORTED_LOCATION_DEBUG
-        IMPORTED_LOCATION_MINSIZEREL)
-
-    set(_LANGUAGES CXX)
-    if(TIMEMORY_C_LIBRARY)
-        list(APPEND _LANGUAGES C)
-    endif()
-
-    # loop over library types
-    foreach(_TYPE shared static)
-        # loop over languages
-        foreach(_LANG ${_LANGUAGES})
-            string(TOLOWER "${_LANG}" _LANG_LOWER)
-            # try imported locations until one is found
-            foreach(_LOC ${LOCATIONS})
-                if(NOT _${_LANG}_LOCATION)
-                    get_target_property(_${_LANG}_LOCATION
-                        @LIBNAME@-${_LANG_LOWER}-library-${_TYPE} ${_LOC})
-                endif()
-            endforeach()
-
-            if(_${_LANG}_LOCATION)
-                set(@PROJECT_NAME@_${_LANG}_LIBRARY ${_${_LANG}_LOCATION}
-                    CACHE INTERNAL "@PROJECT_NAME@ ${_LANG} library")
-            endif()
-
-            unset(_${_LANG}_LOCATION)
-
-            if("${_TYPE}" STREQUAL "static" AND WIN32)
-                target_compile_definitions(@LIBNAME@-${_LANG_LOWER}-library-${_TYPE} PUBLIC
-                    _TIMEMORY_ARCHIVE)
-            endif()
-        endforeach()
-    endforeach()
-
 else() # build tree
 
     set(@PROJECT_NAME@_ROOT_DIR "@PROJECT_BINARY_DIR@")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
-        list(APPEND @PROJECT_NAME@_INCLUDE_DIR "${RELATIVE_SOURCE_DIR}/source/python/pybind11")
-    endif()
-
     set(@PROJECT_NAME@_LIB_DIR "@PROJECT_BINARY_DIR@")
 
-    if(TIMEMORY_PYTHON_BINDINGS)
+    if(@TIMEMORY_BUILD_PYTHON@)
         set(@PROJECT_NAME@_PYTHON_DIR "@PROJECT_BINARY_DIR@")
     endif()
 
@@ -149,54 +107,225 @@ else() # build tree
         import_lib(${_LIB} INTERFACE_IMPORTED_LOCATION)
     endforeach()
 
-    list(REMOVE_ITEM @PROJECT_NAME@_INSTALLED_LIBRARIES ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
-
-    foreach(_LIB ${@PROJECT_NAME@_INSTALLED_LIBRARIES})
+    foreach(_LIB ${@PROJECT_NAME@_COMPILED_LIBRARIES})
         import_lib(${_LIB} IMPORTED_LOCATION)
     endforeach()
 
     if(WIN32)
-        target_compile_definitions(@LIBNAME@-cxx-library-static PUBLIC _TIMEMORY_ARCHIVE)
+        target_compile_definitions(@LIBNAME@-cxx-static PUBLIC _TIMEMORY_ARCHIVE)
         if(TIMEMORY_C_LIBRARY)
-            target_compile_definitions(@LIBNAME@-c-library-static PUBLIC _TIMEMORY_ARCHIVE)
+            target_compile_definitions(@LIBNAME@-c-static PUBLIC _TIMEMORY_ARCHIVE)
         endif()
     endif()
 
 endif()
 
 
-#------------------------------------------------------------------------------#
-#   include directories
-#------------------------------------------------------------------------------#
-set(@PROJECT_NAME@_INCLUDE_DIRS ${@PROJECT_NAME@_INCLUDE_DIR})
-set(@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS "@EXTERNAL_INCLUDE_DIRS@")
-
-foreach(_DIR ${@PROJECT_NAME@_EXTERNAL_INCLUDE_DIRS})
-    list(APPEND @PROJECT_NAME@_INCLUDE_DIRS ${_DIR})
-endforeach()
-
-
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   TiMemory link target
-#------------------------------------------------------------------------------#
-set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-library)
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-library)
+#----------------------------------------------------------------------------------------#
+set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx)
 if(TIMEMORY_C_LIBRARY)
-    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-library)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-library)
+    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
 endif()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
+#   timemory component interface library
+#----------------------------------------------------------------------------------------#
+set(_@PROJECT_NAME@_MISSING_COMPONENTS )
+set(@PROJECT_NAME@_FOUND_COMPONENTS ${@PROJECT_NAME@_FIND_COMPONENTS})
+
+# option to skip building the interface library
+set(TIMEMORY_BUILD_INTERFACE_LIBRARY ON)
+if(TIMEMORY_SKIP_INTERFACE_LIBRARY)
+    set(TIMEMORY_BUILD_INTERFACE_LIBRARY OFF)
+endif()
+
+# if build interface library is enabled
+if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
+    set(_INTERFACE_LIB @LIBNAME@)
+    if(@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE)
+        set(_INTERFACE_LIB ${@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE})
+    endif()
+
+    if(CMAKE_VERSION VERSION_LESS 3.11)
+        if(NOT TARGET ${_INTERFACE_LIB})
+            add_library(${_INTERFACE_LIB} INTERFACE)
+        else()
+            set(_MSG "CMake 3.10 does not fully support IMPORTED INTERFACE libraries")
+            set(_MSG "${_MSG}. The \"${_INTERFACE_LIB}\" target is being modified globally...")
+            set(_MSG "${_MSG}... Consider upgrading CMake or setting")
+            set(_MSG "${_MSG} \"@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE\".")
+            message(WARNING "${_MSG}")
+        endif()
+    else()
+        add_library(${_INTERFACE_LIB} INTERFACE IMPORTED)
+    endif()
+endif()
+
+# if build interface library is enabled and COMPONENTS were specified
+if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERFACE_LIBRARY)
+
+    set(_LINK )
+    set(_LANGUAGES )
+    set(_COMPONENT_LIST )
+
+    # always add headers
+    list(APPEND @PROJECT_NAME@_FIND_COMPONENTS headers)
+
+    # determine link type
+    if("shared" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        set(_LINK shared)
+        list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS shared)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS shared)
+    elseif("static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        set(_LINK static)
+        list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS static)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS static)
+    else()
+        if(BUILD_SHARED_LIBS)
+            set(_LINK shared)
+        else()
+            set(_LINK static)
+        endif()
+    endif()
+
+    # find languages
+    foreach(_LANGUAGE c cxx cuda)
+        if("${_LANGUAGE}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            list(APPEND _LANGUAGES ${_LANGUAGE})
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_LANGUAGE})
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_LANGUAGE})
+        endif()
+    endforeach()
+
+    # helper macro
+    macro(@PROJECT_NAME@_LINK_TARGET_IF_EXISTS _TARGET)
+        if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR TARGET ${_TARGET})
+            if(TARGET ${_TARGET})
+                target_link_libraries(${_INTERFACE_LIB} INTERFACE ${_TARGET})
+                list(APPEND @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            else()
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+                list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+            endif()
+
+            if("${_TARGET}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_TARGET})
+            endif()
+
+            foreach(_ARG ${ARGN})
+                if("${_ARG}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                    list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_ARG})
+                endif()
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_ARG})
+            endforeach()
+        else()
+            message(WARNING "Target ${_TARGET} not found!")
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_TARGET})
+            list(APPEND _@PROJECT_NAME@_MISSING_COMPONENTS ${_TARGET})
+        endif()
+    endmacro()
+
+    if("extern-templates" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+        if(NOT WIN32)
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-extern-templates extern-templates)
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cxx-${_LINK})
+        else()
+            message(WARNING "timemory-extern-templates not available on Windows")
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS timemory-extern-templates)
+            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS extern-templates)
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-extern-templates)
+            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS extern-templates)
+        endif()
+    endif()
+
+    foreach(_LANGUAGE ${_LANGUAGES})
+        # handle special case of cuda
+        if("${_LANGUAGE}" STREQUAL "cuda")
+            # link to timemory-cuda
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE})
+
+            set(_CUDART_DEV OFF)
+            set(_CUDART     OFF)
+            # if cudart-device specified, only link to timemory-cudart-device
+            if("cudart-device" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                set(_CUDART_DEV ON)
+                set(_CUDART OFF)
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-device)
+            endif()
+
+            if("cudart" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR
+                "cudart-static" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                 set(_CUDART ON)
+            endif()
+
+            if(_CUDART AND _CUDART_DEV)
+                set(_MSG "Requesting linking to cudadevrt (device runtime) and")
+                set(_MSG "${_MSG} cudart/cudart_static. This has been found to cause")
+                set(_MSG "${_MSG} compilation error in CUDA 10.1")
+                message(AUTHOR_WARNING "${_MSG}")
+                unset(_MSG)
+            endif()
+
+            if(_CUDART)
+                if("${_LINK}" STREQUAL "static")
+                    @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart-static)
+                else()
+                    @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cudart)
+                endif()
+            endif()
+            unset(_CUDART)
+            unset(_CUDART_DEV)
+        else()
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_LANGUAGE}-${_LINK})
+        endif()
+    endforeach()
+
+    foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
+        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+    endforeach()
+
+    # remove duplicate interface libraries
+    if(NOT "${@PROJECT_NAME@_FOUND_COMPONENTS}" STREQUAL "")
+        list(REMOVE_DUPLICATES @PROJECT_NAME@_FOUND_COMPONENTS)
+    endif()
+
+    # remove empty interface libraries
+    if(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES)
+        list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS
+            ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
+    endif()
+
+    list(SORT @PROJECT_NAME@_FOUND_COMPONENTS)
+    set(_COMPONENT_LIST ${@PROJECT_NAME@_FOUND_COMPONENTS})
+    string(REPLACE ";" ", " _COMPONENT_LIST "${_COMPONENT_LIST}")
+    string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
+    message(STATUS
+      "[${PROJECT_NAME}] @PROJECT_NAME@ : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
+
+    unset(_COMPONENT_LIST)
+    unset(_LINK)
+    unset(_LANGUAGES)
+endif()
+
+
+#----------------------------------------------------------------------------------------#
 #   find_package variables
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set TiMemory_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
+    ${_@PROJECT_NAME@_MISSING_COMPONENTS}
     @PROJECT_NAME@_LIBRARIES)
 
 if(APPLE)
-    set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
+    # set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
 endif(APPLE)
+
+unset(TIMEMORY_INSTALL_TREE)

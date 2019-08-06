@@ -8,108 +8,6 @@ matrix:
   include:
     # ------------------------------------------------------------------------ #
     #
-    #   Python 2.7
-    #
-    # ------------------------------------------------------------------------ #
-    # GCC 5
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - libopenmpi-dev
-            - openmpi-bin
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_TYPE=MinSizeRel"
-    # GCC 6
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-6
-            - g++-6
-            - build-essential
-            - libopenmpi-dev
-            - openmpi-bin
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=RelWithDebInfo"
-    # GCC 7
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7
-            - g++-7
-            - build-essential
-            - libopenmpi-dev
-            - openmpi-bin
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_TYPE=Release"
-    # Clang 4.0
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-4.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-4.0
-            - clang++-4.0
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_TYPE=Debug"
-    # Clang 5.0
-    - os: linux
-      dist: xenial
-      sudo: false
-      python: '2.7'
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-5.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-5.0
-            - clang++-5.0
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-      env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_TYPE=MinSizeRel"
-    # ------------------------------------------------------------------------ #
-    #
     #   Python 3.6
     #
     # ------------------------------------------------------------------------ #
@@ -130,6 +28,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -149,8 +51,12 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
     # GCC 7
     - os: linux
       dist: xenial
@@ -168,6 +74,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -186,6 +96,10 @@ matrix:
             - build-essential
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -206,6 +120,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -230,6 +148,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
     # GCC 6
@@ -249,8 +171,12 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=Debug"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
     # GCC 7
     - os: linux
       dist: xenial
@@ -268,6 +194,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
     # Clang 4.0
@@ -286,6 +216,10 @@ matrix:
             - build-essential
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
     # Clang 5.0
@@ -306,6 +240,10 @@ matrix:
             - mpich
             - libpapi-dev
             - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
     # ------------------------------------------------------------------------ #
@@ -333,23 +271,30 @@ before_install:
 install:
     - eval "${MATRIX_EVAL}"
     - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake
+    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
     - source activate pyctest
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis"
-    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
+    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-    - python ./pyctest-runner.py ${ARGS} --coverage --pyctest-build-type=Debug
-    - rm -rf build-timemory
-    - python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE}
-    - rm -rf build-timemory
-    - python setup.py install
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --no-py --profile=cpu -- -VV
+    - travis_wait 15 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=Debug          --no-py --coverage -- -VV
+    # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=RelWithDebInfo --profile=heap
 
 script:
-    #
-    # Python testing
-    #
-    #- mkdir -p ${HOME}/timemory-test
-    # go to empty directory for testing
-    #- cd ${HOME}/timemory-test
-    #- python${TRAVIS_PYTHON_VERSION} -c "import timemory ; timemory.tests.run()"
+    - python setup.py install -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF
+    - python -c "import timemory; print(timemory.__file__)"
     - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+
+after_success:
+    # Create lcov report
+    # capture coverage info
+    - lcov --directory . --capture --output-file coverage.info
+    # filter out system and extra files.
+    # To also not include test code in coverage add them with full path to the patterns: '*/tests/*'
+    - lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' --output-file coverage.info
+    # output coverage data for debugging (optional)
+    - lcov --list coverage.info
+    # Uploading to CodeCov
+    # '-f' specifies file(s) to use and disables manual coverage gathering and file search which has already been done above
+    - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"

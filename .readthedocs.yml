@@ -1,0 +1,14 @@
+
+formats:
+  - htmlzip
+  - epub
+
+conda:
+  file: docs/environment.yml
+
+python:
+  setup_py_install: False
+  version: 3.6
+
+build:
+  image: latest

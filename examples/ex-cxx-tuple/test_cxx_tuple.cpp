@@ -35,31 +35,39 @@
 #include <vector>
 
 #include <timemory/timemory.hpp>
+#include <timemory/utility/signals.hpp>
+#include <timemory/utility/testing.hpp>
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_event<0, PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
+
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
                                      peak_rss, current_rss, papi_tuple_t>;
-using full_measurement_t =
-    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
-                         num_io_out, num_minor_page_faults, num_major_page_faults,
-                         num_msg_sent, num_msg_recv, num_signals,
-                         voluntary_context_switch, priority_context_switch, papi_tuple_t>;
+using __full_measurement_t =
+    tim::auto_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+                    num_io_out, num_minor_page_faults, num_major_page_faults,
+                    num_msg_sent, num_msg_recv, num_signals, voluntary_context_switch,
+                    priority_context_switch, papi_tuple_t>;
 
-using measurement_t =
-    tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
-                         thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                         process_cpu_util, monotonic_clock, monotonic_raw_clock,
-                         papi_tuple_t>;
-using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                                       thread_cpu_clock, process_cpu_clock>;
+using __measurement_t =
+    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+                    thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                    process_cpu_util, monotonic_clock, monotonic_raw_clock, papi_tuple_t>;
+
+using __printed_t = tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                                    thread_cpu_clock, process_cpu_clock>;
+
+using full_measurement_t = typename __full_measurement_t::component_type;
+using measurement_t      = typename __measurement_t::component_type;
+using printed_t          = typename __printed_t::component_type;
 
 // measure multiple clock time + resident set sizes
 using full_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
                     process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
+
 // measure wall-clock, thread cpu-clock + process cpu-utilization
 using small_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
@@ -104,8 +112,8 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
-    auto* timing = new tim::standard_timing_components_t("Tests runtime", true);
-    tim::component_tuple<papi_tuple_t> m("PAPI measurements");
+    auto* timing = new tim::standard_timing_t("Tests runtime", true);
+    tim::auto_tuple<papi_tuple_t>::component_type m("PAPI measurements");
 
     timing->start();
     m.start();
@@ -131,7 +139,7 @@ main(int argc, char** argv)
     m.stop();
     timing->stop();
 
-    std::cout << "\n" << m << std::endl;
+    // std::cout << "\n" << m << std::endl;
     std::cout << "\n" << *timing << std::endl;
 
     TEST_SUMMARY(argv[0], num_test, num_fail);
@@ -287,9 +295,11 @@ test_2_timing()
 {
     print_info(__FUNCTION__);
 
-    using pair_t = std::pair<std::string, measurement_t>;
+    using pair_t  = std::pair<std::string, measurement_t>;
+    using mutex_t = std::mutex;
+    using lock_t  = std::unique_lock<mutex_t>;
 
-    static std::mutex    mtx;
+    mutex_t              mtx;
     std::deque<pair_t>   measurements;
     measurement_t        runtime("");
     printed_t            runtime_printed("");
@@ -305,12 +315,12 @@ test_2_timing()
             _tm.start();
             ret += time_fibonacci(n);
             _tm.stop();
-            mtx.lock();
+
+            lock_t            lk(mtx);
             std::stringstream ss;
             ss << "fibonacci(" << n << ")";
             measurements.push_back(pair_t(ss.str(), _tm));
             lambda_ss << "thread fibonacci(" << n << "): " << _tm << std::endl;
-            mtx.unlock();
         };
 
         runtime_printed.start();
@@ -377,7 +387,7 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_SIGN(""));
+    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_LABEL(""));
     {
         TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
         // just record the peak rss

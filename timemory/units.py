@@ -25,13 +25,13 @@
 #
 
 """
-Imports timemory.libtimemory.units as timemory.units
+Imports timemory.libpytimemory.units as timemory.units
 """
 
 from __future__ import absolute_import
 
 __author__ = "Jonathan Madsen"
-__copyright__ = "Copyright 2018, The Regents of the University of California"
+__copyright__ = "Copyright 2019, The Regents of the University of California"
 __credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
@@ -39,4 +39,4 @@ __maintainer__ = "Jonathan Madsen"
 __email__ = "jonrobm.programming@gmail.com"
 __status__ = "Development"
 
-from .libtimemory.units import *
+from .libpytimemory.units import *

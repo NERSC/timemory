@@ -1,33 +1,13 @@
-cmake_minimum_required(VERSION 3.1.3 FATAL_ERROR)
-cmake_policy(SET CMP0042 NEW)
-cmake_policy(SET CMP0048 NEW)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-#------------------------------------------------------------------------------#
 project(TiMemory-CXX-Tuple-Example LANGUAGES C CXX)
-message(STATUS "Project: ${PROJECT_NAME}")
 
 set(EXE_NAME test_cxx_tuple)
+set(COMPONENTS cxx compile-options papi threading analysis-tools extern-templates)
 
-find_package(TiMemory REQUIRED)
+set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cxx-tuple-example)
+find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
-
-target_link_libraries(${EXE_NAME} timemory-cxx-library timemory-headers)
-
-target_compile_options(${EXE_NAME} PRIVATE
-    $<$<COMPILE_LANGUAGE:C>:${TiMemory_C_COMPILE_OPTIONS}>
-    $<$<COMPILE_LANGUAGE:CXX>:${TiMemory_CXX_COMPILE_OPTIONS}>)
-
-option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
-if(USE_EXTERN_TEMPLATES)
-    message(STATUS "Using extern templates from TiMemory...")
-    target_link_libraries(${EXE_NAME} timemory-extern-templates)
-endif()
-
-foreach(_OPT ${TiMemory_CXX_LINK_OPTIONS})
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} ${_OPT}")
-endforeach()
-
-if(NOT DEFINED TIMEMORY_SETUP_PY OR NOT TIMEMORY_SETUP_PY)
-    install(TARGETS ${EXE_NAME} DESTINATION bin)
-endif()
+target_link_libraries(${EXE_NAME} timemory-cxx-tuple-example)
+install(TARGETS ${EXE_NAME} DESTINATION bin)

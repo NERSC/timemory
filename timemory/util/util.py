@@ -35,7 +35,7 @@ import sys
 import inspect
 
 __author__ = "Jonathan Madsen"
-__copyright__ = "Copyright 2018, The Regents of the University of California"
+__copyright__ = "Copyright 2019, The Regents of the University of California"
 __credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
@@ -48,7 +48,7 @@ __all__ = ['base_decorator',
            'rss_usage',
            'auto_tuple']
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class base_decorator(object):
     """
     A base class for the decorators and context managers
@@ -106,7 +106,7 @@ class base_decorator(object):
         return _str
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class auto_timer(base_decorator):
     """ A decorator or context-manager for the auto-timer, e.g.:
         @timemory.util.auto_timer(add_args=True)
@@ -177,7 +177,7 @@ class auto_timer(base_decorator):
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class timer(base_decorator):
     """ A decorator or context-manager for the timer, e.g.:
 
@@ -256,7 +256,7 @@ class timer(base_decorator):
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class rss_usage(base_decorator):
     """ A decorator or context-manager for the rss usage, e.g.:
 
@@ -345,7 +345,7 @@ class rss_usage(base_decorator):
             traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 class auto_tuple(base_decorator):
     """ A decorator or context-manager for the auto-tuple, e.g.:
         @timemory.util.auto_tuple(components=(timemory.components.wall_clock,

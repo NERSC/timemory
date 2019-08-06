@@ -1,9 +1,9 @@
 [submodule "source/cereal"]
 	path = source/cereal
-	url = https://github.com/USCiLab/cereal.git
-[submodule "pybind11"]
-	path = pybind11
-	url = https://github.com/pybind/pybind11.git
+	url = https://github.com/jrmadsen/cereal.git
 [submodule "source/python/pybind11"]
 	path = source/python/pybind11
-	url = https://github.com/pybind/pybind11.git
+	url = https://github.com/jrmadsen/pybind11.git
+[submodule "source/google-test"]
+	path = source/google-test
+	url = https://github.com/google/googletest.git

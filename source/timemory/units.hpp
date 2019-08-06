@@ -30,7 +30,7 @@
 
 #pragma once
 
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdint>
 #include <ratio>
@@ -38,6 +38,13 @@
 
 #if defined(_UNIX)
 #    include <unistd.h>
+#endif
+
+#if defined(_WINDOWS)
+// clang-format off
+#    include <windows.h>
+#    include <sysinfoapi.h>
+// clang-format on
 #endif
 
 namespace tim
@@ -55,27 +62,61 @@ const int64_t dsec = std::deci::den;
 const int64_t sec  = 1;
 
 const int64_t byte     = 1;
-const int64_t kilobyte = 1024 * byte;
-const int64_t megabyte = 1024 * kilobyte;
-const int64_t gigabyte = 1024 * megabyte;
-const int64_t terabyte = 1024 * gigabyte;
-const int64_t petabyte = 1024 * terabyte;
+const int64_t kilobyte = 1000 * byte;
+const int64_t megabyte = 1000 * kilobyte;
+const int64_t gigabyte = 1000 * megabyte;
+const int64_t terabyte = 1000 * gigabyte;
+const int64_t petabyte = 1000 * terabyte;
 
-const double Bi  = 1.0;
-const double KiB = 1024.0 * Bi;
-const double MiB = 1024.0 * KiB;
-const double GiB = 1024.0 * MiB;
-const double TiB = 1024.0 * GiB;
-const double PiB = 1024.0 * TiB;
+const int64_t kibibyte = 1024 * byte;
+const int64_t mebibyte = 1024 * kibibyte;
+const int64_t gibibyte = 1024 * mebibyte;
+const int64_t tebibyte = 1024 * gibibyte;
+const int64_t pebibyte = 1024 * tebibyte;
 
-#if defined(_UNIX)
-#    if defined(_LINUX)
-const int64_t page_size = ::sysconf(_SC_PAGESIZE);
-#    endif
+const int64_t B  = 1;
+const int64_t KB = 1000 * B;
+const int64_t MB = 1000 * KB;
+const int64_t GB = 1000 * MB;
+const int64_t TB = 1000 * GB;
+const int64_t PB = 1000 * TB;
+
+const int64_t Bi  = 1;
+const int64_t KiB = 1024 * Bi;
+const int64_t MiB = 1024 * KiB;
+const int64_t GiB = 1024 * MiB;
+const int64_t TiB = 1024 * GiB;
+const int64_t PiB = 1024 * TiB;
+
+#if defined(_LINUX)
+
+inline int64_t
+get_page_size()
+{
+    return ::sysconf(_SC_PAGESIZE);
+}
 const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
-#else
-const int64_t page_size      = 1;
+
+#elif defined(_MACOS)
+
+inline int64_t
+get_page_size()
+{
+    return getpagesize();
+}
+const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+
+#elif defined(_WINDOWS)
+
+inline int64_t
+get_page_size()
+{
+    SYSTEM_INFO sysInfo;
+    GetSystemInfo(&sysInfo);
+    return sysInfo.dwPageSize;
+}
 const int64_t clocks_per_sec = CLOCKS_PER_SEC;
+
 #endif
 
 //--------------------------------------------------------------------------------------//

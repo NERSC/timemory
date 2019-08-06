@@ -32,7 +32,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/macros.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <cstdint>
 #include <cstring>
@@ -49,7 +49,12 @@ namespace tim
 {
 // initialization (creates manager and configures output path)
 void
-timemory_init(int argc, char** argv);
+timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+// initialization (creates manager and configures output path)
+void
+timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
 
 namespace settings
 {
@@ -76,8 +81,6 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, cout_output, true)
 
 // general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, env_num_threads, "TIMEMORY_NUM_THREADS")
-DEFINE_STATIC_ACCESSOR_FUNCTION(int, num_threads, 0)
 DEFINE_STATIC_ACCESSOR_FUNCTION(uint16_t, max_depth, std::numeric_limits<uint16_t>::max())
 
 // general formatting
@@ -98,8 +101,8 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, memory_units, "")
 DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
 
 // output control
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")  // folder
+DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")                // file prefix
 
 //--------------------------------------------------------------------------------------//
 
@@ -142,11 +145,11 @@ tim::settings::toupper(std::string str)
 
 //======================================================================================//
 
-#include "timemory/component_operations.hpp"
+#include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
-#include "timemory/mpi.hpp"
+#include "timemory/mpl/operations.hpp"
 #include "timemory/units.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
@@ -169,10 +172,8 @@ tim::settings::parse()
     cout_output() = tim::get_env("TIMEMORY_COUT_OUTPUT", cout_output());
 
     // settings
-    verbose()         = tim::get_env("TIMEMORY_VERBOSE", verbose());
-    env_num_threads() = tim::get_env("TIMEMORY_NUM_THREADS_ENV", env_num_threads());
-    num_threads()     = tim::get_env(env_num_threads(), num_threads());
-    max_depth()       = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
+    verbose()   = tim::get_env("TIMEMORY_VERBOSE", verbose());
+    max_depth() = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
 
     // general formatting
     precision() = tim::get_env("TIMEMORY_PRECISION", precision());
@@ -232,20 +233,24 @@ tim::settings::process()
         if(_unit.length() == 0)
             return return_type("MB", tim::units::megabyte);
 
-        using inner            = std::tuple<string_t, string_t, string_t, int64_t>;
+        using inner            = std::tuple<string_t, string_t, int64_t>;
         using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = { inner("byte", "B", "Bi", tim::units::byte),
-                                   inner("kilobyte", "KB", "KiB", tim::units::kilobyte),
-                                   inner("megabyte", "MB", "MiB", tim::units::megabyte),
-                                   inner("gigabyte", "GB", "GiB", tim::units::gigabyte),
-                                   inner("terabyte", "TB", "TiB", tim::units::terabyte),
-                                   inner("petabyte", "PB", "PiB", tim::units::petabyte) };
+        pair_vector_t matching = { inner("byte", "B", tim::units::byte),
+                                   inner("kilobyte", "KB", tim::units::kilobyte),
+                                   inner("megabyte", "MB", tim::units::megabyte),
+                                   inner("gigabyte", "GB", tim::units::gigabyte),
+                                   inner("terabyte", "TB", tim::units::terabyte),
+                                   inner("petabyte", "PB", tim::units::petabyte),
+                                   inner("kibibyte", "KiB", tim::units::KiB),
+                                   inner("mebibyte", "MiB", tim::units::MiB),
+                                   inner("gibibyte", "GiB", tim::units::GiB),
+                                   inner("tebibyte", "TiB", tim::units::TiB),
+                                   inner("pebibyte", "PiB", tim::units::PiB) };
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
-               _unit == tolower(std::get<2>(itr)))
-                return return_type(std::get<1>(itr), std::get<3>(itr));
+            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)))
+                return return_type(std::get<1>(itr), std::get<2>(itr));
         std::cerr << "Warning!! No memory unit matching \"" << _unit
                   << "\". Using default..." << std::endl;
         return return_type("MB", tim::units::megabyte);
@@ -270,10 +275,11 @@ tim::settings::process()
 
         _unit = tolower(_unit);
         for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)) ||
-               _unit == (tolower(std::get<0>(itr)) + "ec") ||
-               _unit == (tolower(std::get<1>(itr)) + "s"))
-                return return_type(std::get<0>(itr), std::get<2>(itr));
+            if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
+               _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
+            {
+                return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
+            }
         std::cerr << "Warning!! No timing unit matching \"" << _unit
                   << "\". Using default..." << std::endl;
         return return_type("sec", tim::units::sec);
@@ -419,6 +425,24 @@ tim::settings::process()
         process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
         cuda_event::get_unit()          = std::get<1>(_timing_unit);
     }
+
+    if(precision() > 0)
+    {
+        timing_precision() = precision();
+        memory_precision() = precision();
+    }
+
+    if(width() > 0)
+    {
+        timing_width() = width();
+        memory_width() = width();
+    }
+
+    if(scientific())
+    {
+        timing_scientific() = true;
+        memory_scientific() = true;
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -455,7 +479,8 @@ tim::settings::compose_output_filename(const std::string& _tag, std::string _ext
 //--------------------------------------------------------------------------------------//
 
 inline void
-tim::timemory_init(int argc, char** argv)
+tim::timemory_init(int argc, char** argv, const std::string& _prefix,
+                   const std::string& _suffix)
 {
     consume_parameters(argc);
     std::string exe_name = argv[0];
@@ -466,9 +491,13 @@ tim::timemory_init(int argc, char** argv)
     while(exe_name.find("/") != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
+    std::string pyext = ".py";
+    if(exe_name.find(pyext) != std::string::npos)
+        exe_name.erase(exe_name.find(pyext), pyext.length() + 1);
+
     gperf::profiler_start(exe_name);
 
-    exe_name = "timemory-" + exe_name + "-output";
+    exe_name = _prefix + exe_name + _suffix;
     for(auto& itr : exe_name)
     {
         if(itr == '_')
@@ -482,6 +511,16 @@ tim::timemory_init(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/storage.icpp"
+inline void
+tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
+                   const std::string& _suffix)
+{
+    auto cstr = const_cast<char*>(exe_name.c_str());
+    tim::timemory_init(1, &cstr, _prefix, _suffix);
+}
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/details/storage.hpp"
 
 //--------------------------------------------------------------------------------------//

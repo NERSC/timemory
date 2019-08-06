@@ -39,13 +39,16 @@ import timemory
 import timemory.plotting as _plotting
 from timemory.plotting import plot_parameters
 
-if __name__ == "__main__":
+
+def plot():
     try:
         parser = argparse.ArgumentParser()
-        parser.add_argument("-f", "--files", nargs='*', help="File input", type=str)
+        parser.add_argument("-f", "--files", nargs='*',
+                            help="File input", type=str)
         parser.add_argument("-d", "--display", required=False, action='store_true',
                             help="Display plot", dest='display_plot')
-        parser.add_argument("-t", "--titles", nargs='*', help="Plot titles", type=str)
+        parser.add_argument("-t", "--titles", nargs='*',
+                            help="Plot titles", type=str)
         parser.add_argument('-c', "--combine", required=False, action='store_true',
                             help="Combined data into a single plot")
         parser.add_argument('-o', '--output-dir', help="Output directory", type=str,
@@ -53,16 +56,16 @@ if __name__ == "__main__":
         parser.add_argument('-e', '--echo-dart', help="echo Dart measurement for CDash",
                             required=False, action='store_true')
         parser.add_argument('--min-percent', required=False, type=float,
-            help="Exclude plotting below this percentage of maximum")
+                            help="Exclude plotting below this percentage of maximum")
         parser.add_argument('--img-dpi', help="Image dots per sq inch",
-            required=False, type=int)
+                            required=False, type=int)
         parser.add_argument('--img-size', help="Image dimensions", nargs=2,
-            required=False, type=int)
+                            required=False, type=int)
         parser.add_argument('--img-type', help="Image type",
-            required=False, type=str)
+                            required=False, type=str)
         parser.add_argument('--plot-max',
-            help="Plot the maximums from a set of inputs to <filename>",
-            required=False, type=str, dest='plot_max')
+                            help="Plot the maximums from a set of inputs to <filename>",
+                            required=False, type=str, dest='plot_max')
 
         parser.set_defaults(display_plot=False)
         parser.set_defaults(combine=False)
@@ -82,18 +85,19 @@ if __name__ == "__main__":
         print('Files: {}'.format(args.files))
         print('Titles: {}'.format(args.titles))
 
-        params = _plotting.plot_parameters(min_percent = args.min_percent,
-                                           img_dpi = args.img_dpi,
-                                           img_size={'w' : args.img_size[0],
-                                                     'h' : args.img_size[1]},
-                                           img_type = args.img_type)
+        params = _plotting.plot_parameters(min_percent=args.min_percent,
+                                           img_dpi=args.img_dpi,
+                                           img_size={'w': args.img_size[0],
+                                                     'h': args.img_size[1]},
+                                           img_type=args.img_type)
 
         if do_plot_max:
             if len(args.titles) != 1:
                 raise Exception("Error must provide one title")
         else:
             if len(args.titles) != 1 and len(args.titles) != len(args.files):
-                raise Exception("Error must provide one title or a title for each file")
+                raise Exception(
+                    "Error must provide one title or a title for each file")
 
         data = []
         for i in range(len(args.files)):
@@ -128,8 +132,12 @@ if __name__ == "__main__":
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback, limit=5)
-        print ('Exception - {}'.format(e))
+        print('Exception - {}'.format(e))
         sys.exit(1)
 
-    print ('Done - {}'.format(sys.argv[0]))
+    print('Done - {}'.format(sys.argv[0]))
     sys.exit(0)
+
+
+if __name__ == "__main__":
+    plot()

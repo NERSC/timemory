@@ -2,7 +2,7 @@ version: "3.3"
 
 # Building:
 #
-# $ docker-compose build --pull <service>
+#   docker-compose build --pull --parallel <service>
 #
 
 services:
@@ -21,6 +21,7 @@ services:
           COMPILER_TYPE: "gcc"
           COMPILER_VERSION: "7"
           REQUIRE_CUDA_VERSION: "10.0"
+          ENABLE_DISPLAY: "1"
 
     #--------------------------------------------------------------------------#
     # TiMemory development container
@@ -37,3 +38,21 @@ services:
           COMPILER_TYPE: "gcc"
           COMPILER_VERSION: "8"
           REQUIRE_CUDA_VERSION: "10.1"
+          ENABLE_DISPLAY: "1"
+
+    #--------------------------------------------------------------------------#
+    # TiMemory development container
+    timemory-latest:
+      image: jrmadsen/timemory:latest
+      stdin_open: true
+      tty: true
+      build:
+        context: .
+        dockerfile: Dockerfile
+        args:
+          BASE_IMG: "nvidia/cuda"
+          BASE_TAG: "latest"
+          COMPILER_TYPE: "gcc"
+          COMPILER_VERSION: "8"
+          REQUIRE_CUDA_VERSION: "10.1"
+          ENABLE_DISPLAY: "1"

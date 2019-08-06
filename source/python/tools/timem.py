@@ -1,5 +1,6 @@
 #!@PYTHON_EXECUTABLE@
 
+import os
 import sys
 import traceback
 import argparse
@@ -19,7 +20,7 @@ B) Run a process and pass a JSON serialization to a custom
 """
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 #   Allow some options
 #
 def handle_arguments():
@@ -28,16 +29,16 @@ def handle_arguments():
     """
     parser = argparse.ArgumentParser()
     parser.add_argument('--enable-json-handler',
-        required=False, action='store_true', dest='enable_handler',
-        help="Enable:\n\t{}\n\t{} to handle timing info".format(
-            "import timemory_json_handler",
-            "timemory_json_handler.receive(timemory.json())"))
+                        required=False, action='store_true', dest='enable_handler',
+                        help="Enable:\n\t{}\n\t{} to handle timing info".format(
+                            "import timemory_json_handler",
+                            "timemory_json_handler.receive(timemory.json())"))
     parser.add_argument('--timem-quiet',
-        required=False, action='store_true', dest='quiet',
-        help="Suppress reporting to stdout")
+                        required=False, action='store_true', dest='quiet',
+                        help="Suppress reporting to stdout")
     parser.add_argument('--debug',
-        required=False, action='store_true', dest='debug',
-        help="Enable debug output")
+                        required=False, action='store_true', dest='debug',
+                        help="Enable debug output")
 
     parser.set_defaults(enable_handler=False)
     parser.set_defaults(quiet=False)
@@ -50,13 +51,29 @@ def handle_arguments():
     return args
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
+#   Set the environment
+#
+def set_environ(field, default_val):
+    if os.environ.get(field) is None:
+        os.environ[field] = "{}".format(default_val)
+
+
+#----------------------------------------------------------------------------------------#
 #   Main execution
 #
 if __name__ == "__main__":
 
     ret = 0
     try:
+        #----------------------------------------------------------------------#
+        #   default output formatting
+        #
+        set_environ("TIMEMORY_PRECISION", 6)
+        set_environ("TIMEMORY_WIDTH", 12)
+        set_environ("TIMEMORY_SCIENTIFIC", 0)
+        set_environ("TIMEMORY_FILE_OUTPUT", 0)
+
         #----------------------------------------------------------------------#
         #   parse arguments
         #
@@ -75,7 +92,7 @@ if __name__ == "__main__":
         timemory.set_rusage_children()
 
         components = []
-        for c in ["wall_clock", "sys_clock", "cpu_clock", "cpu_util", "peak_rss",
+        for c in ["wall_clock", "user_clock", "sys_clock", "cpu_clock", "cpu_util", "peak_rss",
                   "num_minor_page_faults", "num_major_page_faults",
                   "voluntary_context_switch", "priority_context_switch"]:
             components.append(getattr(timemory.component, c))
@@ -85,17 +102,30 @@ if __name__ == "__main__":
         if len(sys.argv) > 1:
             exe_name = "[{}]".format(sys.argv[1])
 
-        comp = timemory.component_tuple(components, exe_name)
-        comp.start()
+        comp = timemory.component_tuple(components, "[]")
         if len(sys.argv) > 1:
+            comp.start()
             p = sp.Popen(sys.argv[1:])
             ret = p.wait()
-        comp.stop()
+            comp.stop()
+        else:
+            comp.start()
+            comp.stop()
 
-        print("{}".format(comp))
+        report = "{}".format(comp).replace(
+            "> [pyc] <module>@[]", "", 1).replace(" [laps: 1]", "", 1)
+        report = report.replace(": ", "", 1)
+        suffix_report = report.split(",")
+
+        strings = ["\n> {} total execution time :".format(exe_name)]
+        for comp in suffix_report:
+            strings.append("    {}".format(comp))
+
+        for s in strings:
+            print("{}".format(s))
 
         # generate report
-        timemory.report();
+        timemory.report()
 
         #----------------------------------------------------------------------#
         #   handler
@@ -104,7 +134,8 @@ if __name__ == "__main__":
 
             try:
                 import timemory_json_handler
-                timemory_json_handler.receive(sys.argv[1:], timemory_manager.json())
+                timemory_json_handler.receive(
+                    sys.argv[1:], timemory_manager.json())
 
             except Exception as e:
                 exc_type, exc_value, exc_traceback = sys.exc_info()

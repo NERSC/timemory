@@ -1,12 +1,29 @@
 #!/bin/bash -e
 
+EXE=$(basename ${1})
+DIR=cpu.prof.${EXE}
+mkdir -p ${DIR}
+
+# gperf settings
 : ${N:=0}
 : ${GPERF_PROFILE:=""}
-: ${GPERF_PROFILE_BASE:=gperf.cpu.prof}
-: ${PPROF_ARGS:=""}
+: ${GPERF_PROFILE_BASE:=${DIR}/gperf}
 : ${MALLOCSTATS:=1}
 : ${CPUPROFILE_FREQUENCY:=500}
+: ${CPUPROFILE_REALTIME:=1}
+
+# rendering settings
 : ${INTERACTIVE:=0}
+: ${IMG_FORMAT:="jpeg"}
+#: ${DOT_ARGS:='-Gsize=24,24\! -Gdpi=200'}
+: ${DOT_ARGS:=""}
+: ${PPROF_ARGS:="--no_strip_temp --functions"}
+
+run-verbose()
+{
+    echo "${@}" 1>&2
+    eval ${@}
+}
 
 while [ -z "${GPERF_PROFILE}" ]
 do
@@ -19,10 +36,12 @@ done
 
 export MALLOCSTATS
 export CPUPROFILE_FREQUENCY
+export CPUPROFILE_REALTIME
+
 echo -e "\n\t--> Outputting profile to '${GPERF_PROFILE}'...\n"
 
 # remove profile file if unsucessful execution
-cleanup-failure() { set +v ; rm -f ${GPERF_PROFILE}; }
+cleanup-failure() { set +v ; echo "failure"; rm -f ${GPERF_PROFILE}; }
 trap cleanup-failure SIGHUP SIGINT SIGQUIT SIGILL SIGABRT SIGKILL
 
 ADD_LIBS()
@@ -73,6 +92,14 @@ fi
 # run the application
 eval CPUPROFILE_FREQUENCY=${CPUPROFILE_FREQUENCY} CPUPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
 
+echo-dart-measurement()
+{
+    local _NAME=${1}
+    local _TYPE=${2}
+    local _PATH=${3}
+    echo "<DartMeasurementFile name=\"${_NAME}\" type=\"image/${_TYPE}\">${_PATH}</DartMeasurementFile>"
+}
+
 # generate the results
 EXT=so
 if [ "$(uname)" = "Darwin" ]; then EXT=dylib; fi
@@ -80,10 +107,26 @@ if [ -f "${GPERF_PROFILE}" ]; then
     : ${PPROF:=$(which google-pprof)}
     : ${PPROF:=$(which pprof)}
     if [ -n "${PPROF}" ]; then
-        eval ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} | egrep -v ' 0x[0-9]' &> ${GPERF_PROFILE}.txt
-        eval ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} | egrep -v ' 0x[0-9]' &> ${GPERF_PROFILE}.cum.txt
-        if [ "${INTERACTIVE}" -gt 0 ]; then
-            eval ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}
+        run-verbose ${PPROF} --text ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.txt
+        run-verbose ${PPROF} --text --cum ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.cum.txt
+        # if dot is available
+        if [ -n "$(which dot)" ]; then
+            run-verbose ${PPROF} --dot ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.dot
+            run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.dot -o ${GPERF_PROFILE}.${IMG_FORMAT}
+            echo-dart-measurement ${GPERF_PROFILE}.${IMG_FORMAT} ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.${IMG_FORMAT}
+            if [ -f ./gprof2dot.py ]; then
+                run-verbose ${PPROF} --callgrind ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE} 1> ${GPERF_PROFILE}.callgrind
+                run-verbose python ./gprof2dot.py --format=callgrind --output=${GPERF_PROFILE}.callgrind.dot ${GPERF_PROFILE}.callgrind
+                run-verbose dot ${DOT_ARGS} -T${IMG_FORMAT} ${GPERF_PROFILE}.callgrind.dot -o ${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
+                echo-dart-measurement ${GPERF_PROFILE}.callgrind ${IMG_FORMAT} ${PWD}/${GPERF_PROFILE}.callgrind.${IMG_FORMAT}
+            fi
         fi
+        if [ "${INTERACTIVE}" -gt 0 ]; then
+            run-verbose ${PPROF} ${ADD_LIB_LIST} ${PPROF_ARGS} ${1} ${GPERF_PROFILE}
+        fi
+    else
+        echo -e "google-pprof/pprof not found!"
     fi
+else
+    echo -e "profile file \"${GPERF_PROFILE}\" not found!"
 fi

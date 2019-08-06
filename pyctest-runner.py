@@ -15,6 +15,24 @@ import multiprocessing as mp
 import pyctest.pyctest as pyctest
 import pyctest.helpers as helpers
 
+clobber_notes = True
+
+
+#------------------------------------------------------------------------------#
+def get_branch(wd=pyctest.SOURCE_DIRECTORY):
+    cmd = pyctest.command(["git", "show", "-s", "--pretty=%d", "HEAD"])
+    cmd.SetOutputStripTrailingWhitespace(True)
+    cmd.SetWorkingDirectory(wd)
+    cmd.Execute()
+    branch = cmd.Output()
+    branch = branch.split(" ")
+    if branch:
+        branch = branch[len(branch)-1]
+        branch = branch.strip(")")
+    if not branch:
+        branch = pyctest.GetGitBranch(wd)
+    return branch
+
 
 #------------------------------------------------------------------------------#
 def configure():
@@ -30,10 +48,10 @@ def configure():
 
     parser.add_argument("--arch", help="TIMEMORY_USE_ARCH=ON",
                         default=False, action='store_true')
-    parser.add_argument("--gperf", help="TIMEMORY_USE_GPERF=ON",
-                        default=False, action='store_true')
-    parser.add_argument("--sanitizer", help="TIMEMORY_USE_SANITIZER=ON",
-                        default=False, action='store_true')
+    parser.add_argument("--profile", help="Run gperf profiler",
+                        default=None, type=str, choices=("cpu", "heap"))
+    parser.add_argument("--sanitizer", help="Type of sanitizer",
+                        default=None, type=str, choices=("leak", "memory", "address", "thread"))
     parser.add_argument("--coverage", help="TIMEMORY_USE_COVERAGE=ON",
                         default=False, action='store_true')
     parser.add_argument("--static-analysis", help="TIMEMORY_USE_CLANG_TIDY=ON",
@@ -47,6 +65,13 @@ def configure():
     parser.add_argument("--no-py", help="TIMEMORY_BUILD_PYTHON=OFF",
                         default=False, action='store_true')
     parser.add_argument("--no-c", help="TIMEMORY_BUILD_C=OFF",
+                        default=False, action='store_true')
+    parser.add_argument("--no-gtest", help="TIMEMORY_BUILD_GTEST=OFF",
+                        default=False, action='store_true')
+    parser.add_argument("--extra-optimizations",
+                        help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
+                        default=False, action='store_true')
+    parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
                         default=False, action='store_true')
 
     args = parser.parse_args()
@@ -101,7 +126,7 @@ def run_pyctest():
     # Set the build name
     #
     pyctest.BUILD_NAME = "{} {} {} {} {} {}".format(
-        pyctest.GetGitBranch(pyctest.SOURCE_DIRECTORY),
+        get_branch(pyctest.SOURCE_DIRECTORY),
         platform.uname()[0],
         helpers.GetSystemVersionInfo(),
         platform.uname()[4],
@@ -113,8 +138,11 @@ def run_pyctest():
     #   build specifications
     #
     build_opts = {
-        "TIMEMORY_BUILD_PYTHON": "ON",
         "TIMEMORY_BUILD_C": "ON",
+        "TIMEMORY_BUILD_GTEST": "ON",
+        "TIMEMORY_BUILD_PYTHON": "ON",
+        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON",
+        "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "OFF",
         "TIMEMORY_USE_MPI": "ON",
         "TIMEMORY_USE_PAPI": "ON",
         "TIMEMORY_USE_ARCH": "OFF",
@@ -124,6 +152,15 @@ def run_pyctest():
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
+
+    if args.no_extern_templates:
+        build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "OFF"
+        build_opts["USE_EXTERN_TEMPLATES"] = "OFF"
+    else:
+        build_opts["USE_EXTERN_TEMPLATES"] = "ON"
+
+    if args.no_gtest:
+        build_opts["TIMEMORY_BUILD_GTEST"] = "OFF"
 
     if args.no_c:
         build_opts["TIMEMORY_BUILD_C"] = "OFF"
@@ -137,6 +174,10 @@ def run_pyctest():
             sys.version_info[0], sys.version_info[1], sys.version_info[2])
         pyctest.BUILD_NAME = "{} PY-{}".format(pyctest.BUILD_NAME, pyver)
 
+    if args.extra_optimizations:
+        build_opts["TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS"] = "ON"
+        pyctest.BUILD_NAME = "{} OPT".format(pyctest.BUILD_NAME)
+
     if args.no_mpi:
         build_opts["TIMEMORY_USE_MPI"] = "OFF"
     else:
@@ -148,7 +189,7 @@ def run_pyctest():
         pyctest.BUILD_NAME = "{} PAPI".format(pyctest.BUILD_NAME)
 
     if args.arch:
-        pyctest.BUILD_NAME = "{} arch".format(pyctest.BUILD_NAME)
+        pyctest.BUILD_NAME = "{} ARCH".format(pyctest.BUILD_NAME)
         build_opts["TIMEMORY_USE_ARCH"] = "ON"
 
     if args.cuda:
@@ -157,15 +198,19 @@ def run_pyctest():
     else:
         build_opts["TIMEMORY_USE_CUDA"] = "OFF"
 
-    if args.gperf:
-        pyctest.BUILD_NAME = "{} gperf".format(pyctest.BUILD_NAME)
+    if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
-        warnings.warn(
-            "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
-        pyctest.BUILD_TYPE = "RelWithDebInfo"
+        if pyctest.BUILD_TYPE != "RelWithDebInfo":
+            warnings.warn(
+                "Forcing build type to 'RelWithDebInfo' when gperf is enabled")
+            pyctest.BUILD_TYPE = "RelWithDebInfo"
+        pyctest.BUILD_NAME = "{} {}".format(
+            pyctest.BUILD_NAME, args.profile.upper())
 
-    if args.sanitizer:
-        pyctest.BUILD_NAME = "{} asan".format(pyctest.BUILD_NAME)
+    if args.sanitizer is not None:
+        pyctest.BUILD_NAME = "{} {}SAN".format(
+            pyctest.BUILD_NAME, args.sanitizer.upper()[0])
+        build_opts["SANITIZER_TYPE"] = args.sanitizer
         build_opts["TIMEMORY_USE_SANITIZER"] = "ON"
 
     if args.static_analysis:
@@ -176,11 +221,13 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
-            warnings.warn(
-                "Forcing build type to 'Debug' when coverage is enabled")
-            pyctest.BUILD_TYPE = "Debug"
-            pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
-                        "source/cereal/*;source/python/pybind11/*")
+            pyctest.BUILD_NAME = "{} COV".format(pyctest.BUILD_NAME)
+            if pyctest.BUILD_TYPE != "Debug":
+                warnings.warn(
+                    "Forcing build type to 'Debug' when coverage is enabled")
+                pyctest.BUILD_TYPE = "Debug"
+        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
+                    ".*source/cereal/.*;.*source/python/pybind11/.*;")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
@@ -238,55 +285,85 @@ def run_pyctest():
     #--------------------------------------------------------------------------#
     # construct a command
     #
-    def construct_command(cmd, args, clobber=False):
-        _cmd = []
-        if args.gperf:
-            _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
-                                     "gperf-cpu-profile.sh"))
-            pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                             "gperf.cpu.prof.{}.0.txt".format(
-                                 os.path.basename(cmd[0])),
-                             clobber=clobber)
-            pyctest.add_note(pyctest.BINARY_DIRECTORY,
-                             "gperf.cpu.prof.{}.0.cum.txt".format(
-                                 os.path.basename(cmd[0])),
-                             clobber=False)
-        else:
-            _cmd.append("./timem")
-        _cmd.extend(cmd)
-        return _cmd
+    def construct_name(test_name):
+        return test_name.replace("_", "-")
 
     #--------------------------------------------------------------------------#
-    # standard environment settings for tests, adds profile to notes
+    # construct a command
     #
-    def test_env_settings(prof_fname, clobber=False, extra=""):
-        return "NUM_THREADS={};{}".format(
-            mp.cpu_count(), extra)
-
-    #pyctest.set("ENV{GCOV_PREFIX}", pyctest.BINARY_DIRECTORY)
-    #pyctest.set("ENV{GCOV_PREFIX_STRIP}", "4")
+    def construct_command(cmd, args):
+        global clobber_notes
+        _cmd = []
+        if args.profile is not None:
+            _exe = os.path.basename(cmd[0])
+            if args.profile == "cpu":
+                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                                         "gperf-cpu-profile.sh"))
+                pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                 "cpu.prof.{}/gperf.0.txt".format(_exe),
+                                 clobber=clobber_notes)
+                pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                 "cpu.prof.{}/gperf.0.cum.txt".format(_exe),
+                                 clobber=False)
+                clobber_notes = False
+            elif args.profile == "heap":
+                _cmd.append(os.path.join(pyctest.BINARY_DIRECTORY,
+                                         "gperf-heap-profile.sh"))
+                for itr in ["alloc_objects", "alloc_space", "inuse_objects", "inuse_space"]:
+                    pyctest.add_note(pyctest.BINARY_DIRECTORY,
+                                     "heap.prof.{}/gperf.0.0001.heap.{}.txt".format(
+                                         _exe, itr),
+                                     clobber=clobber_notes)
+                    # make sure all subsequent iterations don't clobber
+                    clobber_notes = False
+        else:
+            _cmd.append("{}/timem".format(pyctest.BINARY_DIRECTORY))
+        _cmd.extend(cmd)
+        return _cmd
 
     #--------------------------------------------------------------------------#
     # create tests
     #
     if not args.no_c:
-        pyctest.test("test_c_timing", construct_command(["./test_c_timing"], args, clobber=True),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    pyctest.test("test_cxx_overhead", construct_command(["./test_cxx_overhead"], args),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    pyctest.test("test_cxx_tuple", construct_command(["./test_cxx_tuple"], args, clobber=True),
-                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # pyctest.test("test_cxx_total", construct_command(["./test_cxx_total"], args),
-    #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # pyctest.test("test_cxx_timing", construct_command(["./test_cxx_timing"], args, clobber=True),
-    #             {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
-    # if args.mpi:
-    #    pyctest.test("test_cxx_mpi_timing", construct_command(["./test_cxx_mpi_timing"], args, clobber=True),
-    #                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY, "LABELS": pyctest.PROJECT_NAME})
+        pyctest.test(construct_name("test-c-timing"),
+                     construct_command(["./test_c_timing"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test("test-optional-off", ["./test_optional_off"],
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test-optional-on"),
+                 construct_command(["./test_optional_on"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test-cxx-basic"),
+                 construct_command(["./test_cxx_basic"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
+
+    pyctest.test(construct_name("test-cxx-tuple"),
+                 construct_command(["./test_cxx_tuple"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
+
+    if not args.coverage and not pyctest.BUILD_TYPE == "Debug":
+        pyctest.test(construct_name("test-cxx-overhead"),
+                     construct_command(["./test_cxx_overhead"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME})
+
+        pyctest.test(construct_name("test-cpu-roofline"),
+                     construct_command(["./test_cpu_roofline"], args),
+                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                      "LABELS": pyctest.PROJECT_NAME,
+                      "TIMEOUT": "300"})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
-    pyctest.generate_test_file(os.path.join(
-        pyctest.BINARY_DIRECTORY, "examples"))
+    pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))
     pyctest.run(pyctest.ARGUMENTS, pyctest.BINARY_DIRECTORY)
 
 

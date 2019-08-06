@@ -1,53 +1,34 @@
+# include guard
+include_guard(DIRECTORY)
+
 # MacroUtilities - useful macros and functions for generic tasks
 #
-# CMake Extensions
-# ----------------
-# macro set_ifnot(<var> <value>)
-#       If variable var is not set, set its value to that provided
-#
-# function enum_option(<option>
-#                      VALUES <value1> ... <valueN>
-#                      TYPE   <valuetype>
-#                      DOC    <docstring>
-#                      [DEFAULT <elem>]
-#                      [CASE_INSENSITIVE])
-#          Declare a cache variable <option> that can only take values
-#          listed in VALUES. TYPE may be FILEPATH, PATH or STRING.
-#          <docstring> should describe that option, and will appear in
-#          the interactive CMake interfaces. If DEFAULT is provided,
-#          <elem> will be taken as the zero-indexed element in VALUES
-#          to which the value of <option> should default to if not
-#          provided. Otherwise, the default is taken as the first
-#          entry in VALUES. If CASE_INSENSITIVE is present, then
-#          checks of the value of <option> against the allowed values
-#          will ignore the case when performing string comparison.
-#
-#
-# General
-# --------------
-# function add_feature(<NAME> <DOCSTRING>)
-#          Add a  feature, whose activation is specified by the
-#          existence of the variable <NAME>, to the list of enabled/disabled
-#          features, plus a docstring describing the feature
-#
-# function print_enabled_features()
-#          Print enabled  features plus their docstrings.
-#
-#
-
-# - Include guard
-if(__timemory_macroutilities_isloaded)
-  return()
-endif()
-set(__timemory_macroutilities_isloaded YES)
 
 cmake_policy(PUSH)
-if(NOT CMAKE_VERSION VERSION_LESS 3.1)
-    cmake_policy(SET CMP0054 NEW)
-endif()
+cmake_policy(SET CMP0054 NEW)
 
 include(CMakeDependentOption)
 include(CMakeParseArguments)
+
+# Make this file generic by not explicitly defining the name of the project
+string(TOUPPER "${PROJECT_NAME}" PROJECT_NAME_UC)
+string(TOLOWER "${PROJECT_NAME}" PROJECT_NAME_LC)
+
+unset(${PROJECT_NAME_UC}_COMPILED_LIBRARIES CACHE)
+unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
+
+#-----------------------------------------------------------------------
+# CACHED LIST
+#-----------------------------------------------------------------------
+# macro set_ifnot(<var> <value>)
+#       If variable var is not set, set its value to that provided
+#
+FUNCTION(CACHE_LIST _OP _LIST)
+    # apply operation on list
+    list(${_OP} ${_LIST} ${ARGN})
+    # replace list
+    set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
+ENDFUNCTION()
 
 
 #-----------------------------------------------------------------------
@@ -138,7 +119,7 @@ FUNCTION(ADD_FEATURE _var _description)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
 #          Add an option and add as a feature if NO_FEATURE is not provided
 #
@@ -154,6 +135,87 @@ ENDFUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 
 
 #------------------------------------------------------------------------------#
+# macro for creating a library target
+#
+FUNCTION(CREATE_EXECUTABLE)
+    # for include dirs, compile flags, definitions, etc. --> use INTERFACE libs
+    # and add them to "LINK_LIBRARIES"
+    # list of arguments taking multiple values
+    set(multival_args
+        HEADERS SOURCES PROPERTIES LINK_LIBRARIES INSTALL_DESTINATION)
+
+    # parse args
+    cmake_parse_arguments(EXE
+        "INSTALL"                    # options
+        "TARGET_NAME;"               # single value args
+        "${multival_args}"           # multiple value args
+        ${ARGN})
+
+    # create library
+    add_executable(${EXE_TARGET_NAME} ${EXE_SOURCES} ${EXE_HEADERS})
+
+    # link library
+    target_link_libraries(${EXE_TARGET_NAME} ${EXE_LINK_LIBRARIES})
+
+    # target properties
+    if(NOT "${EXE_PROPERTIES}" STREQUAL "")
+        set_target_properties(${EXE_TARGET_NAME} PROPERTIES ${EXE_PROPERTIES})
+    endif()
+
+    if(EXE_INSTALL AND NOT EXE_INSTALL_DESTINATION)
+        set(EXE_INSTALL_DESTINATION ${CMAKE_INSTALL_BINDIR})
+    endif()
+
+    # Install the exe
+    if(EXE_INSTALL_DESTINATION)
+        install(TARGETS ${EXE_TARGET_NAME} DESTINATION ${EXE_INSTALL_DESTINATION})
+    endif()
+ENDFUNCTION()
+
+#------------------------------------------------------------------------------#
+# macro add_googletest()
+#
+# Adds a unit test and links against googletest. Additional arguments are linked
+# against the test.
+#
+FUNCTION(ADD_GOOGLETEST TEST_NAME)
+    if(NOT TIMEMORY_BUILD_GTEST)
+        return()
+    endif()
+    include(GoogleTest)
+    # list of arguments taking multiple values
+    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS)
+    # parse args
+    cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
+
+    CREATE_EXECUTABLE(
+        TARGET_NAME     ${TEST_NAME}
+        OUTPUT_NAME     ${TEST_NAME}
+        SOURCES         ${TEST_SOURCES}
+        LINK_LIBRARIES  timemory-google-test ${TEST_LINK_LIBRARIES}
+        PROPERTIES      "${TEST_PROPERTIES}")
+
+    if("${TEST_COMMAND}" STREQUAL "")
+        set(TEST_COMMAND $<TARGET_FILE:${TEST_NAME}>)
+    endif()
+
+    if(TEST_DISCOVER_TESTS)
+        GTEST_DISCOVER_TESTS(${TEST_NAME}
+            ${TEST_OPTIONS})
+    elseif(TEST_ADD_TESTS)
+        GTEST_ADD_TESTS(TARGET ${TEST_NAME}
+            ${TEST_OPTIONS})
+    else()
+        ADD_TEST(
+            NAME                ${TEST_NAME}
+            COMMAND             ${TEST_COMMAND}
+            WORKING_DIRECTORY   ${CMAKE_CURRENT_LIST_DIR}
+            ${TEST_OPTIONS})
+    endif()
+
+ENDFUNCTION()
+
+#----------------------------------------------------------------------------------------#
 # macro CHECKOUT_GIT_SUBMODULE()
 #
 #   Run "git submodule update" if a file in a submodule does not exist
@@ -224,28 +286,16 @@ MACRO(CHECKOUT_GIT_SUBMODULE)
 ENDMACRO()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # macro to add an interface lib
 #
 MACRO(ADD_INTERFACE_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE)
-    list(APPEND EXTERNAL_LIBRARIES ${_TARGET})
-    list(APPEND INSTALL_LIBRARIES ${_TARGET})
-    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
+    add_library(${_TARGET} INTERFACE ${ARGN})
+    cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
 ENDMACRO()
 
 
-#------------------------------------------------------------------------------#
-# macro to add an interface lib
-#
-MACRO(ADD_EXPORTED_INTERFACE_LIBRARY _TARGET)
-    add_library(${_TARGET} INTERFACE)
-    list(APPEND INSTALL_LIBRARIES ${_TARGET})
-    list(APPEND INTERFACE_LIBRARIES ${_TARGET})
-ENDMACRO()
-
-
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # macro to build a library of type: shared, static, object
 #
 macro(BUILD_LIBRARY)
@@ -264,10 +314,26 @@ macro(BUILD_LIBRARY)
                     LINK_LIBRARIES
                     COMPILE_DEFINITIONS
                     INCLUDE_DIRECTORIES
+                    C_COMPILE_OPTIONS
+                    CXX_COMPILE_OPTIONS
+                    CUDA_COMPILE_OPTIONS
+                    LINK_OPTIONS
                     EXTRA_PROPERTIES)
 
     cmake_parse_arguments(
         LIBRARY "${_options}" "${_onevalue}" "${_multival}" ${ARGN})
+
+    if("${LIBRARY_LANGUAGE}" STREQUAL "")
+        set(LIBRARY_LANGUAGE CXX)
+    endif()
+
+    if("${LIBRARY_LINKER_LANGUAGE}" STREQUAL "")
+        set(LIBRARY_LINKER_LANGUAGE CXX)
+    endif()
+
+    if("${LIBRARY_OUTPUT_DIR}" STREQUAL "")
+        set(LIBRARY_OUTPUT_DIR ${PROJECT_BINARY_DIR})
+    endif()
 
     if(NOT WIN32 AND NOT XCODE)
         list(APPEND LIBRARY_EXTRA_PROPERTIES
@@ -283,40 +349,66 @@ macro(BUILD_LIBRARY)
         set(LIB_PREFIX lib)
     endif()
 
-    add_library(${LIBRARY_TARGET_NAME}
-        ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    # add the library or sources
+    if(NOT TARGET ${LIBRARY_TARGET_NAME})
+        add_library(${LIBRARY_TARGET_NAME} ${LIBRARY_TYPE} ${LIBRARY_SOURCES})
+    else()
+        target_sources(${LIBRARY_TARGET_NAME} PRIVATE ${LIBRARY_SOURCES})
+    endif()
 
+    # append include directories
     target_include_directories(${LIBRARY_TARGET_NAME}
-        PUBLIC ${EXTERNAL_INCLUDE_DIRS}
-        PRIVATE ${${PROJECT_NAME}_TARGET_INCLUDE_DIRS})
+        PUBLIC ${LIBRARY_INCLUDE_DIRECTORIES})
 
+    # compile definitions
     target_compile_definitions(${LIBRARY_TARGET_NAME}
         PUBLIC ${LIBRARY_COMPILE_DEFINITIONS})
 
+    # compile flags
     target_compile_options(${LIBRARY_TARGET_NAME}
         PRIVATE
-            $<$<COMPILE_LANGUAGE:C>:${${PROJECT_NAME}_C_FLAGS}>
-            $<$<COMPILE_LANGUAGE:CXX>:${${PROJECT_NAME}_CXX_FLAGS}>)
+            $<$<COMPILE_LANGUAGE:C>:${LIBRARY_C_COMPILE_OPTIONS}>
+            $<$<COMPILE_LANGUAGE:CXX>:${LIBRARY_CXX_COMPILE_OPTIONS}>)
 
-    if(NOT LIBRARY_TYPE STREQUAL OBJECT)
-        target_link_libraries(${LIBRARY_TARGET_NAME}
-            PUBLIC ${LIBRARY_LINK_LIBRARIES})
+    # cuda flags
+    get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
+    if(CMAKE_CUDA_COMPILER AND "CUDA" IN_LIST LANGUAGES)
+        target_compile_options(${LIBRARY_TARGET_NAME}
+            PRIVATE
+                $<$<COMPILE_LANGUAGE:CUDA>:${LIBRARY_CUDA_COMPILE_OPTIONS}>)
     endif()
-    
+
+    # link options
+    if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+        target_link_options(${LIBRARY_TARGET_NAME} PUBLIC ${LIBRARY_LINK_OPTIONS})
+    elseif(NOT "${LIBRARY_LINK_OPTIONS}" STREQUAL "")
+        list(APPEND LIBRARY_EXTRA_PROPERTIES LINK_OPTIONS ${LIBRARY_LINK_OPTIONS})
+    endif()
+
+    # link libraries
+    target_link_libraries(${LIBRARY_TARGET_NAME}
+        PUBLIC ${LIBRARY_LINK_LIBRARIES})
+
+    # other properties
     set_target_properties(
-        ${LIBRARY_TARGET_NAME}          PROPERTIES
-        OUTPUT_NAME                     ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
-        LANGUAGE                        ${LIBRARY_LANGUAGE}
-        LINKER_LANGUAGE                 ${LIBRARY_LINKER_LANGUAGE}
-        POSITION_INDEPENDENT_CODE       ${LIBRARY_PIC}
+        ${LIBRARY_TARGET_NAME}      PROPERTIES
+        OUTPUT_NAME                 ${LIB_PREFIX}${LIBRARY_OUTPUT_NAME}
+        LANGUAGE                    ${LIBRARY_LANGUAGE}
+        LINKER_LANGUAGE             ${LIBRARY_LINKER_LANGUAGE}
+        POSITION_INDEPENDENT_CODE   ${LIBRARY_PIC}
         ${LIBRARY_EXTRA_PROPERTIES})
 
-    list(APPEND INSTALL_LIBRARIES ${LIBRARY_TARGET_NAME})
+    # add to cached list of compiled libraries
+    set(COMPILED_TYPES "SHARED" "STATIC" "MODULE")
+    if("${LIBRARY_TYPE}" IN_LIST COMPILED_TYPES)
+        cache_list(APPEND ${PROJECT_NAME_UC}_COMPILED_LIBRARIES ${LIBRARY_TARGET_NAME})
+    endif()
+    unset(COMPILED_TYPES)
 
 endmacro(BUILD_LIBRARY)
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_enabled_features()
 #          Print enabled  features plus their docstrings.
 #
@@ -364,7 +456,7 @@ FUNCTION(print_enabled_features)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_disabled_features()
 #          Print disabled features plus their docstrings.
 #
@@ -394,7 +486,7 @@ FUNCTION(print_disabled_features)
     endif()
 ENDFUNCTION()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # function print_features()
 #          Print all features plus their docstrings.
 #
@@ -405,7 +497,7 @@ FUNCTION(print_features)
 ENDFUNCTION()
 
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
     set(_LIBDIR_DEFAULT "lib")
     # Override this default 'lib' with 'lib64' iff:
@@ -470,7 +562,7 @@ MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
     endif()
 ENDMACRO()
 
-#------------------------------------------------------------------------------#
+#----------------------------------------------------------------------------------------#
 # always determine the default lib directory
 DETERMINE_LIBDIR_DEFAULT(LIBDIR_DEFAULT)
 

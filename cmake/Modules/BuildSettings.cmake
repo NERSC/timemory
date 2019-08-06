@@ -1,69 +1,18 @@
-################################################################################
+# include guard
+include_guard(DIRECTORY)
+
+##########################################################################################
 #
 #        Handles the build settings
 #
-################################################################################
+##########################################################################################
+
 
 include(GNUInstallDirs)
 include(Compilers)
 
 
-# ---------------------------------------------------------------------------- #
-#
-set(CMAKE_INSTALL_MESSAGE LAZY)
-# standard
-set(CMAKE_C_STANDARD 11 CACHE STRING "C language standard")
-set(CMAKE_CXX_STANDARD 11 CACHE STRING "CXX language standard")
-set(CMAKE_CUDA_STANDARD ${CMAKE_CXX_STANDARD} CACHE STRING "CUDA language standard")
-# standard required
-set(CMAKE_C_STANDARD_REQUIRED ON CACHE BOOL "Require the C language standard")
-set(CMAKE_CXX_STANDARD_REQUIRED ON CACHE BOOL "Require the CXX language standard")
-set(CMAKE_CUDA_STANDARD_REQUIRED ON CACHE BOOL "Require the CUDA language standard")
-# extensions
-set(CMAKE_C_EXTENSIONS OFF CACHE BOOL "C language extensions")
-set(CMAKE_CXX_EXTENSIONS OFF CACHE BOOL "CXX language extensions")
-set(CMAKE_CUDA_EXTENSIONS OFF CACHE BOOL "CUDA language extensions")
-
-# ---------------------------------------------------------------------------- #
-# set the output directory (critical on Windows)
-#
-foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
-    # if ${PROJECT_NAME}_OUTPUT_DIR is not defined, set to CMAKE_BINARY_DIR
-    if(NOT DEFINED ${PROJECT_NAME}_OUTPUT_DIR OR "${${PROJECT_NAME}_OUTPUT_DIR}" STREQUAL "")
-        set(${PROJECT_NAME}_OUTPUT_DIR ${CMAKE_BINARY_DIR})
-    endif()
-
-    # set the CMAKE_{ARCHIVE,LIBRARY,RUNTIME}_OUTPUT_DIRECTORY variables
-    if(WIN32)
-        # on Windows, separate types into different directories
-        string(TOLOWER "${_TYPE}" _LTYPE)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR}/outputs/${_LTYPE})
-    elseif(XCODE)
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
-    else()
-        # on UNIX, just set to same directory
-        set(CMAKE_${_TYPE}_OUTPUT_DIRECTORY ${${PROJECT_NAME}_OUTPUT_DIR})
-    endif()
-endforeach()
-
-
-# ---------------------------------------------------------------------------- #
-#  debug macro
-#
-set(DEBUG OFF)
-if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
-    set(DEBUG ON)
-    list(APPEND ${PROJECT_NAME}_DEFINITIONS DEBUG)
-else()
-    list(APPEND ${PROJECT_NAME}_DEFINITIONS NDEBUG)
-endif()
-
-
-# ---------------------------------------------------------------------------- #
-# used by configure_package_*
-set(LIBNAME timemory)
-
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # set the compiler flags
 add_c_flag_if_avail("-W")
 if(NOT WIN32)
@@ -71,12 +20,13 @@ if(NOT WIN32)
 else()
     add_c_flag_if_avail("/bigobj")
 endif()
-add_c_flag_if_avail("-Wextra")
-add_c_flag_if_avail("-Wshadow")
-add_c_flag_if_avail("-Wno-unused-value")
+# add_c_flag_if_avail("-Wextra")
+# add_c_flag_if_avail("-Wshadow")
+# add_c_flag_if_avail("-Wno-unused-value")
+# add_c_flag_if_avail("-Wno-unused-function")
 add_c_flag_if_avail("-Wno-unknown-pragmas")
-add_c_flag_if_avail("-Wno-reserved-id-macro")
-add_c_flag_if_avail("-Wno-deprecated-declarations")
+# add_c_flag_if_avail("-Wno-reserved-id-macro")
+# add_c_flag_if_avail("-Wno-deprecated-declarations")
 
 add_cxx_flag_if_avail("-W")
 if(NOT WIN32)
@@ -84,157 +34,168 @@ if(NOT WIN32)
 else()
     add_cxx_flag_if_avail("/bigobj")
 endif()
-add_cxx_flag_if_avail("-Wextra")
-add_cxx_flag_if_avail("-Wshadow")
-add_cxx_flag_if_avail("-Wno-unused-value")
+# add_cxx_flag_if_avail("-Wextra")
+# add_cxx_flag_if_avail("-Wshadow")
+# add_cxx_flag_if_avail("-Wno-unused-value")
+# add_cxx_flag_if_avail("-Wno-unused-function")
 add_cxx_flag_if_avail("-Wno-unknown-pragmas")
 add_cxx_flag_if_avail("-Wno-c++17-extensions")
-add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
-add_cxx_flag_if_avail("-Wno-deprecated-declarations")
-add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
+# add_cxx_flag_if_avail("-Wno-implicit-fallthrough")
+# add_cxx_flag_if_avail("-Wno-deprecated-declarations")
+add_cxx_flag_if_avail("-Wno-attributes")
 
 if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # these flags succeed with GNU compiler but are unknown (clang flags)
-    add_cxx_flag_if_avail("-Wno-exceptions")
+    # add_cxx_flag_if_avail("-Wno-exceptions")
+    # add_cxx_flag_if_avail("-Wno-class-memaccess")
+    # add_cxx_flag_if_avail("-Wno-reserved-id-macro")
+    # add_cxx_flag_if_avail("-Wno-unused-private-field")
+else()
     add_cxx_flag_if_avail("-Wno-class-memaccess")
-    add_cxx_flag_if_avail("-Wno-reserved-id-macro")
-    add_cxx_flag_if_avail("-Wno-unused-private-field")
 endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # non-debug optimizations
 #
-if(NOT DEBUG)
-    add_c_flag_if_avail("-funroll-loops")
-    add_c_flag_if_avail("-ftree-vectorize")
-    add_c_flag_if_avail("-finline-functions")
-    # add_c_flag_if_avail("-fira-loop-pressure")
-
-    add_cxx_flag_if_avail("-funroll-loops")
-    add_cxx_flag_if_avail("-ftree-vectorize")
-    add_cxx_flag_if_avail("-finline-functions")
-    # add_cxx_flag_if_avail("-fira-loop-pressure")
+if(NOT "${CMAKE_BUILD_TYPE}" STREQUAL "Debug" AND TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS)
+    add_flag_if_avail("-finline-functions")
+    add_flag_if_avail("-funroll-loops")
+    add_flag_if_avail("-ftree-vectorize")
+    add_flag_if_avail("-ftree-loop-optimize")
+    add_flag_if_avail("-ftree-loop-vectorize")
+    # add_flag_if_avail("-freciprocal-math")
+    # add_flag_if_avail("-fno-signed-zeros")
+    # add_flag_if_avail("-mfast-fp")
+else()
+    add_cxx_flag_if_avail("-ftemplate-backtrace-limit=0")
 endif()
 
-# ---------------------------------------------------------------------------- #
-# Intel floating-point model (implies -fprotect-parens)
-#
-add_c_flag_if_avail("-fp-model=precise")
-add_cxx_flag_if_avail("-fp-model=precise")
-
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # debug-safe optimizations
 #
 add_cxx_flag_if_avail("-faligned-new")
-add_cxx_flag_if_avail("-ftls-model=initial-exec")
+if(NOT TIMEMORY_USE_SANITIZER)
+    add_cxx_flag_if_avail("-ftls-model=${TIMEMORY_TLS_MODEL}")
+endif()
 
 if(TIMEMORY_BUILD_LTO)
     add_c_flag_if_avail("-flto")
     add_cxx_flag_if_avail("-flto")
 endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
+add_interface_library(timemory-vector)
+add_interface_library(timemory-arch)
+add_interface_library(timemory-avx512)
+target_link_libraries(timemory-avx512 INTERFACE timemory-arch)
 if(TIMEMORY_USE_ARCH)
-    if(CMAKE_C_COMPILER_IS_INTEL)
-        add_c_flag_if_avail("-xHOST")
-        if(TIMEMORY_USE_AVX512)
-            add_c_flag_if_avail("-axMIC-AVX512")
-        endif()
-    else()
-        add_c_flag_if_avail("-march=native")
-        add_c_flag_if_avail("-msse2")
-        add_c_flag_if_avail("-msse3")
-        add_c_flag_if_avail("-msse4")
-        add_c_flag_if_avail("-mavx")
-        add_c_flag_if_avail("-mavx2")
-        if(TIMEMORY_USE_AVX512)
-            add_c_flag_if_avail("-mavx512f")
-            add_c_flag_if_avail("-mavx512pf")
-            add_c_flag_if_avail("-mavx512er")
-            add_c_flag_if_avail("-mavx512cd")
-        endif()
-    endif()
+    target_link_libraries(timemory-compile-options INTERFACE timemory-arch)
+endif()
+# always provide vectorization width
+target_link_libraries(timemory-compile-options INTERFACE timemory-vector)
 
-    if(CMAKE_CXX_COMPILER_IS_INTEL)
-        add_cxx_flag_if_avail("-xHOST")
-        if(TIMEMORY_USE_AVX512)
-            add_cxx_flag_if_avail("-axMIC-AVX512")
+find_package(CpuArch)
+
+if(CpuArch_FOUND)
+
+    set(_VEC_SET OFF)
+    foreach(_ARCH ${CpuArch_FEATURES})
+
+        if(NOT _VEC_SET)
+            if("${_ARCH}" MATCHES ".*avx512.*" OR "${_ARCH}" MATCHES ".*AVX512.*")
+                target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=512)
+                set(_VEC_SET ON)
+            elseif("${_ARCH}" MATCHES ".*avx.*" OR "${_ARCH}" MATCHES ".*AVX.*")
+                target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=256)
+                set(_VEC_SET ON)
+            endif()
         endif()
-    else()
-        add_cxx_flag_if_avail("-march=native")
-        add_cxx_flag_if_avail("-msse2")
-        add_cxx_flag_if_avail("-msse3")
-        add_cxx_flag_if_avail("-msse4")
-        add_cxx_flag_if_avail("-mavx")
-        add_cxx_flag_if_avail("-mavx2")
-        if(TIMEMORY_USE_AVX512)
-            add_cxx_flag_if_avail("-mavx512f")
-            add_cxx_flag_if_avail("-mavx512pf")
-            add_cxx_flag_if_avail("-mavx512er")
-            add_cxx_flag_if_avail("-mavx512cd")
+
+        # intel compiler
+        if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
+            add_target_flag_if_avail(timemory-arch "-x${_ARCH}")
         endif()
+        # non-intel compilers
+        if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
+            add_target_flag_if_avail(timemory-arch "-m${_ARCH}")
+        endif()
+    endforeach()
+
+    if(NOT _VEC_SET)
+        target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=128)
     endif()
 endif()
 
-# ---------------------------------------------------------------------------- #
+if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)
+    add_target_flag_if_avail(timemory-avx512 "-xMIC-AVX512")
+endif()
+
+if(NOT CMAKE_C_COMPILER_IS_INTEL OR NOT CMAKE_CXX_COMPILER_IS_INTEL)
+    add_target_flag_if_avail(timemory-avx512 "-mavx512f" "-mavx512pf" "-mavx512er" "-mavx512cd")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
 # sanitizer
 #
 if(TIMEMORY_USE_SANITIZER)
-    add_c_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
-    add_cxx_flag_if_avail("-fsanitize=${SANITIZER_TYPE}")
+    set(SANITIZER_TYPES address memory thread leak)
 
-    if(c_fsanitize_${SANITIZER_TYPE} AND cxx_fsanitize_${SANITIZER_TYPE})
-        if("${SANITIZER_TYPE}" STREQUAL "address")
-            set(SANITIZER_LIBNAME asan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "memory")
-            set(SANITIZER_LIBNAME msan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "thread")
-            set(SANITIZER_LIBNAME tsan)
-        elseif("${SANITIZER_TYPE}" STREQUAL "leak")
-            set(SANITIZER_LIBNAME lsan)
-        endif()
-        find_library(SANITIZER_LIBRARY NAMES ${SANITIZER_LIBNAME})
-        if(SANITIZER_LIBRARY)
-            list(APPEND EXTERNAL_LIBRARIES ${SANITIZER_LIBRARY})
+    set(asan_key "address")
+    set(msan_key "memory")
+    set(tsan_key "thread")
+    set(lsan_key "leak")
+
+    set(address_lib asan)
+    set(memory_lib msan)
+    set(thread_lib tsan)
+    set(leak_lib lsan)
+
+    find_library(SANITIZER_asan_LIBRARY NAMES asan)
+    find_library(SANITIZER_msan_LIBRARY NAMES msan)
+    find_library(SANITIZER_tsan_LIBRARY NAMES tsan)
+    find_library(SANITIZER_lsan_LIBRARY NAMES lsan)
+
+    string(TOLOWER "${SANITIZER_TYPE}" SANITIZER_TYPE)
+    list(REMOVE_ITEM SANITIZER_TYPES ${SANITIZER_TYPE})
+    set(SANITIZER_TYPES ${SANITIZER_TYPE} ${SANITIZER_TYPES})
+
+    foreach(_TYPE ${SANITIZER_TYPES})
+        set(_LIB ${${_TYPE}_lib})
+        add_interface_library(timemory-${_TYPE}-sanitizer)
+        add_target_flag_if_avail(timemory-${_TYPE}-sanitizer "-fsanitize=${SANITIZER_TYPE}")
+        target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_LIB}_LIBRARY})
+    endforeach()
+
+    foreach(_TYPE ${SANITIZER_TYPES})
+        set(_LIB ${${_TYPE}_lib})
+        if(c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+                SANITIZER_${_LIB}_LIBRARY)
+            add_interface_library(timemory-sanitizer)
+            add_target_flag_if_avail(timemory-sanitizer "-fno-omit-frame-pointer")
+            target_compile_definitions(timemory-sanitizer INTERFACE TIMEMORY_USE_SANITIZER)
+            target_link_libraries(timemory-sanitizer INTERFACE timemory-${_TYPE}-sanitizer)
+            break()
         else()
-            message(STATUS "TIMEMORY_USE_SANITIZER disabled. Unable to find sanitizer library \"${SANITIZER_LIBNAME}\"")
-            unset(SANITIZER_TYPE CACHE)
-            set(TIMEMORY_USE_SANITIZER OFF)
+            message(STATUS "${_TYPE} sanitizer not found. library: ${SANITIZER_${_LIB}_LIBRARY}...")
         endif()
-        unset(SANITIZER_LIBNAME)
-    else()
+    endforeach()
+
+    if(NOT TARGET timemory-sanitizer)
+        message(WARNING "TIMEMORY_USE_SANITIZER not found. Tried: ${SANITIZER_TYPES}")
         unset(SANITIZER_TYPE CACHE)
         set(TIMEMORY_USE_SANITIZER OFF)
     endif()
+
 endif()
 
-# ---------------------------------------------------------------------------- #
-# code coverage
-#
-if(TIMEMORY_USE_COVERAGE AND CMAKE_CXX_COMPILER_IS_GNU)
-    add_c_flag_if_avail("-ftest-coverage")
-    if(c_ftest_coverage)
-        list(APPEND ${PROJECT_NAME}_C_FLAGS "-fprofile-arcs")
-    endif()
-    add_cxx_flag_if_avail("-ftest-coverage")
-    if(cxx_ftest_coverage)
-        list(APPEND ${PROJECT_NAME}_CXX_FLAGS "-fprofile-arcs")
-        add(CMAKE_EXE_LINKER_FLAGS "-fprofile-arcs")
-        add_feature(CMAKE_EXE_LINKER_FLAGS "Linker flags")
-    endif()
-elseif(TIMEMORY_USE_COVERAGE)
-    message(STATUS "Coverage only available for GNU compilers...")
-    set(TIMEMORY_USE_COVERAGE OFF)
-endif()
 
-# ---------------------------------------------------------------------------- #
+#----------------------------------------------------------------------------------------#
+# -------------------------------------------------------------------------------------- #
 # user customization
 #
-set(_CFLAGS ${CFLAGS} $ENV{CFLAGS})
-set(_CXXFLAGS ${CXXFLAGS} $ENV{CXXFLAGS})
-string(REPLACE " " ";" _CFLAGS "${_CFLAGS}")
-string(REPLACE " " ";" _CXXFLAGS "${_CXXFLAGS}")
-list(APPEND ${PROJECT_NAME}_C_FLAGS ${_CFLAGS})
-list(APPEND ${PROJECT_NAME}_CXX_FLAGS ${_CXXFLAGS})
+add_user_flags(timemory-compile-options "C")
+add_user_flags(timemory-compile-options "CXX")

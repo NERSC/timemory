@@ -2,7 +2,7 @@
 #       CMake settings
 ##########################################################################################
 
-cmake_minimum_required(VERSION 3.13 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 if("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_BINARY_DIR}")
     set(MSG "")
@@ -14,6 +14,11 @@ endif()
 
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
+# this gets annoying
+if(TIMEMORY_BUILD_GTEST)
+    set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
+        "Suppress Warnings that are meant for the author of the CMakeLists.txt files")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   versioning
@@ -22,8 +27,20 @@ cmake_policy(SET CMP0042 NEW)
 file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" VERSION_STRING LIMIT_COUNT 1)
 string(REGEX REPLACE "(\n|\r)" "" VERSION_STRING "${VERSION_STRING}")
 string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${VERSION_STRING}")
-set(TIMEMORY_VERSION "${VERSION_STRING}" CACHE STRING "Version of TiMemory project" FORCE)
+set(TIMEMORY_VERSION "${VERSION_STRING}")
 message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
+
+#----------------------------------------------------------------------------------------#
+#   setup.py
+#----------------------------------------------------------------------------------------#
+
+if(SKBUILD)
+    set(CMAKE_INSTALL_LIBDIR lib)
+endif()
+
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
+    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   project
@@ -34,27 +51,35 @@ project(TiMemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)
 if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-  set(${PROJECT_NAME}_MASTER_PROJECT OFF)
+    set(${PROJECT_NAME}_MASTER_PROJECT OFF)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
     ${CMAKE_CURRENT_LIST_DIR}/source/python/pybind11/tools
     ${CMAKE_MODULE_PATH})
+set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
+set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
+set(CMAKE_INSTALL_MESSAGE LAZY)
 
 foreach(_TYPE MAJOR MINOR PATCH)
-    set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}} CACHE STRING "${PROJECT_NAME} ${_TYPE} version" FORCE)
-    mark_as_advanced(TIMEMORY_VERSION_${_TYPE})
+    set(TIMEMORY_VERSION_${_TYPE} ${PROJECT_VERSION_${_TYPE}})
 endforeach(_TYPE MAJOR MINOR PATCH)
+set(LIBNAME timemory)
 
-set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules ${CMAKE_MODULE_PATH})
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
-mark_as_advanced(TIMEMORY_VERSION)
-
-if(SKBUILD)
-    set(TIMEMORY_SETUP_PY OFF CACHE BOOL "Built with scikit-build" FORCE)
-endif()
-
-set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
+#----------------------------------------------------------------------------------------#
+# set the output directory (critical for Windows and Xcode)
+#
+foreach(_TYPE ARCHIVE LIBRARY RUNTIME)
+    if(WIN32)
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/runtime)
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/library)
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/outputs/archive)
+    else()
+        set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+        set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+    endif()
+endforeach()
 
 #----------------------------------------------------------------------------------------#
 #   configuration
@@ -68,18 +93,17 @@ include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
 include(ClangFormat)
+include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
 #   TiMemory source
 #----------------------------------------------------------------------------------------#
 
+install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
+    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+    EXPORT ${PROJECT_NAME}LibraryDepends)
+
 add_subdirectory(source)
-
-#----------------------------------------------------------------------------------------#
-#   Package setup
-#----------------------------------------------------------------------------------------#
-
-include(PackageConfigure)
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing
@@ -87,4 +111,20 @@ include(PackageConfigure)
 
 set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
 add_subdirectory(examples)
-enable_testing()
+
+#----------------------------------------------------------------------------------------#
+#   Documentation
+#----------------------------------------------------------------------------------------#
+
+if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+
+    include(Documentation)
+
+    if(TIMEMORY_DOXYGEN_DOCS)
+        SET(CMAKE_INSTALL_MESSAGE NEVER)
+        Generate_Documentation(Doxyfile.${PROJECT_NAME})
+        SET(CMAKE_INSTALL_MESSAGE LAZY)
+    endif()
+
+    print_features()
+endif()

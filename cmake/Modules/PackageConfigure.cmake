@@ -1,9 +1,12 @@
+# include guard
+include_guard(DIRECTORY)
 
-################################################################################
+##########################################################################################
 #
 #        TiMemory Package installation
 #
-################################################################################
+##########################################################################################
+
 
 include(CMakePackageConfigHelpers)
 
@@ -13,8 +16,7 @@ set(LIB_INSTALL_DIR         ${CMAKE_INSTALL_LIBDIR})
 foreach(_LANG C CXX CUDA)
     foreach(_TYPE COMPILE LINK)
         set(PROJECT_${_LANG}_${_TYPE}_OPTIONS
-            ${${PROJECT_NAME}_${_LANG}_${_TYPE}_OPTIONS}
-            ${EXTERNAL_${_LANG}_${_TYPE}_OPTIONS})
+            ${${PROJECT_NAME}_${_LANG}_${_TYPE}_OPTIONS})
     endforeach()
 endforeach()
 
@@ -47,17 +49,9 @@ install(
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
     DESTINATION
-        ${TIMEMORY_INSTALL_CMAKEDIR}
-    COMPONENT
-        development)
+        ${TIMEMORY_INSTALL_CMAKEDIR})
 
-if(NOT TIMEMORY_SETUP_PY OR TIMEMORY_DEVELOPER_INSTALL)
-    install(FILES ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
-        DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
-        COMPONENT development)
-endif()
-
+# only if master project
 if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     # documentation
@@ -69,15 +63,8 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
     set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/source/cereal
         ${PROJECT_SOURCE_DIR}/source/python/pybind11)
 
-    include(Documentation)
-
-    if(TIMEMORY_DOXYGEN_DOCS)
-        SET(CMAKE_INSTALL_MESSAGE NEVER)
-        Generate_Documentation(Doxyfile.${PROJECT_NAME})
-        SET(CMAKE_INSTALL_MESSAGE LAZY)
-    endif()
-
-    print_features()
+    add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
+    add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
 
 endif()
 
@@ -86,4 +73,6 @@ if(TIMEMORY_USE_GPERF)
         configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gperf-${_TYPE}-profile.sh
             ${CMAKE_BINARY_DIR}/gperf-${_TYPE}-profile.sh COPYONLY)
     endforeach()
+    configure_file(${PROJECT_SOURCE_DIR}/cmake/Scripts/gprof2dot.py
+        ${CMAKE_BINARY_DIR}/gprof2dot.py COPYONLY)
 endif()

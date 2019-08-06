@@ -14,7 +14,7 @@ export CXX=$(which c++)
 export CUDACXX=$(which nvcc)
 
 ROOT_DIR=${PWD}
-: ${TIMEMORY_BRANCH:="master"}
+: ${TIMEMORY_BRANCH:="CUPTI"}
 
 run-verbose git clone -b ${TIMEMORY_BRANCH} https://github.com/jrmadsen/TiMemory.git timemory-source
 run-verbose cd timemory-source
@@ -24,8 +24,8 @@ run-verbose mkdir timemory-build
 run-verbose cd timemory-build
 
 BINARY_DIR=${PWD}
-run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_LTO=ON ${SOURCE_DIR} -G Ninja
-run-verbose ninja
+run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTIMEMORY_BUILD_GTEST=ON -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
+run-verbose ninja -j2
 run-verbose ninja install
 
 cd ${ROOT_DIR}

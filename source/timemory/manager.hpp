@@ -35,14 +35,14 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/apply.hpp"
-#include "timemory/graph.hpp"
-#include "timemory/macros.hpp"
-#include "timemory/mpi.hpp"
-#include "timemory/serializer.hpp"
-#include "timemory/singleton.hpp"
-#include "timemory/storage.hpp"
-#include "timemory/utility.hpp"
+#include "timemory/backends/papi.hpp"
+#include "timemory/mpl/apply.hpp"
+#include "timemory/utility/graph.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
+#include "timemory/utility/singleton.hpp"
+#include "timemory/utility/storage.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -61,6 +61,19 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
+namespace cupti
+{
+inline void
+initialize()
+{
+#if defined(TIMEMORY_USE_CUPTI)
+    unsigned int init_flags = 0;
+    cuInit(init_flags);
+#endif
+}
+}  // namespace cupti
+
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 class component_tuple;
@@ -72,7 +85,7 @@ struct manager_deleter;
 
 //--------------------------------------------------------------------------------------//
 
-tim_api class manager
+class manager
 {
 public:
     using this_type     = manager;
@@ -183,10 +196,8 @@ public:
 
         iterator       begin() { return m_graph.begin(); }
         iterator       end() { return m_graph.end(); }
-        const_iterator begin() const { return m_graph.cbegin(); }
-        const_iterator end() const { return m_graph.cend(); }
-        const_iterator cbegin() const { return m_graph.cbegin(); }
-        const_iterator cend() const { return m_graph.cend(); }
+        const_iterator begin() const { return m_graph.begin(); }
+        const_iterator end() const { return m_graph.end(); }
 
         inline void reset()
         {
@@ -238,17 +249,23 @@ public:
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
-    static void exit_print()
+    static void exit_hook()
     {
         auto*   ptr   = noninit_master_instance();
-        void*   vptr  = static_cast<void*>(ptr);
-        int32_t count = -1;
+        int32_t count = 0;
         if(ptr)
         {
             ptr->print(false, false);
             count = ptr->instance_count();
+            if(get_env("TIMEMORY_BANNER", true))
+                printf(
+                    "\n\n#---------------------- tim::manager destroyed [%i] "
+                    "----------------------#\n",
+                    count);
+            delete ptr;
         }
-        printf("############## tim::~manager [%p, %i] ##############\n", vptr, count);
+        tim::papi::shutdown();
+        // tim::cupti::shutdown();
     }
 
     static void print(const tim::component_tuple<>&) {}
@@ -260,6 +277,53 @@ public:
     static void print()
     {
         print(ComponentTuple_t());
+    }
+
+private:
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _init_storage()
+    {
+        auto ret = storage<_Tp>::instance();
+        consume_parameters(ret);
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _init_storage()
+    {
+        _init_storage<_Tp>();
+        _init_storage<_Tail...>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _clear()
+    {
+        auto ret = storage<_Tp>::instance();
+        ret->data().clear();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _clear()
+    {
+        auto ret = storage<_Tp>::instance();
+        ret->data().clear();
+        _clear<_Tail...>();
+    }
+
+public:
+    template <typename... _Types>
+    void initialize_storage()
+    {
+        _init_storage<_Types...>();
+    }
+
+    template <template <typename...> class Obj, typename... _Types>
+    void clear(const Obj<_Types...>&)
+    {
+        _clear<_Types...>();
     }
 
 public:
@@ -313,6 +377,14 @@ private:
     graph_data m_data;
     /// list of node ids
     std::unordered_map<int64_t, iterator> m_node_ids;
+
+private:
+    /// num-threads based on number of managers created
+    static std::atomic<int32_t>& f_thread_counter()
+    {
+        static std::atomic<int32_t> _instance;
+        return _instance;
+    }
 };
 
 //======================================================================================//
@@ -335,51 +407,41 @@ struct manager_deleter
 
         if(ptr && master && ptr != master)
         {
-            DEBUG_PRINT_HERE("manager_deleter");
         }
         else
         {
-            DEBUG_PRINT_HERE("manager_deleter");
             if(ptr)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 // ptr->print();
             }
             else if(master)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 // master->print();
             }
         }
 
-        DEBUG_PRINT_HERE("manager_deleter");
         if(this_tid == master_tid)
         {
-            DEBUG_PRINT_HERE("manager_deleter");
             // delete ptr;
         }
         else
         {
             if(master && ptr != master)
             {
-                DEBUG_PRINT_HERE("manager_deleter");
                 singleton_t::remove(ptr);
             }
-            DEBUG_PRINT_HERE("manager_deleter");
             delete ptr;
         }
     }
 };
 
 //--------------------------------------------------------------------------------------//
-
 inline manager::singleton_t&
 manager_singleton()
 {
     static manager::singleton_t _instance = manager::singleton_t::instance();
     return _instance;
 }
-
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details
@@ -390,4 +452,4 @@ manager_singleton()
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/impl/manager.icpp"
+#include "timemory/details/manager.hpp"
