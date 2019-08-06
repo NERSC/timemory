@@ -25,7 +25,7 @@ run-verbose cd timemory-build
 
 BINARY_DIR=${PWD}
 run-verbose cmake -DCMAKE_INSTALL_PREFIX=/usr/local -DCMAKE_BUILD_TYPE=RelWithDebInfo -DTIMEMORY_BUILD_GTEST=ON -DPYTHON_EXECUTABLE=$(which python) -DTIMEMORY_BUILD_C=ON -DTIMEMORY_BUILD_PYTHON=ON ${SOURCE_DIR} -G Ninja
-run-verbose ninja
+run-verbose ninja -j2
 run-verbose ninja install
 
 cd ${ROOT_DIR}
