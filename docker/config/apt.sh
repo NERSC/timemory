@@ -56,7 +56,18 @@ fi
 
 DISPLAY_PACKAGES="xserver-xorg freeglut3-dev libx11-dev libx11-xcb-dev libxpm-dev libxft-dev libxmu-dev libxv-dev libxrandr-dev \
     libglew-dev libftgl-dev libxkbcommon-x11-dev libxrender-dev libxxf86vm-dev libxinerama-dev qt5-default \
-    qtcreator emacs-nox vim-nox"
+    emacs-nox vim-nox"
+CUDA_VER=$(dpkg --get-selections | grep cuda-cudart- | awk '{print $1}' | head -n 1 | sed 's/cuda-cudart-//g')
+
+#-----------------------------------------------------------------------------#
+#
+#   CUDA nsight tools
+#
+#-----------------------------------------------------------------------------#
+
+if [ -n "${CUDA_VER}" ]; then
+    run-verbose apt-get install -y cuda-nsight-{compute,systems}-${CUDA_VER}
+fi
 
 #-----------------------------------------------------------------------------#
 #

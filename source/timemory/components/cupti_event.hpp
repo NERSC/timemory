@@ -174,9 +174,9 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
         {
             switch(itr.index)
             {
-                case 0: values.push_back(std::get<0>(obj.data)); break;
-                case 1: values.push_back(std::get<1>(obj.data)); break;
-                case 2: values.push_back(std::get<2>(obj.data)); break;
+                case 0: values.push_back(std::get<0>(itr.data)); break;
+                case 1: values.push_back(std::get<1>(itr.data)); break;
+                case 2: values.push_back(std::get<2>(itr.data)); break;
             }
         }
         return values;

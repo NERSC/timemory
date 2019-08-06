@@ -394,7 +394,10 @@ public:
     }
 
     void print();
-    bool empty() const { return (m_data.graph().size() == 0); }
+
+    // there is always a head node that should not be counted
+    bool          empty() const { return (m_data.graph().size() <= 1); }
+    inline size_t size() const { return m_data.graph().size() - 1; }
 
     const graph_data& data() const { return m_data; }
     const graph_t&    graph() const { return m_data.graph(); }
@@ -403,8 +406,6 @@ public:
     graph_data& data() { return m_data; }
     iterator&   current() { return m_data.current(); }
     graph_t&    graph() { return m_data.graph(); }
-
-    inline size_t size() const { return m_data.graph().size(); }
 
 public:
     //----------------------------------------------------------------------------------//

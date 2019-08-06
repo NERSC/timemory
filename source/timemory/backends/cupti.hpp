@@ -127,7 +127,7 @@ static void CUPTIAPI
 //--------------------------------------------------------------------------------------//
 
 static void CUPTIAPI
-            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t size,
+            buffer_completed(CUcontext /* ctx */, uint32_t streamId, uint8_t* buffer, size_t /* size */,
                              size_t validSize)
 {
     CUpti_Activity* record = nullptr;
@@ -427,9 +427,9 @@ static void CUPTIAPI
         k_data.m_name        = corr_data;
         auto& pass_data      = k_data.m_pass_data;
 
-        for(int j = 0; j < pass_data.size(); ++j)
+        for(size_t j = 0; j < pass_data.size(); ++j)
         {
-            for(int i = 0; i < pass_data[j].event_groups->numEventGroups; i++)
+            for(uint32_t i = 0; i < pass_data[j].event_groups->numEventGroups; i++)
             {
                 _LOG("  Enabling group %d", i);
                 uint32_t all = 1;
@@ -446,12 +446,12 @@ static void CUPTIAPI
     else if(cbInfo->callbackSite == CUPTI_API_EXIT)
     {
         auto& current_kernel = (*kernel_data)[corr_data];
-        for(int current_pass = 0; current_pass < current_kernel.m_pass_data.size();
+        for(size_t current_pass = 0; current_pass < current_kernel.m_pass_data.size();
             ++current_pass)
         {
             auto& pass_data = current_kernel.m_pass_data[current_pass];
 
-            for(int i = 0; i < pass_data.event_groups->numEventGroups; i++)
+            for(uint32_t i = 0; i < pass_data.event_groups->numEventGroups; i++)
             {
                 CUpti_EventGroup    group = pass_data.event_groups->eventGroups[i];
                 CUpti_EventDomainID group_domain;
@@ -712,7 +712,7 @@ struct profiler
             _LOG("[metric] Looking at set (pass) %d", i);
             uint32_t num_events      = 0;
             size_t   num_events_size = sizeof(num_events);
-            for(int j = 0; j < m_metric_pass_data->sets[i].numEventGroups; ++j)
+            for(uint32_t j = 0; j < m_metric_pass_data->sets[i].numEventGroups; ++j)
             {
                 CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_metric_pass_data->sets[i].eventGroups[j],
@@ -730,7 +730,7 @@ struct profiler
             _LOG("[event] Looking at set (pass) %d", i);
             uint32_t num_events      = 0;
             size_t   num_events_size = sizeof(num_events);
-            for(int j = 0; j < m_event_pass_data->sets[i].numEventGroups; ++j)
+            for(uint32_t j = 0; j < m_event_pass_data->sets[i].numEventGroups; ++j)
             {
                 CUPTI_CALL(cuptiEventGroupGetAttribute(
                     m_event_pass_data->sets[i].eventGroups[j],
@@ -744,7 +744,9 @@ struct profiler
 
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
+#if defined(__NVCC__)
         impl::warmup<<<1, 1>>>();
+#endif
     }
 
     ~profiler()
