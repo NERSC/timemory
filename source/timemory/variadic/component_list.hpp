@@ -412,6 +412,10 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        uint64_t count = 0;
+        apply<void>::access<op_count_t>(obj.m_data, std::ref(count));
+        if(count < 1)
+            return os;
         {
             // stop, if not already stopped
             using apply_types = std::tuple<operation::pointer_operator<
@@ -425,11 +429,15 @@ public:
             apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
                                                           false);
         }
-        obj.update_identifier();
-        ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        if(obj.laps() > 0)
-            os << " [laps: " << obj.m_laps << "]";
+        if(ss_data.str().length() > 0)
+        {
+            obj.update_identifier();
+            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                      << " : ";
+            os << ss_prefix.str() << ss_data.str();
+            if(obj.laps() > 0)
+                os << " [laps: " << obj.m_laps << "]";
+        }
         return os;
     }
 
