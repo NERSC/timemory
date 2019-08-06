@@ -1,16 +1,28 @@
 # Welcome to the TiMemory Documentation!
 
-C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities
+## Timing + Memory + Hardware Counter Utilities for C / C++ / CUDA / Python
 
-[![Build Status](https://travis-ci.org/jrmadsen/TiMemory.svg?branch=master)](https://travis-ci.org/jrmadsen/TiMemory)
-[![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory)
-[![codecov](https://codecov.io/gh/jrmadsen/TiMemory/branch/master/graph/badge.svg)](https://codecov.io/gh/jrmadsen/TiMemory)
+[![Build Status](https://travis-ci.org/NERSC/timemory.svg?branch=master)](https://travis-ci.org/NERSC/timemory)
+[![Build status](https://ci.appveyor.com/api/projects/status/8xk72ootwsefi8c1/branch/master?svg=true)](https://ci.appveyor.com/project/jrmadsen/timemory/branch/master)
+[![codecov](https://codecov.io/gh/NERSC/timemory/branch/master/graph/badge.svg)](https://codecov.io/gh/NERSC/timemory)
+[![Conda Recipe](https://img.shields.io/badge/recipe-timemory-green.svg)](https://anaconda.org/jrmadsen/timemory)
+[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/version.svg)](https://anaconda.org/jrmadsen/timemory)
+[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/platforms.svg)](https://anaconda.org/jrmadsen/timemory)
+[![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/downloads.svg)](https://anaconda.org/jrmadsen/timemory)
 
-[TiMemory on GitHub (Source code)](https://github.com/jrmadsen/TiMemory)
+[TiMemory on GitHub (Source code)](https://github.com/NERSC/timemory)
 
-[TiMemory General Documentation](https://timemory.readthedocs.io)
+[TiMemory General Documentation](https://timemory.readthedocs.io/en/latest/)
+
+[TiMemory Source Code Documentation (Doxygen)](https://timemory.readthedocs.io/en/latest/doxygen-docs/)
 
 [TiMemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
+
+|                |                                                   |
+| -------------- | ------------------------------------------------- |
+| GitHub         | `git clone https://github.com/NERSC/timemory.git` |
+| PyPi           | `pip install timemory`                            |
+| Anaconda Cloud | `conda install -c jrmadsen timemory`              |
 
 ## Table of contents
 
