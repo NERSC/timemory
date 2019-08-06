@@ -448,7 +448,11 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : m_data.graph())
+        {
+            if(itr.depth() < 0)
+                continue;
             _list.push_back(itr);
+        }
         return _list;
     };
 
