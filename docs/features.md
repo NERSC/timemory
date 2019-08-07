@@ -59,22 +59,28 @@ The results from TiMemory can be serialized to JSON and the JSON output can be u
 via the standalone `timemory-plotter` or `timemory.plotting` Python module. For roofline analysis,
 the `timemory.roofline` module can be used.
 
-### Command-line Tools
+## Command-line Tools
 
+The command-line tools `timem` and `pytimem` work like the `time` executable but with more information.
 UNIX systems provide `timem` executable that works like `time`. On all systems, `pytimem` is provided.
 
 ```shell
-$ ./timem sleep 5
+$ ./timem sleep 2
+
 > [sleep] total execution time :
-       5.005e+00 sec real
-       0.000e+00 sec sys
-       0.000e+00 sec cpu
-       0.000e+00 % cpu_util
-       6.719e-01 MB peak_rss
-             310 minor_page_flts
-               1 major_page_flts
-               2 vol_cxt_swch
-               5 prio_cxt_swch
+        2.119142 sec real
+        0.000000 sec user
+        0.000000 sec sys
+        0.000000 sec cpu
+        0.000000 % cpu_util
+        0.745472 MB peak_rss
+               0 io_in
+               0 io_out
+             389 minor_page_flts
+               0 major_page_flts
+               0 num_signals
+              46 vol_cxt_swch
+              10 prio_cxt_swch
 ```
 
 ## Signal Detection
@@ -100,3 +106,4 @@ A `get_max()` function is provided for convenience as some systems (e.g. KNL) do
 | L2          | `tim::ert::cache_size::get(2)`, `tim::ert::cache_size::get<2>()` |
 | L3          | `tim::ert::cache_size::get(3)`, `tim::ert::cache_size::get<3>()` |
 | max         | `tim::ert::cache_size::get_max()`                                |
+
