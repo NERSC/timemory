@@ -29,7 +29,7 @@
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple<real_clock>;
+using real_tuple_t = tim::auto_tuple<real_clock, caliper>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;

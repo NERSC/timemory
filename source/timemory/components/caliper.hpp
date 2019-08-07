@@ -58,6 +58,7 @@ struct caliper : public base<caliper>
 
     float get() const { return compute_display(); }
 
+    caliper() { prefix = std::to_string(m_count); }
     void start()
     {
 #if defined(TIMEMORY_USE_CALIPER)
@@ -75,6 +76,8 @@ struct caliper : public base<caliper>
 #if defined(TIMEMORY_USE_CALIPER)
     cali_id_t id = cali_create_attribute("timemory", CALI_TYPE_STRING, CALI_ATTR_NESTED);
 #endif
+
+    std::string prefix;
 };
 
 }  // namespace component
