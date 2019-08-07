@@ -27,12 +27,10 @@
 ## Table of contents
 
 1. [About](about) -- About the TiMemory project
-2. [Features](features) -- Features supported and provided
+2. [Features](features) -- Features supported and provided by TiMemory
 3. [Installation](installation) -- How to install TiMemory
-4. [Project Integration](integrating) -- How to integrate TiMemory into another project
-5. [Components](components) -- Available components in TiMemory
-6. [Getting Started](getting_started) -- How to get started using TiMemory
-7. [Custom Components](customization) -- Creating Custom Components
-8. [Customizing Roofline](roofline) -- Customizing the roofline components
-9. [Runtime Overhead](overhead) -- Runtime overhead of TiMemory
-10. [Doxygen Documentation](doxygen-docs) -- Doxygen source code documentation
+4. [Components](components) -- Available components in TiMemory and their wrappers
+5. [Getting Started](getting_started) -- How to get started using TiMemory
+    - Project integration, basic syntax, custom components, generating a roofline
+6.  [Runtime Overhead](overhead) -- Analysis of runtime overhead of TiMemory
+7.  [Doxygen Documentation](doxygen-docs) -- Doxygen source code documentation

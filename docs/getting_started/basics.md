@@ -53,28 +53,35 @@ environment variables.
 
 ## Environment Controls
 
-| Environment Variable       | Value Type                              | Description                                           | Default            |
-| -------------------------- | --------------------------------------- | ----------------------------------------------------- | ------------------ |
-| TIMEMORY_ENABLE            | boolean                                 | Enable TiMemory                                       | ON                 |
-| TIMEMORY_MAX_DEPTH         | integral                                | Max depth for function call stack to record           | UINT16_MAX         |
-| TIMEMORY_AUTO_OUTPUT       | boolean                                 | Automatic output at the end of application            | ON                 |
-| TIMEMORY_COUT_OUTPUT       | boolean                                 | Enable output to stdout                               | ON                 |
-| TIMEMORY_FILE_OUTPUT       | boolean                                 | Enable output to file (text and/or JSON)              | ON                 |
-| TIMEMORY_JSON_OUTPUT       | boolean                                 | Enable JSON output                                    | OFF                |
-| TIMEMORY_TEXT_OUTPUT       | boolean                                 | Enable/disable text output                            | ON                 |
-| TIMEMORY_OUTPUT_PATH       | string                                  | Output folder                                         | "timemory-output"  |
-| TIMEMORY_OUTPUT_PREFIX     | string                                  | Filename prefix for component outputs                 | ""                 |
-| TIMEMORY_WIDTH             | integral                                | Output width for all component values                 | component-specific |
-| TIMEMORY_TIMING_WIDTH      | integral                                | Output width of timing component values               | component-specific |
-| TIMEMORY_MEMORY_WIDTH      | integral                                | Output width of memory component values               | component-specific |
-| TIMEMORY_PRECISION         | integral                                | Precision for all output values                       | component-specific |
-| TIMEMORY_TIMING_PRECISION  | integral                                | Precision for timing component values                 | component-specific |
-| TIMEMORY_MEMORY_PRECISION  | integral                                | Precision for memory component values                 | component-specific |
-| TIMEMORY_SCIENTIFIC        | boolean                                 | Output all component values in scientific notation    | component-specific |
-| TIMEMORY_TIMING_SCIENTIFIC | boolean                                 | Output timing component values in scientific notation | component-specific |
-| TIMEMORY_MEMORY_SCIENTIFIC | boolean                                 | Output memory component values in scientific notation | component-specific |
-| TIMEMORY_TIMING_UNITS      | sec, dsec, csec, msec, usec, nsec, psec | Units for timing component values                     | sec (seconds)      |
-| TIMEMORY_MEMORY_UNITS      | B, KB, MB, TB, PB, KiB, MiB, TiB, PiB   | Units of memory component values                      | MB                 |
+| Environment Variable          | Value Type                                | Description                                                              | Default            |
+| ----------------------------- | ----------------------------------------- | ------------------------------------------------------------------------ | ------------------ |
+| TIMEMORY_ENABLE               | boolean                                   | Enable TiMemory                                                          | ON                 |
+| TIMEMORY_MAX_DEPTH            | integral                                  | Max depth for function call stack to record                              | UINT16_MAX         |
+| TIMEMORY_AUTO_OUTPUT          | boolean                                   | Automatic output at the end of application                               | ON                 |
+| TIMEMORY_COUT_OUTPUT          | boolean                                   | Enable output to stdout                                                  | ON                 |
+| TIMEMORY_FILE_OUTPUT          | boolean                                   | Enable output to file (text and/or JSON)                                 | ON                 |
+| TIMEMORY_JSON_OUTPUT          | boolean                                   | Enable JSON output                                                       | OFF                |
+| TIMEMORY_TEXT_OUTPUT          | boolean                                   | Enable/disable text output                                               | ON                 |
+| TIMEMORY_OUTPUT_PATH          | string                                    | Output folder                                                            | "timemory-output"  |
+| TIMEMORY_OUTPUT_PREFIX        | string                                    | Filename prefix for component outputs                                    | ""                 |
+| TIMEMORY_WIDTH                | integral                                  | Output width for all component values                                    | component-specific |
+| TIMEMORY_TIMING_WIDTH         | integral                                  | Output width of timing component values                                  | component-specific |
+| TIMEMORY_MEMORY_WIDTH         | integral                                  | Output width of memory component values                                  | component-specific |
+| TIMEMORY_PRECISION            | integral                                  | Precision for all output values                                          | component-specific |
+| TIMEMORY_TIMING_PRECISION     | integral                                  | Precision for timing component values                                    | component-specific |
+| TIMEMORY_MEMORY_PRECISION     | integral                                  | Precision for memory component values                                    | component-specific |
+| TIMEMORY_SCIENTIFIC           | boolean                                   | Output all component values in scientific notation                       | component-specific |
+| TIMEMORY_TIMING_SCIENTIFIC    | boolean                                   | Output timing component values in scientific notation                    | component-specific |
+| TIMEMORY_MEMORY_SCIENTIFIC    | boolean                                   | Output memory component values in scientific notation                    | component-specific |
+| TIMEMORY_TIMING_UNITS         | sec, dsec, csec, msec, usec, nsec, psec   | Units for timing component values                                        | sec (seconds)      |
+| TIMEMORY_MEMORY_UNITS         | B, KB, MB, TB, PB, KiB, MiB, TiB, PiB     | Units of memory component values                                         | MB                 |
+| TIMEMORY_ROOFLINE_MODE        | ai, op                                    | Mode for roofline calculation if can't be completed in one process       |
+| TIMEMORY_ROOFLINE_NUM_THREADS | integral                                  | Number of threads to execute when calculating the "roof" of the roofline |
+| TIMEMORY_COMPONENTS           | See [component types](docs:components.md) | Controls the types enabled/disabled by `libtimemory-preload`             |
+| TIMEMORY_PAPI_MULTIPLEXING    | boolean                                   | Enable/disable multiplexing                                              |
+| TIMEMORY_VERBOSE              | integral                                  | Enable/disable extra messages during execution                           |
+| TIMEMORY_PAPI_EVENTS          | PAPI preset and/or native HW counters     | Enables these counters in a `papi_array`                                 |
+| TIMEM_USE_SHELL               | boolean                                   | Execute via the user's shell when commands are wrapped by `timem`        |
 
 ## Example
 
