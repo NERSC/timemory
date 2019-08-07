@@ -30,9 +30,9 @@
 using namespace tim::component;
 
 using real_tuple_t = tim::auto_tuple<real_clock>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
+using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss>;
+using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
 
 void
 some_func();
@@ -48,7 +48,7 @@ main(int argc, char** argv)
 {
     // runtime customization of auto_list_t initialization
     auto_list_t::get_initializer() = [](auto_list_t& al) {
-        al.initialize<real_clock, cpu_clock, cpu_util, peak_rss>();
+        al.initialize<real_clock, cpu_clock, cpu_util, peak_rss, caliper>();
         al.report_at_exit(true);
     };
 

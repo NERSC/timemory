@@ -114,6 +114,7 @@ public:
     //
     void set_prefix(const string_t& _prefix)
     {
+        label = _prefix;
         storage_type::instance()->set_prefix(_prefix);
     }
 
@@ -430,6 +431,7 @@ protected:
     value_type     accum        = value_type();
     int64_t        hashid       = 0;
     int64_t        laps         = 0;
+    std::string    label        = "";
     graph_iterator graph_itr;
 };
 

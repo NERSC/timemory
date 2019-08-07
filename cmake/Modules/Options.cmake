@@ -142,6 +142,8 @@ add_option(TIMEMORY_USE_CUDA
     "Enable CUDA option for GPU measurements" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CUPTI
     "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA} ${_FEATURE})
+add_option(TIMEMORY_USE_CALIPER
+    "Enable Caliper" OFF ${_FEATURE})
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

@@ -33,6 +33,7 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
+add_interface_library(timemory-caliper)
 
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
@@ -607,6 +608,22 @@ else()
     inform_empty_interface(timemory-gperftools "gperftools")
 endif()
 
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Caliper
+#
+#----------------------------------------------------------------------------------------#
+find_package(caliper QUIET)
+
+if(caliper_FOUND)
+    target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
+    target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
+    target_link_libraries(timemory-caliper INTERFACE caliper)
+else()
+    set(TIMEMORY_USE_CALIPER OFF)
+    inform_empty_interface(timemory-caliper "caliper")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #

@@ -32,6 +32,7 @@
 #pragma once
 
 // general components
+#include "timemory/components/caliper.hpp"
 #include "timemory/components/cuda_event.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
