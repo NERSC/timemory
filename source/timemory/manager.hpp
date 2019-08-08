@@ -249,25 +249,7 @@ public:
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
-    static void exit_hook()
-    {
-        auto*   ptr   = noninit_master_instance();
-        int32_t count = 0;
-        if(ptr)
-        {
-            ptr->print(false, false);
-            count = ptr->instance_count();
-            if(get_env("TIMEMORY_BANNER", true))
-                printf(
-                    "\n\n#---------------------- tim::manager destroyed [%i] "
-                    "----------------------#\n",
-                    count);
-            delete ptr;
-        }
-        tim::papi::shutdown();
-        // tim::cupti::shutdown();
-    }
-
+    static void exit_hook();
     static void print(const tim::component_tuple<>&) {}
 
     template <typename Head, typename... Tail>

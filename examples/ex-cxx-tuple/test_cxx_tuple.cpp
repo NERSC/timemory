@@ -369,7 +369,7 @@ test_3_auto_tuple()
     // run longer fibonacci calculations on two threads
     TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(worker_thread, full_set_t, "[worker_thread]");
     std::thread t(run_fibonacci, 43);
-    TIMEMORY_CALIPER_APPLY(worker_thread, pop);
+    TIMEMORY_CALIPER_APPLY(worker_thread, stop);
 
     // run shorter fibonacci calculation on main thread
     TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(master_thread, full_set_t, "[master_thread]");

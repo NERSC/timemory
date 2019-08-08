@@ -116,7 +116,7 @@ inline manager::manager()
 
     if(m_instance_count == 0)
     {
-        if(get_env("TIMEMORY_BANNER", true))
+        if(get_env("TIMEMORY_BANNER", settings::banner()))
             printf(
                 "#--------------------- tim::manager initialized [%i] "
                 "---------------------#\n\n",
@@ -142,6 +142,27 @@ inline manager::~manager()
     }
 
     --f_manager_instance_count();
+}
+
+//======================================================================================//
+
+inline void manager::exit_hook()
+{
+    auto*   ptr   = noninit_master_instance();
+    int32_t count = 0;
+    if(ptr)
+    {
+        ptr->print(false, false);
+        count = ptr->instance_count();
+        if(get_env("TIMEMORY_BANNER", settings::banner()))
+            printf(
+                "\n\n#---------------------- tim::manager destroyed [%i] "
+                "----------------------#\n",
+                count);
+        delete ptr;
+    }
+    tim::papi::shutdown();
+    // tim::cupti::shutdown();
 }
 
 //======================================================================================//

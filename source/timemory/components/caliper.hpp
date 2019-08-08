@@ -36,6 +36,8 @@ namespace component
 {
 struct caliper : public base<caliper, int64_t>
 {
+    // timemory component api
+
     using value_type = int64_t;
     using base_type  = base<caliper, value_type>;
 
@@ -52,17 +54,64 @@ struct caliper : public base<caliper, int64_t>
     float             compute_display() const { return 0.0f; }
     float             get() const { return compute_display(); }
 
-    caliper() {}
-    caliper(const std::string& _prefix)
-    : prefix(_prefix)
+    caliper(const std::string& _channel = get_channel(),
+            const int& _attributes = get_attributes(), const std::string& _prefix = "")
+    : channel(_channel)
+    , attributes(_attributes)
+    , id(cali::create_attribute(_channel, CALI_TYPE_STRING, _attributes))
+    , prefix(_prefix)
     {}
 
     void start() { cali::begin(id, prefix.c_str()); }
     void stop() { cali::end(id); }
 
-    cali::id_t  id     = cali::create_attribute("timemory", CALI_TYPE_STRING,
-                                           CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
+    //----------------------------------------------------------------------------------//
+    //
+    // Custom functions
+    //
+    //----------------------------------------------------------------------------------//
+    using attributes_t = int;
+    static std::string get_default_channel()
+    {
+        return "timemory";
+    }
+    static std::string& get_channel()
+    {
+        static std::string _instance = get_default_channel();
+        return _instance;
+    }
+    static attributes_t get_default_attributes()
+    {
+        return (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
+    }
+    static attributes_t& get_attributes()
+    {
+        static attributes_t _instance = get_default_attributes();
+        return _instance;
+    }
+    static void enable_process_scope()
+    {
+        get_attributes() = get_default_attributes();
+    }
+    static void enable_thread_scope()
+    {
+        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);
+    }
+    static void enable_task_scope()
+    {
+        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_TASK);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    // Member Variables
+    //
+    //----------------------------------------------------------------------------------//
+    std::string channel = get_channel();
+    int attributes = get_attributes();
+    cali::id_t  id     = cali::create_attribute(channel, CALI_TYPE_STRING, attributes);
     std::string prefix = "";
+
 };
 
 }  // namespace component
