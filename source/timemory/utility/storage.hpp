@@ -38,6 +38,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/graph.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -393,8 +394,6 @@ public:
         return get_noninit_singleton().master_instance();
     }
 
-    void print();
-
     // there is always a head node that should not be counted
     bool          empty() const { return (m_data.graph().size() <= 1); }
     inline size_t size() const { return m_data.graph().size() - 1; }
@@ -572,8 +571,21 @@ private:
 
 public:
     template <typename Archive>
-    void serialize(Archive&, const unsigned int);
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        typename tim::trait::array_serialization<ObjectType>::type type;
+        constexpr auto uses_internal = trait::internal_output_handling<ObjectType>::value;
+        if(uses_internal)
+            serialize<Archive>(type, ar, version);
+    }
 
+    void print()
+    {
+        typename trait::internal_output_handling<ObjectType>::type type;
+        internal_print(type);
+    }
+
+protected:
     // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
     void serialize(std::true_type, Archive&, const unsigned int);
@@ -581,6 +593,12 @@ public:
     // tim::trait::array_serialization<ObjectType>::type == FALSE
     template <typename Archive>
     void serialize(std::false_type, Archive&, const unsigned int);
+
+    // tim::trait::internal_output_handling<ObjectType>::type == TRUE
+    void internal_print(std::true_type);
+
+    // tim::trait::internal_output_handling<ObjectType>::type == FALSE
+    void internal_print(std::false_type);
 };
 
 //--------------------------------------------------------------------------------------//

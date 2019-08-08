@@ -48,7 +48,8 @@ main(int argc, char** argv)
 {
     // runtime customization of auto_list_t initialization
     auto_list_t::get_initializer() = [](auto_list_t& al) {
-        al.initialize<real_clock, cpu_clock, cpu_util, peak_rss, caliper>();
+        const std::string default_env = "real_clock,cpu_clock,cpu_util,caliper";
+        tim::env::initialize(al, "TIMEMORY_COMPONENTS", default_env);
         al.report_at_exit(true);
     };
 

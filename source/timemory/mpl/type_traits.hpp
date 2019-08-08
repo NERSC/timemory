@@ -63,6 +63,14 @@ struct is_available : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies that a component uses the timemory output handling
+///
+template <typename _Tp>
+struct internal_output_handling : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 /// trait that designates whether there is a priority ordering for variadic list
 /// e.g. -1 for type A would mean it should come before type B with 0 and
 /// type C with 1 should come after A and B
@@ -230,6 +238,23 @@ struct is_available<component::cupti_event> : std::false_type
 };
 
 #endif  // TIMEMORY_USE_CUPTI
+
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_CALIPER
+//
+#if !defined(TIMEMORY_USE_CALIPER)
+
+template <>
+struct is_available<component::caliper> : std::false_type
+{
+};
+
+#endif  // TIMEMORY_USE_CALIPER
+
+template <>
+struct internal_output_handling<component::caliper> : std::false_type
+{
+};
 
 //--------------------------------------------------------------------------------------//
 }  // component

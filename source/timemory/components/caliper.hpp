@@ -24,28 +24,24 @@
 
 #pragma once
 
+#include "timemory/backends/caliper.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/storage.hpp"
 
-#if defined(TIMEMORY_USE_CALIPER)
-#    include <caliper/cali.h>
-#endif
-
 namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper>
+struct caliper : public base<caliper, int64_t, policy::global_init>
 {
     using value_type = int64_t;
-    using base_type  = base<caliper, value_type>;
+    using base_type  = base<caliper, value_type, policy::global_init>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+    static const short                   precision    = 0;
+    static const short                   width        = 0;
+    static const std::ios_base::fmtflags format_flags = {};
 
     static int64_t     unit() { return 1; }
     static std::string label() { return ""; }
@@ -53,31 +49,23 @@ struct caliper : public base<caliper>
     static std::string display_unit() { return ""; }
 
     static value_type record() { return 0; }
+    float             compute_display() const { return 0.0f; }
+    float             get() const { return compute_display(); }
 
-    float compute_display() const { return 0.0f; }
+    static void invoke_global_init() { cali::init(); }
 
-    float get() const { return compute_display(); }
+    caliper() {}
+    caliper(const std::string& _prefix)
+    : prefix(_prefix)
+    {}
 
-    caliper() { prefix = std::to_string(m_count); }
-    void start()
-    {
-#if defined(TIMEMORY_USE_CALIPER)
-        cali_begin_string(id, prefix.c_str());
-#endif
-    }
+    void start() { cali::begin(id, prefix.c_str()); }
 
-    void stop()
-    {
-#if defined(TIMEMORY_USE_CALIPER)
-        cali_end(id);
-#endif
-    }
+    void stop() { cali::end(id); }
 
-#if defined(TIMEMORY_USE_CALIPER)
-    cali_id_t id = cali_create_attribute("timemory", CALI_TYPE_STRING, CALI_ATTR_NESTED);
-#endif
-
-    std::string prefix;
+    cali::id_t id =
+        cali::create_attribute("timemory", CALI_TYPE_STRING, CALI_ATTR_NESTED);
+    std::string prefix = "";
 };
 
 }  // namespace component

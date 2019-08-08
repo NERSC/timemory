@@ -144,7 +144,8 @@ enum TIMEMORY_COMPONENT
     CUDA_EVENT,
     PAPI_ARRAY,
     CPU_ROOFLINE_SP_FLOPS,  // single-precision cpu_roofline
-    CPU_ROOFLINE_DP_FLOPS   // double-precision cpu_roofline
+    CPU_ROOFLINE_DP_FLOPS,  // double-precision cpu_roofline
+    CALIPER
 };
 
 //======================================================================================//

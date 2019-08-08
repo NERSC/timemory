@@ -492,6 +492,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
+        compute_identifier_extra<data_type>(key, lang);
     }
 
     void update_identifier() const
@@ -522,6 +523,23 @@ protected:
             } while(propose_width > current_width);
         }
         return _instance.load();
+    }
+
+    template <
+        typename _Tuple = data_type,
+        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
+    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    {
+        constexpr auto idx           = index_of<component::caliper, _Tuple>::value;
+        std::get<idx>(m_data).prefix = key;
+        consume_parameters(lang);
+    }
+
+    template <typename _Tuple       = data_type,
+              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
+                               int> = 0>
+    void compute_identifier_extra(const string_t&, const language_t&)
+    {
     }
 
 private:

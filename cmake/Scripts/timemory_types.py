@@ -34,6 +34,7 @@ components = [
     "papi_array_t",
     "cpu_roofline_sp_flops",
     "cpu_roofline_dp_flops",
+    "caliper",
 ]
 
 #
@@ -57,6 +58,7 @@ mangled_strings = {
     "papi_array_t": ["papi_array", "papi"],
     "cpu_roofline_sp_flops": ["cpu_roofline_sp", "cpu_roofline_single"],
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
+    "caliper": ["cali"]
 }
 
 
