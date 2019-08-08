@@ -102,6 +102,7 @@ inline manager::manager()
 
     if(_once++ == 0)
     {
+        tim::cali::init();
         tim::papi::init();
         tim::cupti::initialize();
         tim::settings::parse();

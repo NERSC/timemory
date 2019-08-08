@@ -34,17 +34,17 @@ namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, int64_t, policy::global_init>
+struct caliper : public base<caliper, int64_t>
 {
     using value_type = int64_t;
-    using base_type  = base<caliper, value_type, policy::global_init>;
+    using base_type  = base<caliper, value_type>;
 
     static const short                   precision    = 0;
     static const short                   width        = 0;
     static const std::ios_base::fmtflags format_flags = {};
 
     static int64_t     unit() { return 1; }
-    static std::string label() { return ""; }
+    static std::string label() { return "caliper"; }
     static std::string descript() { return "caliper"; }
     static std::string display_unit() { return ""; }
 
@@ -52,15 +52,12 @@ struct caliper : public base<caliper, int64_t, policy::global_init>
     float             compute_display() const { return 0.0f; }
     float             get() const { return compute_display(); }
 
-    static void invoke_global_init() { cali::init(); }
-
     caliper() {}
     caliper(const std::string& _prefix)
     : prefix(_prefix)
     {}
 
     void start() { cali::begin(id, prefix.c_str()); }
-
     void stop() { cali::end(id); }
 
     cali::id_t id =
