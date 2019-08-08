@@ -470,7 +470,8 @@ namespace heap
 inline int
 profiler_start(const std::string& name)
 {
-    return HeapProfilerStart(name.c_str());
+    HeapProfilerStart(name.c_str());
+    return 0;
 }
 //--------------------------------------------------------------------------------------//
 inline void
