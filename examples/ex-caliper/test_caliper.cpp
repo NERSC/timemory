@@ -161,9 +161,7 @@ test_caliper(intmax_t nfib, const std::string& scope_tag)
     TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(master_thread, auto_tuple_t, "[master-thread-",
                                       scope_tag, "-scope]");
     run_fibonacci(nfib - 1, "master");
-    auto m = TIMEMORY_CALIPER_REFERENCE(master_thread);
-    m.stop();
-    // TIMEMORY_CALIPER_APPLY(master_thread, stop);
+    TIMEMORY_CALIPER_APPLY(master_thread, stop);
 
     // wait to finish
     t.join();
