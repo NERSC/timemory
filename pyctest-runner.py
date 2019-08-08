@@ -200,6 +200,8 @@ def run_pyctest():
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
+        components = "profiler" if args.profile == "cpu" else "tcmalloc"
+        build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
         if pyctest.BUILD_TYPE != "RelWithDebInfo":
             warnings.warn(
                 "Forcing build type to 'RelWithDebInfo' when gperf is enabled")

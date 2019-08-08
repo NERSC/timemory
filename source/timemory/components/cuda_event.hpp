@@ -115,8 +115,6 @@ struct cuda_event : public base<cuda_event, float>
         set_stopped();
     }
 
-    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
-
     void sync()
     {
         if(m_is_valid && !m_is_synced)
@@ -155,6 +153,8 @@ struct cuda_event : public base<cuda_event, float>
         // return if not ready (OK) or something else
         return (ret == cuda::err_not_ready_v);
     }
+
+    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
 
 protected:
     static void callback(cuda::stream_t /*_stream*/, cuda::error_t /*_status*/,
