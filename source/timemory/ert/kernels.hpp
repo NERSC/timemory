@@ -140,7 +140,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func
         counter.destroy_buffer(buf);
     };
 
-    tim::mpi_barrier();  // i.e. OMP_MASTER
+    tim::mpi::barrier();  // i.e. OMP_MASTER
 
     if(counter.params.nthreads > 1)
     {
@@ -162,7 +162,7 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func
         _cpu_op(0, nullptr, nullptr);
     }
 
-    tim::mpi_barrier();  // i.e. OMP_MASTER
+    tim::mpi::barrier();  // i.e. OMP_MASTER
     // end the recursive loop
 }
 
@@ -238,7 +238,7 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
             if(ntrials < 1)
                 ntrials = 1;
 
-            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_MASTER { tim::mpi::barrier(); }
             OMP_BARRIER
             counter.start();
             gpu_ops_kernel<_Nops><<<counter.grid_size, counter.block_size, counter.shmem,
@@ -247,7 +247,7 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
                                                       &counter_data[1]);
             cuda::stream_sync(counter.stream);
             OMP_BARRIER
-            OMP_MASTER { tim::mpi_barrier(); }
+            OMP_MASTER { tim::mpi::barrier(); }
             counter.stop(n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
@@ -259,7 +259,7 @@ gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
         cuda::stream_sync(counter.stream);
         cuda::free(counter_data);
     }
-    tim::mpi_barrier();
+    tim::mpi::barrier();
 }
 
 //--------------------------------------------------------------------------------------//

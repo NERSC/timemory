@@ -219,7 +219,8 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
         }
         catch(std::exception& e)
         {
-#if defined(TIMEMORY_USE_GPERF)
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||           \
+    defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
             std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
                       << ". Continuing..." << std::endl;
 #else

@@ -215,7 +215,11 @@ struct stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit stop(base_type& obj) { obj.stop(); }
+    explicit stop(base_type& obj)
+    {
+        obj.stop();
+        obj.activate_noop();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -19,6 +19,7 @@ modernize-*,\
 -modernize-use-noexcept,\
 -modernize-use-transparent-functors,\
 -modernize-use-using,\
+-modernize-avoid-c-arrays,\
 performance-*,\
 -performance-inefficient-string-concatenation,\
 readability-*,\
@@ -30,6 +31,9 @@ readability-*,\
 -readability-redundant-declaration,\
 -readability-redundant-member-init,\
 -readability-simplify-boolean-expr,\
+-readability-magic-numbers,\
+-readability-uppercase-literal-suffix,\
+-google-readability-casting,\
 "
 HeaderFilterRegex: 'source/[^/]*\.(hh|cc|h|c|hpp|cpp|icpp)$'
 CheckOptions:

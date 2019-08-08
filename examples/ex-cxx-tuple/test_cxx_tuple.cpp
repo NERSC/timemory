@@ -44,33 +44,30 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, papi_tuple_t>;
-using __full_measurement_t =
-    tim::auto_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
-                    num_io_out, num_minor_page_faults, num_major_page_faults,
-                    num_msg_sent, num_msg_recv, num_signals, voluntary_context_switch,
-                    priority_context_switch, papi_tuple_t>;
+                                     peak_rss, current_rss, caliper, papi_tuple_t>;
+using full_measurement_t =
+    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+                         num_io_out, num_minor_page_faults, num_major_page_faults,
+                         num_msg_sent, num_msg_recv, num_signals,
+                         voluntary_context_switch, priority_context_switch, papi_tuple_t>;
 
-using __measurement_t =
-    tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
-                    thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, monotonic_clock, monotonic_raw_clock, papi_tuple_t>;
+using measurement_t =
+    tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock, cpu_util,
+                         thread_cpu_clock, thread_cpu_util, process_cpu_clock,
+                         process_cpu_util, monotonic_clock, monotonic_raw_clock,
+                         papi_tuple_t>;
 
-using __printed_t = tim::auto_tuple<real_clock, system_clock, user_clock, cpu_clock,
-                                    thread_cpu_clock, process_cpu_clock>;
-
-using full_measurement_t = typename __full_measurement_t::component_type;
-using measurement_t      = typename __measurement_t::component_type;
-using printed_t          = typename __printed_t::component_type;
+using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu_clock,
+                                       thread_cpu_clock, process_cpu_clock>;
 
 // measure multiple clock time + resident set sizes
 using full_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, current_rss, papi_tuple_t>;
+                    process_cpu_util, peak_rss, current_rss, caliper, papi_tuple_t>;
 
 // measure wall-clock, thread cpu-clock + process cpu-utilization
-using small_set_t =
-    tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util, papi_tuple_t>;
+using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
+                                    caliper, papi_tuple_t>;
 
 //--------------------------------------------------------------------------------------//
 // fibonacci calculation
@@ -153,9 +150,9 @@ main(int argc, char** argv)
 void
 print_info(const std::string& func)
 {
-    if(tim::mpi_rank() == 0)
+    if(tim::mpi::rank() == 0)
     {
-        std::cout << "\n[" << tim::mpi_rank() << "]\e[1;33m TESTING \e[0m["
+        std::cout << "\n[" << tim::mpi::rank() << "]\e[1;33m TESTING \e[0m["
                   << "\e[1;36m" << func << "\e[0m"
                   << "]...\n"
                   << std::endl;
@@ -168,7 +165,7 @@ void
 print_string(const std::string& str)
 {
     std::stringstream _ss;
-    _ss << "[" << tim::mpi_rank() << "] " << str << std::endl;
+    _ss << "[" << tim::mpi::rank() << "] " << str << std::endl;
     std::cout << _ss.str();
 }
 
@@ -358,25 +355,32 @@ test_3_auto_tuple()
     print_info(__FUNCTION__);
 
     std::atomic<int64_t> ret;
-    {
-        // accumulate metrics on full run
-        TIMEMORY_BASIC_AUTO_TUPLE(full_set_t, "[total]");
+    // accumulate metrics on full run
+    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(tot, full_set_t, "[total]");
 
-        std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
-        // run a fibonacci calculation and accumulate metric
-        auto run_fibonacci = [&](long n) {
-            TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
-            ret += time_fibonacci(n);
-        };
+    // run a fibonacci calculation and accumulate metric
+    auto run_fibonacci = [&](long n) {
+        // TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+        ret += time_fibonacci(n);
+    };
 
-        // run shorter fibonacci calculations on two threads
-        std::thread t(run_fibonacci, 43);
-        // run longer fibonacci calculation on main thread
-        run_fibonacci(42);
+    // run longer fibonacci calculations on two threads
+    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(worker_thread, full_set_t, "[worker_thread]");
+    std::thread t(run_fibonacci, 43);
+    TIMEMORY_CALIPER_APPLY(worker_thread, pop);
 
-        t.join();
-    }
+    // run shorter fibonacci calculation on main thread
+    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(master_thread, full_set_t, "[master_thread]");
+    run_fibonacci(42);
+    TIMEMORY_CALIPER_APPLY(master_thread, stop);
+
+    // wait to finish
+    t.join();
+
+    TIMEMORY_CALIPER_APPLY(tot, stop);
+
     std::cout << "\nfibonacci total: " << ret.load() << "\n" << std::endl;
 }
 

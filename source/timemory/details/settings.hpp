@@ -24,46 +24,15 @@
 
 #pragma once
 
-#include "timemory/backends/caliper.hpp"
-#include "timemory/components/base.hpp"
-#include "timemory/components/types.hpp"
-#include "timemory/units.hpp"
-#include "timemory/utility/storage.hpp"
+// #include "timemory/manager.hpp"
+#include "timemory/backends/mpi.hpp"
 
 namespace tim
 {
-namespace component
+namespace settings
 {
-struct caliper : public base<caliper, int64_t>
-{
-    using value_type = int64_t;
-    using base_type  = base<caliper, value_type>;
+//--------------------------------------------------------------------------------------//
 
-    static const short                   precision    = 0;
-    static const short                   width        = 0;
-    static const std::ios_base::fmtflags format_flags = {};
-
-    static int64_t     unit() { return 1; }
-    static std::string label() { return "caliper"; }
-    static std::string descript() { return "caliper"; }
-    static std::string display_unit() { return ""; }
-
-    static value_type record() { return 0; }
-    float             compute_display() const { return 0.0f; }
-    float             get() const { return compute_display(); }
-
-    caliper() {}
-    caliper(const std::string& _prefix)
-    : prefix(_prefix)
-    {}
-
-    void start() { cali::begin(id, prefix.c_str()); }
-    void stop() { cali::end(id); }
-
-    cali::id_t  id     = cali::create_attribute("timemory", CALI_TYPE_STRING,
-                                           CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
-    std::string prefix = "";
-};
-
-}  // namespace component
+//--------------------------------------------------------------------------------------//
+}  // namespace settings
 }  // namespace tim

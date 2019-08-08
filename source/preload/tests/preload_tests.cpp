@@ -102,7 +102,8 @@ random_entry(const std::vector<_Tp>& v)
 void
 allocate()
 {
-    std::vector<int64_t> v(nelements, 15);
+    static const int64_t v_init = 15;
+    std::vector<int64_t> v(nelements, v_init);
     auto                 ret  = fibonacci(0);
     long                 nfib = details::random_entry(v);
     for(int64_t i = 0; i < niter; ++i)
@@ -110,7 +111,8 @@ allocate()
         nfib = details::random_entry(v);
         ret += details::fibonacci(nfib);
     }
-    printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
+    printf("fibonacci(%li) * %li = %li\n", static_cast<long>(nfib),
+           static_cast<long>(niter), ret);
 }
 }  // namespace details
 

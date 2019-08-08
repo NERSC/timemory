@@ -32,6 +32,7 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/details/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>
@@ -81,6 +82,7 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(bool, cout_output, true)
 
 // general settings
 DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
+DEFINE_STATIC_ACCESSOR_FUNCTION(bool, banner, true)
 DEFINE_STATIC_ACCESSOR_FUNCTION(uint16_t, max_depth, std::numeric_limits<uint16_t>::max())
 
 // general formatting
@@ -462,9 +464,9 @@ inline tim::settings::string_t
 tim::settings::compose_output_filename(const std::string& _tag, std::string _ext)
 {
     auto _prefix      = get_output_prefix();
-    auto _rank_suffix = (!mpi_is_initialized())
+    auto _rank_suffix = (!mpi::is_initialized())
                             ? std::string("")
-                            : (std::string("_") + std::to_string(mpi_rank()));
+                            : (std::string("_") + std::to_string(mpi::rank()));
     if(_ext.find('.') != 0)
         _ext = std::string(".") + _ext;
     auto plast = _prefix.length() - 1;
@@ -491,9 +493,12 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
     while(exe_name.find("/") != std::string::npos)
         exe_name = exe_name.substr(exe_name.find_last_of('/') + 1);
 
-    std::string pyext = ".py";
-    if(exe_name.find(pyext) != std::string::npos)
-        exe_name.erase(exe_name.find(pyext), pyext.length() + 1);
+    static const std::vector<std::string> _exe_suffixes = { ".py", ".exe" };
+    for(const auto& ext : _exe_suffixes)
+    {
+        if(exe_name.find(ext) != std::string::npos)
+            exe_name.erase(exe_name.find(ext), ext.length() + 1);
+    }
 
     gperf::profiler_start(exe_name);
 

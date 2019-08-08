@@ -9,10 +9,9 @@
 
 unset(CMAKE_CXX_CLANG_TIDY)
 
-add_library(timemory-python-tls-model INTERFACE)
-if(NOT TIMEMORY_USE_SANITIZER)
-    add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-tls-model)
-endif()
+add_library(timemory-python-compile-options INTERFACE)
+add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
+add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
@@ -39,7 +38,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-analysis-tools
     timemory-cuda
     timemory-papi
-    timemory-python-tls-model
+    timemory-python-compile-options
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)

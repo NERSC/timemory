@@ -272,15 +272,15 @@ manager::clear()
 
     if(m_fos)
     {
-        for(int32_t i = 0; i < mpi_size(); ++i)
+        for(int32_t i = 0; i < mpi::size(); ++i)
         {
-            mpi_barrier(MPI_COMM_WORLD);
-            if(mpi_rank() != i)
+            mpi::barrier(mpi::comm_world_v);
+            if(mpi::rank() != i)
                 continue;
 
             if(m_fos->good() && m_fos->is_open())
             {
-                if(mpi_rank() + 1 >= mpi_size())
+                if(mpi::rank() + 1 >= mpi::size())
                 {
                     m_fos->flush();
                     m_fos->close();
@@ -308,27 +308,27 @@ manager::report(bool ign_cutoff, bool endline) const
 {
     const_cast<this_type*>(this)->merge();
 
-    int32_t _default = (mpi_is_initialized()) ? 1 : 0;
+    int32_t _default = (mpi::is_initialized()) ? 1 : 0;
     int32_t _verbose = tim::get_env<int32_t>("TIMEMORY_VERBOSE", _default);
 
-    if(mpi_rank() == 0 && _verbose > 0)
+    if(mpi::rank() == 0 && _verbose > 0)
     {
         std::stringstream _info;
-        if(mpi_is_initialized())
-            _info << "[" << mpi_rank() << "] ";
+        if(mpi::is_initialized())
+            _info << "[" << mpi::rank() << "] ";
         _info << "Reporting timing output..." << std::endl;
         std::cout << _info.str();
     }
 
-    int nitr = std::max(mpi_size(), 1);
+    int nitr = std::max(mpi::size(), 1);
     for(int32_t i = 0; i < nitr; ++i)
     {
         // MPI blocking
-        if(mpi_is_initialized())
+        if(mpi::is_initialized())
         {
-            mpi_barrier(MPI_COMM_WORLD);
+            mpi::barrier(mpi::comm_world_v);
             // only 1 at a time
-            if(i != mpi_rank())
+            if(i != mpi::rank())
                 continue;
         }
         report(m_report, ign_cutoff, endline);
@@ -349,13 +349,13 @@ manager::set_output_stream(const path_t& fname)
             delete(ofstream_t*) m_os;
 
         ofstream_t* _fos = new ofstream_t;
-        for(int32_t i = 0; i < mpi_size(); ++i)
+        for(int32_t i = 0; i < mpi::size(); ++i)
         {
-            mpi_barrier(MPI_COMM_WORLD);
-            if(mpi_rank() != i)
+            mpi::barrier(mpi::comm_world_v);
+            if(mpi::rank() != i)
                 continue;
 
-            if(mpi_rank() == 0)
+            if(mpi::rank() == 0)
                 _fos->open(_fname);
             else
                 _fos->open(_fname, std::ios_base::out | std::ios_base::app);
@@ -438,37 +438,41 @@ manager::get_communicator_group()
     // We want on-node communication only
     int32_t nthreads         = f_thread_counter().load();
     int32_t max_processes    = max_concurrency / nthreads;
-    int32_t mpi_node_default = mpi_size() / max_processes;
+    int32_t mpi_node_default = mpi::size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
     int32_t mpi_node_count =
         tim::get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
-    int32_t mpi_split_size = mpi_rank() / (mpi_size() / mpi_node_count);
+    int32_t mpi_split_size = mpi::rank() / (mpi::size() / mpi_node_count);
 
     // Split the communicator based on the number of nodes and use the
     // original rank for ordering
-    MPI_Comm local_mpi_comm;
-    MPI_Comm_split(MPI_COMM_WORLD, mpi_split_size, mpi_rank(), &local_mpi_comm);
+    mpi::comm_t local_mpi_comm;
+    mpi::comm_split(mpi::comm_world_v, mpi_split_size, mpi::rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
     if(tim::settings::verbose() > 1)
     {
-        int32_t local_mpi_rank = mpi_rank(local_mpi_comm);
-        int32_t local_mpi_size = mpi_size(local_mpi_comm);
-        int32_t local_mpi_file = mpi_rank() / local_mpi_size;
+        int32_t local_mpi_rank  = mpi::rank(local_mpi_comm);
+        int32_t local_mpi::size = mpi::size(local_mpi_comm);
+        int32_t local_mpi_file  = mpi::rank() / local_mpi::size;
 
         std::stringstream _info;
-        _info << "\t" << mpi_rank() << " Rank      : " << mpi_rank() << std::endl;
-        _info << "\t" << mpi_rank() << " Size      : " << mpi_size() << std::endl;
-        _info << "\t" << mpi_rank() << " Node      : " << mpi_node_count << std::endl;
-        _info << "\t" << mpi_rank() << " Local Size: " << local_mpi_size << std::endl;
-        _info << "\t" << mpi_rank() << " Local Rank: " << local_mpi_rank << std::endl;
-        _info << "\t" << mpi_rank() << " Local File: " << local_mpi_file << std::endl;
+        _info << "\t" << mpi::rank() << " Rank      : " << mpi::rank() << std::endl;
+        _info << "\t" << mpi::rank() << " Size      : " << mpi::size() << std::endl;
+        _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count << std::endl;
+        _info << "\t" << mpi::rank() << " Local Size: " << local_mpi::size << std::endl;
+        _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank << std::endl;
+        _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file << std::endl;
         std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
     }
 #endif
 
-    return comm_group_t(local_mpi_comm, mpi_rank() / mpi_size(local_mpi_comm));
+    auto local_rank = mpi::rank() / mpi::size(local_mpi_comm);
+    // check
+    assert(local_rank == mpi::get_node_index());
+
+    return comm_group_t(local_mpi_comm, local_rank);
 }
 
 //======================================================================================//

@@ -27,39 +27,13 @@ add_feature(CMAKE_CXX_FLAGS_${_CONFIG} "C++ compiler build type flags")
 #
 ##########################################################################################
 
-
-if(TIMEMORY_DEVELOPER_INSTALL)
-
-    set(TIMEMORY_INSTALL_DATAROOTDIR ${CMAKE_INSTALL_DATAROOTDIR})
-    if(NOT IS_ABSOLUTE ${TIMEMORY_INSTALL_DATAROOTDIR})
-        set(TIMEMORY_INSTALL_DATAROOTDIR "${TIMEMORY_INSTALL_PREFIX}/share"
-            CACHE PATH "Installation root directory for data" FORCE)
-    endif()
-
-    set(TIMEMORY_INSTALL_CMAKEDIR ${TIMEMORY_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
-        CACHE PATH "Installation for CMake config" FORCE)
-    set(TIMEMORY_INSTALL_INCLUDEDIR ${TIMEMORY_INSTALL_PREFIX}/include
-        CACHE PATH "Installation for include directories" FORCE)
-    set(TIMEMORY_INSTALL_LIBDIR ${TIMEMORY_INSTALL_PREFIX}/${LIBDIR_DEFAULT}
-        CACHE PATH "Installation for libraries" FORCE)
-    set(TIMEMORY_INSTALL_BINDIR ${TIMEMORY_INSTALL_PREFIX}/bin
-        CACHE PATH "Installation for executables" FORCE)
-    set(TIMEMORY_INSTALL_MANDIR ${TIMEMORY_INSTALL_DATAROOTDIR}/man
-        CACHE PATH "Installation for executables" FORCE)
-    set(TIMEMORY_INSTALL_DOCDIR ${TIMEMORY_INSTALL_DATAROOTDIR}/doc
-        CACHE PATH "Installation for executables" FORCE)
-
-else()
-
-    # cmake installation folder
-    set(TIMEMORY_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
-        CACHE PATH "Installation directory for CMake package config files")
-    # the rest of the installation folders
-    foreach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
-        set(TIMEMORY_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${_TYPE}DIR})
-    endforeach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
-
-endif()
+# cmake installation folder
+set(TIMEMORY_INSTALL_CMAKEDIR  ${CMAKE_INSTALL_DATAROOTDIR}/cmake/${PROJECT_NAME}
+    CACHE PATH "Installation directory for CMake package config files")
+# the rest of the installation folders
+foreach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
+    set(TIMEMORY_INSTALL_${_TYPE}DIR ${CMAKE_INSTALL_${_TYPE}DIR})
+endforeach(_TYPE in DATAROOT INCLUDE LIB BIN MAN DOC)
 
 # create the full path version and generic path versions
 foreach(_TYPE in DATAROOT CMAKE INCLUDE LIB BIN MAN DOC)

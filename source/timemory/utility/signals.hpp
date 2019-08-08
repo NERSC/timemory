@@ -219,7 +219,8 @@
 #endif
 
 #if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS) &&                      \
-    !defined(TIMEMORY_USE_GPERF)
+    !(defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||         \
+      defined(TIMEMORY_USE_GPERF_HEAP_PROFILER))
 #    if !defined(SIGNAL_AVAILABLE)
 #        define SIGNAL_AVAILABLE
 #    endif
@@ -586,8 +587,8 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
     sys_signal        _sig = (sys_signal)(sig);
 
     message << "\n### ERROR ### ";
-    if(mpi_is_initialized())
-        message << " [ MPI rank : " << mpi_rank() << " ] ";
+    if(mpi::is_initialized())
+        message << " [ MPI rank : " << mpi::rank() << " ] ";
     message << "Error code : " << sig;
     if(sinfo)
         message << " @ " << sinfo->si_addr;

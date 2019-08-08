@@ -89,8 +89,8 @@ inline std::string
 rank_prefix()
 {
     std::stringstream ss;
-    if(tim::mpi_is_initialized())
-        ss << "[" << tim::mpi_rank() << "] ";
+    if(tim::mpi::is_initialized())
+        ss << "[" << tim::mpi::rank() << "] ";
     return ss.str();
 }
 

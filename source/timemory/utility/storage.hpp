@@ -205,22 +205,26 @@ public:
         graph_node()
         : base_type(0, ObjectType(), "", 0)
         {
+            obj().activate_noop();
         }
 
         explicit graph_node(base_type&& _base)
         : base_type(std::forward<base_type>(_base))
         {
+            obj().activate_noop();
         }
 
         graph_node(const int64_t& _id, const ObjectType& _obj, int64_t _depth)
         : base_type(_id, _obj, "", _depth)
         {
+            obj().activate_noop();
         }
 
         graph_node(const int64_t& _id, const ObjectType& _obj, const string_t& _tag,
                    int64_t _depth)
         : base_type(_id, _obj, _tag, _depth)
         {
+            obj().activate_noop();
         }
 
         ~graph_node() {}
@@ -620,7 +624,7 @@ serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency 
         cereal::JSONOutputArchive          oa(ss, opts);
         oa.setNextName("rank");
         oa.startNode();
-        auto rank = tim::mpi_rank();
+        auto rank = tim::mpi::rank();
         oa(cereal::make_nvp("rank_id", rank));
         oa(cereal::make_nvp("concurrency", concurrency));
         oa(cereal::make_nvp("data", obj));

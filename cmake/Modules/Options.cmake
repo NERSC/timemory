@@ -47,7 +47,16 @@ else()
 endif()
 
 set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
+set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
+
 set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+set(TIMEMORY_GPERF_COMPONENTS "profiler;tcmalloc" CACHE STRING "gperftools components")
+
+set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
+set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
+if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
+    message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
+endif()
 
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
@@ -90,8 +99,6 @@ endif()
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 # Build settings
-add_option(TIMEMORY_DEVELOPER_INSTALL
-    "Python developer installation from setup.py"  OFF ${_FEATURE})
 add_option(TIMEMORY_DOXYGEN_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
@@ -154,6 +161,10 @@ endif()
 
 add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)
+
+if(${PROJECT_NAME}_MASTER_PROJECT AND TIMEMORY_USE_GPERF)
+    add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
+endif()
 
 # cereal options
 add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
