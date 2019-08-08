@@ -41,7 +41,7 @@ def configure():
     parser = helpers.ArgumentParser(project_name="TiMemory",
                                     source_dir=os.getcwd(),
                                     binary_dir=os.path.join(
-                                        os.getcwd(), "build-timemory"),
+                                        os.getcwd(), "build-timemory", platform.system()),
                                     build_type="Release",
                                     vcs_type="git",
                                     use_launchers=False)

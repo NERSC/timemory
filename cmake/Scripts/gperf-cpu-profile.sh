@@ -19,6 +19,11 @@ mkdir -p ${DIR}
 : ${DOT_ARGS:=""}
 : ${PPROF_ARGS:="--no_strip_temp --functions"}
 
+if [ "$(uname)" = "Darwin" ]; then
+    if [ "${IMG_FORMAT}" = "jpeg" ]; then
+        IMG_FORMAT="jpg"
+    fi
+fi
 run-verbose()
 {
     echo "${@}" 1>&2
