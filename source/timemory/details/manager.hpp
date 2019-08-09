@@ -146,7 +146,8 @@ inline manager::~manager()
 
 //======================================================================================//
 
-inline void manager::exit_hook()
+inline void
+manager::exit_hook()
 {
     auto*   ptr   = noninit_master_instance();
     int32_t count = 0;

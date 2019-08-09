@@ -71,10 +71,7 @@ struct caliper : public base<caliper, int64_t>
     //
     //----------------------------------------------------------------------------------//
     using attributes_t = int;
-    static std::string get_default_channel()
-    {
-        return "timemory";
-    }
+    static std::string  get_default_channel() { return "timemory"; }
     static std::string& get_channel()
     {
         static std::string _instance = get_default_channel();
@@ -89,10 +86,7 @@ struct caliper : public base<caliper, int64_t>
         static attributes_t _instance = get_default_attributes();
         return _instance;
     }
-    static void enable_process_scope()
-    {
-        get_attributes() = get_default_attributes();
-    }
+    static void enable_process_scope() { get_attributes() = get_default_attributes(); }
     static void enable_thread_scope()
     {
         get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);
@@ -107,11 +101,10 @@ struct caliper : public base<caliper, int64_t>
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
-    std::string channel = get_channel();
-    int attributes = get_attributes();
+    std::string channel    = get_channel();
+    int         attributes = get_attributes();
     cali::id_t  id     = cali::create_attribute(channel, CALI_TYPE_STRING, attributes);
     std::string prefix = "";
-
 };
 
 }  // namespace component

@@ -456,8 +456,10 @@ public:
             }
             else
             {
-                m_data         = graph_data(*master_instance()->current());
-                m_data.depth() = master_instance()->data().depth();
+                m_data           = graph_data(*master_instance()->current());
+                m_data.head()    = master_instance()->data().current();
+                m_data.current() = master_instance()->data().current();
+                m_data.depth()   = master_instance()->data().depth();
                 return _insert_child();
             }
         }
@@ -551,7 +553,7 @@ protected:
 
         for(auto& itr : m_children)
             if(itr != this)
-                itr->data().reset();
+                itr->data().clear();
     }
 
     void merge(this_type* itr);

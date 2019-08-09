@@ -55,7 +55,7 @@ struct cuda_event : public base<cuda_event, float>
     using base_type  = base<cuda_event, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 

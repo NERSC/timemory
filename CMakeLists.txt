@@ -109,8 +109,10 @@ add_subdirectory(source)
 #   Examples and Testing
 #----------------------------------------------------------------------------------------#
 
-set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
-add_subdirectory(examples)
+if(TIMEMORY_BUILD_EXAMPLES)
+    set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
+    add_subdirectory(examples)
+endif()
 
 #----------------------------------------------------------------------------------------#
 #   Documentation

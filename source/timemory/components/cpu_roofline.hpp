@@ -126,7 +126,7 @@ struct cpu_roofline
     static const size_type num_ai_offset = sizeof...(EventTypes);
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
