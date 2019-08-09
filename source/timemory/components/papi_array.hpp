@@ -128,8 +128,8 @@ struct papi_array
     template <typename _Tp>
     using array_t = std::array<_Tp, MaxNumEvents>;
 
-    explicit papi_array()
-    : events(get_events())
+    explicit papi_array(const event_list& _events = get_events())
+    : events(_events)
     {
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
@@ -153,10 +153,11 @@ struct papi_array
         return read_value;
     }
 
-    std::vector<double> get() const
+    template <typename _Tp = double>
+    std::vector<_Tp> get() const
     {
-        std::vector<double> values;
-        auto&               _data = (is_transient) ? accum : value;
+        std::vector<_Tp> values;
+        auto&            _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
         return values;

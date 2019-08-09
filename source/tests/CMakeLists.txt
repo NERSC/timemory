@@ -15,3 +15,8 @@ add_googletest(rusage_tests
     SOURCES         rusage_tests.cpp
     LINK_LIBRARIES  timemory-headers
 )
+
+add_googletest(papi_tests
+    DISCOVER_TESTS
+    SOURCES         papi_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-papi)

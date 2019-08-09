@@ -260,10 +260,11 @@ public:
         return ss.str();
     }
 
-    std::vector<double> get() const
+    template <typename _Tp = double>
+    std::vector<_Tp> get() const
     {
-        std::vector<double> values;
-        auto&               _data = (is_transient) ? accum : value;
+        std::vector<_Tp> values;
+        auto&            _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
         return values;

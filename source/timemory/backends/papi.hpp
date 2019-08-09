@@ -151,7 +151,7 @@ is_master_thread()
 inline bool&
 working()
 {
-    static thread_local bool _instance = false;
+    static thread_local bool _instance = true;
     return _instance;
 }
 
@@ -170,7 +170,7 @@ check(int retval, const std::string& mesg, bool quiet = false)
         fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
 #endif
     }
-    return success;
+    return (success && working());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -364,7 +364,7 @@ init_library()
         int retval = PAPI_library_init(PAPI_VER_CURRENT);
         if(retval != PAPI_VER_CURRENT && retval > 0)
             fprintf(stderr, "PAPI library version mismatch!\n");
-        working() = (retval == PAPI_VER_CURRENT);
+        working() = (retval == PAPI_VER_CURRENT && working());
     }
 #endif
 }
@@ -424,13 +424,13 @@ destroy_event_set(int event_set)
     // remove all PAPI events from an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_cleanup_eventset(event_set);
-    check(retval, "Warning!! Failure to cleanup event set");
+    working()  = check(retval, "Warning!! Failure to cleanup event set");
 #endif
 
     // deallocates memory associated with an empty PAPI event set
 #if defined(TIMEMORY_USE_PAPI)
-    retval = PAPI_destroy_eventset(&event_set);
-    check(retval, "Warning!! Failure to destroy event set");
+    retval    = PAPI_destroy_eventset(&event_set);
+    working() = check(retval, "Warning!! Failure to destroy event set");
 #else
     consume_parameters(event_set);
 #endif
@@ -445,7 +445,7 @@ enable_multiplexing(int event_set)
     int               retval = PAPI_set_multiplex(event_set);
     std::stringstream ss;
     ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
-    check(retval, ss.str());
+    working() = check(retval, ss.str());
 #else
     consume_parameters(event_set);
 #endif
@@ -466,7 +466,7 @@ start(int event_set, bool enable_multiplex = false)
         enable_multiplexing(event_set);
         retval = PAPI_start(event_set);
     }
-    check(retval, "Warning!! Failure to start event set");
+    working() = check(retval, "Warning!! Failure to start event set");
 #else
     consume_parameters(event_set, enable_multiplex);
 #endif
@@ -480,7 +480,7 @@ stop(int event_set, long long* values)
     // stop counting hardware events in an event set and return current events
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_stop(event_set, values);
-    check(retval, "Warning!! Failure to stop event set");
+    working()  = check(retval, "Warning!! Failure to stop event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -494,7 +494,7 @@ read(int event_set, long long* values)
     // read hardware events from an event set with no reset
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_read(event_set, values);
-    check(retval, "Warning!! Failure to read event set");
+    working()  = check(retval, "Warning!! Failure to read event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -508,7 +508,7 @@ write(int event_set, long long* values)
     // write counter values into counters
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_write(event_set, values);
-    check(retval, "Warning!! Failure to write event set");
+    working()  = check(retval, "Warning!! Failure to write event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -522,7 +522,7 @@ accum(int event_set, long long* values)
     // accumulate and reset hardware events from an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_accum(event_set, values);
-    check(retval, "Warning!! Failure to accum event set");
+    working()  = check(retval, "Warning!! Failure to accum event set");
 #else
     consume_parameters(event_set, values);
 #endif
@@ -536,7 +536,7 @@ reset(int event_set)
     // reset the hardware event counts in an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_reset(event_set);
-    check(retval, "Warning!! Failure to reset event set");
+    working()  = check(retval, "Warning!! Failure to reset event set");
 #else
     consume_parameters(event_set);
 #endif
@@ -551,7 +551,7 @@ add_event(int event_set, int event)
 #if defined(TIMEMORY_USE_PAPI)
     init();
     int retval = PAPI_add_event(event_set, event);
-    check(retval, "Warning!! Failure to add event to event set");
+    working()  = check(retval, "Warning!! Failure to add event to event set");
 #else
     consume_parameters(event_set, event);
 #endif
@@ -565,7 +565,7 @@ remove_event(int event_set, int event)
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_remove_event(event_set, event);
-    check(retval, "Warning!! Failure to remove event from event set");
+    working()  = check(retval, "Warning!! Failure to remove event from event set");
 #else
     consume_parameters(event_set, event);
 #endif
@@ -580,7 +580,7 @@ add_events(int event_set, int* events, int number)
 #if defined(TIMEMORY_USE_PAPI)
     init();
     int retval = PAPI_add_events(event_set, events, number);
-    check(retval, "Warning!! Failure to add events to event set");
+    working()  = check(retval, "Warning!! Failure to add events to event set");
 #else
     consume_parameters(event_set, events, number);
 #endif
@@ -593,9 +593,8 @@ remove_events(int event_set, int* events, int number)
 {
     // add array of PAPI preset or native hardware events to an event set
 #if defined(TIMEMORY_USE_PAPI)
-    init();
     int retval = PAPI_remove_events(event_set, events, number);
-    check(retval, "Warning!! Failure to remove events from event set");
+    working()  = check(retval, "Warning!! Failure to remove events from event set");
 #else
     consume_parameters(event_set, events, number);
 #endif
@@ -609,7 +608,7 @@ assign_event_set_component(int event_set, int cidx)
     // assign a component index to an existing but empty eventset
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_assign_eventset_component(event_set, cidx);
-    check(retval, "Warning!! Failure to assign event set component");
+    working()  = check(retval, "Warning!! Failure to assign event set component");
 #else
     consume_parameters(event_set, cidx);
 #endif
@@ -622,8 +621,9 @@ attach(int event_set, unsigned long tid)
 {
     // attach specified event set to a specific process or thread id
 #if defined(TIMEMORY_USE_PAPI)
+    init();
     int retval = PAPI_attach(event_set, tid);
-    check(retval, "Warning!! Failure to attach event set");
+    working()  = check(retval, "Warning!! Failure to attach event set");
 #else
     consume_parameters(event_set, tid);
 #endif
@@ -637,7 +637,7 @@ detach(int event_set)
     // detach specified event set from a previously specified process or thread id
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_detach(event_set);
-    check(retval, "Warning!! Failure to detach event set");
+    working()  = check(retval, "Warning!! Failure to detach event set");
 #else
     consume_parameters(event_set);
 #endif
