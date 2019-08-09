@@ -39,6 +39,10 @@ using condvar_t = std::condition_variable;
 static const int64_t ops_tolerance = 10;
 static const int64_t lst_tolerance = 10;
 
+static constexpr uint64_t FLOPS  = 32;
+static constexpr uint64_t TRIALS = 1024;
+static constexpr uint64_t SIZE   = 1024;
+
 #define CHECK_WORKING()                                                                  \
     if(!tim::papi::working())                                                            \
     {                                                                                    \
@@ -71,7 +75,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     auto bytes_per_element = sizeof(_Tp);
     auto memory_accesses_per_element = 2;
 
-    int64_t working_size = nsize;
+    int64_t working_size = nsize * ntrials;
     int64_t total_bytes  = working_size * bytes_per_element * memory_accesses_per_element;
     int64_t total_ops    = working_size * _Nops;
 
@@ -93,8 +97,12 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
 
     // return zeros if not working
     if(!tim::papi::working())
+    {
+        std::cout << "\n\nPAPI is not working so returning zeros instead of total_ops = "
+                  << total_ops << " and total_bytes = " << total_bytes << "\n\n"
+                  << std::endl;
         return return_type<_Component>(obj, 0, 0);
-
+    }
     return return_type<_Component>(obj, total_ops, total_bytes);
 }
 //--------------------------------------------------------------------------------------//
@@ -108,8 +116,6 @@ template <typename _Tp>
 void
 report(const _Tp& measured_count, const _Tp& explicit_count, const _Tp& tolerance)
 {
-    std::cout << std::boolalpha << "PAPI is working == " << tim::papi::working()
-              << std::endl;
     double diff = static_cast<double>(measured_count) - explicit_count;
     diff /= static_cast<double>(explicit_count);
     diff *= 100.0;
@@ -129,7 +135,7 @@ class papi_tests : public ::testing::Test
 };
 
 //--------------------------------------------------------------------------------------//
-
+/*
 TEST_F(papi_tests, working)
 {
     using test_type = papi_tuple<PAPI_TOT_CYC>;
@@ -141,7 +147,7 @@ TEST_F(papi_tests, working)
     test_type::invoke_thread_finalize();
     SUCCEED();
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 TEST_F(papi_tests, tuple_single_precision_ops)
@@ -149,7 +155,7 @@ TEST_F(papi_tests, tuple_single_precision_ops)
     using test_type = papi_tuple<PAPI_SP_OPS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<float, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -170,7 +176,7 @@ TEST_F(papi_tests, array_single_precision_ops)
     CHECK_AVAILABLE(test_type);
 
     papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<float, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -190,7 +196,7 @@ TEST_F(papi_tests, tuple_double_precision_ops)
     using test_type = papi_tuple<PAPI_DP_OPS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<double, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -204,14 +210,14 @@ TEST_F(papi_tests, tuple_double_precision_ops)
 }
 
 //--------------------------------------------------------------------------------------//
-
+/*
 TEST_F(papi_tests, array_double_precision_ops)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
     papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
-    auto ret = details::run_cpu_ops_kernel<double, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<1>(ret);
@@ -223,7 +229,7 @@ TEST_F(papi_tests, array_double_precision_ops)
     else
         FAIL();
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 TEST_F(papi_tests, tuple_load_store_ins)
@@ -231,7 +237,7 @@ TEST_F(papi_tests, tuple_load_store_ins)
     using test_type = papi_tuple<PAPI_LST_INS>;
     CHECK_AVAILABLE(test_type);
 
-    auto ret = details::run_cpu_ops_kernel<int64_t, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<int64_t, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
@@ -252,7 +258,7 @@ TEST_F(papi_tests, array_load_store_ins)
     CHECK_AVAILABLE(test_type);
 
     papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret = details::run_cpu_ops_kernel<int64_t, 8, test_type>(1, 256);
+    auto ret = details::run_cpu_ops_kernel<int64_t, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
