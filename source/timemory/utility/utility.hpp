@@ -715,7 +715,11 @@ protected:
     : m_count(count()++)
     {
     }
-    ~counted_object() { --count(); }
+    ~counted_object()
+    {
+        if(!is_noop)
+            --count();
+    }
     explicit counted_object(const this_type&)
     : m_count(count()++)
     {
@@ -724,8 +728,17 @@ protected:
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&& rhs) = default;
 
+    void activate_noop()
+    {
+        count()--;
+        is_noop = true;
+    }
+
 protected:
     int64_t m_count;
+
+private:
+    bool is_noop = false;
 
 private:
     // number of existing objects

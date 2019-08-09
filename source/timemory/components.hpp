@@ -32,6 +32,7 @@
 #pragma once
 
 // general components
+#include "timemory/components/caliper.hpp"
 #include "timemory/components/cuda_event.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
@@ -116,6 +117,7 @@ initialize(_CompList<_CompTypes...>&               obj,
         TIMEMORY_COMPONENT comp = static_cast<TIMEMORY_COMPONENT>(itr);
         switch(comp)
         {
+            case CALIPER: obj.template init<caliper>(); break;
             case CPU_CLOCK: obj.template init<cpu_clock>(); break;
             case CPU_ROOFLINE_DP_FLOPS: obj.template init<cpu_roofline_dp_flops>(); break;
             case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
@@ -176,7 +178,12 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
     {
         std::transform(itr.begin(), itr.end(), itr.begin(),
                        [](unsigned char c) -> unsigned char { return std::tolower(c); });
-        if(itr == "cpu_clock")
+
+        if(itr == "cali" || itr == "caliper")
+        {
+            vec.push_back(CALIPER);
+        }
+        else if(itr == "cpu_clock")
         {
             vec.push_back(CPU_CLOCK);
         }
@@ -298,14 +305,14 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             fprintf(
                 stderr,
-                "Unknown component label: %s. Valid choices are: ['cpu_clock', "
-                "'cpu_roofline_double', 'cpu_roofline_dp', 'cpu_roofline_dp_flops', "
-                "'cpu_roofline_single', 'cpu_roofline_sp', 'cpu_roofline_sp_flops', "
-                "'cpu_util', 'cuda_event', 'current_rss', 'data_rss', 'monotonic_clock', "
-                "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
-                "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
-                "'num_msg_sent', 'num_signals', 'num_swap', 'papi', 'papi_array', "
-                "'papi_array_t', 'peak_rss', 'priority_context_switch', "
+                "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
+                "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
+                "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
+                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'current_rss', "
+                "'data_rss', 'monotonic_clock', 'monotonic_raw_clock', 'num_io_in', "
+                "'num_io_out', 'num_major_page_faults', 'num_minor_page_faults', "
+                "'num_msg_recv', 'num_msg_sent', 'num_signals', 'num_swap', 'papi', "
+                "'papi_array', 'papi_array_t', 'peak_rss', 'priority_context_switch', "
                 "'process_cpu_clock', 'process_cpu_util', 'real_clock', 'stack_rss', "
                 "'sys_clock', 'system_clock', 'thread_cpu_clock', 'thread_cpu_util', "
                 "'user_clock', 'voluntary_context_switch']\n",
@@ -335,6 +342,51 @@ inline std::vector<TIMEMORY_COMPONENT>
 enumerate_components(const std::initializer_list<std::string>& component_names)
 {
     return enumerate_components(std::vector<std::string>(component_names));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//                  extra specializations for std::string
+//
+//--------------------------------------------------------------------------------------//
+//
+// this is for initializing with a container of string
+//
+template <typename... _CompTypes, template <typename...> class _CompList,
+          typename... _ExtraArgs, template <typename, typename...> class _Container>
+inline void
+initialize(_CompList<_CompTypes...>&                     obj,
+           const _Container<std::string, _ExtraArgs...>& components)
+{
+    initialize(obj, enumerate_components(components));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+// this is for initializing with a string
+//
+template <typename... _CompTypes, template <typename...> class _CompList>
+inline void
+initialize(_CompList<_CompTypes...>& obj, const std::string& components)
+{
+    initialize(obj, enumerate_components(tim::delimit(components)));
+}
+
+//--------------------------------------------------------------------------------------//
+//
+// this is for initializing reading an environment variable, getting a string, breaking
+// into list of components, and initializing
+//
+namespace env
+{
+template <typename... _CompTypes, template <typename...> class _CompList>
+inline void
+initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
+           const std::string& default_env)
+{
+    auto env_result = tim::get_env(env_var, default_env);
+    initialize(obj, enumerate_components(tim::delimit(env_result)));
+}
 }
 
 //--------------------------------------------------------------------------------------//

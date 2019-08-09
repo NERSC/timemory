@@ -41,7 +41,7 @@ def configure():
     parser = helpers.ArgumentParser(project_name="TiMemory",
                                     source_dir=os.getcwd(),
                                     binary_dir=os.path.join(
-                                        os.getcwd(), "build-timemory"),
+                                        os.getcwd(), "build-timemory", platform.system()),
                                     build_type="Release",
                                     vcs_type="git",
                                     use_launchers=False)
@@ -200,6 +200,8 @@ def run_pyctest():
 
     if args.profile is not None:
         build_opts["TIMEMORY_USE_GPERF"] = "ON"
+        components = "profiler" if args.profile == "cpu" else "tcmalloc"
+        build_opts["TIMEMORY_GPERF_COMPONENTS"] = components
         if pyctest.BUILD_TYPE != "RelWithDebInfo":
             warnings.warn(
                 "Forcing build type to 'RelWithDebInfo' when gperf is enabled")

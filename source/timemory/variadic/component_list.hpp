@@ -261,6 +261,8 @@ public:
             std::tuple<operation::pointer_operator<Types, operation::stop<Types>>...>;
         // stop components
         apply<void>::access<apply_types>(m_data);
+        // pop them off the running stack
+        pop();
     }
 
     void conditional_start()
@@ -277,6 +279,8 @@ public:
         using apply_types = std::tuple<
             operation::pointer_operator<Types, operation::conditional_stop<Types>>...>;
         apply<void>::access<apply_types>(m_data);
+        // pop them off the running stack
+        pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -539,6 +543,7 @@ public:
     {
         auto&& _obj = get<_Tp>();
         _obj        = new _Tp(std::forward<_Args>(_args)...);
+        compute_identifier_extra(_obj);
     }
 
     template <typename _Tp, typename... _Args,
@@ -568,16 +573,16 @@ protected:
     string_t get_prefix()
     {
         auto _get_prefix = []() {
-            if(!mpi_is_initialized())
+            if(!mpi::is_initialized())
                 return string_t("> ");
 
             // prefix spacing
             static uint16_t width = 1;
-            if(mpi_size() > 9)
-                width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
+            if(mpi::size() > 9)
+                width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
             std::stringstream ss;
             ss.fill('0');
-            ss << "|" << std::setw(width) << mpi_rank() << "> ";
+            ss << "|" << std::setw(width) << mpi::rank() << "> ";
             return ss.str();
         };
         static string_t _prefix = _get_prefix();
@@ -603,6 +608,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
+        compute_identifier_extra<data_type>(key, lang);
     }
 
     void update_identifier() const
@@ -633,6 +639,39 @@ protected:
             } while(propose_width > current_width);
         }
         return _instance.load();
+    }
+
+    template <
+        typename _Tuple = data_type,
+        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
+    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    {
+        constexpr auto idx = index_of<component::caliper, _Tuple>::value;
+        auto*          obj = std::get<idx>(m_data);
+        if(obj)
+            obj->prefix = key;
+        consume_parameters(lang);
+    }
+
+    template <typename _Tuple       = data_type,
+              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
+                               int> = 0>
+    void compute_identifier_extra(const string_t&, const language_t&)
+    {
+    }
+
+    template <typename _Tp,
+              tim::enable_if_t<(std::is_same<_Tp, component::caliper>::value), char> = 0>
+    void compute_identifier_extra(_Tp* obj)
+    {
+        if(obj)
+            obj->prefix = m_key;
+    }
+
+    template <typename _Tp,
+              tim::enable_if_t<(!std::is_same<_Tp, component::caliper>::value), char> = 0>
+    void compute_identifier_extra(_Tp*)
+    {
     }
 
 private:

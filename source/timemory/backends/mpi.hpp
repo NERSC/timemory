@@ -43,16 +43,53 @@
 // dummy MPI types
 #    define MPI_Comm int32_t
 #    define MPI_COMM_WORLD 0
+#    define MPI_INFO_NULL 0
+#    define MPI_COMM_TYPE_SHARED 0
+#    define MPI_INT int32_t
+#    define MPI_CHAR char
+#    define MPI_Gather(...)
+#    define MPI_Gatherv(...)
+#    define MPI_Comm_free(...)
+#    define MPI_Comm_split(...)
+#    define MPI_Comm_split_type(...)
 #endif
 
 #include "timemory/utility/utility.hpp"
 
 namespace tim
 {
+namespace mpi
+{
+//--------------------------------------------------------------------------------------//
+#if defined(TIMEMORY_USE_MPI)
+using comm_t = MPI_Comm;
+using info_t = MPI_Info;
+#else
+// dummy MPI types
+using comm_t = int32_t;
+using info_t = int32_t;
+#endif
+
+static const comm_t  comm_world_v       = MPI_COMM_WORLD;
+static const info_t  info_null_v        = MPI_INFO_NULL;
+static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+
 //--------------------------------------------------------------------------------------//
 
 inline bool
-mpi_is_initialized()
+is_supported()
+{
+#if defined(TIMEMORY_USE_MPI)
+    return true;
+#else
+    return false;
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline bool
+is_initialized()
 {
     int32_t _init = 0;
 #if defined(TIMEMORY_USE_MPI)
@@ -64,10 +101,11 @@ mpi_is_initialized()
 //--------------------------------------------------------------------------------------//
 
 inline void
-mpi_initialize(int argc, char** argv)
+initialize(int argc, char** argv)
 {
 #if defined(TIMEMORY_USE_MPI)
-    MPI_Init(&argc, &argv);
+    if(!is_initialized())
+        MPI_Init(&argc, &argv);
 #else
     consume_parameters(argc, argv);
 #endif
@@ -76,7 +114,7 @@ mpi_initialize(int argc, char** argv)
 //--------------------------------------------------------------------------------------//
 
 inline void
-mpi_finalize()
+finalize()
 {
 #if defined(TIMEMORY_USE_MPI)
     MPI_Finalize();
@@ -86,11 +124,11 @@ mpi_finalize()
 //--------------------------------------------------------------------------------------//
 
 inline int32_t
-mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
+rank(comm_t comm = comm_world_v)
 {
     int32_t _rank = 0;
 #if defined(TIMEMORY_USE_MPI)
-    if(mpi_is_initialized())
+    if(is_initialized())
         MPI_Comm_rank(comm, &_rank);
 #else
     consume_parameters(comm);
@@ -101,11 +139,11 @@ mpi_rank(MPI_Comm comm = MPI_COMM_WORLD)
 //--------------------------------------------------------------------------------------//
 
 inline int32_t
-mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
+size(comm_t comm = comm_world_v)
 {
     int32_t _size = 1;
 #if defined(TIMEMORY_USE_MPI)
-    if(mpi_is_initialized())
+    if(is_initialized())
         MPI_Comm_size(comm, &_size);
 #else
     consume_parameters(comm);
@@ -116,10 +154,10 @@ mpi_size(MPI_Comm comm = MPI_COMM_WORLD)
 //--------------------------------------------------------------------------------------//
 
 inline void
-mpi_barrier(MPI_Comm comm = MPI_COMM_WORLD)
+barrier(comm_t comm = comm_world_v)
 {
 #if defined(TIMEMORY_USE_MPI)
-    if(mpi_is_initialized())
+    if(is_initialized())
         MPI_Barrier(comm);
 #else
     consume_parameters(comm);
@@ -128,49 +166,83 @@ mpi_barrier(MPI_Comm comm = MPI_COMM_WORLD)
 
 //--------------------------------------------------------------------------------------//
 
-inline bool
-has_mpi_support()
+inline void
+comm_split(comm_t comm, int split_size, int rank, comm_t* local_comm)
 {
 #if defined(TIMEMORY_USE_MPI)
-    return true;
+    if(is_initialized())
+        MPI_Comm_split(comm, split_size, rank, local_comm);
 #else
-    return false;
+    consume_parameters(comm, split_size, rank, local_comm);
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace tim
+inline void
+comm_split_type(comm_t comm, int split_size, int key, info_t info, comm_t* local_comm)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(is_initialized())
+        MPI_Comm_split_type(comm, split_size, key, info, local_comm);
+#else
+    consume_parameters(comm, split_size, key, info, local_comm);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+/// returns the communicator for the node
+inline comm_t
+get_node_comm()
+{
+    if(!is_initialized())
+        return comm_world_v;
+    auto _get_node_comm = []() {
+        comm_t local_comm;
+        comm_split_type(mpi::comm_world_v, mpi::comm_type_shared_v, 0, mpi::info_null_v,
+                        &local_comm);
+        return local_comm;
+    };
+    static comm_t _instance = _get_node_comm();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+/// returns the number of ranks on a node
+inline int32_t
+get_num_ranks_per_node()
+{
+    if(!is_initialized())
+        return 1;
+    return size(get_node_comm());
+}
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_USE_MPI)
-#else
+inline int32_t
+get_num_nodes()
+{
+    if(!is_initialized())
+        return 1;
+    auto _world_size = size(comm_world_v);
+    auto _ncomm_size = get_num_ranks_per_node();
+    return (_world_size >= _ncomm_size) ? (_world_size / _ncomm_size) : 1;
+}
 
-#    define MPI_INT int32_t
-#    define MPI_CHAR char
-#    define MPI_Gather(send_data, send_count, send_type, recv_data, recv_count,          \
-                       recv_type, root, communicator)                                    \
-        {                                                                                \
-            tim::consume_parameters(send_data, send_count, recv_data, recv_count, root,  \
-                                    communicator);                                       \
-        }
+//--------------------------------------------------------------------------------------//
 
-#    define MPI_Gatherv(send_buf, send_count, send_type, recv_buf, recv_count,           \
-                        group_size, recv_type, root, communicator)                       \
-        {                                                                                \
-            tim::consume_parameters(send_buf, send_count, recv_buf, recv_count, root,    \
-                                    communicator);                                       \
-        }
-#    define MPI_Comm_free(comm)                                                          \
-        {                                                                                \
-            tim::consume_parameters(comm);                                               \
-        }
-#    define MPI_Comm_split(comm, color, key, new_comm)                                   \
-        {                                                                                \
-            tim::consume_parameters(color, key, new_comm);                               \
-        }
+inline int32_t
+get_node_index()
+{
+    if(!is_initialized())
+        return 0;
+    return rank() / get_num_ranks_per_node();
+}
 
-#endif
+//--------------------------------------------------------------------------------------//
+
+}  // namespace mpi
+
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//

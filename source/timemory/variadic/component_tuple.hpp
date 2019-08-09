@@ -221,6 +221,8 @@ public:
     {
         // stop components
         apply<void>::access<op_stop_t>(m_data);
+        // pop them off the running stack
+        pop();
     }
 
     void conditional_start()
@@ -233,6 +235,8 @@ public:
     {
         // stop, if not already stopped
         apply<void>::access<op_cond_stop_t>(m_data);
+        // pop them off the running stack
+        pop();
     }
 
     //----------------------------------------------------------------------------------//
@@ -457,16 +461,16 @@ protected:
     string_t get_prefix()
     {
         auto _get_prefix = []() {
-            if(!mpi_is_initialized())
+            if(!mpi::is_initialized())
                 return string_t("> ");
 
             // prefix spacing
             static uint16_t width = 1;
-            if(mpi_size() > 9)
-                width = std::max(width, (uint16_t)(log10(mpi_size()) + 1));
+            if(mpi::size() > 9)
+                width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
             std::stringstream ss;
             ss.fill('0');
-            ss << "|" << std::setw(width) << mpi_rank() << "> ";
+            ss << "|" << std::setw(width) << mpi::rank() << "> ";
             return ss.str();
         };
         static string_t _prefix = _get_prefix();
@@ -492,6 +496,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
+        compute_identifier_extra<data_type>(key, lang);
     }
 
     void update_identifier() const
@@ -522,6 +527,23 @@ protected:
             } while(propose_width > current_width);
         }
         return _instance.load();
+    }
+
+    template <
+        typename _Tuple = data_type,
+        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
+    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    {
+        constexpr auto idx           = index_of<component::caliper, _Tuple>::value;
+        std::get<idx>(m_data).prefix = key;
+        consume_parameters(lang);
+    }
+
+    template <typename _Tuple       = data_type,
+              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
+                               int> = 0>
+    void compute_identifier_extra(const string_t&, const language_t&)
+    {
     }
 
 private:

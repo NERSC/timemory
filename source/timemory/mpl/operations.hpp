@@ -215,7 +215,11 @@ struct stop
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit stop(base_type& obj) { obj.stop(); }
+    explicit stop(base_type& obj)
+    {
+        obj.stop();
+        obj.activate_noop();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -328,11 +332,24 @@ struct print
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    // static constexpr const bool is_available = trait::is_available<_Tp>::value;
+    // static constexpr const bool uses_internal =
+    // trait::internal_output_handling<_Tp>::value;
+
+    //----------------------------------------------------------------------------------//
+    // shorthand for available and using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       trait::internal_output_handling<_Up>::value);
+    };
+
     //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(const Type& _obj, std::ostream& _os, bool _endline = false)
     {
         std::stringstream ss;
@@ -342,8 +359,7 @@ struct print
         _os << ss.str();
     }
 
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(std::size_t _N, std::size_t _Ntot, const Type& _obj, std::ostream& _os,
           bool _endline)
     {
@@ -356,8 +372,7 @@ struct print
         _os << ss.str();
     }
 
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, int64_t _output_width, bool _endline,
           const string_t& _suffix = "")
@@ -381,16 +396,14 @@ struct print
     //----------------------------------------------------------------------------------//
     // only if components are available -- pointers
     //
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(const Type* _obj, std::ostream& _os, bool _endline = false)
     {
         if(_obj)
             print(*_obj, _os, _endline);
     }
 
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(std::size_t _N, std::size_t _Ntot, const Type* _obj, std::ostream& _os,
           bool _endline)
     {
@@ -398,8 +411,7 @@ struct print
             print(_N, _Ntot, *_obj, _os, _endline);
     }
 
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
           int64_t _depth, int64_t _output_width, bool _endline,
           const string_t& _suffix = "")
@@ -411,20 +423,20 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type&, std::ostream&, bool = false)
     {
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(std::size_t, std::size_t, const Type&, std::ostream&, bool)
     {
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool,
           const string_t& = "")
     {
@@ -433,20 +445,20 @@ struct print
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available -- pointers
     //
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type*, std::ostream&, bool = false)
     {
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(std::size_t, std::size_t, const Type*, std::ostream&, bool)
     {
     }
 
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool,
           const string_t& = "")
     {
@@ -463,24 +475,31 @@ struct print_storage
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
+    // shorthand for available and using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       trait::internal_output_handling<_Up>::value);
+    };
+
+    //----------------------------------------------------------------------------------//
     // only if components are available
     //
-    template <typename _Up                                                 = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == true), char> = 0>
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value == true), char> = 0>
     print_storage()
     {
         auto _storage = tim::storage<_Tp>::noninit_instance();
         if(_storage)
-        {
             _storage->print();
-        }
     }
 
     //----------------------------------------------------------------------------------//
     // print nothing if component is not available
     //
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
     print_storage()
     {
     }

@@ -196,8 +196,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
 //======================================================================================//
 
 template <typename ObjectType>
-void
-tim::storage<ObjectType>::print()
+void tim::storage<ObjectType>::internal_print(std::true_type)
 {
     auto num_instances = instance_count().load();
 
@@ -220,7 +219,8 @@ tim::storage<ObjectType>::print()
         }
         catch(std::exception& e)
         {
-#if defined(TIMEMORY_USE_GPERF)
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||           \
+    defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
             std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
                       << ". Continuing..." << std::endl;
 #else
@@ -435,6 +435,32 @@ tim::storage<ObjectType>::print()
 //======================================================================================//
 
 template <typename ObjectType>
+void tim::storage<ObjectType>::internal_print(std::false_type)
+{
+    if(!singleton_t::is_master(this))
+    {
+        singleton_t::master_instance()->merge(this);
+        ObjectType::thread_finalize_policy();
+    }
+    else if(settings::auto_output())
+    {
+        merge();
+        ObjectType::thread_finalize_policy();
+        ObjectType::global_finalize_policy();
+        instance_count().store(0);
+    }
+    else
+    {
+        if(singleton_t::is_master(this))
+        {
+            instance_count().store(0);
+        }
+    }
+}
+
+//======================================================================================//
+
+template <typename ObjectType>
 template <typename Archive>
 void
 tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
@@ -502,17 +528,6 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
        serializer::make_nvp("dtype", data_type));
     ObjectType::serialization_policy(ar, version);
     ar(serializer::make_nvp("graph", graph_list));
-}
-
-//======================================================================================//
-
-template <typename ObjectType>
-template <typename Archive>
-void
-tim::storage<ObjectType>::serialize(Archive& ar, const unsigned int version)
-{
-    typename tim::trait::array_serialization<ObjectType>::type type;
-    serialize<Archive>(type, ar, version);
 }
 
 //======================================================================================//

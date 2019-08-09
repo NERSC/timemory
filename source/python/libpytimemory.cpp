@@ -266,7 +266,7 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Enable signal detection");
     //----------------------------------------------------------------------------------//
     tim.def(
-        "has_mpi_support", [&]() { return tim::has_mpi_support(); },
+        "has_mpi_support", [&]() { return tim::mpi::is_supported(); },
         "Return if the TiMemory library has MPI support");
     //----------------------------------------------------------------------------------//
     tim.def("set_rusage_children", set_rusage_child,

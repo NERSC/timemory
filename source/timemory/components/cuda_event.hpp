@@ -55,7 +55,7 @@ struct cuda_event : public base<cuda_event, float>
     using base_type  = base<cuda_event, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -115,8 +115,6 @@ struct cuda_event : public base<cuda_event, float>
         set_stopped();
     }
 
-    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
-
     void sync()
     {
         if(m_is_valid && !m_is_synced)
@@ -155,6 +153,8 @@ struct cuda_event : public base<cuda_event, float>
         // return if not ready (OK) or something else
         return (ret == cuda::err_not_ready_v);
     }
+
+    void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
 
 protected:
     static void callback(cuda::stream_t /*_stream*/, cuda::error_t /*_status*/,

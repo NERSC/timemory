@@ -50,7 +50,7 @@ struct real_clock : public base<real_clock>
     using base_type  = base<real_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -103,7 +103,7 @@ struct system_clock : public base<system_clock>
     using base_type  = base<system_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -146,7 +146,7 @@ struct user_clock : public base<user_clock>
     using base_type  = base<user_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -189,7 +189,7 @@ struct cpu_clock : public base<cpu_clock>
     using base_type  = base<cpu_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -229,7 +229,7 @@ struct monotonic_clock : public base<monotonic_clock>
     using base_type  = base<monotonic_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -273,7 +273,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     using base_type  = base<monotonic_raw_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -318,7 +318,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using base_type  = base<thread_cpu_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -359,7 +359,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using base_type  = base<process_cpu_clock, value_type>;
 
     static const short                   precision = 3;
-    static const short                   width     = 6;
+    static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -405,7 +405,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     using this_type  = cpu_util;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -478,7 +478,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     using this_type  = process_cpu_util;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -551,7 +551,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     using this_type  = thread_cpu_util;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 

@@ -122,7 +122,9 @@ ENDIF (DEFINED _gperftools_MISSING_COMPONENTS AND _gperftools_CHECK_COMPONENTS)
 
 #----------------------------------------------------------------------------------------#
 
-mark_as_advanced(gperftools_INCLUDE_DIR)
+mark_as_advanced(gperftools_INCLUDE_DIR gperftools_COMPONENTS gperftools_PROFILER_LIBRARY
+    gperftools_ROOT_DIR gperftools_TCMALLOC_LIBRARY)
+
 find_package_handle_standard_args(gperftools DEFAULT_MSG
     gperftools_ROOT_DIR
     gperftools_INCLUDE_DIRS ${_gperftools_MISSING_LIBRARIES})

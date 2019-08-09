@@ -280,8 +280,8 @@ struct exec_params
     uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
     const uint64_t nthreads  = 1;
-    const uint64_t nrank     = tim::mpi_rank();
-    const uint64_t nproc     = tim::mpi_size();
+    const uint64_t nrank     = tim::mpi::rank();
+    const uint64_t nproc     = tim::mpi::size();
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)

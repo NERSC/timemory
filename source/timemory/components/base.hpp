@@ -73,6 +73,7 @@ public:
     using this_type      = base<_Tp, value_type, _Policies...>;
     using storage_type   = storage<Type>;
     using graph_iterator = typename storage_type::iterator;
+    using counted_type   = tim::counted_object<_Tp>;
 
     base()                          = default;
     ~base()                         = default;
@@ -122,16 +123,22 @@ public:
     //
     void insert_node(bool& exists, const int64_t& _hashid)
     {
-        hashid    = _hashid;
-        Type& obj = static_cast<Type&>(*this);
-        graph_itr = storage_type::instance()->insert(hashid, obj, exists);
+        if(!is_on_stack)
+        {
+            Type& obj   = static_cast<Type&>(*this);
+            graph_itr   = storage_type::instance()->insert(_hashid, obj, exists);
+            is_on_stack = true;
+        }
     }
 
     void insert_node(const string_t& _prefix, const int64_t& _hashid)
     {
-        hashid    = _hashid;
-        Type& obj = static_cast<Type&>(*this);
-        graph_itr = storage_type::instance()->insert(hashid, obj, _prefix);
+        if(!is_on_stack)
+        {
+            Type& obj   = static_cast<Type&>(*this);
+            graph_itr   = storage_type::instance()->insert(_hashid, obj, _prefix);
+            is_on_stack = true;
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -140,13 +147,17 @@ public:
     template <typename U = value_type, enable_if_t<(!std::is_class<U>::value), int> = 0>
     void pop_node()
     {
-        Type& obj = graph_itr->obj();
-        obj.accum += accum;
-        obj.value += value;
-        obj.is_transient = is_transient;
-        obj.is_running   = false;
-        obj.laps += laps;
-        graph_itr = storage_type::instance()->pop();
+        if(is_on_stack)
+        {
+            Type& obj = graph_itr->obj();
+            obj.accum += accum;
+            obj.value += value;
+            obj.is_transient = is_transient;
+            obj.is_running   = false;
+            obj.laps += laps;
+            graph_itr   = storage_type::instance()->pop();
+            is_on_stack = false;
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -155,11 +166,15 @@ public:
     template <typename U = value_type, enable_if_t<(std::is_class<U>::value), int> = 0>
     void pop_node()
     {
-        Type& obj = graph_itr->obj();
-        Type& rhs = static_cast<Type&>(*this);
-        obj += rhs;
-        obj.laps += rhs.laps;
-        storage_type::instance()->pop();
+        if(is_on_stack)
+        {
+            Type& obj = graph_itr->obj();
+            Type& rhs = static_cast<Type&>(*this);
+            obj += rhs;
+            obj.laps += rhs.laps;
+            storage_type::instance()->pop();
+            is_on_stack = false;
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -168,6 +183,7 @@ public:
     void reset()
     {
         is_running   = false;
+        is_on_stack  = false;
         is_transient = false;
         laps         = 0;
         value        = value_type();
@@ -425,10 +441,10 @@ public:
 
 protected:
     bool           is_running   = false;
+    bool           is_on_stack  = false;
     bool           is_transient = false;
     value_type     value        = value_type();
     value_type     accum        = value_type();
-    int64_t        hashid       = 0;
     int64_t        laps         = 0;
     graph_iterator graph_itr;
 };

@@ -93,7 +93,7 @@ public:
     using singleton_t   = singleton<this_type, pointer_t>;
     using size_type     = std::size_t;
     using string_t      = std::string;
-    using comm_group_t  = std::tuple<MPI_Comm, int32_t>;
+    using comm_group_t  = std::tuple<mpi::comm_t, int32_t>;
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = singleton_t::pointer;
     using smart_pointer = singleton_t::smart_pointer;
@@ -249,25 +249,7 @@ public:
     void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
-    static void exit_hook()
-    {
-        auto*   ptr   = noninit_master_instance();
-        int32_t count = 0;
-        if(ptr)
-        {
-            ptr->print(false, false);
-            count = ptr->instance_count();
-            if(get_env("TIMEMORY_BANNER", true))
-                printf(
-                    "\n\n#---------------------- tim::manager destroyed [%i] "
-                    "----------------------#\n",
-                    count);
-            delete ptr;
-        }
-        tim::papi::shutdown();
-        // tim::cupti::shutdown();
-    }
-
+    static void exit_hook();
     static void print(const tim::component_tuple<>&) {}
 
     template <typename Head, typename... Tail>

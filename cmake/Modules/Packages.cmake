@@ -33,6 +33,7 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
+add_interface_library(timemory-caliper)
 
 add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
@@ -163,6 +164,10 @@ if(TIMEMORY_BUILD_GTEST)
     # add google-test
     set(INSTALL_GTEST OFF CACHE BOOL "Install gtest")
     set(BUILD_GMOCK ON CACHE BOOL "Build gmock")
+    if(APPLE)
+        set(CMAKE_MACOSX_RPATH ON CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
+        mark_as_advanced(CMAKE_MACOSX_RPATH)
+    endif()
     add_subdirectory(${PROJECT_SOURCE_DIR}/source/google-test)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
     target_include_directories(timemory-google-test INTERFACE
@@ -595,11 +600,22 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-set(gperftools_COMPONENTS profiler tcmalloc CACHE STRING "gperftools components")
-find_package(gperftools QUIET COMPONENTS ${gperftools_COMPONENTS})
+find_package(gperftools QUIET COMPONENTS ${TIMEMORY_GPERF_COMPONENTS})
 
 if(gperftools_FOUND)
-    target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF)
+    set(_HAS_PROFILER OFF)
+    set(_HAS_TCMALLOC OFF)
+    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_CPU_PROFILER)
+        set(_HAS_PROFILER ON)
+    endif()
+    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_HEAP_PROFILER)
+        set(_HAS_TCMALLOC ON)
+    endif()
+    if(_HAS_PROFILER AND _HAS_TCMALLOC)
+        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF)
+    endif()
     target_include_directories(timemory-gperftools INTERFACE ${gperftools_INCLUDE_DIRS})
     target_link_libraries(timemory-gperftools INTERFACE ${gperftools_LIBRARIES})
 else()
@@ -607,6 +623,22 @@ else()
     inform_empty_interface(timemory-gperftools "gperftools")
 endif()
 
+
+#----------------------------------------------------------------------------------------#
+#
+#                               Caliper
+#
+#----------------------------------------------------------------------------------------#
+find_package(caliper QUIET)
+
+if(caliper_FOUND)
+    target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
+    target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
+    target_link_libraries(timemory-caliper INTERFACE caliper)
+else()
+    set(TIMEMORY_USE_CALIPER OFF)
+    inform_empty_interface(timemory-caliper "caliper")
+endif()
 
 #----------------------------------------------------------------------------------------#
 #

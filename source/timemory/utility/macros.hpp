@@ -416,39 +416,105 @@ _DBG(const char* msg)
 //
 //======================================================================================//
 
-#if defined(TIMEMORY_USE_GPERF)
+#if !defined(TIMEMORY_USE_GPERF)
+#    if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+#        include <gperftools/heap-profiler.h>
+#    endif
+#    if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+#        include <gperftools/profiler.h>
+#    endif
+#elif defined(TIMEMORY_USE_GPERF)
 #    include <gperftools/heap-profiler.h>
 #    include <gperftools/profiler.h>
+#endif
 
 namespace gperf
 {
-inline void
+namespace cpu
+{
+#if defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+//--------------------------------------------------------------------------------------//
+inline int
 profiler_start(const std::string& name)
 {
-    int ret = ProfilerStart(name.c_str());
-    if(ret != 0)
-    {
-        std::cerr << "Profiler failed to start for \"" << name << "\"..." << std::endl;
-    }
+    return ProfilerStart(name.c_str());
 }
-
+//--------------------------------------------------------------------------------------//
 inline void
 profiler_stop()
 {
     ProfilerStop();
 }
-
-}  // namespace gperf
+//--------------------------------------------------------------------------------------//
 #else
-namespace gperf
-{
-inline void
+//--------------------------------------------------------------------------------------//
+inline int
 profiler_start(const std::string&)
 {
+    return 0;
 }
+//--------------------------------------------------------------------------------------//
 inline void
 profiler_stop()
 {
 }
-}  // namespace gperf
+//--------------------------------------------------------------------------------------//
 #endif
+
+}  // namespace cpu
+
+namespace heap
+{
+#if defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+//--------------------------------------------------------------------------------------//
+inline int
+profiler_start(const std::string& name)
+{
+    HeapProfilerStart(name.c_str());
+    return 0;
+}
+//--------------------------------------------------------------------------------------//
+inline void
+profiler_stop()
+{
+    HeapProfilerStop();
+}
+//--------------------------------------------------------------------------------------//
+#else
+//--------------------------------------------------------------------------------------//
+inline int
+profiler_start(const std::string&)
+{
+    return 0;
+}
+//--------------------------------------------------------------------------------------//
+inline void
+profiler_stop()
+{
+}
+//--------------------------------------------------------------------------------------//
+#endif
+
+}  // namespace heap
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+profiler_start(const std::string& name)
+{
+    int ret = cpu::profiler_start(name) + heap::profiler_start(name);
+    if(ret != 0)
+        std::cerr << "Profiler failed to start for \"" << name << "\"..." << std::endl;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+profiler_stop()
+{
+    cpu::profiler_stop();
+    heap::profiler_stop();
+}
+
+//--------------------------------------------------------------------------------------//
+}  // namespace gperf

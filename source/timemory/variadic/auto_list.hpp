@@ -129,8 +129,7 @@ public:
               tim::enable_if_t<(is_one_of<_Tp, tuple_type>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
-        auto&& _obj = m_temporary_object.template get<_Tp>();
-        _obj        = new _Tp(std::forward<_Args>(_args)...);
+        m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
     }
 
     template <typename _Tp, typename... _Args,

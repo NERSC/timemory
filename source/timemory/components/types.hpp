@@ -25,6 +25,8 @@
 #pragma once
 
 #include <cstdint>
+#include <iostream>
+#include <string>
 #include <type_traits>
 
 //======================================================================================//
@@ -94,6 +96,9 @@ template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
 
 struct cupti_event;
+
+// caliper
+struct caliper;
 
 }  // component
 

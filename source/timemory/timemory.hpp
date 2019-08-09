@@ -40,10 +40,6 @@
 #include "timemory/variadic/auto_timer.hpp"
 #include "timemory/variadic/macros.hpp"
 
-#if defined(TIMEMORY_EXTERN_INIT)
-#    include "timemory/utility/storage.hpp"
-#endif
-
 #include "timemory/ctimemory.h"
 
 //======================================================================================//
@@ -62,6 +58,7 @@
 //======================================================================================//
 
 #if defined(TIMEMORY_EXTERN_INIT)
+#    include "timemory/utility/storage.hpp"
 
 TIMEMORY_DECLARE_EXTERN_STORAGE(real_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(system_clock)
