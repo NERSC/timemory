@@ -164,11 +164,53 @@ TEST_F(papi_tests, tuple_single_precision_ops)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(papi_tests, array_single_precision_ops)
+{
+    using test_type = papi_array_t;
+    CHECK_AVAILABLE(test_type);
+
+    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
+    auto ret = details::run_cpu_ops_kernel<float, 8, test_type>(1, 256);
+
+    auto obj            = std::get<0>(ret);
+    auto total_expected = std::get<1>(ret);
+    auto total_measured = obj->get<int64_t>()[0];
+
+    details::report(total_measured, total_expected, ops_tolerance);
+    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+        SUCCEED();
+    else
+        FAIL();
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(papi_tests, tuple_double_precision_ops)
 {
     using test_type = papi_tuple<PAPI_DP_OPS>;
     CHECK_AVAILABLE(test_type);
 
+    auto ret = details::run_cpu_ops_kernel<double, 8, test_type>(1, 256);
+
+    auto obj            = std::get<0>(ret);
+    auto total_expected = std::get<1>(ret);
+    auto total_measured = obj->get<int64_t>()[0];
+
+    details::report(total_measured, total_expected, ops_tolerance);
+    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+        SUCCEED();
+    else
+        FAIL();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(papi_tests, array_double_precision_ops)
+{
+    using test_type = papi_array_t;
+    CHECK_AVAILABLE(test_type);
+
+    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
     auto ret = details::run_cpu_ops_kernel<double, 8, test_type>(1, 256);
 
     auto obj            = std::get<0>(ret);
@@ -204,55 +246,13 @@ TEST_F(papi_tests, tuple_load_store_ins)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(papi_tests, array_single_precision_ops)
-{
-    using test_type = papi_array<1>;
-    CHECK_AVAILABLE(test_type);
-
-    std::vector<int> test_events = { PAPI_SP_OPS };
-    auto ret = details::run_cpu_ops_kernel<float, 8, test_type>(1, 256, test_events);
-
-    auto obj            = std::get<0>(ret);
-    auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
-
-    details::report(total_measured, total_expected, ops_tolerance);
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
-}
-
-//--------------------------------------------------------------------------------------//
-
-TEST_F(papi_tests, array_double_precision_ops)
-{
-    using test_type = papi_array<1>;
-    CHECK_AVAILABLE(test_type);
-
-    std::vector<int> test_events = { PAPI_DP_OPS };
-    auto ret = details::run_cpu_ops_kernel<double, 8, test_type>(1, 256, test_events);
-
-    auto obj            = std::get<0>(ret);
-    auto total_expected = std::get<1>(ret);
-    auto total_measured = obj->get<int64_t>()[0];
-
-    details::report(total_measured, total_expected, ops_tolerance);
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
-        SUCCEED();
-    else
-        FAIL();
-}
-
-//--------------------------------------------------------------------------------------//
-
 TEST_F(papi_tests, array_load_store_ins)
 {
-    using test_type = papi_array<1>;
-
+    using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
-    std::vector<int> test_events = { PAPI_LST_INS };
-    auto ret = details::run_cpu_ops_kernel<int64_t, 8, test_type>(1, 256, test_events);
+
+    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_LST_INS }); };
+    auto ret = details::run_cpu_ops_kernel<int64_t, 8, test_type>(1, 256);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);

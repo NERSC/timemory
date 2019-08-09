@@ -82,8 +82,7 @@ struct papi_array
     static get_events_func_t& get_events_func()
     {
         static get_events_func_t _instance = []() {
-            auto                  events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS",
-                                                "PAPI_LD_INS,PAPI_SR_INS,PAPI_LST_INS");
+            auto events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS", "");
             std::vector<string_t> events_str_list = delimit(events_str);
             std::vector<int>      events_list;
             for(const auto& itr : events_str_list)
@@ -93,11 +92,7 @@ struct papi_array
         return _instance;
     }
 
-    static event_list& get_events()
-    {
-        static event_list _instance = get_events_func()();
-        return _instance;
-    }
+    static event_list get_events() { return get_events_func()(); }
 
     static void invoke_thread_init()
     {
@@ -128,8 +123,8 @@ struct papi_array
     template <typename _Tp>
     using array_t = std::array<_Tp, MaxNumEvents>;
 
-    explicit papi_array(const event_list& _events = get_events())
-    : events(_events)
+    explicit papi_array()
+    : events(get_events())
     {
         apply<void>::set_value(value, 0);
         apply<void>::set_value(accum, 0);
