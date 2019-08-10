@@ -36,12 +36,12 @@ using mutex_t   = std::mutex;
 using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
-static const int64_t ops_tolerance = 10;
-static const int64_t lst_tolerance = 10;
-
 static constexpr uint64_t FLOPS  = 32;
-static constexpr uint64_t TRIALS = 1024;
-static constexpr uint64_t SIZE   = 1024;
+static constexpr uint64_t TRIALS = 1;
+static constexpr uint64_t SIZE   = 1024 * 1024;
+// tolerance of 5.0e-5
+static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
+static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 
 #define CHECK_WORKING()                                                                  \
     if(!tim::papi::working())                                                            \
@@ -116,14 +116,14 @@ template <typename _Tp>
 void
 report(const _Tp& measured_count, const _Tp& explicit_count, const _Tp& tolerance)
 {
-    double diff = static_cast<double>(measured_count) - explicit_count;
-    diff /= static_cast<double>(explicit_count);
-    diff *= 100.0;
+    _Tp    diff = measured_count - explicit_count;
+    double err  = (diff / static_cast<double>(explicit_count)) * 100.0;
     std::cout << get_test_name() << std::endl;
-    std::cout << "    Measured:  " << measured_count << std::endl;
-    std::cout << "    Expected:  " << explicit_count << std::endl;
-    std::cout << "    Tolerance: " << tolerance << std::endl;
-    std::cout << "    Abs Error: " << diff << " %" << std::endl;
+    std::cout << "    Measured:   " << measured_count << std::endl;
+    std::cout << "    Expected:   " << explicit_count << std::endl;
+    std::cout << "    Tolerance:  " << tolerance << std::endl;
+    std::cout << "    Difference: " << diff << std::endl;
+    std::cout << "    Abs Error:  " << err << " %" << std::endl;
 }
 //--------------------------------------------------------------------------------------//
 }  // namespace details
