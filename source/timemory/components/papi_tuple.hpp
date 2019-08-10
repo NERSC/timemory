@@ -81,21 +81,35 @@ public:
 
     static int& event_set()
     {
-        static int _instance = PAPI_NULL;
+        static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
     static bool& enable_multiplex()
     {
-        static bool _instance = false;
+        static thread_local bool _instance = false;
         return _instance;
     }
 
     static void invoke_thread_init()
     {
+        // set overhead to zero
+        apply<void>::set_value(get_overhead_values(), 0);
         int events[] = { EventTypes... };
         tim::papi::create_event_set(&event_set());
         tim::papi::add_events(event_set(), events, num_events);
         tim::papi::start(event_set(), enable_multiplex());
+        // record the overhead
+        auto tmp1 = get_read_values();
+        tmp1      = this_type::record();
+        auto tmp2 = get_read_values();
+        tmp2      = this_type::record();
+        this_type obj;
+        obj.start();
+        obj.stop();
+        for(uint64_t i = 0; i < get_overhead_values().size(); ++i)
+            get_overhead_values()[i] = std::max(tmp1[i], tmp2[i]);
+        for(uint64_t i = 0; i < get_overhead_values().size(); ++i)
+            get_overhead_values()[i] = std::max(get_overhead_values()[i], obj.accum[i]);
     }
 
     static void invoke_thread_finalize()
@@ -109,12 +123,30 @@ public:
 
     static value_type record()
     {
-        value_type read_value;
-        apply<void>::set_value(read_value, 0);
-        if(event_count::is_master())
-            tim::papi::read(event_set(), read_value.data());
-        return read_value;
+        tim::papi::read(event_set(), get_read_values().data());
+        return get_read_values();
     }
+
+private:
+    static value_type& get_overhead_values()
+    {
+        static thread_local value_type _instance;
+        return _instance;
+    }
+
+    static value_type& get_read_values()
+    {
+        static auto _get_read_values = []() {
+            value_type values;
+            apply<void>::set_value(values, 0);
+            return values;
+        };
+        static thread_local value_type _instance = _get_read_values();
+        return _instance;
+    }
+
+public:
+    static value_type get_overhead() { return get_overhead_values(); }
 
 public:
     //==================================================================================//
@@ -142,7 +174,7 @@ public:
     void start()
     {
         set_started();
-        value = record();
+        value = std::move(record());
     }
 
     //----------------------------------------------------------------------------------//
@@ -150,11 +182,16 @@ public:
     //
     void stop()
     {
-        auto tmp = record();
-        for(size_type i = 0; i < num_events; ++i)
+        auto tmp      = std::move(record());
+        auto overhead = get_overhead_values();
+        // account for the overhead of recording (relevant for load/store)
+        for(uint64_t i = 0; i < tmp.size(); ++i)
         {
-            accum[i] += (tmp[i] - value[i]);
+            tmp[i] -= overhead[i];
+            value[i] -= overhead[i];
         }
+        for(size_type i = 0; i < num_events; ++i)
+            accum[i] += (tmp[i] - value[i]);
         value = std::move(tmp);
         set_stopped();
     }
