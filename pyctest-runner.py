@@ -228,8 +228,7 @@ def run_pyctest():
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
                 pyctest.BUILD_TYPE = "Debug"
-        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE",
-                    ".*source/cereal/.*;.*source/python/pybind11/.*;")
+        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())

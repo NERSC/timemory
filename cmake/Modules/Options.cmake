@@ -27,6 +27,11 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(_USE_COVERAGE ON)
 endif()
 
+set(_BUILD_CALIPER ON)
+if(WIN32)
+    set(_BUILD_CALIPER OFF)
+endif()
+
 # Check if CUDA can be enabled
 if(NOT DEFINED TIMEMORY_USE_CUDA OR TIMEMORY_USE_CUDA)
     set(_USE_CUDA ON)
@@ -117,6 +122,8 @@ add_option(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS
     "Add extra optimization flags" OFF)
 add_option(TIMEMORY_BUILD_GTEST
     "Enable GoogleTest" OFF)
+add_option(TIMEMORY_BUILD_CALIPER
+    "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
 
 # Features
 
@@ -150,13 +157,12 @@ add_option(TIMEMORY_USE_CUDA
 add_option(TIMEMORY_USE_CUPTI
     "Enable CUPTI profiling for NVIDIA GPUs" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CALIPER
-    "Enable Caliper" OFF ${_FEATURE})
+    "Enable Caliper" ${_BUILD_CALIPER} ${_FEATURE})
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TIMEMORY_BUILD_LTO OFF)
     set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS OFF)
-    set(TIMEMORY_USE_ARCH OFF)
 endif()
 
 add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")

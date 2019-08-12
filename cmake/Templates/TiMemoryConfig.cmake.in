@@ -131,8 +131,8 @@ endif()
 #----------------------------------------------------------------------------------------#
 #   TiMemory link target
 #----------------------------------------------------------------------------------------#
+set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-headers)
 set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
-set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx)
 if(TIMEMORY_C_LIBRARY)
     set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
     list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
@@ -164,7 +164,7 @@ if(TIMEMORY_BUILD_INTERFACE_LIBRARY)
         else()
             set(_MSG "CMake 3.10 does not fully support IMPORTED INTERFACE libraries")
             set(_MSG "${_MSG}. The \"${_INTERFACE_LIB}\" target is being modified globally...")
-            set(_MSG "${_MSG}... Consider upgrading CMake or setting")
+            set(_MSG "${_MSG} Consider upgrading CMake or setting")
             set(_MSG "${_MSG} \"@PROJECT_NAME@_FIND_COMPONENTS_INTERFACE\".")
             message(WARNING "${_MSG}")
         endif()

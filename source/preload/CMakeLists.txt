@@ -14,14 +14,22 @@ endif()
 # Embed the link path into the executable
 #
 set(CMAKE_INSTALL_RPATH_USE_LINK_PATH ON)
-set(LINK_LIBS timemory-arch
-    timemory-vector
+set(LINK_LIBS
     timemory-headers
+    timemory-arch
+    timemory-vector
     timemory-compile-options
     timemory-papi
     timemory-cuda
     timemory-cupti
     timemory-cudart-device)
+
+# set(VARIANTS papi papi-cuda papi-cuda-cupti cuda cuda-cupti)
+# set(papi_VARIANT_LINK_LIBS timemory-papi)
+# set(papi-cuda_VARIANT_LINK_LIBS timemory-papi timemory-cuda timemory-cudart)
+# set(papi-cuda-cupti_VARIANT_LINK_LIBS timemory-papi timemory-cuda timemory-cupti timemory-cudart-device)
+# set(cuda_VARIANT_LINK_LIBS timemory-cuda timemory-cudart)
+# set(cuda-cupti_VARIANT_LINK_LIBS timemory-cuda timemory-cupti timemory-cudart-device)
 
 #----------------------------------------------------------------------------------------#
 # Build, link, and install libraries

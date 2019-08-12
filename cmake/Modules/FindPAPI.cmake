@@ -98,8 +98,8 @@ find_library(PAPI_LIBRARY
     HINTS
         ${PAPI_ROOT_DIR}
         ENV PAPI_ROOT_DIR
-        ENV LD_LIBRARY_PATH
         ENV LIBRARY_PATH
+        ENV LD_LIBRARY_PATH
         ENV DYLD_LIBRARY_PATH
     PATH_SUFFIXES
         lib
@@ -111,12 +111,12 @@ find_library(PAPI_LIBRARY
 
 find_library(PAPI_pfm_LIBRARY
     NAMES
-        pfm
+        pfm libpfm.so libpfm.so.4
     HINTS
         ${PAPI_ROOT_DIR}
         ENV PAPI_ROOT_DIR
-        ENV LD_LIBRARY_PATH
         ENV LIBRARY_PATH
+        ENV LD_LIBRARY_PATH
         ENV DYLD_LIBRARY_PATH
     PATH_SUFFIXES
         lib
@@ -141,6 +141,24 @@ find_static_library(PAPI_STATIC_LIBRARY
     DOC
         "Path to the PAPI library")
 
+#
+#----------------------------------------------------------------------------------------#
+
+find_static_library(PAPI_pfm_STATIC_LIBRARY
+    NAMES
+        pfm libpfm.a
+    HINTS
+        ${PAPI_ROOT_DIR}
+        ENV PAPI_ROOT_DIR
+        ENV LIBRARY_PATH
+        ENV LD_LIBRARY_PATH
+        ENV DYLD_LIBRARY_PATH
+    PATH_SUFFIXES
+        lib
+        lib64
+    DOC
+        "Path to the PAPI library")
+
 #----------------------------------------------------------------------------------------#
 
 include(FindPackageHandleStandardArgs)
@@ -155,18 +173,17 @@ if(PAPI_FOUND)
     add_library(papi-shared INTERFACE)
     add_library(papi-static INTERFACE)
     target_link_libraries(papi-shared INTERFACE ${PAPI_LIBRARY})
-    if(PAPI_pfm_LIBRARY)
-        target_link_libraries(papi-shared INTERFACE ${PAPI_pfm_LIBRARY})
-    endif()
     target_link_libraries(papi-static INTERFACE ${PAPI_STATIC_LIBRARY})
     target_include_directories(papi-shared INTERFACE ${PAPI_INCLUDE_DIR})
     target_include_directories(papi-static INTERFACE ${PAPI_INCLUDE_DIR})
-    get_filename_component(PAPI_INCLUDE_DIRS
-        ${PAPI_INCLUDE_DIR} REALPATH)
-    get_filename_component(PAPI_LIBRARIES
-        ${PAPI_LIBRARY} REALPATH)
+    get_filename_component(PAPI_INCLUDE_DIRS ${PAPI_INCLUDE_DIR} REALPATH)
+    get_filename_component(PAPI_LIBRARIES ${PAPI_LIBRARY} REALPATH)
     if(PAPI_pfm_LIBRARY)
+        target_link_libraries(papi-shared INTERFACE ${PAPI_pfm_LIBRARY})
         list(APPEND PAPI_LIBRARIES ${PAPI_pfm_LIBRARY})
+    endif()
+    if(PAPI_pfm_STATIC_LIBRARY)
+        target_link_libraries(papi-static INTERFACE ${PAPI_pfm_STATIC_LIBRARY})
     endif()
 endif()
 

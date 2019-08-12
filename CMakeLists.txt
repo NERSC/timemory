@@ -55,9 +55,8 @@ if(NOT CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
 endif()
 
 set(CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules
-    ${CMAKE_CURRENT_LIST_DIR}/source/python/pybind11/tools
+    ${CMAKE_CURRENT_LIST_DIR}/external/pybind11/tools
     ${CMAKE_MODULE_PATH})
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)
 set(CMAKE_DIRECTORY_LABELS "${PROJECT_NAME}")
 set(CMAKE_INSTALL_MESSAGE LAZY)
 
@@ -96,12 +95,29 @@ include(ClangFormat)
 include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
-#   TiMemory source
+#   TiMemory exports
 #----------------------------------------------------------------------------------------#
 
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}LibraryDepends)
+
+if(TIMEMORY_BUILD_CALIPER)
+    set(_CALIPER_TARGETS)
+    foreach(CALIPER_TARGET caliper caliper-serial caliper-tools-util caliper-mpi)
+        if(TARGET ${CALIPER_TARGET})
+            list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${CALIPER_TARGET})
+        endif()
+    endforeach()
+    list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
+    install(TARGETS ${_CALIPER_TARGETS}
+        DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+        EXPORT ${PROJECT_NAME}LibraryDepends)
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   TiMemory source
+#----------------------------------------------------------------------------------------#
 
 add_subdirectory(source)
 

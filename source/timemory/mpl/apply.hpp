@@ -318,7 +318,7 @@ struct _apply_impl<void>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
         // assign argument
-        std::get<_N>(__t) = std::forward<_Value>(__v);
+        std::get<_N>(__t) = __v;
     }
 
     template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
@@ -326,10 +326,9 @@ struct _apply_impl<void>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
         // call operator()
-        std::get<_N>(__t) = std::forward<_Value>(__v);
+        std::get<_N>(__t) = __v;
         // recursive call
-        set_value<_N + 1, _Nt, _Tuple, _Value>(std::forward<_Tuple>(__t),
-                                               std::forward<_Value>(__v));
+        set_value<_N + 1, _Nt, _Tuple, _Value>(std::forward<_Tuple>(__t), std::forward<_Value>(__v));
     }
 
     //----------------------------------------------------------------------------------//

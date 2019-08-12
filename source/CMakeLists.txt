@@ -229,8 +229,12 @@ install(EXPORT ${PROJECT_NAME}LibraryDepends
     DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
 
 export(
-    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES}
-    FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
+    TARGETS
+        ${TIMEMORY_COMPILED_LIBRARIES}
+        ${TIMEMORY_INTERFACE_LIBRARIES}
+        ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
+    FILE
+        ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
 
 
 #----------------------------------------------------------------------------------------#
