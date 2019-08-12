@@ -69,13 +69,13 @@ struct papi_array
 
     static int& event_set()
     {
-        static int _instance = PAPI_NULL;
+        static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
 
     static bool& enable_multiplex()
     {
-        static bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", false);
+        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
         return _instance;
     }
 
@@ -109,6 +109,7 @@ struct papi_array
         tim::papi::stop(event_set(), values.data());
         tim::papi::remove_events(event_set(), events.data(), events.size());
         tim::papi::destroy_event_set(event_set());
+        event_set() = PAPI_NULL;
     }
 
     using base_type::accum;

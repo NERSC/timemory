@@ -86,7 +86,7 @@ public:
     }
     static bool& enable_multiplex()
     {
-        static thread_local bool _instance = false;
+        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
         return _instance;
     }
 
@@ -119,6 +119,7 @@ public:
         tim::papi::stop(event_set(), values.data());
         tim::papi::remove_events(event_set(), events, num_events);
         tim::papi::destroy_event_set(event_set());
+        event_set() = PAPI_NULL;
     }
 
     static value_type record()

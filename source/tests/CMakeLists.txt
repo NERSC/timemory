@@ -9,6 +9,9 @@ if(TIMEMORY_USE_CUDA)
     set(DEVICE_LANGUAGE CUDA)
 endif()
 
+# add_library(no-store-merge INTERFACE)
+# add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
+
 add_googletest(timing_tests
     DISCOVER_TESTS
     SOURCES         timing_tests.cpp

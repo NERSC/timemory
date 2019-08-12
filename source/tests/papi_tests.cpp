@@ -30,6 +30,7 @@
 #include <thread>
 #include <timemory/timemory.hpp>
 #include <vector>
+#include <x86intrin.h>
 
 using namespace tim::component;
 using mutex_t   = std::mutex;
@@ -37,8 +38,8 @@ using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
 static constexpr uint64_t FLOPS  = 16;
-static constexpr uint64_t TRIALS = 1;
-static constexpr uint64_t SIZE   = 1024 * 1024;
+static constexpr uint64_t TRIALS = 2;
+static constexpr uint64_t SIZE   = 1024 * 1024 * 64;
 // tolerance of 5.0e-5
 static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
@@ -66,22 +67,33 @@ using return_type = std::tuple<ptr_t<_Tp>, int64_t, int64_t>;
 namespace details
 {
 //--------------------------------------------------------------------------------------//
-template <typename _Tp, int64_t _Nops, typename _Component, typename... _Args>
+template <typename _Tp, int64_t _Unroll, typename _Component, typename... _Args>
 return_type<_Component>
 run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
 {
     // auto op_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
     auto op_func           = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
     auto store_func        = [](_Tp& a, const _Tp& b) { a = b; };
-    auto bytes_per_element = sizeof(_Tp);
-    auto memory_accesses_per_element = 2;
+    auto bytes_per_elem = sizeof(_Tp);
+    auto vec_size = sizeof(__m128);
+    auto mem_access_per_elem = 2;
 
+    int64_t nops         = _Unroll;
     int64_t working_size = nsize * ntrials;
-    int64_t total_bytes  = working_size * bytes_per_element * memory_accesses_per_element;
-    int64_t total_ops    = working_size * _Nops;
+    int64_t total_bytes  = working_size * bytes_per_elem * mem_access_per_elem / vec_size;
+    int64_t total_ops    = working_size * nops;
 
-    _Tp* array = new _Tp[nsize];
-    std::memset(array, 0, nsize * sizeof(_Tp));
+    std::cout << "              Nops = " << nops << "\n";
+    std::cout << "           ntrials = " << ntrials << "\n";
+    std::cout << " bytes per element = " << bytes_per_elem << "\n";
+    std::cout << " accesses per elem = " << mem_access_per_elem << "\n";
+    std::cout << "      working size = " << working_size << "\n";
+    std::cout << "       total bytes = " << total_bytes << "\n";
+    std::cout << "  total operations = " << total_ops << "\n";
+
+    //_Tp* array = new _Tp[nsize];
+    std::vector<_Tp, tim::ert::aligned_allocator<_Tp, 64>> array(nsize);
+    std::memset(array.data(), 0, nsize * sizeof(_Tp));
 
     _Component::invoke_thread_init();
 
@@ -89,12 +101,10 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     pointer obj   = pointer(new _Component(std::forward<_Args>(_args)...));
 
     obj->start();
-    tim::ert::cpu_ops_kernel<_Nops>(ntrials, op_func, store_func, nsize, array);
+    tim::ert::cpu_ops_kernel<_Unroll>(ntrials, op_func, store_func, nsize, array.data());
     obj->stop();
 
     _Component::invoke_thread_finalize();
-
-    delete[] array;
 
     // return zeros if not working
     if(!tim::papi::working())
@@ -119,12 +129,14 @@ report(const _Tp& measured_count, const _Tp& explicit_count, const _Tp& toleranc
 {
     _Tp    diff = measured_count - explicit_count;
     double err  = (diff / static_cast<double>(explicit_count)) * 100.0;
+    double ratio = static_cast<double>(explicit_count) / measured_count;
     std::cout << get_test_name() << std::endl;
-    std::cout << "    Measured:   " << measured_count << std::endl;
-    std::cout << "    Expected:   " << explicit_count << std::endl;
-    std::cout << "    Tolerance:  " << tolerance << std::endl;
-    std::cout << "    Difference: " << diff << std::endl;
-    std::cout << "    Abs Error:  " << err << " %" << std::endl;
+    std::cout << "    Measured:  " << measured_count << std::endl;
+    std::cout << "    Expected:  " << explicit_count << std::endl;
+    std::cout << "   Tolerance:  " << tolerance << std::endl;
+    std::cout << "  Difference:  " << diff << std::endl;
+    std::cout << "       Ratio:  " << ratio << std::endl;
+    std::cout << "   Abs Error:  " << err << " %" << std::endl;
 }
 //--------------------------------------------------------------------------------------//
 }  // namespace details
@@ -169,12 +181,12 @@ TEST_F(papi_tests, tuple_single_precision_ops)
     details::report(total_measured, total_expected, ops_tolerance);
     if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
-    // else
-    //    FAIL();
+    else
+        FAIL();
 }
 
 //--------------------------------------------------------------------------------------//
-/*
+
 TEST_F(papi_tests, array_single_precision_ops)
 {
     using test_type = papi_array_t;
@@ -193,7 +205,7 @@ TEST_F(papi_tests, array_single_precision_ops)
     else
         FAIL();
 }
-*/
+
 //--------------------------------------------------------------------------------------//
 
 TEST_F(papi_tests, tuple_double_precision_ops)
@@ -214,12 +226,12 @@ TEST_F(papi_tests, tuple_double_precision_ops)
     details::report(total_measured, total_expected, ops_tolerance);
     if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
-    // else
-    //    FAIL();
+    else
+        FAIL();
 }
 
 //--------------------------------------------------------------------------------------//
-/*
+
 TEST_F(papi_tests, array_double_precision_ops)
 {
     using test_type = papi_array_t;
@@ -238,44 +250,40 @@ TEST_F(papi_tests, array_double_precision_ops)
     else
         FAIL();
 }
-*/
+
 //--------------------------------------------------------------------------------------//
 
 TEST_F(papi_tests, tuple_load_store_ins)
 {
-    using test_type = papi_tuple<PAPI_LD_INS, PAPI_SR_INS>;
+    using test_type = papi_tuple<PAPI_LST_INS>;
     CHECK_AVAILABLE(test_type);
 
     auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
 
-    auto obj               = std::get<0>(ret);
-    auto total_expected    = std::get<2>(ret);
-    auto total_measured_ld = obj->get<int64_t>()[0];
-    auto total_measured_sr = obj->get<int64_t>()[1];
-    auto total_measured    = total_measured_ld + total_measured_sr;
+    auto obj            = std::get<0>(ret);
+    auto total_expected = std::get<2>(ret);
+    auto total_measured = obj->get<int64_t>()[0];
 
     int idx = 0;
     for(auto itr : test_type::get_overhead())
         std::cout << "Overhead for counter " << idx++ << " is " << itr << std::endl;
 
-    details::report(total_measured_ld, total_expected, ops_tolerance);
-    details::report(total_measured_sr, total_expected, ops_tolerance);
     details::report(total_measured, total_expected, ops_tolerance);
     if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
-    // else
-    //    FAIL();
+    else
+        FAIL();
 }
 
 //--------------------------------------------------------------------------------------//
-/*
+
 TEST_F(papi_tests, array_load_store_ins)
 {
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
     papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_LST_INS }); };
-    auto ret = details::run_cpu_ops_kernel<int64_t, FLOPS, test_type>(TRIALS, SIZE);
+    auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
     auto total_expected = std::get<2>(ret);
@@ -287,7 +295,7 @@ TEST_F(papi_tests, array_load_store_ins)
     else
         FAIL();
 }
-*/
+
 //--------------------------------------------------------------------------------------//
 
 int
