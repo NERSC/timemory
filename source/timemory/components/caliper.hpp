@@ -79,14 +79,17 @@ struct caliper : public base<caliper, int64_t>
     }
     static attributes_t get_default_attributes()
     {
-        return (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
+        return (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);
     }
     static attributes_t& get_attributes()
     {
         static attributes_t _instance = get_default_attributes();
         return _instance;
     }
-    static void enable_process_scope() { get_attributes() = get_default_attributes(); }
+    static void enable_process_scope()
+    {
+        get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_PROCESS);
+    }
     static void enable_thread_scope()
     {
         get_attributes() = (CALI_ATTR_NESTED | CALI_ATTR_SCOPE_THREAD);

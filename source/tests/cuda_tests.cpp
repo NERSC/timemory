@@ -39,7 +39,7 @@ using namespace tim::component;
 
 static constexpr int     nitr     = 10;
 static constexpr int     nstreams = 4;
-static constexpr int64_t N        = 50 * (1 << 20);
+static constexpr int64_t N        = 50 * (1 << 23);
 using default_device              = tim::device::default_device;
 
 //--------------------------------------------------------------------------------------//
@@ -172,6 +172,7 @@ TEST_F(cuda_tests, saxpy_streams)
     using stream_t = default_device::stream_t;
     using tuple_t =
         tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event>::component_type;
+    using mark_stream_t = void (cuda_event::*)(tim::cuda::stream_t);
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -201,42 +202,48 @@ TEST_F(cuda_tests, saxpy_streams)
         y[i] = 2.0;
     }
 
-    TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(dev, tuple_t, details::get_test_name(),
-                                      " iterations + memory");
+    TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(mem, tuple_t, "memory");
+    auto& mem = TIMEMORY_CALIPER_REFERENCE(mem);
+    mem.start();
+
+    TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(dev, tuple_t, "iterations + memory");
     auto& dev = TIMEMORY_CALIPER_REFERENCE(dev);
     dev.start();
 
     float* d_x = tim::device::gpu::alloc<float>(N);
     float* d_y = tim::device::gpu::alloc<float>(N);
+
+    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[0]);
     tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v, streams[0]);
+    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[0]);
+
+    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[1]);
     tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v, streams[1]);
+    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[1]);
 
     sync_streams();
-    tuple_t bw(details::get_test_name() + " iterations");
-    typedef void (cuda_event::*mark_stream_t)(tim::cuda::stream_t);
+    tuple_t bw("iterations");
 
     for(int i = 0; i < nitr; ++i)
     {
         bw.start();
         params.stream = streams[i % streams.size()];
-        // using the caliper version
-        TIMEMORY_CALIPER_TYPE_APPLY(
-            dev, cuda_event, (mark_stream_t) &cuda_event::mark_begin, params.stream);
-        // dev.get<cuda_event>().mark_begin(params.stream);
+        TIMEMORY_CALIPER_MARK_STREAM_BEGIN(dev, params.stream);
         tim::device::launch(params, details::saxpy, N, 1.0, d_x, d_y);
-#if defined(TIMEMORY_USE_CUDA)
-        // applying directly
-        dev.get<cuda_event>().mark_end(params.stream);
-#endif
+        TIMEMORY_CALIPER_MARK_STREAM_END(dev, params.stream);
         bw.stop();
     }
 
+    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[0]);
     tim::cuda::memcpy(y, d_y, N, tim::cuda::device_to_host_v, streams[0]);
+    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[0]);
+
     sync_streams();
     tim::cuda::device_sync();
     tim::cuda::free(d_x);
     tim::cuda::free(d_y);
 
+    mem.stop();
     dev.stop();
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -269,6 +276,7 @@ TEST_F(cuda_tests, saxpy_streams)
     std::cout << details::get_test_name() << " cuda event: " << ce << std::endl;
     std::cout << details::get_test_name() << " real clock: " << rc << std::endl;
     std::cout << tot << std::endl;
+    std::cout << mem << std::endl;
     std::cout << dev << std::endl;
     std::cout << bw << std::endl;
     std::cout << std::endl;

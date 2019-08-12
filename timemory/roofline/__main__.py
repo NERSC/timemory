@@ -35,6 +35,7 @@ import json
 import argparse
 import warnings
 import traceback
+import multiprocessing as mp
 
 import timemory
 import timemory.roofline as _roofline
@@ -59,6 +60,8 @@ def parse_args(add_run_args=False):
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
                             choices=["ai", "op"], default=None)
+        parser.add_argument("-n", "--num-threads", help="Set the number of threads for peak calculation",
+                            default=None, type=int)
     else:
         parser.add_argument("-ai", "--arithmetic-intensity", type=str, help="AI intensity input")
         parser.add_argument("-op", "--operations", type=str, help="Operations input")
@@ -101,6 +104,9 @@ def run(args, cmd):
     output_path = get_environ("TIMEMORY_OUTPUT_PATH", "timemory-output", str)
     output_prefix = get_environ("TIMEMORY_OUTPUT_PREFIX", "", str)
     os.environ["TIMEMORY_JSON_OUTPUT"] = "ON"
+
+    if args.num_threads is not None:
+        os.environ["TIMEMORY_ROOFLINE_NUM_THREADS"] = "{}".format(args.num_threads)
 
     if args.preload:
         # walk back up the tree until we find libtimemory-preload.<EXT>

@@ -464,6 +464,24 @@ using str = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
+#    if defined(TIMEMORY_USE_CUDA)
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_begin,                      \
+                                        stream)
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_end,                        \
+                                        stream)
+#    else
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)
+#    endif
+
+//--------------------------------------------------------------------------------------//
+
 #endif  // !defined(TIMEMORY_MACROS)
 
 //--------------------------------------------------------------------------------------//
