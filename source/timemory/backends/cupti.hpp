@@ -169,6 +169,31 @@ warmup()
 {
 }
 
+struct int_data
+{
+    using type = int64_t;
+};
+struct uint_data
+{
+    using type = uint64_t;
+};
+struct percent_data
+{
+    using type = double;
+};
+struct double_data
+{
+    using type = double;
+};
+struct throughput_data
+{
+    using type = double;
+};
+struct utilization_data
+{
+    using type = int64_t;
+};
+
 //--------------------------------------------------------------------------------------//
 
 static metric_tuple_t

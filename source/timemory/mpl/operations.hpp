@@ -209,6 +209,52 @@ struct start
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct priority_start
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    explicit priority_start(base_type& obj)
+    {
+        obj.start();
+    }
+
+    template <typename _Up                                                   = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    explicit priority_start(base_type&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct standard_start
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    explicit standard_start(base_type&)
+    {
+    }
+
+    template <typename _Up                                                   = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    explicit standard_start(base_type& obj)
+    {
+        obj.start();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct stop
 {
     using Type       = _Tp;
@@ -219,6 +265,52 @@ struct stop
     {
         obj.stop();
         obj.activate_noop();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct priority_stop
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                 = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    explicit priority_stop(base_type& obj)
+    {
+        obj.stop();
+    }
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    explicit priority_stop(base_type&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct standard_stop
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                 = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    explicit standard_stop(base_type&)
+    {
+    }
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    explicit standard_stop(base_type& obj)
+    {
+        obj.stop();
     }
 };
 
@@ -243,6 +335,78 @@ struct conditional_start
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct conditional_priority_start
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    explicit conditional_priority_start(base_type& obj)
+    {
+        obj.conditional_start();
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    conditional_priority_start(base_type& obj, _Func&& func)
+    {
+        std::forward<_Func>(func)(obj.conditional_start());
+    }
+
+    template <typename _Up                                                   = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    explicit conditional_priority_start(base_type&)
+    {
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    conditional_priority_start(base_type&, _Func&&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct conditional_standard_start
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                   = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    explicit conditional_standard_start(base_type&)
+    {
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
+    conditional_standard_start(base_type&, _Func&&)
+    {
+    }
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    explicit conditional_standard_start(base_type& obj)
+    {
+        obj.conditional_start();
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::start_priority<_Up>::value == true), int> = 0>
+    conditional_standard_start(base_type& obj, _Func&& func)
+    {
+        std::forward<_Func>(func)(obj.conditional_start());
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct conditional_stop
 {
     using Type       = _Tp;
@@ -256,6 +420,102 @@ struct conditional_stop
     {
         std::forward<_Func>(func)(obj.conditional_stop());
     }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct conditional_priority_stop
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                 = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    explicit conditional_priority_stop(base_type& obj)
+    {
+        obj.conditional_stop();
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    conditional_priority_stop(base_type& obj, _Func&& func)
+    {
+        std::forward<_Func>(func)(obj.conditional_stop());
+    }
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    explicit conditional_priority_stop(base_type&)
+    {
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    conditional_priority_stop(base_type&, _Func&&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct conditional_standard_stop
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    explicit conditional_standard_stop(base_type&)
+    {
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
+    conditional_standard_stop(base_type&, _Func&&)
+    {
+    }
+
+    template <typename _Up                                                 = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    explicit conditional_standard_stop(base_type& obj)
+    {
+        obj.conditional_stop();
+    }
+
+    template <typename _Func, typename _Up = _Tp,
+              enable_if_t<(trait::stop_priority<_Up>::value == true), int> = 0>
+    conditional_standard_stop(base_type& obj, _Func&& func)
+    {
+        std::forward<_Func>(func)(obj.conditional_stop());
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct mark_begin
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    mark_begin(Type& obj) { obj.mark_begin(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct mark_end
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    mark_end(Type& obj) { obj.mark_end(); }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -328,7 +328,8 @@ struct _apply_impl<void>
         // call operator()
         std::get<_N>(__t) = __v;
         // recursive call
-        set_value<_N + 1, _Nt, _Tuple, _Value>(std::forward<_Tuple>(__t), std::forward<_Value>(__v));
+        set_value<_N + 1, _Nt, _Tuple, _Value>(std::forward<_Tuple>(__t),
+                                               std::forward<_Value>(__v));
     }
 
     //----------------------------------------------------------------------------------//

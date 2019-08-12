@@ -220,6 +220,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // mark a point in the execution, by default, this does nothing
+    //
+    void mark_begin() {}
+
+    //----------------------------------------------------------------------------------//
+    // mark a point in the execution, by default, this does nothing
+    //
+    void mark_end() {}
+
+    //----------------------------------------------------------------------------------//
     // set the firsts notify that start has been called
     //
     void set_started()

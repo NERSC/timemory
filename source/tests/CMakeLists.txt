@@ -4,6 +4,11 @@ unset(CMAKE_LIBRARY_OUTPUT_DIRECTORY )
 unset(CMAKE_ARCHIVE_OUTPUT_DIRECTORY )
 unset(CMAKE_PDB_OUTPUT_DIRECTORY )
 
+set(DEVICE_LANGUAGE CXX)
+if(TIMEMORY_USE_CUDA)
+    set(DEVICE_LANGUAGE CUDA)
+endif()
+
 add_googletest(timing_tests
     DISCOVER_TESTS
     SOURCES         timing_tests.cpp
@@ -29,4 +34,24 @@ if(TIMEMORY_USE_ARCH)
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch timemory-compile-options)
+endif()
+
+set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
+    PROPERTIES
+    LANGUAGE        ${DEVICE_LANGUAGE}
+    LINKER_LANGUAGE ${DEVICE_LANGUAGE})
+
+add_googletest(cuda_tests
+    DISCOVER_TESTS
+    SOURCES         cuda_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-arch  timemory-compile-options
+                    timemory-cuda    timemory-cudart)
+
+if(TIMEMORY_USE_CUPTI)
+    add_googletest(cupti_tests
+        DISCOVER_TESTS
+        SOURCES         cupti_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
+                        timemory-cuda    timemory-cupti  timemory-cudart-device
+    )
 endif()

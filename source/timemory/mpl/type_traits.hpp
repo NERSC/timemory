@@ -75,8 +75,28 @@ struct internal_output_handling : std::true_type
 /// e.g. -1 for type A would mean it should come before type B with 0 and
 /// type C with 1 should come after A and B
 ///
+/*
 template <typename _Tp>
 struct ordering_priority : std::integral_constant<int16_t, 0>
+{
+};
+*/
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates whether there is a priority when starting the type w.r.t.
+/// other types.
+///
+template <typename _Tp>
+struct start_priority : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates whether there is a priority when stopping the type w.r.t.
+/// other types.
+///
+template <typename _Tp>
+struct stop_priority : std::false_type
 {
 };
 
@@ -131,8 +151,9 @@ struct array_serialization<component::cupti_event> : std::true_type
 {
 };
 
+/// component::cuda_event should be stopped before other types
 template <>
-struct ordering_priority<component::cuda_event> : std::integral_constant<int16_t, -1>
+struct stop_priority<component::cuda_event> : std::true_type
 {
 };
 

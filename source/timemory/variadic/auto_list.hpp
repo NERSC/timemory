@@ -67,7 +67,7 @@ public:
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
     using language_t     = tim::language;
-    using tuple_type     = implemented_tuple<Types...>;
+    using tuple_type     = implemented<Types...>;
     using init_func_t    = std::function<void(this_type&)>;
 
 public:
@@ -96,6 +96,8 @@ public:
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
+    inline void mark_begin() { m_temporary_object.mark_begin(); }
+    inline void mark_end() { m_temporary_object.mark_end(); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }

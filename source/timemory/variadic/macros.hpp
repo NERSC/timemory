@@ -338,6 +338,27 @@ using str = tim::apply<std::string>;
 #    define TIMEMORY_CALIPER_APPLY(id, func, ...) _AUTO_NAME(id).func(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)
+ *
+ * apply a function to a caliper, e.g. start or stop
+ *
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_CALIPER(1, (tim::auto_tuple<tim::component::real_clock>), "");
+ *          TIMEMORY_CALIPER_APPLY(1, start);
+ *
+ *          TIMEMORY_CALIPER_APPLY(1, stop);
+ *          ...
+ *      }
+ *
+ */
+#    define TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)                             \
+        _AUTO_NAME(id).type_apply<type>(func, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_CALIPER_REFERENCE(id, func, ...)
  *
  * apply a function to a caliper, e.g. start or stop

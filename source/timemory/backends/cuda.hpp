@@ -59,6 +59,16 @@
         }                                                                                \
     }
 
+// this a macro so we can pre-declare
+#define CUDA_RUNTIME_CHECK_ERROR(err)                                                    \
+    {                                                                                    \
+        if(err != tim::cuda::success_v)                                                  \
+        {                                                                                \
+            fprintf(stderr, "%s:%d: error check failed with: %s.\n", __FILE__, __LINE__, \
+                    tim::cuda::get_error_string(err));                                   \
+        }                                                                                \
+    }
+
 //--------------------------------------------------------------------------------------//
 namespace tim
 {

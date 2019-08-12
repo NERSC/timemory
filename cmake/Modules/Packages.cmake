@@ -509,6 +509,9 @@ if(TIMEMORY_USE_CUDA)
 
         add_user_flags(timemory-cuda "CUDA")
 
+        target_compile_options(timemory-cuda INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE
                 $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)

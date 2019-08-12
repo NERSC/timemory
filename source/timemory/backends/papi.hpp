@@ -327,8 +327,8 @@ init_multiplexing()
     if(!allow_multiplexing)
         return;
 
-    static bool multiplexing_initialized = false;
-    if(is_master_thread() && !multiplexing_initialized && working())
+    static bool thread_local multiplexing_initialized = false;
+    if(!multiplexing_initialized && working())
     {
         int retval = PAPI_multiplex_init();
         working()  = check(retval, "Warning!! Failure initializing PAPI multiplexing");
@@ -377,8 +377,8 @@ init()
     // initialize the PAPI library
 #if defined(TIMEMORY_USE_PAPI)
     init_library();
-    init_threading();
     init_multiplexing();
+    init_threading();
     if(!working())
     {
         fprintf(stderr, "Warning!! PAPI library not fully initialized!\n");

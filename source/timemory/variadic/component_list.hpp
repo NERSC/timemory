@@ -77,7 +77,7 @@ class component_list
 public:
     using size_type      = int64_t;
     using this_type      = component_list<Types...>;
-    using data_type      = tim::implemented_tuple<Types*...>;
+    using data_type      = tim::implemented<Types*...>;
     using reference_type = std::tuple<Types...>;
     using string_hash    = std::hash<string_t>;
     using counter_type   = tim::counted_object<this_type>;
@@ -88,7 +88,7 @@ public:
 
 public:
     using auto_type = auto_list<Types...>;
-    // using op_count_t = tim::operation_tuple<operation::pointer_counter, Types...>;
+    // using op_count_t = tim::modifiers<operation::pointer_counter, Types...>;
     using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
@@ -241,8 +241,11 @@ public:
     // start/stop functions
     void start()
     {
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
+        using prior_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_priority_start<Types>>...>;
+        using stand_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_standard_start<Types>>...>;
+
         bool _incremented    = false;
         auto _increment_laps = [&](bool _started) {
             if(_started && !_incremented)
@@ -252,15 +255,19 @@ public:
             }
         };
         // start components
-        apply<void>::access<apply_types>(m_data, _increment_laps);
+        apply<void>::access<prior_apply_types>(m_data, _increment_laps);
+        apply<void>::access<stand_apply_types>(m_data, _increment_laps);
     }
 
     void stop()
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::stop<Types>>...>;
+        using prior_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::priority_stop<Types>>...>;
+        using stand_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::standard_stop<Types>>...>;
         // stop components
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -268,19 +275,47 @@ public:
     void conditional_start()
     {
         // start, if not already started
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        using prior_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_priority_start<Types>>...>;
+        using stand_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_standard_start<Types>>...>;
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
     }
 
     void conditional_stop()
     {
         // stop, if not already stopped
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_stop<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        using prior_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_priority_stop<Types>>...>;
+        using stand_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_standard_stop<Types>>...>;
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
         // pop them off the running stack
         pop();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_begin()
+    {
+        using apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_end()
+    {
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -549,6 +584,21 @@ public:
     template <typename _Tp, typename... _Args,
               tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void init(_Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
+    void type_apply(_Func&& _func, _Args&&... _args)
+    {
+        auto&& _obj = get<_Tp>();
+        ((*_obj).*(_func))(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
+    void type_apply(_Func&&, _Args&&...)
     {
     }
 

@@ -98,6 +98,8 @@ public:
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
+    inline void mark_begin() { m_temporary_object.mark_begin(); }
+    inline void mark_end() { m_temporary_object.mark_end(); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }

@@ -36,9 +36,9 @@ using mutex_t   = std::mutex;
 using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
-static constexpr uint64_t FLOPS  = 32;
+static constexpr uint64_t FLOPS  = 16;
 static constexpr uint64_t TRIALS = 1;
-static constexpr uint64_t SIZE   = 1 * 1;
+static constexpr uint64_t SIZE   = 1024 * 1024;
 // tolerance of 5.0e-5
 static const int64_t ops_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
 static const int64_t lst_tolerance = (TRIALS * SIZE * FLOPS) / 2000;
@@ -70,10 +70,10 @@ template <typename _Tp, int64_t _Nops, typename _Component, typename... _Args>
 return_type<_Component>
 run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
 {
-    auto op_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-    // auto op_func          = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-    auto store_func                  = [](_Tp& a, const _Tp& b) { a = b; };
-    auto bytes_per_element           = sizeof(_Tp);
+    // auto op_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+    auto op_func           = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+    auto store_func        = [](_Tp& a, const _Tp& b) { a = b; };
+    auto bytes_per_element = sizeof(_Tp);
     auto memory_accesses_per_element = 2;
 
     int64_t working_size = nsize * ntrials;
