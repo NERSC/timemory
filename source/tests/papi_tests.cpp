@@ -75,7 +75,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     auto op_func           = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
     auto store_func        = [](_Tp& a, const _Tp& b) { a = b; };
     auto bytes_per_elem = sizeof(_Tp);
-    auto vec_size = sizeof(__m128);
+    auto vec_size = TIMEMORY_VEC / 16;
     auto mem_access_per_elem = 2;
 
     int64_t nops         = _Unroll;
