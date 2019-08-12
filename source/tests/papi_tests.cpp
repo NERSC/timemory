@@ -72,10 +72,10 @@ return_type<_Component>
 run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
 {
     // auto op_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-    auto op_func           = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
-    auto store_func        = [](_Tp& a, const _Tp& b) { a = b; };
-    auto bytes_per_elem = sizeof(_Tp);
-    auto vec_size = TIMEMORY_VEC / 16;
+    auto op_func             = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+    auto store_func          = [](_Tp& a, const _Tp& b) { a = b; };
+    auto bytes_per_elem      = sizeof(_Tp);
+    auto vec_size            = (TIMEMORY_VEC / 512.0) * (TIMEMORY_VEC / 8.0);
     auto mem_access_per_elem = 2;
 
     int64_t nops         = _Unroll;
@@ -127,8 +127,8 @@ template <typename _Tp>
 void
 report(const _Tp& measured_count, const _Tp& explicit_count, const _Tp& tolerance)
 {
-    _Tp    diff = measured_count - explicit_count;
-    double err  = (diff / static_cast<double>(explicit_count)) * 100.0;
+    _Tp    diff  = measured_count - explicit_count;
+    double err   = (diff / static_cast<double>(explicit_count)) * 100.0;
     double ratio = static_cast<double>(explicit_count) / measured_count;
     std::cout << get_test_name() << std::endl;
     std::cout << "    Measured:  " << measured_count << std::endl;
