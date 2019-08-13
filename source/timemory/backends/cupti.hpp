@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/backends/device.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -153,6 +154,136 @@ static void CUPTIAPI
     free(buffer);
 }
 */
+
+namespace data
+{
+union metric_u {
+    int64_t  integer_v;
+    uint64_t unsigned_integer_v;
+    double   percent_v;
+    double   floating_v;
+    int64_t  throughput_v;
+    int64_t  utilization_v;
+};
+
+struct metric
+{
+    metric_u data  = {};
+    uint64_t count = 1;
+    uint64_t index = 0;
+};
+
+struct unsigned_integer
+{
+    using type                      = uint64_t;
+    static constexpr uint64_t index = 0;
+
+    static type& get(metric& obj) { return obj.data.unsigned_integer_v; }
+    static type  cget(const metric& obj) { return obj.data.unsigned_integer_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValueUint64;
+        obj.index = index;
+    }
+    static void set(metric& obj, const type& value)
+    {
+        get(obj)  = value;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static type get_data(const metric& obj) { return obj.data.unsigned_integer_v; }
+};
+
+struct integer
+{
+    using type                      = int64_t;
+    static constexpr uint64_t index = 1;
+
+    static type& get(metric& obj) { return obj.data.integer_v; }
+    static type  cget(const metric& obj) { return obj.data.integer_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValueInt64;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static type get_data(const metric& obj) { return obj.data.integer_v; }
+};
+
+struct percent
+{
+    using type                      = double;
+    static constexpr uint64_t index = 2;
+
+    static type& get(metric& obj) { return obj.data.percent_v; }
+    static type  cget(const metric& obj) { return obj.data.percent_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValuePercent;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj)
+    {
+        auto val = cget(obj);
+        val /= obj.count;
+        ss << val << " %";
+    }
+    static type get_data(const metric& obj) { return obj.data.percent_v / obj.count; }
+};
+
+struct floating
+{
+    using type                      = double;
+    static constexpr uint64_t index = 3;
+
+    static type& get(metric& obj) { return obj.data.floating_v; }
+    static type  cget(const metric& obj) { return obj.data.floating_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValueDouble;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static type get_data(const metric& obj) { return obj.data.floating_v; }
+};
+
+struct throughput
+{
+    using type                      = int64_t;
+    static constexpr uint64_t index = 4;
+
+    static type& get(metric& obj) { return obj.data.throughput_v; }
+    static type  cget(const metric& obj) { return obj.data.throughput_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValueThroughput;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static type get_data(const metric& obj) { return obj.data.throughput_v; }
+};
+
+struct utilization
+{
+    using type                      = int64_t;
+    static constexpr uint64_t index = 5;
+
+    static type& get(metric& obj) { return obj.data.utilization_v; }
+    static type  cget(const metric& obj) { return obj.data.utilization_v; }
+    static void  set(metric& obj, CUpti_MetricValue& value)
+    {
+        get(obj)  = value.metricValueUtilizationLevel;
+        obj.index = index;
+    }
+    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static type get_data(const metric& obj) { return obj.data.utilization_v; }
+};
+
+using data_types =
+    std::tuple<integer, unsigned_integer, percent, floating, throughput, utilization>;
+
+}  // namespace data
+
 //--------------------------------------------------------------------------------------//
 
 namespace impl
@@ -160,69 +291,36 @@ namespace impl
 //--------------------------------------------------------------------------------------//
 
 static uint64_t dummy_kernel_id = 0;
-using metric_tuple_t            = std::tuple<double, uint64_t, int64_t>;
+using data_metric_t             = data::metric;
 
 //--------------------------------------------------------------------------------------//
 
-__global__ void
+GLOBAL_CALLABLE void
 warmup()
 {
 }
 
-struct int_data
-{
-    using type = int64_t;
-};
-struct uint_data
-{
-    using type = uint64_t;
-};
-struct percent_data
-{
-    using type = double;
-};
-struct double_data
-{
-    using type = double;
-};
-struct throughput_data
-{
-    using type = double;
-};
-struct utilization_data
-{
-    using type = int64_t;
-};
-
 //--------------------------------------------------------------------------------------//
 
-static metric_tuple_t
-get_metric_tuple(CUpti_MetricID& id, CUpti_MetricValue& value)
+static data_metric_t
+get_metric(CUpti_MetricID& id, CUpti_MetricValue& value)
 {
     CUpti_MetricValueKind value_kind;
     size_t                value_kind_sz = sizeof(value_kind);
     CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
                                        &value_kind));
-    metric_tuple_t ret(0.0, 0, 0);
+    data_metric_t ret;
     switch(value_kind)
     {
-        case CUPTI_METRIC_VALUE_KIND_DOUBLE:
-            std::get<0>(ret) = value.metricValueDouble;
-            break;
+        case CUPTI_METRIC_VALUE_KIND_DOUBLE: data::floating::set(ret, value); break;
         case CUPTI_METRIC_VALUE_KIND_UINT64:
-            std::get<1>(ret) = value.metricValueUint64;
+            data::unsigned_integer::set(ret, value);
             break;
-        case CUPTI_METRIC_VALUE_KIND_INT64:
-            std::get<2>(ret) = value.metricValueInt64;
-            break;
-        case CUPTI_METRIC_VALUE_KIND_PERCENT:
-            std::get<0>(ret) = value.metricValuePercent;
-            break;
-        case CUPTI_METRIC_VALUE_KIND_THROUGHPUT:
-            std::get<0>(ret) = value.metricValueThroughput;
-            break;
+        case CUPTI_METRIC_VALUE_KIND_INT64: data::integer::set(ret, value); break;
+        case CUPTI_METRIC_VALUE_KIND_PERCENT: data::percent::set(ret, value); break;
+        case CUPTI_METRIC_VALUE_KIND_THROUGHPUT: data::throughput::set(ret, value); break;
         case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL:
-            std::get<2>(ret) = value.metricValueUtilizationLevel;
+            data::utilization::set(ret, value);
             break;
         default: break;
     }
@@ -253,62 +351,120 @@ print_metric(std::ostream& os, CUpti_MetricID& id, CUpti_MetricValue& value)
 }
 
 //--------------------------------------------------------------------------------------//
-
-static int
-get_metric_tuple_index(CUpti_MetricID& id)
-{
-    CUpti_MetricValueKind value_kind;
-    size_t                value_kind_sz = sizeof(value_kind);
-    CUPTI_CALL(cuptiMetricGetAttribute(id, CUPTI_METRIC_ATTR_VALUE_KIND, &value_kind_sz,
-                                       &value_kind));
-    switch(value_kind)
-    {
-        case CUPTI_METRIC_VALUE_KIND_DOUBLE: return 0; break;
-        case CUPTI_METRIC_VALUE_KIND_UINT64: return 1; break;
-        case CUPTI_METRIC_VALUE_KIND_INT64: return 2; break;
-        case CUPTI_METRIC_VALUE_KIND_PERCENT: return 0; break;
-        case CUPTI_METRIC_VALUE_KIND_THROUGHPUT: return 0; break;
-        case CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL: return 2; break;
-        default: break;
-    }
-    return -1;
-}
-
-//--------------------------------------------------------------------------------------//
 // Generic tuple operations
 //
-template <size_t _N, typename _Tuple>
+template <typename _Ret, typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
 void
-plus(_Tuple& lhs, const _Tuple& rhs)
+_get(_Ret& val, const data_metric_t& lhs)
 {
-    std::get<_N>(lhs) += std::get<_N>(rhs);
+    if(lhs.index == _Tp::index)
+        val = static_cast<_Ret>(_Tp::get_data(lhs));
 }
 
-template <size_t _N, typename _Tuple>
+template <typename _Ret, typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
 void
-minus(_Tuple& lhs, const _Tuple& rhs)
+_get(_Ret& val, const data_metric_t& lhs)
 {
-    std::get<_N>(lhs) -= std::get<_N>(rhs);
+    if(lhs.index == _Tp::index)
+        val = static_cast<_Ret>(_Tp::get_data(lhs));
+    else
+        _get<_Ret, _Types...>(val, lhs);
 }
 
-inline metric_tuple_t&
-operator+=(metric_tuple_t& lhs, const metric_tuple_t& rhs)
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+_print(std::stringstream& ss, const data_metric_t& lhs)
 {
-    plus<0>(lhs, rhs);
-    plus<1>(lhs, rhs);
-    plus<2>(lhs, rhs);
+    if(lhs.index == _Tp::index)
+        _Tp::print(ss, lhs);
+}
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+_print(std::stringstream& ss, const data_metric_t& lhs)
+{
+    if(lhs.index == _Tp::index)
+        _Tp::print(ss, lhs);
+    else
+        _print<_Types...>(ss, lhs);
+}
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+plus(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(lhs.index == _Tp::index)
+        _Tp::get(lhs) += _Tp::cget(rhs);
+}
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+plus(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(lhs.index == _Tp::index)
+        _Tp::get(lhs) += _Tp::cget(rhs);
+    else
+        plus<_Types...>(lhs, rhs);
+}
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+minus(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(lhs.index == _Tp::index)
+        _Tp::get(lhs) -= _Tp::cget(rhs);
+}
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+minus(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(lhs.index == _Tp::index)
+        _Tp::get(lhs) -= _Tp::cget(rhs);
+    else
+        minus<_Types...>(lhs, rhs);
+}
+
+inline void
+print(std::stringstream& ss, const data_metric_t& lhs)
+{
+    _print<data::unsigned_integer, data::integer, data::percent, data::floating,
+           data::throughput, data::utilization>(ss, lhs);
+}
+
+template <typename _Tp>
+inline _Tp
+get(const data_metric_t& lhs)
+{
+    _Tp value = _Tp(0.0);
+    _get<_Tp, data::unsigned_integer, data::integer, data::percent, data::floating,
+         data::throughput, data::utilization>(value, lhs);
+    return value;
+}
+
+inline data_metric_t&
+operator+=(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    impl::plus<data::unsigned_integer, data::integer, data::percent, data::floating,
+               data::throughput, data::utilization>(lhs, rhs);
     return lhs;
 }
 
-inline metric_tuple_t&
-operator-=(metric_tuple_t& lhs, const metric_tuple_t& rhs)
+inline data_metric_t&
+operator-=(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    minus<0>(lhs, rhs);
-    minus<1>(lhs, rhs);
-    minus<2>(lhs, rhs);
+    impl::minus<data::unsigned_integer, data::integer, data::percent, data::floating,
+                data::throughput, data::utilization>(lhs, rhs);
     return lhs;
 }
-
 //--------------------------------------------------------------------------------------//
 // Pass-specific data
 //
@@ -331,7 +487,7 @@ struct kernel_data_t
 {
     using event_val_t  = std::vector<uint64_t>;
     using metric_val_t = std::vector<CUpti_MetricValue>;
-    using metric_tup_t = std::vector<metric_tuple_t>;
+    using metric_tup_t = std::vector<data_metric_t>;
     using pass_val_t   = std::vector<pass_data_t>;
 
     kernel_data_t()                     = default;
@@ -364,7 +520,7 @@ struct kernel_data_t
         m_pass_data     = rhs.m_pass_data;
         m_metric_values = rhs.m_metric_values;
         m_event_values.resize(rhs.m_event_values.size(), 0);
-        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), data_metric_t());
     }
 
     kernel_data_t& operator+=(const kernel_data_t& rhs)
@@ -373,7 +529,7 @@ struct kernel_data_t
         for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
             m_event_values[i] += rhs.m_event_values[i];
 
-        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), data_metric_t());
         for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
             m_metric_tuples[i] += rhs.m_metric_tuples[i];
 
@@ -386,7 +542,7 @@ struct kernel_data_t
         for(uint64_t i = 0; i < rhs.m_event_values.size(); ++i)
             m_event_values[i] -= rhs.m_event_values[i];
 
-        m_metric_tuples.resize(rhs.m_metric_tuples.size(), metric_tuple_t());
+        m_metric_tuples.resize(rhs.m_metric_tuples.size(), data_metric_t());
         for(uint64_t i = 0; i < rhs.m_metric_tuples.size(); ++i)
             m_metric_tuples[i] -= rhs.m_metric_tuples[i];
 
@@ -569,16 +725,32 @@ static void CUPTIAPI
 
 }  // namespace impl
 
+inline void
+plus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
+{
+    impl::plus<data::unsigned_integer, data::integer, data::percent, data::floating,
+               data::throughput, data::utilization>(lhs, rhs);
+    lhs.count += rhs.count;
+}
+
+inline void
+minus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
+{
+    impl::minus<data::unsigned_integer, data::integer, data::percent, data::floating,
+                data::throughput, data::utilization>(lhs, rhs);
+    lhs.count -= rhs.count;
+}
+
 //--------------------------------------------------------------------------------------//
 
 struct result
 {
-    using data_t = std::tuple<uint64_t, int64_t, double>;
+    using data_t = data::metric;
 
     bool        is_event_value = true;
     int         index          = 0;
     std::string name           = "unk";
-    data_t      data           = data_t(0, 0, 0.0);
+    data_t      data;
 
     result()              = default;
     ~result()             = default;
@@ -587,37 +759,19 @@ struct result
     result& operator=(const result&) = default;
     result& operator=(result&&) = default;
 
-    explicit result(const std::string& _name, const uint64_t& _data, bool _is = true)
+    explicit result(const std::string& _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)
-    , index(0)
+    , index(_data.index)
     , name(_name)
-    , data({ _data, 0, 0.0 })
-    {
-    }
-
-    explicit result(const std::string& _name, const int64_t& _data, bool _is = false)
-    : is_event_value(_is)
-    , index(1)
-    , name(_name)
-    , data({ 0, _data, 0.0 })
-    {
-    }
-
-    explicit result(const std::string& _name, const double& _data, bool _is = false)
-    : is_event_value(_is)
-    , index(2)
-    , name(_name)
-    , data({ 0, 0, _data })
+    , data(_data)
     {
     }
 
     friend std::ostream& operator<<(std::ostream& os, const result& obj)
     {
         std::stringstream ss;
-        ss << std::setprecision(2)
-           << ((obj.index == 0)
-                   ? std::get<0>(obj.data)
-                   : ((obj.index == 1) ? std::get<1>(obj.data) : std::get<2>(obj.data)));
+        ss << std::setprecision(2);
+        impl::print(ss, obj.data);
         ss << " " << obj.name;
         os << ss.str();
         return os;
@@ -634,9 +788,7 @@ struct result
     {
         if(name == "unk")
             return operator=(rhs);
-        impl::plus<0>(data, rhs.data);
-        impl::plus<1>(data, rhs.data);
-        impl::plus<2>(data, rhs.data);
+        plus(data, rhs.data);
         return *this;
     }
 
@@ -644,9 +796,7 @@ struct result
     {
         if(name == "unk")
             return operator=(rhs);
-        impl::minus<0>(data, rhs.data);
-        impl::minus<1>(data, rhs.data);
-        impl::minus<2>(data, rhs.data);
+        minus(data, rhs.data);
         return *this;
     }
 
@@ -929,7 +1079,9 @@ struct profiler
 
     results_t get_events_and_metrics(const std::vector<std::string>& labels)
     {
-        print_events_and_metrics(std::cout);
+        if(tim::get_env<int>("TIMEMORY_VERBOSE", 0) > 2)
+            print_events_and_metrics(std::cout);
+
         results_t kern_data(labels.size());
 
         auto get_label_index = [&](const std::string& key) -> int64_t {
@@ -951,8 +1103,10 @@ struct profiler
                 auto        label_idx = get_label_index(evt_name);
                 if(label_idx < 0)
                     continue;
-                auto value = static_cast<uint64_t>(kitr.second.m_event_values[i]);
-                kern_data[label_idx] += result(evt_name, value, true);
+                auto         value = static_cast<uint64_t>(kitr.second.m_event_values[i]);
+                data::metric ret;
+                data::unsigned_integer::set(ret, value);
+                kern_data[label_idx] += result(evt_name, ret, true);
             }
 
             for(size_t i = 0; i < m_metric_names.size(); ++i)
@@ -961,21 +1115,9 @@ struct profiler
                 auto        label_idx = get_label_index(met_name);
                 if(label_idx < 0)
                     continue;
-                auto idx = impl::get_metric_tuple_index(m_metric_ids[i]);
-                auto ret = impl::get_metric_tuple(m_metric_ids[i],
-                                                  kitr.second.m_metric_values[i]);
-                switch(idx)
-                {
-                    case 0:
-                        kern_data[label_idx] += result(met_name, std::get<0>(ret), false);
-                        break;
-                    case 1:
-                        kern_data[label_idx] += result(met_name, std::get<1>(ret), false);
-                        break;
-                    case 2:
-                        kern_data[label_idx] += result(met_name, std::get<2>(ret), false);
-                        break;
-                }
+                auto ret =
+                    impl::get_metric(m_metric_ids[i], kitr.second.m_metric_values[i]);
+                kern_data[label_idx] += result(met_name, ret, false);
             }
         }
         return kern_data;
@@ -1031,14 +1173,32 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
+inline strvec_t
+available_metrics(CUdevice device);
+
+//--------------------------------------------------------------------------------------//
+
+inline strvec_t
+available_events(CUdevice device);
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace cupti
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
 #if !defined(__CUPTI_PROFILER_NAME_SHORT)
 #    define __CUPTI_PROFILER_NAME_SHORT 128
 #endif
 
 //--------------------------------------------------------------------------------------//
 
-inline strvec_t
-available_metrics(CUdevice device)
+inline tim::cupti::strvec_t
+tim::cupti::available_metrics(CUdevice device)
 {
     strvec_t              metric_names;
     uint32_t              numMetric;
@@ -1069,10 +1229,11 @@ available_metrics(CUdevice device)
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
-            printf(
-                "Metric %s cannot be profiled as metric requires GPU"
-                "time duration for kernel run.\n",
-                metricName);
+            if(tim::get_env<int>("TIMEMORY_VERBOSE", 0) > 0)
+                printf(
+                    "Metric %s cannot be profiled as metric requires GPU"
+                    "time duration for kernel run.\n",
+                    metricName);
         }
         else
         {
@@ -1085,8 +1246,8 @@ available_metrics(CUdevice device)
 
 //--------------------------------------------------------------------------------------//
 
-inline strvec_t
-available_events(CUdevice device)
+inline tim::cupti::strvec_t
+tim::cupti::available_events(CUdevice device)
 {
     strvec_t             event_names;
     uint32_t             numDomains  = 0;
@@ -1140,12 +1301,4 @@ available_events(CUdevice device)
     return std::move(event_names);
 }
 
-//--------------------------------------------------------------------------------------//
-
-}  // namespace cupti
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace tim
-
-//--------------------------------------------------------------------------------------//
+#undef __CUPTI_PROFILER_NAME_SHORT

@@ -90,7 +90,7 @@ TEST_F(cuda_tests, saxpy)
     float*   y         = tim::device::cpu::alloc<float>(N);
     float    data_size = (3.0 * N * sizeof(float)) / tim::units::gigabyte;
     stream_t stream    = 0;
-    params_t params(512, params_t::compute(N, 512));
+    params_t params(params_t::compute(N, 512), 512);
 
     std::cout << "\n"
               << details::get_test_name() << " launching on " << default_device::name()
@@ -189,7 +189,7 @@ TEST_F(cuda_tests, saxpy_streams)
     float*   x         = tim::device::cpu::alloc<float>(N);
     float*   y         = tim::device::cpu::alloc<float>(N);
     float    data_size = (3.0 * N * sizeof(float)) / tim::units::gigabyte;
-    params_t params(512, params_t::compute(N, 512));
+    params_t params(params_t::compute(N, 512), 512);
 
     std::cout << "\n"
               << details::get_test_name() << " launching on " << default_device::name()

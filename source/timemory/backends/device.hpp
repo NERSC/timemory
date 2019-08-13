@@ -157,7 +157,7 @@ struct params
     using stream_t = typename _Device::stream_t;
     params()       = default;
 
-    explicit params(uint32_t _block, uint32_t _grid = 0, uint32_t _shmem = 0,
+    explicit params(uint32_t _grid, uint32_t _block, uint32_t _shmem = 0,
                     stream_t _stream = 0)
     : block(_block)
     , grid(_grid)

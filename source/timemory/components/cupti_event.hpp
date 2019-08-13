@@ -130,7 +130,6 @@ struct cupti_event
     string_t compute_display() const
     {
         auto _compute_display = [&](std::ostream& os, const cupti::result& obj) {
-            auto _idx   = obj.index;
             auto _label = obj.name;
             auto _prec  = base_type::get_precision();
             auto _width = base_type::get_width();
@@ -139,13 +138,7 @@ struct cupti_event
             std::stringstream ss, ssv, ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec);
-            switch(_idx)
-            {
-                case 0: ssv << std::get<0>(obj.data); break;
-                case 1: ssv << std::get<1>(obj.data); break;
-                case 2: ssv << std::get<2>(obj.data); break;
-                default: ssv << -1; break;
-            }
+            cupti::impl::print(ssv, obj.data);
             if(!_label.empty())
                 ssi << " " << _label;
             ss << ssv.str() << ssi.str();
@@ -169,12 +162,7 @@ struct cupti_event
         const auto&         _data = (is_transient) ? accum : value;
         for(auto itr : _data)
         {
-            switch(itr.index)
-            {
-                case 0: values.push_back(std::get<0>(itr.data)); break;
-                case 1: values.push_back(std::get<1>(itr.data)); break;
-                case 2: values.push_back(std::get<2>(itr.data)); break;
-            }
+            values.push_back(cupti::impl::get<double>(itr.data));
         }
         return values;
     }
@@ -302,14 +290,7 @@ struct cupti_event
         auto _get = [&](const value_type& _data) {
             std::vector<double> values;
             for(auto itr : _data)
-            {
-                switch(itr.index)
-                {
-                    case 0: values.push_back(std::get<0>(itr.data)); break;
-                    case 1: values.push_back(std::get<1>(itr.data)); break;
-                    case 2: values.push_back(std::get<2>(itr.data)); break;
-                }
-            }
+                values.push_back(cupti::impl::get<double>(itr.data));
             return values;
         };
         array_t<double> _disp  = _get(accum);

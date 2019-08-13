@@ -405,6 +405,45 @@ shutdown()
 //--------------------------------------------------------------------------------------//
 
 inline void
+print_hw_info()
+{
+    init_library();
+#if defined(TIMEMORY_USE_PAPI)
+    const PAPI_hw_info_t* hwinfo = PAPI_get_hardware_info();
+    const PAPI_mh_info_t* mh     = &hwinfo->mem_hierarchy;
+    printf("\n");
+    printf("                    Vendor :   %s\n", hwinfo->vendor_string);
+    printf("                     Model :   %s\n", hwinfo->model_string);
+    printf("                   CPU MHz :   %f\n", hwinfo->mhz);
+    printf("               CPU Max MHz :   %i\n", hwinfo->cpu_max_mhz);
+    printf("               CPU Min MHz :   %i\n", hwinfo->cpu_min_mhz);
+    printf("          Total NUMA nodes :   %i\n", hwinfo->nnodes);
+    printf("             Number of CPU :   %i\n", hwinfo->ncpu);
+    printf("                 Total CPU :   %i\n", hwinfo->totalcpus);
+    printf("                   Sockets :   %i\n", hwinfo->sockets);
+    printf("                     Cores :   %i\n", hwinfo->cores);
+    printf("                   Threads :   %i\n", hwinfo->threads);
+    printf("    Memory Hierarch Levels :   %i\n", mh->levels);
+    printf(" Max level of TLB or Cache :   %d\n", mh->levels);
+    for(int i = 0; i < mh->levels; i++)
+    {
+        for(int j = 0; j < PAPI_MH_MAX_LEVELS; j++)
+        {
+            const PAPI_mh_cache_info_t* c = &mh->level[i].cache[j];
+            const PAPI_mh_tlb_info_t*   t = &mh->level[i].tlb[j];
+            printf("        Level %2d, TLB   %2d :  %2d, %8d, %8d\n", i, j, t->type,
+                   t->num_entries, t->associativity);
+            printf("        Level %2d, Cache %2d :  %2d, %8d, %8d, %8d, %8d\n", i, j,
+                   c->type, c->size, c->line_size, c->num_lines, c->associativity);
+        }
+    }
+    printf("\n");
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 create_event_set(int* event_set)
 {
     // create a new empty PAPI event set

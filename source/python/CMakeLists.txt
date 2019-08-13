@@ -38,6 +38,9 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-analysis-tools
     timemory-cuda
     timemory-papi
+    timemory-cupti
+    timemory-cudart
+    timemory-cudart-device
     timemory-python-compile-options
     PRIVATE pybind11::module)
 

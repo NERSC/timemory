@@ -27,6 +27,10 @@
 #include "timemory/settings.hpp"
 #include <pybind11/pybind11.h>
 
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/backends/cupti.hpp"
+#endif
+
 //======================================================================================//
 //  Python wrappers
 //======================================================================================//
@@ -127,6 +131,43 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("FileSize", sys_signal_t::sFileSize)
         .value("VirtualAlarm", sys_signal_t::sVirtualAlarm)
         .value("ProfileAlarm", sys_signal_t::sProfileAlarm);
+
+    //==================================================================================//
+    //
+    //      CUPTI submodule
+    //
+    //==================================================================================//
+    py::module cupti = tim.def_submodule("cupti", "cupti query");
+    cupti.def("available_events",
+              [&](int device) {
+#if defined(TIMEMORY_USE_CUPTI)
+                  CUdevice cu_device;
+                  CUDA_DRIVER_API_CALL(cuInit(0));
+                  CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+                  return tim::cupti::available_events(cu_device);
+#else
+                  tim::consume_parameters(device);
+                  return py::list();
+#endif
+              },
+              "Return the available CUPTI events", py::arg("device") = 0);
+    cupti.def("available_metrics",
+              [&](int device) {
+#if defined(TIMEMORY_USE_CUPTI)
+                  CUdevice cu_device;
+                  CUDA_DRIVER_API_CALL(cuInit(0));
+                  CUDA_DRIVER_API_CALL(cuDeviceGet(&cu_device, device));
+                  auto     ret = tim::cupti::available_metrics(cu_device);
+                  py::list l;
+                  for(const auto& itr : ret)
+                      l.append(py::cast<std::string>(itr));
+                  return l;
+#else
+                  tim::consume_parameters(device);
+                  return py::list();
+#endif
+              },
+              "Return the available CUPTI metric", py::arg("device") = 0);
 
     //==================================================================================//
     //
