@@ -182,6 +182,7 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
 
     # always add headers
     list(APPEND @PROJECT_NAME@_FIND_COMPONENTS headers)
+    target_link_libraries(${_INTERFACE_LIB} INTERFACE timemory-headers)
 
     # determine link type
     if("shared" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)

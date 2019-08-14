@@ -246,14 +246,14 @@ main(int argc, char** argv)
 
     details::allocate();
 
-    tim::component_tuple<read_bytes, written_bytes> io("io_rw_bytes");
-    io.start();
-    details::read_write();
-    io.stop();
+    // tim::component_tuple<read_bytes, written_bytes> io("io_rw_bytes");
+    // io.start();
+    // details::read_write();
+    // io.stop();
 
 #if !defined(_WINDOWS)
-    rb = io.get<read_bytes>();
-    wb = io.get<written_bytes>();
+    // rb = io.get<read_bytes>();
+    // wb = io.get<written_bytes>();
 #endif
 
     return RUN_ALL_TESTS();

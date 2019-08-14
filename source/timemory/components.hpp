@@ -39,14 +39,12 @@
 #include "timemory/components/timing.hpp"
 
 // hardware counter components
-#include "timemory/components/cupti_array.hpp"
-#include "timemory/components/cupti_tuple.hpp"
+#include "timemory/components/cupti_event.hpp"
 #include "timemory/components/papi_array.hpp"
 #include "timemory/components/papi_tuple.hpp"
 
 // advanced components
 #include "timemory/components/cpu_roofline.hpp"
-#include "timemory/components/cupti_event.hpp"
 #include "timemory/components/gpu_roofline.hpp"
 
 //======================================================================================//

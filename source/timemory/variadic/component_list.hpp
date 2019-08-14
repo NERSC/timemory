@@ -276,10 +276,10 @@ public:
     // start/stop functions
     void start()
     {
-        using prior_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::priority_start<Types>>...>;
-        using stand_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::standard_start<Types>>...>;
+        using prior_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::priority_start<Types>>...>;
+        using stand_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::standard_start<Types>>...>;
 
         push();
         ++m_laps;
