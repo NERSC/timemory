@@ -58,7 +58,7 @@ static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.fir
 
 static const float util_epsilon    = 1.0e-1;
 static const float util_tolerance  = 2.5;
-static const float timer_epsilon   = 1.0e-4;
+static const float timer_epsilon   = 2.5e-3;
 static const float timer_tolerance = 0.01;
 static const float peak_tolerance  = 5 * tim::units::MiB;
 
