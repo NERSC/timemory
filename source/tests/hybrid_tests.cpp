@@ -56,7 +56,7 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
 
-static const float util_epsilon    = 1.0e-2;
+static const float util_epsilon    = 1.0e-1;
 static const float util_tolerance  = 2.5;
 static const float timer_epsilon   = 1.0e-4;
 static const float timer_tolerance = 0.01;

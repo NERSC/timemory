@@ -155,6 +155,16 @@ report(const _Tp& measured_count, const _Tp& explicit_count, const _Tp& toleranc
 
 class papi_tests : public ::testing::Test
 {
+protected:
+    void SetUp() override
+    {
+        static std::atomic<int> once;
+        if(once++ == 0)
+        {
+            tim::papi::init();
+            tim::papi::print_hw_info();
+        }
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -299,7 +309,7 @@ TEST_F(papi_tests, array_load_store_ins_dp)
 }
 
 //--------------------------------------------------------------------------------------//
-
+/*
 TEST_F(papi_tests, array_load_store_ins_tp)
 {
     using test_type = papi_array_t;
@@ -319,17 +329,13 @@ TEST_F(papi_tests, array_load_store_ins_tp)
     else
         FAIL();
 }
-
+*/
 //--------------------------------------------------------------------------------------//
 
 int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-
-    tim::papi::init();
-    tim::papi::print_hw_info();
-
     return RUN_ALL_TESTS();
 }
 
