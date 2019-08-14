@@ -61,6 +61,9 @@ namespace tim
 template <typename... Types>
 class auto_tuple;
 
+template <typename _CompTuple, typename _CompList>
+class component_hybrid;
+
 //======================================================================================//
 // variadic list of components
 //
@@ -72,6 +75,9 @@ class component_tuple
     explicit component_tuple() {}
     // manager is friend so can use above
     friend class manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
 
 public:
     using size_type   = int64_t;
@@ -92,6 +98,10 @@ public:
     using multiply_t         = modifiers<operation::multiply, Types...>;
     using divide_t           = modifiers<operation::divide, Types...>;
     using print_t            = modifiers<operation::print, Types...>;
+    using start_t            = modifiers<operation::start, Types...>;
+    using stop_t             = modifiers<operation::stop, Types...>;
+    using cond_start_t       = modifiers<operation::conditional_start, Types...>;
+    using cond_stop_t        = modifiers<operation::conditional_stop, Types...>;
     using prior_start_t      = modifiers<operation::priority_start, Types...>;
     using prior_stop_t       = modifiers<operation::priority_stop, Types...>;
     using prior_cond_start_t = modifiers<operation::conditional_priority_start, Types...>;
@@ -121,7 +131,6 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
     explicit component_tuple(const string_t& key, const bool& store,
@@ -138,12 +147,12 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
-    component_tuple(const string_t& key, const language_t& lang = language_t::cxx(),
-                    const int64_t& ncount = 0, const int64_t& nhash = 0,
-                    bool store = false)
+    explicit component_tuple(const string_t&   key,
+                             const language_t& lang = language_t::cxx(),
+                             const int64_t& ncount = 0, const int64_t& nhash = 0,
+                             bool store = true)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -155,7 +164,6 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
     ~component_tuple() { pop(); }
@@ -182,6 +190,10 @@ public:
     // get the size
     //
     static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t available_size()
+    {
+        return std::tuple_size<data_type>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     // insert into graph
@@ -189,6 +201,7 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
+            apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
@@ -217,11 +230,13 @@ public:
     // start/stop functions
     void start()
     {
+        push();
         // increment laps
         ++m_laps;
         // start components
         apply<void>::access<prior_start_t>(m_data);
         apply<void>::access<stand_start_t>(m_data);
+        // apply<void>::access<start_t>(m_data);
     }
 
     void stop()
@@ -229,15 +244,18 @@ public:
         // stop components
         apply<void>::access<prior_stop_t>(m_data);
         apply<void>::access<stand_stop_t>(m_data);
+        // apply<void>::access<stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
 
     void conditional_start()
     {
+        push();
         // start, if not already started
         apply<void>::access<prior_cond_start_t>(m_data);
         apply<void>::access<stand_cond_start_t>(m_data);
+        // apply<void>::access<cond_start_t>(m_data);
     }
 
     void conditional_stop()
@@ -245,6 +263,7 @@ public:
         // stop, if not already stopped
         apply<void>::access<prior_cond_stop_t>(m_data);
         apply<void>::access<stand_cond_stop_t>(m_data);
+        // apply<void>::access<cond_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -372,9 +391,12 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        if(available_size() == 0)
+            return os;
         // stop, if not already stopped
         apply<void>::access<prior_cond_stop_t>(obj.m_data);
         apply<void>::access<stand_cond_stop_t>(obj.m_data);
+        // apply<void>::access<cond_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);

@@ -172,7 +172,6 @@ TEST_F(cuda_tests, saxpy_streams)
     using stream_t = default_device::stream_t;
     using tuple_t =
         tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event>::component_type;
-    using mark_stream_t = void (cuda_event::*)(tim::cuda::stream_t);
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -288,13 +287,14 @@ TEST_F(cuda_tests, saxpy_streams)
 int
 main(int argc, char** argv)
 {
+    ::testing::InitGoogleTest(&argc, argv);
+
     tim::timemory_init(argc, argv);
     tim::settings::file_output()      = false;
     tim::settings::cout_output()      = true;
     tim::settings::json_output()      = false;
     tim::settings::timing_precision() = 6;
 
-    ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
 

@@ -29,6 +29,7 @@
  */
 
 #include "timemory/backends/rusage.hpp"
+#include "timemory/components/timing.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -331,6 +332,66 @@ tim::get_num_priority_context_switch()
 #else
     return static_cast<int64_t>(0);
 #endif
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_bytes_read()
+{
+#if defined(_MACOS)
+    rusage_info_current rusage;
+    if(proc_pid_rusage(get_rusage_pid(), RUSAGE_INFO_CURRENT, (void**) &rusage) == 0)
+        return rusage.ri_diskio_bytesread;
+#elif defined(_LINUX)
+    std::stringstream fio;
+    fio << "/proc/" << get_rusage_pid() << "/io";
+    std::string   label = "";
+    int64_t       value = 0;
+    std::ifstream ifs(fio.str().c_str());
+    if(ifs)
+    {
+        static constexpr int max_lines = 7;
+        for(int i = 0; i < max_lines && !ifs.eof(); ++i)
+        {
+            ifs >> label;
+            ifs >> value;
+            if(label.find("read_bytes") != std::string::npos)
+                return value;
+        }
+    }
+#endif
+    return 0;
+}
+
+//======================================================================================//
+
+inline int64_t
+tim::get_bytes_written()
+{
+#if defined(_MACOS)
+    rusage_info_current rusage;
+    if(proc_pid_rusage(get_rusage_pid(), RUSAGE_INFO_CURRENT, (void**) &rusage) == 0)
+        return rusage.ri_diskio_byteswritten;
+#elif defined(_LINUX)
+    std::stringstream fio;
+    fio << "/proc/" << get_rusage_pid() << "/io";
+    std::string   label = "";
+    int64_t       value = 0;
+    std::ifstream ifs(fio.str().c_str());
+    if(ifs)
+    {
+        static constexpr int max_lines = 7;
+        for(int i = 0; i < max_lines && !ifs.eof(); ++i)
+        {
+            ifs >> label;
+            ifs >> value;
+            if(label.find("write_bytes") != std::string::npos)
+                return value;
+        }
+    }
+#endif
+    return 0;
 }
 
 //======================================================================================//

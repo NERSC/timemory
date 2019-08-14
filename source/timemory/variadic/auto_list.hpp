@@ -84,6 +84,13 @@ public:
     inline this_type& operator=(const this_type&) = default;
     inline this_type& operator=(this_type&&) = default;
 
+    static constexpr std::size_t size() { return component_type::size(); }
+
+    static constexpr std::size_t available_size()
+    {
+        return component_type::available_size();
+    }
+
 public:
     // public member functions
     inline component_type&       component_list() { return m_temporary_object; }
@@ -157,7 +164,9 @@ public:
 
     static init_func_t& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static init_func_t _instance = [](this_type& al) {
+            tim::env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
         return _instance;
     }
 
@@ -193,7 +202,6 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
     if(m_enabled)
     {
         get_initializer()(*this);
-        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -216,7 +224,6 @@ auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
     if(m_enabled)
     {
         get_initializer()(*this);
-        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -230,7 +237,6 @@ auto_list<Types...>::~auto_list()
     {
         // stop the timer
         m_temporary_object.conditional_stop();
-        m_temporary_object.pop();
 
         // report timer at exit
         if(m_report_at_exit)

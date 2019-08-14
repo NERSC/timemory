@@ -299,9 +299,9 @@ TEST_F(cupti_tests, kernels)
 int
 main(int argc, char** argv)
 {
+    ::testing::InitGoogleTest(&argc, argv);
     auto manager = tim::manager::instance();
     tim::consume_parameters(manager);
-    ::testing::InitGoogleTest(&argc, argv);
     return RUN_ALL_TESTS();
 }
 

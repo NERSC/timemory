@@ -325,9 +325,11 @@ TEST_F(papi_tests, array_load_store_ins_tp)
 int
 main(int argc, char** argv)
 {
+    ::testing::InitGoogleTest(&argc, argv);
+
     tim::papi::init();
     tim::papi::print_hw_info();
-    ::testing::InitGoogleTest(&argc, argv);
+
     return RUN_ALL_TESTS();
 }
 

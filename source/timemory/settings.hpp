@@ -303,6 +303,8 @@ tim::settings::process()
         num_signals::get_width()              = memory_width();
         voluntary_context_switch::get_width() = memory_width();
         priority_context_switch::get_width()  = memory_width();
+        read_bytes::get_width()               = memory_width();
+        written_bytes::get_width()            = memory_width();
     }
 
     if(!(timing_width() < 0))
@@ -337,6 +339,8 @@ tim::settings::process()
         num_signals::get_format_flags()              = std::ios_base::scientific;
         voluntary_context_switch::get_format_flags() = std::ios_base::scientific;
         priority_context_switch::get_format_flags()  = std::ios_base::scientific;
+        read_bytes::get_format_flags()               = std::ios_base::scientific;
+        written_bytes::get_format_flags()            = std::ios_base::scientific;
     }
 
     if(timing_scientific())
@@ -371,6 +375,8 @@ tim::settings::process()
         num_signals::get_precision()              = memory_precision();
         voluntary_context_switch::get_precision() = memory_precision();
         priority_context_switch::get_precision()  = memory_precision();
+        read_bytes::get_precision()               = memory_precision();
+        written_bytes::get_precision()            = memory_precision();
     }
 
     if(!(timing_precision() < 0))
@@ -393,15 +399,19 @@ tim::settings::process()
     {
         auto _memory_unit = get_memory_unit(memory_units());
 
-        peak_rss::get_display_unit()    = std::get<0>(_memory_unit);
-        current_rss::get_display_unit() = std::get<0>(_memory_unit);
-        stack_rss::get_display_unit()   = std::get<0>(_memory_unit);
-        data_rss::get_display_unit()    = std::get<0>(_memory_unit);
+        peak_rss::get_display_unit()      = std::get<0>(_memory_unit);
+        current_rss::get_display_unit()   = std::get<0>(_memory_unit);
+        stack_rss::get_display_unit()     = std::get<0>(_memory_unit);
+        data_rss::get_display_unit()      = std::get<0>(_memory_unit);
+        read_bytes::get_display_unit()    = std::get<0>(_memory_unit);
+        written_bytes::get_display_unit() = std::get<0>(_memory_unit);
 
-        peak_rss::get_unit()    = std::get<1>(_memory_unit);
-        current_rss::get_unit() = std::get<1>(_memory_unit);
-        stack_rss::get_unit()   = std::get<1>(_memory_unit);
-        data_rss::get_unit()    = std::get<1>(_memory_unit);
+        peak_rss::get_unit()      = std::get<1>(_memory_unit);
+        current_rss::get_unit()   = std::get<1>(_memory_unit);
+        stack_rss::get_unit()     = std::get<1>(_memory_unit);
+        data_rss::get_unit()      = std::get<1>(_memory_unit);
+        read_bytes::get_unit()    = std::get<1>(_memory_unit);
+        written_bytes::get_unit() = std::get<1>(_memory_unit);
     }
 
     if(timing_units().length() > 0)

@@ -84,14 +84,7 @@ using auto_timer_t =
 using auto_usage_t =
     tim::auto_tuple<current_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                     voluntary_context_switch, priority_context_switch>;
-using auto_list_t =
-    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
-                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
-                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
-                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
-                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch, cuda_event,
-                   papi_array_t, cpu_roofline_dp_flops, cpu_roofline_sp_flops>;
+using auto_list_t = tim::complete_auto_list_t;
 
 using tim_timer_t       = typename auto_timer_t::component_type;
 using rss_usage_t       = typename auto_usage_t::component_type;

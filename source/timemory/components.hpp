@@ -34,6 +34,7 @@
 // general components
 #include "timemory/components/caliper.hpp"
 #include "timemory/components/cuda_event.hpp"
+#include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
@@ -45,11 +46,8 @@
 
 // advanced components
 #include "timemory/components/cpu_roofline.hpp"
+#include "timemory/components/cupti_event.hpp"
 #include "timemory/components/gpu_roofline.hpp"
-
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_event.hpp"
-#endif
 
 //======================================================================================//
 //
@@ -57,12 +55,12 @@
 //
 //======================================================================================//
 
-// this is the default maximum number of CPU counters that can be used in papi_array
+/// this is the default maximum number of CPU counters that can be used in papi_array
 #if !defined(TIMEMORY_CPU_COUNTERS)
 #    define TIMEMORY_CPU_COUNTERS 32
 #endif
 
-// this is the default maximum number of CPU counters that can be used in cupti_array
+/// this is the default maximum number of CPU counters that can be used in cupti_array
 #if !defined(TIMEMORY_GPU_COUNTERS)
 #    define TIMEMORY_GPU_COUNTERS 32
 #endif
@@ -82,7 +80,7 @@ extern "C"
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-//  provide a default size for papi_array
+///  provide a default size for papi_array
 //
 namespace component
 {
@@ -91,19 +89,19 @@ using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
 
 //--------------------------------------------------------------------------------------//
 //
-//  description:
-//      use this function to initialize a auto_list or component_list from a list
-//      of enumerations
+///  description:
+///      use this function to initialize a auto_list or component_list from a list
+///      of enumerations
 //
-//  usage:
-//      using namespace tim::component;
-//      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
+///  usage:
+///      using namespace tim::component;
+///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
 //
-//      auto obj = new optional_t(__FUNCTION__, __LINE__);
-//      tim::initialize(*obj, { CPU_CLOCK, CPU_UTIL });
+///      auto obj = new optional_t(__FUNCTION__, __LINE__);
+///      tim::initialize(*obj, { CPU_CLOCK, CPU_UTIL });
 //
-//  typename... _ExtraArgs
-//      required because of extra "hidden" template parameters in STL containers
+///  typename... _ExtraArgs
+///      required because of extra "hidden" template parameters in STL containers
 //
 template <typename... _CompTypes, template <typename...> class _CompList, typename _Intp,
           typename... _ExtraArgs, template <typename, typename...> class _Container>
@@ -123,6 +121,7 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
             case CPU_UTIL: obj.template init<cpu_util>(); break;
             case CUDA_EVENT: obj.template init<cuda_event>(); break;
+            case CUPTI_EVENT: obj.template init<cupti_event>(); break;
             case CURRENT_RSS: obj.template init<current_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
             case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
@@ -142,32 +141,35 @@ initialize(_CompList<_CompTypes...>&               obj,
                 break;
             case PROCESS_CPU_CLOCK: obj.template init<process_cpu_clock>(); break;
             case PROCESS_CPU_UTIL: obj.template init<process_cpu_util>(); break;
+            case READ_BYTES: obj.template init<read_bytes>(); break;
             case WALL_CLOCK: obj.template init<real_clock>(); break;
             case STACK_RSS: obj.template init<stack_rss>(); break;
             case SYS_CLOCK: obj.template init<system_clock>(); break;
             case THREAD_CPU_CLOCK: obj.template init<thread_cpu_clock>(); break;
             case THREAD_CPU_UTIL: obj.template init<thread_cpu_util>(); break;
+            case TRIP_COUNT: obj.template init<trip_count>(); break;
             case USER_CLOCK: obj.template init<user_clock>(); break;
             case VOLUNTARY_CONTEXT_SWITCH:
                 obj.template init<voluntary_context_switch>();
                 break;
+            case WRITTEN_BYTES: obj.template init<written_bytes>(); break;
         }
     }
 }
 
 //--------------------------------------------------------------------------------------//
 //
-//  description:
-//      use this function to generate an array of enumerations from a list of string
-//      that can be subsequently used to initialize an auto_list or a component_list
-//
-//  usage:
-//      using namespace tim::component;
-//      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
-//
-//      auto obj = new optional_t(__FUNCTION__, __LINE__);
-//      tim::initialize(*obj, tim::enumerate_components({ "cpu_clock", "cpu_util"}));
-//
+///  description:
+///      use this function to generate an array of enumerations from a list of string
+///      that can be subsequently used to initialize an auto_list or a component_list
+///
+///  usage:
+///      using namespace tim::component;
+///      using optional_t = tim::auto_list<real_clock, cpu_clock, cpu_util, cuda_event>;
+///
+///      auto obj = new optional_t(__FUNCTION__, __LINE__);
+///      tim::initialize(*obj, tim::enumerate_components({ "cpu_clock", "cpu_util"}));
+///
 template <typename _StringT, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
 _Container<TIMEMORY_COMPONENT>
@@ -204,6 +206,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         else if(itr == "cuda_event")
         {
             vec.push_back(CUDA_EVENT);
+        }
+        else if(itr == "cupti" || itr == "cupti_event")
+        {
+            vec.push_back(CUPTI_EVENT);
         }
         else if(itr == "current_rss")
         {
@@ -273,6 +279,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(PROCESS_CPU_UTIL);
         }
+        else if(itr == "read_bytes")
+        {
+            vec.push_back(READ_BYTES);
+        }
         else if(itr == "real_clock")
         {
             vec.push_back(WALL_CLOCK);
@@ -293,6 +303,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(THREAD_CPU_UTIL);
         }
+        else if(itr == "trip_count")
+        {
+            vec.push_back(TRIP_COUNT);
+        }
         else if(itr == "user_clock")
         {
             vec.push_back(USER_CLOCK);
@@ -301,22 +315,27 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(VOLUNTARY_CONTEXT_SWITCH);
         }
+        else if(itr == "write_bytes" || itr == "written_bytes")
+        {
+            vec.push_back(WRITTEN_BYTES);
+        }
         else
         {
-            fprintf(
-                stderr,
-                "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
-                "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
-                "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
-                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'current_rss', "
-                "'data_rss', 'monotonic_clock', 'monotonic_raw_clock', 'num_io_in', "
-                "'num_io_out', 'num_major_page_faults', 'num_minor_page_faults', "
-                "'num_msg_recv', 'num_msg_sent', 'num_signals', 'num_swap', 'papi', "
-                "'papi_array', 'papi_array_t', 'peak_rss', 'priority_context_switch', "
-                "'process_cpu_clock', 'process_cpu_util', 'real_clock', 'stack_rss', "
-                "'sys_clock', 'system_clock', 'thread_cpu_clock', 'thread_cpu_util', "
-                "'user_clock', 'voluntary_context_switch']\n",
-                itr.c_str());
+            fprintf(stderr,
+                    "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
+                    "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
+                    "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
+                    "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti', "
+                    "'cupti_event', 'current_rss', 'data_rss', 'monotonic_clock', "
+                    "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
+                    "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
+                    "'num_msg_sent', 'num_signals', 'num_swap', 'papi', 'papi_array', "
+                    "'papi_array_t', 'peak_rss', 'priority_context_switch', "
+                    "'process_cpu_clock', 'process_cpu_util', 'read_bytes', "
+                    "'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
+                    "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
+                    "'voluntary_context_switch', 'write_bytes', 'written_bytes']\n",
+                    itr.c_str());
         }
     }
     return vec;
@@ -350,7 +369,7 @@ enumerate_components(const std::initializer_list<std::string>& component_names)
 //
 //--------------------------------------------------------------------------------------//
 //
-// this is for initializing with a container of string
+/// this is for initializing with a container of string
 //
 template <typename... _CompTypes, template <typename...> class _CompList,
           typename... _ExtraArgs, template <typename, typename...> class _Container>
@@ -363,7 +382,7 @@ initialize(_CompList<_CompTypes...>&                     obj,
 
 //--------------------------------------------------------------------------------------//
 //
-// this is for initializing with a string
+/// this is for initializing with a string
 //
 template <typename... _CompTypes, template <typename...> class _CompList>
 inline void
@@ -374,8 +393,8 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& components)
 
 //--------------------------------------------------------------------------------------//
 //
-// this is for initializing reading an environment variable, getting a string, breaking
-// into list of components, and initializing
+/// this is for initializing reading an environment variable, getting a string, breaking
+/// into list of components, and initializing
 //
 namespace env
 {

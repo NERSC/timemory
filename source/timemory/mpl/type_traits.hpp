@@ -71,16 +71,28 @@ struct internal_output_handling : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-/// trait that designates whether there is a priority ordering for variadic list
-/// e.g. -1 for type A would mean it should come before type B with 0 and
-/// type C with 1 should come after A and B
+/// trait that signifies that a component handles it's label when printing
 ///
-/*
 template <typename _Tp>
-struct ordering_priority : std::integral_constant<int16_t, 0>
+struct custom_label_printing : std::false_type
 {
 };
-*/
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that a component includes it's units when printing
+///
+template <typename _Tp>
+struct custom_unit_printing : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that a component includes it's laps when printing
+///
+template <typename _Tp>
+struct custom_laps_printing : std::false_type
+{
+};
 
 //--------------------------------------------------------------------------------------//
 /// trait that designates whether there is a priority when starting the type w.r.t.
@@ -157,6 +169,31 @@ struct stop_priority<component::cuda_event> : std::true_type
 {
 };
 
+template <>
+struct custom_unit_printing<component::read_bytes> : std::true_type
+{
+};
+
+template <>
+struct custom_unit_printing<component::written_bytes> : std::true_type
+{
+};
+
+template <>
+struct custom_label_printing<component::read_bytes> : std::true_type
+{
+};
+
+template <>
+struct custom_label_printing<component::written_bytes> : std::true_type
+{
+};
+
+template <>
+struct custom_laps_printing<component::trip_count> : std::true_type
+{
+};
+
 //--------------------------------------------------------------------------------------//
 // if not UNIX (i.e. Windows)
 //
@@ -209,6 +246,16 @@ struct is_available<component::num_signals> : std::false_type
 
 template <>
 struct is_available<component::num_swap> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::read_bytes> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::written_bytes> : std::false_type
 {
 };
 

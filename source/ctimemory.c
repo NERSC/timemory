@@ -35,7 +35,7 @@ cxx_timemory_init(int, char**, timemory_settings);
 extern int
 cxx_timemory_enabled(void);
 extern void*
-cxx_timemory_create_auto_timer(const char*, int, int);
+cxx_timemory_create_auto_timer(const char*, int);
 extern void*
 cxx_timemory_create_auto_tuple(const char*, int, int, const int*);
 extern void*
@@ -68,8 +68,7 @@ c_timemory_enabled(void)
 void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
 {
-    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno, false)
-                                    : NULL;
+    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno) : NULL;
 }
 
 //======================================================================================//

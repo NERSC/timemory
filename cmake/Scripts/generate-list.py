@@ -3,10 +3,10 @@
 import sys
 import argparse
 # read in components and mangled enums
-from timemory_types import components, mangled_enums
+from timemory_types import components, mangled_enums, recommended_types
 
 
-def generate_case_label(component, indent_tabs=3, spaces=4, reference=True, template=True):
+def generate_list(component, indent_tabs=3, spaces=4, reference=True, template=True):
     """
     This function generates a case label for C++
     """
@@ -83,11 +83,35 @@ if __name__ == "__main__":
     components.sort()
     if args.verbose > 0:
         print("timemory components: [{}]\n".format(", ".join(components)))
-    outdata = ""
+    outdata = "using complete_auto_list_t = auto_list<\n"
     for component in components:
-        outdata += "{}".format(generate_case_label(component,
-                                                   args.tabs_per_indent, args.spaces_per_tab,
-                                                   not args.pointer, not args.specialized))
+        outdata += "\tcomponent::{},\n".format(component)
+    outdata = outdata.strip("\n")
+    outdata = outdata.strip(",")
+    outdata += ">;\n\n"
+    outdata += "using complete_list_t = complete_auto_list_t::component_type;\n\n"
+
+    a_hybdata = "using recommended_auto_hybrid_t = auto_hybrid<\n"
+    c_hybdata = "using recommended_hybrid_t = component_hybrid<\n"
+    for key, items in recommended_types.items():
+        outdata += "using recommended_auto_{0}_t = auto_{0}<\n".format(key)
+        for item in items:
+            outdata += "\tcomponent::{},\n".format(item)
+        outdata = outdata.strip("\n")
+        outdata = outdata.strip(",")
+        outdata += ">;\n\n"
+        outdata += "using recommended_{0}_t = recommended_auto_{0}_t::component_type;\n\n".format(key)
+        a_hybdata += "\trecommended_{0}_t,\n".format(key)
+        c_hybdata += "\trecommended_{0}_t,\n".format(key)
+    a_hybdata = a_hybdata.strip("\n")
+    a_hybdata = a_hybdata.strip(",")
+    a_hybdata += ">;\n\n"
+    c_hybdata = c_hybdata.strip("\n")
+    c_hybdata = c_hybdata.strip(",")
+    c_hybdata += ">;\n\n"
+
+    outdata += a_hybdata
+    outdata += c_hybdata
 
     if subdata is not None:
         try:

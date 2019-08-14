@@ -61,6 +61,9 @@ namespace tim
 template <typename... Types>
 class auto_list;
 
+template <typename _CompTuple, typename _CompList>
+class component_hybrid;
+
 //======================================================================================//
 // variadic list of components
 //
@@ -74,10 +77,13 @@ class component_list
     // manager is friend so can use above
     friend class manager;
 
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
+
 public:
     using size_type      = int64_t;
     using this_type      = component_list<Types...>;
-    using data_type      = tim::implemented<Types*...>;
+    using data_type      = std::tuple<Types*...>;
     using reference_type = std::tuple<Types...>;
     using string_hash    = std::hash<string_t>;
     using counter_type   = tim::counted_object<this_type>;
@@ -92,6 +98,23 @@ public:
     using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
+    explicit component_list(const string_t& key, const bool& store,
+                            const int64_t& ncount = 0, const int64_t& nhash = 0,
+                            const language_t& lang = language_t::cxx())
+    : m_store(store)
+    , m_laps(0)
+    , m_count(ncount)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
+    , m_key(key)
+    , m_lang(lang)
+    , m_identifier("")
+    {
+        apply<void>::set_value(m_data, nullptr);
+        compute_identifier(key, lang);
+        init_manager();
+        get_initializer()(*this);
+    }
+
     explicit component_list(const string_t& key, const bool& store,
                             const language_t& lang = language_t::cxx(),
                             const int64_t& ncount = 0, const int64_t& nhash = 0)
@@ -109,9 +132,10 @@ public:
         get_initializer()(*this);
     }
 
-    component_list(const string_t& key, const language_t& lang = language_t::cxx(),
-                   const int64_t& ncount = 0, const int64_t& nhash = 0,
-                   bool store = false)
+    explicit component_list(const string_t&   key,
+                            const language_t& lang = language_t::cxx(),
+                            const int64_t& ncount = 0, const int64_t& nhash = 0,
+                            bool store = true)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -187,12 +211,19 @@ public:
     // get the size
     //
     static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t available_size()
+    {
+        using implemented_tuple_t = implemented<Types...>;
+        return std::tuple_size<implemented_tuple_t>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     // function for default initialization
     static init_func_t& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static init_func_t _instance = [](this_type& al) {
+            tim::env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+        };
         return _instance;
     }
 
@@ -204,6 +235,10 @@ public:
         apply<void>::access<op_count_t>(m_data, std::ref(count));
         if(m_store && !m_is_pushed && count > 0)
         {
+            using apply_types = std::tuple<
+                operation::pointer_operator<Types, operation::reset<Types>>...>;
+            apply<void>::access<apply_types>(m_data);
+
             using insert_types = std::tuple<
                 operation::pointer_operator<Types, operation::insert_node<Types>>...>;
             // avoid pushing/popping when already pushed/popped
@@ -242,21 +277,15 @@ public:
     void start()
     {
         using prior_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_priority_start<Types>>...>;
+            Types, operation::priority_start<Types>>...>;
         using stand_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_standard_start<Types>>...>;
+            Types, operation::standard_start<Types>>...>;
 
-        bool _incremented    = false;
-        auto _increment_laps = [&](bool _started) {
-            if(_started && !_incremented)
-            {
-                ++m_laps;
-                _incremented = true;
-            }
-        };
+        push();
+        ++m_laps;
         // start components
-        apply<void>::access<prior_apply_types>(m_data, _increment_laps);
-        apply<void>::access<stand_apply_types>(m_data, _increment_laps);
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
     }
 
     void stop()
@@ -274,6 +303,7 @@ public:
 
     void conditional_start()
     {
+        push();
         // start, if not already started
         using prior_apply_types = std::tuple<operation::pointer_operator<
             Types, operation::conditional_priority_start<Types>>...>;
@@ -576,9 +606,36 @@ public:
               tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::value)
+        {
+            static std::atomic<int> _count;
+            if(settings::verbose() > 0 && _count++ == 0)
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf("[component_list::init]> skipping unavailable type '%s'...\n",
+                       _id.c_str());
+            }
+            return;
+        }
+
         auto&& _obj = get<_Tp>();
-        _obj        = new _Tp(std::forward<_Args>(_args)...);
-        compute_identifier_extra(_obj);
+        if(!_obj)
+        {
+            _obj = new _Tp(std::forward<_Args>(_args)...);
+            compute_identifier_extra(_obj);
+        }
+        else
+        {
+            static std::atomic<int> _count;
+            if(settings::verbose() > 0 && _count++ == 0)
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf(
+                    "[component_list::init]> skipping re-initialization of type"
+                    " \"%s\"...\n",
+                    _id.c_str());
+            }
+        }
     }
 
     template <typename _Tp, typename... _Args,
@@ -588,6 +645,25 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    //  variadic initialization
+    //
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+        this->initialize<_Tail...>();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
     void type_apply(_Func&& _func, _Args&&... _args)

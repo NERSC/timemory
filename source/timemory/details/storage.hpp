@@ -58,6 +58,20 @@ reduce_merge(_Pred lhs, _Pred rhs)
     *lhs += *rhs;
 }
 
+template <typename _Tp>
+struct combine_plus
+{
+    combine_plus(_Tp& lhs, const _Tp& rhs) { lhs += rhs; }
+};
+
+template <typename... _Types>
+void
+combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    using apply_t = std::tuple<combine_plus<_Types>...>;
+    apply<void>::access2<apply_t>(lhs, rhs);
+}
+
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
 void
@@ -76,6 +90,14 @@ combine(_Tp& lhs, const _Tp& rhs)
     lhs += rhs;
 }
 
+template <typename... _Types>
+std::tuple<_Types...>
+compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
+{
+    std::tuple<_Types...> _one;
+    return _one;
+}
+
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container, typename _Ret = _Tp>
 _Container<_Ret>
@@ -85,7 +107,10 @@ compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
     auto             len = std::min(lhs.size(), rhs.size());
     _Container<_Ret> perc(len, 0.0);
     for(decltype(len) i = 0; i < len; ++i)
-        perc[i] = (1.0 - (lhs[i] / rhs[i])) * 100.0;
+    {
+        if(rhs[i] > 0)
+            perc[i] = (1.0 - (lhs[i] / rhs[i])) * 100.0;
+    }
     return perc;
 }
 
@@ -94,7 +119,7 @@ template <typename _Tp, typename _Ret = _Tp,
 _Ret
 compute_percentage(_Tp& lhs, const _Tp& rhs)
 {
-    return (1.0 - (lhs / rhs)) * 100.0;
+    return (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
 }
 
 template <typename _Tp, typename... _ExtraArgs,
@@ -118,6 +143,12 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     }
     ss << ")";
     os << ss.str();
+}
+
+template <typename... _Types>
+void
+print_percentage(std::ostream&, const std::tuple<_Types...>&)
+{
 }
 
 template <typename _Tp,

@@ -12,6 +12,31 @@ endif()
 # add_library(no-store-merge INTERFACE)
 # add_target_cxx_flag_if_avail(no-store-merge "-fno-store-merging")
 
+set(HYBRID_COMPONENTS )
+
+if(TIMEMORY_USE_CUDA)
+    list(APPEND HYBRID_COMPONENTS timemory-cuda timemory-cudart)
+endif()
+
+if(TIMEMORY_USE_PAPI)
+    list(APPEND HYBRID_COMPONENTS timemory-papi)
+endif()
+
+if(TIMEMORY_USE_CUPTI)
+    list(APPEND HYBRID_COMPONENTS timemory-cupti timemory-cudart-device)
+endif()
+
+if(TIMEMORY_USE_CALIPER)
+    list(APPEND HYBRID_COMPONENTS timemory-caliper)
+endif()
+
+message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
+
+add_googletest(hybrid_tests
+    DISCOVER_TESTS
+    SOURCES         hybrid_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options ${HYBRID_COMPONENTS})
+
 add_googletest(timing_tests
     DISCOVER_TESTS
     SOURCES         timing_tests.cpp

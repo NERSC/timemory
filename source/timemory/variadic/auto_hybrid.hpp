@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file auto_tuple.hpp
- * \headerfile auto_tuple.hpp "timemory/variadic/auto_tuple.hpp"
+/** \file auto_hybrid.hpp
+ * \headerfile auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
  * Automatic starting and stopping of components. Accept unlimited number of
  * parameters. The constructor starts the components, the destructor stops the
  * components
@@ -44,50 +44,47 @@
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/macros.hpp"
 
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... Types>
-class auto_tuple
-: public tim::counted_object<auto_tuple<Types...>>
-, public tim::hashed_object<auto_tuple<Types...>>
+template <typename _CompTuple, typename _CompList>
+class auto_hybrid
+: public counted_object<auto_hybrid<_CompTuple, _CompList>>
+, public hashed_object<auto_hybrid<_CompTuple, _CompList>>
 {
 public:
-    using component_type = tim::component_tuple<Types...>;
-    using this_type      = auto_tuple<Types...>;
+    using tuple_type     = _CompTuple;
+    using list_type      = _CompList;
+    using component_type = component_hybrid<tuple_type, list_type>;
+    using this_type      = auto_hybrid<tuple_type, list_type>;
     using data_type      = typename component_type::data_type;
-    using counter_type   = tim::counted_object<this_type>;
-    using counter_void   = tim::counted_object<void>;
-    using hashed_type    = tim::hashed_object<this_type>;
+    using counter_type   = counted_object<this_type>;
+    using counter_void   = counted_object<void>;
+    using hashed_type    = hashed_object<this_type>;
     using string_t       = std::string;
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
-    using language_t     = tim::language;
+    using language_t     = language;
 
 public:
-    inline explicit auto_tuple(const string_t&, const int64_t& lineno = 0,
-                               const language_t& lang           = language_t::cxx(),
-                               bool              report_at_exit = false);
-    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
-                               bool report_at_exit = false);
-    inline ~auto_tuple();
+    inline explicit auto_hybrid(const string_t&, const int64_t& lineno = 0,
+                                const language_t& lang           = language_t::cxx(),
+                                bool              report_at_exit = false);
+    inline explicit auto_hybrid(component_type& tmp, const int64_t& lineno = 0,
+                                bool report_at_exit = false);
+    inline ~auto_hybrid();
 
     // copy and move
-    inline auto_tuple(const this_type&) = default;
-    inline auto_tuple(this_type&&)      = default;
+    inline auto_hybrid(const this_type&) = default;
+    inline auto_hybrid(this_type&&)      = default;
     inline this_type& operator=(const this_type&) = default;
     inline this_type& operator=(this_type&&) = default;
 
     static constexpr std::size_t size() { return component_type::size(); }
-
-    static constexpr std::size_t available_size()
-    {
-        return component_type::available_size();
-    }
 
 public:
     // public member functions
@@ -107,29 +104,20 @@ public:
     inline bool report_at_exit() const { return m_report_at_exit; }
 
 public:
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return m_temporary_object.template get<_N>();
-    }
+    tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }
+    const tuple_type& get_tuple() const { return m_temporary_object.get_tuple(); }
+    list_type&        get_list() { return m_temporary_object.get_list(); }
+    const list_type&  get_list() const { return m_temporary_object.get_list(); }
 
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return m_temporary_object.template get<_N>();
-    }
+    tuple_type&       get_first() { return m_temporary_object.get_tuple(); }
+    const tuple_type& get_first() const { return m_temporary_object.get_tuple(); }
+    list_type&        get_second() { return m_temporary_object.get_list(); }
+    const list_type&  get_second() const { return m_temporary_object.get_list(); }
 
-    template <typename _Tp>
-    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
-    {
-        return m_temporary_object.template get<_Tp>();
-    }
-
-    template <typename _Tp>
-    auto get() const -> decltype(std::declval<const component_type>().template get<_Tp>())
-    {
-        return m_temporary_object.template get<_Tp>();
-    }
+    tuple_type&       get_lhs() { return m_temporary_object.get_tuple(); }
+    const tuple_type& get_lhs() const { return m_temporary_object.get_tuple(); }
+    list_type&        get_rhs() { return m_temporary_object.get_list(); }
+    const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
@@ -147,15 +135,17 @@ private:
 
 //======================================================================================//
 
-template <typename... Types>
-auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& lineno,
-                                 const language_t& lang, bool report_at_exit)
+template <typename _CompTuple, typename _CompList>
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t&   object_tag,
+                                                const int64_t&    lineno,
+                                                const language_t& lang,
+                                                bool              report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
                   ? (string_hash()(object_tag) * static_cast<int64_t>(lang) +
                      (counter_type::live() + hashed_type::live() + lineno))
                   : 0)
-, m_enabled(counter_type::enable() && tim::settings::enabled())
+, m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
                      m_enabled)
@@ -168,9 +158,10 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& line
 
 //======================================================================================//
 
-template <typename... Types>
-auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
-                                 bool report_at_exit)
+template <typename _CompTuple, typename _CompList>
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp,
+                                                const int64_t&  lineno,
+                                                bool            report_at_exit)
 : counter_type()
 , hashed_type((counter_type::enable())
                   ? (string_hash()(tmp.key()) * static_cast<int64_t>(tmp.lang()) +
@@ -189,8 +180,8 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
 
 //======================================================================================//
 
-template <typename... Types>
-auto_tuple<Types...>::~auto_tuple()
+template <typename _CompTuple, typename _CompList>
+auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
 {
     if(m_enabled)
     {
@@ -216,60 +207,3 @@ auto_tuple<Types...>::~auto_tuple()
 //======================================================================================//
 
 }  // namespace tim
-
-//======================================================================================//
-
-#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BLANK_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_TUPLE(auto_tuple_type, ...)                                        \
-    TIMEMORY_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// caliper versions
-
-#define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
-    TIMEMORY_BLANK_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
-    TIMEMORY_BASIC_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                            \
-    TIMEMORY_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// instance versions
-
-#define TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
-    TIMEMORY_BLANK_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
-    TIMEMORY_BASIC_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                               \
-    TIMEMORY_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// debug versions
-
-#define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                            \
-    TIMEMORY_DEBUG_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-#define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_DEBUG_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// variadic versions
-
-#define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
-    TIMEMORY_BASIC_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
-
-#define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
-    TIMEMORY_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
-
-//======================================================================================//

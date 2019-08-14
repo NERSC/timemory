@@ -49,17 +49,10 @@ extern "C"
 
 using namespace tim::component;
 
-using auto_timer_t =
-    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
+using auto_timer_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                          current_rss, peak_rss>;
 
-using auto_list_t =
-    tim::auto_list<real_clock, system_clock, user_clock, cpu_clock, monotonic_clock,
-                   monotonic_raw_clock, thread_cpu_clock, process_cpu_clock, cpu_util,
-                   thread_cpu_util, process_cpu_util, current_rss, peak_rss, stack_rss,
-                   data_rss, num_swap, num_io_in, num_io_out, num_minor_page_faults,
-                   num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
-                   voluntary_context_switch, priority_context_switch, cuda_event,
-                   papi_array_t, cpu_roofline_dp_flops, cpu_roofline_sp_flops>;
+using auto_list_t = tim::complete_list_t;
 
 //======================================================================================//
 //
@@ -107,14 +100,15 @@ cxx_timemory_enabled(void)
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int lineno, int report)
+cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
 {
     using namespace tim::component;
     std::string key_tag(timer_tag);
     char*       _timer_tag = (char*) timer_tag;
     free(_timer_tag);
-    return (void*) new auto_timer_t(key_tag, lineno, tim::language::c(),
-                                    (report > 0) ? true : false);
+    auto* obj = new auto_timer_t(key_tag, tim::language::c(), lineno);
+    obj->start();
+    return (void*) obj;
 }
 
 //======================================================================================//
@@ -124,14 +118,11 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
                                const int* components)
 {
     using namespace tim::component;
-    std::string key_tag(timer_tag);
-    auto        obj = new auto_list_t(key_tag, lineno, tim::language::c(), false);
-    obj->stop();
-    obj->reset();
+    std::string      key_tag(timer_tag);
+    auto             obj = new auto_list_t(key_tag, tim::language::c(), lineno);
     std::vector<int> _components(num_components);
     std::memcpy(_components.data(), components, num_components * sizeof(int));
     tim::initialize(*obj, _components);
-    obj->push();
     obj->start();
     return static_cast<void*>(obj);
 }
@@ -141,8 +132,9 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
 extern "C" tim_api void*
 cxx_timemory_delete_auto_timer(void* ctimer)
 {
-    auto_timer_t* cxxtimer = static_cast<auto_timer_t*>(ctimer);
-    delete cxxtimer;
+    auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
+    obj->stop();
+    delete obj;
     ctimer = nullptr;
     return ctimer;
 }
@@ -154,7 +146,6 @@ cxx_timemory_delete_auto_tuple(void* ctuple)
 {
     auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
     obj->stop();
-    obj->pop();
     delete obj;
     ctuple = nullptr;
     return ctuple;

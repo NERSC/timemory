@@ -127,6 +127,12 @@ struct type_id
         return "float_pair";
     }
 
+    template <typename... _Types>
+    static std::string value(const std::tuple<_Types...>&)
+    {
+        return "tuple";
+    }
+
     template <typename SubType, std::size_t SubTypeSize,
               enable_if_t<(std::is_integral<SubType>::value), int> = 0>
     static std::string value(const std::array<SubType, SubTypeSize>&)

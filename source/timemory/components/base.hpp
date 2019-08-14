@@ -424,9 +424,9 @@ public:
         std::stringstream ss_extra;
         ss_value.setf(_flags);
         ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
-        if(!_disp.empty())
+        if(!_disp.empty() && !trait::custom_unit_printing<Type>::value)
             ss_extra << " " << _disp;
-        if(!_label.empty())
+        if(!_label.empty() && !trait::custom_label_printing<Type>::value)
             ss_extra << " " << _label;
         os << ss_value.str() << ss_extra.str();
 

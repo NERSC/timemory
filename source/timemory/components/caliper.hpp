@@ -37,7 +37,6 @@ namespace component
 struct caliper : public base<caliper, int64_t>
 {
     // timemory component api
-
     using value_type = int64_t;
     using base_type  = base<caliper, value_type>;
 

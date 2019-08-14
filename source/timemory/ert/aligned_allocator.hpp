@@ -217,6 +217,9 @@ public:
     {
         return allocate(n);
     }
+
+    // returns the alignment in bytes
+    std::size_t get_alignment() { return _Align_v / 8; }
 };
 
 }  // namespace ert

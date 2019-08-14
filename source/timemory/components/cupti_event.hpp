@@ -31,9 +31,12 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
-#include "timemory/backends/cupti.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/backends/cupti.hpp"
+#endif
 
 #include <algorithm>
 #include <numeric>
@@ -49,6 +52,8 @@ namespace component
 //          CUPTI component
 //
 //--------------------------------------------------------------------------------------//
+
+#if defined(TIMEMORY_USE_CUPTI)
 
 struct cupti_event
 : public base<cupti_event, cupti::profiler::results_t, policy::thread_init,
@@ -402,6 +407,34 @@ private:
         get_private_profilers().clear();
     }
 };
+
+#else
+struct cupti_event
+: public base<cupti_event, int64_t, policy::thread_init, policy::thread_finalize>
+{
+    using value_type = int64_t;
+    using base_type =
+        base<trip_count, value_type, policy::thread_init, policy::thread_finalize>;
+
+    static const short                   precision = 0;
+    static const short                   width     = 5;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t     unit() { return 1; }
+    static std::string label() { return "cupti_event"; }
+    static std::string descript() { return "cupti_event"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return 0; }
+
+    value_type compute_display() const { return 0; }
+    value_type get() const { return 0; }
+
+    void start() {}
+
+    void stop() {}
+};
+#endif
 
 }  // namespace component
 }  // namespace tim

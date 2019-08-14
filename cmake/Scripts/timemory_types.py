@@ -35,6 +35,10 @@ components = [
     "cpu_roofline_sp_flops",
     "cpu_roofline_dp_flops",
     "caliper",
+    "trip_count",
+    "read_bytes",
+    "written_bytes",
+    "cupti_event",
 ]
 
 #
@@ -58,11 +62,15 @@ mangled_strings = {
     "papi_array_t": ["papi_array", "papi"],
     "cpu_roofline_sp_flops": ["cpu_roofline_sp", "cpu_roofline_single"],
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
-    "caliper": ["cali"]
+    "caliper": ["cali"],
+    "written_bytes": ["write_bytes"],
+    "cupti_event": ["cupti"],
 }
 
-
-conditional_types = {
-    "papi": ["papi_array_t", "cpu_roofline_sp_flops", "cpu_roofline_dp_flops"],
-    "cuda": ["cuda_event"],
+recommended_types = {
+    "tuple": ["real_clock", "system_clock", "user_clock", "cpu_util",
+              "current_rss", "peak_rss", "read_bytes", "written_bytes",
+              "num_minor_page_faults", "num_major_page_faults",
+              "voluntary_context_switch", "priority_context_switch"],
+    "list": ["caliper", "papi_array_t", "cuda_event", "cupti_event"],
 }
