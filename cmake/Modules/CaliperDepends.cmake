@@ -48,3 +48,7 @@ if(LIBUNWIND_INCLUDE_DIR AND LIBUNWIND_LIBRARY)
 else()
     set(WITH_CALLPATH OFF CACHE BOOL "Enable libunwind in Caliper")
 endif()
+
+if(APPLE)
+    set(WITH_GOTCHA OFF)
+endif()

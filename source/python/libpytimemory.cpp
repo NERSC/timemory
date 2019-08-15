@@ -340,24 +340,8 @@ PYBIND11_MODULE(libpytimemory, tim)
         [&](py::list argv, std::string _prefix, std::string _suffix) {
             if(argv.size() < 1)
                 return;
-            /*
-            std::vector<char*> _argv;
-            for(const auto& itr : argv)
-            {
-                std::string sitr  = itr.cast<std::string>();
-                char*       _c    = new char[sitr.length() + 1];
-                _c[sitr.length()] = '\0';
-                std::memcpy(_c, sitr.c_str(), sitr.length() * sizeof(char));
-                _argv.push_back(_c);
-            }
-            tim::timemory_init(argv.size(), _argv.data());
-            for(auto& itr : _argv)
-                delete[] itr;
-            */
             char* _argv = const_cast<char*>(argv.begin()->cast<std::string>().c_str());
             tim::timemory_init(1, &_argv, _prefix, _suffix);
-            // std::cout << "timemory output path: '" << tim::settings::output_path()
-            //          << "'..." << std::endl;
         },
         "Parse the environment and use argv[0] to set output path",
         py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
