@@ -33,18 +33,27 @@ from __future__ import division
 import os
 import imp
 import sys
+import warnings
 import importlib
 
 __author__ = "Jonathan Madsen"
 __copyright__ = "Copyright 2019, The Regents of the University of California"
-__credits__ = ["Jonathan Madsen"]
+__credits__ = ["Jonathan Madsen", "Yunsong Wang"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
-__email__ = "jonrobm.programming@gmail.com"
+__email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
-from . import roofline
-from .roofline import *
 
-__all__ = ['plot_roofline']
+def errprint(*args, **kwargs):
+    print(*args, file=sys.stderr, **kwargs)
+
+
+try:
+    from . import roofline
+    from .roofline import *
+    __all__ = ['plot_roofline']
+except Exception as e:
+    errprint(e)
+    warnings.warn("timemory.roofline is disabled")
