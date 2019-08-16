@@ -32,6 +32,8 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
 
+#include <iostream>
+
 //======================================================================================//
 
 namespace tim
@@ -67,6 +69,26 @@ struct papi_array
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
 
+    static bool initialize_papi()
+    {
+        static thread_local bool _initalized = false;
+        static thread_local bool _working    = false;
+        if(!_initalized)
+        {
+            papi::init();
+            _initalized = true;
+            _working    = papi::working();
+            if(!_working)
+            {
+                std::cerr << "Warning! PAPI failed to initialized!\n";
+                std::cerr << "The following PAPI events will not be reported: \n";
+                for(const auto& itr : get_events())
+                    std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
+                std::cerr << std::flush;
+            }
+        }
+        return _working;
+    }
     static int& event_set()
     {
         static thread_local int _instance = PAPI_NULL;
@@ -96,19 +118,23 @@ struct papi_array
 
     static void invoke_thread_init()
     {
+        if(!initialize_papi())
+            return;
         auto events = get_events();
-        tim::papi::create_event_set(&event_set());
-        tim::papi::add_events(event_set(), events.data(), events.size());
-        tim::papi::start(event_set(), enable_multiplex());
+        papi::create_event_set(&event_set());
+        papi::add_events(event_set(), events.data(), events.size());
+        papi::start(event_set(), enable_multiplex());
     }
 
     static void invoke_thread_finalize()
     {
+        if(!initialize_papi())
+            return;
         value_type values;
         auto       events = get_events();
-        tim::papi::stop(event_set(), values.data());
-        tim::papi::remove_events(event_set(), events.data(), events.size());
-        tim::papi::destroy_event_set(event_set());
+        papi::stop(event_set(), values.data());
+        papi::remove_events(event_set(), events.data(), events.size());
+        papi::destroy_event_set(event_set());
         event_set() = PAPI_NULL;
     }
 
@@ -145,7 +171,8 @@ struct papi_array
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        tim::papi::read(event_set(), read_value.data());
+        if(initialize_papi())
+            papi::read(event_set(), read_value.data());
         return read_value;
     }
 
