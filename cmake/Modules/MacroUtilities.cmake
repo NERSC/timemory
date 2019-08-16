@@ -114,8 +114,17 @@ FUNCTION(ADD_FEATURE _var _description)
       endif()
   endforeach()
 
-  set_property(GLOBAL APPEND PROPERTY PROJECT_FEATURES ${_var})
+  set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_FEATURES ${_var})
   set_property(GLOBAL PROPERTY ${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
+ENDFUNCTION()
+
+
+FUNCTION(ADD_ENABLED_INTERFACE _var)
+    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES ${_var})
+ENDFUNCTION()
+
+FUNCTION(ADD_DISABLED_INTERFACE _var)
+    set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES ${_var})
 ENDFUNCTION()
 
 
@@ -292,6 +301,7 @@ ENDMACRO()
 MACRO(ADD_INTERFACE_LIBRARY _TARGET)
     add_library(${_TARGET} INTERFACE ${ARGN})
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES ${_TARGET})
+    add_enabled_interface(${_TARGET})
 ENDMACRO()
 
 
@@ -415,7 +425,7 @@ endmacro(BUILD_LIBRARY)
 FUNCTION(print_enabled_features)
     set(_basemsg "The following features are defined/enabled (+):")
     set(_currentFeatureText "${_basemsg}")
-    get_property(_features GLOBAL PROPERTY PROJECT_FEATURES)
+    get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
     if(NOT "${_features}" STREQUAL "")
         list(REMOVE_DUPLICATES _features)
         list(SORT _features)
@@ -463,7 +473,7 @@ ENDFUNCTION()
 FUNCTION(print_disabled_features)
     set(_basemsg "The following features are NOT defined/enabled (-):")
     set(_currentFeatureText "${_basemsg}")
-    get_property(_features GLOBAL PROPERTY PROJECT_FEATURES)
+    get_property(_features GLOBAL PROPERTY ${PROJECT_NAME}_FEATURES)
     if(NOT "${_features}" STREQUAL "")
         list(REMOVE_DUPLICATES _features)
         list(SORT _features)
@@ -486,6 +496,58 @@ FUNCTION(print_disabled_features)
     endif()
 ENDFUNCTION()
 
+
+#----------------------------------------------------------------------------------------#
+# function print_enabled_interfaces()
+#          Print enabled INTERFACE libraries plus their docstrings.
+#
+FUNCTION(print_enabled_interfaces)
+    set(_basemsg "The following INTERFACE libraries are enabled:")
+    set(_currentFeatureText "${_basemsg}")
+    get_property(_enabled GLOBAL PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES)
+    get_property(_disabled GLOBAL PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES)
+    if(NOT "${_enabled}" STREQUAL "")
+        list(REMOVE_DUPLICATES _enabled)
+        list(SORT _enabled)
+    endif()
+    foreach(_LIB ${_disabled})
+        if("${_LIB}" IN_LIST _enabled)
+            list(REMOVE_ITEM _enabled ${_LIB})
+        endif()
+    endforeach()
+    foreach(_feature ${_enabled})
+        # add feature to text
+        set(_currentFeatureText "${_currentFeatureText}\n     ${_feature}")
+    endforeach()
+
+    if(NOT "${_currentFeatureText}" STREQUAL "${_basemsg}")
+        message(STATUS "${_currentFeatureText}\n")
+    endif()
+ENDFUNCTION()
+
+
+#----------------------------------------------------------------------------------------#
+# function print_disabled_interfaces()
+#          Print disabled interfaces plus their docstrings.
+#
+FUNCTION(print_disabled_interfaces)
+    set(_basemsg "The following INTERFACE libraries are NOT enabled (empty INTERFACE libraries):")
+    set(_currentFeatureText "${_basemsg}")
+    get_property(_disabled GLOBAL PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES)
+    if(NOT "${_disabled}" STREQUAL "")
+        list(REMOVE_DUPLICATES _disabled)
+        list(SORT _disabled)
+    endif()
+    foreach(_feature ${_disabled})
+        set(_currentFeatureText "${_currentFeatureText}\n     ${_feature}")
+    endforeach(_feature)
+
+    if(NOT "${_currentFeatureText}" STREQUAL "${_basemsg}")
+        message(STATUS "${_currentFeatureText}\n")
+    endif()
+ENDFUNCTION()
+
+
 #----------------------------------------------------------------------------------------#
 # function print_features()
 #          Print all features plus their docstrings.
@@ -494,6 +556,9 @@ FUNCTION(print_features)
     message(STATUS "")
     print_enabled_features()
     print_disabled_features()
+    message(STATUS "")
+    print_enabled_interfaces()
+    print_disabled_interfaces()
 ENDFUNCTION()
 
 

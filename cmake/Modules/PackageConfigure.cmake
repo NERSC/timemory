@@ -64,7 +64,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         ${PROJECT_SOURCE_DIR}/external/pybind11)
 
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
-    add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
+    # add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")
 
 endif()
 

@@ -178,7 +178,7 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 
 //======================================================================================//
 
-#include <execinfo.h>
+// #include <execinfo.h>
 #include <iostream>
 
 using component_enum_t = std::vector<TIMEMORY_COMPONENT>;

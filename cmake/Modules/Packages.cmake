@@ -75,10 +75,13 @@ endif()
 add_library(timemory-google-test INTERFACE)
 
 function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
-    message(STATUS
-        "[interface] ${_PACKAGE} not found. ${_TARGET} interface will not provide ${_PACKAGE}...")
-    set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET}
-        PARENT_SCOPE)
+    if(NOT TARGET ${_TARGET})
+        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
+    endif()
+    message(STATUS  "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+    # message(AUTHOR_WARNING "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+    set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
+    add_disabled_interface(${_TARGET})
 endfunction()
 
 #----------------------------------------------------------------------------------------#
@@ -369,7 +372,8 @@ if(PAPI_FOUND)
     target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
-    inform_empty_interface(timemory-papi "PAPI")
+    inform_empty_interface(timemory-papi "PAPI (shared libraries)")
+    inform_empty_interface(timemory-papi-static "PAPI (static libraries)")
 endif()
 
 
@@ -538,6 +542,9 @@ if(TIMEMORY_USE_CUDA)
     endif()
 else()
     inform_empty_interface(timemory-cuda "CUDA")
+    inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
+    inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
+    inform_empty_interface(timemory-cudart-static "CUDA Runtime (static)")
 endif()
 
 
@@ -626,7 +633,7 @@ if(NVTX_FOUND)
     target_compile_definitions(timemory-cuda-nvtx INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-nvtx "NVTX")
+    inform_empty_interface(timemory-cuda-nvtx "NVTX")
 endif()
 
 
