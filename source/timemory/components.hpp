@@ -362,6 +362,17 @@ enumerate_components(const std::initializer_list<std::string>& component_names)
 }
 
 //--------------------------------------------------------------------------------------//
+
+inline std::vector<TIMEMORY_COMPONENT>
+enumerate_components(const std::string& names, const std::string& env_id = "")
+{
+    if(env_id.length() > 0)
+        return enumerate_components(tim::delimit(get_env<std::string>(env_id, names)));
+    else
+        return enumerate_components(tim::delimit(names));
+}
+
+//--------------------------------------------------------------------------------------//
 //
 //                  extra specializations for std::string
 //

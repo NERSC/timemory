@@ -45,8 +45,8 @@ using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
-using tuple_t       = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using list_t        = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss,
+using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
+using list_t = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, current_rss,
                                    papi_array_t, cuda_event, cupti_event, caliper>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = auto_hybrid_t::component_type;
@@ -178,17 +178,12 @@ TEST_F(hybrid_tests, hybrid)
 {
     hybrid_t obj(details::get_test_name());
     obj.start();
-
     std::thread t(details::consume, 1000);
     details::consume(500);
     details::do_sleep(500);
     t.join();
-
     obj.stop();
-
-    std::cout << "\n[" << details::get_test_name() << "]> result: \n"
-              << obj << "\n"
-              << std::endl;
+    std::cout << "\n" << obj << std::endl;
 
     auto clock_convert    = [](const int64_t& obj) { return obj; };
     auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
@@ -211,17 +206,11 @@ TEST_F(hybrid_tests, hybrid)
                 obj.get_list().get<cpu_util>()->get(), util_epsilon);
 
     obj.start();
-
     details::allocate();
-
     obj.stop();
-
-    std::cout << "\n[" << details::get_test_name() << "]> result: \n"
-              << obj << "\n"
-              << std::endl;
+    std::cout << obj << std::endl;
 
     details::print_info(obj.get_tuple().get<peak_rss>(), tot_size, "KiB");
-
     ASSERT_NEAR(tot_size, obj.get_tuple().get<peak_rss>().get(), peak_tolerance);
 }
 
@@ -230,17 +219,12 @@ TEST_F(hybrid_tests, hybrid)
 TEST_F(hybrid_tests, auto_timer)
 {
     tim::auto_timer obj(details::get_test_name());
-
-    std::thread t(details::consume, 1000);
+    std::thread     t(details::consume, 1000);
     details::consume(500);
     details::do_sleep(500);
     t.join();
-
     obj.stop();
-
-    std::cout << "\n[" << details::get_test_name() << "]> result: \n"
-              << obj << "\n"
-              << std::endl;
+    std::cout << "\n" << obj << std::endl;
 
     auto clock_convert    = [](const int64_t& obj) { return obj; };
     auto cpu_util_convert = [](const std::pair<int64_t, int64_t>& val) {
@@ -256,14 +240,9 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(150.0, obj.get_lhs().get<cpu_util>().get(), util_tolerance);
 
     obj.start();
-
     details::allocate();
-
     obj.stop();
-
-    std::cout << "\n[" << details::get_test_name() << "]> result: \n"
-              << obj << "\n"
-              << std::endl;
+    std::cout << obj << std::endl;
 
     details::print_info(obj.get_lhs().get<peak_rss>(), tot_size, "KiB");
     // ASSERT_NEAR(tot_size, obj.get<peak_rss>().get(), peak_tolerance);
@@ -284,8 +263,8 @@ main(int argc, char** argv)
     tim::settings::verbose() += 1;
 
     list_t::get_initializer() = [](list_t& l) {
-        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, papi_array_t, cuda_event,
-                     cupti_event, caliper>();
+        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, papi_array_t,
+                     cuda_event, cupti_event, caliper>();
     };
 
     return RUN_ALL_TESTS();

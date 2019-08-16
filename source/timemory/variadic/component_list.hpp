@@ -92,6 +92,9 @@ public:
     using language_t     = tim::language;
     using init_func_t    = std::function<void(this_type&)>;
 
+    // used by component hybrid
+    static constexpr bool is_component_list = true;
+
 public:
     using auto_type = auto_list<Types...>;
     // using op_count_t = tim::modifiers<operation::pointer_counter, Types...>;
@@ -500,11 +503,15 @@ public:
         }
         if(ss_data.str().length() > 0)
         {
-            obj.update_identifier();
-            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
-                      << " : ";
-            os << ss_prefix.str() << ss_data.str();
-            if(obj.laps() > 0)
+            if(obj.m_print_prefix)
+            {
+                obj.update_identifier();
+                ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                          << " : ";
+                os << ss_prefix.str();
+            }
+            os << ss_data.str();
+            if(obj.laps() > 0 && obj.m_print_laps)
                 os << " [laps: " << obj.m_laps << "]";
         }
         return os;
@@ -685,14 +692,16 @@ protected:
 
 protected:
     // objects
-    bool              m_store      = false;
-    bool              m_is_pushed  = false;
-    int64_t           m_laps       = 0;
-    int64_t           m_count      = 0;
-    int64_t           m_hash       = 0;
-    string_t          m_key        = "";
-    language_t        m_lang       = language_t::cxx();
-    string_t          m_identifier = "";
+    bool              m_store        = false;
+    bool              m_is_pushed    = false;
+    bool              m_print_prefix = true;
+    bool              m_print_laps   = true;
+    int64_t           m_laps         = 0;
+    int64_t           m_count        = 0;
+    int64_t           m_hash         = 0;
+    string_t          m_key          = "";
+    language_t        m_lang         = language_t::cxx();
+    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:

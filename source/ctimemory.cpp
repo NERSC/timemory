@@ -177,3 +177,140 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 #endif  // TIMEMORY_BUILD_C
 
 //======================================================================================//
+
+#include <execinfo.h>
+#include <iostream>
+
+using component_enum_t = std::vector<TIMEMORY_COMPONENT>;
+
+static uint64_t                         uniqID = 0;
+static component_enum_t                 components;
+static std::map<std::string, uint64_t>  components_keys;
+static std::map<uint64_t, auto_list_t*> record_map;
+static std::string spacer = "---------------------------------------------------------";
+
+//--------------------------------------------------------------------------------------//
+// default components to record -- maybe should be empty?
+//
+inline std::string
+get_default_components()
+{
+    return "real_clock, user_clock, system_clock, cpu_util, current_rss, peak_rss, "
+           "cuda_event";
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      TiMemory start/stop
+//
+//--------------------------------------------------------------------------------------//
+
+void
+record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
+{
+    auto itr = components_keys.find(std::string(name));
+    if(itr != components_keys.end())
+    {
+        *kernid = itr->second;
+        tim::initialize(*(record_map[*kernid]), types);
+        record_map[*kernid]->start();  // start recording
+    }
+    else
+    {
+        *kernid               = uniqID++;
+        components_keys[name] = *kernid;
+        auto obj              = new auto_list_t(name, tim::language::cxx(), *kernid);
+        tim::initialize(*obj, types);
+        record_map[*kernid] = obj;
+        record_map[*kernid]->start();  // start recording
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+record_stop(uint64_t kernid)
+{
+    record_map[kernid]->stop();  // stop recording
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      TiMemory symbols
+//
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+timemory_init_library(int argc, char** argv)
+{
+    printf("%s\n", spacer.c_str());
+    printf("\tInitialization of timemory preload...\n");
+    printf("%s\n\n", spacer.c_str());
+
+    tim::settings::auto_output() = true;   // print when destructing
+    tim::settings::cout_output() = true;   // print to stdout
+    tim::settings::text_output() = true;   // print text files
+    tim::settings::json_output() = false;  // print to json
+    tim::timemory_init(argc, argv);
+
+    components =
+        tim::enumerate_components(get_default_components(), "TIMEMORY_COMPONENTS");
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+timemory_finalize_library()
+{
+    printf("\n%s\n", spacer.c_str());
+    printf("\tFinalization of timemory preload...\n");
+    printf("%s\n\n", spacer.c_str());
+
+    for(auto& itr : record_map)
+        delete itr.second;
+    record_map.clear();
+
+    // PGI and Intel compilers don't respect destruction order
+#if defined(__PGI) || defined(__INTEL_COMPILER)
+    tim::settings::auto_output() = false;
+#endif
+
+    // Compensate for Intel compiler not allowing auto output
+#if defined(__INTEL_COMPILER)
+    auto_list_t::print_storage();
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+timemory_begin_record(const char* name, uint64_t* kernid)
+{
+    record_start(name, kernid, components);
+    if(tim::settings::verbose() > 1)
+        printf("beginning record for '%s' (id = %lli)...\n", name,
+               (long long int) *kernid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+timemory_begin_record_types(const char* name, uint64_t* kernid, const char* ctypes)
+{
+    record_start(name, kernid, tim::enumerate_components(std::string(ctypes)));
+    if(tim::settings::verbose() > 1)
+        printf("beginning record for '%s' (id = %lli)...\n", name,
+               (long long int) *kernid);
+}
+
+//--------------------------------------------------------------------------------------//
+
+extern "C" void
+timemory_end_record(uint64_t kernid)
+{
+    record_stop(kernid);
+    if(tim::settings::verbose() > 1)
+        printf("ending record for %lli...\n", (long long int) kernid);
+}
+
+//======================================================================================//

@@ -589,6 +589,7 @@ struct print
     using Type       = _Tp;
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
+    using widths_t   = std::vector<int64_t>;
 
     // static constexpr const bool is_available = trait::is_available<_Tp>::value;
     // static constexpr const bool uses_internal =
@@ -632,18 +633,18 @@ struct print
 
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type& _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _depth, int64_t _output_width, bool _endline,
+          int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
     {
         std::stringstream ss_prefix;
         std::stringstream ss;
-        ss_prefix << std::setw(_output_width) << std::left << _prefix << " : ";
+        ss_prefix << std::setw(_output_widths.at(0)) << std::left << _prefix << " : ";
         ss << ss_prefix.str() << _obj;
         if(_laps > 0 && !trait::custom_laps_printing<Type>::value)
-            ss << ", " << _laps << " laps";
+            ss << ", " << std::setw(_output_widths.at(1)) << _laps << " laps";
         if(_endline)
         {
-            ss << ", depth " << _depth;
+            ss << ", depth " << std::setw(_output_widths.at(2)) << _depth;
             if(_suffix.length() > 0)
                 ss << " " << _suffix;
             ss << std::endl;
@@ -671,11 +672,11 @@ struct print
 
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     print(const Type* _obj, std::ostream& _os, const string_t& _prefix, int64_t _laps,
-          int64_t _depth, int64_t _output_width, bool _endline,
+          int64_t _depth, const widths_t& _output_widths, bool _endline,
           const string_t& _suffix = "")
     {
         if(_obj)
-            print(*_obj, _os, _prefix, _laps, _depth, _output_width, _endline, _suffix);
+            print(*_obj, _os, _prefix, _laps, _depth, _output_widths, _endline, _suffix);
     }
 
     //----------------------------------------------------------------------------------//
@@ -695,8 +696,8 @@ struct print
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool,
-          const string_t& = "")
+    print(const Type&, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
+          bool, const string_t& = "")
     {
     }
 
@@ -717,8 +718,8 @@ struct print
 
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, int64_t, bool,
-          const string_t& = "")
+    print(const Type*, std::ostream&, const string_t&, int64_t, int64_t, const widths_t&,
+          bool, const string_t& = "")
     {
     }
 };
@@ -907,6 +908,62 @@ struct pointer_counter
     {
         if(obj)
             ++count;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct set_width
+{
+    template <typename _Up>
+    set_width(const _Up& val)
+    {
+        _Tp::get_width() = val;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct set_precision
+{
+    template <typename _Up>
+    set_precision(const _Up& val)
+    {
+        _Tp::get_precision() = val;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct set_format_flags
+{
+    template <typename _Up>
+    set_format_flags(const _Up& val)
+    {
+        _Tp::get_format_flags() = val;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct set_units
+{
+    template <typename _Up>
+    set_units(const _Up& val, const std::string& str)
+    {
+        _Tp::get_unit()         = val;
+        _Tp::get_display_unit() = str;
+    }
+
+    template <typename _Up>
+    set_units(const std::tuple<std::string, _Up>& val)
+    {
+        _Tp::get_display_unit() = std::get<0>(val);
+        _Tp::get_unit()         = std::get<1>(val);
     }
 };
 

@@ -113,6 +113,40 @@ struct stop_priority : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates the width and precision should follow env specified
+/// timing settings
+///
+template <typename _Tp>
+struct is_timing_category : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the width and precision should follow env specified
+/// memory settings
+///
+template <typename _Tp>
+struct is_memory_category : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the units should follow env specified timing settings
+///
+template <typename _Tp>
+struct uses_timing_units : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that designates the units should follow env specified memory settings
+///
+template <typename _Tp>
+struct uses_memory_units : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 }  // trait
 }  // tim
 
@@ -127,7 +161,9 @@ namespace tim
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
-//
+//      record_max
+//--------------------------------------------------------------------------------------//
+
 template <>
 struct record_max<component::peak_rss> : std::true_type
 {
@@ -148,6 +184,10 @@ struct record_max<component::data_rss> : std::true_type
 {
 };
 
+//--------------------------------------------------------------------------------------//
+//      array_serialization
+//--------------------------------------------------------------------------------------//
+
 template <int... EventTypes>
 struct array_serialization<component::papi_tuple<EventTypes...>> : std::true_type
 {
@@ -163,11 +203,19 @@ struct array_serialization<component::cupti_event> : std::true_type
 {
 };
 
+//--------------------------------------------------------------------------------------//
+//      stop_priority
+//--------------------------------------------------------------------------------------//
+
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cuda_event> : std::true_type
 {
 };
+
+//--------------------------------------------------------------------------------------//
+//      custom_unit_printing
+//--------------------------------------------------------------------------------------//
 
 template <>
 struct custom_unit_printing<component::read_bytes> : std::true_type
@@ -178,6 +226,10 @@ template <>
 struct custom_unit_printing<component::written_bytes> : std::true_type
 {
 };
+
+//--------------------------------------------------------------------------------------//
+//      custom_label_printing
+//--------------------------------------------------------------------------------------//
 
 template <>
 struct custom_label_printing<component::read_bytes> : std::true_type
@@ -191,6 +243,222 @@ struct custom_label_printing<component::written_bytes> : std::true_type
 
 template <>
 struct custom_laps_printing<component::trip_count> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//		is_timing_category
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct is_timing_category<component::real_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::system_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::user_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::monotonic_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::monotonic_raw_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::thread_cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::process_cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::cuda_event> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//		is_memory_category
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct is_memory_category<component::peak_rss> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::current_rss> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::stack_rss> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::data_rss> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_swap> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_io_in> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_io_out> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_minor_page_faults> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_major_page_faults> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_msg_sent> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_msg_recv> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::num_signals> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::voluntary_context_switch> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::priority_context_switch> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::read_bytes> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::written_bytes> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//		uses_timing_units
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct uses_timing_units<component::real_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::system_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::user_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::monotonic_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::monotonic_raw_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::thread_cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::process_cpu_clock> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::cuda_event> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//		uses_memory_units
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct uses_memory_units<component::peak_rss> : std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::current_rss> : std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::stack_rss> : std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::data_rss> : std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::read_bytes> : std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::written_bytes> : std::true_type
 {
 };
 

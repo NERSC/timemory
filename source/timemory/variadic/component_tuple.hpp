@@ -400,10 +400,15 @@ public:
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
-        obj.update_identifier();
-        ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        if(obj.m_laps > 0)
+        if(obj.m_print_prefix)
+        {
+            obj.update_identifier();
+            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                      << " : ";
+            os << ss_prefix.str();
+        }
+        os << ss_data.str();
+        if(obj.m_laps > 0 && obj.m_print_laps)
             os << " [laps: " << obj.m_laps << "]";
         return os;
     }
@@ -506,14 +511,16 @@ protected:
 
 protected:
     // objects
-    bool              m_store      = false;
-    bool              m_is_pushed  = false;
-    int64_t           m_laps       = 0;
-    int64_t           m_count      = 0;
-    int64_t           m_hash       = 0;
-    const language_t  m_lang       = language_t::cxx();
-    string_t          m_key        = "";
-    string_t          m_identifier = "";
+    bool              m_store        = false;
+    bool              m_is_pushed    = false;
+    bool              m_print_prefix = true;
+    bool              m_print_laps   = true;
+    int64_t           m_laps         = 0;
+    int64_t           m_count        = 0;
+    int64_t           m_hash         = 0;
+    const language_t  m_lang         = language_t::cxx();
+    string_t          m_key          = "";
+    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:

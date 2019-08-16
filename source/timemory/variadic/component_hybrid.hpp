@@ -88,6 +88,9 @@ public:
     : m_tuple(key, store, ncount, nhash, lang)
     , m_list(key, store, ncount, nhash, lang)
     {
+        m_tuple.m_print_laps  = false;
+        m_list.m_print_laps   = false;
+        m_list.m_print_prefix = false;
     }
 
     explicit component_hybrid(const string_t& key, const bool& store,
@@ -96,6 +99,9 @@ public:
     : m_tuple(key, store, lang, ncount, nhash)
     , m_list(key, store, lang, ncount, nhash)
     {
+        m_tuple.m_print_laps  = false;
+        m_list.m_print_laps   = false;
+        m_list.m_print_prefix = false;
     }
 
     explicit component_hybrid(const string_t&   key,
@@ -105,6 +111,9 @@ public:
     : m_tuple(key, lang, ncount, nhash, store)
     , m_list(key, lang, ncount, nhash, store)
     {
+        m_tuple.m_print_laps  = false;
+        m_list.m_print_laps   = false;
+        m_list.m_print_prefix = false;
     }
 
     ~component_hybrid() {}
@@ -352,9 +361,12 @@ public:
         if(tss.str().length() > 0)
             os << tss.str();
         if(tss.str().length() > 0 && lss.str().length() > 0)
-            os << "\n";
+            os << ", ";
         if(lss.str().length() > 0)
             os << lss.str();
+
+        if(obj.m_tuple.laps() > 0)
+            os << " [laps: " << obj.m_tuple.laps() << "]";
 
         return os;
     }

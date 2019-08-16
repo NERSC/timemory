@@ -334,6 +334,7 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
         m_data.current()   = m_data.head();
         int64_t _width     = ObjectType::get_width();
         int64_t _max_depth = 0;
+        int64_t _max_laps  = 0;
         // find the max width
         for(const auto& itr : m_data.graph())
         {
@@ -342,7 +343,11 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
             _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
+            _max_laps    = std::max<int64_t>(_max_laps, itr.obj().laps);
         }
+        int64_t              _width_laps  = std::log10(_max_laps) + 1;
+        int64_t              _width_depth = std::log10(_max_depth) + 1;
+        std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
 
         // return type of get() function
         using get_return_type = decltype(std::declval<const ObjectType>().get());
@@ -396,8 +401,8 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
             auto _laps   = _obj.laps;
             auto _depth  = itr.depth();
 
-            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _width, true,
-                                         _pss.str());
+            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _widths,
+                                         true, _pss.str());
             // operation::print<ObjectType>(_obj, _mss, false);
         }
 

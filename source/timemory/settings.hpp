@@ -33,6 +33,7 @@
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/details/settings.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>
@@ -111,8 +112,6 @@ DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")                // f
 inline string_t tolower(string_t);
 inline string_t toupper(string_t);
 inline void
-process();
-inline void
 parse();
 inline string_t
 get_output_prefix();
@@ -152,6 +151,30 @@ tim::settings::toupper(std::string str)
 #include "timemory/mpl/operations.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/utility.hpp"
+
+namespace tim
+{
+using complete_tuple_t = std::tuple<
+    component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
+    component::cpu_roofline_sp_flops, component::cpu_util, component::cuda_event,
+    component::cupti_event, component::current_rss, component::data_rss,
+    component::monotonic_clock, component::monotonic_raw_clock, component::num_io_in,
+    component::num_io_out, component::num_major_page_faults,
+    component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
+    component::num_signals, component::num_swap, component::papi_array_t,
+    component::peak_rss, component::priority_context_switch, component::process_cpu_clock,
+    component::process_cpu_util, component::read_bytes, component::real_clock,
+    component::stack_rss, component::system_clock, component::thread_cpu_clock,
+    component::thread_cpu_util, component::trip_count, component::user_clock,
+    component::voluntary_context_switch, component::written_bytes>;
+
+namespace settings
+{
+template <typename _Tuple = tim::complete_tuple_t>
+void
+process();
+}
+}
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
@@ -204,10 +227,15 @@ tim::settings::parse()
 // function to process the settings -- always called even when environment processesing
 // is suppressed
 //
+template <typename _Tuple>
 inline void
 tim::settings::process()
 {
     using namespace tim::component;
+    using category_timing  = impl::filter_false<trait::is_timing_category, _Tuple>;
+    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
+    using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
+    using has_memory_units = impl::filter_false<trait::uses_memory_units, _Tuple>;
 
     if(precision() > 0)
     {
@@ -289,171 +317,48 @@ tim::settings::process()
 
     if(!(memory_width() < 0))
     {
-        peak_rss::get_width()                 = memory_width();
-        current_rss::get_width()              = memory_width();
-        stack_rss::get_width()                = memory_width();
-        data_rss::get_width()                 = memory_width();
-        num_swap::get_width()                 = memory_width();
-        num_io_in::get_width()                = memory_width();
-        num_io_out::get_width()               = memory_width();
-        num_major_page_faults::get_width()    = memory_width();
-        num_minor_page_faults::get_width()    = memory_width();
-        num_msg_sent::get_width()             = memory_width();
-        num_msg_recv::get_width()             = memory_width();
-        num_signals::get_width()              = memory_width();
-        voluntary_context_switch::get_width() = memory_width();
-        priority_context_switch::get_width()  = memory_width();
-        read_bytes::get_width()               = memory_width();
-        written_bytes::get_width()            = memory_width();
+        apply<void>::type_access<operation::set_width, category_memory>(memory_width());
     }
 
     if(!(timing_width() < 0))
     {
-        real_clock::get_width()          = timing_width();
-        system_clock::get_width()        = timing_width();
-        user_clock::get_width()          = timing_width();
-        cpu_clock::get_width()           = timing_width();
-        monotonic_clock::get_width()     = timing_width();
-        monotonic_raw_clock::get_width() = timing_width();
-        thread_cpu_clock::get_width()    = timing_width();
-        process_cpu_clock::get_width()   = timing_width();
-        cpu_util::get_width()            = timing_width();
-        thread_cpu_util::get_width()     = timing_width();
-        process_cpu_util::get_width()    = timing_width();
-        cuda_event::get_width()          = timing_width();
+        apply<void>::type_access<operation::set_width, category_timing>(timing_width());
     }
 
     if(memory_scientific())
     {
-        peak_rss::get_format_flags()                 = std::ios_base::scientific;
-        current_rss::get_format_flags()              = std::ios_base::scientific;
-        stack_rss::get_format_flags()                = std::ios_base::scientific;
-        data_rss::get_format_flags()                 = std::ios_base::scientific;
-        num_swap::get_format_flags()                 = std::ios_base::scientific;
-        num_io_in::get_format_flags()                = std::ios_base::scientific;
-        num_io_out::get_format_flags()               = std::ios_base::scientific;
-        num_major_page_faults::get_format_flags()    = std::ios_base::scientific;
-        num_minor_page_faults::get_format_flags()    = std::ios_base::scientific;
-        num_msg_sent::get_format_flags()             = std::ios_base::scientific;
-        num_msg_recv::get_format_flags()             = std::ios_base::scientific;
-        num_signals::get_format_flags()              = std::ios_base::scientific;
-        voluntary_context_switch::get_format_flags() = std::ios_base::scientific;
-        priority_context_switch::get_format_flags()  = std::ios_base::scientific;
-        read_bytes::get_format_flags()               = std::ios_base::scientific;
-        written_bytes::get_format_flags()            = std::ios_base::scientific;
+        apply<void>::type_access<operation::set_format_flags, category_memory>(
+            std::ios_base::scientific);
     }
 
     if(timing_scientific())
     {
-        real_clock::get_format_flags()          = std::ios_base::scientific;
-        system_clock::get_format_flags()        = std::ios_base::scientific;
-        user_clock::get_format_flags()          = std::ios_base::scientific;
-        cpu_clock::get_format_flags()           = std::ios_base::scientific;
-        monotonic_clock::get_format_flags()     = std::ios_base::scientific;
-        monotonic_raw_clock::get_format_flags() = std::ios_base::scientific;
-        thread_cpu_clock::get_format_flags()    = std::ios_base::scientific;
-        process_cpu_clock::get_format_flags()   = std::ios_base::scientific;
-        cpu_util::get_format_flags()            = std::ios_base::scientific;
-        thread_cpu_util::get_format_flags()     = std::ios_base::scientific;
-        process_cpu_util::get_format_flags()    = std::ios_base::scientific;
-        cuda_event::get_format_flags()          = std::ios_base::scientific;
+        apply<void>::type_access<operation::set_format_flags, category_timing>(
+            std::ios_base::scientific);
     }
 
     if(!(memory_precision() < 0))
     {
-        peak_rss::get_precision()                 = memory_precision();
-        current_rss::get_precision()              = memory_precision();
-        stack_rss::get_precision()                = memory_precision();
-        data_rss::get_precision()                 = memory_precision();
-        num_swap::get_precision()                 = memory_precision();
-        num_io_in::get_precision()                = memory_precision();
-        num_io_out::get_precision()               = memory_precision();
-        num_major_page_faults::get_precision()    = memory_precision();
-        num_minor_page_faults::get_precision()    = memory_precision();
-        num_msg_sent::get_precision()             = memory_precision();
-        num_msg_recv::get_precision()             = memory_precision();
-        num_signals::get_precision()              = memory_precision();
-        voluntary_context_switch::get_precision() = memory_precision();
-        priority_context_switch::get_precision()  = memory_precision();
-        read_bytes::get_precision()               = memory_precision();
-        written_bytes::get_precision()            = memory_precision();
+        apply<void>::type_access<operation::set_precision, category_memory>(
+            memory_precision());
     }
 
     if(!(timing_precision() < 0))
     {
-        real_clock::get_precision()          = timing_precision();
-        system_clock::get_precision()        = timing_precision();
-        user_clock::get_precision()          = timing_precision();
-        cpu_clock::get_precision()           = timing_precision();
-        monotonic_clock::get_precision()     = timing_precision();
-        monotonic_raw_clock::get_precision() = timing_precision();
-        thread_cpu_clock::get_precision()    = timing_precision();
-        process_cpu_clock::get_precision()   = timing_precision();
-        cpu_util::get_precision()            = timing_precision();
-        thread_cpu_util::get_precision()     = timing_precision();
-        process_cpu_util::get_precision()    = timing_precision();
-        cuda_event::get_precision()          = timing_precision();
+        apply<void>::type_access<operation::set_precision, category_timing>(
+            timing_precision());
     }
 
     if(memory_units().length() > 0)
     {
-        auto _memory_unit = get_memory_unit(memory_units());
-
-        peak_rss::get_display_unit()      = std::get<0>(_memory_unit);
-        current_rss::get_display_unit()   = std::get<0>(_memory_unit);
-        stack_rss::get_display_unit()     = std::get<0>(_memory_unit);
-        data_rss::get_display_unit()      = std::get<0>(_memory_unit);
-        read_bytes::get_display_unit()    = std::get<0>(_memory_unit);
-        written_bytes::get_display_unit() = std::get<0>(_memory_unit);
-
-        peak_rss::get_unit()      = std::get<1>(_memory_unit);
-        current_rss::get_unit()   = std::get<1>(_memory_unit);
-        stack_rss::get_unit()     = std::get<1>(_memory_unit);
-        data_rss::get_unit()      = std::get<1>(_memory_unit);
-        read_bytes::get_unit()    = std::get<1>(_memory_unit);
-        written_bytes::get_unit() = std::get<1>(_memory_unit);
+        auto _memory_units = get_memory_unit(memory_units());
+        apply<void>::type_access<operation::set_units, has_memory_units>(_memory_units);
     }
 
     if(timing_units().length() > 0)
     {
-        auto _timing_unit = get_timing_unit(timing_units());
-
-        real_clock::get_display_unit()          = std::get<0>(_timing_unit);
-        system_clock::get_display_unit()        = std::get<0>(_timing_unit);
-        user_clock::get_display_unit()          = std::get<0>(_timing_unit);
-        cpu_clock::get_display_unit()           = std::get<0>(_timing_unit);
-        monotonic_clock::get_display_unit()     = std::get<0>(_timing_unit);
-        monotonic_raw_clock::get_display_unit() = std::get<0>(_timing_unit);
-        thread_cpu_clock::get_display_unit()    = std::get<0>(_timing_unit);
-        process_cpu_clock::get_display_unit()   = std::get<0>(_timing_unit);
-
-        real_clock::get_unit()          = std::get<1>(_timing_unit);
-        system_clock::get_unit()        = std::get<1>(_timing_unit);
-        user_clock::get_unit()          = std::get<1>(_timing_unit);
-        cpu_clock::get_unit()           = std::get<1>(_timing_unit);
-        monotonic_clock::get_unit()     = std::get<1>(_timing_unit);
-        monotonic_raw_clock::get_unit() = std::get<1>(_timing_unit);
-        thread_cpu_clock::get_unit()    = std::get<1>(_timing_unit);
-        process_cpu_clock::get_unit()   = std::get<1>(_timing_unit);
-        cuda_event::get_unit()          = std::get<1>(_timing_unit);
-    }
-
-    if(precision() > 0)
-    {
-        timing_precision() = precision();
-        memory_precision() = precision();
-    }
-
-    if(width() > 0)
-    {
-        timing_width() = width();
-        memory_width() = width();
-    }
-
-    if(scientific())
-    {
-        timing_scientific() = true;
-        memory_scientific() = true;
+        auto _timing_units = get_timing_unit(timing_units());
+        apply<void>::type_access<operation::set_units, has_timing_units>(_timing_units);
     }
 }
 

@@ -253,7 +253,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Preload library tool
 #
-add_subdirectory(preload)
+# add_subdirectory(preload)
 
 #----------------------------------------------------------------------------------------#
 # install the plotting.py module as a Python executable
