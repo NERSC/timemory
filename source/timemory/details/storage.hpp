@@ -227,7 +227,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::internal_print(std::true_type)
+void tim::storage<ObjectType>::external_print(std::false_type)
 {
     auto num_instances = instance_count().load();
 
@@ -471,7 +471,7 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::internal_print(std::false_type)
+void tim::storage<ObjectType>::external_print(std::true_type)
 {
     if(!singleton_t::is_master(this))
     {

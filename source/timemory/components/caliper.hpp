@@ -34,10 +34,10 @@ namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, int64_t>
+struct caliper : public base<caliper, int8_t>
 {
     // timemory component api
-    using value_type = int64_t;
+    using value_type = int8_t;
     using base_type  = base<caliper, value_type>;
 
     static const short                   precision    = 0;

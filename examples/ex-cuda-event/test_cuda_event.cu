@@ -51,10 +51,10 @@
 using namespace tim::component;
 
 using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, papi_tuple_t>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                     nvtx_marker, papi_tuple_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using cuda_tuple_t = tim::auto_tuple<cuda_event>;
+using cuda_tuple_t = tim::auto_tuple<cuda_event, nvtx_marker>;
 
 //======================================================================================//
 

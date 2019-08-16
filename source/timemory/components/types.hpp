@@ -55,6 +55,7 @@ struct base;
 
 // general
 struct trip_count;
+struct nvtx_marker;
 
 // timing
 struct real_clock;

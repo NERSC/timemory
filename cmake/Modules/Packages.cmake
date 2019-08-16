@@ -31,6 +31,7 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
+add_interface_library(timemory-cuda-nvtx)
 add_interface_library(timemory-caliper)
 
 add_interface_library(timemory-gperftools)
@@ -45,7 +46,10 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-papi
     timemory-papi-static
     timemory-cuda
+    timemory-cudart
+    timemory-cuda-nvtx
     timemory-cupti
+    timemory-cudart-device
     timemory-coverage
     timemory-gperftools
     timemory-santizier)
@@ -605,6 +609,24 @@ if(TIMEMORY_USE_CUPTI)
 
 else()
     inform_empty_interface(timemory-cupti "CUPTI")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               NVTX
+#
+#----------------------------------------------------------------------------------------#
+
+find_package(NVTX QUIET)
+
+if(NVTX_FOUND)
+    target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
+    target_include_directories(timemory-cuda-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-cuda-nvtx INTERFACE TIMEMORY_USE_NVTX)
+else()
+    set(TIMEMORY_USE_NVTX OFF)
+    inform_empty_interface(timemory-nvtx "NVTX")
 endif()
 
 

@@ -96,6 +96,19 @@ struct set_prefix
         if(!exists)
             obj.set_prefix(_prefix);
     }
+
+    template <typename _Up                                           = _Tp,
+              enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
+    set_prefix(Type& obj, const string_t& _prefix)
+    {
+        obj.prefix = _prefix;
+    }
+
+    template <typename _Up                                                    = _Tp,
+              enable_if_t<(trait::requires_prefix<_Up>::value == false), int> = 0>
+    set_prefix(Type&, const string_t&)
+    {
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -591,10 +604,6 @@ struct print
     using base_type  = typename Type::base_type;
     using widths_t   = std::vector<int64_t>;
 
-    // static constexpr const bool is_available = trait::is_available<_Tp>::value;
-    // static constexpr const bool uses_internal =
-    // trait::internal_output_handling<_Tp>::value;
-
     //----------------------------------------------------------------------------------//
     // shorthand for available and using internal output handling
     //
@@ -602,7 +611,7 @@ struct print
     struct is_enabled
     {
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       trait::internal_output_handling<_Up>::value);
+                                       !(trait::external_output_handling<_Up>::value));
     };
 
     //----------------------------------------------------------------------------------//
@@ -740,7 +749,7 @@ struct print_storage
     struct is_enabled
     {
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       trait::internal_output_handling<_Up>::value);
+                                       !(trait::external_output_handling<_Up>::value));
     };
 
     //----------------------------------------------------------------------------------//

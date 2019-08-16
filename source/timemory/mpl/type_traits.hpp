@@ -66,7 +66,17 @@ struct is_available : std::true_type
 /// trait that signifies that a component uses the timemory output handling
 ///
 template <typename _Tp>
-struct internal_output_handling : std::true_type
+struct external_output_handling : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that a component requires the prefix to be set right after
+/// construction. Types with this trait must contain a member string variable named
+/// prefix
+///
+template <typename _Tp>
+struct requires_prefix : std::false_type
 {
 };
 
@@ -576,6 +586,30 @@ struct is_available<component::cupti_event> : std::false_type
 #endif  // TIMEMORY_USE_CUPTI
 
 //--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_NVTX
+//
+#if !defined(TIMEMORY_USE_NVTX)
+
+template <>
+struct is_available<component::nvtx_marker> : std::false_type
+{
+};
+
+#else
+
+template <>
+struct requires_prefix<component::nvtx_marker> : std::false_type
+{
+};
+
+#endif  // TIMEMORY_USE_NVTX
+
+template <>
+struct external_output_handling<component::nvtx_marker> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_CALIPER
 //
 #if !defined(TIMEMORY_USE_CALIPER)
@@ -585,10 +619,17 @@ struct is_available<component::caliper> : std::false_type
 {
 };
 
+#else
+
+template <>
+struct requires_prefix<component::caliper> : std::false_type
+{
+};
+
 #endif  // TIMEMORY_USE_CALIPER
 
 template <>
-struct internal_output_handling<component::caliper> : std::false_type
+struct external_output_handling<component::caliper> : std::true_type
 {
 };
 

@@ -743,7 +743,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
-        compute_identifier_extra<data_type>(key, lang);
+        compute_identifier_extra(key, lang);
     }
 
     void update_identifier() const
@@ -776,27 +776,14 @@ protected:
         return _instance.load();
     }
 
-    template <
-        typename _Tuple = data_type,
-        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
-    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    void compute_identifier_extra(const string_t& key, const language_t&)
     {
-        constexpr auto idx = index_of<component::caliper, _Tuple>::value;
-        auto*          obj = std::get<idx>(m_data);
-        if(obj)
-            obj->prefix = key;
-        consume_parameters(lang);
+        using apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::set_prefix<Types>>...>;
+        apply<void>::access<apply_types>(m_data, key);
     }
 
-    template <typename _Tuple       = data_type,
-              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
-                               int> = 0>
-    void compute_identifier_extra(const string_t&, const language_t&)
-    {
-    }
-
-    template <typename _Tp,
-              tim::enable_if_t<(std::is_same<_Tp, component::caliper>::value), char> = 0>
+    template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
     void compute_identifier_extra(_Tp* obj)
     {
         if(obj)
@@ -804,7 +791,7 @@ protected:
     }
 
     template <typename _Tp,
-              tim::enable_if_t<(!std::is_same<_Tp, component::caliper>::value), char> = 0>
+              enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
     void compute_identifier_extra(_Tp*)
     {
     }

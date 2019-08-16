@@ -132,6 +132,7 @@ initialize(_CompList<_CompTypes...>&               obj,
             case NUM_MSG_SENT: obj.template init<num_msg_sent>(); break;
             case NUM_SIGNALS: obj.template init<num_signals>(); break;
             case NUM_SWAP: obj.template init<num_swap>(); break;
+            case NVTX_MARKER: obj.template init<nvtx_marker>(); break;
             case PAPI_ARRAY: obj.template init<papi_array_t>(); break;
             case PEAK_RSS: obj.template init<peak_rss>(); break;
             case PRIORITY_CONTEXT_SWITCH:
@@ -257,6 +258,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(NUM_SWAP);
         }
+        else if(itr == "nvtx" || itr == "nvtx_marker")
+        {
+            vec.push_back(NVTX_MARKER);
+        }
         else if(itr == "papi" || itr == "papi_array" || itr == "papi_array_t")
         {
             vec.push_back(PAPI_ARRAY);
@@ -319,21 +324,22 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         }
         else
         {
-            fprintf(stderr,
-                    "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
-                    "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
-                    "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
-                    "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti', "
-                    "'cupti_event', 'current_rss', 'data_rss', 'monotonic_clock', "
-                    "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
-                    "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
-                    "'num_msg_sent', 'num_signals', 'num_swap', 'papi', 'papi_array', "
-                    "'papi_array_t', 'peak_rss', 'priority_context_switch', "
-                    "'process_cpu_clock', 'process_cpu_util', 'read_bytes', "
-                    "'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
-                    "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
-                    "'voluntary_context_switch', 'write_bytes', 'written_bytes']\n",
-                    itr.c_str());
+            fprintf(
+                stderr,
+                "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
+                "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
+                "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
+                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti', "
+                "'cupti_event', 'current_rss', 'data_rss', 'monotonic_clock', "
+                "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
+                "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
+                "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
+                "'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
+                "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
+                "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
+                "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
+                "'voluntary_context_switch', 'write_bytes', 'written_bytes']\n",
+                itr.c_str());
         }
     }
     return vec;

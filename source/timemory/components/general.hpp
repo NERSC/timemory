@@ -25,8 +25,12 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
+#include "timemory/backends/nvtx.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+
+#include <cstdint>
 
 //======================================================================================//
 
@@ -71,6 +75,107 @@ struct trip_count : public base<trip_count>
         accum += value;
         set_stopped();
     }
+};
+
+//--------------------------------------------------------------------------------------//
+// adds NVTX markers
+//
+struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
+{
+    using value_type = int8_t;
+    using base_type  = base<nvtx_marker, value_type, policy::thread_init>;
+
+    static const short                   precision    = 0;
+    static const short                   width        = 5;
+    static const std::ios_base::fmtflags format_flags = {};
+
+    static int64_t     unit() { return 1; }
+    static std::string label() { return "nvtx_marker"; }
+    static std::string descript() { return "NVTX markers"; }
+    static std::string display_unit() { return ""; }
+    static int8_t      record() { return 0; }
+
+    value_type compute_display() const { return accum; }
+    value_type get() const { return accum; }
+
+    static const int32_t& get_thread_id()
+    {
+        static std::atomic<int32_t> _thread_counter;
+        static thread_local int32_t _thread_id = _thread_counter++;
+        return _thread_id;
+    }
+
+    static const int32_t& get_stream_id(cuda::stream_t _stream)
+    {
+        using pair_t    = std::pair<cuda::stream_t, int32_t>;
+        using map_t     = std::map<cuda::stream_t, int32_t>;
+        using map_ptr_t = std::unique_ptr<map_t>;
+
+        static thread_local map_ptr_t _instance = map_ptr_t(new map_t);
+        if(_instance->find(_stream) == _instance->end())
+            _instance->insert(pair_t(_stream, _instance->size()));
+        return _instance->find(_stream)->second;
+    }
+
+    void invoke_thread_init()
+    {
+        static std::atomic<int32_t> _thread_counter;
+        nvtx::name_thread(_thread_counter++);
+    }
+
+    nvtx_marker(const nvtx::color::color_t& _color = 0, const std::string& _prefix = "",
+                cuda::stream_t _stream = 0)
+    : color(_color)
+    , prefix(_prefix)
+    , stream(_stream)
+    {}
+
+    void start() { range_id = nvtx::range_start(get_attribute()); }
+    void stop()
+    {
+        cuda::stream_sync(stream);
+        nvtx::range_stop(range_id);
+    }
+
+    void mark_begin()
+    {
+        nvtx::mark(prefix + "_begin_t" + std::to_string(get_thread_id()));
+    }
+
+    void mark_end() { nvtx::mark(prefix + "_end_t" + std::to_string(get_thread_id())); }
+
+    void mark_begin(cuda::stream_t _stream)
+    {
+        nvtx::mark(prefix + "_begin_t" + std::to_string(get_thread_id()) + "_s" +
+                   std::to_string(get_stream_id(_stream)));
+    }
+
+    void mark_end(cuda::stream_t _stream)
+    {
+        nvtx::mark(prefix + "_end_t" + std::to_string(get_thread_id()) + "_s" +
+                   std::to_string(get_stream_id(_stream)));
+    }
+
+    void set_stream(cuda::stream_t _stream) { stream = _stream; }
+
+    nvtx::color::color_t     color = 0;
+    nvtx::event_attributes_t attribute;
+    nvtx::range_id_t         range_id;
+    std::string              prefix = "";
+    cuda::stream_t           stream = 0;
+
+private:
+    nvtx::event_attributes_t& get_attribute()
+    {
+        if(!has_attribute)
+        {
+            attribute     = nvtx::init_marker(prefix, color);
+            has_attribute = true;
+        }
+        return attribute;
+    }
+
+    bool has_attribute = false;
 };
 
 }  // namespace component

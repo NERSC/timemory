@@ -149,7 +149,8 @@ enum TIMEMORY_COMPONENT
     TRIP_COUNT,
     READ_BYTES,
     WRITTEN_BYTES,
-    CUPTI_EVENT
+    CUPTI_EVENT,
+    NVTX_MARKER
 };
 
 //======================================================================================//

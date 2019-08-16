@@ -39,6 +39,7 @@ components = [
     "read_bytes",
     "written_bytes",
     "cupti_event",
+    "nvtx_marker",
 ]
 
 #
@@ -65,6 +66,7 @@ mangled_strings = {
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
     "cupti_event": ["cupti"],
+    "nvtx_marker": ["nvtx"],
 }
 
 recommended_types = {

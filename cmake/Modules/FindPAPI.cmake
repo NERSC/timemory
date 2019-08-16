@@ -48,6 +48,7 @@
 #
 
 #----------------------------------------------------------------------------------------#
+include(CMakeParseArguments)
 
 function(FIND_STATIC_LIBRARY _VAR)
     set(_options    )
