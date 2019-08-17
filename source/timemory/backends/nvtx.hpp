@@ -139,7 +139,7 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
 {
     static thread_local color::color_t _counter = 0;
     event_attributes_t                 attrib   = { 0 };
-    attrib.message.ascii                        = _msg.str();
+    attrib.message.ascii                        = _msg.c_str();
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
                        : _color;
@@ -173,7 +173,7 @@ name_thread(const int32_t& _id)
     {
         ss << "WORKER_" << _id;
     }
-    nvtxNameOsThread(ss.str().str());
+    nvtxNameOsThread(ss.str().c_str());
 #else
     consume_parameters(_id);
 #endif
