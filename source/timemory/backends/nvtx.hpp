@@ -139,7 +139,7 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
 {
     static thread_local color::color_t _counter = 0;
     event_attributes_t                 attrib   = { 0 };
-    attrib.message.ascii                        = _msg;
+    attrib.message.ascii                        = _msg.str();
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
                        : _color;
@@ -173,7 +173,7 @@ name_thread(const int32_t& _id)
     {
         ss << "WORKER_" << _id;
     }
-    nvtxNameOsThread(_ss.str());
+    nvtxNameOsThread(ss.str().str());
 #else
     consume_parameters(_id);
 #endif
@@ -185,7 +185,7 @@ inline void
 range_push(const std::string& _msg)
 {
 #if defined(TIMEMORY_USE_NVTX)
-    nvtxRangePush(_msg);
+    nvtxRangePush(_msg.str());
 #else
     consume_parameters(_msg);
 #endif
@@ -244,7 +244,7 @@ inline void
 mark(const std::string& _msg)
 {
 #if defined(TIMEMORY_USE_NVTX)
-    nvtxMarkA(_msg);
+    nvtxMarkA(_msg.c_str());
 #else
     consume_parameters(_msg);
 #endif
