@@ -247,7 +247,8 @@ parent_process(pid_t pid)
         papi_array_t::get_label() = "";
         _oss << "\n"
              << tim::language(command().c_str())
-             << " hardware counters : " << (*get_papi_array()) << std::flush;
+             << " hardware counters : " << (*get_papi_array()) << "\n"
+             << std::flush;
         delete get_papi_array();
         get_papi_array() = nullptr;
     }

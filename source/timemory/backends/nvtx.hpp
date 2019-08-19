@@ -165,6 +165,9 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
 {
     static thread_local color::color_t _counter = 0;
     event_attributes_t                 attrib   = { 0 };
+    attrib.version                              = NVTX_VERSION;
+    attrib.size                                 = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    attrib.messageType                          = NVTX_MESSAGE_TYPE_ASCII;
     attrib.message.ascii                        = _msg.c_str();
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
