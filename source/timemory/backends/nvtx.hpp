@@ -168,6 +168,7 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
     attrib.version                              = NVTX_VERSION;
     attrib.size                                 = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
     attrib.messageType                          = NVTX_MESSAGE_TYPE_ASCII;
+    attrib.colorType                            = NVTX_COLOR_ARGB;
     attrib.message.ascii                        = _msg.c_str();
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
