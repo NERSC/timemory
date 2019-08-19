@@ -130,7 +130,7 @@ public:
     cuda_event& operator=(const cuda_event&) = default;
     cuda_event& operator=(cuda_event&&) = default;
 
-    float compute_display() const
+    float get_display() const
     {
         auto val = (is_transient) ? accum : value;
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *

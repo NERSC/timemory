@@ -152,9 +152,8 @@ get_info(const _Tp& obj, _Func&& _func)
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
           typename _Func = std::function<_Vp(_Vp)>>
 void
-print_info(
-    const _Tp& obj, const _Up& expected, string_t unit,
-    _Func _func = [](const _Vp& obj) { return obj; })
+print_info(const _Tp& obj, const _Up& expected, string_t unit,
+           _Func _func = [](const _Vp& obj) { return obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;

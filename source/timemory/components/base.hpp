@@ -413,7 +413,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        auto _value = static_cast<const Type&>(obj).compute_display();
+        auto _value = static_cast<const Type&>(obj).get_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::get_display_unit();
         auto _prec  = this_type::get_precision();
@@ -439,7 +439,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        auto _disp = static_cast<const Type&>(*this).compute_display();
+        auto _disp = static_cast<const Type&>(*this).get_display();
         ar(serializer::make_nvp("is_transient", is_transient),
            serializer::make_nvp("laps", laps), serializer::make_nvp("value", value),
            serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));

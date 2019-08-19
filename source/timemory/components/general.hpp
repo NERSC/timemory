@@ -62,7 +62,7 @@ struct trip_count : public base<trip_count>
     static std::string display_unit() { return ""; }
     static value_type  record() { return 1; }
 
-    value_type compute_display() const { return accum; }
+    value_type get_display() const { return accum; }
     value_type get() const { return accum; }
 
     void start()
@@ -96,7 +96,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
     static std::string display_unit() { return ""; }
     static int8_t      record() { return 0; }
 
-    value_type compute_display() const { return accum; }
+    value_type get_display() const { return accum; }
     value_type get() const { return accum; }
 
     static bool& use_device_sync()

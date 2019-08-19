@@ -784,7 +784,7 @@ struct serialization
 
     serialization(base_type& obj, _Archive& ar, const unsigned int version)
     {
-        auto _disp = static_cast<const Type&>(obj).compute_display();
+        auto _disp = static_cast<const Type&>(obj).get_display();
         ar(serializer::make_nvp("is_transient", obj.is_transient),
            serializer::make_nvp("laps", obj.laps),
            serializer::make_nvp("value", obj.value),

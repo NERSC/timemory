@@ -50,8 +50,8 @@ struct caliper : public base<caliper, int8_t>
     static std::string display_unit() { return ""; }
 
     static value_type record() { return 0; }
-    float             compute_display() const { return 0.0f; }
-    float             get() const { return compute_display(); }
+    float             get_display() const { return 0.0f; }
+    float             get() const { return get_display(); }
 
     caliper(const std::string& _channel = get_channel(),
             const int& _attributes = get_attributes(), const std::string& _prefix = "")

@@ -132,9 +132,9 @@ struct cupti_event
 
     static value_type record() { return value_type{}; }
 
-    string_t compute_display() const
+    string_t get_display() const
     {
-        auto _compute_display = [&](std::ostream& os, const cupti::result& obj) {
+        auto _get_display = [&](std::ostream& os, const cupti::result& obj) {
             auto _label = obj.name;
             auto _prec  = base_type::get_precision();
             auto _width = base_type::get_width();
@@ -154,7 +154,7 @@ struct cupti_event
         std::stringstream ss;
         for(size_type i = 0; i < _data.size(); ++i)
         {
-            _compute_display(ss, _data[i]);
+            _get_display(ss, _data[i]);
             if(i + 1 < _data.size())
                 ss << ", ";
         }
@@ -427,7 +427,7 @@ struct cupti_event
     static std::string display_unit() { return ""; }
     static value_type  record() { return 0; }
 
-    value_type compute_display() const { return 0; }
+    value_type get_display() const { return 0; }
     value_type get() const { return 0; }
 
     void start() {}

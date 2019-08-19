@@ -47,26 +47,15 @@ template <int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>,
               policy::thread_init, policy::thread_finalize>
-, public static_counted_object<papi_tuple<>>
 {
     friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
 
-    using size_type   = std::size_t;
-    using value_type  = std::array<long long, sizeof...(EventTypes)>;
-    using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_tuple<EventTypes...>, value_type, policy::thread_init,
+    using size_type  = std::size_t;
+    using value_type = std::array<long long, sizeof...(EventTypes)>;
+    using entry_type = typename value_type::value_type;
+    using base_type  = base<papi_tuple<EventTypes...>, value_type, policy::thread_init,
                            policy::thread_finalize>;
-    using this_type   = papi_tuple<EventTypes...>;
-    using event_count = static_counted_object<papi_tuple<>>;
-
-    using base_type::accum;
-    using base_type::is_running;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-    using event_count::m_count;
+    using this_type  = papi_tuple<EventTypes...>;
 
     static const size_type num_events = sizeof...(EventTypes);
     template <typename _Tp>
@@ -148,6 +137,13 @@ private:
 
 public:
     static value_type get_overhead() { return get_overhead_values(); }
+
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
 
 public:
     //==================================================================================//
@@ -250,7 +246,7 @@ public:
         array_t<double> _accum;
         for(size_type i = 0; i < num_events; ++i)
         {
-            _disp[i]  = compute_display(i);
+            _disp[i]  = get_display(i);
             _value[i] = value[i];
             _accum[i] = accum[i];
         }
@@ -259,17 +255,17 @@ public:
            serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
     }
 
-    entry_type compute_display(int evt_type) const
+    entry_type get_display(int evt_type) const
     {
         auto val = (is_transient) ? accum[evt_type] : value[evt_type];
         return val;
     }
 
-    string_t compute_display() const
+    string_t get_display() const
     {
-        auto val              = (is_transient) ? accum : value;
-        int  evt_types[]      = { EventTypes... };
-        auto _compute_display = [&](std::ostream& os, size_type idx) {
+        auto val          = (is_transient) ? accum : value;
+        int  evt_types[]  = { EventTypes... };
+        auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val[idx];
             auto     _evt_type  = evt_types[idx];
             string_t _label     = papi::get_event_info(_evt_type).short_descr;
@@ -291,7 +287,7 @@ public:
         std::stringstream ss;
         for(size_type i = 0; i < num_events; ++i)
         {
-            _compute_display(ss, i);
+            _get_display(ss, i);
             if(i + 1 < num_events)
                 ss << ", ";
         }

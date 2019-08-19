@@ -109,14 +109,6 @@ struct cpu_roofline
     using iterator       = typename array_type::iterator;
     using const_iterator = typename array_type::const_iterator;
 
-    using base_type::accum;
-    using base_type::is_running;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-
     // total size of data
     static const size_type num_events = sizeof...(EventTypes) + 1;
     // array size
@@ -410,13 +402,20 @@ struct cpu_roofline
         return *this;
     }
 
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
 public:
     //==================================================================================//
     //
     //      representation as a string
     //
     //==================================================================================//
-    double compute_display() const
+    double get_display() const
     {
         auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
@@ -447,7 +446,7 @@ public:
         sst << ", ";
 
         // output the roofline metric
-        auto _value = obj.compute_display();
+        auto _value = obj.get_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::display_unit();
         auto _prec  = clock_type::get_precision();
@@ -486,6 +485,17 @@ struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
 template <>
 struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
 {};
+
+#if !defined(TIMEMORY_USE_PAPI)
+template <>
+struct is_available<component::cpu_roofline_sp_flops> : std::false_type
+{};
+
+template <>
+struct is_available<component::cpu_roofline_dp_flops> : std::false_type
+{};
+#endif
+
 }  // namespace trait
 
 }  // namespace tim

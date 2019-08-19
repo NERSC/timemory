@@ -358,6 +358,20 @@ malloc(size_t n)
 #endif
 }
 
+/// cuda malloc host (pinned memory)
+template <typename _Tp>
+inline _Tp*
+malloc_host(size_t n)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    _Tp* arr;
+    CUDA_RUNTIME_API_CALL(cudaMallocHost(&arr, n * sizeof(_Tp)));
+    return arr;
+#else
+    return new _Tp[n];
+#endif
+}
+
 /// cuda malloc
 template <typename _Tp>
 inline void
@@ -369,6 +383,34 @@ free(_Tp*& arr)
 #else
     consume_parameters(arr);
     arr = nullptr;
+#endif
+}
+
+/// cuda malloc
+template <typename _Tp>
+inline void
+free_host(_Tp*& arr)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    cudaFreeHost(arr);
+    arr = nullptr;
+#else
+    delete[] arr;
+    arr = nullptr;
+#endif
+}
+
+/// cuda memcpy
+template <typename _Tp>
+inline error_t
+memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    return cudaMemcpy(dst, src, n * sizeof(_Tp), from_to);
+#else
+    consume_parameters(from_to);
+    std::memcpy(dst, src, n * sizeof(_Tp));
+    return success_v;
 #endif
 }
 
@@ -394,8 +436,20 @@ memset(_Tp* dst, const int& value, size_t n)
 #if defined(TIMEMORY_USE_CUDA)
     return cudaMemset(dst, value, n * sizeof(_Tp));
 #else
-    if(std::memset(dst, value, n * sizeof(_Tp)))
-        return success_v;
+    return std::memset(dst, value, n * sizeof(_Tp));
+#endif
+}
+
+/// cuda memset
+template <typename _Tp>
+inline error_t
+memset(_Tp* dst, const int& value, size_t n, stream_t stream)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    return cudaMemsetAsync(dst, value, n * sizeof(_Tp), stream);
+#else
+    consume_parameters(stream);
+    return std::memset(dst, value, n * sizeof(_Tp));
 #endif
 }
 
