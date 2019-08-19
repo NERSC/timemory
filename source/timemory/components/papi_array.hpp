@@ -105,10 +105,23 @@ struct papi_array
     {
         static get_events_func_t _instance = []() {
             auto events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS", "");
+            if(settings::verbose() > 0 || settings::debug())
+            {
+                printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
+                       events_str.c_str());
+            }
             std::vector<string_t> events_str_list = delimit(events_str);
             std::vector<int>      events_list;
             for(const auto& itr : events_str_list)
-                events_list.push_back(papi::get_event_code(itr));
+            {
+                int evt_code = papi::get_event_code(itr);
+                if(settings::debug())
+                {
+                    printf("[papi_array] creating event '%s' with code '%i'...\n",
+                           itr.c_str(), evt_code);
+                }
+                events_list.push_back(evt_code);
+            }
             return events_list;
         };
         return _instance;
@@ -167,6 +180,8 @@ struct papi_array
     // data types
     event_list events;
 
+    std::size_t size() { return events.size(); }
+
     static value_type record()
     {
         value_type read_value;
@@ -183,6 +198,7 @@ struct papi_array
         auto&            _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
+        values.resize(events.size());
         return values;
     }
 

@@ -61,6 +61,10 @@ class auto_hybrid;
 template <typename _CompTuple, typename _CompList>
 class component_hybrid
 {
+    static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
+                  "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
+                  "must be tim::component_list<...>");
+
     static const std::size_t num_elements = _CompTuple::size() + _CompList::size();
     // empty init for friends
     explicit component_hybrid() {}

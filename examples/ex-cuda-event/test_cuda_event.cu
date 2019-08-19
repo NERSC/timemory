@@ -103,7 +103,7 @@ static auto      Nsub = N / nitr;
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-__global__ void
+GLOBAL_CALLABLE void
 warmup(int64_t n)
 {
     int i   = blockIdx.x * blockDim.x + threadIdx.x;
@@ -114,7 +114,7 @@ warmup(int64_t n)
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-__global__ void
+GLOBAL_CALLABLE void
 saxpy(int64_t n, float a, float* x, float* y)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
@@ -132,7 +132,7 @@ warmup()
     int     ngrid = 128;
     int64_t val   = 256;
     warmup<<<ngrid, block>>>(val);
-    CUDA_CHECK_LAST_ERROR();
+    // CUDA_CHECK_LAST_ERROR();
 }
 
 //======================================================================================//
@@ -177,13 +177,11 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
-    int ndevices = 0;
-    cudaGetDeviceCount(&ndevices);
+    int ndevices = tim::cuda::device_count();
     warmup();
 
-    auto* timing =
-        new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>(
-            "Tests runtime", true);
+    auto* timing = new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                            nvtx_marker>("Tests runtime", true);
 
     timing->start();
 
@@ -970,7 +968,7 @@ test_6_mt_saxpy_async_pinned()
 namespace impl
 {
 template <typename T>
-__global__ void
+GLOBAL_CALLABLE void
 KERNEL_A(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
@@ -983,7 +981,7 @@ KERNEL_A(T* begin, int n)
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
-__global__ void
+GLOBAL_CALLABLE void
 KERNEL_B(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)

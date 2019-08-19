@@ -28,6 +28,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -258,8 +259,7 @@ struct cpu_roofline
         auto  op_counter_func = get_finalize_function();
         auto* op_counter      = op_counter_func();
         get_operation_counter().reset(op_counter);
-        int verbose = get_env<int>("TIMEMORY_VERBOSE", 0);
-        if(op_counter && verbose > 0)
+        if(op_counter && (settings::verbose() > 0 || settings::debug()))
             std::cout << *op_counter << std::endl;
     }
 
@@ -474,14 +474,18 @@ public:
 using cpu_roofline_sp_flops = cpu_roofline<float, PAPI_SP_OPS>;
 using cpu_roofline_dp_flops = cpu_roofline<double, PAPI_DP_OPS>;
 
-// TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
-// accesses/reads/writes/etc.
-// using cpu_roofline_l1 = cpu_roofline<PAPI_L1_TCH>;
-
-// TODO: check if L2 roofline wants L2 total cache hits (below) or L2 composite of
-// accesses/reads/writes/etc.
-// using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
-
 //--------------------------------------------------------------------------------------//
 }  // namespace component
+
+namespace trait
+{
+template <>
+struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
+{};
+
+template <>
+struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
+{};
+}  // namespace trait
+
 }  // namespace tim

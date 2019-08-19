@@ -18,9 +18,8 @@ find_program(CLANG_FORMATTER
 if(CLANG_FORMATTER)
     file(GLOB_RECURSE headers
         ${PROJECT_SOURCE_DIR}/source/timemory/*.h
-        ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/timemory/*.icpp)
-    file(GLOB tests
+        ${PROJECT_SOURCE_DIR}/source/timemory/*.hpp)
+    file(GLOB_RECURSE tests
         ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
         ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
         ${PROJECT_SOURCE_DIR}/source/preload/tests/*.hpp
@@ -52,11 +51,11 @@ if(CLANG_FORMATTER)
     endif()
 
     add_custom_target(${FORMAT_NAME}
+        COMMAND ${CLANG_FORMATTER} -i ${tests}
         COMMAND ${CLANG_FORMATTER} -i ${headers}
         COMMAND ${CLANG_FORMATTER} -i ${sources}
         COMMAND ${CLANG_FORMATTER} -i ${examples}
-        COMMAND ${CLANG_FORMATTER} -i ${tests}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running '${CLANG_FORMATTER}'..."
-        SOURCES ${headers} ${sources} ${examples})
+        SOURCES ${headers} ${sources} ${examples} ${tests})
 endif()

@@ -24,19 +24,45 @@
 
 #pragma once
 
+#include "timemory/details/settings.hpp"
+#include "timemory/utility/macros.hpp"
+
 #include <cstdint>
 #include <initializer_list>
 #include <string>
 #include <vector>
 
 #if defined(TIMEMORY_USE_NVTX)
-#    include <nvToolsExt.h>
+#    include <nvtx3/nvToolsExt.h>
+#endif
+
+#if defined(_LINUX)
+#    include <sys/syscall.h>
+#    include <unistd.h>
+#elif defined(_WINDOWS)
+#    include <processthreadsapi.h>
+#elif defined(_MACOS)
+#    include <atomic>
 #endif
 
 namespace tim
 {
 namespace nvtx
 {
+//--------------------------------------------------------------------------------------//
+inline uint32_t
+get_thread_id()
+{
+#if defined(_LINUX)
+    return syscall(SYS_gettid);
+#elif defined(_WINDOWS)
+    return GetCurrentThreadId();
+#else
+    static std::atomic<uint32_t> _thread_counter;
+    static thread_local uint32_t _thread_id = _thread_counter++;
+    return _thread_id;
+#endif
+}
 //--------------------------------------------------------------------------------------//
 
 template <typename... _Args>
@@ -112,17 +138,17 @@ struct message_t
 
 struct event_attributes_t
 {
-    uint32_t  version     = NVTX_VERSION;
-    uint32_t  size        = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
-    uint32_t  colorType   = NVTX_COLOR_ARGB;
-    uint32_t  color       = 0xff00ff;
-    uint32_t  messageType = NVTX_MESSAGE_TYPE_ASCII;
+    uint32_t version = NVTX_VERSION;
+    uint32_t size = NVTX_EVENT_ATTRIB_STRUCT_SIZE;
+    uint32_t colorType = NVTX_COLOR_ARGB;
+    uint32_t color = 0xff00ff;
+    uint32_t messageType = NVTX_MESSAGE_TYPE_ASCII;
     message_t message;
 
-    event_attributes_t()                          = default;
-    ~event_attributes_t()                         = default;
+    event_attributes_t() = default;
+    ~event_attributes_t() = default;
     event_attributes_t(const event_attributes_t&) = default;
-    event_attributes_t(event_attributes_t&&)      = default;
+    event_attributes_t(event_attributes_t&&) = default;
     event_attributes_t(int) {}
 
     event_attributes_t& operator=(const event_attributes_t&) = default;
@@ -143,6 +169,13 @@ init_marker(const std::string& _msg, color::color_t _color = 0)
     attrib.color                                = (_color == 0)
                        ? (color::available().at((_counter++) % color::available().size()))
                        : _color;
+    if(settings::debug())
+    {
+        std::stringstream ss;
+        ss << "[nvtx]> initializing marker with label \"" << _msg << "\" and "
+           << "color " << std::hex << attrib.color << "...\n";
+        std::cout << ss.str() << std::flush;
+    }
     return attrib;
 }
 
@@ -152,7 +185,7 @@ inline void
 name_thread(const std::string& _msg)
 {
 #if defined(TIMEMORY_USE_NVTX)
-    nvtxNameOsThread(_msg);
+    nvtxNameOsThread(get_thread_id(), _msg.c_str());
 #else
     consume_parameters(_msg);
 #endif
@@ -166,14 +199,10 @@ name_thread(const int32_t& _id)
 #if defined(TIMEMORY_USE_NVTX)
     std::stringstream ss;
     if(_id == 0)
-    {
         ss << "MASTER";
-    }
     else
-    {
         ss << "WORKER_" << _id;
-    }
-    nvtxNameOsThread(ss.str().c_str());
+    nvtxNameOsThread(get_thread_id(), ss.str().c_str());
 #else
     consume_parameters(_id);
 #endif
@@ -185,7 +214,7 @@ inline void
 range_push(const std::string& _msg)
 {
 #if defined(TIMEMORY_USE_NVTX)
-    nvtxRangePush(_msg.str());
+    nvtxRangePush(_msg.c_str());
 #else
     consume_parameters(_msg);
 #endif

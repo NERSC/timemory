@@ -47,6 +47,9 @@
 #include "timemory/components/cpu_roofline.hpp"
 #include "timemory/components/gpu_roofline.hpp"
 
+// device backend
+#include "timemory/backends/device.hpp"
+
 //======================================================================================//
 //
 //      helpers for generating components

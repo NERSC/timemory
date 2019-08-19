@@ -86,6 +86,10 @@ public:
     using this_type   = component_tuple<Types...>;
     using data_type   = implemented<Types...>;
 
+    // used by component hybrid
+    static constexpr bool is_component_list  = false;
+    static constexpr bool is_component_tuple = true;
+
 public:
     // modifier types
     using insert_node_t      = modifiers<operation::insert_node, Types...>;

@@ -261,6 +261,7 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::settings::file_output() = false;
     tim::settings::verbose() += 1;
+    tim::settings::debug() = true;
 
     list_t::get_initializer() = [](list_t& l) {
         l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, papi_array_t,

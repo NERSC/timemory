@@ -29,6 +29,7 @@
 #include "timemory/backends/nvtx.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/details/settings.hpp"
 
 #include <cstdint>
 
@@ -98,6 +99,12 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
     value_type compute_display() const { return accum; }
     value_type get() const { return accum; }
 
+    static bool& use_device_sync()
+    {
+        static bool _instance = get_env("TIMEMORY_NVTX_MARKER_DEVICE_SYNC", true);
+        return _instance;
+    }
+
     static const int32_t& get_thread_id()
     {
         static std::atomic<int32_t> _thread_counter;
@@ -117,11 +124,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
         return _instance->find(_stream)->second;
     }
 
-    void invoke_thread_init()
-    {
-        static std::atomic<int32_t> _thread_counter;
-        nvtx::name_thread(_thread_counter++);
-    }
+    static void invoke_thread_init() { nvtx::name_thread(get_thread_id()); }
 
     nvtx_marker(const nvtx::color::color_t& _color = 0, const std::string& _prefix = "",
                 cuda::stream_t _stream = 0)
@@ -133,7 +136,10 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
     void start() { range_id = nvtx::range_start(get_attribute()); }
     void stop()
     {
-        cuda::stream_sync(stream);
+        if(use_device_sync())
+            cuda::device_sync();
+        else
+            cuda::stream_sync(stream);
         nvtx::range_stop(range_id);
     }
 
@@ -169,6 +175,13 @@ private:
     {
         if(!has_attribute)
         {
+            if(settings::debug())
+            {
+                std::stringstream ss;
+                ss << "[nvtx_marker]> Creating NVTX marker with label: \"" << prefix
+                   << "\" and color " << std::hex << color << "...";
+                std::cout << ss.str() << std::endl;
+            }
             attribute     = nvtx::init_marker(prefix, color);
             has_attribute = true;
         }

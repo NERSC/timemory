@@ -45,7 +45,6 @@
 
 find_path(NVTX_ROOT_DIR
     NAMES
-        include/nvToolsExt.h
         include/nvtx3/nvToolsExt.h
     HINTS
         ENV NVTX_ROOT_DIR
@@ -69,14 +68,13 @@ find_path(NVTX_ROOT_DIR
 
 find_path(NVTX_INCLUDE_DIR
     NAMES
-        nvToolsExt.h
+        nvtx3/nvToolsExt.h
     HINTS
         ${NVTX_ROOT_DIR}
         ENV NVTX_ROOT_DIR
         ENV CPATH
     PATH_SUFFIXES
         include
-        include/nvtx3
     DOC
         "Path to the NVTX headers")
 

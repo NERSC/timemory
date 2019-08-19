@@ -182,7 +182,7 @@ def get_hotspots(op_data, ai_data):
         avg_runtime -= max_runtime
         avg_runtime /= len(op_graph_data) - 1
 
-    for i in range(0, len(op_graph_data)):
+    for i in range(0, min([len(op_graph_data), len(ai_graph_data)])):
         runtime = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
         flop = float(op_graph_data[i]["tuple_element1"]
                      ["accum"]["first"]["value0"])

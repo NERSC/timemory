@@ -31,6 +31,7 @@
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
 
 #include <map>
@@ -388,7 +389,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                     ++eitr;
                 }
                 // if there were exclusive values encountered
-                if(nexclusive > 0)
+                if(nexclusive > 0 && trait::is_available<ObjectType>::value)
                 {
                     tim::details::print_percentage(
                         _pss, tim::details::compute_percentage(exclusive_values,
@@ -406,14 +407,15 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             // operation::print<ObjectType>(_obj, _mss, false);
         }
 
-        if(settings::file_output() && _oss.str().length() > 0)
+        if((settings::file_output() || trait::requires_json<ObjectType>::value) &&
+           _oss.str().length() > 0)
         {
             printf("\n");
             auto label = ObjectType::label();
             //--------------------------------------------------------------------------//
             // output to text
             //
-            if(settings::text_output())
+            if(settings::text_output() && settings::file_output())
             {
                 auto fname = tim::settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
@@ -439,11 +441,11 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             //--------------------------------------------------------------------------//
             // output to json
             //
-            if(settings::json_output())
+            if(settings::json_output() || trait::requires_json<ObjectType>::value)
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
                 auto jname = tim::settings::compose_output_filename(label, ".json");
-                printf("[%s]> Outputting '%s'...", ObjectType::label().c_str(),
+                printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
                        jname.c_str());
                 serialize_storage(jname, *this, num_instances);
                 printf("Done\n");

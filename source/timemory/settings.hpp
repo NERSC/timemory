@@ -41,10 +41,6 @@
 #include <limits>
 #include <string>
 
-#if !defined(TIMEMORY_DEFAULT_ENABLED)
-#    define TIMEMORY_DEFAULT_ENABLED true
-#endif
-
 //--------------------------------------------------------------------------------------//
 
 namespace tim
@@ -57,56 +53,12 @@ timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
 void
 timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
+// finalization (optional)
+void
+timemory_finalize();
 
 namespace settings
 {
-//--------------------------------------------------------------------------------------//
-
-using string_t = std::string;
-
-#define DEFINE_STATIC_ACCESSOR_FUNCTION(TYPE, FUNC, INIT)                                \
-    inline TYPE& FUNC()                                                                  \
-    {                                                                                    \
-        static TYPE instance = INIT;                                                     \
-        return instance;                                                                 \
-    }
-
-//--------------------------------------------------------------------------------------//
-// logic
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, enabled, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, suppress_parsing, false)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, auto_output, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, file_output, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, text_output, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, json_output, false)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, cout_output, true)
-
-// general settings
-DEFINE_STATIC_ACCESSOR_FUNCTION(int, verbose, 0)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, banner, true)
-DEFINE_STATIC_ACCESSOR_FUNCTION(uint16_t, max_depth, std::numeric_limits<uint16_t>::max())
-
-// general formatting
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, precision, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, width, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, scientific, false)
-
-// timing formatting
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, timing_precision, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, timing_width, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, timing_units, "")
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, timing_scientific, false)
-
-// memory formatting
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, memory_precision, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(int16_t, memory_width, -1)
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, memory_units, "")
-DEFINE_STATIC_ACCESSOR_FUNCTION(bool, memory_scientific, false)
-
-// output control
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_path, "timemory_output/")  // folder
-DEFINE_STATIC_ACCESSOR_FUNCTION(string_t, output_prefix, "")                // file prefix
-
 //--------------------------------------------------------------------------------------//
 
 inline string_t tolower(string_t);
@@ -198,6 +150,7 @@ tim::settings::parse()
 
     // settings
     verbose()   = tim::get_env("TIMEMORY_VERBOSE", verbose());
+    debug()     = tim::get_env("TIMEMORY_DEBUG", debug());
     max_depth() = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
 
     // general formatting
@@ -439,6 +392,18 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
     tim::timemory_init(1, &cstr, _prefix, _suffix);
 }
 
+//--------------------------------------------------------------------------------------//
+
+inline void
+tim::timemory_finalize()
+{
+#if defined(__INTEL_COMPILER) || defined(__PGI__)
+    tim::settings::auto_output() = false;
+#endif
+#if defined(__INTEL_COMPILER)
+    apply<void>::type_access<operation::print_storage, complete_tuple_t>();
+#endif
+}
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/details/storage.hpp"

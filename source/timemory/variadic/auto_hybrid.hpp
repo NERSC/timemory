@@ -56,6 +56,10 @@ class auto_hybrid
 : public counted_object<auto_hybrid<_CompTuple, _CompList>>
 , public hashed_object<auto_hybrid<_CompTuple, _CompList>>
 {
+    static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
+                  "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
+                  "must be tim::component_list<...>");
+
 public:
     using tuple_type     = _CompTuple;
     using list_type      = _CompList;

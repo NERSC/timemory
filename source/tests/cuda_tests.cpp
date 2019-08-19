@@ -80,8 +80,8 @@ TEST_F(cuda_tests, saxpy)
 {
     using params_t = tim::device::params<default_device>;
     using stream_t = default_device::stream_t;
-    using tuple_t =
-        tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event>::component_type;
+    using tuple_t  = tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event,
+                                    nvtx_marker>::component_type;
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -170,8 +170,8 @@ TEST_F(cuda_tests, saxpy_streams)
 {
     using params_t = tim::device::params<default_device>;
     using stream_t = default_device::stream_t;
-    using tuple_t =
-        tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event>::component_type;
+    using tuple_t  = tim::auto_tuple<real_clock, cpu_clock, cpu_util, cuda_event,
+                                    nvtx_marker>::component_type;
 
     tuple_t tot(details::get_test_name() + " total");
     tot.start();
@@ -294,6 +294,7 @@ main(int argc, char** argv)
     tim::settings::cout_output()      = true;
     tim::settings::json_output()      = false;
     tim::settings::timing_precision() = 6;
+    tim::settings::debug()            = true;
 
     return RUN_ALL_TESTS();
 }

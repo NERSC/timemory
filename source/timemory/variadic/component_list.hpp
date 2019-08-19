@@ -93,7 +93,8 @@ public:
     using init_func_t    = std::function<void(this_type&)>;
 
     // used by component hybrid
-    static constexpr bool is_component_list = true;
+    static constexpr bool is_component_list  = true;
+    static constexpr bool is_component_tuple = false;
 
 public:
     using auto_type = auto_list<Types...>;
@@ -616,7 +617,7 @@ public:
         if(!trait::is_available<_Tp>::value)
         {
             static std::atomic<int> _count;
-            if(settings::verbose() > 0 && _count++ == 0)
+            if((settings::verbose() > 0 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = tim::demangle(typeid(_Tp).name());
                 printf("[component_list::init]> skipping unavailable type '%s'...\n",
@@ -634,7 +635,7 @@ public:
         else
         {
             static std::atomic<int> _count;
-            if(settings::verbose() > 0 && _count++ == 0)
+            if((settings::verbose() > 0 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = tim::demangle(typeid(_Tp).name());
                 printf(

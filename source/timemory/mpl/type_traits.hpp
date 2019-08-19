@@ -157,6 +157,14 @@ struct uses_memory_units : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates a type should always print a JSON output
+///
+template <typename _Tp>
+struct requires_json : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 }  // trait
 }  // tim
 
@@ -559,6 +567,11 @@ struct is_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_ty
 {
 };
 
+template <typename _Tp, int... EventTypes>
+struct requires_json<component::cpu_roofline<_Tp, EventTypes...>> : std::true_type
+{
+};
+
 #endif  // TIMEMORY_USE_PAPI
 
 //--------------------------------------------------------------------------------------//
@@ -598,7 +611,7 @@ struct is_available<component::nvtx_marker> : std::false_type
 #else
 
 template <>
-struct requires_prefix<component::nvtx_marker> : std::false_type
+struct requires_prefix<component::nvtx_marker> : std::true_type
 {
 };
 
@@ -622,7 +635,7 @@ struct is_available<component::caliper> : std::false_type
 #else
 
 template <>
-struct requires_prefix<component::caliper> : std::false_type
+struct requires_prefix<component::caliper> : std::true_type
 {
 };
 

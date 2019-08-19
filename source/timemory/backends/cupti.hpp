@@ -32,6 +32,7 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -146,7 +147,7 @@ static void CUPTIAPI
         std::stringstream ss;
         ss << "Error: expected kernel activity record, got "
            << static_cast<int>(kernel->kind);
-        throw std::runtime_error(ss.str());
+        throw std::runtime_error(os.str());
     }
 
     (*get_stream_kernel_duration())[streamId] = kernel->end - kernel->start;
@@ -190,7 +191,7 @@ struct unsigned_integer
         get(obj)  = value;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.unsigned_integer_v; }
 };
 
@@ -206,7 +207,7 @@ struct integer
         get(obj)  = value.metricValueInt64;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.integer_v; }
 };
 
@@ -222,11 +223,11 @@ struct percent
         get(obj)  = value.metricValuePercent;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj)
+    static void print(std::ostream& os, const metric& obj)
     {
         auto val = cget(obj);
         val /= obj.count;
-        ss << val << " %";
+        os << val << " %";
     }
     static type get_data(const metric& obj) { return obj.data.percent_v / obj.count; }
 };
@@ -243,7 +244,7 @@ struct floating
         get(obj)  = value.metricValueDouble;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.floating_v; }
 };
 
@@ -259,7 +260,7 @@ struct throughput
         get(obj)  = value.metricValueThroughput;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.throughput_v; }
 };
 
@@ -275,7 +276,7 @@ struct utilization
         get(obj)  = value.metricValueUtilizationLevel;
         obj.index = index;
     }
-    static void print(std::stringstream& ss, const metric& obj) { ss << cget(obj); }
+    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.utilization_v; }
 };
 
@@ -376,21 +377,21 @@ _get(_Ret& val, const data_metric_t& lhs)
 template <typename _Tp, typename... _Types,
           typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
 void
-_print(std::stringstream& ss, const data_metric_t& lhs)
+_print(std::ostream& os, const data_metric_t& lhs)
 {
     if(lhs.index == _Tp::index)
-        _Tp::print(ss, lhs);
+        _Tp::print(os, lhs);
 }
 
 template <typename _Tp, typename... _Types,
           typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
 void
-_print(std::stringstream& ss, const data_metric_t& lhs)
+_print(std::ostream& os, const data_metric_t& lhs)
 {
     if(lhs.index == _Tp::index)
-        _Tp::print(ss, lhs);
+        _Tp::print(os, lhs);
     else
-        _print<_Types...>(ss, lhs);
+        _print<_Types...>(os, lhs);
 }
 
 template <typename _Tp, typename... _Types,
@@ -434,10 +435,10 @@ minus(data_metric_t& lhs, const data_metric_t& rhs)
 }
 
 inline void
-print(std::stringstream& ss, const data_metric_t& lhs)
+print(std::ostream& os, const data_metric_t& lhs)
 {
     _print<data::unsigned_integer, data::integer, data::percent, data::floating,
-           data::throughput, data::utilization>(ss, lhs);
+           data::throughput, data::utilization>(os, lhs);
 }
 
 template <typename _Tp>
@@ -1079,7 +1080,7 @@ struct profiler
 
     results_t get_events_and_metrics(const std::vector<std::string>& labels)
     {
-        if(tim::get_env<int>("TIMEMORY_VERBOSE", 0) > 2)
+        if(settings::verbose() > 2 || settings::debug())
             print_events_and_metrics(std::cout);
 
         results_t kern_data(labels.size());
@@ -1229,7 +1230,7 @@ tim::cupti::available_metrics(CUdevice device)
         if((metricKind == CUPTI_METRIC_VALUE_KIND_THROUGHPUT) ||
            (metricKind == CUPTI_METRIC_VALUE_KIND_UTILIZATION_LEVEL))
         {
-            if(tim::get_env<int>("TIMEMORY_VERBOSE", 0) > 0)
+            if(settings::verbose() > 0 || settings::debug())
                 printf(
                     "Metric %s cannot be profiled as metric requires GPU"
                     "time duration for kernel run.\n",

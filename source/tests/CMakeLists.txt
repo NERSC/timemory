@@ -72,8 +72,14 @@ set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
 add_googletest(cuda_tests
     DISCOVER_TESTS
     SOURCES         cuda_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-arch  timemory-compile-options
+    LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
                     timemory-cuda    timemory-cudart)
+
+add_googletest(cuda_nvtx_tests
+    DISCOVER_TESTS
+    SOURCES         cuda_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
+                    timemory-cuda    timemory-cudart timemory-cuda-nvtx)
 
 if(TIMEMORY_USE_CUPTI)
     add_googletest(cupti_tests

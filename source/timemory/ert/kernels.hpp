@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
@@ -175,7 +176,7 @@ void
 cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func,
              _FuncStore&& store_func)
 {
-    if(get_env<int>("TIMEMORY_VERBOSE", 0))
+    if(settings::verbose() > 0 || settings::debug())
         printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
     // execute a single parameter
     cpu_ops_main<_Nops>(counter, ops_func, store_func);
