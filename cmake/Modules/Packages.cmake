@@ -592,9 +592,9 @@ if(TIMEMORY_USE_CUPTI)
             HINTS           ${_CUDA_PATHS}
             PATHS           ${_CUDA_PATHS}
             PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
-        set(HAS_CUDA_cuda_LIBRARY OFF)
+        set(HAS_CUDA_cuda_LIBRARY OFF CACHE BOOL "Using stubs library")
     else()
-        set(HAS_CUDA_cuda_LIBRARY ON)
+        set(HAS_CUDA_cuda_LIBRARY ON CACHE BOOL "Using stubs library")
     endif()
 
     find_package_handle_standard_args(CUDA_CUPTI DEFAULT_MSG
@@ -611,8 +611,8 @@ if(TIMEMORY_USE_CUPTI)
             ${CUDA_cupti_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         target_link_libraries(timemory-cupti INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
         set_target_properties(timemory-cupti PROPERTIES
-            INSTALL_RPATH               ${_CUDA_PATHS}
-            INSTALL_RPATH_USE_LINK_PATH ${HAS_CUDA_cuda_LIBRARY})
+            INTERFACE_INSTALL_RPATH               ""
+            INTERFACE_INSTALL_RPATH_USE_LINK_PATH ${HAS_CUDA_cuda_LIBRARY})
     endif()
 
     # clean-up

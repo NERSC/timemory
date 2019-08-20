@@ -22,7 +22,7 @@ if(TIMEMORY_USE_PAPI)
     list(APPEND HYBRID_COMPONENTS timemory-papi)
 endif()
 
-if(TIMEMORY_USE_CUPTI)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
     list(APPEND HYBRID_COMPONENTS timemory-cupti timemory-cudart-device)
 endif()
 
@@ -81,11 +81,10 @@ add_googletest(cuda_nvtx_tests
     LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
                     timemory-cuda    timemory-cudart timemory-cuda-nvtx)
 
-if(TIMEMORY_USE_CUPTI)
+if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
     add_googletest(cupti_tests
         DISCOVER_TESTS
         SOURCES         cupti_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
-                        timemory-cuda    timemory-cupti  timemory-cudart-device
-    )
+                        timemory-cuda    timemory-cupti  timemory-cudart-device)
 endif()
