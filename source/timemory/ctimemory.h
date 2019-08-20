@@ -116,41 +116,42 @@
 
 enum TIMEMORY_COMPONENT
 {
-    WALL_CLOCK,
-    SYS_CLOCK,
-    USER_CLOCK,
-    CPU_CLOCK,
-    MONOTONIC_CLOCK,
-    MONOTONIC_RAW_CLOCK,
-    THREAD_CPU_CLOCK,
-    PROCESS_CPU_CLOCK,
-    CPU_UTIL,
-    THREAD_CPU_UTIL,
-    PROCESS_CPU_UTIL,
-    CURRENT_RSS,
-    PEAK_RSS,
-    STACK_RSS,
-    DATA_RSS,
-    NUM_SWAP,
-    NUM_IO_IN,
-    NUM_IO_OUT,
-    NUM_MINOR_PAGE_FAULTS,
-    NUM_MAJOR_PAGE_FAULTS,
-    NUM_MSG_SENT,
-    NUM_MSG_RECV,
-    NUM_SIGNALS,
-    VOLUNTARY_CONTEXT_SWITCH,
-    PRIORITY_CONTEXT_SWITCH,
-    CUDA_EVENT,
-    PAPI_ARRAY,
-    CPU_ROOFLINE_SP_FLOPS,  // single-precision cpu_roofline
-    CPU_ROOFLINE_DP_FLOPS,  // double-precision cpu_roofline
-    CALIPER,
-    TRIP_COUNT,
-    READ_BYTES,
-    WRITTEN_BYTES,
-    CUPTI_EVENT,
-    NVTX_MARKER
+    WALL_CLOCK               = 0,
+    SYS_CLOCK                = 1,
+    USER_CLOCK               = 2,
+    CPU_CLOCK                = 3,
+    MONOTONIC_CLOCK          = 4,
+    MONOTONIC_RAW_CLOCK      = 5,
+    THREAD_CPU_CLOCK         = 6,
+    PROCESS_CPU_CLOCK        = 7,
+    CPU_UTIL                 = 8,
+    THREAD_CPU_UTIL          = 9,
+    PROCESS_CPU_UTIL         = 10,
+    CURRENT_RSS              = 11,
+    PEAK_RSS                 = 12,
+    STACK_RSS                = 13,
+    DATA_RSS                 = 14,
+    NUM_SWAP                 = 15,
+    NUM_IO_IN                = 16,
+    NUM_IO_OUT               = 17,
+    NUM_MINOR_PAGE_FAULTS    = 18,
+    NUM_MAJOR_PAGE_FAULTS    = 19,
+    NUM_MSG_SENT             = 20,
+    NUM_MSG_RECV             = 21,
+    NUM_SIGNALS              = 22,
+    VOLUNTARY_CONTEXT_SWITCH = 23,
+    PRIORITY_CONTEXT_SWITCH  = 24,
+    CUDA_EVENT               = 25,
+    PAPI_ARRAY               = 26,
+    CPU_ROOFLINE_SP_FLOPS    = 27,  // single-precision cpu_roofline
+    CPU_ROOFLINE_DP_FLOPS    = 28,  // double-precision cpu_roofline
+    CALIPER                  = 29,
+    TRIP_COUNT               = 30,
+    READ_BYTES               = 31,
+    WRITTEN_BYTES            = 32,
+    CUPTI_EVENT              = 33,
+    NVTX_MARKER              = 34,
+    TIMEMORY_COMPONENTS_END  = 35
 };
 
 //======================================================================================//
@@ -197,7 +198,7 @@ c_timemory_create_auto_timer(const char*, int);
 tim_api extern void
 c_timemory_delete_auto_timer(void*);
 tim_api extern void*
-c_timemory_create_auto_tuple(const char*, int, int, ...);
+c_timemory_create_auto_tuple(const char*, int, ...);
 tim_api extern void
 c_timemory_delete_auto_tuple(void*);
 tim_api extern const char*
@@ -210,25 +211,7 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 //      C timemory macros
 //
 //======================================================================================//
-// Count the number of __VA_ARGS__
-//
-#if !defined(__VA_NARG__)
-#    define __VA_NARG__(...) (__VA_NARG_(_0, ##__VA_ARGS__, __RSEQ_N()))
-#    define __VA_NARG_(...) __VA_ARG_N(__VA_ARGS__)
-#    define __VA_ARG_N(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, _11, _12, _13, _14, _15, \
-                       _16, _17, _18, _19, _20, _21, _22, _23, _24, _25, _26, _27, _28,  \
-                       _29, _30, _31, _32, _33, _34, _35, _36, _37, _38, _39, _40, _41,  \
-                       _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54,  \
-                       _55, _56, _57, _58, _59, _60, _61, _62, N, ...)                   \
-        N
-#    define __RSEQ_N()                                                                   \
-        63, 62, 61, 60, 59, 58, 57, 56, 55, 54, 53, 52, 51, 50, 49, 48, 47, 46, 45, 44,  \
-            43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25,  \
-            24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5,   \
-            4, 3, 2, 1, 0
-#endif
 
-//--------------------------------------------------------------------------------------//
 // only define for C
 #if !defined(__cplusplus)
 
@@ -333,7 +316,7 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 #    define TIMEMORY_BASIC_AUTO_TUPLE(c_str, ...)                                        \
         c_timemory_create_auto_tuple(                                                    \
             c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),       \
-            __LINE__, __VA_NARG__(__VA_ARGS__), __VA_ARGS__)
+            __LINE__, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)
@@ -349,8 +332,8 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
  *
  */
 #    define TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)                                        \
-        c_timemory_create_auto_tuple(c_str, __LINE__, __VA_NARG__(__VA_ARGS__),          \
-                                     __VA_ARGS__)
+        c_timemory_create_auto_tuple(c_str, __LINE__, __VA_ARGS__,                       \
+                                     TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TUPLE(c_str, ...)
@@ -368,7 +351,7 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 #    define TIMEMORY_AUTO_TUPLE(c_str, ...)                                              \
         c_timemory_create_auto_tuple(                                                    \
             c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__,           \
-            __VA_NARG__(__VA_ARGS__), __VA_ARGS__)
+            __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def FREE_TIMEMORY_AUTO_TIMER(ctimer)

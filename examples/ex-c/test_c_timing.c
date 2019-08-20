@@ -13,9 +13,9 @@ get_timer(const char* func, int use_tuple)
 {
     if(use_tuple > 0)
     {
-        return TIMEMORY_AUTO_TUPLE(func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK,
-                                   CPU_UTIL, CURRENT_RSS, PEAK_RSS,
-                                   PRIORITY_CONTEXT_SWITCH, VOLUNTARY_CONTEXT_SWITCH);
+        return TIMEMORY_AUTO_TUPLE(
+            func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK, CPU_UTIL, CURRENT_RSS,
+            PEAK_RSS, PRIORITY_CONTEXT_SWITCH, VOLUNTARY_CONTEXT_SWITCH, CALIPER);
     }
     else
     {
@@ -108,19 +108,19 @@ main(int argc, char** argv)
     settings.json_output       = 1;
     TIMEMORY_INIT(argc, argv, settings);
 
-    void*    timer0 = get_timer("[main (untimed)]", 0);
+    void*    timer0 = get_timer("[main (untimed)]", 1);
     intmax_t n0     = _fibonacci(nfib);
-    free_timer(timer0, 0);
+    free_timer(timer0, 1);
 
     printf("main (untimed): fibonacci(%i, %i) = %lli\n", nfib, nfib, (long long) n0);
 
-    void*    timer1 = get_timer("[main (timed + tuple)]", 0);
+    void*    timer1 = get_timer("[main (timed + tuple)]", 1);
     intmax_t n1     = fibonacci(nfib, cutoff, 1);
-    free_timer(timer1, 0);
+    free_timer(timer1, 1);
 
-    void*    timer2 = get_timer("[main (timed + timer)]", 0);
+    void*    timer2 = get_timer("[main (timed + timer)]", 1);
     intmax_t n2     = fibonacci(nfib, cutoff, 0);
-    free_timer(timer2, 0);
+    free_timer(timer2, 1);
 
     printf("main (timed): fibonacci(%i, %i) = %lli\n", nfib, cutoff, (long long) n1);
     printf("# laps = %li\n", nlaps);

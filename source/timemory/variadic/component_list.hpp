@@ -617,7 +617,7 @@ public:
         if(!trait::is_available<_Tp>::value)
         {
             static std::atomic<int> _count;
-            if((settings::verbose() > 0 || settings::debug()) && _count++ == 0)
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = tim::demangle(typeid(_Tp).name());
                 printf("[component_list::init]> skipping unavailable type '%s'...\n",
@@ -629,13 +629,19 @@ public:
         auto&& _obj = get<_Tp>();
         if(!_obj)
         {
+            if(settings::debug())
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf("[component_list::init]> initializing type '%s'...\n",
+                       _id.c_str());
+            }
             _obj = new _Tp(std::forward<_Args>(_args)...);
             compute_identifier_extra(_obj);
         }
         else
         {
             static std::atomic<int> _count;
-            if((settings::verbose() > 0 || settings::debug()) && _count++ == 0)
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
                 std::string _id = tim::demangle(typeid(_Tp).name());
                 printf(

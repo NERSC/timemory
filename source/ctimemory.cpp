@@ -42,11 +42,6 @@
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 
-extern "C"
-{
-#include "timemory/ctimemory.h"
-}
-
 using namespace tim::component;
 
 using auto_timer_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
@@ -120,8 +115,13 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
     using namespace tim::component;
     std::string      key_tag(timer_tag);
     auto             obj = new auto_list_t(key_tag, tim::language::c(), lineno);
-    std::vector<int> _components(num_components);
-    std::memcpy(_components.data(), components, num_components * sizeof(int));
+    std::vector<int> _components;
+    for(int i = 0; i < num_components; ++i)
+    {
+        if(tim::settings::debug())
+            printf("[%s]> Adding component %i...\n", __FUNCTION__, components[i]);
+        _components.push_back(components[i]);
+    }
     tim::initialize(*obj, _components);
     obj->start();
     return static_cast<void*>(obj);

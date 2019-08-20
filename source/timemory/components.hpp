@@ -155,6 +155,8 @@ initialize(_CompList<_CompTypes...>&               obj,
                 obj.template init<voluntary_context_switch>();
                 break;
             case WRITTEN_BYTES: obj.template init<written_bytes>(); break;
+            case TIMEMORY_COMPONENTS_END:
+            default: break;
         }
     }
 }
