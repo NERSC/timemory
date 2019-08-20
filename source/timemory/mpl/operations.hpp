@@ -949,10 +949,12 @@ struct set_precision
 template <typename _Tp>
 struct set_format_flags
 {
-    template <typename _Up>
-    set_format_flags(const _Up& val)
+    set_format_flags(const std::ios_base::fmtflags& add_flags,
+                     const std::ios_base::fmtflags& remove_flags =
+                         (std::ios_base::fixed & std::ios_base::scientific))
     {
-        _Tp::get_format_flags() = val;
+        _Tp::get_format_flags() &= remove_flags;
+        _Tp::get_format_flags() |= add_flags;
     }
 };
 

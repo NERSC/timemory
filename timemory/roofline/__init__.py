@@ -46,14 +46,10 @@ __email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 
-def errprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
-
-
 try:
     from . import roofline
     from .roofline import *
     __all__ = ['plot_roofline']
 except Exception as e:
-    errprint(e)
+    sys.stderr.write("{}\n".format(e))
     warnings.warn("timemory.roofline is disabled")

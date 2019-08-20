@@ -154,8 +154,9 @@ tim::settings::parse()
     max_depth() = tim::get_env("TIMEMORY_MAX_DEPTH", max_depth());
 
     // general formatting
-    precision() = tim::get_env("TIMEMORY_PRECISION", precision());
-    width()     = tim::get_env("TIMEMORY_WIDTH", width());
+    width()      = tim::get_env("TIMEMORY_WIDTH", width());
+    precision()  = tim::get_env("TIMEMORY_PRECISION", precision());
+    scientific() = tim::get_env("TIMEMORY_SCIENTIFIC", scientific());
 
     // timing formatting
     timing_precision()  = tim::get_env("TIMEMORY_TIMING_PRECISION", timing_precision());
@@ -189,24 +190,6 @@ tim::settings::process()
     using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
     using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
     using has_memory_units = impl::filter_false<trait::uses_memory_units, _Tuple>;
-
-    if(precision() > 0)
-    {
-        timing_precision() = precision();
-        memory_precision() = precision();
-    }
-
-    if(width() > 0)
-    {
-        timing_width() = width();
-        memory_width() = width();
-    }
-
-    if(scientific())
-    {
-        timing_scientific() = true;
-        memory_scientific() = true;
-    }
 
     //------------------------------------------------------------------------//
     //  Helper function for memory units processing
@@ -267,6 +250,22 @@ tim::settings::process()
                   << "\". Using default..." << std::endl;
         return return_type("sec", tim::units::sec);
     };
+
+    if(precision() > 0)
+    {
+        apply<void>::type_access<operation::set_precision, _Tuple>(precision());
+    }
+
+    if(width() > 0)
+    {
+        apply<void>::type_access<operation::set_width, _Tuple>(width());
+    }
+
+    if(scientific())
+    {
+        apply<void>::type_access<operation::set_format_flags, _Tuple>(
+            std::ios_base::scientific);
+    }
 
     if(!(memory_width() < 0))
     {

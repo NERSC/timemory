@@ -587,12 +587,14 @@ if(TIMEMORY_USE_CUPTI)
 
     # try to find cuda driver stubs library if no real driver
     if(NOT CUDA_cuda_LIBRARY)
-        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF CACHE BOOL "Use link path for RPATH" FORCE)
         find_library(CUDA_cuda_LIBRARY
             NAMES           cuda
             HINTS           ${_CUDA_PATHS}
             PATHS           ${_CUDA_PATHS}
             PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+        set(HAS_CUDA_cuda_LIBRARY OFF)
+    else()
+        set(HAS_CUDA_cuda_LIBRARY ON)
     endif()
 
     find_package_handle_standard_args(CUDA_CUPTI DEFAULT_MSG
@@ -608,6 +610,9 @@ if(TIMEMORY_USE_CUPTI)
         target_include_directories(timemory-cupti INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CUDA_cupti_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         target_link_libraries(timemory-cupti INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
+        set_target_properties(timemory-cupti PROPERTIES
+            INSTALL_RPATH               ${_CUDA_PATHS}
+            INSTALL_RPATH_USE_LINK_PATH ${HAS_CUDA_cuda_LIBRARY})
     endif()
 
     # clean-up
