@@ -63,7 +63,7 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector timemory-mpi
+    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
                         #timemory-cuda timemory-cudart timemory-cuda-nvtx timemory-cupti
                         timemory-papi timemory-caliper)
 
@@ -76,7 +76,7 @@ build_library(
     OUTPUT_DIR          ${PROJECT_BINARY_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector timemory-mpi
+    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
                         #timemory-cuda timemory-cudart-static timemory-cudart-device timemory-cuda-nvtx timemory-cupti
                         timemory-papi-static timemory-caliper)
 

@@ -102,6 +102,8 @@ class Timemory(CMakePackage):
         if '+python' in spec:
             args.append(
                 '-DPYTHON_EXECUTABLE={}'.format(os.path.join(spec['python'].prefix, "bin", "python")))
+            args.append('-DTIMEMORY_BUILD_PYTHON=ON')
+            args.append("-DTIMEMORY_TLS_MODEL='global-dynamic'")
             python("-m", "pip", "install", "matplotlib", "numpy", "pillow")
         else:
             args.append('-DTIMEMORY_BUILD_PYTHON=OFF')
