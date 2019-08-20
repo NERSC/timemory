@@ -252,10 +252,6 @@ TEST_F(cupti_tests, kernels)
     auto B_glob_store    = (1.0 * num_blck / num_grid) * ratio;
     auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
     auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
-    auto A_gld_inst_32b  = 1.0 * num_data;
-    auto B_gld_inst_32b  = 0.5 * num_data;
-    auto A_gst_inst_32b  = 1.0 * num_data;
-    auto B_gst_inst_32b  = 0.5 * num_data;
     auto A_flop_count_sp = 2.00 * num_data;
     auto B_flop_count_sp = 0.75 * num_data;
     // these are inherent to kernel design
@@ -277,8 +273,6 @@ TEST_F(cupti_tests, kernels)
     auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
     auto global_load_eff  = 0.5 * (A_glob_load_eff + B_glob_load_eff);
     auto global_store_eff = 0.5 * (A_glob_store_eff + B_glob_store_eff);
-    auto gld_inst_32b     = num_iter * (A_gld_inst_32b + B_gld_inst_32b);
-    auto gst_inst_32b     = num_iter * (A_gst_inst_32b + B_gst_inst_32b);
     auto flop_count_sp    = num_iter * (A_flop_count_sp + B_flop_count_sp);
 
     printf("A flop = %f\n", A_flop_count_sp);
@@ -289,8 +283,6 @@ TEST_F(cupti_tests, kernels)
     ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
     ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
     ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
-    ASSERT_NEAR(cupti_map["gld_inst_32bit"], gld_inst_32b, epsilon);
-    ASSERT_NEAR(cupti_map["gst_inst_32bit"], gst_inst_32b, epsilon);
     ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
 }
 

@@ -35,11 +35,11 @@
 #include "timemory/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
+#include <limits>
 #include <map>
 #include <numeric>
 #include <stdexcept>
 #include <thread>
-#include <limits>
 
 //======================================================================================//
 
@@ -58,7 +58,7 @@ is_finite(const _Tp& val)
 #endif
 }
 
-    inline std::atomic<int>&
+inline std::atomic<int>&
 storage_once_flag()
 {
     static std::atomic<int> _instance;

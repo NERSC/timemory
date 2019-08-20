@@ -1,4 +1,3 @@
-#!/usr/bin/env python
 # Copyright 2013-2019 Lawrence Livermore National Security, LLC and other
 # Spack Project Developers. See the top-level COPYRIGHT file for details.
 #
@@ -12,11 +11,11 @@
 # next to all the things you'll want to change. Once you've handled
 # them, you can save this file and test your package like this:
 #
-#     spack install timemory-git
+#     spack install timemory
 #
 # You can edit this file again by typing:
 #
-#     spack edit timemory-git
+#     spack edit timemory
 #
 # See the Spack documentation for more information on packaging.
 # ----------------------------------------------------------------------------
@@ -31,7 +30,7 @@ class Timemory(CMakePackage):
     homepage = "https://timemory.readthedocs.io/en/latest/"
     git = "https://github.com/NERSC/timemory.git"
 
-    version('develop', branch='papi-google-tests', submodules=True)
+    version('master', branch='master', submodules=True)
 
     variant('python', default=True, description="Enable Python support")
     variant('mpi', default=True, description="Enable MPI support")

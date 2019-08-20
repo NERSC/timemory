@@ -266,10 +266,22 @@ struct cupti_event
 
     this_type& operator+=(const this_type& rhs)
     {
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            accum[i] += rhs.accum[i];
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            value[i] += rhs.value[i];
+        if(accum.empty())
+        {
+            accum = rhs.accum;
+        } else
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                accum[i] += rhs.accum[i];
+        }
+        if(value.empty())
+        {
+            value = rhs.value;
+        } else
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                value[i] += rhs.value[i];
+        }
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;

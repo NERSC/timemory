@@ -296,6 +296,7 @@ using data_metric_t             = data::metric;
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp>
 GLOBAL_CALLABLE void
 warmup()
 {
@@ -925,7 +926,7 @@ struct profiler
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
 #if defined(__NVCC__)
-        impl::warmup<<<1, 1>>>();
+        impl::warmup<int><<<1, 1>>>();
 #endif
     }
 
