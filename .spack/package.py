@@ -98,17 +98,35 @@ class Timemory(CMakePackage):
         ]
 
         print("{}".format(self.spec))
+
         if '+python' in spec:
             args.append(
                 '-DPYTHON_EXECUTABLE={}'.format(os.path.join(spec['python'].prefix, "bin", "python")))
             python("-m", "pip", "install", "matplotlib", "numpy", "pillow")
         else:
             args.append('-DTIMEMORY_BUILD_PYTHON=OFF')
+
+        if '+caliper' in spec:
+            args.append('-DTIMEMORY_USE_CALIPER=ON')
+        else:
+            args.append('-DTIMEMORY_USE_CALIPER=OFF')
+
         if '+papi' in spec:
+            args.append('-DTIMEMORY_USE_PAPI=ON')
             args.append('-DPAPI_ROOT_DIR={}'.format(spec['papi'].prefix))
+        else:
+            args.append('-DTIMEMORY_USE_PAPI=OFF')
+
         if '+mpi' in spec:
             args.append('-DMPI_C_COMPILER={}'.format(spec['mpi'].mpicc))
             args.append('-DMPI_CXX_COMPILER={}'.format(spec['mpi'].mpicxx))
+        else:
+            args.append('-DTIMEMORY_USE_MPI=OFF')
+
+        if '+cupti' in spec:
+            args.append('-DTIMEMORY_USE_CUPTI=ON')
+        else:
+            args.append('-DTIMEMORY_USE_CUPTI=OFF')
 
         args.append("-DCMAKE_BUILD_TYPE:STRING=Release")
 
