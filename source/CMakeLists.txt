@@ -63,7 +63,9 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers)
+    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
+                        #timemory-cuda timemory-cudart timemory-cuda-nvtx timemory-cupti
+                        timemory-papi timemory-caliper)
 
 build_library(
     TYPE                STATIC
@@ -74,7 +76,9 @@ build_library(
     OUTPUT_DIR          ${PROJECT_BINARY_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    LINK_LIBRARIES      timemory-headers)
+    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
+                        #timemory-cuda timemory-cudart-static timemory-cudart-device timemory-cuda-nvtx timemory-cupti
+                        timemory-papi-static timemory-caliper)
 
 if(WIN32)
     # make sure on Windows, static is built first. There is something weird
@@ -229,8 +233,12 @@ install(EXPORT ${PROJECT_NAME}LibraryDepends
     DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
 
 export(
-    TARGETS ${TIMEMORY_COMPILED_LIBRARIES} ${TIMEMORY_INTERFACE_LIBRARIES}
-    FILE ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
+    TARGETS
+        ${TIMEMORY_COMPILED_LIBRARIES}
+        ${TIMEMORY_INTERFACE_LIBRARIES}
+        ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
+    FILE
+        ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
 
 
 #----------------------------------------------------------------------------------------#
@@ -249,7 +257,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 # Preload library tool
 #
-add_subdirectory(preload)
+# add_subdirectory(preload)
 
 #----------------------------------------------------------------------------------------#
 # install the plotting.py module as a Python executable

@@ -338,6 +338,27 @@ using str = tim::apply<std::string>;
 #    define TIMEMORY_CALIPER_APPLY(id, func, ...) _AUTO_NAME(id).func(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)
+ *
+ * apply a function to a caliper, e.g. start or stop
+ *
+ *
+ * Usage:
+ *
+ *      void some_func()
+ *      {
+ *          TIMEMORY_CALIPER(1, (tim::auto_tuple<tim::component::real_clock>), "");
+ *          TIMEMORY_CALIPER_APPLY(1, start);
+ *
+ *          TIMEMORY_CALIPER_APPLY(1, stop);
+ *          ...
+ *      }
+ *
+ */
+#    define TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)                             \
+        _AUTO_NAME(id).type_apply<type>(func, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_CALIPER_REFERENCE(id, func, ...)
  *
  * apply a function to a caliper, e.g. start or stop
@@ -439,6 +460,61 @@ using str = tim::apply<std::string>;
             {                                                                            \
                 ;                                                                        \
             }
+#    endif
+
+//--------------------------------------------------------------------------------------//
+
+#    if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_NVTX)
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_begin,                      \
+                                        stream);                                         \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
+                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
+                                            nvtx_marker::mark_begin,                     \
+                                        stream)
+
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_end,                        \
+                                        stream);                                         \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
+                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
+                                            nvtx_marker::mark_end,                       \
+                                        stream)
+
+#    elif defined(TIMEMORY_USE_CUDA)
+
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_begin,                      \
+                                        stream);
+
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
+                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
+                                            cuda_event::mark_end,                        \
+                                        stream)
+
+#    elif defined(TIMEMORY_USE_NVTX)
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
+                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
+                                            nvtx_marker::mark_begin,                     \
+                                        stream)
+
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
+            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
+                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
+                                            nvtx_marker::mark_end,                       \
+                                        stream)
+
+#    else
+#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)
+#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)
 #    endif
 
 //--------------------------------------------------------------------------------------//

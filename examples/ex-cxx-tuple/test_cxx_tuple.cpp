@@ -298,8 +298,8 @@ test_2_timing()
 
     mutex_t              mtx;
     std::deque<pair_t>   measurements;
-    measurement_t        runtime("");
-    printed_t            runtime_printed("");
+    measurement_t        runtime("", false);
+    printed_t            runtime_printed("", false);
     std::atomic<int64_t> ret;
     std::stringstream    lambda_ss;
 
@@ -308,7 +308,7 @@ test_2_timing()
 
         auto run_fib = [&](long n) {
             TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
-            measurement_t _tm("");
+            measurement_t _tm("", false);
             _tm.start();
             ret += time_fibonacci(n);
             _tm.stop();
@@ -401,7 +401,6 @@ test_4_measure()
 
     {
         TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", current_rss, peak_rss);
-        prss.start();
         // do something, where you want delta peak rss
         auto                 n = 10000000;
         std::vector<int64_t> v(n, 10);

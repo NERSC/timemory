@@ -35,7 +35,7 @@ cxx_timemory_init(int, char**, timemory_settings);
 extern int
 cxx_timemory_enabled(void);
 extern void*
-cxx_timemory_create_auto_timer(const char*, int, int);
+cxx_timemory_create_auto_timer(const char*, int);
 extern void*
 cxx_timemory_create_auto_tuple(const char*, int, int, const int*);
 extern void*
@@ -68,24 +68,33 @@ c_timemory_enabled(void)
 void*
 c_timemory_create_auto_timer(const char* tag, int lineno)
 {
-    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno, false)
-                                    : NULL;
+    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno) : NULL;
 }
 
 //======================================================================================//
 
 void*
-c_timemory_create_auto_tuple(const char* tag, int lineno, int num_components, ...)
+c_timemory_create_auto_tuple(const char* tag, int lineno, ...)
 {
-    if(!cxx_timemory_enabled() || num_components == 0)
+    if(!cxx_timemory_enabled())
         return NULL;
-    int*    components = (int*) malloc(num_components * sizeof(int));
-    va_list args;
-    va_start(args, num_components);
-    for(int i = 0; i < num_components; ++i)
-        components[i] = va_arg(args, int);
+    const int max_size       = (int) TIMEMORY_COMPONENTS_END;
+    int       num_components = 0;
+    int*      components     = (int*) malloc(max_size * sizeof(int));
+    va_list   args;
+    va_start(args, lineno);
+    for(int i = 0; i < max_size; ++i)
+    {
+        int comp = va_arg(args, int);
+        if(comp >= TIMEMORY_COMPONENTS_END)
+            break;
+        ++num_components;
+        components[i] = comp;
+    }
     va_end(args);
-    void* ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
+    void* ptr = NULL;
+    if(num_components > 0)
+        ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
     free(components);
     return ptr;
 }

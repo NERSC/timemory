@@ -28,6 +28,7 @@
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -108,14 +109,6 @@ struct cpu_roofline
     using iterator       = typename array_type::iterator;
     using const_iterator = typename array_type::const_iterator;
 
-    using base_type::accum;
-    using base_type::is_running;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-
     // total size of data
     static const size_type num_events = sizeof...(EventTypes) + 1;
     // array size
@@ -179,7 +172,7 @@ struct cpu_roofline
         return _instance;
     }
 
-    static operation_function_t& get_finalize_function()
+    static operation_function_t& get_finalizer()
     {
         static operation_function_t _instance = []() {
             // vectorization number of ops
@@ -255,11 +248,10 @@ struct cpu_roofline
     static void invoke_global_finalize()
     {
         // run roofline peak generation
-        auto  op_counter_func = get_finalize_function();
+        auto  op_counter_func = get_finalizer();
         auto* op_counter      = op_counter_func();
         get_operation_counter().reset(op_counter);
-        int verbose = get_env<int>("TIMEMORY_VERBOSE", 0);
-        if(op_counter && verbose > 0)
+        if(op_counter && (settings::verbose() > 0 || settings::debug()))
             std::cout << *op_counter << std::endl;
     }
 
@@ -410,13 +402,20 @@ struct cpu_roofline
         return *this;
     }
 
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
 public:
     //==================================================================================//
     //
     //      representation as a string
     //
     //==================================================================================//
-    double compute_display() const
+    double get_display() const
     {
         auto& obj = (accum.second > 0) ? accum : value;
         if(obj.second == 0)
@@ -447,7 +446,7 @@ public:
         sst << ", ";
 
         // output the roofline metric
-        auto _value = obj.compute_display();
+        auto _value = obj.get_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::display_unit();
         auto _prec  = clock_type::get_precision();
@@ -474,14 +473,29 @@ public:
 using cpu_roofline_sp_flops = cpu_roofline<float, PAPI_SP_OPS>;
 using cpu_roofline_dp_flops = cpu_roofline<double, PAPI_DP_OPS>;
 
-// TODO: check if L1 roofline wants L1 total cache hits (below) or L1 composite of
-// accesses/reads/writes/etc.
-// using cpu_roofline_l1 = cpu_roofline<PAPI_L1_TCH>;
-
-// TODO: check if L2 roofline wants L2 total cache hits (below) or L2 composite of
-// accesses/reads/writes/etc.
-// using cpu_roofline_l2 = cpu_roofline<PAPI_L2_TCH>;
-
 //--------------------------------------------------------------------------------------//
 }  // namespace component
+
+namespace trait
+{
+template <>
+struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
+{};
+
+template <>
+struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
+{};
+
+#if !defined(TIMEMORY_USE_PAPI)
+template <>
+struct is_available<component::cpu_roofline_sp_flops> : std::false_type
+{};
+
+template <>
+struct is_available<component::cpu_roofline_dp_flops> : std::false_type
+{};
+#endif
+
+}  // namespace trait
+
 }  // namespace tim

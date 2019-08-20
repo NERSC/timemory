@@ -36,11 +36,51 @@
 #include "timemory/units.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_timer.hpp"
 #include "timemory/variadic/macros.hpp"
 
 #include "timemory/ctimemory.h"
+
+//======================================================================================//
+
+namespace tim
+{
+using complete_auto_list_t = auto_list<
+    component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
+    component::cpu_roofline_sp_flops, component::cpu_util, component::cuda_event,
+    component::cupti_event, component::current_rss, component::data_rss,
+    component::monotonic_clock, component::monotonic_raw_clock, component::num_io_in,
+    component::num_io_out, component::num_major_page_faults,
+    component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
+    component::num_signals, component::num_swap, component::nvtx_marker,
+    component::papi_array_t, component::peak_rss, component::priority_context_switch,
+    component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
+    component::real_clock, component::stack_rss, component::system_clock,
+    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
+    component::user_clock, component::voluntary_context_switch, component::written_bytes>;
+
+using complete_list_t = complete_auto_list_t::component_type;
+
+using recommended_auto_tuple_t =
+    auto_tuple<component::real_clock, component::system_clock, component::user_clock,
+               component::cpu_util, component::current_rss, component::peak_rss,
+               component::read_bytes, component::written_bytes,
+               component::num_minor_page_faults, component::num_major_page_faults,
+               component::voluntary_context_switch, component::priority_context_switch>;
+
+using recommended_tuple_t = recommended_auto_tuple_t::component_type;
+
+using recommended_auto_list_t = auto_list<component::caliper, component::papi_array_t,
+                                          component::cuda_event, component::cupti_event>;
+
+using recommended_list_t = recommended_auto_list_t::component_type;
+
+using recommended_auto_hybrid_t = auto_hybrid<recommended_tuple_t, recommended_list_t>;
+
+using recommended_hybrid_t = component_hybrid<recommended_tuple_t, recommended_list_t>;
+}
 
 //======================================================================================//
 

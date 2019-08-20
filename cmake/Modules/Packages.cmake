@@ -12,8 +12,6 @@ enable_testing()
 #
 ##########################################################################################
 
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME external)
-
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
 add_interface_library(timemory-extern-templates)
@@ -33,6 +31,7 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
+add_interface_library(timemory-cuda-nvtx)
 add_interface_library(timemory-caliper)
 
 add_interface_library(timemory-gperftools)
@@ -47,7 +46,10 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-papi
     timemory-papi-static
     timemory-cuda
+    timemory-cudart
+    timemory-cuda-nvtx
     timemory-cupti
+    timemory-cudart-device
     timemory-coverage
     timemory-gperftools
     timemory-santizier)
@@ -73,10 +75,13 @@ endif()
 add_library(timemory-google-test INTERFACE)
 
 function(INFORM_EMPTY_INTERFACE _TARGET _PACKAGE)
-    message(STATUS
-        "[interface] ${_PACKAGE} not found. ${_TARGET} interface will not provide ${_PACKAGE}...")
-    set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET}
-        PARENT_SCOPE)
+    if(NOT TARGET ${_TARGET})
+        message(AUTHOR_WARNING "A non-existant target was passed to INFORM_EMPTY_INTERFACE: ${_TARGET}")
+    endif()
+    message(STATUS  "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+    # message(AUTHOR_WARNING "[interface] ${_PACKAGE} not found. '${_TARGET}' interface will not provide ${_PACKAGE}...")
+    set(TIMEMORY_EMPTY_INTERFACE_LIBRARIES ${TIMEMORY_EMPTY_INTERFACE_LIBRARIES} ${_TARGET} PARENT_SCOPE)
+    add_disabled_interface(${_TARGET})
 endfunction()
 
 #----------------------------------------------------------------------------------------#
@@ -136,14 +141,14 @@ endif()
 #set(DEV_WARNINGS ${CMAKE_SUPPRESS_DEVELOPER_WARNINGS})
 
 checkout_git_submodule(RECURSIVE
-    RELATIVE_PATH source/cereal
+    RELATIVE_PATH external/cereal
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
 # add cereal
-add_subdirectory(${PROJECT_SOURCE_DIR}/source/cereal)
+add_subdirectory(${PROJECT_SOURCE_DIR}/external/cereal)
 
 target_include_directories(timemory-cereal INTERFACE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/source/cereal/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/cereal/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
 
 # timemory-headers always provides timemory-cereal
@@ -158,7 +163,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-cereal)
 
 if(TIMEMORY_BUILD_GTEST)
     checkout_git_submodule(RECURSIVE
-        RELATIVE_PATH source/google-test
+        RELATIVE_PATH external/google-test
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # add google-test
@@ -168,7 +173,7 @@ if(TIMEMORY_BUILD_GTEST)
         set(CMAKE_MACOSX_RPATH ON CACHE BOOL "Enable MACOS_RPATH on targets to suppress warnings")
         mark_as_advanced(CMAKE_MACOSX_RPATH)
     endif()
-    add_subdirectory(${PROJECT_SOURCE_DIR}/source/google-test)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/google-test)
     target_link_libraries(timemory-google-test INTERFACE gtest gmock gtest_main)
     target_include_directories(timemory-google-test INTERFACE
         ${PROJECT_SOURCE_DIR}/google-test/googletest/include
@@ -299,7 +304,7 @@ if(TIMEMORY_BUILD_PYTHON)
 
     # checkout PyBind11 if not checked out
     checkout_git_submodule(RECURSIVE
-        RELATIVE_PATH source/python/pybind11
+        RELATIVE_PATH external/pybind11
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # C++ standard
@@ -309,7 +314,7 @@ if(TIMEMORY_BUILD_PYTHON)
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
     if(NOT TARGET pybind11)
-        add_subdirectory(${PROJECT_SOURCE_DIR}/source/python/pybind11)
+        add_subdirectory(${PROJECT_SOURCE_DIR}/external/pybind11)
     endif()
 
     if(NOT PYBIND11_PYTHON_VERSION)
@@ -367,7 +372,8 @@ if(PAPI_FOUND)
     target_compile_definitions(timemory-papi-static INTERFACE TIMEMORY_USE_PAPI)
 else()
     set(TIMEMORY_USE_PAPI OFF)
-    inform_empty_interface(timemory-papi "PAPI")
+    inform_empty_interface(timemory-papi "PAPI (shared libraries)")
+    inform_empty_interface(timemory-papi-static "PAPI (static libraries)")
 endif()
 
 
@@ -511,6 +517,9 @@ if(TIMEMORY_USE_CUDA)
 
         add_user_flags(timemory-cuda "CUDA")
 
+        target_compile_options(timemory-cuda INTERFACE
+            $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE
                 $<$<COMPILE_LANGUAGE:CUDA>:--compiler-bindir=${CMAKE_CXX_COMPILER}>)
@@ -533,6 +542,9 @@ if(TIMEMORY_USE_CUDA)
     endif()
 else()
     inform_empty_interface(timemory-cuda "CUDA")
+    inform_empty_interface(timemory-cudart "CUDA Runtime (shared)")
+    inform_empty_interface(timemory-cudart-device "CUDA Runtime (device)")
+    inform_empty_interface(timemory-cudart-static "CUDA Runtime (static)")
 endif()
 
 
@@ -546,28 +558,43 @@ if(TIMEMORY_USE_CUPTI)
     set(_CUDA_PATHS $ENV{CUDA_HOME} ${CUDA_TOOLKIT_ROOT_DIR} ${CUDA_SDK_ROOT_DIR})
     set(_CUDA_INC ${CUDA_INCLUDE_DIRS} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
 
+    find_path(CUPTI_ROOT_DIR
+        NAMES           include/cupti.h
+        HINTS           ${_CUDA_PATHS}
+        PATHS           ${_CUDA_PATHS}
+        PATH_SUFFIXES   extras/CUPTI)
+
     # try to find cupti header
     find_path(CUDA_cupti_INCLUDE_DIR
         NAMES           cupti.h
-        HINTS           ${_CUDA_INC} ${_CUDA_PATHS}
-        PATHS           ${_CUDA_INC} ${_CUDA_PATHS}
-        PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include)
+        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_INC} ${_CUDA_PATHS}
+        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_INC} ${_CUDA_PATHS}
+        PATH_SUFFIXES   extras/CUPTI/include extras/CUPTI extras/include CUTPI/include include)
+
+    # try to find cuda driver library
+    find_library(CUDA_cupti_LIBRARY
+        NAMES           cupti
+        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+        PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
 
     # try to find cuda driver library
     find_library(CUDA_cuda_LIBRARY
         NAMES           cuda
-        HINTS           ${_CUDA_PATHS}
-        PATHS           ${_CUDA_PATHS}
+        HINTS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
+        PATHS           ${CUPTI_ROOT_DIR} ${_CUDA_PATHS}
         PATH_SUFFIXES   lib lib64 lib/nvidia lib64/nvidia nvidia)
 
     # try to find cuda driver stubs library if no real driver
     if(NOT CUDA_cuda_LIBRARY)
-        set(CMAKE_INSTALL_RPATH_USE_LINK_PATH OFF CACHE BOOL "Use link path for RPATH" FORCE)
         find_library(CUDA_cuda_LIBRARY
             NAMES           cuda
             HINTS           ${_CUDA_PATHS}
             PATHS           ${_CUDA_PATHS}
             PATH_SUFFIXES   lib/stubs lib64/stubs stubs)
+        set(HAS_CUDA_cuda_LIBRARY OFF CACHE BOOL "Using stubs library")
+    else()
+        set(HAS_CUDA_cuda_LIBRARY ON CACHE BOOL "Using stubs library")
     endif()
 
     find_package_handle_standard_args(CUDA_CUPTI DEFAULT_MSG
@@ -583,6 +610,9 @@ if(TIMEMORY_USE_CUPTI)
         target_include_directories(timemory-cupti INTERFACE ${CUDA_INCLUDE_DIRS}
             ${CUDA_cupti_INCLUDE_DIR} ${CMAKE_CUDA_TOOLKIT_INCLUDE_DIRECTORIES})
         target_link_libraries(timemory-cupti INTERFACE ${CUDA_cupti_LIBRARY} ${CUDA_cuda_LIBRARY})
+        set_target_properties(timemory-cupti PROPERTIES
+            INTERFACE_INSTALL_RPATH               ""
+            INTERFACE_INSTALL_RPATH_USE_LINK_PATH ${HAS_CUDA_cuda_LIBRARY})
     endif()
 
     # clean-up
@@ -591,6 +621,24 @@ if(TIMEMORY_USE_CUPTI)
 
 else()
     inform_empty_interface(timemory-cupti "CUPTI")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               NVTX
+#
+#----------------------------------------------------------------------------------------#
+
+find_package(NVTX QUIET)
+
+if(NVTX_FOUND)
+    target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
+    target_include_directories(timemory-cuda-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-cuda-nvtx INTERFACE TIMEMORY_USE_NVTX)
+else()
+    set(TIMEMORY_USE_NVTX OFF)
+    inform_empty_interface(timemory-cuda-nvtx "NVTX")
 endif()
 
 
@@ -629,21 +677,44 @@ endif()
 #                               Caliper
 #
 #----------------------------------------------------------------------------------------#
-find_package(caliper QUIET)
+if(TIMEMORY_BUILD_CALIPER)
+    set(caliper_FOUND ON)
+    checkout_git_submodule(RECURSIVE
+        RELATIVE_PATH external/caliper
+        WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+    include(CaliperDepends)
+    set(_ORIG_CEXT ${CMAKE_C_EXTENSIONS})
+    set(_ORIG_TESTING ${BUILD_TESTING})
+    set(CMAKE_C_EXTENSIONS ON)
+    set(BUILD_TESTING OFF)
+    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
+    set(BUILD_TESTING ${_ORIG_TESTING} CACHE BOOL "" FORCE)
+    set(BUILD_TESTING ${_ORIG_TESTING})
+    set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
+    set(caliper_DIR ${CMAKE_INSTALL_PREFIX})
+else()
+    find_package(caliper QUIET)
+endif()
 
 if(caliper_FOUND)
     target_compile_definitions(timemory-caliper INTERFACE TIMEMORY_USE_CALIPER)
-    target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
-    target_link_libraries(timemory-caliper INTERFACE caliper)
+    if(TIMEMORY_BUILD_CALIPER)
+        target_include_directories(timemory-caliper INTERFACE
+            $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
+            $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
+        target_link_libraries(timemory-caliper INTERFACE caliper)
+        if(WITH_CUPTI)
+            target_link_libraries(timemory-caliper INTERFACE timemory-cupti)
+        endif()
+        if(WITH_PAPI)
+            target_link_libraries(timemory-caliper INTERFACE timemory-papi)
+        endif()
+    else()
+        target_include_directories(timemory-caliper INTERFACE ${caliper_INCLUDE_DIR})
+        target_link_libraries(timemory-caliper INTERFACE caliper)
+    endif()
 else()
     set(TIMEMORY_USE_CALIPER OFF)
     inform_empty_interface(timemory-caliper "caliper")
 endif()
-
-#----------------------------------------------------------------------------------------#
-#
-#                               External variables
-#
-#----------------------------------------------------------------------------------------#
-
-set(CMAKE_INSTALL_DEFAULT_COMPONENT_NAME development)

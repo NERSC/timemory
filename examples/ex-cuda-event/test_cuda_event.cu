@@ -50,11 +50,11 @@
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util, papi_tuple_t>;
+// using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_BR_MSP, PAPI_BR_PRC>;
+using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                     nvtx_marker, papi_array_t>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
-using cuda_tuple_t = tim::auto_tuple<cuda_event>;
+using cuda_tuple_t = tim::auto_tuple<cuda_event, nvtx_marker>;
 
 //======================================================================================//
 
@@ -97,13 +97,13 @@ array_to_string(const _Tp& arr, const std::string& delimiter = ", ",
 
 //--------------------------------------------------------------------------------------//
 
-static const int nitr = 4;
+static const int nitr = 10;
 static int64_t   N    = 50 * (1 << 23);
 static auto      Nsub = N / nitr;
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-__global__ void
+GLOBAL_CALLABLE void
 warmup(int64_t n)
 {
     int i   = blockIdx.x * blockDim.x + threadIdx.x;
@@ -114,14 +114,12 @@ warmup(int64_t n)
 
 //--------------------------------------------------------------------------------------//
 // saxpy calculation
-__global__ void
+GLOBAL_CALLABLE void
 saxpy(int64_t n, float a, float* x, float* y)
 {
-    for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
-    {
-        // y[i] = a * x[i] + y[i];
-        atomicAdd(&y[i], y[i] - (a * x[i]));
-    }
+    auto itr = tim::device::grid_strided_range<tim::device::default_device, 0>(n);
+    for(int i = itr.begin(); i < itr.end(); i += itr.stride())
+        y[i] = a * x[i] + y[i];
 }
 //--------------------------------------------------------------------------------------//
 
@@ -132,7 +130,7 @@ warmup()
     int     ngrid = 128;
     int64_t val   = 256;
     warmup<<<ngrid, block>>>(val);
-    CUDA_CHECK_LAST_ERROR();
+    // CUDA_CHECK_LAST_ERROR();
 }
 
 //======================================================================================//
@@ -177,13 +175,11 @@ main(int argc, char** argv)
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
-    int ndevices = 0;
-    cudaGetDeviceCount(&ndevices);
+    int ndevices = tim::cuda::device_count();
     warmup();
 
-    auto* timing =
-        new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util>(
-            "Tests runtime", true);
+    auto* timing = new tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
+                                            nvtx_marker>("Tests runtime", true);
 
     timing->start();
 
@@ -269,23 +265,23 @@ test_1_saxpy()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 512;
-    int         ngrid        = (N + block - 1) / block;
-    float       milliseconds = 0.0f;
-    float       maxError     = 0.0f;
-    float       sumError     = 0.0f;
-    cuda_event* evt          = nullptr;
+    int         block    = 512;
+    int         ngrid    = (N + block - 1) / block;
+    float       nseconds = 0.0f;
+    float       maxError = 0.0f;
+    float       sumError = 0.0f;
+    cuda_event* evt      = nullptr;
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
-        x = (float*) malloc(N * sizeof(float));
-        y = (float*) malloc(N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cpu_malloc]");
+        x = tim::device::cpu::alloc<float>(N);
+        y = tim::device::cpu::alloc<float>(N);
     }
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
-        cudaMalloc(&d_x, N * sizeof(float));
-        cudaMalloc(&d_y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[gpu_malloc]");
+        d_x = tim::cuda::malloc<float>(N);
+        d_y = tim::cuda::malloc<float>(N);
         CUDA_CHECK_LAST_ERROR();
     }
 
@@ -305,29 +301,30 @@ test_1_saxpy()
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
-        cudaMemcpy(d_x, x, N * sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_y, y, N * sizeof(float), cudaMemcpyHostToDevice);
+        evt->mark_begin();
+        tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v);
+        tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v);
+        evt->mark_end();
         CUDA_CHECK_LAST_ERROR();
     }
 
-    for(int i = 0; i < nitr; ++i)
+    for(int i = 0; i < 1; ++i)
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
-        evt->start();
-
         // Perform SAXPY on 1M elements
+        evt->mark_begin();
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
-        CUDA_CHECK_LAST_ERROR();
-
-        evt->stop();
-        milliseconds += evt->get_value();
+        evt->mark_end();
     }
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
+        evt->mark_begin();
         cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
-        CUDA_CHECK_LAST_ERROR();
+        evt->mark_end();
     }
+
+    tim::cuda::device_sync();
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
@@ -338,6 +335,8 @@ test_1_saxpy()
         }
     }
 
+    evt->sync();
+    nseconds += evt->get();
     _clock.stop();
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[output]");
@@ -345,13 +344,20 @@ test_1_saxpy()
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     delete evt;
+
+    tim::device::gpu::free(d_x);
+    tim::device::gpu::free(d_y);
+    tim::device::cpu::free(x);
+    tim::device::cpu::free(y);
+
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -370,13 +376,13 @@ test_2_saxpy_async()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 512;
-    int           ngrid        = (Nsub + block - 1) / block;
-    float         milliseconds = 0.0f;
-    float         maxError     = 0.0f;
-    float         sumError     = 0.0f;
-    cuda_event**  evt          = new cuda_event*[nitr];
-    cudaStream_t* stream       = new cudaStream_t[nitr];
+    int           block    = 512;
+    int           ngrid    = (Nsub + block - 1) / block;
+    float         nseconds = 0.0f;
+    float         maxError = 0.0f;
+    float         sumError = 0.0f;
+    cuda_event**  evt      = new cuda_event*[nitr];
+    cudaStream_t* stream   = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
@@ -384,15 +390,15 @@ test_2_saxpy_async()
     };
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
-        x = (float*) malloc(N * sizeof(float));
-        y = (float*) malloc(N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cpu_malloc]");
+        x = tim::device::cpu::alloc<float>(N);
+        y = tim::device::cpu::alloc<float>(N);
     }
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
-        cudaMalloc(&d_x, N * sizeof(float));
-        cudaMalloc(&d_y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[gpu_malloc]");
+        d_x = tim::cuda::malloc<float>(N);
+        d_y = tim::cuda::malloc<float>(N);
     }
 
     {
@@ -408,8 +414,9 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            cudaStreamCreate(&stream[i]);
+            tim::cuda::stream_create(stream[i]);
             evt[i] = new cuda_event(stream[i]);
+            evt[i]->start();
         }
     }
 
@@ -419,13 +426,13 @@ test_2_saxpy_async()
         {
             auto   offset = Nsub * i;
             float* _x     = x + offset;
-            float* _dx    = d_x + offset;
             float* _y     = y + offset;
+            float* _dx    = d_x + offset;
             float* _dy    = d_y + offset;
-            cudaMemcpyAsync(_dx, _x, Nsub * sizeof(float), cudaMemcpyHostToDevice,
-                            stream[i]);
-            cudaMemcpyAsync(_dy, _y, Nsub * sizeof(float), cudaMemcpyHostToDevice,
-                            stream[i]);
+            evt[i]->mark_begin();
+            tim::cuda::memcpy(_dx, _x, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            tim::cuda::memcpy(_dy, _y, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            evt[i]->mark_end();
         }
     }
 
@@ -437,17 +444,12 @@ test_2_saxpy_async()
         float* _dx    = d_x + offset;
         float* _dy    = d_y + offset;
 
-        evt[i]->start();
-
+        evt[i]->mark_begin();
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, _dx, _dy);
-        CUDA_CHECK_LAST_ERROR();
-
-        evt[i]->stop();
-        milliseconds += evt[i]->get_value();
+        saxpy<<<ngrid, block, 0, stream[i]>>>(Nsub, 1.0f, _dx, _dy);
+        evt[i]->mark_end();
     }
 
-    _sync();
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
         for(int i = 0; i < nitr; ++i)
@@ -455,12 +457,14 @@ test_2_saxpy_async()
             auto   offset = Nsub * i;
             float* _y     = y + offset;
             float* _dy    = d_y + offset;
-            cudaMemcpyAsync(_y, _dy, Nsub * sizeof(float), cudaMemcpyDeviceToHost,
-                            stream[i]);
+            evt[i]->mark_begin();
+            tim::cuda::memcpy(_y, _dy, Nsub, tim::cuda::device_to_host_v, stream[i]);
+            evt[i]->mark_end();
         }
     }
 
     _sync();
+
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
         for(int64_t i = 0; i < N; i++)
@@ -475,20 +479,30 @@ test_2_saxpy_async()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[output]");
         cuda_event _evt = **evt;
         for(int i = 1; i < nitr; ++i)
+        {
+            evt[i]->stop();
+            nseconds += evt[i]->get();
             _evt += *(evt[i]);
+        }
         std::cout << "Event: " << _evt << std::endl;
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     for(int i = 0; i < nitr; ++i)
         delete evt[i];
     delete[] evt;
+
+    tim::device::gpu::free(d_x);
+    tim::device::gpu::free(d_y);
+    tim::device::cpu::free(x);
+    tim::device::cpu::free(y);
+
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -507,23 +521,23 @@ test_3_saxpy_pinned()
     float*      y;
     float*      d_x;
     float*      d_y;
-    int         block        = 512;
-    int         ngrid        = (N + block - 1) / block;
-    float       milliseconds = 0.0f;
-    float       maxError     = 0.0f;
-    float       sumError     = 0.0f;
-    cuda_event* evt          = nullptr;
+    int         block    = 512;
+    int         ngrid    = (N + block - 1) / block;
+    float       nseconds = 0.0f;
+    float       maxError = 0.0f;
+    float       sumError = 0.0f;
+    cuda_event* evt      = nullptr;
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
-        cudaMallocHost(&x, N * sizeof(float));
-        cudaMallocHost(&y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cpu_malloc]");
+        x = tim::cuda::malloc_host<float>(N);
+        y = tim::cuda::malloc_host<float>(N);
     }
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
-        cudaMalloc(&d_x, N * sizeof(float));
-        cudaMalloc(&d_y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[gpu_malloc]");
+        d_x = tim::cuda::malloc<float>(N);
+        d_y = tim::cuda::malloc<float>(N);
     }
 
     {
@@ -538,31 +552,34 @@ test_3_saxpy_pinned()
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create_event]");
         evt = new cuda_event();
+        evt->start();
     }
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
-        cudaMemcpy(d_x, x, N * sizeof(float), cudaMemcpyHostToDevice);
-        cudaMemcpy(d_y, y, N * sizeof(float), cudaMemcpyHostToDevice);
+        evt->mark_begin();
+        tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v);
+        tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v);
+        evt->mark_end();
     }
 
-    for(int i = 0; i < nitr; ++i)
+    for(int i = 0; i < 1; ++i)
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
-        evt->start();
-
+        evt->mark_begin();
         // Perform SAXPY on 1M elements
         saxpy<<<ngrid, block>>>(N, 1.0f, d_x, d_y);
-        CUDA_CHECK_LAST_ERROR();
-
-        evt->stop();
-        milliseconds += evt->get_value();
+        evt->mark_end();
     }
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
-        cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
+        evt->mark_begin();
+        tim::cuda::memcpy(y, d_y, N, tim::cuda::device_to_host_v);
+        evt->mark_end();
     }
+
+    tim::cuda::device_sync();
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
@@ -574,19 +591,28 @@ test_3_saxpy_pinned()
     }
 
     _clock.stop();
+    evt->stop();
+    nseconds += evt->get();
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[output]");
         std::cout << "Event: " << *evt << std::endl;
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     delete evt;
+
+    tim::cuda::free_host(x);
+    tim::cuda::free_host(y);
+    tim::cuda::free(d_x);
+    tim::cuda::free(d_y);
+
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -605,13 +631,13 @@ test_4_saxpy_async_pinned()
     float*        y;
     float*        d_x;
     float*        d_y;
-    int           block        = 512;
-    int           ngrid        = (Nsub + block - 1) / block;
-    float         milliseconds = 0.0f;
-    float         maxError     = 0.0f;
-    float         sumError     = 0.0f;
-    cuda_event**  evt          = new cuda_event*[nitr];
-    cudaStream_t* stream       = new cudaStream_t[nitr];
+    int           block    = 512;
+    int           ngrid    = (Nsub + block - 1) / block;
+    float         nseconds = 0.0f;
+    float         maxError = 0.0f;
+    float         sumError = 0.0f;
+    cuda_event**  evt      = new cuda_event*[nitr];
+    cudaStream_t* stream   = new cudaStream_t[nitr];
 
     auto _sync = [&]() {
         for(int i = 0; i < nitr; i++)
@@ -619,15 +645,15 @@ test_4_saxpy_async_pinned()
     };
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[malloc]");
-        cudaMallocHost(&x, N * sizeof(float));
-        cudaMallocHost(&y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cpu_malloc]");
+        x = tim::cuda::malloc_host<float>(N);
+        y = tim::cuda::malloc_host<float>(N);
     }
 
     {
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[cudaMalloc]");
-        cudaMalloc(&d_x, N * sizeof(float));
-        cudaMalloc(&d_y, N * sizeof(float));
+        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[gpu_malloc]");
+        d_x = tim::cuda::malloc<float>(N);
+        d_y = tim::cuda::malloc<float>(N);
     }
 
     {
@@ -643,8 +669,9 @@ test_4_saxpy_async_pinned()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[create]");
         for(int i = 0; i < nitr; ++i)
         {
-            cudaStreamCreate(&stream[i]);
+            tim::cuda::stream_create(stream[i]);
             evt[i] = new cuda_event(stream[i]);
+            evt[i]->start();
         }
     }
 
@@ -652,11 +679,15 @@ test_4_saxpy_async_pinned()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[H2D]");
         for(int i = 0; i < nitr; ++i)
         {
-            auto offset = Nsub * i;
-            cudaMemcpyAsync(d_x + offset, x + offset, Nsub * sizeof(float),
-                            cudaMemcpyHostToDevice, stream[i]);
-            cudaMemcpyAsync(d_y + offset, y + offset, Nsub * sizeof(float),
-                            cudaMemcpyHostToDevice, stream[i]);
+            auto   offset = Nsub * i;
+            float* _x     = x + offset;
+            float* _y     = y + offset;
+            float* _dx    = d_x + offset;
+            float* _dy    = d_y + offset;
+            evt[i]->mark_begin();
+            tim::cuda::memcpy(_dx, _x, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            tim::cuda::memcpy(_dy, _y, Nsub, tim::cuda::host_to_device_v, stream[i]);
+            evt[i]->mark_end();
         }
     }
 
@@ -664,31 +695,33 @@ test_4_saxpy_async_pinned()
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", i, "]");
 
-        auto offset = Nsub * i;
+        auto   offset = Nsub * i;
+        float* _dx    = d_x + offset;
+        float* _dy    = d_y + offset;
 
-        evt[i]->start();
-
+        evt[i]->mark_begin();
         // Perform SAXPY on 1M elements
-        saxpy<<<ngrid, block, 0, stream[i]>>>(N, 1.0f, d_x + offset, d_y + offset);
-
-        evt[i]->stop();
-        milliseconds += evt[i]->get_value();
+        saxpy<<<ngrid, block, 0, stream[i]>>>(Nsub, 1.0f, _dx, _dy);
+        evt[i]->mark_end();
     }
 
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[D2H]");
-        cudaMemcpy(y, d_y, N * sizeof(float), cudaMemcpyDeviceToHost);
         for(int i = 0; i < nitr; ++i)
         {
-            auto offset = Nsub * i;
-            cudaMemcpyAsync(y + offset, d_y + offset, Nsub * sizeof(float),
-                            cudaMemcpyDeviceToHost, stream[i]);
+            auto   offset = Nsub * i;
+            float* _y     = y + offset;
+            float* _dy    = d_y + offset;
+            evt[i]->mark_begin();
+            tim::cuda::memcpy(_y, _dy, Nsub, tim::cuda::device_to_host_v, stream[i]);
+            evt[i]->mark_end();
         }
     }
 
+    _sync();
+
     {
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[check]");
-        _sync();
         for(int64_t i = 0; i < N; i++)
         {
             maxError = std::max(maxError, std::abs(y[i] - 2.0f));
@@ -701,20 +734,34 @@ test_4_saxpy_async_pinned()
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[output]");
         cuda_event _evt = **evt;
         for(int i = 1; i < nitr; ++i)
+        {
+            evt[i]->stop();
+            nseconds += evt[i]->get();
             _evt += *(evt[i]);
+        }
         std::cout << "Event: " << _evt << std::endl;
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     for(int i = 0; i < nitr; ++i)
+    {
         delete evt[i];
+        tim::cuda::stream_destroy(stream[i]);
+    }
     delete[] evt;
+
+    tim::cuda::free(d_x);
+    tim::cuda::free(d_y);
+    tim::cuda::free_host(x);
+    tim::cuda::free_host(y);
+
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -736,28 +783,32 @@ test_5_mt_saxpy_async()
     data_vector_t data_vector(nitr);
 
     auto run_thread = [&](int i) {
-        float*     x;
-        float*     y;
-        float*     d_x;
-        float*     d_y;
-        int        block        = 512;
-        int        ngrid        = (Nsub + block - 1) / block;
-        float      milliseconds = 0.0f;
-        float      maxError     = 0.0f;
-        float      sumError     = 0.0f;
-        cuda_event evt;
+        float*              x;
+        float*              y;
+        float*              d_x;
+        float*              d_y;
+        int                 block    = 512;
+        int                 ngrid    = (Nsub + block - 1) / block;
+        float               nseconds = 0.0f;
+        float               maxError = 0.0f;
+        float               sumError = 0.0f;
+        tim::cuda::stream_t stream;
+        tim::cuda::stream_create(stream);
+        cuda_event evt(stream);
+        evt.start();
+
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[run_thread]");
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");
-            x = (float*) malloc(Nsub * sizeof(float));
-            y = (float*) malloc(Nsub * sizeof(float));
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cpu_malloc]");
+            x = tim::device::cpu::alloc<float>(Nsub);
+            y = tim::device::cpu::alloc<float>(Nsub);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cudaMalloc]");
-            cudaMalloc(&d_x, Nsub * sizeof(float));
-            cudaMalloc(&d_y, Nsub * sizeof(float));
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[gpu_malloc]");
+            d_x = tim::cuda::malloc<float>(Nsub);
+            d_y = tim::cuda::malloc<float>(Nsub);
         }
 
         {
@@ -771,26 +822,29 @@ test_5_mt_saxpy_async()
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[H2D]");
-            cudaMemcpy(d_x, x, Nsub * sizeof(float), cudaMemcpyHostToDevice);
-            cudaMemcpy(d_y, y, Nsub * sizeof(float), cudaMemcpyHostToDevice);
+            evt.mark_begin();
+            tim::cuda::memcpy(d_x, x, Nsub, tim::cuda::host_to_device_v, stream);
+            tim::cuda::memcpy(d_y, y, Nsub, tim::cuda::host_to_device_v, stream);
+            evt.mark_end();
         }
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[", i, "]");
-
-            evt.start();
-
             // Perform SAXPY on 1M elements
-            saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
-
-            evt.stop();
-            milliseconds += evt.get_value();
+            evt.mark_begin();
+            saxpy<<<ngrid, block, 0, stream>>>(Nsub, 1.0f, d_x, d_y);
+            evt.mark_end();
         }
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[D2H]");
-            cudaMemcpy(y, d_y, Nsub * sizeof(float), cudaMemcpyDeviceToHost);
+            evt.mark_begin();
+            tim::cuda::memcpy(y, d_y, Nsub, tim::cuda::device_to_host_v);
+            evt.mark_end();
         }
+
+        tim::cuda::stream_sync(stream);
+        tim::cuda::stream_destroy(stream);
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[check]");
@@ -801,8 +855,14 @@ test_5_mt_saxpy_async()
             }
         }
 
-        data_vector[i] =
-            std::move(std::make_tuple(evt, milliseconds, maxError, sumError));
+        evt.stop();
+        nseconds += evt.get();
+        data_vector[i] = std::move(std::make_tuple(evt, nseconds, maxError, sumError));
+
+        tim::device::gpu::free(d_x);
+        tim::device::gpu::free(d_y);
+        tim::device::cpu::free(x);
+        tim::device::cpu::free(y);
     };
 
     std::vector<std::thread> threads;
@@ -812,15 +872,15 @@ test_5_mt_saxpy_async()
     for(int i = 0; i < nitr; i++)
         threads[i].join();
 
-    cuda_event evt          = std::get<0>(data_vector[0]);
-    float      milliseconds = std::get<1>(data_vector[0]);
-    float      maxError     = std::get<2>(data_vector[0]);
-    float      sumError     = std::get<3>(data_vector[0]);
+    cuda_event evt      = std::get<0>(data_vector[0]);
+    float      nseconds = std::get<1>(data_vector[0]);
+    float      maxError = std::get<2>(data_vector[0]);
+    float      sumError = std::get<3>(data_vector[0]);
 
     for(int i = 1; i < nitr; i++)
     {
         evt += std::get<0>(data_vector[i]);
-        milliseconds += std::get<1>(data_vector[i]);
+        nseconds += std::get<1>(data_vector[i]);
         maxError = std::max(maxError, std::get<2>(data_vector[i]));
         sumError += std::get<3>(data_vector[i]);
     }
@@ -832,12 +892,13 @@ test_5_mt_saxpy_async()
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -859,28 +920,32 @@ test_6_mt_saxpy_async_pinned()
     data_vector_t data_vector(nitr);
 
     auto run_thread = [&](int i) {
-        float*      x;
-        float*      y;
-        float*      d_x;
-        float*      d_y;
-        int         block        = 512;
-        int         ngrid        = (Nsub + block - 1) / block;
-        float       milliseconds = 0.0f;
-        float       maxError     = 0.0f;
-        float       sumError     = 0.0f;
-        cuda_event* evt          = new cuda_event();
+        float*              x;
+        float*              y;
+        float*              d_x;
+        float*              d_y;
+        int                 block    = 512;
+        int                 ngrid    = (Nsub + block - 1) / block;
+        float               nseconds = 0.0f;
+        float               maxError = 0.0f;
+        float               sumError = 0.0f;
+        tim::cuda::stream_t stream;
+        tim::cuda::stream_create(stream);
+        cuda_event* evt = new cuda_event(stream);
+        evt->start();
+
         TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[run_thread]");
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[malloc]");
-            cudaMallocHost(&x, Nsub * sizeof(float));
-            cudaMallocHost(&y, Nsub * sizeof(float));
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cpu_malloc]");
+            x = tim::cuda::malloc_host<float>(Nsub);
+            y = tim::cuda::malloc_host<float>(Nsub);
         }
 
         {
-            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[cudaMalloc]");
-            cudaMalloc(&d_x, Nsub * sizeof(float));
-            cudaMalloc(&d_y, Nsub * sizeof(float));
+            TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[gpu_malloc]");
+            d_x = tim::cuda::malloc_host<float>(Nsub);
+            d_y = tim::cuda::malloc_host<float>(Nsub);
         }
 
         {
@@ -894,25 +959,30 @@ test_6_mt_saxpy_async_pinned()
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[H2D]");
-            cudaMemcpy(d_x, x, Nsub * sizeof(float), cudaMemcpyHostToDevice);
-            cudaMemcpy(d_y, y, Nsub * sizeof(float), cudaMemcpyHostToDevice);
+            evt->mark_begin();
+            tim::cuda::memcpy(d_x, x, Nsub, tim::cuda::host_to_device_v, stream);
+            tim::cuda::memcpy(d_y, y, Nsub, tim::cuda::host_to_device_v, stream);
+            evt->mark_end();
         }
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[", i, "]");
-            evt->start();
 
             // Perform SAXPY on 1M elements
-            saxpy<<<ngrid, block>>>(Nsub, 1.0f, d_x, d_y);
-
-            evt->stop();
-            milliseconds += evt->get_value();
+            evt->mark_begin();
+            saxpy<<<ngrid, block, 0, stream>>>(Nsub, 1.0f, d_x, d_y);
+            evt->mark_end();
         }
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[D2H]");
-            cudaMemcpy(y, d_y, Nsub * sizeof(float), cudaMemcpyDeviceToHost);
+            evt->mark_begin();
+            tim::cuda::memcpy(y, d_y, Nsub, tim::cuda::device_to_host_v, stream);
+            evt->mark_end();
         }
+
+        tim::cuda::stream_sync(stream);
+        tim::cuda::stream_destroy(stream);
 
         {
             TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, lambda_op, "[check]");
@@ -923,8 +993,16 @@ test_6_mt_saxpy_async_pinned()
             }
         }
 
-        data_vector[i] =
-            std::move(std::make_tuple(*evt, milliseconds, maxError, sumError));
+        evt->stop();
+        nseconds += evt->get();
+
+        data_vector[i] = std::move(std::make_tuple(*evt, nseconds, maxError, sumError));
+
+        tim::cuda::free_host(x);
+        tim::cuda::free_host(y);
+        tim::cuda::free(d_x);
+        tim::cuda::free(d_y);
+        delete evt;
     };
 
     std::vector<std::thread> threads;
@@ -934,15 +1012,15 @@ test_6_mt_saxpy_async_pinned()
     for(int i = 0; i < nitr; i++)
         threads[i].join();
 
-    cuda_event evt          = std::move(std::get<0>(data_vector[0]));
-    float      milliseconds = std::get<1>(data_vector[0]);
-    float      maxError     = std::get<2>(data_vector[0]);
-    float      sumError     = std::get<3>(data_vector[0]);
+    cuda_event evt      = std::move(std::get<0>(data_vector[0]));
+    float      nseconds = std::get<1>(data_vector[0]);
+    float      maxError = std::get<2>(data_vector[0]);
+    float      sumError = std::get<3>(data_vector[0]);
 
     for(int i = 1; i < nitr; i++)
     {
         evt += std::get<0>(data_vector[i]);
-        milliseconds += std::get<1>(data_vector[i]);
+        nseconds += std::get<1>(data_vector[i]);
         maxError = std::max(maxError, std::get<2>(data_vector[i]));
         sumError += std::get<3>(data_vector[i]);
     }
@@ -954,12 +1032,13 @@ test_6_mt_saxpy_async_pinned()
         std::cout << _clock << std::endl;
         printf("Max error: %8.4e\n", maxError);
         printf("Sum error: %8.4e\n", sumError);
-        printf("Effective Bandwidth (GB/s): %f\n", N * 4 * 3 / milliseconds / 1e6);
-        printf("Kernel Runtime (sec): %16.12e\n", milliseconds / 1e6);
+        printf("Effective Bandwidth (GB/s): %f\n",
+               N * 4 * 3 / nseconds / tim::units::gigabyte);
+        printf("Kernel Runtime (sec): %16.12e\n", nseconds);
     }
 
     tim::cuda::device_sync();
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -970,7 +1049,7 @@ test_6_mt_saxpy_async_pinned()
 namespace impl
 {
 template <typename T>
-__global__ void
+GLOBAL_CALLABLE void
 KERNEL_A(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
@@ -983,7 +1062,7 @@ KERNEL_A(T* begin, int n)
 //--------------------------------------------------------------------------------------//
 
 template <typename T>
-__global__ void
+GLOBAL_CALLABLE void
 KERNEL_B(T* begin, int n)
 {
     for(int i = blockIdx.x * blockDim.x + threadIdx.x; i < n; i += blockDim.x * gridDim.x)
@@ -1097,7 +1176,7 @@ void
 test_8_cupti_subset()
 {
     print_info(__FUNCTION__);
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 
     CUDA_DRIVER_API_CALL(cuInit(0));
     std::vector<std::string> event_names{ "active_warps",   "active_cycles",
@@ -1148,7 +1227,7 @@ test_8_cupti_subset()
     std::cout << "Data values: \n\t" << array_to_string(cpu_data, ", ", 8, 10)
               << std::endl;
     printf("\n");
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//
@@ -1157,7 +1236,7 @@ void
 test_9_cupti_event()
 {
     print_info(__FUNCTION__);
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 
     CUdevice device;
     CUDA_DRIVER_API_CALL(cuInit(0));
@@ -1234,7 +1313,7 @@ test_9_cupti_event()
     CUDA_RUNTIME_API_CALL(cudaFree(data));
 
     printf("\n");
-    tim::cuda::device_reset();
+    // tim::cuda::device_reset();
 }
 
 //======================================================================================//

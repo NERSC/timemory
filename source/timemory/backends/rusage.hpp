@@ -48,6 +48,7 @@
 #    include <sys/resource.h>
 #    include <unistd.h>
 #    if defined(_MACOS)
+#        include <libproc.h>
 #        include <mach/mach.h>
 #    endif
 #elif defined(_WINDOWS)
@@ -71,13 +72,23 @@ namespace tim
 //--------------------------------------------------------------------------------------//
 
 #if defined(_UNIX)
+
 using rusage_type_t = decltype(RUSAGE_SELF);
+
 inline rusage_type_t&
 get_rusage_type()
 {
     static auto instance = RUSAGE_SELF;
     return instance;
 }
+
+inline pid_t&
+get_rusage_pid()
+{
+    static auto instance = getpid();
+    return instance;
+}
+
 #endif
 
 int64_t
@@ -108,6 +119,10 @@ int64_t
 get_num_voluntary_context_switch();
 int64_t
 get_num_priority_context_switch();
+int64_t
+get_bytes_read();
+int64_t
+get_bytes_written();
 
 //--------------------------------------------------------------------------------------//
 

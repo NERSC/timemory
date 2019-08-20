@@ -82,9 +82,11 @@ public:
     inline this_type& operator=(const this_type&) = default;
     inline this_type& operator=(this_type&&) = default;
 
-    static constexpr std::size_t size()
+    static constexpr std::size_t size() { return component_type::size(); }
+
+    static constexpr std::size_t available_size()
     {
-        return std::tuple_size<std::tuple<Types...>>::value;
+        return component_type::available_size();
     }
 
 public:
@@ -98,6 +100,8 @@ public:
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
+    inline void mark_begin() { m_temporary_object.mark_begin(); }
+    inline void mark_end() { m_temporary_object.mark_end(); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
@@ -179,7 +183,6 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
 {
     if(m_enabled)
     {
-        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -193,7 +196,6 @@ auto_tuple<Types...>::~auto_tuple()
     {
         // stop the timer
         m_temporary_object.conditional_stop();
-        m_temporary_object.pop();
 
         // report timer at exit
         if(m_report_at_exit)

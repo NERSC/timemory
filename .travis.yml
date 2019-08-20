@@ -276,8 +276,8 @@ install:
     - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
     - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
     - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-    - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations -- -VV
-    - travis_wait 20 python ./pyctest-runner.py ${ARGS} --coverage -- -VV
+    - travis_wait 25 python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV
+    - travis_wait 20 python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV
     # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
 
 script:

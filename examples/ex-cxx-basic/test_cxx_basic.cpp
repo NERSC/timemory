@@ -29,8 +29,10 @@
 
 using namespace tim::component;
 
-using real_tuple_t = tim::auto_tuple<real_clock, caliper>;
-using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
+using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
+using real_tuple_t = tim::auto_tuple<real_clock, papi_tuple_t, caliper>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, papi_tuple_t, caliper>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
 
@@ -66,7 +68,7 @@ main(int argc, char** argv)
     // create a component tuple (does not auto-start)
     comp_tuple_t main("overall timer", true);
     main.start();
-    for(auto n : { 10, 11, 12 })
+    for(auto n : { 15, 20, 25 })
     {
         // create a caliper handle to an auto_tuple_t and have it report when destroyed
         TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");

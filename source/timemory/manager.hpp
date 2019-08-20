@@ -56,6 +56,10 @@
 #include <tuple>
 #include <unordered_map>
 
+#if defined(TIMEMORY_USE_CUPTI)
+#    include <cupti.h>
+#endif
+
 //--------------------------------------------------------------------------------------//
 
 namespace tim

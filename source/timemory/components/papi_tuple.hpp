@@ -47,26 +47,15 @@ template <int... EventTypes>
 struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>,
               policy::thread_init, policy::thread_finalize>
-, public static_counted_object<papi_tuple<>>
 {
     friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
 
-    using size_type   = std::size_t;
-    using value_type  = std::array<long long, sizeof...(EventTypes)>;
-    using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_tuple<EventTypes...>, value_type, policy::thread_init,
+    using size_type  = std::size_t;
+    using value_type = std::array<long long, sizeof...(EventTypes)>;
+    using entry_type = typename value_type::value_type;
+    using base_type  = base<papi_tuple<EventTypes...>, value_type, policy::thread_init,
                            policy::thread_finalize>;
-    using this_type   = papi_tuple<EventTypes...>;
-    using event_count = static_counted_object<papi_tuple<>>;
-
-    using base_type::accum;
-    using base_type::is_running;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-    using event_count::m_count;
+    using this_type  = papi_tuple<EventTypes...>;
 
     static const size_type num_events = sizeof...(EventTypes);
     template <typename _Tp>
@@ -81,21 +70,35 @@ public:
 
     static int& event_set()
     {
-        static int _instance = PAPI_NULL;
+        static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
     static bool& enable_multiplex()
     {
-        static bool _instance = false;
+        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
         return _instance;
     }
 
     static void invoke_thread_init()
     {
+        // set overhead to zero
+        apply<void>::set_value(get_overhead_values(), 0);
         int events[] = { EventTypes... };
         tim::papi::create_event_set(&event_set());
         tim::papi::add_events(event_set(), events, num_events);
         tim::papi::start(event_set(), enable_multiplex());
+        // record the overhead
+        auto tmp1 = get_read_values();
+        tmp1      = this_type::record();
+        auto tmp2 = get_read_values();
+        tmp2      = this_type::record();
+        this_type obj;
+        obj.start();
+        obj.stop();
+        for(uint64_t i = 0; i < get_overhead_values().size(); ++i)
+            get_overhead_values()[i] = std::max(tmp1[i], tmp2[i]);
+        for(uint64_t i = 0; i < get_overhead_values().size(); ++i)
+            get_overhead_values()[i] = std::max(get_overhead_values()[i], obj.accum[i]);
     }
 
     static void invoke_thread_finalize()
@@ -105,16 +108,42 @@ public:
         tim::papi::stop(event_set(), values.data());
         tim::papi::remove_events(event_set(), events, num_events);
         tim::papi::destroy_event_set(event_set());
+        event_set() = PAPI_NULL;
     }
 
     static value_type record()
     {
-        value_type read_value;
-        apply<void>::set_value(read_value, 0);
-        if(event_count::is_master())
-            tim::papi::read(event_set(), read_value.data());
-        return read_value;
+        tim::papi::read(event_set(), get_read_values().data());
+        return get_read_values();
     }
+
+private:
+    static value_type& get_overhead_values()
+    {
+        static thread_local value_type _instance;
+        return _instance;
+    }
+
+    static value_type& get_read_values()
+    {
+        static auto _get_read_values = []() {
+            value_type values;
+            apply<void>::set_value(values, 0);
+            return values;
+        };
+        static thread_local value_type _instance = _get_read_values();
+        return _instance;
+    }
+
+public:
+    static value_type get_overhead() { return get_overhead_values(); }
+
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
 
 public:
     //==================================================================================//
@@ -142,7 +171,7 @@ public:
     void start()
     {
         set_started();
-        value = record();
+        value = std::move(record());
     }
 
     //----------------------------------------------------------------------------------//
@@ -150,11 +179,16 @@ public:
     //
     void stop()
     {
-        auto tmp = record();
-        for(size_type i = 0; i < num_events; ++i)
+        auto tmp      = std::move(record());
+        auto overhead = get_overhead_values();
+        // account for the overhead of recording (relevant for load/store)
+        for(uint64_t i = 0; i < tmp.size(); ++i)
         {
-            accum[i] += (tmp[i] - value[i]);
+            tmp[i] -= overhead[i];
+            value[i] -= overhead[i];
         }
+        for(size_type i = 0; i < num_events; ++i)
+            accum[i] += (tmp[i] - value[i]);
         value = std::move(tmp);
         set_stopped();
     }
@@ -212,7 +246,7 @@ public:
         array_t<double> _accum;
         for(size_type i = 0; i < num_events; ++i)
         {
-            _disp[i]  = compute_display(i);
+            _disp[i]  = get_display(i);
             _value[i] = value[i];
             _accum[i] = accum[i];
         }
@@ -221,17 +255,17 @@ public:
            serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
     }
 
-    entry_type compute_display(int evt_type) const
+    entry_type get_display(int evt_type) const
     {
         auto val = (is_transient) ? accum[evt_type] : value[evt_type];
         return val;
     }
 
-    string_t compute_display() const
+    string_t get_display() const
     {
-        auto val              = (is_transient) ? accum : value;
-        int  evt_types[]      = { EventTypes... };
-        auto _compute_display = [&](std::ostream& os, size_type idx) {
+        auto val          = (is_transient) ? accum : value;
+        int  evt_types[]  = { EventTypes... };
+        auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val[idx];
             auto     _evt_type  = evt_types[idx];
             string_t _label     = papi::get_event_info(_evt_type).short_descr;
@@ -253,17 +287,18 @@ public:
         std::stringstream ss;
         for(size_type i = 0; i < num_events; ++i)
         {
-            _compute_display(ss, i);
+            _get_display(ss, i);
             if(i + 1 < num_events)
                 ss << ", ";
         }
         return ss.str();
     }
 
-    std::vector<double> get() const
+    template <typename _Tp = double>
+    std::vector<_Tp> get() const
     {
-        std::vector<double> values;
-        auto&               _data = (is_transient) ? accum : value;
+        std::vector<_Tp> values;
+        auto&            _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
         return values;

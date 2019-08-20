@@ -38,238 +38,10 @@
 #pragma once
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/backends/signals.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
-
-#include <cfenv>
-#include <cmath>
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
-#include <deque>
-#include <exception>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
-#if defined(_UNIX)
-#    include <cfenv>
-#    include <cxxabi.h>
-#    include <execinfo.h>  // for StackBacktrace()
-#endif
-
-#if defined(_LINUX)
-#    include <features.h>
-#endif
-
-//======================================================================================//
-//
-//      WINDOWS SIGNALS (dummy)
-//
-//======================================================================================//
-
-#if defined(_WINDOWS) || defined(_WIN32) || defined(_WIN64)
-//   dummy definition of SIGHUP
-#    ifndef SIGHUP
-#        define SIGHUP 1
-#    endif
-//   dummy definition of SIGINT
-#    ifndef SIGINT
-#        define SIGINT 2
-#    endif
-//   dummy definition of SIGQUIT
-#    ifndef SIGQUIT
-#        define SIGQUIT 3
-#    endif
-//   dummy definition of SIGILL
-#    ifndef SIGILL
-#        define SIGILL 4
-#    endif
-//   dummy definition of SIGTRAP
-#    ifndef SIGTRAP
-#        define SIGTRAP 5
-#    endif
-//   dummy definition of SIGABRT
-#    ifndef SIGABRT
-#        define SIGABRT 6
-#    endif
-//   dummy definition of SIGEMT
-#    ifndef SIGEMT
-#        define SIGEMT 7
-#    endif
-//   dummy definition of SIGFPE
-#    ifndef SIGFPE
-#        define SIGFPE 8
-#    endif
-//   dummy definition of SIGKILL
-#    ifndef SIGKILL
-#        define SIGKILL 9
-#    endif
-//   dummy definition of SIGBUS
-#    ifndef SIGBUS
-#        define SIGBUS 10
-#    endif
-//   dummy definition of SIGSEGV
-#    ifndef SIGSEGV
-#        define SIGSEGV 11
-#    endif
-//   dummy definition of SIGSYS
-#    ifndef SIGSYS
-#        define SIGSYS 12
-#    endif
-//   dummy definition of SIGPIPE
-#    ifndef SIGPIPE
-#        define SIGPIPE 13
-#    endif
-//   dummy definition of SIGALRM
-#    ifndef SIGALRM
-#        define SIGALRM 14
-#    endif
-//   dummy definition of SIGTERM
-#    ifndef SIGTERM
-#        define SIGTERM 15
-#    endif
-//   dummy definition of SIGURG
-#    ifndef SIGURG
-#        define SIGURG 16
-#    endif
-//   dummy definition of SIGSTOP
-#    ifndef SIGSTOP
-#        define SIGSTOP 17
-#    endif
-//   dummy definition of SIGTSTP
-#    ifndef SIGTSTP
-#        define SIGTSTP 18
-#    endif
-//   dummy definition of SIGCONT
-#    ifndef SIGCONT
-#        define SIGCONT 19
-#    endif
-//   dummy definition of SIGCHLD
-#    ifndef SIGCHLD
-#        define SIGCHLD 20
-#    endif
-//   dummy definition of SIGTTIN
-#    ifndef SIGTTIN
-#        define SIGTTIN 21
-#    endif
-//   dummy definition of SIGTTOU
-#    ifndef SIGTTOU
-#        define SIGTTOU 22
-#    endif
-//   dummy definition of SIGIO
-#    ifndef SIGIO
-#        define SIGIO 23
-#    endif
-//   dummy definition of SIGXCPU
-#    ifndef SIGXCPU
-#        define SIGXCPU 24
-#    endif
-//   dummy definition of SIGXFSZ
-#    ifndef SIGXFSZ
-#        define SIGXFSZ 25
-#    endif
-//   dummy definition of SIGVTALRM
-#    ifndef SIGVTALRM
-#        define SIGVTALRM 26
-#    endif
-//   dummy definition of SIGPROF
-#    ifndef SIGPROF
-#        define SIGPROF 27
-#    endif
-//   dummy definition of SIGWINCH
-#    ifndef SIGWINCH
-#        define SIGWINCH 28
-#    endif
-//   dummy definition of SIGINFO
-#    ifndef SIGINFO
-#        define SIGINFO 29
-#    endif
-//   dummy definition of SIGUSR1
-#    ifndef SIGUSR1
-#        define SIGUSR1 30
-#    endif
-//   dummy definition of SIGUSR2
-#    ifndef SIGUSR2
-#        define SIGUSR2 31
-#    endif
-#endif  // defined(_WINDOWS)
-
-// compatible compiler
-#if(defined(__GNUC__) || defined(__clang__) || defined(_INTEL_COMPILER))
-#    if !defined(SIGNAL_COMPAT_COMPILER)
-#        define SIGNAL_COMPAT_COMPILER
-#    endif
-#endif
-
-#if _XOPEN_SOURCE >= 700 || _POSIX_C_SOURCE >= 200809L
-#    define PSIGINFO_AVAILABLE
-#endif
-
-// compatible operating system
-#if(defined(__linux__) || defined(__MACH__))
-#    if !defined(SIGNAL_COMPAT_OS)
-#        define SIGNAL_COMPAT_OS
-#    endif
-#endif
-
-#if defined(SIGNAL_COMPAT_COMPILER) && defined(SIGNAL_COMPAT_OS) &&                      \
-    !(defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||         \
-      defined(TIMEMORY_USE_GPERF_HEAP_PROFILER))
-#    if !defined(SIGNAL_AVAILABLE)
-#        define SIGNAL_AVAILABLE
-#    endif
-#endif
-
-#if defined(__linux__)
-#    include <csignal>
-#    include <features.h>
-#elif defined(__MACH__) /* MacOSX */
-#    include <signal.h>
-#endif
-
-//======================================================================================//
-//  these are not in the original POSIX.1-1990 standard so we are defining
-//  them in case the OS hasn't
-//  POSIX-1.2001
-#ifndef SIGTRAP
-#    define SIGTRAP 5
-#endif
-//  not specified in POSIX.1-2001, but nevertheless appears on most other
-//  UNIX systems, where its default action is typically to terminate the
-//  process with a core dump.
-#ifndef SIGEMT
-#    define SIGEMT 7
-#endif
-//  POSIX-1.2001
-#ifndef SIGURG
-#    define SIGURG 16
-#endif
-//  POSIX-1.2001
-#ifndef SIGXCPU
-#    define SIGXCPU 24
-#endif
-//  POSIX-1.2001
-#ifndef SIGXFSZ
-#    define SIGXFSZ 25
-#endif
-//  POSIX-1.2001
-#ifndef SIGVTALRM
-#    define SIGVTALRM 26
-#endif
-//  POSIX-1.2001
-#ifndef SIGPROF
-#    define SIGPROF 27
-#endif
-//  POSIX-1.2001
-#ifndef SIGINFO
-#    define SIGINFO 29
-#endif
 
 //======================================================================================//
 
@@ -383,7 +155,7 @@ disable_signal_detection();
 //--------------------------------------------------------------------------------------//
 
 inline void
-update_signal_detection(signal_settings::signal_set_t _signals)
+update_signal_detection(const signal_settings::signal_set_t& _signals)
 {
     disable_signal_detection();
     enable_signal_detection(_signals);
@@ -634,7 +406,7 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
         }
         else
         {
-            message << "Unknown error: " << sinfo->si_code << ".";
+            message << "Unknown error.";
         }
     }
 
@@ -690,7 +462,7 @@ enable_signal_detection(signal_settings::signal_set_t operations)
     }
     signal_settings::set_active(true);
 
-    if(get_env<int32_t>("TIMEMORY_VERBOSE", 0) > 1)
+    if(settings::verbose() > 0 || settings::debug())
         std::cout << signal_settings::str() << std::endl;
 
     return true;

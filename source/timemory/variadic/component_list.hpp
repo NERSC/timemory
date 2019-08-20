@@ -61,6 +61,9 @@ namespace tim
 template <typename... Types>
 class auto_list;
 
+template <typename _CompTuple, typename _CompList>
+class component_hybrid;
+
 //======================================================================================//
 // variadic list of components
 //
@@ -74,10 +77,13 @@ class component_list
     // manager is friend so can use above
     friend class manager;
 
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
+
 public:
     using size_type      = int64_t;
     using this_type      = component_list<Types...>;
-    using data_type      = tim::implemented_tuple<Types*...>;
+    using data_type      = std::tuple<Types*...>;
     using reference_type = std::tuple<Types...>;
     using string_hash    = std::hash<string_t>;
     using counter_type   = tim::counted_object<this_type>;
@@ -86,12 +92,33 @@ public:
     using language_t     = tim::language;
     using init_func_t    = std::function<void(this_type&)>;
 
+    // used by component hybrid
+    static constexpr bool is_component_list  = true;
+    static constexpr bool is_component_tuple = false;
+
 public:
     using auto_type = auto_list<Types...>;
-    // using op_count_t = tim::operation_tuple<operation::pointer_counter, Types...>;
+    // using op_count_t = tim::modifiers<operation::pointer_counter, Types...>;
     using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
+    explicit component_list(const string_t& key, const bool& store,
+                            const int64_t& ncount = 0, const int64_t& nhash = 0,
+                            const language_t& lang = language_t::cxx())
+    : m_store(store)
+    , m_laps(0)
+    , m_count(ncount)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
+    , m_key(key)
+    , m_lang(lang)
+    , m_identifier("")
+    {
+        apply<void>::set_value(m_data, nullptr);
+        compute_identifier(key, lang);
+        init_manager();
+        get_initializer()(*this);
+    }
+
     explicit component_list(const string_t& key, const bool& store,
                             const language_t& lang = language_t::cxx(),
                             const int64_t& ncount = 0, const int64_t& nhash = 0)
@@ -109,9 +136,10 @@ public:
         get_initializer()(*this);
     }
 
-    component_list(const string_t& key, const language_t& lang = language_t::cxx(),
-                   const int64_t& ncount = 0, const int64_t& nhash = 0,
-                   bool store = false)
+    explicit component_list(const string_t&   key,
+                            const language_t& lang = language_t::cxx(),
+                            const int64_t& ncount = 0, const int64_t& nhash = 0,
+                            bool store = true)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -187,12 +215,19 @@ public:
     // get the size
     //
     static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t available_size()
+    {
+        using implemented_tuple_t = implemented<Types...>;
+        return std::tuple_size<implemented_tuple_t>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     // function for default initialization
     static init_func_t& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static init_func_t _instance = [](this_type& al) {
+            tim::env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+        };
         return _instance;
     }
 
@@ -204,6 +239,10 @@ public:
         apply<void>::access<op_count_t>(m_data, std::ref(count));
         if(m_store && !m_is_pushed && count > 0)
         {
+            using apply_types = std::tuple<
+                operation::pointer_operator<Types, operation::reset<Types>>...>;
+            apply<void>::access<apply_types>(m_data);
+
             using insert_types = std::tuple<
                 operation::pointer_operator<Types, operation::insert_node<Types>>...>;
             // avoid pushing/popping when already pushed/popped
@@ -241,46 +280,76 @@ public:
     // start/stop functions
     void start()
     {
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
-        bool _incremented    = false;
-        auto _increment_laps = [&](bool _started) {
-            if(_started && !_incremented)
-            {
-                ++m_laps;
-                _incremented = true;
-            }
-        };
+        using prior_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::priority_start<Types>>...>;
+        using stand_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::standard_start<Types>>...>;
+
+        push();
+        ++m_laps;
         // start components
-        apply<void>::access<apply_types>(m_data, _increment_laps);
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
     }
 
     void stop()
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::stop<Types>>...>;
+        using prior_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::priority_stop<Types>>...>;
+        using stand_apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::standard_stop<Types>>...>;
         // stop components
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
         // pop them off the running stack
         pop();
     }
 
     void conditional_start()
     {
+        push();
         // start, if not already started
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        using prior_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_priority_start<Types>>...>;
+        using stand_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_standard_start<Types>>...>;
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
     }
 
     void conditional_stop()
     {
         // stop, if not already stopped
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::conditional_stop<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        using prior_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_priority_stop<Types>>...>;
+        using stand_apply_types = std::tuple<operation::pointer_operator<
+            Types, operation::conditional_standard_stop<Types>>...>;
+        apply<void>::access<prior_apply_types>(m_data);
+        apply<void>::access<stand_apply_types>(m_data);
         // pop them off the running stack
         pop();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_begin()
+    {
+        using apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_end()
+    {
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
@@ -435,11 +504,15 @@ public:
         }
         if(ss_data.str().length() > 0)
         {
-            obj.update_identifier();
-            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
-                      << " : ";
-            os << ss_prefix.str() << ss_data.str();
-            if(obj.laps() > 0)
+            if(obj.m_print_prefix)
+            {
+                obj.update_identifier();
+                ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                          << " : ";
+                os << ss_prefix.str();
+            }
+            os << ss_data.str();
+            if(obj.laps() > 0 && obj.m_print_laps)
                 os << " [laps: " << obj.m_laps << "]";
         }
         return os;
@@ -541,14 +614,81 @@ public:
               tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
+        if(!trait::is_available<_Tp>::value)
+        {
+            static std::atomic<int> _count;
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf("[component_list::init]> skipping unavailable type '%s'...\n",
+                       _id.c_str());
+            }
+            return;
+        }
+
         auto&& _obj = get<_Tp>();
-        _obj        = new _Tp(std::forward<_Args>(_args)...);
-        compute_identifier_extra(_obj);
+        if(!_obj)
+        {
+            if(settings::debug())
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf("[component_list::init]> initializing type '%s'...\n",
+                       _id.c_str());
+            }
+            _obj = new _Tp(std::forward<_Args>(_args)...);
+            compute_identifier_extra(_obj);
+        }
+        else
+        {
+            static std::atomic<int> _count;
+            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+            {
+                std::string _id = tim::demangle(typeid(_Tp).name());
+                printf(
+                    "[component_list::init]> skipping re-initialization of type"
+                    " \"%s\"...\n",
+                    _id.c_str());
+            }
+        }
     }
 
     template <typename _Tp, typename... _Args,
               tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void init(_Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  variadic initialization
+    //
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void initialize()
+    {
+        this->init<_Tp>();
+        this->initialize<_Tail...>();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
+    void type_apply(_Func&& _func, _Args&&... _args)
+    {
+        auto&& _obj = get<_Tp>();
+        ((*_obj).*(_func))(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
+    void type_apply(_Func&&, _Args&&...)
     {
     }
 
@@ -559,14 +699,16 @@ protected:
 
 protected:
     // objects
-    bool              m_store      = false;
-    bool              m_is_pushed  = false;
-    int64_t           m_laps       = 0;
-    int64_t           m_count      = 0;
-    int64_t           m_hash       = 0;
-    string_t          m_key        = "";
-    language_t        m_lang       = language_t::cxx();
-    string_t          m_identifier = "";
+    bool              m_store        = false;
+    bool              m_is_pushed    = false;
+    bool              m_print_prefix = true;
+    bool              m_print_laps   = true;
+    int64_t           m_laps         = 0;
+    int64_t           m_count        = 0;
+    int64_t           m_hash         = 0;
+    string_t          m_key          = "";
+    language_t        m_lang         = language_t::cxx();
+    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:
@@ -608,7 +750,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
-        compute_identifier_extra<data_type>(key, lang);
+        compute_identifier_extra(key, lang);
     }
 
     void update_identifier() const
@@ -641,27 +783,14 @@ protected:
         return _instance.load();
     }
 
-    template <
-        typename _Tuple = data_type,
-        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
-    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    void compute_identifier_extra(const string_t& key, const language_t&)
     {
-        constexpr auto idx = index_of<component::caliper, _Tuple>::value;
-        auto*          obj = std::get<idx>(m_data);
-        if(obj)
-            obj->prefix = key;
-        consume_parameters(lang);
+        using apply_types = std::tuple<
+            operation::pointer_operator<Types, operation::set_prefix<Types>>...>;
+        apply<void>::access<apply_types>(m_data, key);
     }
 
-    template <typename _Tuple       = data_type,
-              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
-                               int> = 0>
-    void compute_identifier_extra(const string_t&, const language_t&)
-    {
-    }
-
-    template <typename _Tp,
-              tim::enable_if_t<(std::is_same<_Tp, component::caliper>::value), char> = 0>
+    template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
     void compute_identifier_extra(_Tp* obj)
     {
         if(obj)
@@ -669,7 +798,7 @@ protected:
     }
 
     template <typename _Tp,
-              tim::enable_if_t<(!std::is_same<_Tp, component::caliper>::value), char> = 0>
+              enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
     void compute_identifier_extra(_Tp*)
     {
     }

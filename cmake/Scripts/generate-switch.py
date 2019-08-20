@@ -6,7 +6,7 @@ import argparse
 from timemory_types import components, mangled_enums
 
 
-def generate_case_label(component, indent_tabs=3, spaces=4, reference=False, template=False):
+def generate_case_label(component, indent_tabs=3, spaces=4, reference=True, template=True):
     """
     This function generates a case label for C++
     """
@@ -20,7 +20,7 @@ def generate_case_label(component, indent_tabs=3, spaces=4, reference=False, tem
     init_str = "." if reference else "->"
     if template:
         init_str += "template "
-    return "{2}case {1}: obj{3}init<{0}>(); break;".format(
+    return "{2}case {1}: obj{3}init<{0}>(); break;\n".format(
         component, enumeration.upper(), ftab, init_str)
 
 
@@ -46,10 +46,11 @@ if __name__ == "__main__":
                         help="Replace area between '{}' and '{}' in the output file".format(rbegin, rend))
     parser.add_argument(
         "-c", "--config", help="alternative to -i/--input when replacing", type=str, default=None)
-    parser.add_argument("-R", "--reference", help="Object operating on is reference ('.') instead of ('->')",
+    parser.add_argument("-P", "--pointer", help="Object operating on is pointer ('->') instead of reference ('.')",
                         action='store_true')
-    parser.add_argument("-T", "--template", help="Initialization is template (e.g. .template init<...>)",
+    parser.add_argument("-S", "--specialized", help="Initialization is specialized (not a template)",
                         action='store_true')
+    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
 
     args = parser.parse_args()
 
@@ -80,12 +81,13 @@ if __name__ == "__main__":
                 subdata = f.read()
 
     components.sort()
-    print("timemory components: [{}]\n".format(", ".join(components)))
+    if args.verbose > 0:
+        print("timemory components: [{}]\n".format(", ".join(components)))
     outdata = ""
     for component in components:
-        outdata += "{}\n".format(generate_case_label(component,
-                                                     args.tabs_per_indent, args.spaces_per_tab,
-                                                     args.reference, args.template))
+        outdata += "{}".format(generate_case_label(component,
+                                                   args.tabs_per_indent, args.spaces_per_tab,
+                                                   not args.pointer, not args.specialized))
 
     if subdata is not None:
         try:
@@ -93,9 +95,12 @@ if __name__ == "__main__":
             send = subdata.find(rend)
             substr = subdata[sbegin:send]
             outdata += " " * args.spaces_per_tab * (args.tabs_per_indent + 1)
-            # print("sbegin = {}\nsend = {}\nsubstring:\n{}\n\noutdata:\n{}\n".format(sbegin, send, substr, outdata))
+            if args.verbose > 1:
+                print("sbegin = {}\nsend = {}\nsubstring:\n{}\n\noutdata:\n{}\n".format(
+                      sbegin, send, substr, outdata))
             outdata = subdata.replace(substr, outdata)
-            # print("converted:\n{}\n".format(subdata))
+            if args.verbose > 1:
+                print("converted:\n{}\n".format(subdata))
         except Exception as e:
             print(e)
             raise

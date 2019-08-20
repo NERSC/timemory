@@ -227,7 +227,7 @@ void
 customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
 {
     // overload the finalization function that runs ERT calculations
-    roofline_t::get_finalize_function() = [=]() {
+    roofline_t::get_finalizer() = [=]() {
         using _Tp = float_type;
         // these are the kernel functions we want to calculate the peaks with
         auto store_func = [](_Tp& a, const _Tp& b) { a = b; };

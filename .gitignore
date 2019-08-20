@@ -54,3 +54,6 @@ timing_report*
 /*.jpg
 /*.gif
 /run*.sh
+
+# stashed source tree
+/.stash

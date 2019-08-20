@@ -31,8 +31,11 @@
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
+#include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/utility/macros.hpp"
 
+#include <limits>
 #include <map>
 #include <numeric>
 #include <stdexcept>
@@ -44,6 +47,17 @@ namespace tim
 {
 namespace details
 {
+template <typename _Tp>
+bool
+is_finite(const _Tp& val)
+{
+#if defined(_WINDOWS)
+    return (val == val && std::abs<_Tp>(val) != std::numeric_limits<_Tp>::infinity());
+#else
+    return std::isfinite(val);
+#endif
+}
+
 inline std::atomic<int>&
 storage_once_flag()
 {
@@ -56,6 +70,20 @@ void
 reduce_merge(_Pred lhs, _Pred rhs)
 {
     *lhs += *rhs;
+}
+
+template <typename _Tp>
+struct combine_plus
+{
+    combine_plus(_Tp& lhs, const _Tp& rhs) { lhs += rhs; }
+};
+
+template <typename... _Types>
+void
+combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
+{
+    using apply_t = std::tuple<combine_plus<_Types>...>;
+    apply<void>::access2<apply_t>(lhs, rhs);
 }
 
 template <typename _Tp, typename... _ExtraArgs,
@@ -76,6 +104,14 @@ combine(_Tp& lhs, const _Tp& rhs)
     lhs += rhs;
 }
 
+template <typename... _Types>
+std::tuple<_Types...>
+compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
+{
+    std::tuple<_Types...> _one;
+    return _one;
+}
+
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container, typename _Ret = _Tp>
 _Container<_Ret>
@@ -85,7 +121,10 @@ compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
     auto             len = std::min(lhs.size(), rhs.size());
     _Container<_Ret> perc(len, 0.0);
     for(decltype(len) i = 0; i < len; ++i)
-        perc[i] = (1.0 - (lhs[i] / rhs[i])) * 100.0;
+    {
+        if(rhs[i] > 0)
+            perc[i] = (1.0 - (lhs[i] / rhs[i])) * 100.0;
+    }
     return perc;
 }
 
@@ -94,7 +133,7 @@ template <typename _Tp, typename _Ret = _Tp,
 _Ret
 compute_percentage(_Tp& lhs, const _Tp& rhs)
 {
-    return (1.0 - (lhs / rhs)) * 100.0;
+    return (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
 }
 
 template <typename _Tp, typename... _ExtraArgs,
@@ -105,7 +144,7 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     // negative values appear when multiple threads are involved.
     // This needs to be addressed
     for(size_t i = 0; i < obj.size(); ++i)
-        if(obj[i] < 0.0 || !std::isfinite(obj[i]))
+        if(obj[i] < 0.0 || !is_finite(obj[i]))
             return;
 
     std::stringstream ss;
@@ -120,6 +159,12 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     os << ss.str();
 }
 
+template <typename... _Types>
+void
+print_percentage(std::ostream&, const std::tuple<_Types...>&)
+{
+}
+
 template <typename _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
 void
@@ -127,7 +172,7 @@ print_percentage(std::ostream& os, const _Tp& obj)
 {
     // negative values appear when multiple threads are involved.
     // This needs to be addressed
-    if(obj < 0.0 || !std::isfinite(obj))
+    if(obj < 0.0 || !is_finite(obj))
         return;
 
     std::stringstream ss;
@@ -196,7 +241,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::internal_print(std::true_type)
+void tim::storage<ObjectType>::external_print(std::false_type)
 {
     auto num_instances = instance_count().load();
 
@@ -303,6 +348,7 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
         m_data.current()   = m_data.head();
         int64_t _width     = ObjectType::get_width();
         int64_t _max_depth = 0;
+        int64_t _max_laps  = 0;
         // find the max width
         for(const auto& itr : m_data.graph())
         {
@@ -311,7 +357,11 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
             _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
+            _max_laps    = std::max<int64_t>(_max_laps, itr.obj().laps);
         }
+        int64_t              _width_laps  = std::log10(_max_laps) + 1;
+        int64_t              _width_depth = std::log10(_max_depth) + 1;
+        std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
 
         // return type of get() function
         using get_return_type = decltype(std::declval<const ObjectType>().get());
@@ -352,7 +402,7 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
                     ++eitr;
                 }
                 // if there were exclusive values encountered
-                if(nexclusive > 0)
+                if(nexclusive > 0 && trait::is_available<ObjectType>::value)
                 {
                     tim::details::print_percentage(
                         _pss, tim::details::compute_percentage(exclusive_values,
@@ -365,19 +415,20 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
             auto _laps   = _obj.laps;
             auto _depth  = itr.depth();
 
-            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _width, true,
-                                         _pss.str());
+            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _widths,
+                                         true, _pss.str());
             // operation::print<ObjectType>(_obj, _mss, false);
         }
 
-        if(settings::file_output() && _oss.str().length() > 0)
+        if((settings::file_output() || trait::requires_json<ObjectType>::value) &&
+           _oss.str().length() > 0)
         {
             printf("\n");
             auto label = ObjectType::label();
             //--------------------------------------------------------------------------//
             // output to text
             //
-            if(settings::text_output())
+            if(settings::text_output() && settings::file_output())
             {
                 auto fname = tim::settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
@@ -403,11 +454,11 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
             //--------------------------------------------------------------------------//
             // output to json
             //
-            if(settings::json_output())
+            if(settings::json_output() || trait::requires_json<ObjectType>::value)
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
                 auto jname = tim::settings::compose_output_filename(label, ".json");
-                printf("[%s]> Outputting '%s'...", ObjectType::label().c_str(),
+                printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
                        jname.c_str());
                 serialize_storage(jname, *this, num_instances);
                 printf("Done\n");
@@ -435,7 +486,7 @@ void tim::storage<ObjectType>::internal_print(std::true_type)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::internal_print(std::false_type)
+void tim::storage<ObjectType>::external_print(std::true_type)
 {
     if(!singleton_t::is_master(this))
     {

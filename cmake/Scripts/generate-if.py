@@ -6,7 +6,7 @@ import argparse
 from timemory_types import components, mangled_enums, mangled_strings
 
 
-def generate_if_statement(component, idx, indent_tabs=2, spaces=4, vec_var="comp_vec"):
+def generate_if_statement(component, idx, indent_tabs=2, spaces=4, vec_var="vec"):
     """
     This function generates a case label for C++
     """
@@ -34,12 +34,12 @@ if __name__ == "__main__":
     rend = "// GENERATE_SWITCH_REPLACE_END"
 
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "-a", "--additional", help="Additional components to produce case labels for", nargs='*')
-    parser.add_argument(
-        "-i", "--input", help="input file for replacing", type=str, default=None)
-    parser.add_argument(
-        "-o", "--output", help="output components from file", type=str, default=None)
+    parser.add_argument("-a", "--additional",
+                        help="Additional components to produce case labels for", nargs='*')
+    parser.add_argument("-i", "--input", help="input file for replacing",
+                        type=str, default=None)
+    parser.add_argument("-o", "--output", help="output components from file",
+                        type=str, default=None)
     parser.add_argument("-e", "--exclude",
                         help="exclude components", action='store_true')
     parser.add_argument("-s", "--spaces-per-tab",
@@ -48,12 +48,13 @@ if __name__ == "__main__":
                         help="Number of tabs to indent", type=int, default=2)
     parser.add_argument("-r", "--replace", action='store_true',
                         help="Replace area between '{}' and '{}' in the output file".format(rbegin, rend))
-    parser.add_argument(
-        "-c", "--config", help="alternative to -i/--input when replacing", type=str, default=None)
-    parser.add_argument("-V", "--vec-var", help="Name of the enumeration vector variable",
-                        type=str, default="comp_vec")
+    parser.add_argument("-c", "--config", help="alternative to -i/--input when replacing",
+                        type=str, default=None)
+    parser.add_argument("-v", "--vec-var", help="Name of the enumeration vector variable",
+                        type=str, default="vec")
     parser.add_argument("-I", "--iter-var", help="Name of the iteration variable",
                         type=str, default="itr")
+    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
 
     args = parser.parse_args()
 
@@ -82,7 +83,8 @@ if __name__ == "__main__":
                 subdata = f.read()
 
     components.sort()
-    print("timemory components: [{}]\n".format(", ".join(components)))
+    if args.verbose > 0:
+        print("timemory components: [{}]\n".format(", ".join(components)))
 
     component_options = []
     for component in components:
@@ -99,7 +101,7 @@ if __name__ == "__main__":
                                                        args.vec_var))
         idx += 1
     tab = " " * args.spaces_per_tab * args.tabs_per_indent
-    outdata += '{}else {} fprintf(stderr, "Unknown component label: %s{}", {}.c_str()); {}\n'.format(
+    outdata += '{}else {} fprintf(stderr, "Unknown component label: %s{}", {}.c_str()); {}'.format(
         tab, "{", ". Valid choices are: {}\\n".format(component_options), args.iter_var, "}")
 
     if subdata is not None:
@@ -108,9 +110,12 @@ if __name__ == "__main__":
             send = subdata.find(rend)
             substr = subdata[sbegin:send]
             outdata += " " * args.spaces_per_tab * (args.tabs_per_indent + 1)
-            # print("sbegin = {}\nsend = {}\nsubstring:\n{}\n\noutdata:\n{}\n".format(sbegin, send, substr, outdata))
+            if args.verbose > 1:
+                print("sbegin = {}\nsend = {}\nsubstring:\n{}\n\noutdata:\n{}\n".format(
+                      sbegin, send, substr, outdata))
             outdata = subdata.replace(substr, outdata)
-            # print("converted:\n{}\n".format(subdata))
+            if args.verbose > 1:
+                print("converted:\n{}\n".format(subdata))
         except Exception as e:
             print(e)
             raise

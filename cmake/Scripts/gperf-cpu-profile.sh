@@ -9,7 +9,7 @@ mkdir -p ${DIR}
 : ${GPERF_PROFILE:=""}
 : ${GPERF_PROFILE_BASE:=${DIR}/gperf}
 : ${MALLOCSTATS:=1}
-: ${CPUPROFILE_FREQUENCY:=500}
+: ${CPUPROFILE_FREQUENCY:=250}
 : ${CPUPROFILE_REALTIME:=1}
 
 # rendering settings

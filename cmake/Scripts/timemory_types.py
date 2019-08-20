@@ -35,6 +35,11 @@ components = [
     "cpu_roofline_sp_flops",
     "cpu_roofline_dp_flops",
     "caliper",
+    "trip_count",
+    "read_bytes",
+    "written_bytes",
+    "cupti_event",
+    "nvtx_marker",
 ]
 
 #
@@ -58,11 +63,71 @@ mangled_strings = {
     "papi_array_t": ["papi_array", "papi"],
     "cpu_roofline_sp_flops": ["cpu_roofline_sp", "cpu_roofline_single"],
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
-    "caliper": ["cali"]
+    "caliper": ["cali"],
+    "written_bytes": ["write_bytes"],
+    "cupti_event": ["cupti"],
+    "nvtx_marker": ["nvtx"],
 }
 
+recommended_types = {
+    "tuple": ["real_clock", "system_clock", "user_clock", "cpu_util",
+              "current_rss", "peak_rss", "read_bytes", "written_bytes",
+              "num_minor_page_faults", "num_major_page_faults",
+              "voluntary_context_switch", "priority_context_switch"],
+    "list": ["caliper", "papi_array_t", "cuda_event", "cupti_event"],
+}
 
-conditional_types = {
-    "papi": ["papi_array_t", "cpu_roofline_sp_flops", "cpu_roofline_dp_flops"],
-    "cuda": ["cuda_event"],
+traits = {
+    "is_timing_category": ("std::true_type",
+    [
+        "real_clock",
+        "system_clock",
+        "user_clock",
+        "cpu_clock",
+        "monotonic_clock",
+        "monotonic_raw_clock",
+        "thread_cpu_clock",
+        "process_cpu_clock",
+        "cuda_event",
+    ]),
+    "is_memory_category": ("std::true_type",
+    [
+        "peak_rss",
+        "current_rss",
+        "stack_rss",
+        "data_rss",
+        "num_swap",
+        "num_io_in",
+        "num_io_out",
+        "num_minor_page_faults",
+        "num_major_page_faults",
+        "num_msg_sent",
+        "num_msg_recv",
+        "num_signals",
+        "voluntary_context_switch",
+        "priority_context_switch",
+        "read_bytes",
+        "written_bytes",
+    ]),
+    "uses_timing_units": ("std::true_type",
+    [
+        "real_clock",
+        "system_clock",
+        "user_clock",
+        "cpu_clock",
+        "monotonic_clock",
+        "monotonic_raw_clock",
+        "thread_cpu_clock",
+        "process_cpu_clock",
+        "cuda_event",
+    ]),
+    "uses_memory_units": ("std::true_type",
+    [
+        "peak_rss",
+        "current_rss",
+        "stack_rss",
+        "data_rss",
+        "read_bytes",
+        "written_bytes",
+    ]),
 }

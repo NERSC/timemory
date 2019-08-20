@@ -33,11 +33,11 @@ using namespace tim::component;
 static int64_t nlaps = 0;
 
 // using auto_tuple_t = tim::auto_tuple<real_clock>;
+using namespace tim::component;
 
 using auto_tuple_t =
-    tim::auto_tuple<tim::component::real_clock, tim::component::system_clock,
-                    tim::component::user_clock>;
-using timer_tuple_t = typename auto_tuple_t::component_type;
+    tim::auto_tuple<real_clock, system_clock, user_clock, trip_count, caliper>;
+using timer_tuple_t = typename tim::auto_tuple<real_clock>::component_type;
 
 using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
@@ -70,8 +70,8 @@ fibonacci(int64_t n, int64_t cutoff)
     {
         nlaps += auto_tuple_t::size();
         // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
-        TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
-        // TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, __FUNCTION__);
+        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
+        TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n : (fibonacci(n - 1, cutoff) + fibonacci(n - 2, cutoff));
     }
     return fibonacci(n);
@@ -101,13 +101,12 @@ int
 main(int argc, char** argv)
 {
     tim::settings::timing_scientific() = true;
-    tim::settings::cout_output()       = false;
-    tim::timemory_init(argc, argv);
-    tim::settings::cout_output() = false;
 #if !defined(TIMEMORY_USE_GPERF)
     // heap-profiler will take a long timer if enabled
     tim::settings::json_output() = true;
 #endif
+    tim::timemory_init(argc, argv);
+    tim::settings::cout_output() = false;
     tim::print_env();
 
     // default calc: fibonacci(43)
@@ -158,7 +157,8 @@ main(int argc, char** argv)
               << std::endl;
 
     int64_t rc_size = tim::storage<real_clock>::instance()->size();
-    int64_t ex_size = (nlaps / auto_tuple_t::size()) + 3;
+    // int64_t ex_size = (nlaps / auto_tuple_t::size()) + 3;
+    int64_t ex_size = nfib - cutoff + 3;
     printf("Expected size: %li, actual size: %li\n", (long) ex_size, (long) rc_size);
     return (rc_size == ex_size) ? EXIT_SUCCESS : EXIT_FAILURE;
 }

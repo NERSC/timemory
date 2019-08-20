@@ -95,8 +95,8 @@ struct custom_print
 template <typename... Types>
 class custom_component_tuple : public component_tuple<Types...>
 {
-    using apply_stop  = operation_tuple<operation::conditional_stop, Types...>;
-    using apply_print = operation_tuple<custom_print, Types...>;
+    using apply_stop_t  = modifiers<operation::conditional_stop, Types...>;
+    using apply_print_t = modifiers<custom_print, Types...>;
 
 public:
     custom_component_tuple(const string_t& key, const language& lang)
@@ -114,8 +114,8 @@ public:
         auto&&            ident = obj.m_identifier;
         auto&&            width = obj.output_width();
 
-        apply<void>::access<apply_stop>(data);
-        apply<void>::access_with_indices<apply_print>(data, std::ref(ssd), false);
+        apply<void>::access<apply_stop_t>(data);
+        apply<void>::access_with_indices<apply_print_t>(data, std::ref(ssd), false);
 
         ssp << std::setw(width) << std::left << ident << " : ";
         os << ssp.str() << ssd.str();
@@ -247,7 +247,8 @@ parent_process(pid_t pid)
         papi_array_t::get_label() = "";
         _oss << "\n"
              << tim::language(command().c_str())
-             << " hardware counters : " << (*get_papi_array()) << std::flush;
+             << " hardware counters : " << (*get_papi_array()) << "\n"
+             << std::flush;
         delete get_papi_array();
         get_papi_array() = nullptr;
     }
@@ -441,7 +442,7 @@ main(int argc, char** argv)
     if(papi_enabled())
     {
         tim::papi::init();
-        papi_array_t::get_events_func() = [&]() {
+        papi_array_t::get_initializer() = [&]() {
             auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
             vector_t<string_t> events_str_list = tim::delimit(events_str);
             vector_t<int>      events_list;

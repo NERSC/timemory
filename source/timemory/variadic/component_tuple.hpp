@@ -61,6 +61,9 @@ namespace tim
 template <typename... Types>
 class auto_tuple;
 
+template <typename _CompTuple, typename _CompList>
+class component_hybrid;
+
 //======================================================================================//
 // variadic list of components
 //
@@ -73,29 +76,46 @@ class component_tuple
     // manager is friend so can use above
     friend class manager;
 
-public:
-    using size_type   = int64_t;
-    using this_type   = component_tuple<Types...>;
-    using data_type   = tim::implemented_tuple<Types...>;
-    using string_hash = std::hash<string_t>;
-    using language_t  = tim::language;
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
 
 public:
-    // operation types
-    using op_insert_node_t = tim::operation_tuple<operation::insert_node, Types...>;
-    using op_pop_node_t    = tim::operation_tuple<operation::pop_node, Types...>;
-    using op_measure_t     = tim::operation_tuple<operation::measure, Types...>;
-    using op_start_t       = tim::operation_tuple<operation::start, Types...>;
-    using op_stop_t        = tim::operation_tuple<operation::stop, Types...>;
-    using op_cond_start_t  = tim::operation_tuple<operation::conditional_start, Types...>;
-    using op_cond_stop_t   = tim::operation_tuple<operation::conditional_stop, Types...>;
-    using op_record_t      = tim::operation_tuple<operation::record, Types...>;
-    using op_reset_t       = tim::operation_tuple<operation::reset, Types...>;
-    using op_plus_t        = tim::operation_tuple<operation::plus, Types...>;
-    using op_minus_t       = tim::operation_tuple<operation::minus, Types...>;
-    using op_multiply_t    = tim::operation_tuple<operation::multiply, Types...>;
-    using op_divide_t      = tim::operation_tuple<operation::divide, Types...>;
-    using op_print_t       = tim::operation_tuple<operation::print, Types...>;
+    using size_type   = int64_t;
+    using language_t  = tim::language;
+    using string_hash = std::hash<string_t>;
+    using this_type   = component_tuple<Types...>;
+    using data_type   = implemented<Types...>;
+
+    // used by component hybrid
+    static constexpr bool is_component_list  = false;
+    static constexpr bool is_component_tuple = true;
+
+public:
+    // modifier types
+    using insert_node_t      = modifiers<operation::insert_node, Types...>;
+    using pop_node_t         = modifiers<operation::pop_node, Types...>;
+    using measure_t          = modifiers<operation::measure, Types...>;
+    using record_t           = modifiers<operation::record, Types...>;
+    using reset_t            = modifiers<operation::reset, Types...>;
+    using plus_t             = modifiers<operation::plus, Types...>;
+    using minus_t            = modifiers<operation::minus, Types...>;
+    using multiply_t         = modifiers<operation::multiply, Types...>;
+    using divide_t           = modifiers<operation::divide, Types...>;
+    using print_t            = modifiers<operation::print, Types...>;
+    using start_t            = modifiers<operation::start, Types...>;
+    using stop_t             = modifiers<operation::stop, Types...>;
+    using cond_start_t       = modifiers<operation::conditional_start, Types...>;
+    using cond_stop_t        = modifiers<operation::conditional_stop, Types...>;
+    using prior_start_t      = modifiers<operation::priority_start, Types...>;
+    using prior_stop_t       = modifiers<operation::priority_stop, Types...>;
+    using prior_cond_start_t = modifiers<operation::conditional_priority_start, Types...>;
+    using prior_cond_stop_t  = modifiers<operation::conditional_priority_stop, Types...>;
+    using stand_start_t      = modifiers<operation::standard_start, Types...>;
+    using stand_stop_t       = modifiers<operation::standard_stop, Types...>;
+    using stand_cond_start_t = modifiers<operation::conditional_standard_start, Types...>;
+    using stand_cond_stop_t  = modifiers<operation::conditional_standard_stop, Types...>;
+    using mark_begin_t       = modifiers<operation::mark_begin, Types...>;
+    using mark_end_t         = modifiers<operation::mark_end, Types...>;
 
 public:
     using auto_type = auto_tuple<Types...>;
@@ -115,7 +135,6 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
     explicit component_tuple(const string_t& key, const bool& store,
@@ -132,12 +151,12 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
-    component_tuple(const string_t& key, const language_t& lang = language_t::cxx(),
-                    const int64_t& ncount = 0, const int64_t& nhash = 0,
-                    bool store = false)
+    explicit component_tuple(const string_t&   key,
+                             const language_t& lang = language_t::cxx(),
+                             const int64_t& ncount = 0, const int64_t& nhash = 0,
+                             bool store = true)
     : m_store(store)
     , m_laps(0)
     , m_count(ncount)
@@ -149,7 +168,6 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        push();
     }
 
     ~component_tuple() { pop(); }
@@ -176,6 +194,10 @@ public:
     // get the size
     //
     static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t available_size()
+    {
+        return std::tuple_size<data_type>::value;
+    }
 
     //----------------------------------------------------------------------------------//
     // insert into graph
@@ -183,10 +205,11 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
+            apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<op_insert_node_t>(m_data, m_identifier, m_hash);
+            apply<void>::access<insert_node_t>(m_data, m_identifier, m_hash);
         }
     }
 
@@ -197,7 +220,7 @@ public:
         if(m_store && m_is_pushed)
         {
             // set the current node to the parent node
-            apply<void>::access<op_pop_node_t>(m_data);
+            apply<void>::access<pop_node_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = false;
         }
@@ -205,39 +228,61 @@ public:
 
     //----------------------------------------------------------------------------------//
     // measure functions
-    void measure() { apply<void>::access<op_measure_t>(m_data); }
+    void measure() { apply<void>::access<measure_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
+        push();
         // increment laps
         ++m_laps;
         // start components
-        apply<void>::access<op_start_t>(m_data);
+        apply<void>::access<prior_start_t>(m_data);
+        apply<void>::access<stand_start_t>(m_data);
+        // apply<void>::access<start_t>(m_data);
     }
 
     void stop()
     {
         // stop components
-        apply<void>::access<op_stop_t>(m_data);
+        apply<void>::access<prior_stop_t>(m_data);
+        apply<void>::access<stand_stop_t>(m_data);
+        // apply<void>::access<stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
 
     void conditional_start()
     {
+        push();
         // start, if not already started
-        apply<void>::access<op_cond_start_t>(m_data);
+        apply<void>::access<prior_cond_start_t>(m_data);
+        apply<void>::access<stand_cond_start_t>(m_data);
+        // apply<void>::access<cond_start_t>(m_data);
     }
 
     void conditional_stop()
     {
         // stop, if not already stopped
-        apply<void>::access<op_cond_stop_t>(m_data);
+        apply<void>::access<prior_cond_stop_t>(m_data);
+        apply<void>::access<stand_cond_stop_t>(m_data);
+        // apply<void>::access<cond_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_begin() { apply<void>::access<mark_begin_t>(m_data); }
+
+    //----------------------------------------------------------------------------------//
+    // mark a beginning position in the execution (typically used by asynchronous
+    // structures)
+    //
+    void mark_end() { apply<void>::access<mark_end_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
     // recording
@@ -245,14 +290,14 @@ public:
     this_type& record()
     {
         ++m_laps;
-        apply<void>::access<op_record_t>(m_data);
+        apply<void>::access<record_t>(m_data);
         return *this;
     }
 
     //----------------------------------------------------------------------------------//
     void reset()
     {
-        apply<void>::access<op_reset_t>(m_data);
+        apply<void>::access<reset_t>(m_data);
         m_laps = 0;
     }
 
@@ -261,28 +306,28 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        apply<void>::access2<op_minus_t>(m_data, rhs.m_data);
+        apply<void>::access2<minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        apply<void>::access2<op_minus_t>(m_data, rhs.m_data);
+        apply<void>::access2<minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        apply<void>::access2<op_plus_t>(m_data, rhs.m_data);
+        apply<void>::access2<plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        apply<void>::access2<op_plus_t>(m_data, rhs.m_data);
+        apply<void>::access2<plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
@@ -293,28 +338,28 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        apply<void>::access<op_minus_t>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<minus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        apply<void>::access<op_plus_t>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<plus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        apply<void>::access<op_multiply_t>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<multiply_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        apply<void>::access<op_divide_t>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<divide_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
@@ -350,16 +395,24 @@ public:
     //----------------------------------------------------------------------------------//
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        if(available_size() == 0)
+            return os;
         // stop, if not already stopped
-        apply<void>::access<op_cond_stop_t>(obj.m_data);
+        apply<void>::access<prior_cond_stop_t>(obj.m_data);
+        apply<void>::access<stand_cond_stop_t>(obj.m_data);
+        // apply<void>::access<cond_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
-        apply<void>::access_with_indices<op_print_t>(obj.m_data, std::ref(ss_data),
-                                                     false);
-        obj.update_identifier();
-        ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier << " : ";
-        os << ss_prefix.str() << ss_data.str();
-        if(obj.m_laps > 0)
+        apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
+        if(obj.m_print_prefix)
+        {
+            obj.update_identifier();
+            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                      << " : ";
+            os << ss_prefix.str();
+        }
+        os << ss_data.str();
+        if(obj.m_laps > 0 && obj.m_print_laps)
             os << " [laps: " << obj.m_laps << "]";
         return os;
     }
@@ -440,6 +493,21 @@ public:
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
+    //----------------------------------------------------------------------------------//
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, data_type>::value == true), int> = 0>
+    void type_apply(_Func&& _func, _Args&&... _args)
+    {
+        auto&& _obj = get<_Tp>();
+        ((_obj).*(_func))(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, data_type>::value == false), int> = 0>
+    void type_apply(_Func&&, _Args&&...)
+    {
+    }
+
 protected:
     // protected member functions
     data_type&       get_data() { return m_data; }
@@ -447,14 +515,16 @@ protected:
 
 protected:
     // objects
-    bool              m_store      = false;
-    bool              m_is_pushed  = false;
-    int64_t           m_laps       = 0;
-    int64_t           m_count      = 0;
-    int64_t           m_hash       = 0;
-    const language_t  m_lang       = language_t::cxx();
-    string_t          m_key        = "";
-    string_t          m_identifier = "";
+    bool              m_store        = false;
+    bool              m_is_pushed    = false;
+    bool              m_print_prefix = true;
+    bool              m_print_laps   = true;
+    int64_t           m_laps         = 0;
+    int64_t           m_count        = 0;
+    int64_t           m_hash         = 0;
+    const language_t  m_lang         = language_t::cxx();
+    string_t          m_key          = "";
+    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:
@@ -496,7 +566,7 @@ protected:
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
-        compute_identifier_extra<data_type>(key, lang);
+        compute_identifier_extra(key, lang);
     }
 
     void update_identifier() const
@@ -529,21 +599,10 @@ protected:
         return _instance.load();
     }
 
-    template <
-        typename _Tuple = data_type,
-        tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == true), int> = 0>
-    void compute_identifier_extra(const string_t& key, const language_t& lang)
+    void compute_identifier_extra(const string_t& key, const language_t&)
     {
-        constexpr auto idx           = index_of<component::caliper, _Tuple>::value;
-        std::get<idx>(m_data).prefix = key;
-        consume_parameters(lang);
-    }
-
-    template <typename _Tuple       = data_type,
-              tim::enable_if_t<(is_one_of<component::caliper, _Tuple>::value == false),
-                               int> = 0>
-    void compute_identifier_extra(const string_t&, const language_t&)
-    {
+        using set_prefix_extra_t = modifiers<operation::set_prefix, Types...>;
+        apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
 
 private:

@@ -1,21 +1,21 @@
 #!/usr/bin/env python
-
+#
 # MIT License
-# 
-# Copyright (c) 2019, The Regents of the University of California, 
+#
+# Copyright (c) 2019, The Regents of the University of California,
 # through Lawrence Berkeley National Laboratory (subject to receipt of any
 # required approvals from the U.S. Dept. of Energy).  All rights reserved.
-# 
+#
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
 # in the Software without restriction, including without limitation the rights
 # to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 # copies of the Software, and to permit persons to whom the Software is
 # furnished to do so, subject to the following conditions:
-# 
+#
 # The above copyright notice and this permission notice shall be included in all
 # copies or substantial portions of the Software.
-# 
+#
 # THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 # IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 # FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -23,18 +23,19 @@
 # LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
+#
 
 import os
+import re
 import sys
-import argparse
-import matplotlib.pyplot as plt
 import json
 import math
-import numpy
-import re
-
-from matplotlib.pyplot import text
+import argparse
 from math import log, pi
+
+import matplotlib.pyplot as plt
+from matplotlib.pyplot import text
+import numpy
 
 
 GIGABYTE = 1.0e9
@@ -50,18 +51,20 @@ __all__ = ['smooth',
            'plot_roofline']
 
 #==============================================================================#
-def smooth(x,y):
+
+
+def smooth(x, y):
     """
     Smooth a curve
     """
     xs = x[:]
     ys = y[:]
     d = 0
-    for i in range(0,len(ys)):
-        num = min(len(ys),i+d+1) - max(0,i-d)
-        total = sum(ys[max(0,i-d):min(len(ys),i+d+1)])
+    for i in range(0, len(ys)):
+        num = min(len(ys), i+d+1) - max(0, i-d)
+        total = sum(ys[max(0, i-d):min(len(ys), i+d+1)])
         ys[i] = total/float(num)
-    return xs,ys
+    return xs, ys
 
 
 #==============================================================================#
@@ -78,15 +81,15 @@ def get_peak_flops(roof_data, flop_info):
     peak_flops = [max(flops_data), info]
     return peak_flops
 
-    
+
 #==============================================================================#
 def get_peak_bandwidth(roof_data):
     """
     Get multi-level bandwidth peaks - Implementation from ERT:
     https://bitbucket.org/berkeleylab/cs-roofline-toolkit
     """
-    ref_intensity  = 0
-    work_set       = []
+    ref_intensity = 0
+    work_set = []
     bandwidth_data = []
 
     # Read bandwidth raw data
@@ -99,7 +102,7 @@ def get_peak_bandwidth(roof_data):
         work_set.append(element["tuple_element0"])
         bandwidth_data.append(element["tuple_element5"]/GIGABYTE)
     fraction = 1.05
-    samples  = 10000
+    samples = 10000
 
     max_bandwidth = max(bandwidth_data)
     begin = bandwidth_data.index(max_bandwidth)
@@ -113,9 +116,9 @@ def get_peak_bandwidth(roof_data):
     counts = samples*[0]
     totals = samples*[0.0]
 
-    work_set,bandwidth_data = smooth(work_set,bandwidth_data)
+    work_set, bandwidth_data = smooth(work_set, bandwidth_data)
 
-    for i in range(0,samples):
+    for i in range(0, samples):
         cband = i*dband
         for bandwidth in bandwidth_data:
             if bandwidth >= cband/fraction and bandwidth <= cband*fraction:
@@ -123,34 +126,34 @@ def get_peak_bandwidth(roof_data):
                 counts[i] += 1
 
     band_list = [[1000*max_bandwidth, 1000]]
-    
+
     maxc = -1
     maxi = -1
-    
-    for i in range(samples-3,1,-1):
+
+    for i in range(samples-3, 1, -1):
         if counts[i] > 10:
             if counts[i] > maxc:
                 maxc = counts[i]
                 maxi = i
         else:
             if maxc > 1:
-                value = float(totals[maxi])/max(1,counts[maxi])
+                value = float(totals[maxi])/max(1, counts[maxi])
                 if 1.20*value < float(band_list[-1][0])/band_list[-1][1]:
-                    band_list.append([totals[maxi],counts[maxi]])
+                    band_list.append([totals[maxi], counts[maxi]])
                 else:
                     band_list[-1][0] += totals[maxi]
                     band_list[-1][1] += counts[maxi]
             maxc = -1
             maxi = -1
-            
+
     band_info_list = ["DRAM"]
     cache_num = len(band_list)-1
-    
-    for cache in range(1,cache_num+1):
+
+    for cache in range(1, cache_num+1):
         band_info_list = ["L%d" % (cache_num+1 - cache)] + band_info_list
-        
+
     peak_bandwidths = []
-    for (band,band_info) in zip(band_list,band_info_list):
+    for (band, band_info) in zip(band_list, band_info_list):
         band_info = band_info + " GB/s"
         peak_bandwidths.append([float(band[0]/band[1]), band_info])
     return peak_bandwidths
@@ -163,39 +166,46 @@ def get_hotspots(op_data, ai_data):
     """
     op_graph_data = op_data["graph"]
     ai_graph_data = ai_data["graph"]
-    hotspots   = []
-    
+    hotspots = []
+
     avg_runtime = 0.0
     max_runtime = 0.0
     for i in range(0, len(op_graph_data)):
-        op_runtime = float(op_graph_data[0]["tuple_element1"]["accum"]["second"])
-        ai_runtime = float(ai_graph_data[0]["tuple_element1"]["accum"]["second"])
+        op_runtime = float(
+            op_graph_data[0]["tuple_element1"]["accum"]["second"])
+        ai_runtime = float(
+            ai_graph_data[0]["tuple_element1"]["accum"]["second"])
         avg_runtime += 0.5 * (op_runtime + ai_runtime)
         max_runtime = max([max_runtime, 0.5 * (op_runtime + ai_runtime)])
 
     if len(op_graph_data) > 1:
         avg_runtime -= max_runtime
         avg_runtime /= len(op_graph_data) - 1
-    
-    for i in range(0, len(op_graph_data)):
-        runtime   = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
-        flop      = float(op_graph_data[i]["tuple_element1"]["accum"]["first"]["value0"])
-        bandwidth = float(ai_graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
-        label     = op_graph_data[i]["tuple_element2"]
 
-        intensity  = flop / bandwidth
-        flop       = flop / GIGABYTE / runtime
+    for i in range(0, min([len(op_graph_data), len(ai_graph_data)])):
+        runtime = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
+        flop = float(op_graph_data[i]["tuple_element1"]
+                     ["accum"]["first"]["value0"])
+        bandwidth = float(
+            ai_graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
+        label = op_graph_data[i]["tuple_element2"]
+
+        intensity = flop / bandwidth
+        flop = flop / GIGABYTE / runtime
         proportion = runtime / avg_runtime
-        label      = label.replace("> [cxx] ", "").replace("> [_c_] ", "").replace("> [pyc] ", "")
+        label = label.replace("> [cxx] ", "").replace(
+            "> [_c_] ", "").replace("> [pyc] ", "")
 
         if VERBOSE > 1:
-            print("intensity: {}, flop: {}, proportion: {}, label: {}".format(intensity, flop, proportion, label))
+            print("intensity: {}, flop: {}, proportion: {}, label: {}".format(
+                intensity, flop, proportion, label))
         # this can arise from overflow
         if flop <= 1.0e-3 or bandwidth <= 0.0:
             continue
         elif VERBOSE > 0:
-            print("{} : runtime = {}, avg = {}, proportion = {}".format(label, runtime, avg_runtime, proportion))
-            
+            print("{} : runtime = {}, avg = {}, proportion = {}".format(
+                label, runtime, avg_runtime, proportion))
+
         hotspots.append([intensity, flop, proportion, label])
     return hotspots
 
@@ -224,7 +234,7 @@ class plot_parameters():
 
         for element in (hotspots):
             intensity = element[0]
-            flop      = element[1]
+            flop = element[1]
             if flop > self.ymax:
                 self.ymax = 10**int(log(flop)/log(10)+1)
             if flop < self.ymin:
@@ -238,9 +248,9 @@ class plot_parameters():
 
 
 #==============================================================================#
-def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
-                  image_type = "png", output_dir = os.getcwd(), title = "Roofline Plot",
-                  width = 1600, height = 1200, dpi = 75):
+def plot_roofline(ai_data, op_data, display=False, fname="roofline",
+                  image_type="png", output_dir=os.getcwd(), title="Roofline Plot",
+                  width=1600, height=1200, dpi=75):
     """
     Plot the roofline
     """
@@ -250,8 +260,8 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
 
     peak_band = get_peak_bandwidth(band_data)
     peak_flop = get_peak_flops(flop_data, flop_info)
-    hotspots  = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
-    
+    hotspots = get_hotspots(op_data["rank"]["data"], ai_data["rank"]["data"])
+
     plot_params = plot_parameters(peak_flop, hotspots)
 
     f = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
@@ -265,11 +275,11 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
 
     plt.xlabel(plot_params.xlabel)
     plt.ylabel(plot_params.ylabel)
-        
+
     axes = plt.gca()
     axes.set_xlim([plot_params.xmin, plot_params.xmax])
     axes.set_ylim([plot_params.ymin, plot_params.ymax])
-    
+
     # plot bandwidth roof
     x0 = plot_params.xmax
     for band in (peak_band):
@@ -282,7 +292,7 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
         y2 = peak_flop[0]
         if x2 < x0:
             x0 = x2
-        
+
         x1log = log(x1)/log(10)
         x2log = log(x2)/log(10)
         y1log = log(y1)/log(10)
@@ -302,12 +312,13 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
         Dy = dy * fig_y / (log(y_max) - log(y_min))
         angle = (180/pi)*numpy.arctan(Dy / Dx)
 
-        text(x_text, y_text, "%.2f %s" % (band[0], band[1]), rotation=angle, rotation_mode='anchor')
+        text(x_text, y_text, "%.2f %s" %
+             (band[0], band[1]), rotation=angle, rotation_mode='anchor')
         plt.plot([x1, x2], [y1, y2], color='magenta')
 
     # plot computing roof
     text(plot_params.xmax, peak_flop[0] + 2, "%.2f %s" % (peak_flop[0],
-        peak_flop[1]), horizontalalignment='right')
+                                                          peak_flop[1]), horizontalalignment='right')
     plt.plot([x0, plot_params.xmax], [peak_flop[0], peak_flop[0]], color='b')
 
     # plot hotspots
@@ -316,7 +327,8 @@ def plot_roofline(ai_data, op_data, display = False, fname = "roofline",
             print(element[0], element[1])
         c = get_color(element[2])
         plt.scatter(element[0], element[1], color=c)
-        text(element[0], element[1], "%s" % element[3], rotation=0, rotation_mode='anchor')
+        text(element[0], element[1], "%s" %
+             element[3], rotation=0, rotation_mode='anchor')
 
     if display:
         print('Displaying plot...')

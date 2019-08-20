@@ -127,6 +127,12 @@ struct type_id
         return "float_pair";
     }
 
+    template <typename... _Types>
+    static std::string value(const std::tuple<_Types...>&)
+    {
+        return "tuple";
+    }
+
     template <typename SubType, std::size_t SubTypeSize,
               enable_if_t<(std::is_integral<SubType>::value), int> = 0>
     static std::string value(const std::array<SubType, SubTypeSize>&)
@@ -580,15 +586,15 @@ public:
     void serialize(Archive& ar, const unsigned int version)
     {
         typename tim::trait::array_serialization<ObjectType>::type type;
-        constexpr auto uses_internal = trait::internal_output_handling<ObjectType>::value;
-        if(uses_internal)
+        constexpr auto uses_external = trait::external_output_handling<ObjectType>::value;
+        if(!uses_external)
             serialize<Archive>(type, ar, version);
     }
 
     void print()
     {
-        typename trait::internal_output_handling<ObjectType>::type type;
-        internal_print(type);
+        typename trait::external_output_handling<ObjectType>::type type;
+        external_print(type);
     }
 
 protected:
@@ -600,11 +606,11 @@ protected:
     template <typename Archive>
     void serialize(std::false_type, Archive&, const unsigned int);
 
-    // tim::trait::internal_output_handling<ObjectType>::type == TRUE
-    void internal_print(std::true_type);
+    // tim::trait::external_output_handling<ObjectType>::type == TRUE
+    void external_print(std::true_type);
 
-    // tim::trait::internal_output_handling<ObjectType>::type == FALSE
-    void internal_print(std::false_type);
+    // tim::trait::external_output_handling<ObjectType>::type == FALSE
+    void external_print(std::false_type);
 };
 
 //--------------------------------------------------------------------------------------//

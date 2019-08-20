@@ -39,6 +39,8 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
+#include <deque>
+
 //======================================================================================//
 
 namespace tim
@@ -50,9 +52,54 @@ namespace component
 //
 struct cuda_event : public base<cuda_event, float>
 {
-    using ratio_t    = std::milli;
-    using value_type = float;
-    using base_type  = base<cuda_event, value_type>;
+    struct marker
+    {
+        bool          valid   = true;
+        bool          synced  = false;
+        bool          running = false;
+        cuda::event_t first;
+        cuda::event_t second;
+
+        marker() { valid = (cuda::event_create(first) && cuda::event_create(second)); }
+
+        ~marker()
+        {
+            // cuda::event_destroy(first);
+            // cuda::event_destroy(second);
+        }
+
+        void start(cuda::stream_t& stream)
+        {
+            if(!valid)
+                return;
+            synced  = false;
+            running = true;
+            cuda::event_record(first, stream);
+        }
+
+        void stop(cuda::stream_t& stream)
+        {
+            if(!valid || !running)
+                return;
+            cuda::event_record(second, stream);
+            running = false;
+        }
+
+        float sync()
+        {
+            if(!valid)
+                return 0.0;
+            if(!synced)
+                cuda::event_sync(second);
+            synced = true;
+            return cuda::event_elapsed_time(first, second);
+        }
+    };
+
+    using ratio_t       = std::milli;
+    using value_type    = float;
+    using base_type     = base<cuda_event, value_type>;
+    using marker_list_t = std::deque<marker>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -65,22 +112,26 @@ struct cuda_event : public base<cuda_event, float>
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
 
-    explicit cuda_event(cuda::stream_t _stream = 0)
-    : m_stream(_stream)
+    static uint64_t& get_batched_marker_size()
     {
-        m_is_valid = (cuda::event_create(m_start) && cuda::event_create(m_stop));
+        static uint64_t _instance = get_env("TIMEMORY_CUDA_EVENT_MARKERS", 5);
+        return _instance;
     }
 
-    ~cuda_event() {}
+public:
+    explicit cuda_event(cuda::stream_t _stream = 0)
+    : m_stream(_stream)
+    , m_global(marker())
+    {}
 
+    ~cuda_event() {}
     cuda_event(const cuda_event&) = default;
     cuda_event(cuda_event&&)      = default;
     cuda_event& operator=(const cuda_event&) = default;
     cuda_event& operator=(cuda_event&&) = default;
 
-    float compute_display() const
+    float get_display() const
     {
-        const_cast<cuda_event&>(*this).sync();
         auto val = (is_transient) ? accum : value;
         return static_cast<float>(val / static_cast<float>(ratio_t::den) *
                                   base_type::get_unit());
@@ -96,69 +147,88 @@ struct cuda_event : public base<cuda_event, float>
     void start()
     {
         set_started();
-        if(m_is_valid)
-        {
-            m_is_synced = false;
-            // cuda_event* _this = static_cast<cuda_event*>(this);
-            // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
-            cuda::event_record(m_start, m_stream);
-        }
+        m_global_synced = false;
+        m_global.start(m_stream);
+        // cuda_event* _this = static_cast<cuda_event*>(this);
+        // cudaStreamAddCallback(m_stream, &cuda_event::callback, _this, 0);
     }
 
     void stop()
     {
-        if(m_is_valid)
-        {
-            cuda::event_record(m_stop, m_stream);
-            sync();
-        }
+        for(uint64_t i = 0; i < m_num_markers; ++i)
+            m_markers[i].stop(m_stream);
+        if(m_current_marker == 0 && m_num_markers == 0)
+            m_global.stop(m_stream);
+        sync();
         set_stopped();
     }
 
     void sync()
     {
-        if(m_is_valid && !m_is_synced)
+        if(m_current_marker == 0 && m_num_markers == 0)
         {
-            cuda::event_sync(m_stop);
-            float tmp = cuda::event_elapsed_time(m_start, m_stop);
+            if(!m_global_synced)
+            {
+                float tmp       = m_global.sync();
+                m_global_synced = true;
+                accum += tmp;
+                value = std::move(tmp);
+            }
+        } else if(m_current_marker > m_synced_markers)
+        {
+            float tmp = 0.0;
+            for(uint64_t i = m_synced_markers; i < m_num_markers; ++i, ++m_synced_markers)
+                tmp += m_markers[i].sync();
+            m_markers_synced = true;
             accum += tmp;
-            value       = std::move(tmp);
-            m_is_synced = true;
+            value = std::move(tmp);
         }
-    }
-
-    void destroy()
-    {
-        if(m_is_valid && is_valid())
-        {
-            cuda::event_destroy(m_start);
-            cuda::event_destroy(m_stop);
-        }
-    }
-
-    bool is_valid() const
-    {
-        // get last error but don't reset last error to cudaSuccess
-        auto ret = cuda::peek_at_last_error();
-        // if failure previously, return false
-        if(ret != cuda::success_v)
-            return false;
-        // query
-        ret = cuda::event_query(m_stop);
-        // if all good, return valid
-        if(ret == cuda::success_v)
-            return true;
-        // if not all good, clear the last error bc if was from failed query
-        ret = cuda::get_last_error();
-        // return if not ready (OK) or something else
-        return (ret == cuda::err_not_ready_v);
     }
 
     void set_stream(cuda::stream_t _stream = 0) { m_stream = _stream; }
 
+    void mark_begin()
+    {
+        m_markers_synced = false;
+        m_current_marker = m_num_markers++;
+        if(m_current_marker >= m_markers.size())
+            append_marker_list(std::max<uint64_t>(m_marker_batch_size, 1));
+        m_markers[m_current_marker].start(m_stream);
+    }
+
+    void mark_end() { m_markers[m_current_marker].stop(m_stream); }
+
+    void mark_begin(cuda::stream_t _stream)
+    {
+        m_markers_synced = false;
+        m_current_marker = m_num_markers++;
+        if(m_current_marker >= m_markers.size())
+            append_marker_list(std::max<uint64_t>(m_marker_batch_size, 1));
+        m_markers[m_current_marker].start(_stream);
+    }
+
+    void mark_end(cuda::stream_t _stream) { m_markers[m_current_marker].stop(_stream); }
+
 protected:
-    static void callback(cuda::stream_t /*_stream*/, cuda::error_t /*_status*/,
-                         void* user_data)
+    void append_marker_list(const uint64_t nsize)
+    {
+        for(uint64_t i = 0; i < nsize; ++i)
+            m_markers.emplace_back(marker());
+    }
+
+private:
+    bool           m_global_synced     = false;
+    bool           m_markers_synced    = false;
+    uint64_t       m_synced_markers    = 0;
+    uint64_t       m_current_marker    = 0;
+    uint64_t       m_num_markers       = 0;
+    uint64_t       m_marker_batch_size = get_batched_marker_size();
+    cuda::stream_t m_stream            = 0;
+    marker         m_global;
+    marker_list_t  m_markers;
+
+    /*
+    static void callback(cuda::stream_t stream, cuda::error_t status, void* user_data)
     {
         cuda_event* _this = static_cast<cuda_event*>(user_data);
         if(!_this->m_is_synced && _this->is_valid())
@@ -170,13 +240,27 @@ protected:
             _this->m_is_synced = true;
         }
     }
+    */
 
-private:
-    bool           m_is_synced = false;
-    bool           m_is_valid  = true;
-    cuda::stream_t m_stream    = 0;
-    cuda::event_t  m_start     = cuda::event_t();
-    cuda::event_t  m_stop      = cuda::event_t();
+    /*
+    bool is_valid(const marker& m) const
+    {
+        // get last error but don't reset last error to cudaSuccess
+        auto ret = cuda::peek_at_last_error();
+        // if failure previously, return false
+        if(ret != cuda::success_v)
+            return false;
+        // query
+        ret = cuda::event_query(m.second);
+        // if all good, return valid
+        if(ret == cuda::success_v)
+            return true;
+        // if not all good, clear the last error bc if was from failed query
+        ret = cuda::get_last_error();
+        // return if not ready (OK) or something else
+        return (ret == cuda::err_not_ready_v);
+    }
+    */
 };
 
 }  // namespace component

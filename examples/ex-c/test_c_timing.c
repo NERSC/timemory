@@ -9,29 +9,50 @@ static long nlaps = 0;
 //======================================================================================//
 
 void*
-get_timer(const char* func)
+get_timer(const char* func, int use_tuple)
 {
-    return TIMEMORY_AUTO_TUPLE(func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK,
-                               CPU_UTIL, CURRENT_RSS, PEAK_RSS, PRIORITY_CONTEXT_SWITCH,
-                               VOLUNTARY_CONTEXT_SWITCH);
-}
-
-//======================================================================================//
-
-void*
-get_fibonacci_timer(const char* func, long n)
-{
-    char* buffer = (char*) (malloc(64 * sizeof(char)));
-    sprintf(buffer, "%s[%li]", func, n);
-    return TIMEMORY_BLANK_AUTO_TUPLE(buffer, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
+    if(use_tuple > 0)
+    {
+        return TIMEMORY_AUTO_TUPLE(
+            func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK, CPU_UTIL, CURRENT_RSS,
+            PEAK_RSS, PRIORITY_CONTEXT_SWITCH, VOLUNTARY_CONTEXT_SWITCH, CALIPER);
+    }
+    else
+    {
+        return TIMEMORY_AUTO_TIMER(func);
+    }
 }
 
 //======================================================================================//
 
 void
-free_timer(void* timer)
+free_timer(void* timer, int use_tuple)
 {
-    FREE_TIMEMORY_AUTO_TUPLE(timer);
+    if(use_tuple > 0)
+    {
+        FREE_TIMEMORY_AUTO_TUPLE(timer);
+    }
+    else
+    {
+        FREE_TIMEMORY_AUTO_TIMER(timer);
+    }
+}
+
+//======================================================================================//
+
+void*
+get_fibonacci_timer(const char* func, int use_tuple)
+{
+    char* buffer = (char*) (malloc(64 * sizeof(char)));
+    sprintf(buffer, "%s[using_tuple=%i]", func, use_tuple);
+    if(use_tuple > 0)
+    {
+        return TIMEMORY_BLANK_AUTO_TUPLE(buffer, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
+    }
+    else
+    {
+        return TIMEMORY_BLANK_AUTO_TIMER(buffer);
+    }
 }
 
 //======================================================================================//
@@ -45,14 +66,16 @@ _fibonacci(intmax_t n)
 //======================================================================================//
 
 intmax_t
-fibonacci(intmax_t n, intmax_t cutoff)
+fibonacci(intmax_t n, intmax_t cutoff, int use_tuple)
 {
     if(n > cutoff)
     {
         nlaps += 3;
-        void*    timer = get_fibonacci_timer(__FUNCTION__, n);
-        intmax_t _n = (n < 2) ? n : (fibonacci(n - 1, cutoff) + fibonacci(n - 2, cutoff));
-        free_timer(timer);
+        void*    timer = get_fibonacci_timer(__FUNCTION__, use_tuple);
+        intmax_t _n    = (n < 2) ? n
+                              : (fibonacci(n - 1, cutoff, use_tuple) +
+                                 fibonacci(n - 2, cutoff, use_tuple));
+        free_timer(timer, use_tuple);
         return _n;
     }
     else
@@ -72,7 +95,7 @@ main(int argc, char** argv)
         nfib = atoi(argv[1]);
 
     // only record auto_timers when n > cutoff
-    int cutoff = nfib - 20;
+    int cutoff = nfib - 15;
     if(argc > 2)
         cutoff = atoi(argv[2]);
 
@@ -81,25 +104,29 @@ main(int argc, char** argv)
 
     timemory_settings settings = TIMEMORY_SETTINGS_INIT;
     settings.auto_output       = 1;
-    settings.cout_output       = 0;
+    settings.cout_output       = 1;
     settings.json_output       = 1;
     TIMEMORY_INIT(argc, argv, settings);
 
-    void*    timer0 = get_timer("[main (untimed)]");
+    void*    timer0 = get_timer("[main (untimed)]", 1);
     intmax_t n0     = _fibonacci(nfib);
-    free_timer(timer0);
+    free_timer(timer0, 1);
 
     printf("main (untimed): fibonacci(%i, %i) = %lli\n", nfib, nfib, (long long) n0);
 
-    void*    timer1 = get_timer("[main (timed)]");
-    intmax_t n1     = fibonacci(nfib, cutoff);
-    free_timer(timer1);
+    void*    timer1 = get_timer("[main (timed + tuple)]", 1);
+    intmax_t n1     = fibonacci(nfib, cutoff, 1);
+    free_timer(timer1, 1);
+
+    void*    timer2 = get_timer("[main (timed + timer)]", 1);
+    intmax_t n2     = fibonacci(nfib, cutoff, 0);
+    free_timer(timer2, 1);
 
     printf("main (timed): fibonacci(%i, %i) = %lli\n", nfib, cutoff, (long long) n1);
     printf("# laps = %li\n", nlaps);
 
-    printf("\n... \"%s\" : %s @ %i --> n = %lli and %lli\n", __FILE__, __FUNCTION__,
-           __LINE__, (long long int) n0, (long long int) n1);
+    printf("\n... \"%s\" : %s @ %i --> n = %lli, %lli, %lli\n", __FILE__, __FUNCTION__,
+           __LINE__, (long long int) n0, (long long int) n1, (long long int) n2);
 
     return 0;
 }

@@ -3,12 +3,22 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(TiMemory-CXX-Overhead-Example LANGUAGES C CXX)
 
 set(EXE_NAME test_cxx_overhead)
-set(COMPONENTS cxx compile-options papi threading analysis-tools)
+set(COMPONENTS cxx compile-options analysis-tools)
 
+option(USE_PAPI "Enable papi" OFF)
+option(USE_CALIPER "Enable caliper" OFF)
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
-if(USE_EXTERN_TEMPLATES)
-    list(APPEND COMPONENTS extern-templates)
-endif()
+
+set(USE_PAPI_COMPONENTS papi)
+set(USE_CALIPER_COMPONENTS caliper)
+set(USE_EXTERN_TEMPLATES extern-templates)
+
+foreach(_OPT PAPI CALIPER EXTERN_TEMPLATES)
+    message(STATUS "${PROJECT_NAME}: USE_${_OPT} = ${USE_${_OPT}}")
+    if(USE_${_OPT})
+        list(APPEND COMPONENTS ${USE_${_OPT}_COMPONENTS})
+    endif()
+endforeach()
 
 set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cxx-overhead-example)
 find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})

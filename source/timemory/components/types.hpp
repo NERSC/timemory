@@ -53,6 +53,10 @@ namespace component
 template <typename _Tp, typename value_type = int64_t, typename... _Policies>
 struct base;
 
+// general
+struct trip_count;
+struct nvtx_marker;
+
 // timing
 struct real_clock;
 struct system_clock;
@@ -81,6 +85,10 @@ struct num_msg_recv;
 struct num_signals;
 struct voluntary_context_switch;
 struct priority_context_switch;
+
+// filesystem
+struct read_bytes;
+struct written_bytes;
 
 // cuda
 struct cuda_event;

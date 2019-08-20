@@ -24,6 +24,33 @@
 | PyPi           | `pip install timemory`                            |
 | Anaconda Cloud | `conda install -c jrmadsen timemory`              |
 
+## Why Use TiMemory?
+
+- Header-only interface for majority of C++ components
+- Variadic interface to all the utilities from C code
+- Variadic interface to all the utilities from C++ code
+- Variadic interface to all the utilities from Python code
+  - Includes context-managers and decorators
+- Flexible and easily extensible interface: none of the components are restricted to a certain data type
+- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
+- Direct access to performance data in native data structures for language
+- High-performance: template meta-programming and lambda result in extensive inlining
+- Ability to arbitrarily switch and combine different measurement types anywhere in application
+- Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
+  - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
+- Arbitrarily add support for:
+  - CPU hardware counters via PAPI without an explicit PAPI dependency and zero `#ifdef`
+  - GPU hardware counters via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
+  - Generating a roofline for performance-critical sections
+  - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper)
+  - Colored CUDA NVTX markers
+  - Memory usage
+  - Wall-clock, cpu-clock, system-clock timing
+  - Number of bytes read/written to file-system (and rate)
+  - Number of context switches
+  - Trip counts
+  - CUDA kernel runtime(s)
+
 ## Table of contents
 
 1. [About](about) -- About the TiMemory project
@@ -32,5 +59,5 @@
 4. [Components](components) -- Available components in TiMemory and their wrappers
 5. [Getting Started](getting_started) -- How to get started using TiMemory
     - Project integration, basic syntax, custom components, generating a roofline
-6.  [Runtime Overhead](overhead) -- Analysis of runtime overhead of TiMemory
-7.  [Doxygen Documentation](doxygen-docs) -- Doxygen source code documentation
+6. [Runtime Overhead](overhead) -- Analysis of runtime overhead of TiMemory
+7. [Doxygen Documentation](doxygen-docs) -- Doxygen source code documentation

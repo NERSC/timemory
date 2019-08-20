@@ -67,7 +67,7 @@ public:
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
     using language_t     = tim::language;
-    using tuple_type     = implemented_tuple<Types...>;
+    using tuple_type     = implemented<Types...>;
     using init_func_t    = std::function<void(this_type&)>;
 
 public:
@@ -84,6 +84,13 @@ public:
     inline this_type& operator=(const this_type&) = default;
     inline this_type& operator=(this_type&&) = default;
 
+    static constexpr std::size_t size() { return component_type::size(); }
+
+    static constexpr std::size_t available_size()
+    {
+        return component_type::available_size();
+    }
+
 public:
     // public member functions
     inline component_type&       component_list() { return m_temporary_object; }
@@ -96,6 +103,8 @@ public:
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
+    inline void mark_begin() { m_temporary_object.mark_begin(); }
+    inline void mark_end() { m_temporary_object.mark_end(); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
@@ -155,7 +164,9 @@ public:
 
     static init_func_t& get_initializer()
     {
-        static init_func_t _instance = [](this_type&) {};
+        static init_func_t _instance = [](this_type& al) {
+            tim::env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
         return _instance;
     }
 
@@ -191,7 +202,6 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
     if(m_enabled)
     {
         get_initializer()(*this);
-        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -214,7 +224,6 @@ auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
     if(m_enabled)
     {
         get_initializer()(*this);
-        m_temporary_object.push();
         m_temporary_object.start();
     }
 }
@@ -228,7 +237,6 @@ auto_list<Types...>::~auto_list()
     {
         // stop the timer
         m_temporary_object.conditional_stop();
-        m_temporary_object.pop();
 
         // report timer at exit
         if(m_report_at_exit)

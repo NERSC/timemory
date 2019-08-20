@@ -27,11 +27,13 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
 #include <atomic>
 #include <condition_variable>
+#include <cstddef>
 #include <cstdint>
 #include <mutex>
 #include <numeric>
@@ -40,27 +42,6 @@
 #include <string>
 #include <thread>
 #include <vector>
-
-#if defined(__INTEL_COMPILER)
-#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __assume_aligned(ARRAY, WIDTH)
-#elif defined(__xlC__)
-#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH) __alignx(WIDTH, ARRAY)
-#else
-#    define ASSUME_ALIGNED_ARRAY(ARRAY, WIDTH)
-#endif
-
-// #define ERT_FLOP 256
-// #define ERT_TRIALS_MIN 100
-// #define ERT_WORKING_SET_MIN 100
-// #define ERT_MEMORY_MAX 64 * 64 * 64 * 64
-
-#if !defined(_WINDOWS)
-#    define RESTRICT(TYPE) TYPE __restrict__
-#else
-#    define RESTRICT(TYPE) TYPE
-#endif
-
-#include <cstddef>
 
 #if defined(_MACOS)
 #    include <sys/sysctl.h>
@@ -230,39 +211,6 @@ get_max()
     return 0;
 }
 };
-
-//--------------------------------------------------------------------------------------//
-//  aligned allocation
-//
-template <typename _Tp>
-_Tp*
-allocate_aligned(size_t size, size_t alignment)
-{
-#if defined(__INTEL_COMPILER)
-    return static_cast<_Tp*>(_mm_malloc(size * sizeof(_Tp), alignment));
-#elif defined(_UNIX)
-    void* ptr = nullptr;
-    auto  ret = posix_memalign(&ptr, alignment, size * sizeof(_Tp));
-    consume_parameters(ret);
-    return static_cast<_Tp*>(ptr);
-#elif defined(_WINDOWS)
-    return static_cast<_Tp*>(_aligned_malloc(size * sizeof(_Tp), alignment));
-#endif
-}
-
-//--------------------------------------------------------------------------------------//
-//  free aligned array
-//
-template <typename _Tp>
-void
-free_aligned(_Tp* ptr)
-{
-#if defined(__INTEL_COMPILER)
-    _mm_free(static_cast<void*>(ptr));
-#elif defined(_UNIX) || defined(_WINDOWS)
-    free(static_cast<void*>(ptr));
-#endif
-}
 
 //--------------------------------------------------------------------------------------//
 //  execution params

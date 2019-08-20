@@ -32,6 +32,8 @@
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
 
+#include <iostream>
+
 //======================================================================================//
 
 namespace tim
@@ -48,82 +50,110 @@ template <std::size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>,
               policy::thread_init, policy::thread_finalize>
-, public static_counted_object<papi_array<0>>
 {
     friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
 
-    using size_type   = std::size_t;
-    using event_list  = std::vector<int>;
-    using value_type  = std::array<long long, MaxNumEvents>;
-    using entry_type  = typename value_type::value_type;
-    using base_type   = base<papi_array<MaxNumEvents>, value_type, policy::thread_init,
+    using size_type  = std::size_t;
+    using event_list = std::vector<int>;
+    using value_type = std::array<long long, MaxNumEvents>;
+    using entry_type = typename value_type::value_type;
+    using base_type  = base<papi_array<MaxNumEvents>, value_type, policy::thread_init,
                            policy::thread_finalize>;
-    using this_type   = papi_array<MaxNumEvents>;
-    using event_count = static_counted_object<papi_array<0>>;
-    using get_events_func_t = std::function<event_list()>;
+    using this_type  = papi_array<MaxNumEvents>;
+    using get_initializer_t = std::function<event_list()>;
 
     static const short                   precision = 3;
     static const short                   width     = 12;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
 
+    static bool initialize_papi()
+    {
+        static thread_local bool _initalized = false;
+        static thread_local bool _working    = false;
+        if(!_initalized)
+        {
+            papi::init();
+            _initalized = true;
+            _working    = papi::working();
+            if(!_working)
+            {
+                std::cerr << "Warning! PAPI failed to initialized!\n";
+                std::cerr << "The following PAPI events will not be reported: \n";
+                for(const auto& itr : get_events())
+                    std::cerr << "    " << papi::get_event_info(itr).short_descr << "\n";
+                std::cerr << std::flush;
+            }
+        }
+        return _working;
+    }
     static int& event_set()
     {
-        static int _instance = PAPI_NULL;
+        static thread_local int _instance = PAPI_NULL;
         return _instance;
     }
 
     static bool& enable_multiplex()
     {
-        static bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", false);
+        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
         return _instance;
     }
 
-    static get_events_func_t& get_events_func()
+    static get_initializer_t& get_initializer()
     {
-        static get_events_func_t _instance = []() {
-            auto                  events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS",
-                                                "PAPI_LD_INS,PAPI_SR_INS,PAPI_LST_INS");
+        static get_initializer_t _instance = []() {
+            auto events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS", "");
+            if(settings::verbose() > 0 || settings::debug())
+            {
+                printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
+                       events_str.c_str());
+            }
             std::vector<string_t> events_str_list = delimit(events_str);
             std::vector<int>      events_list;
             for(const auto& itr : events_str_list)
-                events_list.push_back(papi::get_event_code(itr));
+            {
+                int evt_code = papi::get_event_code(itr);
+                if(settings::debug())
+                {
+                    printf("[papi_array] creating event '%s' with code '%i'...\n",
+                           itr.c_str(), evt_code);
+                }
+                events_list.push_back(evt_code);
+            }
             return events_list;
         };
         return _instance;
     }
 
-    static event_list& get_events()
-    {
-        static event_list _instance = get_events_func()();
-        return _instance;
-    }
+    static event_list get_events() { return get_initializer()(); }
 
     static void invoke_thread_init()
     {
+        if(!initialize_papi())
+            return;
         auto events = get_events();
-        tim::papi::create_event_set(&event_set());
-        tim::papi::add_events(event_set(), events.data(), events.size());
-        tim::papi::start(event_set(), enable_multiplex());
+        if(events.size() > 0)
+        {
+            papi::create_event_set(&event_set());
+            papi::add_events(event_set(), events.data(), events.size());
+            papi::start(event_set(), enable_multiplex());
+        }
     }
 
     static void invoke_thread_finalize()
     {
-        value_type values;
-        auto       events = get_events();
-        tim::papi::stop(event_set(), values.data());
-        tim::papi::remove_events(event_set(), events.data(), events.size());
-        tim::papi::destroy_event_set(event_set());
+        if(!initialize_papi())
+            return;
+        auto events = get_events();
+        if(events.size() > 0 && event_set() != PAPI_NULL)
+        {
+            value_type values;
+            papi::stop(event_set(), values.data());
+            papi::remove_events(event_set(), events.data(), events.size());
+            papi::destroy_event_set(event_set());
+            event_set() = PAPI_NULL;
+        }
     }
-
-    using base_type::accum;
-    using base_type::is_running;
-    using base_type::is_transient;
-    using base_type::laps;
-    using base_type::set_started;
-    using base_type::set_stopped;
-    using base_type::value;
-    using event_count::m_count;
 
     template <typename _Tp>
     using array_t = std::array<_Tp, MaxNumEvents>;
@@ -145,20 +175,25 @@ struct papi_array
     // data types
     event_list events;
 
+    std::size_t size() { return events.size(); }
+
     static value_type record()
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        tim::papi::read(event_set(), read_value.data());
+        if(initialize_papi() && event_set() != PAPI_NULL)
+            papi::read(event_set(), read_value.data());
         return read_value;
     }
 
-    std::vector<double> get() const
+    template <typename _Tp = double>
+    std::vector<_Tp> get() const
     {
-        std::vector<double> values;
-        auto&               _data = (is_transient) ? accum : value;
+        std::vector<_Tp> values;
+        auto&            _data = (is_transient) ? accum : value;
         for(auto& itr : _data)
             values.push_back(itr);
+        values.resize(events.size());
         return values;
     }
 
@@ -202,6 +237,13 @@ struct papi_array
         return *this;
     }
 
+    using base_type::accum;
+    using base_type::is_transient;
+    using base_type::laps;
+    using base_type::set_started;
+    using base_type::set_stopped;
+    using base_type::value;
+
 public:
     //==================================================================================//
     //
@@ -214,7 +256,7 @@ public:
     static std::string display_unit() { return ""; }
     static int64_t     unit() { return 1; }
 
-    entry_type compute_display(int evt_type) const
+    entry_type get_display(int evt_type) const
     {
         auto val = (is_transient) ? accum[evt_type] : value[evt_type];
         return val;
@@ -231,7 +273,7 @@ public:
         array_t<double> _accum;
         for(size_type i = 0; i < events.size(); ++i)
         {
-            _disp[i]  = compute_display(i);
+            _disp[i]  = get_display(i);
             _value[i] = value[i];
             _accum[i] = accum[i];
         }
@@ -284,10 +326,12 @@ public:
         return arr;
     }
 
-    string_t compute_display() const
+    string_t get_display() const
     {
-        auto val              = (is_transient) ? accum : value;
-        auto _compute_display = [&](std::ostream& os, size_type idx) {
+        if(events.size() == 0)
+            return "";
+        auto val          = (is_transient) ? accum : value;
+        auto _get_display = [&](std::ostream& os, size_type idx) {
             auto     _obj_value = val[idx];
             auto     _evt_type  = events[idx];
             string_t _label     = papi::get_event_info(_evt_type).short_descr;
@@ -310,7 +354,7 @@ public:
         std::stringstream ss;
         for(size_type i = 0; i < events.size(); ++i)
         {
-            _compute_display(ss, i);
+            _get_display(ss, i);
             if(i + 1 < events.size())
                 ss << ", ";
         }
@@ -319,8 +363,10 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
+        if(obj.events.size() == 0)
+            return os;
         // output the metrics
-        auto _value = obj.compute_display();
+        auto _value = obj.get_display();
         auto _label = this_type::get_label();
         auto _disp  = this_type::display_unit();
         auto _prec  = this_type::get_precision();
@@ -336,7 +382,6 @@ public:
         else if(!_label.empty())
             ss_extra << " " << _label;
         os << ss_value.str() << ss_extra.str();
-
         return os;
     }
 };

@@ -31,9 +31,12 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
-#include "timemory/backends/cupti.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/backends/cupti.hpp"
+#endif
 
 #include <algorithm>
 #include <numeric>
@@ -50,16 +53,21 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 
-struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
+#if defined(TIMEMORY_USE_CUPTI)
+
+struct cupti_event
+: public base<cupti_event, cupti::profiler::results_t, policy::thread_init,
+              policy::thread_finalize>
 {
     using size_type     = std::size_t;
     using string_t      = std::string;
     using kernel_data_t = cupti::result;
     using value_type    = cupti::profiler::results_t;
     using entry_type    = typename value_type::value_type;
-    using base_type     = base<cupti_event, value_type>;
-    using this_type     = cupti_event;
-    using event_count   = static_counted_object<cupti_event>;
+    using base_type =
+        base<cupti_event, value_type, policy::thread_init, policy::thread_finalize>;
+    using this_type   = cupti_event;
+    using event_count = static_counted_object<cupti_event>;
     // short-hard for vectors
     using strvec_t  = std::vector<string_t>;
     using intvec_t  = std::vector<int>;
@@ -97,30 +105,28 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
         return _instance;
     }
 
+    static const profvec_t& get_profilers() { return get_private_profilers(); }
+    static const strvec_t&  get_events() { return get_private_events(); }
+    static const strvec_t&  get_metrics() { return get_private_metrics(); }
+    static const intvec_t&  get_devices() { return get_private_devices(); }
+    static const strvec_t&  get_labels() { return get_private_labels(); }
+    static void             invoke_thread_init() { init(); }
+    static void             invoke_thread_finalize() {}
+
     // size_type size() const { return (is_transient) ? accum.size() : value.size(); }
 
-    cupti_event(const strvec_t& events  = get_event_setter()(),
-                const strvec_t& metrics = get_metric_setter()(),
-                const intvec_t& devices = get_device_setter()())
+    explicit cupti_event()
     {
-        init(events, metrics, devices);
+        value.resize(m_labels.size());
+        accum.resize(m_labels.size());
+        for(size_type i = 0; i < m_labels.size(); ++i)
+        {
+            value[i].name = m_labels[i];
+            accum[i].name = m_labels[i];
+        }
     }
 
-    ~cupti_event() { clear(); }
-
-    void clear()
-    {
-        // for(auto& itr : m_profilers)
-        //    delete itr;
-        m_profilers.clear();
-    }
-
-    //----------------------------------------------------------------------------------//
-    // serialization
-    //
-    // template <typename Archive>
-    // void serialize(Archive& ar, const unsigned int)
-    //{}
+    ~cupti_event() {}
 
     static int64_t unit() { return 1; }
     // leave these empty
@@ -130,10 +136,9 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
 
     static value_type record() { return value_type{}; }
 
-    string_t compute_display() const
+    string_t get_display() const
     {
-        auto _compute_display = [&](std::ostream& os, const cupti::result& obj) {
-            auto _idx   = obj.index;
+        auto _get_display = [&](std::ostream& os, const cupti::result& obj) {
             auto _label = obj.name;
             auto _prec  = base_type::get_precision();
             auto _width = base_type::get_width();
@@ -142,13 +147,7 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
             std::stringstream ss, ssv, ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec);
-            switch(_idx)
-            {
-                case 0: ssv << std::get<0>(obj.data); break;
-                case 1: ssv << std::get<1>(obj.data); break;
-                case 2: ssv << std::get<2>(obj.data); break;
-                default: ssv << -1; break;
-            }
+            cupti::impl::print(ssv, obj.data);
             if(!_label.empty())
                 ssi << " " << _label;
             ss << ssv.str() << ssi.str();
@@ -159,7 +158,7 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
         std::stringstream ss;
         for(size_type i = 0; i < _data.size(); ++i)
         {
-            _compute_display(ss, _data[i]);
+            _get_display(ss, _data[i]);
             if(i + 1 < _data.size())
                 ss << ", ";
         }
@@ -172,12 +171,7 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
         const auto&         _data = (is_transient) ? accum : value;
         for(auto itr : _data)
         {
-            switch(itr.index)
-            {
-                case 0: values.push_back(std::get<0>(itr.data)); break;
-                case 1: values.push_back(std::get<1>(itr.data)); break;
-                case 2: values.push_back(std::get<2>(itr.data)); break;
-            }
+            values.push_back(cupti::impl::get<double>(itr.data));
         }
         return values;
     }
@@ -188,7 +182,7 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
     //----------------------------------------------------------------------------------//
     // array of descriptions
     //
-    array_t<string_t> label_array()
+    static array_t<string_t> label_array()
     {
         array_t<string_t> arr;
         auto              contains = [&](const string_t& entry) {
@@ -198,7 +192,7 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
             if(!contains(entry))
                 arr.push_back(entry);
         };
-        for(const auto& profiler : m_profilers)
+        for(const auto& profiler : get_profilers())
         {
             for(const auto& itr : profiler->get_event_names())
                 insert(itr);
@@ -211,25 +205,22 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
     //----------------------------------------------------------------------------------//
     // array of labels
     //
-    array_t<string_t> descript_array() { return label_array(); }
+    static array_t<string_t> descript_array() { return label_array(); }
 
     //----------------------------------------------------------------------------------//
     // array of unit
     //
-    array_t<string_t> display_unit_array()
+    static array_t<string_t> display_unit_array()
     {
-        return array_t<string_t>(m_profilers.size(), "");
+        return array_t<string_t>(get_profilers().size(), "");
     }
 
     //----------------------------------------------------------------------------------//
     // array of unit values
     //
-    array_t<int64_t> unit_array()
+    static array_t<int64_t> unit_array()
     {
-        array_t<int64_t> arr;
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            arr[i] = 1;
-        return arr;
+        return array_t<int64_t>(get_labels().size(), 1);
     }
 
     //----------------------------------------------------------------------------------//
@@ -279,10 +270,22 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
 
     this_type& operator+=(const this_type& rhs)
     {
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            accum[i] += rhs.accum[i];
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            value[i] += rhs.value[i];
+        if(accum.empty())
+        {
+            accum = rhs.accum;
+        } else
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                accum[i] += rhs.accum[i];
+        }
+        if(value.empty())
+        {
+            value = rhs.value;
+        } else
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                value[i] += rhs.value[i];
+        }
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -290,54 +293,59 @@ struct cupti_event : public base<cupti_event, cupti::profiler::results_t>
 
     this_type& operator-=(const this_type& rhs)
     {
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            accum[i] -= rhs.accum[i];
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            value[i] -= rhs.value[i];
+        if(!accum.empty())
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                accum[i] -= rhs.accum[i];
+        }
+        if(!value.empty())
+        {
+            for(size_type i = 0; i < m_labels.size(); ++i)
+                value[i] -= rhs.value[i];
+        }
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
     }
 
-    value_type serialization() { return accum; }
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        auto _get = [&](const value_type& _data) {
+            std::vector<double> values;
+            for(auto itr : _data)
+                values.push_back(cupti::impl::get<double>(itr.data));
+            return values;
+        };
+        array_t<double> _disp  = _get(accum);
+        array_t<double> _value = _get(value);
+        array_t<double> _accum = _get(accum);
+        ar(serializer::make_nvp("is_transient", is_transient),
+           serializer::make_nvp("laps", laps), serializer::make_nvp("value", _value),
+           serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
+    }
 
     //----------------------------------------------------------------------------------//
     //
-
-    /*
-    cupti_event(const cupti_event& rhs)
-    : base_type(rhs)
-    , m_events(rhs.m_events)
-    , m_metrics(rhs.m_metrics)
-    , m_devices(rhs.m_devices)
-    , m_labels(rhs.m_labels)
-    {}
-
-    cupti_event& operator=(const cupti_event& rhs)
+    cupti_event(const cupti_event&) = default;
+    cupti_event(cupti_event&&)      = default;
+    cupti_event& operator           =(const cupti_event& rhs)
     {
         if(this != &rhs)
-        {
             base_type::operator=(rhs);
-            m_events           = rhs.m_events;
-            m_metrics          = rhs.m_metrics;
-            m_devices          = rhs.m_devices;
-            m_labels           = rhs.m_labels;
-        }
         return *this;
     }
-    */
-
-    cupti_event(const cupti_event&) = default;
-    cupti_event& operator=(const cupti_event&) = default;
-    cupti_event(cupti_event&&)                 = default;
     cupti_event& operator=(cupti_event&&) = default;
 
 private:
-    profvec_t m_profilers;
-    strvec_t  m_events;
-    strvec_t  m_metrics;
-    intvec_t  m_devices;
-    strvec_t  m_labels;
+    const profvec_t& m_profilers = get_profilers();
+    const strvec_t&  m_events    = get_events();
+    const strvec_t&  m_metrics   = get_metrics();
+    const intvec_t&  m_devices   = get_devices();
+    const strvec_t&  m_labels    = get_labels();
 
     template <typename _Tp>
     struct writer
@@ -358,26 +366,97 @@ private:
         }
     };
 
-    void init(const strvec_t& events, const strvec_t& metrics, const intvec_t& devices)
+    static profvec_t& get_private_profilers()
+    {
+        static thread_local profvec_t _instance;
+        return _instance;
+    }
+
+    static strvec_t& get_private_events()
+    {
+        static thread_local strvec_t _instance;
+        return _instance;
+    }
+
+    static strvec_t& get_private_metrics()
+    {
+        static thread_local strvec_t _instance;
+        return _instance;
+    }
+
+    static intvec_t& get_private_devices()
+    {
+        static thread_local intvec_t _instance;
+        return _instance;
+    }
+
+    static strvec_t& get_private_labels()
+    {
+        static thread_local strvec_t _instance;
+        return _instance;
+    }
+
+    static void init()
     {
         clear();
-        for(const auto& device : devices)
-            m_profilers.push_back(
-                profptr_t(new cupti::profiler(events, metrics, device)));
+        auto& _profilers = get_private_profilers();
+        auto& _events    = get_private_events();
+        auto& _metrics   = get_private_metrics();
+        auto& _devices   = get_private_devices();
+        auto& _labels    = get_private_labels();
 
-        m_devices = devices;
-        m_events  = events;
-        m_metrics = metrics;
-        m_labels  = label_array();
-        value.resize(m_labels.size());
-        for(size_type i = 0; i < m_labels.size(); ++i)
-            value[i].name = m_labels[i];
-        std::cout << "Devices : " << writer<intvec_t>(m_devices) << std::endl;
-        std::cout << "Event   : " << writer<strvec_t>(m_events) << std::endl;
-        std::cout << "Metrics : " << writer<strvec_t>(m_metrics) << std::endl;
-        std::cout << "Labels  : " << writer<strvec_t>(m_labels) << std::endl;
+        _events  = get_event_setter()();
+        _metrics = get_metric_setter()();
+        _devices = get_device_setter()();
+
+        for(const auto& _device : _devices)
+            _profilers.push_back(
+                profptr_t(new cupti::profiler(_events, _metrics, _device)));
+
+        _labels = label_array();
+        std::cout << "Devices : " << writer<intvec_t>(_devices) << std::endl;
+        std::cout << "Event   : " << writer<strvec_t>(_events) << std::endl;
+        std::cout << "Metrics : " << writer<strvec_t>(_metrics) << std::endl;
+        std::cout << "Labels  : " << writer<strvec_t>(_labels) << std::endl;
+    }
+
+    static void clear()
+    {
+        get_private_labels().clear();
+        get_private_devices().clear();
+        get_private_metrics().clear();
+        get_private_events().clear();
+        get_private_profilers().clear();
     }
 };
+
+#else
+struct cupti_event
+: public base<cupti_event, int64_t, policy::thread_init, policy::thread_finalize>
+{
+    using value_type = int64_t;
+    using base_type =
+        base<trip_count, value_type, policy::thread_init, policy::thread_finalize>;
+
+    static const short                   precision = 0;
+    static const short                   width     = 5;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t     unit() { return 1; }
+    static std::string label() { return "cupti_event"; }
+    static std::string descript() { return "cupti_event"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return 0; }
+
+    value_type get_display() const { return 0; }
+    value_type get() const { return 0; }
+
+    void start() {}
+
+    void stop() {}
+};
+#endif
 
 }  // namespace component
 }  // namespace tim
