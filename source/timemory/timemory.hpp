@@ -30,18 +30,100 @@
 
 #pragma once
 
-#include "timemory/components.hpp"
-#include "timemory/manager.hpp"
-#include "timemory/settings.hpp"
-#include "timemory/units.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_timer.hpp"
-#include "timemory/variadic/macros.hpp"
+#if defined(DISABLE_TIMEMORY)
 
-#include "timemory/ctimemory.h"
+namespace tim
+{
+void
+print_env()
+{
+}
+template <typename... _Args>
+void
+timemory_init(_Args...)
+{
+}
+void
+timemory_finalize()
+{
+}
+
+/// this provides "functionality" for *_INSTANCE macros
+/// and can be omitted if these macros are not utilized
+struct dummy
+{
+    template <typename... _Args>
+    dummy(_Args&&...)
+    {
+    }
+    ~dummy()            = default;
+    dummy(const dummy&) = default;
+    dummy(dummy&&)      = default;
+    dummy& operator=(const dummy&) = default;
+    dummy& operator=(dummy&&) = default;
+
+    void start() {}
+    void stop() {}
+    void conditional_start() {}
+    void conditional_stop() {}
+    void report_at_exit(bool) {}
+    template <typename... _Args>
+    void mark_begin(_Args&&...)
+    {
+    }
+    template <typename... _Args>
+    void mark_end(_Args&&...)
+    {
+    }
+    friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
+};
+}  // namespace tim
+
+// creates a label
+#    define TIMEMORY_BASIC_LABEL(...) std::string("")
+#    define TIMEMORY_LABEL(...) std::string("")
+
+// define an object
+#    define TIMEMORY_BLANK_OBJECT(...)
+#    define TIMEMORY_BASIC_OBJECT(...)
+#    define TIMEMORY_OBJECT(...)
+
+// define an object with a caliper reference
+#    define TIMEMORY_BLANK_CALIPER(...)
+#    define TIMEMORY_BASIC_CALIPER(...)
+#    define TIMEMORY_CALIPER(...)
+#    define TIMEMORY_CALIPER_APPLY(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+
+// define an object
+#    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
+#    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
+#    define TIMEMORY_INSTANCE(...) tim::dummy()
+
+// debug only
+#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
+#    define TIMEMORY_DEBUG_OBJECT(...)
+#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
+#    define TIMEMORY_DEBUG_OBJECT(...)
+
+// for CUDA
+#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
+#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
+
+#else
+
+#    include "timemory/components.hpp"
+#    include "timemory/manager.hpp"
+#    include "timemory/settings.hpp"
+#    include "timemory/units.hpp"
+#    include "timemory/utility/macros.hpp"
+#    include "timemory/utility/utility.hpp"
+#    include "timemory/variadic/auto_hybrid.hpp"
+#    include "timemory/variadic/auto_list.hpp"
+#    include "timemory/variadic/auto_timer.hpp"
+#    include "timemory/variadic/macros.hpp"
+
+#    include "timemory/ctimemory.h"
 
 //======================================================================================//
 
@@ -84,21 +166,21 @@ using recommended_hybrid_t = component_hybrid<recommended_tuple_t, recommended_l
 
 //======================================================================================//
 
-#if defined(TIMEMORY_EXTERN_TEMPLATES)
-#    include "timemory/templates/native_extern.hpp"
-#endif
+#    if defined(TIMEMORY_EXTERN_TEMPLATES)
+#        include "timemory/templates/native_extern.hpp"
+#    endif
 
 //======================================================================================//
 
-#if defined(TIMEMORY_EXTERN_TEMPLATES) && defined(TIMEMORY_USE_CUDA)
+#    if defined(TIMEMORY_EXTERN_TEMPLATES) && defined(TIMEMORY_USE_CUDA)
 // not yet implemented
 // #    include "timemory/templates/cuda_extern.hpp"
-#endif
+#    endif
 
 //======================================================================================//
 
-#if defined(TIMEMORY_EXTERN_INIT)
-#    include "timemory/utility/storage.hpp"
+#    if defined(TIMEMORY_EXTERN_INIT)
+#        include "timemory/utility/storage.hpp"
 
 TIMEMORY_DECLARE_EXTERN_STORAGE(real_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(system_clock)
@@ -126,6 +208,8 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(num_signals)
 TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_STORAGE(priority_context_switch)
 
-#endif
+#    endif  // defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
+
+#endif  // ! defined(DISABLE_TIMEMORY)

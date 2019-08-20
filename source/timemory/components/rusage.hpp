@@ -695,9 +695,8 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 
 //--------------------------------------------------------------------------------------//
 /// \class written_bytes
-/// \brief I/O counter: bytes read Attempt to count the number of bytes which this process
-/// really did cause to be fetched from the storage layer. Done at the submit_bio() level,
-/// so it is accurate for block-backed filesystems.
+/// \brief I/O counter: Attempt to count the number of bytes which this process caused to
+/// be sent to the storage layer. This is done at page-dirtying time.
 //
 struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 {

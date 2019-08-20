@@ -90,13 +90,13 @@ int main(int argc, char** argv)
     //
     // create an auto tuple accessible via a caliper integer or expand to nothing
     //
-    TIMEMORY_AUTO_TUPLE_CALIPER(main, auto_tuple_t, "");
-    TIMEMORY_AUTO_TUPLE_CALIPER(0, auto_tuple_t, "[]");
+    auto main = TIMEMORY_INSTANCE(auto_tuple_t, "");
+    TIMEMORY_CALIPER(0, auto_tuple_t, "[]");
 
     //
     // call <auto_tuple_t>.report_at_exit(true) or expand to nothing
     //
-    TIMEMORY_CALIPER_APPLY(main, report_at_exit, true);
+    main.report_at_exit(true);
     TIMEMORY_CALIPER_APPLY(0, report_at_exit, true);
 
     //
@@ -121,8 +121,9 @@ int main(int argc, char** argv)
     //
     // call <auto_tuple_t>.stop() or expand to nothing
     //
-    TIMEMORY_CALIPER_APPLY(main, stop);
+    main.stop();
 
+    tim::timemory_finalize();
     status();
 }
 
@@ -139,7 +140,7 @@ long impl::fibonacci(long n)
 
 long fibonacci(long n)
 {
-    TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "(", n, ")");
+    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "(", n, ")");
     return impl::fibonacci(n);
 }
 

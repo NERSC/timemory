@@ -102,7 +102,7 @@ main(int argc, char** argv)
     // execute fibonacci in a thread
     //
     auto exec_fibonacci = [&](int64_t n) {
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(0, auto_tuple_t, "fibonacci(", n, ")");
+        TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "fibonacci(", n, ")");
         auto ret = fibonacci(n);
         TIMEMORY_CALIPER_APPLY(0, stop);
         printf("fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
@@ -112,7 +112,7 @@ main(int argc, char** argv)
     // execute random_fibonacci in a thread
     //
     auto exec_random_fibonacci = [&](int64_t n) {
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(1, auto_tuple_t, "random_fibonacci(", n, ")");
+        TIMEMORY_BLANK_CALIPER(1, auto_tuple_t, "random_fibonacci(", n, ")");
         auto ret = random_fibonacci(n);
         TIMEMORY_CALIPER_APPLY(1, stop);
         printf("random_fibonacci(%li) = %.1f\n", static_cast<long>(n), ret);
@@ -121,7 +121,7 @@ main(int argc, char** argv)
     //
     // overall timing
     //
-    auto _main = TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_t, "overall_timer");
+    auto _main = TIMEMORY_BLANK_INSTANCE(auto_tuple_t, "overall_timer");
     _main.report_at_exit(true);
     real_clock total;
     total.start();

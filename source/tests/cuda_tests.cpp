@@ -201,11 +201,11 @@ TEST_F(cuda_tests, saxpy_streams)
         y[i] = 2.0;
     }
 
-    TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(mem, tuple_t, "memory");
+    TIMEMORY_BLANK_CALIPER(mem, tuple_t, "memory");
     auto& mem = TIMEMORY_CALIPER_REFERENCE(mem);
     mem.start();
 
-    TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(dev, tuple_t, "iterations + memory");
+    TIMEMORY_BLANK_CALIPER(dev, tuple_t, "iterations + memory");
     auto& dev = TIMEMORY_CALIPER_REFERENCE(dev);
     dev.start();
 

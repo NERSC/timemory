@@ -32,6 +32,11 @@ endif()
 
 message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
 
+add_googletest(macro_tests
+    DISCOVER_TESTS
+    SOURCES         macro_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options)
+
 add_googletest(hybrid_tests
     DISCOVER_TESTS
     SOURCES         hybrid_tests.cpp

@@ -24,9 +24,12 @@
 
 #include "gtest/gtest.h"
 
-#include <chrono>
-#include <thread>
 #include <timemory/timemory.hpp>
+
+#include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 using namespace tim::component;
 using mutex_t   = std::mutex;

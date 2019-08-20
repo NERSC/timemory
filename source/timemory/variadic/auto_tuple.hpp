@@ -53,20 +53,20 @@ namespace tim
 
 template <typename... Types>
 class auto_tuple
-: public tim::counted_object<auto_tuple<Types...>>
-, public tim::hashed_object<auto_tuple<Types...>>
+: public counted_object<auto_tuple<Types...>>
+, public hashed_object<auto_tuple<Types...>>
 {
 public:
-    using component_type = tim::component_tuple<Types...>;
+    using component_type = component_tuple<Types...>;
     using this_type      = auto_tuple<Types...>;
     using data_type      = typename component_type::data_type;
-    using counter_type   = tim::counted_object<this_type>;
-    using counter_void   = tim::counted_object<void>;
-    using hashed_type    = tim::hashed_object<this_type>;
+    using counter_type   = counted_object<this_type>;
+    using counter_void   = counted_object<void>;
+    using hashed_type    = hashed_object<this_type>;
     using string_t       = std::string;
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
-    using language_t     = tim::language;
+    using language_t     = language;
 
 public:
     inline explicit auto_tuple(const string_t&, const int64_t& lineno = 0,
@@ -91,8 +91,8 @@ public:
 
 public:
     // public member functions
-    inline component_type&       component_tuple() { return m_temporary_object; }
-    inline const component_type& component_tuple() const { return m_temporary_object; }
+    inline component_type&       get_component_type() { return m_temporary_object; }
+    inline const component_type& get_component_type() const { return m_temporary_object; }
 
     // partial interface to underlying component_tuple
     inline void record() { m_temporary_object.record(); }
@@ -105,6 +105,14 @@ public:
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
+
+    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline const data_type& data() const { return m_temporary_object.data(); }
+    inline int64_t          laps() const { return m_temporary_object.laps(); }
+    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
+    inline const string_t&  key() const { return m_temporary_object.key(); }
+    inline const language&  lang() const { return m_temporary_object.lang(); }
+    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
 
 public:
     template <std::size_t _N>
@@ -155,7 +163,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& line
                   ? (string_hash()(object_tag) * static_cast<int64_t>(lang) +
                      (counter_type::live() + hashed_type::live() + lineno))
                   : 0)
-, m_enabled(counter_type::enable() && tim::settings::enabled())
+, m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
 , m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
                      m_enabled)
@@ -219,45 +227,57 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
+//  DEPRECATED use macros in timemory/variadic/macros.hpp!
+/// DEPRECATED
 #define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
     TIMEMORY_BLANK_OBJECT(auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
     TIMEMORY_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_AUTO_TUPLE(auto_tuple_type, ...)                                        \
     TIMEMORY_OBJECT(auto_tuple_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-// caliper versions
+// caliper versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
 
+/// DEPRECATED
 #define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
     TIMEMORY_BLANK_CALIPER(id, auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
     TIMEMORY_BASIC_CALIPER(id, auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                            \
     TIMEMORY_CALIPER(id, auto_tuple_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-// instance versions
+// instance versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
 
+/// DEPRECATED
 #define TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
     TIMEMORY_BLANK_INSTANCE(auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_BASIC_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
     TIMEMORY_BASIC_INSTANCE(auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                               \
     TIMEMORY_INSTANCE(auto_tuple_type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-// debug versions
+// debug versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
 
+/// DEPRECATED
 #define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                            \
     TIMEMORY_DEBUG_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
 
+/// DEPRECATED
 #define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, ...)                                  \
     TIMEMORY_DEBUG_OBJECT(auto_tuple_type, __VA_ARGS__)
 

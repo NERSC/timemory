@@ -15,7 +15,7 @@ In C++ and Python, TiMemory can be added in one line of code (once the type is d
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss>;
 void some_function()
 {
-    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+    TIMEMORY_OBJECT(auto_tuple_t, "");
     // ...
 }
 ```
@@ -26,7 +26,7 @@ void some_function()
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss, cuda_event>;
 void some_function()
 {
-    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+    TIMEMORY_OBJECT(auto_tuple_t, "");
     // ...
 }
 ```
@@ -42,10 +42,11 @@ def some_function():
 ### C
 
 In C, TiMemory requires only two lines of code
+
 ```c
-void* timer = TIMEMORY_AUTO_TUPLE("", WALL_CLOCK, SYS_CLOCK, USER_CLOCK, PEAK_RSS, CUDA_EVENT);
+void* timer = TIMEMORY_OBJECT("", WALL_CLOCK, SYS_CLOCK, USER_CLOCK, PEAK_RSS, CUDA_EVENT);
 // ...
-FREE_TIMEMORY_AUTO_TUPLE(timer);
+FREE_TIMEMORY_OBJECT(timer);
 ```
 
 When the application terminates, output to text and JSON is automated or controlled via
@@ -97,7 +98,7 @@ using comp_tuple_t = typename auto_tuple_t::component_type;
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_AUTO_TUPLE(real_tuple_t, "");
+    TIMEMORY_BASIC_OBJECT(real_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 
@@ -120,7 +121,7 @@ main(int argc, char** argv)
     for(auto n : { 10, 11, 12 })
     {
         // create a caliper handle to an auto_tuple_t and have it report when destroyed
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");
+        TIMEMORY_BLANK_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");
         TIMEMORY_CALIPER_APPLY(fib, report_at_exit, true);
         // run calculation
         auto ret = fibonacci(n);
