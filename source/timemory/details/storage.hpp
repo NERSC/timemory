@@ -33,11 +33,13 @@
 #include "timemory/mpl/operations.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
+#include "timemory/utility/macros.hpp"
 
 #include <map>
 #include <numeric>
 #include <stdexcept>
 #include <thread>
+#include <limits>
 
 //======================================================================================//
 
@@ -45,7 +47,18 @@ namespace tim
 {
 namespace details
 {
-inline std::atomic<int>&
+template <typename _Tp>
+bool
+is_finite(const _Tp& val)
+{
+#if defined(_WINDOWS)
+    return (val == val && std::abs<_Tp>(val) != std::numeric_limits<_Tp>::infinity());
+#else
+    return std::isfinite(val);
+#endif
+}
+
+    inline std::atomic<int>&
 storage_once_flag()
 {
     static std::atomic<int> _instance;
@@ -131,7 +144,7 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     // negative values appear when multiple threads are involved.
     // This needs to be addressed
     for(size_t i = 0; i < obj.size(); ++i)
-        if(obj[i] < 0.0 || !std::isfinite(obj[i]))
+        if(obj[i] < 0.0 || !is_finite(obj[i]))
             return;
 
     std::stringstream ss;
@@ -159,7 +172,7 @@ print_percentage(std::ostream& os, const _Tp& obj)
 {
     // negative values appear when multiple threads are involved.
     // This needs to be addressed
-    if(obj < 0.0 || !std::isfinite(obj))
+    if(obj < 0.0 || !is_finite(obj))
         return;
 
     std::stringstream ss;
