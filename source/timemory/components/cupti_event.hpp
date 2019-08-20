@@ -118,8 +118,12 @@ struct cupti_event
     explicit cupti_event()
     {
         value.resize(m_labels.size());
+        accum.resize(m_labels.size());
         for(size_type i = 0; i < m_labels.size(); ++i)
+        {
             value[i].name = m_labels[i];
+            accum[i].name = m_labels[i];
+        }
     }
 
     ~cupti_event() {}

@@ -199,7 +199,7 @@ TEST_F(papi_tests, array_single_precision_ops)
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
-    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
+    papi_array_t::get_initializer() = []() { return std::vector<int>({ PAPI_SP_OPS }); };
     auto ret = details::run_cpu_ops_kernel<float, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
@@ -246,7 +246,7 @@ TEST_F(papi_tests, array_double_precision_ops)
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
-    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
+    papi_array_t::get_initializer() = []() { return std::vector<int>({ PAPI_DP_OPS }); };
     auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
@@ -293,7 +293,7 @@ TEST_F(papi_tests, array_load_store_ins_dp)
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
-    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_LST_INS }); };
+    papi_array_t::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
     auto ret = details::run_cpu_ops_kernel<double, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);
@@ -315,7 +315,7 @@ TEST_F(papi_tests, array_load_store_ins_tp)
     using test_type = papi_array_t;
     CHECK_AVAILABLE(test_type);
 
-    papi_array_t::get_events_func() = []() { return std::vector<int>({ PAPI_LST_INS }); };
+    papi_array_t::get_initializer() = []() { return std::vector<int>({ PAPI_LST_INS }); };
     auto ret = details::run_cpu_ops_kernel<long double, FLOPS, test_type>(TRIALS, SIZE);
 
     auto obj            = std::get<0>(ret);

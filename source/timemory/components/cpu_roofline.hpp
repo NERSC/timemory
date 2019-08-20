@@ -172,7 +172,7 @@ struct cpu_roofline
         return _instance;
     }
 
-    static operation_function_t& get_finalize_function()
+    static operation_function_t& get_finalizer()
     {
         static operation_function_t _instance = []() {
             // vectorization number of ops
@@ -248,7 +248,7 @@ struct cpu_roofline
     static void invoke_global_finalize()
     {
         // run roofline peak generation
-        auto  op_counter_func = get_finalize_function();
+        auto  op_counter_func = get_finalizer();
         auto* op_counter      = op_counter_func();
         get_operation_counter().reset(op_counter);
         if(op_counter && (settings::verbose() > 0 || settings::debug()))

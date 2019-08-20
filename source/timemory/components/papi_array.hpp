@@ -60,7 +60,7 @@ struct papi_array
     using base_type  = base<papi_array<MaxNumEvents>, value_type, policy::thread_init,
                            policy::thread_finalize>;
     using this_type  = papi_array<MaxNumEvents>;
-    using get_events_func_t = std::function<event_list()>;
+    using get_initializer_t = std::function<event_list()>;
 
     static const short                   precision = 3;
     static const short                   width     = 12;
@@ -99,9 +99,9 @@ struct papi_array
         return _instance;
     }
 
-    static get_events_func_t& get_events_func()
+    static get_initializer_t& get_initializer()
     {
-        static get_events_func_t _instance = []() {
+        static get_initializer_t _instance = []() {
             auto events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS", "");
             if(settings::verbose() > 0 || settings::debug())
             {
@@ -125,7 +125,7 @@ struct papi_array
         return _instance;
     }
 
-    static event_list get_events() { return get_events_func()(); }
+    static event_list get_events() { return get_initializer()(); }
 
     static void invoke_thread_init()
     {

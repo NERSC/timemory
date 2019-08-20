@@ -442,7 +442,7 @@ main(int argc, char** argv)
     if(papi_enabled())
     {
         tim::papi::init();
-        papi_array_t::get_events_func() = [&]() {
+        papi_array_t::get_initializer() = [&]() {
             auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
             vector_t<string_t> events_str_list = tim::delimit(events_str);
             vector_t<int>      events_list;
