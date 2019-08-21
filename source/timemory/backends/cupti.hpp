@@ -574,7 +574,9 @@ static void CUPTIAPI
 
     // This callback is enabled only for launch so we shouldn't see anything else.
     if((cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020) &&
-       (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000))
+       (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000) &&
+       (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000) &&
+       (cbid != CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000))
     {
         char buf[512];
         sprintf(buf, "%s:%d: Unexpected cbid %d\n", __FILE__, __LINE__, cbid);
@@ -846,6 +848,10 @@ struct profiler
         CUPTI_CALL(cuptiSubscribe(&m_subscriber,
                                   (CUpti_CallbackFunc) impl::get_value_callback,
                                   &m_kernel_data));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
         CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                        CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
         CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
