@@ -85,21 +85,43 @@ struct cupti_event
 
     static event_func_t& get_event_setter()
     {
-        static event_func_t _instance = []() { return strvec_t(); };
+        static event_func_t _instance = []() {
+            auto env = get_env<string_t>("TIMEMORY_CUPTI_EVENTS", "");
+            return delimit(env);
+        };
         return _instance;
     }
 
     static metric_func_t& get_metric_setter()
     {
-        static metric_func_t _instance = []() { return strvec_t(); };
+        static metric_func_t _instance = []() {
+            auto env = get_env<string_t>("TIMEMORY_CUPTI_METRICS", "");
+            return delimit(env);
+        };
         return _instance;
     }
 
     static device_func_t& get_device_setter()
     {
         static device_func_t _instance = []() {
-            intvec_t devices(tim::cuda::device_count(), 0);
-            std::iota(devices.begin(), devices.end(), 0);
+            auto     env = get_env<string_t>("TIMEMORY_CUPTI_DEVICES", "");
+            intvec_t devices;
+            int      device_count = cuda::device_count();
+            if(env.length() > 0)
+            {
+                auto _devices = tim::delimit(env);
+                for(auto itr : _devices)
+                {
+                    auto dev = atoi(itr.c_str());
+                    if(dev < device_count)
+                        devices.push_back(dev);
+                }
+            }
+            if(devices.size() == 0)
+            {
+                devices.resize(device_count, 0);
+                std::iota(devices.begin(), devices.end(), 0);
+            }
             return devices;
         };
         return _instance;
@@ -229,6 +251,25 @@ struct cupti_event
     void start()
     {
         set_started();
+        value_type tmp;
+        for(size_type i = 0; i < m_profilers.size(); ++i)
+        {
+            m_profilers[i]->stop();
+            if(tmp.size() == 0)
+            {
+                tmp = m_profilers[i]->get_events_and_metrics(m_labels);
+            } else if(tmp.size() == m_labels.size())
+            {
+                auto ret = m_profilers[i]->get_events_and_metrics(m_labels);
+                for(size_t j = 0; j < m_labels.size(); ++j)
+                    tmp[j] += ret[j];
+            } else
+            {
+                fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
+                        __FUNCTION__, __FILE__, __LINE__);
+            }
+        }
+        value = std::move(tmp);
         for(size_type i = 0; i < m_profilers.size(); ++i)
             m_profilers[i]->start();
     }
@@ -257,6 +298,10 @@ struct cupti_event
         if(accum.size() == 0)
         {
             accum = tmp;
+            for(size_type i = 0; i < tmp.size(); ++i)
+            {
+                accum[i] -= value[i];
+            }
         } else
         {
             for(size_type i = 0; i < tmp.size(); ++i)

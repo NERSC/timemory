@@ -605,9 +605,9 @@ protected:
         apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
 
-private:
-    void init_manager();
-    void init_storage()
+public:
+    static void init_manager();
+    static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, data_type>();
     }

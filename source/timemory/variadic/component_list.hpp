@@ -116,6 +116,7 @@ public:
         apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         get_initializer()(*this);
     }
 
@@ -133,6 +134,7 @@ public:
         apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         get_initializer()(*this);
     }
 
@@ -151,6 +153,7 @@ public:
         apply<void>::set_value(m_data, nullptr);
         compute_identifier(key, lang);
         init_manager();
+        init_storage();
         get_initializer()(*this);
     }
 
@@ -803,8 +806,12 @@ protected:
     {
     }
 
-private:
-    void init_manager();
+public:
+    static void init_manager();
+    static void init_storage()
+    {
+        // apply<void>::type_access<operation::init_storage, implemented<Types...>>();
+    }
 };
 
 //--------------------------------------------------------------------------------------//

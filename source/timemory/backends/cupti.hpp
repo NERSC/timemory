@@ -159,7 +159,7 @@ static void CUPTIAPI
 namespace data
 {
 union metric_u {
-    int64_t  integer_v;
+    int64_t  integer_v = 0;
     uint64_t unsigned_integer_v;
     double   percent_v;
     double   floating_v;
@@ -589,6 +589,9 @@ static void CUPTIAPI
         return;
     }
 
+    static std::mutex            mtx;
+    std::unique_lock<std::mutex> lk(mtx);
+
     map_type*     kernel_data = static_cast<map_type*>(userdata);
     kernel_data_t dummy       = (*kernel_data)[dummy_kernel_id];
 
@@ -831,11 +834,19 @@ struct profiler
     {
         int device_count = 0;
 
+        // sync before starting
+        tim::cuda::device_sync();
+
         CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
         CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
         if(device_count == 0)
         {
             fprintf(stderr, "There is no device supporting CUDA.\n");
+            return;
+        }
+        if(events.size() + metrics.size() == 0)
+        {
+            fprintf(stderr, "No events or metrics were specified\n");
             return;
         }
 
@@ -845,18 +856,6 @@ struct profiler
         // Init device, context and setup callback
         CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, device_num));
         CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
-        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
-                                  (CUpti_CallbackFunc) impl::get_value_callback,
-                                  &m_kernel_data));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
-
         if(m_metric_names.size() > 0)
         {
             for(size_t i = 0; i < m_metric_names.size(); ++i)
@@ -931,9 +930,10 @@ struct profiler
 
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
-#if defined(__NVCC__)
-        impl::warmup<int><<<1, 1>>>();
-#endif
+        start();
+        device::params<device::default_device> p(1, 1, 0, 0);
+        device::launch(p, impl::warmup<int>);
+        stop();
     }
 
     ~profiler()
@@ -959,11 +959,41 @@ struct profiler
 
     int passes() { return m_metric_passes + m_event_passes; }
 
-    void start() {}
+    void start()
+    {
+        if(m_is_running)
+            return;
+        m_is_running = true;
+
+        tim::cuda::device_sync();
+
+        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
+                                  (CUpti_CallbackFunc) impl::get_value_callback,
+                                  &m_kernel_data));
+
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+
+        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
+        CUPTI_CALL(
+            cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
+
+        tim::cuda::device_sync();
+    }
+
     void stop()
     {
+        if(!m_is_running)
+            return;
+        m_is_running = false;
+
         using event_id_map_t = std::map<CUpti_EventID, uint64_t>;
-        tim::cuda::stream_sync(0);
+
+        tim::cuda::device_sync();
         for(auto& k : m_kernel_data)
         {
             if(k.first == impl::dummy_kernel_id)
@@ -1022,6 +1052,11 @@ struct profiler
                                        CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
         CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
                                        CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
+        CUPTI_CALL(
+            cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
         CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
     }
 
@@ -1163,6 +1198,7 @@ struct profiler
     const strvec_t& get_metric_names() const { return m_metric_names; }
 
 private:
+    bool                                 m_is_running    = false;
     int                                  m_device_num    = 0;
     int                                  m_metric_passes = 0;
     int                                  m_event_passes  = 0;
