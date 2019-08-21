@@ -116,7 +116,7 @@ fibonacci(intmax_t n)
 intmax_t
 time_fibonacci(intmax_t n, const std::string& scope_tag, const std::string& type_tag)
 {
-    TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", scope_tag, "-", type_tag, "]");
+    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "[", scope_tag, "-", type_tag, "]");
     return fibonacci(n);
 }
 
@@ -144,7 +144,7 @@ test_caliper(intmax_t nfib, const std::string& scope_tag)
 {
     std::atomic<int64_t> ret;
     // accumulate metrics on full run
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(tot, auto_tuple_t, "[total-", scope_tag, "-scope]");
+    TIMEMORY_BASIC_CALIPER(tot, auto_tuple_t, "[total-", scope_tag, "-scope]");
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n, const std::string& type_tag) {
@@ -152,14 +152,14 @@ test_caliper(intmax_t nfib, const std::string& scope_tag)
     };
 
     // run longer fibonacci calculations on two threads
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(worker_thread, auto_tuple_t, "[worker-thread-",
-                                      scope_tag, "-scope]");
+    TIMEMORY_BASIC_CALIPER(worker_thread, auto_tuple_t, "[worker-thread-", scope_tag,
+                           "-scope]");
     std::thread t(run_fibonacci, nfib, "worker");
     TIMEMORY_CALIPER_APPLY(worker_thread, stop);
 
     // run shorter fibonacci calculation on main thread
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(master_thread, auto_tuple_t, "[master-thread-",
-                                      scope_tag, "-scope]");
+    TIMEMORY_BASIC_CALIPER(master_thread, auto_tuple_t, "[master-thread-", scope_tag,
+                           "-scope]");
     run_fibonacci(nfib - 1, "master");
     TIMEMORY_CALIPER_APPLY(master_thread, stop);
 

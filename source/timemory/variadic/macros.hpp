@@ -81,8 +81,8 @@ using str = tim::apply<std::string>;
 //
 #    define _LINE_STRING priv::apply::join("", __LINE__)
 #    define _AUTO_NAME_COMBINE(X, Y) X##Y
-#    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(_tim_auto_variable, Y)
-#    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(typedef_auto_tuple, Y)
+#    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(timemory_variable_, Y)
+#    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(timemory_variable_type_, Y)
 //
 // helper macro for "__FUNCTION__@'__FILE__':__LINE__" tagging
 //
@@ -121,7 +121,7 @@ using str = tim::apply<std::string>;
 #    define TIMEMORY_JOIN(delim, ...) priv::apply::join(delim, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_AUTO_LABEL(...)
+/*! \def TIMEMORY_BASIC_LABEL(...)
  *
  * helper macro for "__FUNCTION__" + ... tagging
  *
@@ -129,15 +129,15 @@ using str = tim::apply<std::string>;
  *
  *      void func()
  *      {
- *          auto_timer_t timer(TIMEMORY_BASIC_AUTO_LABEL("example"), __LINE__)
+ *          auto_timer_t timer(TIMEMORY_BASIC_LABEL("example"), __LINE__)
  *          ...
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_LABEL(...)                                               \
+#    define TIMEMORY_BASIC_LABEL(...)                                                    \
         priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_AUTO_LABEL(...)
+/*! \def TIMEMORY_LABEL(...)
  *
  * helper macro for "__FUNCTION__" + ... + '@__FILE__':__LINE__" tagging
  *
@@ -145,11 +145,11 @@ using str = tim::apply<std::string>;
  *
  *      void func()
  *      {
- *          auto_timer_t timer(TIMEMORY_AUTO_LABEL("example"), __LINE__)
+ *          auto_timer_t timer(TIMEMORY_LABEL("example"), __LINE__)
  *          ...
  *      }
  */
-#    define TIMEMORY_AUTO_LABEL(...)                                                     \
+#    define TIMEMORY_LABEL(...)                                                          \
         priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                        \
                           _AUTO_STR(__FILE__, _LINE_STRING))
 

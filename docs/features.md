@@ -33,7 +33,7 @@ using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_ut
 
 void some_function()
 {
-    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+    TIMEMORY_OBJECT(auto_tuple_t, "");
     // ...
 }
 ```

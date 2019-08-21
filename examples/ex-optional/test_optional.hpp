@@ -47,21 +47,66 @@ using auto_tuple_thr = tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_
 
 #else
 
+#    include <ostream>
 #    include <string>
-#    define TIMEMORY_AUTO_TUPLE(...)
-#    define TIMEMORY_BASIC_AUTO_TUPLE(...)
-#    define TIMEMORY_BLANK_AUTO_TUPLE(...)
-#    define TIMEMORY_AUTO_TUPLE_CALIPER(...)
-#    define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(...)
-#    define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(...)
-#    define TIMEMORY_CALIPER_APPLY(...)
 
 namespace tim
 {
-void print_env() {}
-void timemory_init(int, char**, const std::string& = "", const std::string& = "") {}
-void timemory_init(const std::string&, const std::string& = "", const std::string& = "")
-{}
-}
+void                              print_env() {}
+template <typename... _Args> void timemory_init(_Args...) {}
+void                              timemory_finalize() {}
+
+/// this provides "functionality" for *_INSTANCE macros
+/// and can be omitted if these macros are not utilized
+struct dummy
+{
+    template <typename... _Args> dummy(_Args&&...) {}
+    ~dummy()            = default;
+    dummy(const dummy&) = default;
+    dummy(dummy&&)      = default;
+    dummy& operator=(const dummy&) = default;
+    dummy& operator=(dummy&&) = default;
+
+    void                              start() {}
+    void                              stop() {}
+    void                              conditional_start() {}
+    void                              conditional_stop() {}
+    void                              report_at_exit(bool) {}
+    template <typename... _Args> void mark_begin(_Args&&...) {}
+    template <typename... _Args> void mark_end(_Args&&...) {}
+    friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
+};
+}  // namespace tim
+
+// creates a label
+#    define TIMEMORY_BASIC_LABEL(...) std::string("")
+#    define TIMEMORY_LABEL(...) std::string("")
+
+// define an object
+#    define TIMEMORY_BLANK_OBJECT(...)
+#    define TIMEMORY_BASIC_OBJECT(...)
+#    define TIMEMORY_OBJECT(...)
+
+// define an object with a caliper reference
+#    define TIMEMORY_BLANK_CALIPER(...)
+#    define TIMEMORY_BASIC_CALIPER(...)
+#    define TIMEMORY_CALIPER(...)
+#    define TIMEMORY_CALIPER_APPLY(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+
+// define an object
+#    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
+#    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
+#    define TIMEMORY_INSTANCE(...) tim::dummy()
+
+// debug only
+#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
+#    define TIMEMORY_DEBUG_OBJECT(...)
+#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
+#    define TIMEMORY_DEBUG_OBJECT(...)
+
+// for CUDA
+#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
+#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
 
 #endif

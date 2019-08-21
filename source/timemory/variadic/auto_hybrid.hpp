@@ -25,15 +25,9 @@
 
 /** \file auto_hybrid.hpp
  * \headerfile auto_hybrid.hpp "timemory/variadic/auto_hybrid.hpp"
- * Automatic starting and stopping of components. Accept unlimited number of
- * parameters. The constructor starts the components, the destructor stops the
- * components
+ * Automatic starting and stopping of components. Accept a component_tuple as first
+ * type and component_list as second type
  *
- * Usage with macros (recommended):
- *    \param TIMEMORY_AUTO_TUPLE()
- *    \param TIMEMORY_BASIC_AUTO_TUPLE()
- *    \param auto t = TIMEMORY_AUTO_TUPLE_OBJ()
- *    \param auto t = TIMEMORY_BASIC_AUTO_TUPLE_OBJ()
  */
 
 #pragma once

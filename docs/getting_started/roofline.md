@@ -60,6 +60,7 @@ python -m timemory.roofline -- ./test_cxx_roofline
 | `-d`, `--display`     | bool       | Open a window with the plot                            |
 | `-o`, `--output-file` | bool       | Output filename of roofline plot                       |
 | `-D`, `--output-dir`  | bool       | Output directory for plot                              |
+| `-n`, `--num-threads` | integer    | Number of threads for the peak roofline calculation    |
 | `--format`            | bool       | Image format to render                                 |
 
 ## Customizing the calculation of the "roof" for the Roofline
@@ -84,13 +85,13 @@ cpu_roofline_dp_flops::get_finalize_threads_function() = []() { return 1; };
 
 ## Full Customization of the Roofline Model
 
-Full customization of the roofline model can be accomplished by changing the `get_finalize_function()` of
+Full customization of the roofline model can be accomplished by changing the `get_finalizer()` of
 the roofline component. See documentation on [exec_params](#execution-parameters) and [operation_counter](#operation-counter)
 for more detail about these types.
 
 ```cpp
     // overload the finalization function that runs ERT calculations
-    tim::component::cpu_roofline_dp_flops::get_finalize_function() = [=]() {
+    tim::component::cpu_roofline_dp_flops::get_finalizer() = [=]() {
 
         // these are the kernel functions we want to calculate the peaks with
         auto store_func = [](double& a, const double& b) { a = b; };

@@ -50,11 +50,26 @@ provide data via the POSIX rusage struct on Windows.
 
 > Namespace: `tim::trait`
 
-| Type Trait                        | Description                                                                                                                                  | Default Setting   |
-| --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------- |
-| `tim::trait::record_max`          | Specify that arithmetic operations should use comparisions                                                                                   | `std::false_type` |
-| `tim::trait::is_available`        | Specify the availablity of the component's implementation                                                                                    | `std::true_type`  |
-| `tim::trait::array_serialization` | Specify the component stores data as an array and invoke `_array` variants of `label`, `descript`, `display_unit`, and `unit` function calls | `std::false_type` |
+
+| Type Trait                     | Description                                                                            | Default Setting   |
+| ------------------------------ | -------------------------------------------------------------------------------------- | ----------------- |
+| **`record_max`**               | Specify that arithmetic operations should use comparisions                             | `std::false_type` |
+| **`array_serialization`**      | Specify the component stores data as an array                                          | `std::false_type` |
+| **`is_available`**             | Specify the availablity of the component's implementation                              | `std::true_type`  |
+| **`external_output_handling`** | Specify the component handles it's own output (if any)                                 | `std::false_type` |
+| **`requires_prefix`**          | Specify the component requires a `prefix` member variable to be set before `start()`   | `std::false_type` |
+| **`custom_label_printing`**    | Specify the component provides its own labeling for output (typically multiple labels) | `std::false_type` |
+| **`custom_unit_printing`**     | Specify the component provides its own units for output (typically multiple units)     | `std::false_type` |
+| **`custom_laps_printing`**     | Specify the component provides its own "lap" printing for output                       | `std::false_type` |
+| **`start_priority`**           | Specify the component should be started before non-prioritized components              | `std::false_type` |
+| **`stop_priority`**            | Specify the component should be stopped before non-prioritized components              | `std::false_type` |
+| **`is_timing_category`**       | Designates the width and precision should apply environment-specified timing settings  | `std::false_type` |
+| **`is_memory_category`**       | Designates the width and precision should apply environment-specified memory settings  | `std::false_type` |
+| **`uses_timing_units`**        | Designates the width and precision should apply environment-specified timing units     | `std::false_type` |
+| **`uses_memory_units`**        | Designates the width and precision should apply environment-specified memory units     | `std::false_type` |
+| **`requires_json`**            | Specify the component should always output the JSON file format                        | `std::false_type` |
+
+> `tim::trait::array_serialization` trait causes invocation of `_array` variants of `label`, `descript`, `display_unit`, and `unit` function calls, e.g. `label_array()`
 
 ### Type Traits Example
 
@@ -93,13 +108,13 @@ and their inclusion requires the definition of an associated static member funct
 
 > Namespace: `tim::policy`
 
-| Policy                         | Associated Static Member Function                     | Invocation Context                             |
-| ------------------------------ | ----------------------------------------------------- | ---------------------------------------------- |
-| `tim::policy::global_init`     | `void invoke_global_init()`                           | Initial creation of component within a process |
-| `tim::policy::global_finalize` | `void invoke_global_finalize()`                       | Termination of process (application cleanup)   |
-| `tim::policy::thread_init`     | `void invoke_thread_init()`                           | Initial creation of component within a thread  |
-| `tim::policy::thread_finalize` | `void invoke_thread_finalize()`                       | Termination of thread (thread cleanup)         |
-| `tim::policy::serialization`   | `template <typename Archive> void invoke_serialize()` | Serialization to JSON                          |
+| Policy                             | Associated Static Member Function                     | Invocation Context                             |
+| ---------------------------------- | ----------------------------------------------------- | ---------------------------------------------- |
+| **`tim::policy::global_init`**     | `void invoke_global_init()`                           | Initial creation of component within a process |
+| **`tim::policy::global_finalize`** | `void invoke_global_finalize()`                       | Termination of process (application cleanup)   |
+| **`tim::policy::thread_init`**     | `void invoke_thread_init()`                           | Initial creation of component within a thread  |
+| **`tim::policy::thread_finalize`** | `void invoke_thread_finalize()`                       | Termination of thread (thread cleanup)         |
+| **`tim::policy::serialization`**   | `template <typename Archive> void invoke_serialize()` | Serialization to JSON                          |
 
 In general, the `global_init` policy is used to define an operation that occur prior to recording any component of this
 type, e.g. parse environment of any relevant settings; the `global_finalize` policy is used to define an operation that
@@ -112,22 +127,22 @@ adding the peak data to a roofline component.
 
 ## Custom Component Example
 
-| Required                  | Type                      | Description                                                             |
-| ------------------------- | ------------------------- | ----------------------------------------------------------------------- |
-| `value_type`              | Alias/typedef             | Data type used for storage                                              |
-| `base_type`               | Alias/typedef             | Base type specification                                                 |
-| `precision`               | Constant integer          | Default output precision                                                |
-| `width`                   | Constant integer          | Default output width                                                    |
-| `format_flags`            | `std::ios_base::fmtflags` | Bitset of formatting flags                                              |
-| `unit()`                  | numerical value           | Units of data type                                                      |
-| `label()`                 | string                    | Short-hand description without spaces                                   |
-| `descript()`              | string                    | Full description of component                                           |
-| `display_unit()`          | string                    | String representation of `unit()`                                       |
-| `record()`                | static function           | How to measure/record data type of component (must return `value_type`) |
-| `get() const`             | const member function     | Returns the current measurement                                         |
-| `compute_display() const` | const member function     | Returns the current measurement in for desired for reporting            |
-| `start()`                 | member function           | Defines operation when component recording is started                   |
-| `stop()`                  | member function           | Defines operation when component recording is stopped                   |
+| Required              | Type                      | Description                                                             |
+| --------------------- | ------------------------- | ----------------------------------------------------------------------- |
+| `value_type`          | Alias/typedef             | Data type used for storage                                              |
+| `base_type`           | Alias/typedef             | Base type specification                                                 |
+| `precision`           | Constant integer          | Default output precision                                                |
+| `width`               | Constant integer          | Default output width                                                    |
+| `format_flags`        | `std::ios_base::fmtflags` | Bitset of formatting flags                                              |
+| `unit()`              | numerical value           | Units of data type                                                      |
+| `label()`             | string                    | Short-hand description without spaces                                   |
+| `descript()`          | string                    | Full description of component                                           |
+| `display_unit()`      | string                    | String representation of `unit()`                                       |
+| `record()`            | static function           | How to measure/record data type of component (must return `value_type`) |
+| `get() const`         | const member function     | Returns the current measurement                                         |
+| `get_display() const` | const member function     | Returns the current measurement in format desired for reporting         |
+| `start()`             | member function           | Defines operation when component recording is started                   |
+| `stop()`              | member function           | Defines operation when component recording is stopped                   |
 
 ```cpp
 struct real_clock : public base<real_clock, int64_t>

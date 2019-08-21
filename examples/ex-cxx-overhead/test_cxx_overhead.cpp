@@ -35,15 +35,14 @@ static int64_t nlaps = 0;
 // using auto_tuple_t = tim::auto_tuple<real_clock>;
 using namespace tim::component;
 
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, system_clock, user_clock, trip_count, caliper>;
+using auto_tuple_t  = tim::auto_tuple<real_clock, system_clock, user_clock, trip_count>;
 using timer_tuple_t = typename tim::auto_tuple<real_clock>::component_type;
 
 using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     current_rss, priority_context_switch, voluntary_context_switch,
-                    papi_tuple_t>;
+                    caliper, papi_tuple_t>;
 
 //======================================================================================//
 
@@ -69,9 +68,9 @@ fibonacci(int64_t n, int64_t cutoff)
     if(n > cutoff)
     {
         nlaps += auto_tuple_t::size();
-        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "");
-        // TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_t, "[", n, "]");
-        TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_t, __FUNCTION__);
+        // TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+        // TIMEMORY_BASIC_OBJECT(auto_tuple_t, "[", n, "]");
+        TIMEMORY_BLANK_OBJECT(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n : (fibonacci(n - 1, cutoff) + fibonacci(n - 2, cutoff));
     }
     return fibonacci(n);
@@ -82,8 +81,8 @@ fibonacci(int64_t n, int64_t cutoff)
 timer_tuple_t
 run(int64_t n, bool with_timing, int64_t cutoff)
 {
-    auto signature = TIMEMORY_AUTO_LABEL(" [with timing = ", ((with_timing) ? " " : ""),
-                                         with_timing, "]");
+    auto signature =
+        TIMEMORY_LABEL(" [with timing = ", ((with_timing) ? " " : ""), with_timing, "]");
     timer_tuple_t timer(signature);
     int64_t       result = 0;
     {
@@ -129,7 +128,7 @@ main(int argc, char** argv)
     {
         nlaps = 0;
         bool enable_auto_timers;
-        TIMEMORY_AUTO_TUPLE(global_tuple_t, "[", argv[0], "]");
+        TIMEMORY_OBJECT(global_tuple_t, "[", argv[0], "]");
         // run without timing first
         timer_list.push_back(run(nfib, enable_auto_timers = false, nfib));
         timer_list.push_back(run(nfib, enable_auto_timers = true, cutoff));

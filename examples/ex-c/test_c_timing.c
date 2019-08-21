@@ -13,9 +13,9 @@ get_timer(const char* func, int use_tuple)
 {
     if(use_tuple > 0)
     {
-        return TIMEMORY_AUTO_TUPLE(
-            func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK, CPU_UTIL, CURRENT_RSS,
-            PEAK_RSS, PRIORITY_CONTEXT_SWITCH, VOLUNTARY_CONTEXT_SWITCH, CALIPER);
+        return TIMEMORY_OBJECT(func, WALL_CLOCK, SYS_CLOCK, USER_CLOCK, CPU_CLOCK,
+                               CPU_UTIL, CURRENT_RSS, PEAK_RSS, PRIORITY_CONTEXT_SWITCH,
+                               VOLUNTARY_CONTEXT_SWITCH, CALIPER);
     }
     else
     {
@@ -30,7 +30,7 @@ free_timer(void* timer, int use_tuple)
 {
     if(use_tuple > 0)
     {
-        FREE_TIMEMORY_AUTO_TUPLE(timer);
+        FREE_TIMEMORY_OBJECT(timer);
     }
     else
     {
@@ -47,7 +47,7 @@ get_fibonacci_timer(const char* func, int use_tuple)
     sprintf(buffer, "%s[using_tuple=%i]", func, use_tuple);
     if(use_tuple > 0)
     {
-        return TIMEMORY_BLANK_AUTO_TUPLE(buffer, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
+        return TIMEMORY_BLANK_OBJECT(buffer, WALL_CLOCK, SYS_CLOCK, USER_CLOCK);
     }
     else
     {

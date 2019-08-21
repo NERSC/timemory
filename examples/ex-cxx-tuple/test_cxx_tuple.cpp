@@ -82,7 +82,7 @@ fibonacci(int32_t n)
 int64_t
 time_fibonacci(int32_t n)
 {
-    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+    TIMEMORY_OBJECT(auto_tuple_t, "");
     return fibonacci(n);
 }
 //--------------------------------------------------------------------------------------//
@@ -206,7 +206,7 @@ void
 test_1_usage()
 {
     print_info(__FUNCTION__);
-    TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+    TIMEMORY_OBJECT(auto_tuple_t, "");
 
     full_measurement_t _use_beg("");
     full_measurement_t _use_delta("");
@@ -304,10 +304,10 @@ test_2_timing()
     std::stringstream    lambda_ss;
 
     {
-        TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+        TIMEMORY_OBJECT(auto_tuple_t, "");
 
         auto run_fib = [&](long n) {
-            TIMEMORY_AUTO_TUPLE(auto_tuple_t, "");
+            TIMEMORY_OBJECT(auto_tuple_t, "");
             measurement_t _tm("", false);
             _tm.start();
             ret += time_fibonacci(n);
@@ -356,23 +356,23 @@ test_3_auto_tuple()
 
     std::atomic<int64_t> ret;
     // accumulate metrics on full run
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(tot, full_set_t, "[total]");
+    TIMEMORY_BASIC_CALIPER(tot, full_set_t, "[total]");
 
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n) {
-        // TIMEMORY_AUTO_TUPLE(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+        // TIMEMORY_OBJECT(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
         ret += time_fibonacci(n);
     };
 
     // run longer fibonacci calculations on two threads
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(worker_thread, full_set_t, "[worker_thread]");
+    TIMEMORY_BASIC_CALIPER(worker_thread, full_set_t, "[worker_thread]");
     std::thread t(run_fibonacci, 43);
     TIMEMORY_CALIPER_APPLY(worker_thread, stop);
 
     // run shorter fibonacci calculation on main thread
-    TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(master_thread, full_set_t, "[master_thread]");
+    TIMEMORY_BASIC_CALIPER(master_thread, full_set_t, "[master_thread]");
     run_fibonacci(42);
     TIMEMORY_CALIPER_APPLY(master_thread, stop);
 
@@ -391,7 +391,7 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_AUTO_LABEL(""));
+    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_LABEL(""));
     {
         TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
         // just record the peak rss
@@ -431,12 +431,12 @@ int main()
 
     {
         // uses C++ scoping for start/stop
-        TIMEMORY_AUTO_TUPLE(auto_roofline_t, "roofline_for_A");
+        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_A");
         func_A();
     }
 
     {
-        TIMEMORY_AUTO_TUPLE(auto_roofline_t, "roofline_for_B");
+        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_B");
         func_B();
     }
 

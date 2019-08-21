@@ -38,6 +38,23 @@
 #include <stdlib.h>
 #include <string.h>
 
+#if defined(DISABLE_TIMEMORY)
+
+#    define TIMEMORY_SETTINGS_INIT                                                       \
+        {                                                                                \
+        }
+#    define TIMEMORY_INIT(...)
+#    define TIMEMORY_BLANK_AUTO_TIMER(...) NULL
+#    define TIMEMORY_BASIC_AUTO_TIMER(...) NULL
+#    define TIMEMORY_AUTO_TIMER(...) NULL
+#    define TIMEMORY_BASIC_AUTO_TUPLE(...) NULL
+#    define TIMEMORY_BLANK_AUTO_TUPLE(...) NULL
+#    define TIMEMORY_AUTO_TUPLE(...) NULL
+#    define FREE_TIMEMORY_AUTO_TIMER(...)
+#    define FREE_TIMEMORY_AUTO_TUPLE(...)
+
+#else  // !defined(DISABLE_TIMEMORY)
+
 //======================================================================================//
 //
 //      Operating System
@@ -45,48 +62,49 @@
 //======================================================================================//
 
 // machine bits
-#if defined(__x86_64__)
-#    if !defined(_64BIT)
-#        define _64BIT
+#    if defined(__x86_64__)
+#        if !defined(_64BIT)
+#            define _64BIT
+#        endif
+#    else
+#        if !defined(_32BIT)
+#            define _32BIT
+#        endif
 #    endif
-#else
-#    if !defined(_32BIT)
-#        define _32BIT
-#    endif
-#endif
 
 //--------------------------------------------------------------------------------------//
 // base operating system
 
-#if defined(_WIN32) || defined(_WIN64)
-#    if !defined(_WINDOWS)
-#        define _WINDOWS
-#    endif
+#    if defined(_WIN32) || defined(_WIN64)
+#        if !defined(_WINDOWS)
+#            define _WINDOWS
+#        endif
 //--------------------------------------------------------------------------------------//
 
-#elif defined(__APPLE__) || defined(__MACH__)
-#    if !defined(_MACOS)
-#        define _MACOS
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
+#    elif defined(__APPLE__) || defined(__MACH__)
+#        if !defined(_MACOS)
+#            define _MACOS
+#        endif
+#        if !defined(_UNIX)
+#            define _UNIX
+#        endif
 //--------------------------------------------------------------------------------------//
 
-#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
-#    if !defined(_LINUX)
-#        define _LINUX
-#    endif
-#    if !defined(_UNIX)
-#        define _UNIX
-#    endif
+#    elif defined(__linux__) || defined(__linux) || defined(linux) ||                    \
+        defined(__gnu_linux__)
+#        if !defined(_LINUX)
+#            define _LINUX
+#        endif
+#        if !defined(_UNIX)
+#            define _UNIX
+#        endif
 //--------------------------------------------------------------------------------------//
 
-#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
-#    if !defined(_UNIX)
-#        define _UNIX
+#    elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#        if !defined(_UNIX)
+#            define _UNIX
+#        endif
 #    endif
-#endif
 
 //======================================================================================//
 //
@@ -95,18 +113,18 @@
 //======================================================================================//
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
-#if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
-#    if defined(_TIMEMORY_DLL)
-#        define tim_api __declspec(dllexport)
-#        define tim_api_static static __declspec(dllexport)
+#    if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
+#        if defined(_TIMEMORY_DLL)
+#            define tim_api __declspec(dllexport)
+#            define tim_api_static static __declspec(dllexport)
+#        else
+#            define tim_api __declspec(dllimport)
+#            define tim_api_static static __declspec(dllimport)
+#        endif
 #    else
-#        define tim_api __declspec(dllimport)
-#        define tim_api_static static __declspec(dllimport)
+#        define tim_api
+#        define tim_api_static static
 #    endif
-#else
-#    define tim_api
-#    define tim_api_static static
-#endif
 
 //======================================================================================//
 //
@@ -160,10 +178,10 @@ enum TIMEMORY_COMPONENT
 //
 //======================================================================================//
 
-#if defined(__cplusplus)
+#    if defined(__cplusplus)
 extern "C"
 {
-#endif
+#    endif
 
     typedef struct
     {
@@ -179,9 +197,9 @@ extern "C"
         // skipping remainder
     } timemory_settings;
 
-#if defined(__cplusplus)
+#    if defined(__cplusplus)
 }
-#endif
+#    endif
 
 //======================================================================================//
 //
@@ -213,44 +231,44 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
 //======================================================================================//
 
 // only define for C
-#if !defined(__cplusplus)
+#    if !defined(__cplusplus)
 
-#    if !defined(__FUNCTION__) && defined(__func__)
-#        define __FUNCTION__ __func__
-#    endif
+#        if !defined(__FUNCTION__) && defined(__func__)
+#            define __FUNCTION__ __func__
+#        endif
 
-#    if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
-#        define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
-#    else
-#        define __TIMEMORY_FUNCTION__ __FUNCTION__
-#    endif
+#        if defined(TIMEMORY_PRETTY_FUNCTION) && !defined(_WINDOWS)
+#            define __TIMEMORY_FUNCTION__ __PRETTY_FUNCTION__
+#        else
+#            define __TIMEMORY_FUNCTION__ __FUNCTION__
+#        endif
 
 // stringify some macro -- uses TIMEMORY_STRINGIFY2 which does the actual
 //   "stringify-ing" after the macro has been substituted by it's result
-#    if !defined(TIMEMORY_STRINGIZE)
-#        define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
-#    endif
+#        if !defined(TIMEMORY_STRINGIZE)
+#            define TIMEMORY_STRINGIZE(X) TIMEMORY_STRINGIZE2(X)
+#        endif
 
 // actual stringifying
-#    if !defined(TIMEMORY_STRINGIZE2)
-#        define TIMEMORY_STRINGIZE2(X) #        X
-#    endif
+#        if !defined(TIMEMORY_STRINGIZE2)
+#            define TIMEMORY_STRINGIZE2(X) #            X
+#        endif
 
 // stringify the __LINE__ macro
-#    if !defined(TIMEMORY_LINE_STRING)
-#        define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
-#    endif
+#        if !defined(TIMEMORY_LINE_STRING)
+#            define TIMEMORY_LINE_STRING TIMEMORY_STRINGIZE(__LINE__)
+#        endif
 
 //--------------------------------------------------------------------------------------//
 //
-#    if !defined(TIMEMORY_AUTO_LABEL)
-#        define TIMEMORY_AUTO_LABEL(c_str)                                               \
-            c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
-#    endif
+#        if !defined(TIMEMORY_AUTO_LABEL)
+#            define TIMEMORY_AUTO_LABEL(c_str)                                           \
+                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__)
+#        endif
 
 //--------------------------------------------------------------------------------------//
-#    define TIMEMORY_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };
-#    define TIMEMORY_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings);
+#        define TIMEMORY_SETTINGS_INIT { 1, -1, -1, -1, -1, -1, -1, -1, -1 };
+#        define TIMEMORY_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BLANK_AUTO_TIMER(c_str)
@@ -264,7 +282,8 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
  *          FREE_TIMEMORY_AUTO_TIMER(timer);
  *      }
  */
-#    define TIMEMORY_BLANK_AUTO_TIMER(c_str) c_timemory_create_auto_timer(c_str, __LINE__)
+#        define TIMEMORY_BLANK_AUTO_TIMER(c_str)                                         \
+            c_timemory_create_auto_timer(c_str, __LINE__)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(c_str)
@@ -278,9 +297,9 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
  *          FREE_TIMEMORY_AUTO_TIMER(timer);
  *      }
  */
-#    define TIMEMORY_BASIC_AUTO_TIMER(c_str)                                             \
-        c_timemory_create_auto_timer(                                                    \
-            c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__)
+#        define TIMEMORY_BASIC_AUTO_TIMER(c_str)                                         \
+            c_timemory_create_auto_timer(                                                \
+                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TIMER(str)
@@ -295,63 +314,63 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
  *      }
  *
  */
-#    define TIMEMORY_AUTO_TIMER(c_str)                                                   \
-        c_timemory_create_auto_timer(                                                    \
-            c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),       \
-            __LINE__)
+#        define TIMEMORY_AUTO_TIMER(c_str)                                               \
+            c_timemory_create_auto_timer(                                                \
+                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
+                __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_AUTO_TUPLE(c_str, ...)
+/*! \def TIMEMORY_BASIC_OBJECT(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_BASIC_AUTO_TUPLE("", WALL_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_BASIC_OBJECT("", WALL_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *          FREE_TIMEMORY_OBJECT(timer);
  *      }
  *
  */
-#    define TIMEMORY_BASIC_AUTO_TUPLE(c_str, ...)                                        \
-        c_timemory_create_auto_tuple(                                                    \
-            c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),       \
-            __LINE__, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
+#        define TIMEMORY_BASIC_OBJECT(c_str, ...)                                        \
+            c_timemory_create_auto_tuple(                                                \
+                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
+                __LINE__, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)
+/*! \def TIMEMORY_BLANK_OBJECT(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_BLANK_AUTO_TUPLE("id", WALL_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_BLANK_OBJECT("id", WALL_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *          FREE_TIMEMORY_OBJECT(timer);
  *      }
  *
  */
-#    define TIMEMORY_BLANK_AUTO_TUPLE(c_str, ...)                                        \
-        c_timemory_create_auto_tuple(c_str, __LINE__, __VA_ARGS__,                       \
-                                     TIMEMORY_COMPONENTS_END)
+#        define TIMEMORY_BLANK_OBJECT(c_str, ...)                                        \
+            c_timemory_create_auto_tuple(c_str, __LINE__, __VA_ARGS__,                   \
+                                         TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_AUTO_TUPLE(c_str, ...)
+/*! \def TIMEMORY_OBJECT(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_AUTO_TUPLE("", WALL_CLOCK, SYS_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_OBJECT("", WALL_CLOCK, SYS_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *          FREE_TIMEMORY_OBJECT(timer);
  *      }
  *
  */
-#    define TIMEMORY_AUTO_TUPLE(c_str, ...)                                              \
-        c_timemory_create_auto_tuple(                                                    \
-            c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__,           \
-            __VA_ARGS__, TIMEMORY_COMPONENTS_END)
+#        define TIMEMORY_OBJECT(c_str, ...)                                              \
+            c_timemory_create_auto_tuple(                                                \
+                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__,       \
+                __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def FREE_TIMEMORY_AUTO_TIMER(ctimer)
@@ -365,22 +384,25 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
  *          FREE_TIMEMORY_AUTO_TIMER(timer);
  *      }
  */
-#    define FREE_TIMEMORY_AUTO_TIMER(ctimer) c_timemory_delete_auto_timer((void*) ctimer);
+#        define FREE_TIMEMORY_AUTO_TIMER(ctimer)                                         \
+            c_timemory_delete_auto_timer((void*) ctimer)
 
 //--------------------------------------------------------------------------------------//
-/*! \def FREE_TIMEMORY_AUTO_TUPLE(ctimer)
+/*! \def FREE_TIMEMORY_OBJECT(ctimer)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_AUTO_TUPLE("", WALL_CLOCK);
+ *          void* timer = new TIMEMORY_OBJECT("", WALL_CLOCK);
  *          ...
- *          FREE_TIMEMORY_AUTO_TUPLE(timer);
+ *          FREE_TIMEMORY_OBJECT(timer);
  *      }
  */
-#    define FREE_TIMEMORY_AUTO_TUPLE(ctimer) c_timemory_delete_auto_tuple((void*) ctimer);
+#        define FREE_TIMEMORY_OBJECT(ctimer) c_timemory_delete_auto_tuple((void*) ctimer)
 
 //--------------------------------------------------------------------------------------//
 
-#endif  // !defined(__cplusplus)
+#    endif  // !defined(__cplusplus)
+
+#endif  // !defined(DISABLE_TIMEMORY)

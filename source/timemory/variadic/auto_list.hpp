@@ -53,20 +53,20 @@ namespace tim
 
 template <typename... Types>
 class auto_list
-: public tim::counted_object<auto_list<Types...>>
-, public tim::hashed_object<auto_list<Types...>>
+: public counted_object<auto_list<Types...>>
+, public hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type = tim::component_list<Types...>;
+    using component_type = component_list<Types...>;
     using this_type      = auto_list<Types...>;
     using data_type      = typename component_type::data_type;
-    using counter_type   = tim::counted_object<this_type>;
-    using counter_void   = tim::counted_object<void>;
-    using hashed_type    = tim::hashed_object<this_type>;
+    using counter_type   = counted_object<this_type>;
+    using counter_void   = counted_object<void>;
+    using hashed_type    = hashed_object<this_type>;
     using string_t       = std::string;
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
-    using language_t     = tim::language;
+    using language_t     = language;
     using tuple_type     = implemented<Types...>;
     using init_func_t    = std::function<void(this_type&)>;
 
@@ -93,8 +93,8 @@ public:
 
 public:
     // public member functions
-    inline component_type&       component_list() { return m_temporary_object; }
-    inline const component_type& component_list() const { return m_temporary_object; }
+    inline component_type&       get_component_type() { return m_temporary_object; }
+    inline const component_type& get_component_type() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
     inline void record() { m_temporary_object.record(); }
@@ -108,6 +108,14 @@ public:
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
+
+    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline const data_type& data() const { return m_temporary_object.data(); }
+    inline int64_t          laps() const { return m_temporary_object.laps(); }
+    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
+    inline const string_t&  key() const { return m_temporary_object.key(); }
+    inline const language&  lang() const { return m_temporary_object.lang(); }
+    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
 
 public:
     template <std::size_t _N>
@@ -135,27 +143,27 @@ public:
     }
 
     template <typename _Tp, typename... _Args,
-              tim::enable_if_t<(is_one_of<_Tp, tuple_type>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, tuple_type>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
         m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
     }
 
     template <typename _Tp, typename... _Args,
-              tim::enable_if_t<(is_one_of<_Tp, tuple_type>::value == false), int> = 0>
+              enable_if_t<(is_one_of<_Tp, tuple_type>::value == false), int> = 0>
     void init(_Args&&...)
     {
     }
 
     template <typename _Tp, typename... _Tail,
-              tim::enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void initialize()
     {
         this->init<_Tp>();
     }
 
     template <typename _Tp, typename... _Tail,
-              tim::enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void initialize()
     {
         this->init<_Tp>();
@@ -165,7 +173,7 @@ public:
     static init_func_t& get_initializer()
     {
         static init_func_t _instance = [](this_type& al) {
-            tim::env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
         };
         return _instance;
     }

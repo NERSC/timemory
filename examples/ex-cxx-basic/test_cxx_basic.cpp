@@ -29,10 +29,9 @@
 
 using namespace tim::component;
 
-using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
-using real_tuple_t = tim::auto_tuple<real_clock, papi_tuple_t, caliper>;
+using real_tuple_t = tim::auto_tuple<real_clock, papi_array_t, caliper>;
 using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, papi_tuple_t, caliper>;
+    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, papi_array_t, caliper>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
 
@@ -48,6 +47,10 @@ fibonacci(intmax_t n);
 int
 main(int argc, char** argv)
 {
+    papi_array_t::get_initializer() = []() {
+        return std::vector<int>({ PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS });
+    };
+
     // runtime customization of auto_list_t initialization
     auto_list_t::get_initializer() = [](auto_list_t& al) {
         const std::string default_env = "real_clock,cpu_clock,cpu_util,caliper";
@@ -71,7 +74,7 @@ main(int argc, char** argv)
     for(auto n : { 15, 20, 25 })
     {
         // create a caliper handle to an auto_tuple_t and have it report when destroyed
-        TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");
+        TIMEMORY_BLANK_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");
         TIMEMORY_CALIPER_APPLY(fib, report_at_exit, true);
         // run calculation
         auto ret = fibonacci(n);
@@ -92,7 +95,7 @@ main(int argc, char** argv)
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_AUTO_TUPLE(real_tuple_t, "");
+    TIMEMORY_BASIC_OBJECT(real_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 
