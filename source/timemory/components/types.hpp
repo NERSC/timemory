@@ -141,6 +141,9 @@ struct reset;
 template <typename _Tp>
 struct measure;
 
+template <typename _Ret, typename _Lhs, typename _Rhs>
+struct compose;
+
 template <typename _Tp>
 struct start;
 

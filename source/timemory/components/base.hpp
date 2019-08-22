@@ -65,6 +65,9 @@ struct base : public tim::counted_object<_Tp>
     template <typename _Up, typename Archive>
     friend struct operation::serialization;
 
+    template <typename _Ret, typename _Lhs, typename _Rhs>
+    friend struct operation::compose;
+
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:

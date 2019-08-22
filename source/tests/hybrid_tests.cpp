@@ -56,11 +56,13 @@ static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
 
-static const float util_epsilon    = 1.0e-1;
+// acceptable absolute error
 static const float util_tolerance  = 2.5;
-static const float timer_epsilon   = 2.5e-3;
-static const float timer_tolerance = 0.01;
+static const float timer_tolerance = 0.015;
 static const float peak_tolerance  = 5 * tim::units::MiB;
+// acceptable relative error
+static const float util_epsilon  = 0.1;
+static const float timer_epsilon = 0.02;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
@@ -152,8 +154,9 @@ get_info(const _Tp& obj, _Func&& _func)
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
           typename _Func = std::function<_Vp(_Vp)>>
 void
-print_info(const _Tp& obj, const _Up& expected, string_t unit,
-           _Func _func = [](const _Vp& obj) { return obj; })
+print_info(
+    const _Tp& obj, const _Up& expected, string_t unit,
+    _Func _func = [](const _Vp& obj) { return obj; })
 {
     std::cout << std::endl;
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
@@ -177,9 +180,9 @@ TEST_F(hybrid_tests, hybrid)
 {
     hybrid_t obj(details::get_test_name());
     obj.start();
-    std::thread t(details::consume, 1000);
-    details::consume(500);
-    details::do_sleep(500);
+    std::thread t(details::consume, 500);
+    details::do_sleep(250);
+    details::consume(750);
     t.join();
     obj.stop();
     std::cout << "\n" << obj << std::endl;
@@ -189,20 +192,29 @@ TEST_F(hybrid_tests, hybrid)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    details::print_info(obj.get_tuple().get<real_clock>(), 1.0, "sec", clock_convert);
-    details::print_info(obj.get_tuple().get<cpu_clock>(), 1.5, "sec", clock_convert);
-    details::print_info(obj.get_tuple().get<cpu_util>(), 150.0, "%", cpu_util_convert);
+    auto& t_rc   = obj.get_tuple().get<real_clock>();
+    auto& t_cpu  = obj.get_tuple().get<cpu_clock>();
+    auto& t_util = obj.get_tuple().get<cpu_util>();
 
-    ASSERT_NEAR(1.0, obj.get_tuple().get<real_clock>().get(), timer_tolerance);
-    ASSERT_NEAR(1.5, obj.get_tuple().get<cpu_clock>().get(), timer_tolerance);
-    ASSERT_NEAR(150.0, obj.get_tuple().get<cpu_util>().get(), util_tolerance);
+    auto& l_rc   = *obj.get_list().get<real_clock>();
+    auto& l_cpu  = *obj.get_list().get<cpu_clock>();
+    auto& l_util = *obj.get_list().get<cpu_util>();
 
-    ASSERT_NEAR(obj.get_tuple().get<real_clock>().get(),
-                obj.get_list().get<real_clock>()->get(), timer_epsilon);
-    ASSERT_NEAR(obj.get_tuple().get<cpu_clock>().get(),
-                obj.get_list().get<cpu_clock>()->get(), timer_epsilon);
-    ASSERT_NEAR(obj.get_tuple().get<cpu_util>().get(),
-                obj.get_list().get<cpu_util>()->get(), util_epsilon);
+    details::print_info(t_rc, 1.0, "sec", clock_convert);
+    details::print_info(t_cpu, 1.25, "sec", clock_convert);
+    details::print_info(t_util, 125.0, "%", cpu_util_convert);
+
+    details::print_info(l_rc, 1.0, "sec", clock_convert);
+    details::print_info(l_cpu, 1.25, "sec", clock_convert);
+    details::print_info(l_util, 125.0, "%", cpu_util_convert);
+
+    ASSERT_NEAR(1.0, t_rc.get(), timer_tolerance);
+    ASSERT_NEAR(1.25, t_cpu.get(), timer_tolerance);
+    ASSERT_NEAR(125.0, t_util.get(), util_tolerance);
+
+    ASSERT_NEAR(t_rc.get(), l_rc.get(), timer_epsilon);
+    ASSERT_NEAR(t_cpu.get(), l_cpu.get(), timer_epsilon);
+    ASSERT_NEAR(t_util.get(), l_util.get(), util_epsilon);
 
     obj.start();
     details::allocate();
@@ -218,9 +230,9 @@ TEST_F(hybrid_tests, hybrid)
 TEST_F(hybrid_tests, auto_timer)
 {
     tim::auto_timer obj(details::get_test_name());
-    std::thread     t(details::consume, 1000);
-    details::consume(500);
-    details::do_sleep(500);
+    std::thread     t(details::consume, 500);
+    details::do_sleep(250);
+    details::consume(750);
     t.join();
     obj.stop();
     std::cout << "\n" << obj << std::endl;
@@ -230,13 +242,17 @@ TEST_F(hybrid_tests, auto_timer)
         return static_cast<double>(val.first) / val.second * 100.0;
     };
 
-    details::print_info(obj.get_lhs().get<real_clock>(), 1.0, "sec", clock_convert);
-    details::print_info(obj.get_lhs().get<cpu_clock>(), 1.5, "sec", clock_convert);
-    details::print_info(obj.get_lhs().get<cpu_util>(), 150.0, "%", cpu_util_convert);
+    auto  _cpu  = obj.get_lhs().get<user_clock>() + obj.get_lhs().get<system_clock>();
+    auto& _rc   = obj.get_lhs().get<real_clock>();
+    auto& _util = obj.get_lhs().get<cpu_util>();
 
-    ASSERT_NEAR(1.0, obj.get_lhs().get<real_clock>().get(), timer_tolerance);
-    ASSERT_NEAR(1.5, obj.get_lhs().get<cpu_clock>().get(), timer_tolerance);
-    ASSERT_NEAR(150.0, obj.get_lhs().get<cpu_util>().get(), util_tolerance);
+    details::print_info(_rc, 1.0, "sec", clock_convert);
+    details::print_info(_cpu, 1.25, "sec", clock_convert);
+    details::print_info(_util, 125.0, "%", cpu_util_convert);
+
+    ASSERT_NEAR(1.0, _rc.get(), timer_tolerance);
+    ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
+    ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
     obj.start();
     details::allocate();

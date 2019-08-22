@@ -532,15 +532,48 @@ struct mark_end
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct minus
+template <typename RetType, typename LhsType, typename RhsType>
+struct compose
 {
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
+    using ret_value_type = typename RetType::value_type;
+    using lhs_value_type = typename LhsType::value_type;
+    using rhs_value_type = typename RhsType::value_type;
 
-    minus(base_type& obj, const int64_t& rhs) { obj -= rhs; }
-    minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
+    using ret_base_type = typename RetType::base_type;
+    using lhs_base_type = typename LhsType::base_type;
+    using rhs_base_type = typename RhsType::base_type;
+
+    static_assert(std::is_same<ret_value_type, lhs_value_type>::value,
+                  "Value types of RetType and LhsType are different!");
+
+    static_assert(std::is_same<lhs_value_type, rhs_value_type>::value,
+                  "Value types of LhsType and RhsType are different!");
+
+    static RetType generate(const lhs_base_type& _lhs, const rhs_base_type& _rhs)
+    {
+        RetType _ret;
+        _ret.is_running   = false;
+        _ret.is_on_stack  = false;
+        _ret.is_transient = (_lhs.is_transient && _rhs.is_transient);
+        _ret.laps         = std::min(_lhs.laps, _rhs.laps);
+        _ret.value        = (_lhs.value + _rhs.value);
+        _ret.accum        = (_lhs.accum + _rhs.accum);
+        return _ret;
+    }
+
+    template <typename _Func, typename... _Args>
+    static RetType generate(const lhs_base_type& _lhs, const rhs_base_type& _rhs,
+                            const _Func& _func, _Args&&... _args)
+    {
+        RetType _ret(std::forward<_Args>(_args)...);
+        _ret.is_running   = false;
+        _ret.is_on_stack  = false;
+        _ret.is_transient = (_lhs.is_transient && _rhs.is_transient);
+        _ret.laps         = std::min(_lhs.laps, _rhs.laps);
+        _ret.value        = _func(_lhs.value, _rhs.value);
+        _ret.accum        = _func(_lhs.accum, _rhs.accum);
+        return _ret;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -566,6 +599,19 @@ struct plus
     }
 
     plus(base_type& obj, const int64_t& rhs) { obj += rhs; }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct minus
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    minus(base_type& obj, const int64_t& rhs) { obj -= rhs; }
+    minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -980,10 +1026,20 @@ struct set_units
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace component
+}  // namespace operation
 
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
+inline tim::component::cpu_clock
+operator+(const tim::component::user_clock&   _user,
+          const tim::component::system_clock& _sys)
+{
+    return tim::operation::compose<tim::component::cpu_clock, tim::component::user_clock,
+                                   tim::component::system_clock>::generate(_user, _sys);
+}
 
 //--------------------------------------------------------------------------------------//
