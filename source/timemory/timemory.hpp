@@ -132,9 +132,9 @@ namespace tim
 using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
     component::cpu_roofline_sp_flops, component::cpu_util, component::cuda_event,
-    component::cupti_event, component::current_rss, component::data_rss,
-    component::monotonic_clock, component::monotonic_raw_clock, component::num_io_in,
-    component::num_io_out, component::num_major_page_faults,
+    component::cupti_activity, component::cupti_counters, component::current_rss,
+    component::data_rss, component::monotonic_clock, component::monotonic_raw_clock,
+    component::num_io_in, component::num_io_out, component::num_major_page_faults,
     component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
     component::num_signals, component::num_swap, component::nvtx_marker,
     component::papi_array_t, component::peak_rss, component::priority_context_switch,
@@ -154,8 +154,10 @@ using recommended_auto_tuple_t =
 
 using recommended_tuple_t = recommended_auto_tuple_t::component_type;
 
-using recommended_auto_list_t = auto_list<component::caliper, component::papi_array_t,
-                                          component::cuda_event, component::cupti_event>;
+using recommended_auto_list_t =
+    auto_list<component::caliper, component::papi_array_t, component::cuda_event,
+              component::nvtx_marker, component::cupti_counters,
+              component::cupti_activity>;
 
 using recommended_list_t = recommended_auto_list_t::component_type;
 

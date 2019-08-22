@@ -32,6 +32,7 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
+#include "timemory/details/cupti.hpp"
 #include "timemory/details/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -41,6 +42,7 @@
 #include <cstdio>
 #include <cstring>
 #include <iostream>
+#include <list>
 #include <map>
 #include <sstream>
 #include <string>
@@ -76,6 +78,7 @@
 
 //--------------------------------------------------------------------------------------//
 
+#define CUPTI_BUFFER_SIZE (32 * 1024)
 #define CUPTI_ALIGN_SIZE (8)
 #define CUPTI_ALIGN_BUFFER(buffer, align)                                                \
     (((uintptr_t)(buffer) & ((align) -1))                                                \
@@ -86,8 +89,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-
 namespace cupti
 {
 //--------------------------------------------------------------------------------------//
@@ -123,7 +124,7 @@ static void CUPTIAPI
     rawBuffer      = (uint8_t*) malloc(*size + CUPTI_ALIGN_SIZE);
     *buffer        = CUPTI_ALIGN_BUFFER(rawBuffer, CUPTI_ALIGN_SIZE);
     *maxNumRecords = 0;
-    if(*buffer == NULL)
+    if(*buffer == nullptr)
     {
         throw std::runtime_error("Error: out of memory\n");
     }
@@ -156,135 +157,6 @@ static void CUPTIAPI
 }
 */
 
-namespace data
-{
-union metric_u {
-    int64_t  integer_v = 0;
-    uint64_t unsigned_integer_v;
-    double   percent_v;
-    double   floating_v;
-    int64_t  throughput_v;
-    int64_t  utilization_v;
-};
-
-struct metric
-{
-    metric_u data  = {};
-    uint64_t count = 1;
-    uint64_t index = 0;
-};
-
-struct unsigned_integer
-{
-    using type                      = uint64_t;
-    static constexpr uint64_t index = 0;
-
-    static type& get(metric& obj) { return obj.data.unsigned_integer_v; }
-    static type  cget(const metric& obj) { return obj.data.unsigned_integer_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValueUint64;
-        obj.index = index;
-    }
-    static void set(metric& obj, const type& value)
-    {
-        get(obj)  = value;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
-    static type get_data(const metric& obj) { return obj.data.unsigned_integer_v; }
-};
-
-struct integer
-{
-    using type                      = int64_t;
-    static constexpr uint64_t index = 1;
-
-    static type& get(metric& obj) { return obj.data.integer_v; }
-    static type  cget(const metric& obj) { return obj.data.integer_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValueInt64;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
-    static type get_data(const metric& obj) { return obj.data.integer_v; }
-};
-
-struct percent
-{
-    using type                      = double;
-    static constexpr uint64_t index = 2;
-
-    static type& get(metric& obj) { return obj.data.percent_v; }
-    static type  cget(const metric& obj) { return obj.data.percent_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValuePercent;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj)
-    {
-        auto val = cget(obj);
-        val /= obj.count;
-        os << val << " %";
-    }
-    static type get_data(const metric& obj) { return obj.data.percent_v / obj.count; }
-};
-
-struct floating
-{
-    using type                      = double;
-    static constexpr uint64_t index = 3;
-
-    static type& get(metric& obj) { return obj.data.floating_v; }
-    static type  cget(const metric& obj) { return obj.data.floating_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValueDouble;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
-    static type get_data(const metric& obj) { return obj.data.floating_v; }
-};
-
-struct throughput
-{
-    using type                      = int64_t;
-    static constexpr uint64_t index = 4;
-
-    static type& get(metric& obj) { return obj.data.throughput_v; }
-    static type  cget(const metric& obj) { return obj.data.throughput_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValueThroughput;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
-    static type get_data(const metric& obj) { return obj.data.throughput_v; }
-};
-
-struct utilization
-{
-    using type                      = int64_t;
-    static constexpr uint64_t index = 5;
-
-    static type& get(metric& obj) { return obj.data.utilization_v; }
-    static type  cget(const metric& obj) { return obj.data.utilization_v; }
-    static void  set(metric& obj, CUpti_MetricValue& value)
-    {
-        get(obj)  = value.metricValueUtilizationLevel;
-        obj.index = index;
-    }
-    static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
-    static type get_data(const metric& obj) { return obj.data.utilization_v; }
-};
-
-using data_types =
-    std::tuple<integer, unsigned_integer, percent, floating, throughput, utilization>;
-
-}  // namespace data
-
 //--------------------------------------------------------------------------------------//
 
 namespace impl
@@ -292,7 +164,6 @@ namespace impl
 //--------------------------------------------------------------------------------------//
 
 static uint64_t dummy_kernel_id = 0;
-using data_metric_t             = data::metric;
 
 //--------------------------------------------------------------------------------------//
 
@@ -352,121 +223,6 @@ print_metric(std::ostream& os, CUpti_MetricID& id, CUpti_MetricValue& value)
     }
 }
 
-//--------------------------------------------------------------------------------------//
-// Generic tuple operations
-//
-template <typename _Ret, typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
-void
-_get(_Ret& val, const data_metric_t& lhs)
-{
-    if(lhs.index == _Tp::index)
-        val = static_cast<_Ret>(_Tp::get_data(lhs));
-}
-
-template <typename _Ret, typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
-void
-_get(_Ret& val, const data_metric_t& lhs)
-{
-    if(lhs.index == _Tp::index)
-        val = static_cast<_Ret>(_Tp::get_data(lhs));
-    else
-        _get<_Ret, _Types...>(val, lhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
-void
-_print(std::ostream& os, const data_metric_t& lhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::print(os, lhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
-void
-_print(std::ostream& os, const data_metric_t& lhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::print(os, lhs);
-    else
-        _print<_Types...>(os, lhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
-void
-plus(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) += _Tp::cget(rhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
-void
-plus(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) += _Tp::cget(rhs);
-    else
-        plus<_Types...>(lhs, rhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
-void
-minus(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) -= _Tp::cget(rhs);
-}
-
-template <typename _Tp, typename... _Types,
-          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
-void
-minus(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) -= _Tp::cget(rhs);
-    else
-        minus<_Types...>(lhs, rhs);
-}
-
-inline void
-print(std::ostream& os, const data_metric_t& lhs)
-{
-    _print<data::unsigned_integer, data::integer, data::percent, data::floating,
-           data::throughput, data::utilization>(os, lhs);
-}
-
-template <typename _Tp>
-inline _Tp
-get(const data_metric_t& lhs)
-{
-    _Tp value = _Tp(0.0);
-    _get<_Tp, data::unsigned_integer, data::integer, data::percent, data::floating,
-         data::throughput, data::utilization>(value, lhs);
-    return value;
-}
-
-inline data_metric_t&
-operator+=(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    impl::plus<data::unsigned_integer, data::integer, data::percent, data::floating,
-               data::throughput, data::utilization>(lhs, rhs);
-    return lhs;
-}
-
-inline data_metric_t&
-operator-=(data_metric_t& lhs, const data_metric_t& rhs)
-{
-    impl::minus<data::unsigned_integer, data::integer, data::percent, data::floating,
-                data::throughput, data::utilization>(lhs, rhs);
-    return lhs;
-}
 //--------------------------------------------------------------------------------------//
 // Pass-specific data
 //
@@ -731,92 +487,6 @@ static void CUPTIAPI
 //--------------------------------------------------------------------------------------//
 
 }  // namespace impl
-
-inline void
-plus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
-{
-    impl::plus<data::unsigned_integer, data::integer, data::percent, data::floating,
-               data::throughput, data::utilization>(lhs, rhs);
-    lhs.count += rhs.count;
-}
-
-inline void
-minus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
-{
-    impl::minus<data::unsigned_integer, data::integer, data::percent, data::floating,
-                data::throughput, data::utilization>(lhs, rhs);
-    lhs.count -= rhs.count;
-}
-
-//--------------------------------------------------------------------------------------//
-
-struct result
-{
-    using data_t = data::metric;
-
-    bool        is_event_value = true;
-    int         index          = 0;
-    std::string name           = "unk";
-    data_t      data;
-
-    result()              = default;
-    ~result()             = default;
-    result(const result&) = default;
-    result(result&&)      = default;
-    result& operator=(const result&) = default;
-    result& operator=(result&&) = default;
-
-    explicit result(const std::string& _name, const data_t& _data, bool _is = true)
-    : is_event_value(_is)
-    , index(_data.index)
-    , name(_name)
-    , data(_data)
-    {
-    }
-
-    friend std::ostream& operator<<(std::ostream& os, const result& obj)
-    {
-        std::stringstream ss;
-        ss << std::setprecision(2);
-        impl::print(ss, obj.data);
-        ss << " " << obj.name;
-        os << ss.str();
-        return os;
-    }
-
-    bool operator==(const result& rhs) const { return (name == rhs.name); }
-    bool operator!=(const result& rhs) const { return !(*this == rhs); }
-    bool operator<(const result& rhs) const { return (name < rhs.name); }
-    bool operator>(const result& rhs) const { return (name > rhs.name); }
-    bool operator<=(const result& rhs) const { return !(*this > rhs); }
-    bool operator>=(const result& rhs) const { return !(*this < rhs); }
-
-    result& operator+=(const result& rhs)
-    {
-        if(name == "unk")
-            return operator=(rhs);
-        plus(data, rhs.data);
-        return *this;
-    }
-
-    result& operator-=(const result& rhs)
-    {
-        if(name == "unk")
-            return operator=(rhs);
-        minus(data, rhs.data);
-        return *this;
-    }
-
-    friend result operator+(const result& lhs, const result& rhs)
-    {
-        return result(lhs) += rhs;
-    }
-
-    friend result operator-(const result& lhs, const result& rhs)
-    {
-        return result(lhs) -= rhs;
-    }
-};
 
 //--------------------------------------------------------------------------------------//
 
@@ -1227,6 +897,444 @@ available_events(CUdevice device);
 
 //--------------------------------------------------------------------------------------//
 
+namespace activity
+{
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+memcpy_kind(CUpti_ActivityMemcpyKind kind)
+{
+    switch(kind)
+    {
+        case CUPTI_ACTIVITY_MEMCPY_KIND_HTOD: return "HtoD";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_DTOH: return "DtoH";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_HTOA: return "HtoA";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_ATOH: return "AtoH";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_ATOA: return "AtoA";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_ATOD: return "AtoD";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_DTOA: return "DtoA";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_DTOD: return "DtoD";
+        case CUPTI_ACTIVITY_MEMCPY_KIND_HTOH: return "HtoH";
+        default: break;
+    }
+
+    return "<unknown>";
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+overhead_kind(CUpti_ActivityOverheadKind kind)
+{
+    switch(kind)
+    {
+        case CUPTI_ACTIVITY_OVERHEAD_DRIVER_COMPILER: return "COMPILER";
+        case CUPTI_ACTIVITY_OVERHEAD_CUPTI_BUFFER_FLUSH: return "BUFFER_FLUSH";
+        case CUPTI_ACTIVITY_OVERHEAD_CUPTI_INSTRUMENTATION: return "INSTRUMENTATION";
+        case CUPTI_ACTIVITY_OVERHEAD_CUPTI_RESOURCE: return "RESOURCE";
+        default: break;
+    }
+
+    return "<unknown>";
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+object_kind(CUpti_ActivityObjectKind kind)
+{
+    switch(kind)
+    {
+        case CUPTI_ACTIVITY_OBJECT_PROCESS: return "PROCESS";
+        case CUPTI_ACTIVITY_OBJECT_THREAD: return "THREAD";
+        case CUPTI_ACTIVITY_OBJECT_DEVICE: return "DEVICE";
+        case CUPTI_ACTIVITY_OBJECT_CONTEXT: return "CONTEXT";
+        case CUPTI_ACTIVITY_OBJECT_STREAM: return "STREAM";
+        default: break;
+    }
+
+    return "<unknown>";
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline uint32_t
+object_kind_id(CUpti_ActivityObjectKind kind, CUpti_ActivityObjectKindId* id)
+{
+    switch(kind)
+    {
+        case CUPTI_ACTIVITY_OBJECT_PROCESS: return id->pt.processId;
+        case CUPTI_ACTIVITY_OBJECT_THREAD: return id->pt.threadId;
+        case CUPTI_ACTIVITY_OBJECT_DEVICE: return id->dcs.deviceId;
+        case CUPTI_ACTIVITY_OBJECT_CONTEXT: return id->dcs.contextId;
+        case CUPTI_ACTIVITY_OBJECT_STREAM: return id->dcs.streamId;
+        default: break;
+    }
+
+    return 0xffffffff;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline const char*
+compute_api_kind(CUpti_ActivityComputeApiKind kind)
+{
+    switch(kind)
+    {
+        case CUPTI_ACTIVITY_COMPUTE_API_CUDA: return "CUDA";
+        case CUPTI_ACTIVITY_COMPUTE_API_CUDA_MPS: return "CUDA_MPS";
+        default: break;
+    }
+
+    return "<unknown>";
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline uint64_t
+get_elapsed(CUpti_Activity* record)
+{
+    switch(record->kind)
+    {
+        break;
+        case CUPTI_ACTIVITY_KIND_MEMCPY:
+        {
+            CUpti_ActivityMemcpy* memcpy = (CUpti_ActivityMemcpy*) record;
+            return (memcpy->end) - (memcpy->start);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_MEMSET:
+        {
+            CUpti_ActivityMemset* memset = (CUpti_ActivityMemset*) record;
+            return (memset->end) - (memset->start);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_KERNEL:
+        case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
+        {
+            CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
+            return (kernel->end) - (kernel->start);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_DRIVER:
+        case CUPTI_ACTIVITY_KIND_RUNTIME:
+        {
+            CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
+            return (api->end) - (api->start);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_OVERHEAD:
+        {
+            CUpti_ActivityOverhead* overhead = (CUpti_ActivityOverhead*) record;
+            return (overhead->end) - (overhead->start);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_DEVICE:
+        case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
+        case CUPTI_ACTIVITY_KIND_CONTEXT:
+        case CUPTI_ACTIVITY_KIND_NAME:
+        case CUPTI_ACTIVITY_KIND_MARKER:
+        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+        default: break;
+    }
+    return 0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+print(CUpti_Activity* record)
+{
+    switch(record->kind)
+    {
+        break;
+        case CUPTI_ACTIVITY_KIND_MEMCPY:
+        {
+            CUpti_ActivityMemcpy* memcpy = (CUpti_ActivityMemcpy*) record;
+            printf(
+                "MEMCPY %s [ %llu - %llu ] device %u, context %u, stream %u, "
+                "correlation %u/r%u\n",
+                memcpy_kind((CUpti_ActivityMemcpyKind) memcpy->copyKind),
+                (unsigned long long) (memcpy->start - start_timestamp()),
+                (unsigned long long) (memcpy->end - start_timestamp()), memcpy->deviceId,
+                memcpy->contextId, memcpy->streamId, memcpy->correlationId,
+                memcpy->runtimeCorrelationId);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_MEMSET:
+        {
+            CUpti_ActivityMemset* memset = (CUpti_ActivityMemset*) record;
+            printf(
+                "MEMSET value=%u [ %llu - %llu ] device %u, context %u, stream %u, "
+                "correlation %u\n",
+                memset->value, (unsigned long long) (memset->start - start_timestamp()),
+                (unsigned long long) (memset->end - start_timestamp()), memset->deviceId,
+                memset->contextId, memset->streamId, memset->correlationId);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_KERNEL:
+        case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
+        {
+            const char* kindString =
+                (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
+            CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
+            printf(
+                "%s \"%s\" [ %llu - %llu ] device %u, context %u, stream %u, "
+                "correlation %u\n",
+                kindString, kernel->name,
+                (unsigned long long) (kernel->start - start_timestamp()),
+                (unsigned long long) (kernel->end - start_timestamp()), kernel->deviceId,
+                kernel->contextId, kernel->streamId, kernel->correlationId);
+            printf(
+                "    grid [%u,%u,%u], block [%u,%u,%u], shared memory (static %u, "
+                "dynamic %u)\n",
+                kernel->gridX, kernel->gridY, kernel->gridZ, kernel->blockX,
+                kernel->blockY, kernel->blockZ, kernel->staticSharedMemory,
+                kernel->dynamicSharedMemory);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_DRIVER:
+        {
+            CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
+            printf(
+                "DRIVER cbid=%u [ %llu - %llu ] process %u, thread %u, correlation "
+                "%u\n",
+                api->cbid, (unsigned long long) (api->start - start_timestamp()),
+                (unsigned long long) (api->end - start_timestamp()), api->processId,
+                api->threadId, api->correlationId);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_RUNTIME:
+        {
+            CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
+            printf(
+                "RUNTIME cbid=%u [ %llu - %llu ] process %u, thread %u, correlation "
+                "%u\n",
+                api->cbid, (unsigned long long) (api->start - start_timestamp()),
+                (unsigned long long) (api->end - start_timestamp()), api->processId,
+                api->threadId, api->correlationId);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_OVERHEAD:
+        {
+            CUpti_ActivityOverhead* overhead = (CUpti_ActivityOverhead*) record;
+            printf("OVERHEAD %s [ %llu, %llu ] %s id %u\n",
+                   overhead_kind(overhead->overheadKind),
+                   (unsigned long long) overhead->start - start_timestamp(),
+                   (unsigned long long) overhead->end - start_timestamp(),
+                   object_kind(overhead->objectKind),
+                   object_kind_id(overhead->objectKind, &overhead->objectId));
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_DEVICE:
+        case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
+        case CUPTI_ACTIVITY_KIND_CONTEXT:
+        case CUPTI_ACTIVITY_KIND_NAME:
+        case CUPTI_ACTIVITY_KIND_MARKER:
+        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+        default: break;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+static void CUPTIAPI
+            request_buffer(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
+{
+    uint8_t* bfr = (uint8_t*) malloc(CUPTI_BUFFER_SIZE + CUPTI_ALIGN_SIZE);
+    if(bfr == nullptr)
+        throw std::bad_alloc();
+
+    *size          = CUPTI_BUFFER_SIZE;
+    *buffer        = CUPTI_ALIGN_BUFFER(bfr, CUPTI_ALIGN_SIZE);
+    *maxNumRecords = 0;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+static void CUPTIAPI
+            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t /*size*/,
+                             size_t validSize)
+{
+    using lock_type = typename receiver<_Tp>::lock_type;
+
+    CUptiResult     status;
+    CUpti_Activity* record = nullptr;
+
+    auto& _receiver = get_receiver<_Tp>();
+    // obtain lock to keep data from being removed during update
+    lock_type lk(_receiver.get_mutex());
+
+    if(validSize > 0)
+    {
+        do
+        {
+            status = cuptiActivityGetNextRecord(buffer, validSize, &record);
+            if(status == CUPTI_SUCCESS)
+            {
+                if(settings::verbose() > 3 || settings::debug())
+                    print(record);
+                _receiver += get_elapsed(record);
+            }
+            else if(status == CUPTI_ERROR_MAX_LIMIT_REACHED)
+                break;
+            else
+            {
+                CUPTI_CALL(status);
+            }
+        } while(1);
+
+        // report any records dropped from the queue
+        size_t dropped = 0;
+        CUPTI_CALL(cuptiActivityGetNumDroppedRecords(ctx, streamId, &dropped));
+        if(dropped != 0)
+        {
+            printf("[tim::cupti::activity::%s]> Dropped %u activity records\n",
+                   __FUNCTION__, (unsigned int) dropped);
+        }
+    }
+
+    free(buffer);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline std::vector<CUpti_ActivityKind>&
+get_kind_types()
+{
+    static std::vector<CUpti_ActivityKind> _instance = {
+        CUPTI_ACTIVITY_KIND_DEVICE, CUPTI_ACTIVITY_KIND_CONTEXT,
+        CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_RUNTIME,
+        CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+        CUPTI_ACTIVITY_KIND_NAME,   CUPTI_ACTIVITY_KIND_MARKER,
+        CUPTI_ACTIVITY_KIND_KERNEL, CUPTI_ACTIVITY_KIND_OVERHEAD
+    };
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+scale_device_buffers(
+    int64_t buffer_factor     = get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_SIZE", 0),
+    int64_t pool_limit_factor = get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_POOL_LIMIT", 0))
+{
+    size_t deviceValue   = 0;
+    size_t poolValue     = 0;
+    size_t attrValueSize = sizeof(size_t);
+
+    // Get and set activity attributes.
+    // Attributes can be set by the CUPTI client to change behavior of the activity
+    // API. Some attributes require to be set before any CUDA context is created to be
+    // effective, e.g. to be applied to all device buffer allocations (see
+    // documentation).
+
+    // get the buffer size and increase
+    CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
+                                         &attrValueSize, &deviceValue));
+
+    if(settings::verbose() > 1 || settings::debug())
+        printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
+               "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE",
+               (long long unsigned) deviceValue);
+
+    if(buffer_factor != 0)
+    {
+        size_t attrValue = deviceValue;
+        if(buffer_factor > 1)
+        {
+            attrValue *= buffer_factor;
+        }
+        else if(buffer_factor < -1)
+        {
+            attrValue /= buffer_factor;
+        }
+
+        if(attrValue > 0)
+            CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
+                                                 &attrValueSize, &attrValue));
+    }
+
+    // get the buffer pool limit and increase
+    CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
+                                         &attrValueSize, &poolValue));
+
+    if(settings::verbose() > 1 || settings::debug())
+        printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
+               "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE", (long long unsigned) poolValue);
+
+    if(pool_limit_factor != 0)
+    {
+        size_t attrValue = poolValue;
+        if(pool_limit_factor > 1)
+        {
+            attrValue *= pool_limit_factor;
+        }
+        else if(pool_limit_factor < -1)
+        {
+            attrValue /= pool_limit_factor;
+        }
+        if(attrValue > 0)
+            CUPTI_CALL(
+                cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
+                                          &attrValueSize, &attrValue));
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+start_trace(_Tp* obj)
+{
+    auto& _receiver = get_receiver<_Tp>();
+
+    if(_receiver.empty())
+    {
+        _receiver.set_kinds(get_kind_types<_Tp>());
+        // Device activity record is created when CUDA initializes, so we
+        // want to enable it before cuInit() or any CUDA runtime call.
+        for(const auto& itr : _receiver.get_kinds())
+            CUPTI_CALL(cuptiActivityEnable(itr));
+
+        // Register callbacks for buffer requests and for buffers completed by CUPTI.
+        CUPTI_CALL(
+            cuptiActivityRegisterCallbacks(request_buffer<_Tp>, buffer_completed<_Tp>));
+
+        auto& _start = start_timestamp();
+        CUPTI_CALL(cuptiGetTimestamp(&_start));
+    }
+    _receiver.insert(obj);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+stop_trace(_Tp* obj)
+{
+    auto& _receiver = get_receiver<_Tp>();
+    cuptiActivityFlushAll(0);
+    _receiver.remove(obj);
+
+    if(_receiver.empty())
+    {
+        // Device activity record is created when CUDA initializes, so we
+        // want to enable it before cuInit() or any CUDA runtime call.
+        for(const auto& itr : _receiver.get_kinds())
+            CUPTI_CALL(cuptiActivityDisable(itr));
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace activity
+
+//--------------------------------------------------------------------------------------//
+
 }  // namespace cupti
 
 //--------------------------------------------------------------------------------------//
@@ -1254,7 +1362,7 @@ tim::cupti::available_metrics(CUdevice device)
     CUPTI_CALL(cuptiDeviceGetNumMetrics(device, &numMetric));
     size          = sizeof(CUpti_MetricID) * numMetric;
     metricIdArray = (CUpti_MetricID*) malloc(size);
-    if(NULL == metricIdArray)
+    if(metricIdArray == nullptr)
     {
         printf("Memory could not be allocated for metric array");
         return metric_names;
@@ -1306,7 +1414,7 @@ tim::cupti::available_events(CUdevice device)
     CUPTI_CALL(cuptiDeviceGetNumEventDomains(device, &numDomains));
     size          = sizeof(CUpti_EventDomainID) * numDomains;
     domainIdArray = (CUpti_EventDomainID*) malloc(size);
-    if(NULL == domainIdArray)
+    if(domainIdArray == nullptr)
     {
         printf("Memory could not be allocated for domain array");
         return event_names;

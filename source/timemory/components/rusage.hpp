@@ -64,13 +64,13 @@ struct peak_rss : public base<peak_rss>
     static std::string descript() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_peak_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -107,13 +107,13 @@ struct current_rss : public base<current_rss>
     static std::string descript() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_current_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -151,13 +151,13 @@ struct stack_rss : public base<stack_rss>
     static std::string descript() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -193,13 +193,13 @@ struct data_rss : public base<data_rss>
     static std::string descript() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -238,8 +238,8 @@ struct num_swap : public base<num_swap>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -277,8 +277,8 @@ struct num_io_in : public base<num_io_in>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -316,8 +316,8 @@ struct num_io_out : public base<num_io_out>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -356,8 +356,8 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -395,8 +395,8 @@ struct num_major_page_faults : public base<num_major_page_faults>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -434,8 +434,8 @@ struct num_msg_sent : public base<num_msg_sent>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -473,8 +473,8 @@ struct num_msg_recv : public base<num_msg_recv>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -512,8 +512,8 @@ struct num_signals : public base<num_signals>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -553,8 +553,8 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -596,8 +596,8 @@ struct priority_context_switch : public base<priority_context_switch>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -624,7 +624,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<read_bytes, value_type>;
     using timer_type  = real_clock;
-    using result_type = std::tuple<int64_t, float>;
+    using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
     static const short                   width     = 5;
@@ -671,9 +671,9 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto val = (is_transient) ? accum : value;
 
         auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<float>(std::get<1>(val) /
-                                        static_cast<float>(timer_type::ratio_t::den) *
-                                        timer_type::get_unit());
+        auto delta = static_cast<double>(std::get<1>(val) /
+                                         static_cast<double>(timer_type::ratio_t::den) *
+                                         timer_type::get_unit());
         return result_type(data, data / delta);
     }
 
@@ -703,7 +703,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<written_bytes, value_type>;
     using timer_type  = real_clock;
-    using result_type = std::tuple<int64_t, float>;
+    using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
     static const short                   width     = 5;
@@ -750,9 +750,9 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto val = (is_transient) ? accum : value;
 
         auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<float>(std::get<1>(val) /
-                                        static_cast<float>(timer_type::ratio_t::den) *
-                                        timer_type::get_unit());
+        auto delta = static_cast<double>(std::get<1>(val) /
+                                         static_cast<double>(timer_type::ratio_t::den) *
+                                         timer_type::get_unit());
         return result_type(data, data / delta);
     }
 

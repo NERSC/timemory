@@ -41,11 +41,11 @@
 #include <timemory/utility/testing.hpp>
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_event.hpp"
+#    include "timemory/components/cupti_counters.hpp"
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_event.hpp"
+#    include "timemory/components/cupti_counters.hpp"
 #endif
 
 using namespace tim::component;
@@ -156,7 +156,7 @@ test_7_cupti_available();
 void
 test_8_cupti_subset();
 void
-test_9_cupti_event();
+test_9_cupti_counters();
 void
 test_10_cupti_metric();
 
@@ -208,7 +208,7 @@ main(int argc, char** argv)
         RUN_TEST(6, test_6_mt_saxpy_async_pinned, num_test, num_fail);
         RUN_TEST(7, test_7_cupti_available, num_test, num_fail);
         RUN_TEST(8, test_8_cupti_subset, num_test, num_fail);
-        RUN_TEST(9, test_9_cupti_event, num_test, num_fail);
+        RUN_TEST(9, test_9_cupti_counters, num_test, num_fail);
         RUN_TEST(10, test_10_cupti_metric, num_test, num_fail);
     }
     catch(std::exception& e)
@@ -1233,7 +1233,7 @@ test_8_cupti_subset()
 //======================================================================================//
 
 void
-test_9_cupti_event()
+test_9_cupti_counters()
 {
     print_info(__FUNCTION__);
     // tim::cuda::device_reset();
@@ -1260,13 +1260,13 @@ test_9_cupti_event()
     std::cout << "Metric names: \n\t"
               << array_to_string(metric_names, ", ", wmet, 200 / wmet) << std::endl;
 
-    cupti_event::get_device_setter() = []() { return std::vector<int>({ 0 }); };
-    cupti_event::get_event_setter()  = []() {
+    cupti_counters::get_device_setter() = []() { return std::vector<int>({ 0 }); };
+    cupti_counters::get_event_setter()  = []() {
         return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
                                           "global_store", "gld_inst_32bit",
                                           "gst_inst_32bit" });
     };
-    cupti_event::get_metric_setter() = []() {
+    cupti_counters::get_metric_setter() = []() {
         return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
                                           "warp_execution_efficiency", "flop_count_sp",
                                           "flop_count_sp_add", "flop_count_sp_fma",
@@ -1293,7 +1293,7 @@ test_9_cupti_event()
     CUDA_RUNTIME_API_CALL(cudaMemcpy(data, cpu_data.data(), num_data * sizeof(float),
                                      cudaMemcpyHostToDevice));
 
-    cupti_event profiler;
+    cupti_counters profiler;
     profiler.start();
     for(int i = 0; i < num_iter; ++i)
     {
@@ -1377,7 +1377,7 @@ test_8_cupti_subset()
 //======================================================================================//
 
 void
-test_9_cupti_event()
+test_9_cupti_counters()
 {
     print_info(__FUNCTION__);
     printf("CUPTI is not available...\n");

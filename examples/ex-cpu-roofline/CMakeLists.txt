@@ -3,11 +3,11 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(TiMemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME test_cpu_roofline)
-set(COMPONENTS cxx papi threading compile-options analysis-tools arch)
+set(COMPONENTS papi threading compile-options analysis-tools arch)
 
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)
-    list(APPEND COMPONENTS extern-templates)
+    list(APPEND COMPONENTS cxx shared extern-templates)
 endif()
 
 find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})

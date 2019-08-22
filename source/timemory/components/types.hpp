@@ -103,7 +103,8 @@ struct papi_array;
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
 
-struct cupti_event;
+struct cupti_counters;
+struct cupti_activity;
 
 // caliper
 struct caliper;

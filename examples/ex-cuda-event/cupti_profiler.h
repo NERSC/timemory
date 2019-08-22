@@ -79,7 +79,7 @@ _DBG(const char* msg)
 #    define _DBG(...)
 #endif
 
-namespace cupti_profiler
+namespace cupti_counters
 {
 static uint64_t dummy_kernel_id = 0;
 
@@ -732,4 +732,4 @@ available_events(CUdevice device)
     return std::move(event_names);
 }
 
-}  // namespace cupti_profiler
+}  // namespace cupti_counters

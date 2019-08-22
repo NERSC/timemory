@@ -57,8 +57,8 @@ main()
     CUDA_DRIVER_API_CALL(cuDeviceGet(&device, 0));
 
     //#if PROFILE_ALL_EVENTS_METRICS
-    // const auto event_names = cupti_profiler::available_events(device);
-    // const auto metric_names = cupti_profiler::available_metrics(device);
+    // const auto event_names = cupti_counters::available_events(device);
+    // const auto metric_names = cupti_counters::available_metrics(device);
     //#else
     vector<string> event_names{
         "active_warps",
@@ -75,13 +75,13 @@ main()
     constexpr int                N = 100;
     thrust::device_vector<float> data(N, 0);
 
-    // cupti_profiler::profiler profiler(vector<string>{}, metric_names);
+    // cupti_counters::profiler profiler(vector<string>{}, metric_names);
 
     // XXX: Disabling all metrics seems to change the values
     // of some events. Not sure if this is correct behavior.
-    // cupti_profiler::profiler profiler(event_names, vector<string>{});
+    // cupti_counters::profiler profiler(event_names, vector<string>{});
 
-    cupti_profiler::profiler profiler(event_names, metric_names);
+    cupti_counters::profiler profiler(event_names, metric_names);
     // Get #passes required to compute all metrics and events
     const int passes = profiler.get_passes();
     printf("Passes: %d\n", passes);

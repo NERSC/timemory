@@ -57,20 +57,23 @@ The components in the "resource usage" category are provided by POSIX `rusage` (
 
 > Namespace: `tim::component`
 
-| Component Name    | Category      | Dependencies | Description                                                                 |
-| ----------------- | ------------- | ------------ | --------------------------------------------------------------------------- |
-| **`cuda_event`**  | timing        | CUDA runtime | Elapsed time between two points in a CUDA stream                            |
-| **`nvtx_marker`** | external tool | CUDA runtime | Inserts CUDA NVTX markers into the code for `nvprof` and/or `NsightSystems` |
+| Component Name       | Category      | Dependencies | Description                                                                 |
+| -------------------- | ------------- | ------------ | --------------------------------------------------------------------------- |
+| **`cuda_event`**     | timing        | CUDA runtime | Elapsed time between two points in a CUDA stream                            |
+| **`nvtx_marker`**    | external tool | CUDA runtime | Inserts CUDA NVTX markers into the code for `nvprof` and/or `NsightSystems` |
+| **`cupti_activity`** | GPU           | CUDA, CUPTI  | Provides high-precision runtime activity tracing                            |
 
 ## Hardware Counter Components
 
 > Namespace: `tim::component`
 
-| Component Name    | Category | Template Specification      | Dependencies | Description                                                                             |
-| ----------------- | -------- | --------------------------- | ------------ | --------------------------------------------------------------------------------------- |
-| **`papi_tuple`**  | CPU      | `papi_tuple<EventTypes...>` | PAPI         | Variadic list of compile-time specified list of PAPI preset types (e.g. `PAPI_TOT_CYC`) |
-| **`papi_array`**  | CPU      | `papi_array<N>`             | PAPI         | Variable set of PAPI counters up to size _N_. Supports native hardware counter types    |
-| **`cupti_event`** | GPU      |                             | CUDA, CUPTI  | Provides NVIDIA GPU hardware counters for events and metrics                            |
+| Component Name                         | Category | Template Specification      | Dependencies | Description                                                                             |
+| -------------------------------------- | -------- | --------------------------- | ------------ | --------------------------------------------------------------------------------------- |
+| **`papi_tuple`**                       | CPU      | `papi_tuple<EventTypes...>` | PAPI         | Variadic list of compile-time specified list of PAPI preset types (e.g. `PAPI_TOT_CYC`) |
+| **`papi_array`**<sup>[[3]](#fn3)</sup> | CPU      | `papi_array<N>`             | PAPI         | Variable set of PAPI counters up to size _N_. Supports native hardware counter types    |
+| **`cupti_counters`**                   | GPU      |                             | CUDA, CUPTI  | Provides NVIDIA GPU hardware counters for events and metrics                            |
+
+<a name="fn3">[3]</a>: `tim::component::papi_array_t` is pre-defined as `tim::component::papi_array<32>`
 
 ## Miscellaneous Components
 

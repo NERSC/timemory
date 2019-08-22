@@ -23,7 +23,7 @@
 //  SOFTWARE.
 
 /** \file cupti.hpp
- * \headerfile cupti_event.hpp "timemory/cupti_event.hpp"
+ * \headerfile cupti_counters.hpp "timemory/cupti_counters.hpp"
  * Provides implementation of CUPTI routines.
  *
  */
@@ -55,8 +55,8 @@ namespace component
 
 #if defined(TIMEMORY_USE_CUPTI)
 
-struct cupti_event
-: public base<cupti_event, cupti::profiler::results_t, policy::thread_init,
+struct cupti_counters
+: public base<cupti_counters, cupti::profiler::results_t, policy::thread_init,
               policy::thread_finalize>
 {
     using size_type     = std::size_t;
@@ -65,9 +65,9 @@ struct cupti_event
     using value_type    = cupti::profiler::results_t;
     using entry_type    = typename value_type::value_type;
     using base_type =
-        base<cupti_event, value_type, policy::thread_init, policy::thread_finalize>;
-    using this_type   = cupti_event;
-    using event_count = static_counted_object<cupti_event>;
+        base<cupti_counters, value_type, policy::thread_init, policy::thread_finalize>;
+    using this_type   = cupti_counters;
+    using event_count = static_counted_object<cupti_counters>;
     // short-hard for vectors
     using strvec_t  = std::vector<string_t>;
     using intvec_t  = std::vector<int>;
@@ -137,7 +137,7 @@ struct cupti_event
 
     // size_type size() const { return (is_transient) ? accum.size() : value.size(); }
 
-    explicit cupti_event()
+    explicit cupti_counters()
     {
         value.resize(m_labels.size());
         accum.resize(m_labels.size());
@@ -148,7 +148,7 @@ struct cupti_event
         }
     }
 
-    ~cupti_event() {}
+    ~cupti_counters() {}
 
     static int64_t unit() { return 1; }
     // leave these empty
@@ -169,7 +169,7 @@ struct cupti_event
             std::stringstream ss, ssv, ssi;
             ssv.setf(_flags);
             ssv << std::setw(_width) << std::setprecision(_prec);
-            cupti::impl::print(ssv, obj.data);
+            cupti::print(ssv, obj.data);
             if(!_label.empty())
                 ssi << " " << _label;
             ss << ssv.str() << ssi.str();
@@ -193,7 +193,7 @@ struct cupti_event
         const auto&         _data = (is_transient) ? accum : value;
         for(auto itr : _data)
         {
-            values.push_back(cupti::impl::get<double>(itr.data));
+            values.push_back(cupti::get<double>(itr.data));
         }
         return values;
     }
@@ -290,7 +290,8 @@ struct cupti_event
                     tmp[j] += ret[j];
             } else
             {
-                fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
+                fprintf(stderr,
+                        "Warning! mis-matched size in cupti_counters::%s @ %s:%i\n",
                         __FUNCTION__, __FILE__, __LINE__);
             }
         }
@@ -362,7 +363,7 @@ struct cupti_event
         auto _get = [&](const value_type& _data) {
             std::vector<double> values;
             for(auto itr : _data)
-                values.push_back(cupti::impl::get<double>(itr.data));
+                values.push_back(cupti::get<double>(itr.data));
             return values;
         };
         array_t<double> _disp  = _get(accum);
@@ -375,15 +376,15 @@ struct cupti_event
 
     //----------------------------------------------------------------------------------//
     //
-    cupti_event(const cupti_event&) = default;
-    cupti_event(cupti_event&&)      = default;
-    cupti_event& operator           =(const cupti_event& rhs)
+    cupti_counters(const cupti_counters&) = default;
+    cupti_counters(cupti_counters&&)      = default;
+    cupti_counters& operator              =(const cupti_counters& rhs)
     {
         if(this != &rhs)
             base_type::operator=(rhs);
         return *this;
     }
-    cupti_event& operator=(cupti_event&&) = default;
+    cupti_counters& operator=(cupti_counters&&) = default;
 
 private:
     const profvec_t& m_profilers = get_profilers();
@@ -459,10 +460,13 @@ private:
                 profptr_t(new cupti::profiler(_events, _metrics, _device)));
 
         _labels = label_array();
-        std::cout << "Devices : " << writer<intvec_t>(_devices) << std::endl;
-        std::cout << "Event   : " << writer<strvec_t>(_events) << std::endl;
-        std::cout << "Metrics : " << writer<strvec_t>(_metrics) << std::endl;
-        std::cout << "Labels  : " << writer<strvec_t>(_labels) << std::endl;
+        if(settings::verbose() > 0 || settings::debug())
+        {
+            std::cout << "Devices : " << writer<intvec_t>(_devices) << std::endl;
+            std::cout << "Event   : " << writer<strvec_t>(_events) << std::endl;
+            std::cout << "Metrics : " << writer<strvec_t>(_metrics) << std::endl;
+            std::cout << "Labels  : " << writer<strvec_t>(_labels) << std::endl;
+        }
     }
 
     static void clear()
@@ -476,8 +480,8 @@ private:
 };
 
 #else
-struct cupti_event
-: public base<cupti_event, int64_t, policy::thread_init, policy::thread_finalize>
+struct cupti_counters
+: public base<cupti_counters, int64_t, policy::thread_init, policy::thread_finalize>
 {
     using value_type = int64_t;
     using base_type =
@@ -489,8 +493,8 @@ struct cupti_event
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return 1; }
-    static std::string label() { return "cupti_event"; }
-    static std::string descript() { return "cupti_event"; }
+    static std::string label() { return "cupti_counters"; }
+    static std::string descript() { return "cupti_counters"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return 0; }
 
@@ -502,6 +506,8 @@ struct cupti_event
     void stop() {}
 };
 #endif
+
+using cupti_event = cupti_counters;
 
 }  // namespace component
 }  // namespace tim

@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(TiMemory-CXX-Overhead-Example LANGUAGES C CXX)
 
 set(EXE_NAME test_cxx_overhead)
-set(COMPONENTS cxx compile-options analysis-tools)
+set(COMPONENTS compile-options analysis-tools)
 
 option(USE_PAPI "Enable papi" OFF)
 option(USE_CALIPER "Enable caliper" OFF)
@@ -11,7 +11,7 @@ option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 
 set(USE_PAPI_COMPONENTS papi)
 set(USE_CALIPER_COMPONENTS caliper)
-set(USE_EXTERN_TEMPLATES extern-templates)
+set(USE_EXTERN_TEMPLATES_COMPONENTS cxx extern-templates)
 
 foreach(_OPT PAPI CALIPER EXTERN_TEMPLATES)
     message(STATUS "${PROJECT_NAME}: USE_${_OPT} = ${USE_${_OPT}}")

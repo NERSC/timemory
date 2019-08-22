@@ -29,7 +29,7 @@
 // #endif
 
 #include <timemory/backends/device.hpp>
-#include <timemory/components/cupti_event.hpp>
+#include <timemory/components/cupti_counters.hpp>
 #include <timemory/timemory.hpp>
 
 #include <chrono>
@@ -207,6 +207,32 @@ TEST_F(cupti_tests, available)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(cupti_tests, activity)
+{
+    using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    tuple_t timer(details::get_test_name());
+    timer.start();
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
+
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        details::KERNEL_A(data, num_data);
+        details::KERNEL_B(data, num_data);
+    }
+    timer.stop();
+    std::cout << timer << std::endl;
+
+    tim::device::gpu::free(data);
+    tim::cuda::device_sync();
+    tim::cuda::device_reset();
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(cupti_tests, kernels)
 {
     cupti_event::get_device_setter() = []() { return std::vector<int>({ 0 }); };
@@ -214,7 +240,7 @@ TEST_F(cupti_tests, kernels)
         return std::vector<std::string>(
             { "active_warps", "active_cycles", "global_load", "global_store" });
     };
-    cupti_event::get_metric_setter() = []() {
+    cupti_counters::get_metric_setter() = []() {
         return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
                                           "warp_execution_efficiency", "flop_count_sp",
                                           "flop_sp_efficiency", "gld_efficiency",
@@ -225,7 +251,7 @@ TEST_F(cupti_tests, kernels)
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
+    using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
     tuple_t timer(details::get_test_name());
 
     timer.start();
@@ -242,8 +268,8 @@ TEST_F(cupti_tests, kernels)
     tim::cuda::device_reset();
     printf("\n");
 
-    auto cupti_data   = timer.get<cupti_event>().get();
-    auto cupti_labels = timer.get<cupti_event>().label_array();
+    auto cupti_data   = timer.get<cupti_counters>().get();
+    auto cupti_labels = timer.get<cupti_counters>().label_array();
     std::cout << "CUPTI: data size = " << cupti_data.size()
               << ", label size = " << cupti_labels.size() << "\n"
               << std::endl;

@@ -340,8 +340,8 @@ public:
     using labels_type         = std::array<string_t, 8>;
     using mutex_t             = std::mutex;
     using lock_t              = std::unique_lock<mutex_t>;
-    using result_type =
-        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float, float>;
+    using result_type = std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, double,
+                                   double, double>;
     using result_array = std::vector<result_type>;
 
 public:
@@ -458,10 +458,10 @@ template <typename _Tp>
 class operation_counter
 {
 public:
-    using string_t = std::string;
-    using timer_t  = tim::component::real_clock;
-    using result_type =
-        std::tuple<uint64_t, uint64_t, float, uint64_t, uint64_t, float, float, float>;
+    using string_t    = std::string;
+    using timer_t     = tim::component::real_clock;
+    using result_type = std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, double,
+                                   double, double>;
     using result_array = std::vector<result_type>;
     using labels_type  = std::array<string_t, 8>;
 
@@ -507,7 +507,7 @@ public:
         data.push_back(result_type(working_set_size * bytes_per_element, t, seconds,
                                    total_bytes, total_ops, total_bytes / seconds,
                                    total_ops / seconds,
-                                   total_ops / static_cast<float>(total_bytes)));
+                                   total_ops / static_cast<double>(total_bytes)));
         delete rc;
         rc = nullptr;
     }

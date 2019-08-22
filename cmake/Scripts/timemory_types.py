@@ -38,7 +38,8 @@ components = [
     "trip_count",
     "read_bytes",
     "written_bytes",
-    "cupti_event",
+    "cupti_counters",
+    "cupti_activity",
     "nvtx_marker",
 ]
 
@@ -65,7 +66,6 @@ mangled_strings = {
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
-    "cupti_event": ["cupti"],
     "nvtx_marker": ["nvtx"],
 }
 
@@ -74,7 +74,8 @@ recommended_types = {
               "current_rss", "peak_rss", "read_bytes", "written_bytes",
               "num_minor_page_faults", "num_major_page_faults",
               "voluntary_context_switch", "priority_context_switch"],
-    "list": ["caliper", "papi_array_t", "cuda_event", "cupti_event"],
+    "list": ["caliper", "papi_array_t", "cuda_event", "nvtx_marker",
+             "cupti_counters", "cupti_activity"],
 }
 
 traits = {
@@ -89,6 +90,7 @@ traits = {
         "thread_cpu_clock",
         "process_cpu_clock",
         "cuda_event",
+        "cupti_activity",
     ]),
     "is_memory_category": ("std::true_type",
     [
@@ -120,6 +122,7 @@ traits = {
         "thread_cpu_clock",
         "process_cpu_clock",
         "cuda_event",
+        "cupti_activity",
     ]),
     "uses_memory_units": ("std::true_type",
     [

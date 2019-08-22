@@ -217,7 +217,7 @@ struct array_serialization<component::papi_array<MaxNumEvents>> : std::true_type
 };
 
 template <>
-struct array_serialization<component::cupti_event> : std::true_type
+struct array_serialization<component::cupti_counters> : std::true_type
 {
 };
 
@@ -310,6 +310,11 @@ struct is_timing_category<component::process_cpu_clock> : std::true_type
 
 template <>
 struct is_timing_category<component::cuda_event> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::cupti_activity> : std::true_type
 {
 };
 
@@ -443,6 +448,11 @@ struct uses_timing_units<component::process_cpu_clock> : std::true_type
 
 template <>
 struct uses_timing_units<component::cuda_event> : std::true_type
+{
+};
+
+template <>
+struct uses_timing_units<component::cupti_activity> : std::true_type
 {
 };
 
@@ -592,7 +602,12 @@ struct is_available<component::cuda_event> : std::false_type
 #if !defined(TIMEMORY_USE_CUPTI)
 
 template <>
-struct is_available<component::cupti_event> : std::false_type
+struct is_available<component::cupti_counters> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::cupti_activity> : std::false_type
 {
 };
 

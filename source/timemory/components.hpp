@@ -34,12 +34,13 @@
 // general components
 #include "timemory/components/caliper.hpp"
 #include "timemory/components/cuda_event.hpp"
+#include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
 // hardware counter components
-#include "timemory/components/cupti_event.hpp"
+#include "timemory/components/cupti_counters.hpp"
 #include "timemory/components/papi_array.hpp"
 #include "timemory/components/papi_tuple.hpp"
 
@@ -122,7 +123,8 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
             case CPU_UTIL: obj.template init<cpu_util>(); break;
             case CUDA_EVENT: obj.template init<cuda_event>(); break;
-            case CUPTI_EVENT: obj.template init<cupti_event>(); break;
+            case CUPTI_ACTIVITY: obj.template init<cupti_activity>(); break;
+            case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
             case CURRENT_RSS: obj.template init<current_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
             case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
@@ -211,9 +213,13 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CUDA_EVENT);
         }
-        else if(itr == "cupti" || itr == "cupti_event")
+        else if(itr == "cupti_activity")
         {
-            vec.push_back(CUPTI_EVENT);
+            vec.push_back(CUPTI_ACTIVITY);
+        }
+        else if(itr == "cupti_counters")
+        {
+            vec.push_back(CUPTI_COUNTERS);
         }
         else if(itr == "current_rss")
         {
@@ -334,8 +340,8 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
                 "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
                 "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
-                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti', "
-                "'cupti_event', 'current_rss', 'data_rss', 'monotonic_clock', "
+                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti_activity', "
+                "'cupti_counters', 'current_rss', 'data_rss', 'monotonic_clock', "
                 "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
                 "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
                 "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "

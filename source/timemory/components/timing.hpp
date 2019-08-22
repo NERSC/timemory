@@ -60,14 +60,14 @@ struct real_clock : public base<real_clock>
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
-    float get_display() const
+    double get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
 
-    float get() const { return get_display(); }
+    double get() const { return get_display(); }
 
     void start()
     {
@@ -112,14 +112,14 @@ struct system_clock : public base<system_clock>
     static std::string descript() { return "system time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -155,14 +155,14 @@ struct user_clock : public base<user_clock>
     static std::string descript() { return "user time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -198,14 +198,14 @@ struct cpu_clock : public base<cpu_clock>
     static std::string descript() { return "cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -241,14 +241,14 @@ struct monotonic_clock : public base<monotonic_clock>
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
     }
-    float get_display() const
+    double get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -285,14 +285,14 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     {
         return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
     }
-    float get_display() const
+    double get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -327,14 +327,14 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     static std::string descript() { return "thread cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -368,14 +368,14 @@ struct process_cpu_clock : public base<process_cpu_clock>
     static std::string descript() { return "process cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -417,17 +417,17 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     {
         return value_type(cpu_clock::record(), real_clock::record());
     }
-    float get_display() const
+    double get_display() const
     {
-        float denom =
+        double denom =
             (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        float numer =
+        double numer =
             (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
-        return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
+        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    float serialization() { return get_display(); }
-    float get() const { return get_display(); }
-    void  start()
+    double serialization() { return get_display(); }
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -490,17 +490,17 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     {
         return value_type(process_cpu_clock::record(), real_clock::record());
     }
-    float get_display() const
+    double get_display() const
     {
-        float denom =
+        double denom =
             (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        float numer =
+        double numer =
             (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
-        return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
+        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    float serialization() { return get_display(); }
-    float get() const { return get_display(); }
-    void  start()
+    double serialization() { return get_display(); }
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -563,17 +563,17 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     {
         return value_type(thread_cpu_clock::record(), real_clock::record());
     }
-    float get_display() const
+    double get_display() const
     {
-        float denom =
+        double denom =
             (accum.second > 0) ? accum.second : ((value.second > 0) ? value.second : 1);
-        float numer =
+        double numer =
             (accum.second > 0) ? accum.first : ((value.second > 0) ? value.first : 0);
-        return 100.0 * static_cast<float>(numer) / static_cast<float>(denom);
+        return 100.0 * static_cast<double>(numer) / static_cast<double>(denom);
     }
-    float serialization() { return get_display(); }
-    float get() const { return get_display(); }
-    void  start()
+    double serialization() { return get_display(); }
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
