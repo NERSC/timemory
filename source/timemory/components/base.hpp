@@ -443,9 +443,11 @@ public:
     void serialize(Archive& ar, const unsigned int)
     {
         auto _disp = static_cast<const Type&>(*this).get_display();
+        auto _data = static_cast<const Type&>(*this).get();
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("value", value),
-           serializer::make_nvp("accum", accum), serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _data),
+           serializer::make_nvp("value", value), serializer::make_nvp("accum", accum),
+           serializer::make_nvp("display", _disp));
     }
 
     const int64_t&    nlaps() const { return laps; }

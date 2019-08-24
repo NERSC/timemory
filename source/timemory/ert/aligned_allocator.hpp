@@ -65,6 +65,9 @@
 #    include <malloc/malloc.h>
 #endif
 
+#include "timemory/backends/device.hpp"
+#include "timemory/details/settings.hpp"
+
 namespace tim
 {
 namespace ert
@@ -79,13 +82,22 @@ consume_parameters(_Args&&...)
 }
 }  // namespace details
 
+template <bool B, typename T = int>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
 //--------------------------------------------------------------------------------------//
 //  aligned allocation, alignment should be specified in bits
 //
-template <typename _Tp>
+namespace hidden
+{
+template <typename _Tp, typename _Device,
+          enable_if_t<std::is_same<_Device, device::cpu>::value> = 0>
 _Tp*
 allocate_aligned(std::size_t size, std::size_t alignment)
 {
+    if(settings::debug())
+        printf("Allocating memory with allocate_aligned...\n");
+
 #if defined(__INTEL_COMPILER)
     return static_cast<_Tp*>(_mm_malloc(size * sizeof(_Tp), alignment));
 #elif defined(_ISOC11_SOURCE)
@@ -103,12 +115,27 @@ allocate_aligned(std::size_t size, std::size_t alignment)
 }
 
 //--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Device,
+          enable_if_t<std::is_same<_Device, device::gpu>::value> = 0>
+_Tp*
+allocate_aligned(std::size_t size, std::size_t)
+{
+    if(settings::debug())
+        printf("Allocating memory with cuda::malloc...\n");
+    return cuda::malloc<_Tp>(size);
+}
+
+//--------------------------------------------------------------------------------------//
 //  free aligned array, should be used in conjunction with data allocated with above
 //
-template <typename _Tp>
+template <typename _Tp, typename _Device,
+          enable_if_t<std::is_same<_Device, device::cpu>::value> = 0>
 void
 free_aligned(_Tp* ptr)
 {
+    if(settings::debug())
+        printf("Freeing memory with allocate_aligned...\n");
 #if defined(__INTEL_COMPILER)
     _mm_free(static_cast<void*>(ptr));
 #elif defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||      \
@@ -117,6 +144,40 @@ free_aligned(_Tp* ptr)
 #else
     delete[] ptr;
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename _Device,
+          enable_if_t<std::is_same<_Device, device::gpu>::value> = 0>
+void
+free_aligned(_Tp* ptr)
+{
+    if(settings::debug())
+        printf("Freeing memory with cuda::malloc...\n");
+    cuda::free(ptr);
+}
+
+}  // namespace hidden
+
+//--------------------------------------------------------------------------------------//
+//  aligned allocation, alignment should be specified in bits
+//
+template <typename _Tp, typename _Device = device::cpu>
+_Tp*
+allocate_aligned(std::size_t size, std::size_t alignment)
+{
+    return hidden::allocate_aligned<_Tp, _Device>(size, alignment);
+}
+
+//--------------------------------------------------------------------------------------//
+//  free aligned array, should be used in conjunction with data allocated with above
+//
+template <typename _Tp, typename _Device = device::cpu>
+void
+free_aligned(_Tp* ptr)
+{
+    hidden::free_aligned<_Tp, _Device>(ptr);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -195,7 +256,7 @@ public:
         }
 
         // Mallocator wraps malloc().
-        void* const ptr = allocate_aligned<_Tp>(n, _Align_v);
+        void* const ptr = allocate_aligned<_Tp, device::cpu>(n, _Align_v);
 
         // throw std::bad_alloc in the case of memory allocation failure.
         if(ptr == nullptr)
@@ -209,7 +270,10 @@ public:
         return static_cast<_Tp*>(ptr);
     }
 
-    void deallocate(_Tp* const ptr, const std::size_t) const { free_aligned(ptr); }
+    void deallocate(_Tp* const ptr, const std::size_t) const
+    {
+        free_aligned<_Tp, device::cpu>(ptr);
+    }
 
     // same for all allocators that ignore hints.
     template <typename U>

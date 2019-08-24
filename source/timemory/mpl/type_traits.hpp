@@ -222,12 +222,28 @@ struct array_serialization<component::cupti_counters> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+//      start_priority
+//--------------------------------------------------------------------------------------//
+
+/// component::cuda_event should be stopped before other types
+template <>
+struct start_priority<component::cupti_activity> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 //      stop_priority
 //--------------------------------------------------------------------------------------//
 
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cuda_event> : std::true_type
+{
+};
+
+/// component::cuda_event should be stopped before other types
+template <>
+struct stop_priority<component::cupti_activity> : std::true_type
 {
 };
 
@@ -608,6 +624,11 @@ struct is_available<component::cupti_counters> : std::false_type
 
 template <>
 struct is_available<component::cupti_activity> : std::false_type
+{
+};
+
+template <typename _Tp>
+struct is_available<component::gpu_roofline<_Tp>> : std::false_type
 {
 };
 

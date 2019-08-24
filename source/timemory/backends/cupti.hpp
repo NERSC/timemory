@@ -52,38 +52,20 @@
 
 //--------------------------------------------------------------------------------------//
 
-#define CUDA_DRIVER_API_CALL(apiFuncCall)                                                \
-    {                                                                                    \
-        CUresult _status = apiFuncCall;                                                  \
-        if(_status != CUDA_SUCCESS)                                                      \
-        {                                                                                \
-            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %d.\n",      \
-                    __FILE__, __LINE__, #apiFuncCall, _status);                          \
-        }                                                                                \
-    }
+#if !defined(CUPTI_BUFFER_SIZE)
+#    define CUPTI_BUFFER_SIZE (32 * 1024)
+#endif
 
-//--------------------------------------------------------------------------------------//
+#if !defined(CUPTI_ALIGN_SIZE)
+#    define CUPTI_ALIGN_SIZE (8)
+#endif
 
-#define CUPTI_CALL(call)                                                                 \
-    {                                                                                    \
-        CUptiResult _status = call;                                                      \
-        if(_status != CUPTI_SUCCESS)                                                     \
-        {                                                                                \
-            const char* errstr;                                                          \
-            cuptiGetResultString(_status, &errstr);                                      \
-            fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                    __FILE__, __LINE__, #call, errstr);                                  \
-        }                                                                                \
-    }
-
-//--------------------------------------------------------------------------------------//
-
-#define CUPTI_BUFFER_SIZE (32 * 1024)
-#define CUPTI_ALIGN_SIZE (8)
-#define CUPTI_ALIGN_BUFFER(buffer, align)                                                \
-    (((uintptr_t)(buffer) & ((align) -1))                                                \
-         ? ((buffer) + (align) - ((uintptr_t)(buffer) & ((align) -1)))                   \
-         : (buffer))
+#if !defined(CUPTI_ALIGN_BUFFER)
+#    define CUPTI_ALIGN_BUFFER(buffer, align)                                            \
+        (((uintptr_t)(buffer) & ((align) -1))                                            \
+             ? ((buffer) + (align) - ((uintptr_t)(buffer) & ((align) -1)))               \
+             : (buffer))
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -994,39 +976,46 @@ compute_api_kind(CUpti_ActivityComputeApiKind kind)
 inline uint64_t
 get_elapsed(CUpti_Activity* record)
 {
+#define _CUPTI_CAST_RECORD(ToType, var) ToType* var = (ToType*) record
+
     switch(record->kind)
     {
-        break;
         case CUPTI_ACTIVITY_KIND_MEMCPY:
         {
-            CUpti_ActivityMemcpy* memcpy = (CUpti_ActivityMemcpy*) record;
-            return (memcpy->end) - (memcpy->start);
+            _CUPTI_CAST_RECORD(CUpti_ActivityMemcpy, obj);
+            return obj->end - obj->start;
             break;
         }
         case CUPTI_ACTIVITY_KIND_MEMSET:
         {
-            CUpti_ActivityMemset* memset = (CUpti_ActivityMemset*) record;
-            return (memset->end) - (memset->start);
+            _CUPTI_CAST_RECORD(CUpti_ActivityMemset, obj);
+            return obj->end - obj->start;
             break;
         }
         case CUPTI_ACTIVITY_KIND_KERNEL:
         case CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL:
         {
-            CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
-            return (kernel->end) - (kernel->start);
+            _CUPTI_CAST_RECORD(CUpti_ActivityKernel4, obj);
+            return obj->end - obj->start;
             break;
         }
         case CUPTI_ACTIVITY_KIND_DRIVER:
         case CUPTI_ACTIVITY_KIND_RUNTIME:
         {
-            CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
-            return (api->end) - (api->start);
+            _CUPTI_CAST_RECORD(CUpti_ActivityAPI, obj);
+            return obj->end - obj->start;
             break;
         }
         case CUPTI_ACTIVITY_KIND_OVERHEAD:
         {
-            CUpti_ActivityOverhead* overhead = (CUpti_ActivityOverhead*) record;
-            return (overhead->end) - (overhead->start);
+            _CUPTI_CAST_RECORD(CUpti_ActivityOverhead, obj);
+            return obj->end - obj->start;
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_CDP_KERNEL:
+        {
+            _CUPTI_CAST_RECORD(CUpti_ActivityCdpKernel, obj);
+            return obj->end - obj->start;
             break;
         }
         case CUPTI_ACTIVITY_KIND_DEVICE:
@@ -1038,6 +1027,7 @@ get_elapsed(CUpti_Activity* record)
         default: break;
     }
     return 0;
+#undef _CUPTI_CAST_RECORD
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1047,13 +1037,46 @@ print(CUpti_Activity* record)
 {
     switch(record->kind)
     {
-        break;
+        case CUPTI_ACTIVITY_KIND_DEVICE:
+        {
+            CUpti_ActivityDevice2* device = (CUpti_ActivityDevice2*) record;
+            printf(
+                "DEVICE %s (%u), capability %u.%u, global memory (bandwidth %u GB/s, "
+                "size %u MB), "
+                "multiprocessors %u, clock %u MHz\n",
+                device->name, device->id, device->computeCapabilityMajor,
+                device->computeCapabilityMinor,
+                (unsigned int) (device->globalMemoryBandwidth / 1024 / 1024),
+                (unsigned int) (device->globalMemorySize / 1024 / 1024),
+                device->numMultiprocessors,
+                (unsigned int) (device->coreClockRate / 1000));
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
+        {
+            CUpti_ActivityDeviceAttribute* attribute =
+                (CUpti_ActivityDeviceAttribute*) record;
+            printf("DEVICE_ATTRIBUTE %u, device %u, value=0x%llx\n",
+                   attribute->attribute.cupti, attribute->deviceId,
+                   (unsigned long long) attribute->value.vUint64);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_CONTEXT:
+        {
+            CUpti_ActivityContext* context = (CUpti_ActivityContext*) record;
+            printf(
+                "CONTEXT %u, device %u, compute API %s, NULL stream %d\n",
+                context->contextId, context->deviceId,
+                compute_api_kind((CUpti_ActivityComputeApiKind) context->computeApiKind),
+                (int) context->nullStreamId);
+            break;
+        }
         case CUPTI_ACTIVITY_KIND_MEMCPY:
         {
             CUpti_ActivityMemcpy* memcpy = (CUpti_ActivityMemcpy*) record;
             printf(
-                "MEMCPY %s [ %llu - %llu ] device %u, context %u, stream %u, "
-                "correlation %u/r%u\n",
+                "MEMCPY %s [ %llu - %llu ] device %u, context %u, stream %u, correlation "
+                "%u/r%u\n",
                 memcpy_kind((CUpti_ActivityMemcpyKind) memcpy->copyKind),
                 (unsigned long long) (memcpy->start - start_timestamp()),
                 (unsigned long long) (memcpy->end - start_timestamp()), memcpy->deviceId,
@@ -1079,8 +1102,8 @@ print(CUpti_Activity* record)
                 (record->kind == CUPTI_ACTIVITY_KIND_KERNEL) ? "KERNEL" : "CONC KERNEL";
             CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
             printf(
-                "%s \"%s\" [ %llu - %llu ] device %u, context %u, stream %u, "
-                "correlation %u\n",
+                "%s \"%s\" [ %llu - %llu ] device %u, context %u, stream %u, correlation "
+                "%u\n",
                 kindString, kernel->name,
                 (unsigned long long) (kernel->start - start_timestamp()),
                 (unsigned long long) (kernel->end - start_timestamp()), kernel->deviceId,
@@ -1097,8 +1120,7 @@ print(CUpti_Activity* record)
         {
             CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
             printf(
-                "DRIVER cbid=%u [ %llu - %llu ] process %u, thread %u, correlation "
-                "%u\n",
+                "DRIVER cbid=%u [ %llu - %llu ] process %u, thread %u, correlation %u\n",
                 api->cbid, (unsigned long long) (api->start - start_timestamp()),
                 (unsigned long long) (api->end - start_timestamp()), api->processId,
                 api->threadId, api->correlationId);
@@ -1108,11 +1130,56 @@ print(CUpti_Activity* record)
         {
             CUpti_ActivityAPI* api = (CUpti_ActivityAPI*) record;
             printf(
-                "RUNTIME cbid=%u [ %llu - %llu ] process %u, thread %u, correlation "
-                "%u\n",
+                "RUNTIME cbid=%u [ %llu - %llu ] process %u, thread %u, correlation %u\n",
                 api->cbid, (unsigned long long) (api->start - start_timestamp()),
                 (unsigned long long) (api->end - start_timestamp()), api->processId,
                 api->threadId, api->correlationId);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_NAME:
+        {
+            CUpti_ActivityName* name = (CUpti_ActivityName*) record;
+            switch(name->objectKind)
+            {
+                case CUPTI_ACTIVITY_OBJECT_CONTEXT:
+                    printf("NAME  %s %u %s id %u, name %s\n",
+                           object_kind(name->objectKind),
+                           object_kind_id(name->objectKind, &name->objectId),
+                           object_kind(CUPTI_ACTIVITY_OBJECT_DEVICE),
+                           object_kind_id(CUPTI_ACTIVITY_OBJECT_DEVICE, &name->objectId),
+                           name->name);
+                    break;
+                case CUPTI_ACTIVITY_OBJECT_STREAM:
+                    printf("NAME %s %u %s %u %s id %u, name %s\n",
+                           object_kind(name->objectKind),
+                           object_kind_id(name->objectKind, &name->objectId),
+                           object_kind(CUPTI_ACTIVITY_OBJECT_CONTEXT),
+                           object_kind_id(CUPTI_ACTIVITY_OBJECT_CONTEXT, &name->objectId),
+                           object_kind(CUPTI_ACTIVITY_OBJECT_DEVICE),
+                           object_kind_id(CUPTI_ACTIVITY_OBJECT_DEVICE, &name->objectId),
+                           name->name);
+                    break;
+                default:
+                    printf("NAME %s id %u, name %s\n", object_kind(name->objectKind),
+                           object_kind_id(name->objectKind, &name->objectId), name->name);
+                    break;
+            }
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_MARKER:
+        {
+            CUpti_ActivityMarker2* marker = (CUpti_ActivityMarker2*) record;
+            printf("MARKER id %u [ %llu ], name %s, domain %s\n", marker->id,
+                   (unsigned long long) marker->timestamp, marker->name, marker->domain);
+            break;
+        }
+        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
+        {
+            CUpti_ActivityMarkerData* marker = (CUpti_ActivityMarkerData*) record;
+            printf("MARKER_DATA id %u, color 0x%x, category %u, payload %llu/%f\n",
+                   marker->id, marker->color, marker->category,
+                   (unsigned long long) marker->payload.metricValueUint64,
+                   marker->payload.metricValueDouble);
             break;
         }
         case CUPTI_ACTIVITY_KIND_OVERHEAD:
@@ -1126,13 +1193,11 @@ print(CUpti_Activity* record)
                    object_kind_id(overhead->objectKind, &overhead->objectId));
             break;
         }
-        case CUPTI_ACTIVITY_KIND_DEVICE:
-        case CUPTI_ACTIVITY_KIND_DEVICE_ATTRIBUTE:
-        case CUPTI_ACTIVITY_KIND_CONTEXT:
-        case CUPTI_ACTIVITY_KIND_NAME:
-        case CUPTI_ACTIVITY_KIND_MARKER:
-        case CUPTI_ACTIVITY_KIND_MARKER_DATA:
-        default: break;
+        default:
+            fprintf(stderr,
+                    "[cupti::activity::%s]> Warning!! Unknown activity record: %i\n",
+                    __FUNCTION__, (int) record->kind);
+            break;
     }
 }
 
@@ -1158,19 +1223,18 @@ static void CUPTIAPI
             buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t /*size*/,
                              size_t validSize)
 {
-    using lock_type = typename receiver<_Tp>::lock_type;
-
     CUptiResult     status;
     CUpti_Activity* record = nullptr;
 
-    auto& _receiver = get_receiver<_Tp>();
     // obtain lock to keep data from being removed during update
-    lock_type lk(_receiver.get_mutex());
+    using lock_type = typename receiver<_Tp>::holder_type;
+    auto& _receiver = get_receiver<_Tp>();
 
     if(validSize > 0)
     {
         do
         {
+            lock_type lk(_receiver);
             status = cuptiActivityGetNextRecord(buffer, validSize, &record);
             if(status == CUPTI_SUCCESS)
             {
@@ -1201,26 +1265,8 @@ static void CUPTIAPI
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline std::vector<CUpti_ActivityKind>&
-get_kind_types()
-{
-    static std::vector<CUpti_ActivityKind> _instance = {
-        CUPTI_ACTIVITY_KIND_DEVICE, CUPTI_ACTIVITY_KIND_CONTEXT,
-        CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_RUNTIME,
-        CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
-        CUPTI_ACTIVITY_KIND_NAME,   CUPTI_ACTIVITY_KIND_MARKER,
-        CUPTI_ACTIVITY_KIND_KERNEL, CUPTI_ACTIVITY_KIND_OVERHEAD
-    };
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
 inline void
-scale_device_buffers(
-    int64_t buffer_factor     = get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_SIZE", 0),
-    int64_t pool_limit_factor = get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_POOL_LIMIT", 0))
+set_device_buffers(size_t _buffer_size, size_t _pool_limit)
 {
     size_t deviceValue   = 0;
     size_t poolValue     = 0;
@@ -1236,52 +1282,58 @@ scale_device_buffers(
     CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
                                          &attrValueSize, &deviceValue));
 
-    if(settings::verbose() > 1 || settings::debug())
-        printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
-               "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE",
-               (long long unsigned) deviceValue);
-
-    if(buffer_factor != 0)
-    {
-        size_t attrValue = deviceValue;
-        if(buffer_factor > 1)
-        {
-            attrValue *= buffer_factor;
-        }
-        else if(buffer_factor < -1)
-        {
-            attrValue /= buffer_factor;
-        }
-
-        if(attrValue > 0)
-            CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
-                                                 &attrValueSize, &attrValue));
-    }
-
     // get the buffer pool limit and increase
     CUPTI_CALL(cuptiActivityGetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
                                          &attrValueSize, &poolValue));
 
-    if(settings::verbose() > 1 || settings::debug())
-        printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
-               "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE", (long long unsigned) poolValue);
-
-    if(pool_limit_factor != 0)
+    if(_buffer_size != deviceValue)
     {
-        size_t attrValue = poolValue;
-        if(pool_limit_factor > 1)
-        {
-            attrValue *= pool_limit_factor;
-        }
-        else if(pool_limit_factor < -1)
-        {
-            attrValue /= pool_limit_factor;
-        }
-        if(attrValue > 0)
-            CUPTI_CALL(
-                cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
-                                          &attrValueSize, &attrValue));
+        CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE,
+                                             &attrValueSize, &_buffer_size));
+        if(settings::verbose() > 1 || settings::debug())
+            printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
+                   "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_SIZE",
+                   (long long unsigned) _buffer_size);
+        get_buffer_size() = _buffer_size;
     }
+
+    if(_pool_limit != poolValue)
+    {
+        CUPTI_CALL(cuptiActivitySetAttribute(CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT,
+                                             &attrValueSize, &_pool_limit));
+        if(settings::verbose() > 1 || settings::debug())
+            printf("[tim::cupti::activity::%s]> %s = %llu\n", __FUNCTION__,
+                   "CUPTI_ACTIVITY_ATTR_DEVICE_BUFFER_POOL_LIMIT",
+                   (long long unsigned) _pool_limit);
+        get_buffer_pool_limit() = _pool_limit;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+initialize_trace(const std::vector<activity_kind_t>& _kind_types)
+{
+    size_t f_buffer = get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_SIZE", get_buffer_size());
+    size_t f_pool_limit =
+        get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_POOL_LIMIT", get_buffer_pool_limit());
+
+    enable(_kind_types);
+    register_callbacks(request_buffer<_Tp>, buffer_completed<_Tp>);
+    set_device_buffers(f_buffer, f_pool_limit);
+    start_timestamp() = cupti::activity::get_timestamp();
+    init_driver();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline void
+finalize_trace(const std::vector<activity_kind_t>& _kind_types)
+{
+    disable(_kind_types);
+    get_receiver<_Tp>().clear();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1291,22 +1343,6 @@ inline void
 start_trace(_Tp* obj)
 {
     auto& _receiver = get_receiver<_Tp>();
-
-    if(_receiver.empty())
-    {
-        _receiver.set_kinds(get_kind_types<_Tp>());
-        // Device activity record is created when CUDA initializes, so we
-        // want to enable it before cuInit() or any CUDA runtime call.
-        for(const auto& itr : _receiver.get_kinds())
-            CUPTI_CALL(cuptiActivityEnable(itr));
-
-        // Register callbacks for buffer requests and for buffers completed by CUPTI.
-        CUPTI_CALL(
-            cuptiActivityRegisterCallbacks(request_buffer<_Tp>, buffer_completed<_Tp>));
-
-        auto& _start = start_timestamp();
-        CUPTI_CALL(cuptiGetTimestamp(&_start));
-    }
     _receiver.insert(obj);
 }
 
@@ -1317,16 +1353,9 @@ inline void
 stop_trace(_Tp* obj)
 {
     auto& _receiver = get_receiver<_Tp>();
-    cuptiActivityFlushAll(0);
+    cuda::device_sync();
+    CUPTI_CALL(cuptiActivityFlushAll(0));
     _receiver.remove(obj);
-
-    if(_receiver.empty())
-    {
-        // Device activity record is created when CUDA initializes, so we
-        // want to enable it before cuInit() or any CUDA runtime call.
-        for(const auto& itr : _receiver.get_kinds())
-            CUPTI_CALL(cuptiActivityDisable(itr));
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1454,3 +1483,6 @@ tim::cupti::available_events(CUdevice device)
 }
 
 #undef __CUPTI_PROFILER_NAME_SHORT
+#undef CUPTI_BUFFER_SIZE
+#undef CUPTI_ALIGN_SIZE
+#undef CUPTI_ALIGN_BUFFER

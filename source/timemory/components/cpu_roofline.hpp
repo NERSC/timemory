@@ -45,16 +45,6 @@
 #    define TIMEMORY_VEC 256
 #endif
 
-#include <array>
-#include <memory>
-#include <numeric>
-#include <utility>
-
-// default vectorization width
-#if !defined(TIMEMORY_VEC)
-#    define TIMEMORY_VEC 256
-#endif
-
 //======================================================================================//
 
 namespace tim
@@ -66,17 +56,13 @@ namespace component
 // e.g. for FLOPS roofline (floating point operations / second:
 //
 //  single precision:
-//              cpu_roofline<PAPI_SP_OPS>
+//              cpu_roofline<float, PAPI_SP_OPS>
 //
 //  double precision:
-//              cpu_roofline<PAPI_DP_OPS>
+//              cpu_roofline<double, PAPI_DP_OPS>
 //
 //  generic:
-//              cpu_roofline<PAPI_FP_OPS>
-//              cpu_roofline<PAPI_SP_OPS, PAPI_DP_OPS>
-//
-// NOTE: in order to do a roofline, the peak must be calculated with ERT
-//      (eventually will be integrated)
+//              cpu_roofline<T, ...>
 //
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline
@@ -97,12 +83,13 @@ struct cpu_roofline
         base<this_type, value_type, policy::thread_init, policy::thread_finalize,
              policy::global_finalize, policy::serialization>;
 
-    using papi_op_type                = papi_tuple<EventTypes...>;
-    using papi_ai_type                = papi_tuple<PAPI_LST_INS>;
-    using clock_type                  = real_clock;
-    using ratio_t                     = typename clock_type::ratio_t;
-    using operation_counter_t         = tim::ert::cpu::operation_counter<_Tp, clock_type>;
-    using operation_function_t        = std::function<operation_counter_t*()>;
+    using device_t             = device::cpu;
+    using papi_op_type         = papi_tuple<EventTypes...>;
+    using papi_ai_type         = papi_tuple<PAPI_LST_INS>;
+    using clock_type           = real_clock;
+    using ratio_t              = typename clock_type::ratio_t;
+    using operation_counter_t  = tim::ert::operation_counter<device_t, _Tp, clock_type>;
+    using operation_function_t = std::function<operation_counter_t*()>;
     using operation_counter_ptr_t     = std::shared_ptr<operation_counter_t>;
     using operation_uint64_function_t = std::function<uint64_t()>;
 
@@ -143,19 +130,30 @@ struct cpu_roofline
 
     static MODE& event_mode()
     {
-        static auto aslower = [](std::string str) {
+        auto aslc = [](std::string str) {
             for(auto& itr : str)
                 itr = tolower(itr);
             return str;
         };
-        static std::string _env = get_env<std::string>("TIMEMORY_ROOFLINE_MODE", "op");
-        static MODE        _instance = (aslower(_env) == "op")
-                                    ? MODE::OP
-                                    : ((aslower(_env) == "ai") ? MODE::AI : MODE::OP);
+
+        auto _get = [=]() {
+            // check the standard variable
+            std::string _std = aslc(get_env<std::string>("TIMEMORY_ROOFLINE_MODE", "op"));
+            // check the specific variable (to override)
+            std::string _env =
+                aslc(get_env<std::string>("TIMEMORY_CPU_ROOFLINE_MODE", _std));
+            return (_env == "op" || _env == "hw" || _env == "counters")
+                       ? MODE::OP
+                       : ((_env == "ai" || _env == "ac" || _env == "activity")
+                              ? MODE::AI
+                              : MODE::OP);
+        };
+
+        static MODE _instance = _get();
         return _instance;
     }
 
-    static operation_uint64_function_t& get_finalize_threads_function()
+    static operation_uint64_function_t& get_num_threads_finalizer()
     {
         static operation_uint64_function_t _instance = []() -> uint64_t {
             return get_env<uint64_t>("TIMEMORY_ROOFLINE_NUM_THREADS",
@@ -164,7 +162,7 @@ struct cpu_roofline
         return _instance;
     }
 
-    static operation_uint64_function_t& get_finalize_align_function()
+    static operation_uint64_function_t& get_alignment_finalizer()
     {
         static operation_uint64_function_t _instance = []() -> uint64_t {
             return std::max<uint64_t>(32, sizeof(_Tp));
@@ -186,8 +184,8 @@ struct cpu_roofline
             auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
             // configuration sizes
             auto lm_size    = tim::ert::cache_size::get_max();
-            auto num_thread = get_finalize_threads_function()();
-            auto align_size = get_finalize_align_function()();
+            auto num_thread = get_num_threads_finalizer()();
+            auto align_size = get_alignment_finalizer()();
             // execution parameters
             ert::exec_params params(16, 8 * lm_size, num_thread);
             // operation counter instance
@@ -197,8 +195,8 @@ struct cpu_roofline
             // set number of memory accesses per element from two functions
             op_counter->memory_accesses_per_element = 2;
             // run the kernels (<4> is ideal for avx, <8> is ideal for KNL)
-            tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-            tim::ert::cpu_ops_main<VEC, 2 * VEC>(*op_counter, fma_func, store_func);
+            tim::ert::ops_main<1>(*op_counter, add_func, store_func);
+            tim::ert::ops_main<VEC, 2 * VEC>(*op_counter, fma_func, store_func);
             // return the operation count data
             return op_counter;
         };

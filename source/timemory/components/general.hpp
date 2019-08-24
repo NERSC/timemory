@@ -49,7 +49,8 @@ namespace component
 struct trip_count : public base<trip_count>
 {
     using value_type = int64_t;
-    using base_type  = base<trip_count, value_type>;
+    using this_type  = trip_count;
+    using base_type  = base<this_type, value_type>;
 
     static const short                   precision = 0;
     static const short                   width     = 5;
@@ -84,7 +85,8 @@ struct trip_count : public base<trip_count>
 struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 {
     using value_type = int8_t;
-    using base_type  = base<nvtx_marker, value_type, policy::thread_init>;
+    using this_type  = nvtx_marker;
+    using base_type  = base<this_type, value_type, policy::thread_init>;
 
     static const short                   precision    = 0;
     static const short                   width        = 5;

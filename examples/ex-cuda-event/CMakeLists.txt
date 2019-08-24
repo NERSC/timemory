@@ -42,7 +42,7 @@ add_executable(${EXE_NAME} ${EXE_NAME}.cu)
 target_link_libraries(${EXE_NAME} timemory-cuda-event-example logging)
 target_compile_options(${EXE_NAME} PRIVATE $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
 
-if(USE_CUPTI)
+if(USE_CUPTI AND TIMEMORY_USE_CUPTI)
     add_executable(demo demo.cu)
     target_link_libraries(demo timemory-headers timemory-cuda timemory-cupti logging)
     target_include_directories(demo PRIVATE ${CMAKE_CURRENT_LIST_DIR})

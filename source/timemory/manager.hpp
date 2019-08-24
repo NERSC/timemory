@@ -71,8 +71,8 @@ inline void
 initialize()
 {
 #if defined(TIMEMORY_USE_CUPTI)
-    unsigned int init_flags = 0;
-    cuInit(init_flags);
+    // unsigned int init_flags = 0;
+    // cuInit(init_flags);
 #endif
 }
 }  // namespace cupti

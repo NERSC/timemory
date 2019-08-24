@@ -103,6 +103,9 @@ struct papi_array;
 template <typename _Tp, int... EventTypes>
 struct cpu_roofline;
 
+template <typename _Tp>
+struct gpu_roofline;
+
 struct cupti_counters;
 struct cupti_activity;
 

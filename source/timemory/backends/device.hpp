@@ -46,9 +46,15 @@ namespace tim
 {
 namespace device
 {
+template <typename... _Args>
+inline void
+consume_parameters(_Args&&...)
+{
+}
+
 struct cpu
 {
-    using stream_t = int;
+    using stream_t = cuda::stream_t;
 
     template <typename _Tp>
     static _Tp* alloc(std::size_t nsize)
@@ -68,7 +74,7 @@ struct cpu
 struct gpu
 {
 #if defined(TIMEMORY_USE_CUDA)
-    using stream_t = cudaStream_t;
+    using stream_t = cuda::stream_t;
 
     template <typename _Tp>
     static _Tp* alloc(std::size_t nsize)
@@ -117,6 +123,10 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 template <typename _Tp, bool _Val = true>
 using is_gpu_device = enable_if_t<(std::is_same<gpu, _Tp>::value == _Val)>;
 
+template <typename _Tp, typename _Intp, bool _Val = true>
+using is_int_and_gpu_device = enable_if_t<(std::is_same<gpu, _Tp>::value == _Val &&
+                                           std::is_integral<_Intp>::value)>;
+
 //--------------------------------------------------------------------------------------//
 //
 template <typename _Intp>
@@ -137,6 +147,14 @@ struct range
     HOST_DEVICE_CALLABLE _Intp end() const { return m_end; }
     HOST_DEVICE_CALLABLE _Intp& stride() { return m_stride; }
     HOST_DEVICE_CALLABLE _Intp stride() const { return m_stride; }
+
+    HOST_DEVICE_CALLABLE const char* c_str() const
+    {
+        using llu = long long unsigned;
+        char desc[512];
+        sprintf(desc, "(%llu,%llu,%llu)", (llu) m_begin, (llu) m_end, (llu) m_stride);
+        return desc;
+    }
 
 protected:
     _Intp m_begin;
@@ -163,12 +181,15 @@ struct params
     , grid(_grid)
     , shmem(_shmem)
     , stream(_stream)
+    , dynamic((_grid > 0) ? false : true)
     {
     }
 
     int compute(const int& size)
     {
-        return (grid == 0) ? ((size + block - 1) / block) : grid;
+        if(grid == 0 || dynamic)
+            grid = ((size + block - 1) / block);
+        return grid;
     }
 
     static int compute(const int& size, const int& block_size)
@@ -176,10 +197,11 @@ struct params
         return ((size + block_size - 1) / block_size);
     }
 
-    uint32_t block  = 32;
-    uint32_t grid   = 0;  // 0 == compute
-    uint32_t shmem  = 0;
-    stream_t stream = 0;
+    uint32_t block   = 32;
+    uint32_t grid    = 0;  // 0 == compute
+    uint32_t shmem   = 0;
+    stream_t stream  = 0;
+    bool     dynamic = true;  // allow the grid size to be dynamically computed
 
     friend std::ostream& operator<<(std::ostream& os, const params& obj)
     {
@@ -191,24 +213,121 @@ struct params
     }
 };
 
-#if defined(__NVCC__)
-template <typename _Device, typename _Func, typename... _Args,
-          impl::is_gpu_device<_Device, true> = 0>
-void
-launch(const params<_Device>& p, _Func&& _func, _Args&&... _args)
-{
-    std::forward<_Func>(_func)<<<p.grid, p.block, p.shmem, p.stream>>>(
-        std::forward<_Args>(_args)...);
-    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
-}
-#endif
+//======================================================================================//
+//
+//
+//              CPU LAUNCH
+//
+//
+//======================================================================================//
 
+// execute a function with provided device parameters
+//
 template <typename _Device, typename _Func, typename... _Args,
           impl::is_gpu_device<_Device, false> = 0>
 void
-launch(const params<_Device>&, _Func&& _func, _Args&&... _args)
+launch(params<_Device>&, _Func&& _func, _Args&&... _args)
 {
     std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// overload that passes size
+//
+template <typename _Intp, typename _Device, typename _Func, typename... _Args,
+          impl::is_int_and_gpu_device<_Device, _Intp, false> = 0>
+void
+launch(const _Intp&, params<_Device>&, _Func&& _func, _Args&&... _args)
+{
+    std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+}
+
+//--------------------------------------------------------------------------------------//
+// overload that passes size
+//
+template <typename _Intp, typename _Device, typename _Func, typename... _Args,
+          typename _Stream                                   = typename _Device::stream_t,
+          impl::is_int_and_gpu_device<_Device, _Intp, false> = 0>
+void
+launch(const _Intp&, _Stream, params<_Device>&, _Func&& _func, _Args&&... _args)
+{
+    std::forward<_Func>(_func)(std::forward<_Args>(_args)...);
+}
+
+//======================================================================================//
+//
+//
+//              GPU LAUNCH
+//
+//
+//======================================================================================//
+
+// execute a function with provided device parameters
+//
+template <typename _Device, typename _Func, typename... _Args,
+          impl::is_gpu_device<_Device, true> = 0>
+void
+launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
+{
+#if defined(__NVCC__)
+    if(_p.grid == 0)
+        _p.grid = 1;
+    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
+        std::forward<_Args>(_args)...);
+    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+#else
+    consume_parameters(_p, _func, _args...);
+    throw std::runtime_error(
+        "Launch specified on GPU but not compiled with GPU support!");
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+// overload that passes size
+//
+template <typename _Intp, typename _Device, typename _Func, typename... _Args,
+          impl::is_int_and_gpu_device<_Device, _Intp, true> = 0>
+void
+launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args)
+{
+#if defined(__NVCC__)
+    if(_p.grid == 0 && _nsize > 0)
+        _p.grid = _p.compute(_nsize);
+    else if(_p.grid == 0)
+        _p.grid = 1;
+    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _p.stream>>>(
+        std::forward<_Args>(_args)...);
+    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+#else
+    consume_parameters(_p, _func, _args..., _nsize);
+    throw std::runtime_error(
+        "Launch specified on GPU but not compiled with GPU support!");
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+// overload that passes size and stream
+//
+template <typename _Intp, typename _Device, typename _Func, typename... _Args,
+          typename _Stream                                  = typename _Device::stream_t,
+          impl::is_int_and_gpu_device<_Device, _Intp, true> = 0>
+void
+launch(const _Intp& _nsize, _Stream _stream, params<_Device>& _p, _Func&& _func,
+       _Args&&... _args)
+{
+#if defined(__NVCC__)
+    if(_p.grid == 0 && _nsize > 0)
+        _p.grid = _p.compute(_nsize);
+    else if(_p.grid == 0)
+        _p.grid = 1;
+    std::forward<_Func>(_func)<<<_p.grid, _p.block, _p.shmem, _stream>>>(
+        std::forward<_Args>(_args)...);
+    CUDA_RUNTIME_CHECK_ERROR(tim::cuda::get_last_error());
+#else
+    consume_parameters(_p, _func, _args..., _nsize, _stream);
+    throw std::runtime_error(
+        "Launch specified on GPU but not compiled with GPU support!");
+#endif
 }
 
 //======================================================================================//

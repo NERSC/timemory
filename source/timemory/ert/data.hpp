@@ -25,8 +25,10 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components/timing.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -210,36 +212,8 @@ get_max()
     }
     return 0;
 }
-};
 
-//--------------------------------------------------------------------------------------//
-//  execution params
-//
-struct exec_params
-{
-    exec_params(uint64_t _work_set = 16, uint64_t mem_max = 8 * cache_size::get_max(),
-                uint64_t _nthread = 1)
-    : working_set_min(_work_set)
-    , memory_max(mem_max)
-    , nthreads(_nthread)
-    {
-    }
-
-    uint64_t working_set_min = 16;
-    uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
-    const uint64_t nthreads  = 1;
-    const uint64_t nrank     = tim::mpi::rank();
-    const uint64_t nproc     = tim::mpi::size();
-
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int)
-    {
-        ar(serializer::make_nvp("working_set_min", working_set_min),
-           serializer::make_nvp("memory_max", memory_max),
-           serializer::make_nvp("nthreads", nthreads),
-           serializer::make_nvp("nrank", nrank), serializer::make_nvp("nproc", nproc));
-    }
-};
+}  // namespace cache_size
 
 //--------------------------------------------------------------------------------------//
 //  creates a multithreading barrier
@@ -325,11 +299,88 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-//  measure CPU floating-point or integer operations
+//  execution params
 //
-namespace cpu
+struct exec_params
 {
-template <typename _Tp, typename _Counter = tim::component::real_clock>
+    exec_params(uint64_t _work_set = 16, uint64_t mem_max = 8 * cache_size::get_max(),
+                uint64_t _nthread = 1, uint64_t _nstream = 1, uint64_t _grid_size = 0,
+                uint64_t _block_size = 32)
+    : working_set_min(_work_set)
+    , memory_max(mem_max)
+    , nthreads(_nthread)
+    , nstreams(_nstream)
+    , grid_size(_grid_size)
+    , block_size(_block_size)
+    {
+    }
+
+    uint64_t working_set_min = 16;
+    uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
+    const uint64_t nthreads  = 1;
+    const uint64_t nrank     = tim::mpi::rank();
+    const uint64_t nproc     = tim::mpi::size();
+    uint64_t       nstreams  = 1;
+    uint64_t       grid_size = 0;
+    uint64_t       block_size = 32;
+    uint64_t       shmem_size = 0;
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp("working_set_min", working_set_min),
+           serializer::make_nvp("memory_max", memory_max),
+           serializer::make_nvp("nthreads", nthreads),
+           serializer::make_nvp("nrank", nrank), serializer::make_nvp("nproc", nproc),
+           serializer::make_nvp("nstreams", nstreams),
+           serializer::make_nvp("grid_size", grid_size),
+           serializer::make_nvp("block_size", block_size),
+           serializer::make_nvp("shmem_size", shmem_size));
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+//
+//      CPU -- initialize buffer
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename _Device, typename _Tp, typename _Intp = int32_t,
+          enable_if_t<std::is_same<_Device, device::cpu>::value, int> = 0>
+void
+initialize_buffer(_Tp* A, const _Tp& value, const _Intp& nsize)
+{
+    auto range = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+    for(auto i = range.begin(); i < range.end(); i += range.stride())
+    {
+        if(i < nsize)
+            A[i] = value;
+        else
+            printf("[%s]> Warning! Request for A[%lli] which is > %lli...\n",
+                   __FUNCTION__, (long long) i, (long long) nsize);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      GPU -- initialize buffer
+//
+//--------------------------------------------------------------------------------------//
+
+template <typename _Device, typename _Tp, typename _Intp = int32_t,
+          enable_if_t<std::is_same<_Device, device::gpu>::value, int> = 0>
+GLOBAL_CALLABLE void
+initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
+{
+    auto range = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+    for(auto i = range.begin(); i < range.end(); i += range.stride())
+        A[i] = value;
+}
+
+//--------------------------------------------------------------------------------------//
+//  measure floating-point or integer operations
+//
+template <typename _Device, typename _Tp, typename _Counter = tim::component::real_clock>
 class operation_counter
 {
 public:
@@ -344,6 +395,18 @@ public:
                                    double, double>;
     using result_array = std::vector<result_type>;
 
+    template <typename _Up>
+    struct is_gpu_device
+    {
+        static constexpr bool value = std::is_same<_Up, device::gpu>::value;
+    };
+
+    template <typename _Up>
+    struct is_cpu_device
+    {
+        static constexpr bool value = std::is_same<_Up, device::cpu>::value;
+    };
+
 public:
     operation_counter() = default;
 
@@ -351,7 +414,10 @@ public:
     : params(_params)
     , align(_align)
     {
-        nsize = params.memory_max / params.nproc / params.nthreads;
+        if(is_cpu_device<_Device>::value)
+            params.nstreams = 1;
+
+        nsize = params.memory_max / params.nproc / params.nthreads / params.nstreams;
         nsize = nsize & (~(align - 1));
         nsize = nsize / sizeof(_Tp);
         nsize = std::max<uint64_t>(nsize, 1);
@@ -364,6 +430,8 @@ public:
     , align(_align)
     , create_counter(_func)
     {
+        if(is_cpu_device<_Device>::value)
+            params.nstreams = 1;
     }
 
     ~operation_counter() { delete pmutex; }
@@ -371,19 +439,29 @@ public:
 public:
     _Tp* get_buffer()
     {
-        _Tp* buffer = allocate_aligned<_Tp>(nsize, align);
-        for(uint64_t i = 0; i < nsize; ++i)
-            buffer[i] = _Tp(1);
+        using ull = long long unsigned;
+
+        if(settings::debug())
+            printf("[%s]> nsize = %llu\n", __PRETTY_FUNCTION__, (ull) nsize);
+
+        _Tp* buffer = allocate_aligned<_Tp, _Device>(nsize, align);
+
+        if(settings::debug())
+            printf("[%s]> buffer = %p\n", __PRETTY_FUNCTION__, buffer);
+
+        device::params<_Device> params(0, 32, 0, 0);
+        device::launch(nsize, params, initialize_buffer<_Device, _Tp, uint64_t>, buffer,
+                       _Tp(1), nsize);
         return buffer;
     }
 
-    void destroy_buffer(_Tp* buffer) { free_aligned(buffer); }
+    void destroy_buffer(_Tp* buffer) { free_aligned<_Tp, _Device>(buffer); }
 
     counter_type get_counter() const { return create_counter(); }
 
     inline void record(counter_type& _counter, int n, int t, uint64_t nops)
     {
-        uint64_t working_set_size = n * params.nthreads * params.nproc;
+        uint64_t working_set_size = n * params.nthreads * params.nproc * params.nstreams;
         uint64_t total_bytes =
             t * working_set_size * bytes_per_element * memory_accesses_per_element;
         uint64_t total_ops = t * working_set_size * nops;
@@ -447,114 +525,6 @@ private:
            << std::get<_N>(ret) << _trailing;
     }
 };
-}  // namespace cpu
-
-//--------------------------------------------------------------------------------------//
-//  measure GPU floating-point or integer operations
-//
-namespace gpu
-{
-template <typename _Tp>
-class operation_counter
-{
-public:
-    using string_t    = std::string;
-    using timer_t     = tim::component::real_clock;
-    using result_type = std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, double,
-                                   double, double>;
-    using result_array = std::vector<result_type>;
-    using labels_type  = std::array<string_t, 8>;
-
-public:
-    operation_counter() = default;
-    explicit operation_counter(const exec_params& _params, size_t _align = sizeof(_Tp))
-    : params(_params)
-    , align(_align)
-    {
-    }
-    ~operation_counter()
-    {
-        delete rc;
-        cuda::free(buffer);
-    }
-
-public:
-    _Tp* initialize()
-    {
-        nsize  = params.memory_max / params.nproc / params.nthreads;
-        nsize  = nsize & (~(align - 1));
-        nsize  = nsize / sizeof(_Tp);
-        buffer = cuda::malloc<_Tp>(nsize);
-        cuda::memset<_Tp>(buffer, 0, nsize);
-        return buffer;
-    }
-
-    inline void start()
-    {
-        rc = new timer_t();
-        rc->start();
-        // return rc;
-    }
-
-    inline void stop(int n, int t, size_t nops)
-    {
-        rc->stop();
-        uint64_t working_set_size = n * params.nthreads * params.nproc;
-        uint64_t total_bytes =
-            t * working_set_size * bytes_per_element * memory_accesses_per_element;
-        uint64_t total_ops = t * working_set_size * nops;
-        auto     seconds   = rc->get() * tim::units::sec;
-        data.push_back(result_type(working_set_size * bytes_per_element, t, seconds,
-                                   total_bytes, total_ops, total_bytes / seconds,
-                                   total_ops / seconds,
-                                   total_ops / static_cast<double>(total_bytes)));
-        delete rc;
-        rc = nullptr;
-    }
-
-public:
-    exec_params    params                      = exec_params();
-    int            grid_size                   = 32;
-    int            block_size                  = 32;
-    int            shmem                       = 0;
-    cuda::stream_t stream                      = 0;
-    int            bytes_per_element           = 0;
-    int            memory_accesses_per_element = 0;
-    size_t         align                       = 32;
-    uint64_t       nsize                       = 0;
-    timer_t*       rc                          = nullptr;
-    result_array   data;
-    labels_type    labels =
-        labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
-                        "bytes-per-sec", "ops-per-sec", "intensity" } });
-    _Tp* buffer = nullptr;
-
-public:
-    friend std::ostream& operator<<(std::ostream& os, const operation_counter& obj)
-    {
-        for(const auto& itr : obj.data)
-        {
-            obj.write<0>(os, itr, ", ");
-            obj.write<1>(os, itr, ", ");
-            obj.write<2>(os, itr, ", ");
-            obj.write<3>(os, itr, ", ");
-            obj.write<4>(os, itr, ", ");
-            obj.write<5>(os, itr, ", ");
-            obj.write<6>(os, itr, ", ");
-            obj.write<7>(os, itr, "\n");
-        }
-        return os;
-    }
-
-private:
-    template <size_t _N>
-    void write(std::ostream& os, const result_type& ret, const string_t& _trailing) const
-    {
-        os << std::setw(12) << std::get<_N>(labels) << " = " << std::setw(12)
-           << std::get<_N>(ret) << _trailing;
-    }
-};
-}  // namespace gpu
 
 }  // namespace ert
 }  // namespace tim

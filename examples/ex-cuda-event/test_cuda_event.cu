@@ -1260,13 +1260,13 @@ test_9_cupti_counters()
     std::cout << "Metric names: \n\t"
               << array_to_string(metric_names, ", ", wmet, 200 / wmet) << std::endl;
 
-    cupti_counters::get_device_setter() = []() { return std::vector<int>({ 0 }); };
-    cupti_counters::get_event_setter()  = []() {
+    cupti_counters::get_device_initializer() = []() { return std::vector<int>({ 0 }); };
+    cupti_counters::get_event_initializer()  = []() {
         return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
                                           "global_store", "gld_inst_32bit",
                                           "gst_inst_32bit" });
     };
-    cupti_counters::get_metric_setter() = []() {
+    cupti_counters::get_metric_initializer() = []() {
         return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
                                           "warp_execution_efficiency", "flop_count_sp",
                                           "flop_count_sp_add", "flop_count_sp_fma",
@@ -1275,9 +1275,10 @@ test_9_cupti_counters()
     };
 
     using _Tp                 = double;
-    using operation_counter_t = tim::ert::gpu::operation_counter<_Tp>;
+    using operation_counter_t = tim::ert::operation_counter<tim::device::gpu, _Tp>;
 
-    auto add_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+    auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
+    auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
         a = b + c;
     };
     auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
@@ -1298,8 +1299,8 @@ test_9_cupti_counters()
     for(int i = 0; i < num_iter; ++i)
     {
         printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
-        tim::ert::gpu_ops_main<1>(*op_counter, add_func);
-        tim::ert::gpu_ops_main<2, 4, 8>(*op_counter, fma_func);
+        tim::ert::ops_main<1>(*op_counter, add_func, store_func);
+        tim::ert::ops_main<2, 4, 8>(*op_counter, fma_func, store_func);
         std::cout << *op_counter << std::endl;
         KERNEL_A(data, num_data);
         KERNEL_B(data, num_data);

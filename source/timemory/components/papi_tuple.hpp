@@ -251,8 +251,9 @@ public:
             _accum[i] = accum[i];
         }
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("value", _value),
-           serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _disp),
+           serializer::make_nvp("value", _value), serializer::make_nvp("accum", _accum),
+           serializer::make_nvp("display", _disp));
     }
 
     entry_type get_display(int evt_type) const

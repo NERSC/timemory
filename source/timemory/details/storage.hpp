@@ -47,6 +47,8 @@ namespace tim
 {
 namespace details
 {
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 bool
 is_finite(const _Tp& val)
@@ -58,12 +60,16 @@ is_finite(const _Tp& val)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 inline std::atomic<int>&
 storage_once_flag()
 {
     static std::atomic<int> _instance;
     return _instance;
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Pred, typename _Tp>
 void
@@ -72,11 +78,19 @@ reduce_merge(_Pred lhs, _Pred rhs)
     *lhs += *rhs;
 }
 
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 struct combine_plus
 {
     combine_plus(_Tp& lhs, const _Tp& rhs) { lhs += rhs; }
 };
+
+//--------------------------------------------------------------------------------------//
+//
+//      Combining daughter data
+//
+//--------------------------------------------------------------------------------------//
 
 template <typename... _Types>
 void
@@ -85,6 +99,8 @@ combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
     using apply_t = std::tuple<combine_plus<_Types>...>;
     apply<void>::access2<apply_t>(lhs, rhs);
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
@@ -96,6 +112,24 @@ combine(_Container<_Tp, _ExtraArgs...>& lhs, const _Container<_Tp, _ExtraArgs...
         lhs[i] += rhs[i];
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+void
+combine(std::map<_Key, _Mapped, _ExtraArgs...>&       lhs,
+        const std::map<_Key, _Mapped, _ExtraArgs...>& rhs)
+{
+    for(auto itr : rhs)
+    {
+        if(lhs.find(itr.first) != lhs.end())
+            lhs.find(itr.first)->second += itr.second;
+        else
+            lhs[itr.first] = itr.second;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
 void
@@ -104,6 +138,12 @@ combine(_Tp& lhs, const _Tp& rhs)
     lhs += rhs;
 }
 
+//--------------------------------------------------------------------------------------//
+//
+//      Computing percentage that excludes daughters
+//
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 std::tuple<_Types...>
 compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
@@ -111,6 +151,8 @@ compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
     std::tuple<_Types...> _one;
     return _one;
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container, typename _Ret = _Tp>
@@ -128,6 +170,28 @@ compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
     return perc;
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+std::map<_Key, _Mapped, _ExtraArgs...>
+compute_percentage(const std::map<_Key, _Mapped, _ExtraArgs...>& lhs,
+                   const std::map<_Key, _Mapped, _ExtraArgs...>& rhs)
+{
+    std::map<_Key, _Mapped, _ExtraArgs...> perc;
+    for(auto itr : lhs)
+    {
+        if(rhs.find(itr.first) != rhs.end())
+        {
+            auto ritr = rhs.find(itr.first)->second;
+            if(itr.second > 0)
+                perc[itr.first] = (1.0 - (itr.second / ritr)) * 100.0;
+        }
+    }
+    return perc;
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp, typename _Ret = _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
 _Ret
@@ -135,6 +199,12 @@ compute_percentage(_Tp& lhs, const _Tp& rhs)
 {
     return (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
 }
+
+//--------------------------------------------------------------------------------------//
+//
+//      Printing percentage that excludes daughters
+//
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
@@ -159,11 +229,40 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     os << ss.str();
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+void
+print_percentage(std::ostream& os, const std::map<_Key, _Mapped, _ExtraArgs...>& obj)
+{
+    // negative values appear when multiple threads are involved.
+    // This needs to be addressed
+    for(auto itr = obj.begin(); itr != obj.end(); ++itr)
+        if(itr->second < 0.0 || !is_finite(itr->second))
+            return;
+
+    std::stringstream ss;
+    ss << "(exclusive: ";
+    for(auto itr = obj.begin(); itr != obj.end(); ++itr)
+    {
+        size_t i = std::distance(obj.begin(), itr);
+        ss << std::setprecision(1) << std::fixed << std::setw(5) << itr->second << "%";
+        if(i + 1 < obj.size())
+            ss << ", ";
+    }
+    ss << ")";
+    os << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 void
 print_percentage(std::ostream&, const std::tuple<_Types...>&)
 {
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
@@ -182,8 +281,12 @@ print_percentage(std::ostream& os, const _Tp& obj)
     os << ss.str();
 }
 
+//--------------------------------------------------------------------------------------//
+
 }  // namespace details
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
 
 template <typename ObjectType>
 void
@@ -253,6 +356,11 @@ void tim::storage<ObjectType>::external_print(std::false_type)
     else if(settings::auto_output())
     {
         merge();
+
+        auto _iter_beg = m_data.graph().begin();
+        auto _iter_end = m_data.graph().end();
+        m_data.graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
+
         ObjectType::thread_finalize_policy();
         ObjectType::global_finalize_policy();
 

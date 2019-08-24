@@ -36,6 +36,7 @@ using namespace tim::component;
 using mutex_t   = std::mutex;
 using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
+using device_t  = tim::device::cpu;
 
 static constexpr uint64_t FLOPS  = 16;
 static constexpr uint64_t TRIALS = 2;
@@ -106,7 +107,8 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     pointer obj   = pointer(new _Component(std::forward<_Args>(_args)...));
 
     obj->start();
-    tim::ert::cpu_ops_kernel<_Unroll>(ntrials, op_func, store_func, nsize, array.data());
+    tim::ert::ops_kernel<_Unroll, device_t>(ntrials, nsize, array.data(), op_func,
+                                            store_func);
     obj->stop();
 
     _Component::invoke_thread_finalize();

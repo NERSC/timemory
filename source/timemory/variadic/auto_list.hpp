@@ -116,6 +116,7 @@ public:
     inline const string_t&  key() const { return m_temporary_object.key(); }
     inline const language&  lang() const { return m_temporary_object.lang(); }
     inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
+    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     template <std::size_t _N>

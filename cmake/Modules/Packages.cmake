@@ -653,11 +653,16 @@ find_package(gperftools QUIET COMPONENTS ${TIMEMORY_GPERF_COMPONENTS})
 if(gperftools_FOUND)
     set(_HAS_PROFILER OFF)
     set(_HAS_TCMALLOC OFF)
-    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
         target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_CPU_PROFILER)
         set(_HAS_PROFILER ON)
     endif()
-    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_minimal" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_minimal_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS)
         target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_HEAP_PROFILER)
         set(_HAS_TCMALLOC ON)
     endif()

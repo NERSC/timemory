@@ -32,11 +32,25 @@
 #include <timemory/utility/testing.hpp>
 
 using namespace tim::component;
-using float_type   = double;
+
+#if !defined(ROOFLINE_FP_BYTES)
+#    define ROOFLINE_FP_BYTES 8
+#endif
+
+#if ROOFLINE_FP_BYTES == 8
+using float_type = double;
+using roofline_t = cpu_roofline<float_type, PAPI_DP_OPS>;
+#elif ROOFLINE_FP_BYTES == 4
+using float_type = float;
+using roofline_t = cpu_roofline<float_type, PAPI_SP_OPS>;
+#else
+#    error "ROOFLINE_FP_BYTES must be either 4 or 8"
+#endif
+
 using fib_list_t   = std::vector<int64_t>;
-using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using device_t     = tim::device::cpu;
 
 // unless specified number of threads, use the number of available cores
 #if !defined(NUM_THREADS)
@@ -85,7 +99,7 @@ main(int argc, char** argv)
     //
     // override method for determining how many threads to run
     //
-    roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
+    roofline_t::get_num_threads_finalizer() = [=]() { return num_threads; };
 
     //
     // allow for customizing the roofline
@@ -251,14 +265,14 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         // create the execution parameters
         tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
         // create the operation counter
-        auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
+        auto op_counter = new tim::ert::operation_counter<device_t, _Tp>(params, 64);
         // set bytes per element
         op_counter->bytes_per_element = sizeof(_Tp);
         // set number of memory accesses per element from two functions
         op_counter->memory_accesses_per_element = 2;
         // run the operation counter kernels
-        tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::cpu_ops_main<4, 5, 6, 7, 8>(*op_counter, fma_func, store_func);
+        tim::ert::ops_main<1>(*op_counter, add_func, store_func);
+        tim::ert::ops_main<4, 5, 6, 7, 8>(*op_counter, fma_func, store_func);
         // return this data for processing
         return op_counter;
     };

@@ -159,6 +159,22 @@ public:
     const list_type&  get_rhs() const { return m_list; }
 
 public:
+    inline int64_t laps() const { return m_tuple.laps(); }
+
+    int64_t&  hash() { return m_tuple.hash(); }
+    string_t& key() { return m_tuple.key(); }
+    string_t& identifier() { return m_tuple.identifier(); }
+
+    const int64_t&    hash() const { return m_tuple.hash(); }
+    const string_t&   key() const { return m_tuple.key(); }
+    const language_t& lang() const { return m_tuple.lang(); }
+    const string_t&   identifier() const { return m_tuple.identifier(); }
+    void              rekey(const string_t& _key) { m_tuple.rekey(_key); }
+
+    bool&       store() { return m_tuple.store(); }
+    const bool& store() const { return m_tuple.store(); }
+
+public:
     //----------------------------------------------------------------------------------//
     // get the size
     //

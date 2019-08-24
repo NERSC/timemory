@@ -41,6 +41,7 @@
 #endif
 
 #include <algorithm>
+#include <functional>
 #include <numeric>
 #include <string>
 #include <vector>
@@ -57,29 +58,126 @@ namespace component
 
 //#if defined(TIMEMORY_USE_CUPTI)
 
-struct cupti_activity : public base<cupti_activity, int64_t>
+struct cupti_activity
+: public base<cupti_activity, uint64_t, policy::global_init, policy::global_finalize>
 {
-    using ratio_t       = std::nano;
-    using size_type     = std::size_t;
-    using string_t      = std::string;
-    using receiver_type = cupti::activity::receiver<cupti_activity>;
-    using value_type    = int64_t;
-    using base_type     = base<cupti_activity, value_type>;
-    using this_type     = cupti_activity;
+    // required aliases
+    using value_type = uint64_t;
+    using this_type  = cupti_activity;
+    using base_type =
+        base<cupti_activity, value_type, policy::global_init, policy::global_finalize>;
+
+    // component-specific aliases
+    using ratio_t          = std::nano;
+    using size_type        = std::size_t;
+    using string_t         = std::string;
+    using receiver_type    = cupti::activity::receiver<cupti_activity>;
+    using kind_vector_type = std::vector<cupti::activity_kind_t>;
+    using initializer_type = std::function<kind_vector_type()>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
     static const std::ios_base::fmtflags format_flags =
-        std::ios_base::dec | std::ios_base::showpoint;
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::sec; }
-    static std::string label() { return "real"; }
-    static std::string descript() { return "wall time"; }
+    static std::string label() { return "cupti_activity"; }
+    static std::string descript() { return "CUpti Activity API"; }
     static std::string display_unit() { return "sec"; }
+
+    static int32_t& get_initializer_level()
+    {
+        static int32_t _instance = 1;
+        return _instance;
+    }
+
+    static initializer_type& get_initializer()
+    {
+        static auto _lambda_instance = []() -> kind_vector_type {
+            std::vector<cupti::activity_kind_t> _kinds;
+            auto lvl = get_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", get_initializer_level());
+
+            /// look up integer codes in <timemory/details/cupti.hpp>
+            auto vec = delimit(get_env<string_t>("TIMEMORY_CUPTI_ACTIVITY_KINDS", ""));
+            for(const auto& itr : vec)
+            {
+                int iactivity = atoi(itr.c_str());
+                if(iactivity > static_cast<int>(CUPTI_ACTIVITY_KIND_INVALID) &&
+                   iactivity < static_cast<int>(CUPTI_ACTIVITY_KIND_COUNT))
+                {
+                    _kinds.push_back(static_cast<cupti::activity_kind_t>(iactivity));
+                }
+            }
+
+            // if found settings in environment, use those
+            if(!_kinds.empty())
+            {
+                return _kinds;
+            } else if(lvl == 0)
+            {
+                // general settings for kernels, runtime
+                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                           CUPTI_ACTIVITY_KIND_RUNTIME };
+            } else if(lvl == 1)
+            {
+                // general settings for kernels, runtime, memory
+                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                           CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                           CUPTI_ACTIVITY_KIND_RUNTIME };
+            } else if(lvl == 2)
+            {
+                // general settings for kernels, runtime, memory, overhead, and device
+                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                           CUPTI_ACTIVITY_KIND_MEMCPY,
+                           CUPTI_ACTIVITY_KIND_MEMSET,
+                           CUPTI_ACTIVITY_KIND_RUNTIME,
+                           CUPTI_ACTIVITY_KIND_DEVICE,
+                           CUPTI_ACTIVITY_KIND_DRIVER,
+                           CUPTI_ACTIVITY_KIND_OVERHEAD };
+            } else if(lvl > 2)
+            {
+                // general settings for kernels, runtime, memory, overhead, device,
+                // stream, CDP kernels
+                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                           CUPTI_ACTIVITY_KIND_MEMCPY,
+                           CUPTI_ACTIVITY_KIND_MEMSET,
+                           CUPTI_ACTIVITY_KIND_RUNTIME,
+                           CUPTI_ACTIVITY_KIND_DEVICE,
+                           CUPTI_ACTIVITY_KIND_DRIVER,
+                           CUPTI_ACTIVITY_KIND_OVERHEAD,
+                           CUPTI_ACTIVITY_KIND_MARKER,
+                           CUPTI_ACTIVITY_KIND_STREAM,
+                           CUPTI_ACTIVITY_KIND_CDP_KERNEL };
+            }
+            return _kinds;
+        };
+        static initializer_type _instance = _lambda_instance;
+        return _instance;
+    }
+
+    static kind_vector_type get_kind_types()
+    {
+        static kind_vector_type _instance = get_initializer()();
+        return _instance;
+    }
 
     static value_type record()
     {
         return cupti::activity::get_receiver<this_type>().get();
+    }
+
+    static void invoke_global_init()
+    {
+        static std::atomic<short> _once;
+        if(_once++ > 0)
+            return;
+        cupti::activity::initialize_trace<this_type>(get_kind_types());
+        cupti::init_driver();
+    }
+
+    static void invoke_global_finalize()
+    {
+        cupti::activity::finalize_trace<this_type>(get_kind_types());
     }
 
     // make sure it is removed

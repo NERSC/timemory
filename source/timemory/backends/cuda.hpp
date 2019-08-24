@@ -52,7 +52,7 @@
 #define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
     {                                                                                    \
         tim::cuda::error_t err = apiFuncCall;                                            \
-        if(err != tim::cuda::success_v)                                                  \
+        if(err != tim::cuda::success_v && (int) err != 0)                                \
         {                                                                                \
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
                     __FILE__, __LINE__, #apiFuncCall, tim::cuda::get_error_string(err)); \
@@ -62,10 +62,10 @@
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_CHECK_ERROR(err)                                                    \
     {                                                                                    \
-        if(err != tim::cuda::success_v)                                                  \
+        if(err != tim::cuda::success_v && (int) err != 0)                                \
         {                                                                                \
-            fprintf(stderr, "%s:%d: error check failed with: %s.\n", __FILE__, __LINE__, \
-                    tim::cuda::get_error_string(err));                                   \
+            fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",          \
+                    __FILE__, __LINE__, (int) err, tim::cuda::get_error_string(err));    \
         }                                                                                \
     }
 
@@ -349,14 +349,18 @@ inline _Tp*
 malloc(size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    _Tp* arr;
+    void* arr;
     CUDA_RUNTIME_API_CALL(cudaMalloc(&arr, n * sizeof(_Tp)));
-    return arr;
+    if(!arr)
+        throw std::bad_alloc();
+    return static_cast<_Tp*>(arr);
 #else
     consume_parameters(n);
     return nullptr;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda malloc host (pinned memory)
 template <typename _Tp>
@@ -364,13 +368,17 @@ inline _Tp*
 malloc_host(size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    _Tp* arr;
+    void* arr;
     CUDA_RUNTIME_API_CALL(cudaMallocHost(&arr, n * sizeof(_Tp)));
-    return arr;
+    if(!arr)
+        throw std::bad_alloc();
+    return static_cast<_Tp*>(arr);
 #else
     return new _Tp[n];
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda malloc
 template <typename _Tp>
@@ -386,6 +394,8 @@ free(_Tp*& arr)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda malloc
 template <typename _Tp>
 inline void
@@ -399,6 +409,8 @@ free_host(_Tp*& arr)
     arr = nullptr;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda memcpy
 template <typename _Tp>
@@ -414,6 +426,8 @@ memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda memcpy
 template <typename _Tp>
 inline error_t
@@ -428,6 +442,8 @@ memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to, stream_t stream)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda memset
 template <typename _Tp>
 inline error_t
@@ -439,6 +455,8 @@ memset(_Tp* dst, const int& value, size_t n)
     return std::memset(dst, value, n * sizeof(_Tp));
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda memset
 template <typename _Tp>

@@ -12,13 +12,23 @@ endif()
 
 find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
 
+add_library(cpu-fp-single INTERFACE)
+add_library(cpu-fp-double INTERFACE)
+
+target_compile_definitions(cpu-fp-single INTERFACE ROOFLINE_FP_BYTES=4)
+target_compile_definitions(cpu-fp-double INTERFACE ROOFLINE_FP_BYTES=8)
+
 # create the fibonacci example
-add_executable(test-cpu-roofline-fib          ${EXE_NAME}.cpp)
-target_link_libraries(test-cpu-roofline-fib   timemory)
-set_target_properties(test-cpu-roofline-fib   PROPERTIES OUTPUT_NAME ${EXE_NAME})
+add_executable(test-cpu-roofline-fib-single          ${EXE_NAME}.cpp)
+target_link_libraries(test-cpu-roofline-fib-single   timemory cpu-fp-single)
+set_target_properties(test-cpu-roofline-fib-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
+
+add_executable(test-cpu-roofline-fib-double          ${EXE_NAME}.cpp)
+target_link_libraries(test-cpu-roofline-fib-double   timemory cpu-fp-double)
+set_target_properties(test-cpu-roofline-fib-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
 # install the targets
-install(TARGETS test-cpu-roofline-fib DESTINATION bin)
+install(TARGETS test-cpu-roofline-fib-single test-cpu-roofline-fib-double DESTINATION bin)
 
 if(TIMEMORY_USE_PAPI)
     set(sources test_cpu_roofline_ert.cpp kernel.cpp kernel.hpp rep.h)

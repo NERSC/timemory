@@ -135,7 +135,11 @@ struct papi_array
         if(events.size() > 0)
         {
             papi::create_event_set(&event_set());
-            papi::add_events(event_set(), events.data(), events.size());
+            // papi::add_events(event_set(), events.data(), events.size());
+            for(auto itr : events)
+            {
+                papi::add_event(event_set(), itr);
+            }
             papi::start(event_set(), enable_multiplex());
         }
     }
@@ -278,8 +282,9 @@ public:
             _accum[i] = accum[i];
         }
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("value", _value),
-           serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _disp),
+           serializer::make_nvp("value", _value), serializer::make_nvp("accum", _accum),
+           serializer::make_nvp("display", _disp));
     }
 
     //----------------------------------------------------------------------------------//

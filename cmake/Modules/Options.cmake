@@ -55,7 +55,9 @@ set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic',
 set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
 
 set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
-set(TIMEMORY_GPERF_COMPONENTS "profiler;tcmalloc" CACHE STRING "gperftools components")
+set(TIMEMORY_GPERF_COMPONENTS
+    "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug"
+    CACHE STRING "gperftools components")
 
 set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
 set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")

@@ -240,8 +240,8 @@ main(int argc, char** argv)
              " total measurements";
     timer_list.push_back((timer_list.back() / nitr) - (timer_list.at(0) / nitr));
     timer_list.push_back(timer_list.back() / nmeas);
-    timer_list.at(timer_list.size() - 2).key() = "difference vs. " + prefix;
-    timer_list.at(timer_list.size() - 1).key() = "average overhead of " + prefix;
+    timer_list.at(timer_list.size() - 2).rekey("difference vs. " + prefix);
+    timer_list.at(timer_list.size() - 1).rekey("average overhead of " + prefix);
 
     //----------------------------------------------------------------------------------//
     //      run with "basic" signature
@@ -267,8 +267,8 @@ main(int argc, char** argv)
              " total measurements";
     timer_list.push_back((timer_list.back() / nitr) - (timer_list.at(0) / nitr));
     timer_list.push_back(timer_list.back() / nmeas);
-    timer_list.at(timer_list.size() - 2).key() = "difference vs. " + prefix;
-    timer_list.at(timer_list.size() - 1).key() = "average overhead of " + prefix;
+    timer_list.at(timer_list.size() - 2).rekey("difference vs. " + prefix);
+    timer_list.at(timer_list.size() - 1).rekey("average overhead of " + prefix);
 
     TIMEMORY_CALIPER_APPLY(global, stop);
 
@@ -276,13 +276,6 @@ main(int argc, char** argv)
 
     std::cout << "\nReport from " << ex_measure << " total measurements and " << ex_unique
               << " unique measurements: " << std::endl;
-
-    {
-        // dummy output so all line up
-        std::stringstream ss;
-        for(auto& itr : timer_list)
-            ss << "    " << itr << std::endl;
-    }
 
     for(auto& itr : timer_list)
         std::cout << "    " << itr << std::endl;
