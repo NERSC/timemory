@@ -45,10 +45,11 @@ using float_type = float;
 #    error "ROOFLINE_FP_BYTES must be either 4 or 8"
 #endif
 
-using roofline_t     = gpu_roofline<float_type>;
+using cpu_roofline_t = cpu_roofline<float_type>;
+using gpu_roofline_t = gpu_roofline<float_type>;
 using fib_list_t     = std::vector<int64_t>;
-using auto_tuple_t   = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
-using auto_list_t    = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
 using device_t       = tim::device::gpu;
 using params_t       = tim::device::params<device_t>;
 using stream_t       = tim::cuda::stream_t;
@@ -60,7 +61,7 @@ using default_device = device_t;
 #endif
 
 #if !defined(NUM_STREAMS)
-#    define NUM_STREAMS 8
+#    define NUM_STREAMS 1
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -85,14 +86,50 @@ fma_func(_Tp& a, const _Tp& b, const _Tp& c)
 //
 template <typename _Tp>
 GLOBAL_CALLABLE void
-saxpy(int64_t n, _Tp a, _Tp* x, _Tp* y)
+saxpy(int64_t n, _Tp a, _Tp* x, _Tp* y, int64_t nitr)
 {
-    auto range = tim::device::grid_strided_range<default_device, 0>(n);
-    for(int i = range.begin(); i < range.end(); i += range.stride())
-        fma_func<_Tp>(y[i], a, x[i]);
+    auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
+    for(int64_t j = 0; j < nitr; ++j)
+    {
+        for(int i = range.begin(); i < range.end(); i += range.stride())
+            y[i] = a * y[i] + x[i];
+        // fma_func<_Tp>(y[i], a, x[i]);
+    }
 }
 
-void customize_roofline(int64_t, int64_t, int64_t);
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+void customize_gpu_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+void
+exec_saxpy(int64_t data_size, int64_t nitr, params_t params, const _Tp& factor)
+{
+    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
+
+    _Tp* y = tim::cuda::malloc<_Tp>(data_size);
+    _Tp* x = tim::cuda::malloc<_Tp>(data_size);
+    tim::device::launch(data_size, params, saxpy<_Tp>, data_size, factor, x, y, 1);
+    tim::cuda::device_sync();
+    tim::device::launch(data_size, params,
+                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, y, 0.0,
+                        data_size);
+    tim::device::launch(data_size, params,
+                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, x, 1.0,
+                        data_size);
+    tim::cuda::device_sync();
+
+    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "saxpy_", label);
+    tim::device::launch(data_size, params, saxpy<_Tp>, data_size, factor, x, y, nitr);
+    tim::cuda::device_sync();
+    TIMEMORY_CALIPER_APPLY(0, stop);
+
+    tim::cuda::free(x);
+    tim::cuda::free(y);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -101,23 +138,26 @@ main(int argc, char** argv)
 {
     tim::settings::json_output() = true;
     tim::timemory_init(argc, argv);
-    cuInit(0);
+    // TIMEMORY_CONFIGURE(gpu_roofline_t);
+    tim::cuda::device_query();
+    tim::cuda::set_device(0);
 
-    int64_t    num_threads   = NUM_THREADS;  // default number of threads
-    int64_t    num_streams   = NUM_STREAMS;  // default number of streams
-    int64_t    working_size  = 16;           // default working set size
-    int64_t    memory_factor = 8;            // default multiple of max cache size
-    int64_t    iterations    = 100;
-    int64_t    block_size    = 512;
+    int64_t    num_threads   = NUM_THREADS;               // default number of threads
+    int64_t    num_streams   = NUM_STREAMS;               // default number of streams
+    int64_t    working_size  = 1 * tim::units::megabyte;  // default working set size
+    int64_t    memory_factor = 10;                        // default multiple of 500 MB
+    int64_t    iterations    = 1000;
+    int64_t    block_size    = 1024;
     int64_t    grid_size     = 0;
-    int64_t    data_size     = 1000;
+    int64_t    data_size     = 10000000;
     float_type factor        = 2.0;
 
-    auto usage = [=]() {
+    auto usage = [&]() {
         using lli = long long int;
         printf(
-            "%s [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] "
-            "[%s = %lli] [%s = %lli] [%s = %f]\n",
+            "\n%s [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = "
+            "%lli] "
+            "[%s = %lli] [%s = %lli] [%s = %f]\n\n",
             argv[0], "num_threads", (lli) num_threads, "num_streams", (lli) num_streams,
             "working_size", (lli) working_size, "memory_factor", (lli) memory_factor,
             "iterations", (lli) iterations, "block_size", (lli) block_size, "grid_size",
@@ -151,19 +191,15 @@ main(int argc, char** argv)
     if(argc > curr_arg)
         factor = (float_type) atol(argv[curr_arg++]);
 
-    //
-    // override method for determining how many threads and streams to run
-    //
-    roofline_t::get_num_threads_finalizer() = [=]() { return num_threads; };
-    roofline_t::get_num_streams_finalizer() = [=]() { return num_streams; };
+    usage();
 
-    //
-    // allow for customizing the roofline
-    //
-    if(tim::get_env("CUSTOMIZE_ROOFLINE", false))
-        customize_roofline(num_threads, working_size, memory_factor);
+    customize_gpu_roofline<float_type>(num_threads, working_size, memory_factor,
+                                       num_streams, grid_size, block_size);
 
     params_t params(grid_size, block_size, 0, 0);
+
+    real_clock total;
+    total.start();
 
     std::vector<stream_t> streams;
     if(num_streams > 1)
@@ -173,75 +209,22 @@ main(int argc, char** argv)
             tim::cuda::stream_create(itr);
     }
 
-    int64_t chunk_size   = data_size / num_streams;
-    int64_t chunk_modulo = data_size % num_streams;
-
-    float_type* y = tim::cuda::malloc<float_type>(data_size);
-    float_type* x = tim::cuda::malloc<float_type>(data_size);
-
-    printf("y = %p, x = %p\n", y, x);
-    // tim::device::launch(data_size, params,
-    //                    tim::ert::initialize_buffer<device_t, float_type, int64_t>, y,
-    //                    0.0, data_size);
-    tim::cuda::memset(y, 0, data_size);
-    tim::cuda::device_sync();
-    printf("y = %p, x = %p\n", y, x);
-
-    // tim::device::launch(data_size, params,
-    //                    tim::ert::initialize_buffer<device_t, float_type, int64_t>, x,
-    //                    1.0, data_size);
-    tim::cuda::memset(x, 1, data_size);
-    tim::cuda::device_sync();
-    printf("y = %p, x = %p\n", y, x);
-
-    //
-    // execute fibonacci in a thread
-    //
-    auto exec_saxpy = [&](int64_t n) {
-        TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "saxpy(", n, ")");
-
-        int64_t offset = n * chunk_size;
-        int64_t nsize  = chunk_size;
-        if(n + 1 == streams.size())
-            nsize += chunk_modulo;
-
-        auto*    _x      = x + offset;
-        auto*    _y      = y + offset;
-        stream_t _stream = 0;
-
-        if(!streams.empty())
-            _stream = streams.at(n % streams.size());
-
-        for(int64_t i = 0; i < iterations; ++i)
-            tim::device::launch(nsize, _stream, params, saxpy<float_type>, nsize, factor,
-                                _x, _y);
-
-        TIMEMORY_CALIPER_APPLY(0, stop);
-    };
-
     //
     // overall timing
     //
-    auto _main = TIMEMORY_BLANK_INSTANCE(auto_tuple_t, "overall_timer");
+    auto _main = TIMEMORY_BLANK_INSTANCE(auto_tuple_t, argv[0]);
     _main.report_at_exit(true);
-    real_clock total;
-    total.start();
 
     //
     // run saxpy calculations
     //
-    if(num_threads > 1)
-    {
-        std::vector<std::thread> threads;
-        for(int64_t i = 0; i < num_threads; ++i)
-            threads.push_back(std::thread(exec_saxpy, i));
-        for(auto& itr : threads)
-            itr.join();
-    }
-    else
-    {
-        exec_saxpy(0);
-    }
+    exec_saxpy<float>(data_size / 2, iterations * 2, params, factor);
+    exec_saxpy<float>(data_size, iterations, params, factor);
+    exec_saxpy<float>(data_size * 2, iterations / 2, params, factor);
+
+    exec_saxpy<double>(data_size / 2, iterations * 2, params, factor);
+    exec_saxpy<double>(data_size, iterations, params, factor);
+    exec_saxpy<double>(data_size * 2, iterations / 2, params, factor);
 
     //
     // stop the overall timing
@@ -259,42 +242,90 @@ main(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp>
 void
-customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
+customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor,
+                       int64_t num_streams, int64_t grid_size, int64_t block_size)
 {
-    // overload the finalization function that runs ERT calculations
-    roofline_t::get_finalizer() = [=]() {
-        using _Tp = float_type;
-        // these are the kernel functions we want to calculate the peaks with
-        auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-            a = b + c;
+    using ert_params_t   = typename gpu_roofline_t::ert_params_t;
+    using ert_data_t     = typename gpu_roofline_t::ert_data_t;
+    using ert_data_ptr_t = typename gpu_roofline_t::ert_data_ptr_t;
+    using ert_counter_t  = typename gpu_roofline_t::ert_counter_type<_Tp>;
+    using ert_config_t   = typename gpu_roofline_t::ert_config_type<_Tp>;
+    using ert_executor_t = typename gpu_roofline_t::ert_executor_type<_Tp>;
+
+    //
+    // simple modifications to override method number of threads, number of streams,
+    // block size, and grid size
+    //
+    ert_config_t::get_num_threads() = [=]() { return num_threads; };
+    ert_config_t::get_num_streams() = [=]() { return num_streams; };
+    ert_config_t::get_block_size()  = [=]() { return block_size; };
+    ert_config_t::get_grid_size()   = [=]() { return grid_size; };
+
+    // ensure cpu version also runs the same number of threads
+    using cpu_ert_config_t              = typename cpu_roofline_t::ert_config_type<_Tp>;
+    cpu_ert_config_t::get_num_threads() = [=]() { return num_threads; };
+
+    //
+    // fully customize the roofline
+    //
+    if(tim::get_env<bool>("CUSTOMIZE_ROOFLINE", false))
+    {
+        // overload the finalization function that runs ERT calculations
+        ert_config_t::get_executor() = [=](ert_data_ptr_t data) {
+            // test getting the cache info
+            auto lm_size = 500 * tim::units::megabyte;
+            // log the cache info
+            std::cout << "[INFO]> max cache size: " << (lm_size / tim::units::kilobyte)
+                      << " KB\n"
+                      << std::endl;
+            // log how many threads were used
+            printf("[INFO]> Running ERT with %li threads...\n\n",
+                   static_cast<long>(num_threads));
+            // create the execution parameters
+            ert_params_t params(working_size, memory_factor * lm_size, num_threads,
+                                num_streams, grid_size, block_size);
+            // create the operation _counter
+            ert_counter_t _counter(params, 64, data);
+            return _counter;
         };
-        auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-            a = a * b + c;
+
+        // does the execution of ERT
+        auto callback = [=](ert_counter_t& _counter) {
+            // these are the kernel functions we want to calculate the peaks with
+            auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
+            auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+                a = b + c;
+            };
+            auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+                a = a * b + c;
+            };
+
+            // set bytes per element
+            _counter.bytes_per_element = sizeof(_Tp);
+            // set number of memory accesses per element from two functions
+            _counter.memory_accesses_per_element = 2;
+
+            // set the label
+            _counter.label = "scalar_add";
+            // run the operation _counter kernels
+            tim::ert::ops_main<1>(_counter, add_func, store_func);
+
+            // set the label
+            _counter.label = "vector_add";
+            // run the operation _counter kernels
+            tim::ert::ops_main<4, 8, 16>(_counter, add_func, store_func);
+
+            // set the label
+            _counter.label = "vector_fma";
+            tim::ert::ops_main<2, 4, 6, 8, 10, 12, 16, 32, 64, 96, 128, 192, 256, 512>(
+                _counter, fma_func, store_func);
         };
-        // test getting the cache info
-        auto lm_size = tim::ert::cache_size::get_max();
-        // log the cache info
-        std::cout << "[INFO]> max cache size: " << (lm_size / tim::units::kilobyte)
-                  << " KB\n"
-                  << std::endl;
-        // log how many threads were used
-        printf("[INFO]> Running ERT with %li threads...\n\n",
-               static_cast<long>(num_threads));
-        // create the execution parameters
-        tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
-        // create the operation counter
-        auto op_counter = new tim::ert::operation_counter<device_t, _Tp>(params, 64);
-        // set bytes per element
-        op_counter->bytes_per_element = sizeof(_Tp);
-        // set number of memory accesses per element from two functions
-        op_counter->memory_accesses_per_element = 2;
-        // run the operation counter kernels
-        tim::ert::ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::ops_main<4, 5, 6, 7, 8>(*op_counter, fma_func, store_func);
-        // return this data for processing
-        return op_counter;
-    };
+
+        // set the callback
+        gpu_roofline_t::set_executor_callback<_Tp>(callback);
+    }
 }
+
 //--------------------------------------------------------------------------------------//

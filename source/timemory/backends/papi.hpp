@@ -30,6 +30,7 @@
 
 #pragma once
 
+#include "timemory/details/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -49,7 +50,12 @@
 #        include <pthread.h>
 #    endif
 #else
-#    include "timemory/details/papi_defs.hpp"
+
+// define TIMEMORY_EXTERNAL_PAPI_DEFS if these enumerations/defs cause problems
+#    if !defined(TIMEMORY_EXTERNAL_PAPI_DEFS)
+#        include "timemory/details/papi_defs.hpp"
+#    endif  // !defined(TIMEMORY_EXTERNAL_PAPI_DEFS)
+
 #endif
 
 // int EventSet = PAPI_NULL;
@@ -164,8 +170,14 @@ check(int retval, const std::string& mesg, bool quiet = false)
     if(!success && !quiet)
     {
 #if defined(TIMEMORY_USE_PAPI)
-        auto error_str = PAPI_strerror(retval);
-        fprintf(stderr, "%s : PAPI_error %d: %s\n", mesg.c_str(), retval, error_str);
+        auto              error_str   = PAPI_strerror(retval);
+        static const auto BUFFER_SIZE = 1024;
+        static char       buf[BUFFER_SIZE];
+        sprintf(buf, "%s : PAPI_error %d: %s\n", mesg.c_str(), retval, error_str);
+        if(settings::papi_fail_on_error())
+            throw std::runtime_error(buf);
+        else
+            fprintf(stderr, "%s", buf);
 #else
         fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
 #endif
@@ -244,16 +256,18 @@ inline int
 get_event_code(const std::string& event_code_str)
 {
 #if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
-    int               event_code;
-    auto              event_code_char = const_cast<char*>(event_code_str.c_str());
+    static const uint64_t BUFFER_SIZE = 1024;
+    int                   event_code  = -1;
+    char                  event_code_char[BUFFER_SIZE];
+    sprintf(event_code_char, "%s", event_code_str.c_str());
     int               retval = PAPI_event_name_to_code(event_code_char, &event_code);
     std::stringstream ss;
     ss << "Warning!! Failure converting " << event_code_str << " to enum value";
     working() = check(retval, ss.str());
-    return event_code;
+    return (retval == PAPI_OK) ? event_code : PAPI_NOT_INITED;
 #else
     consume_parameters(event_code_str);
-    return -1;
+    return PAPI_NOT_INITED;
 #endif
 }
 
@@ -323,7 +337,7 @@ inline void
 init_multiplexing()
 {
 #if defined(TIMEMORY_USE_PAPI)
-    static bool allow_multiplexing = get_env("TIMEMORY_PAPI_MULTIPLEXING", true);
+    static bool allow_multiplexing = settings::papi_multiplexing();
     if(!allow_multiplexing)
         return;
 
@@ -336,17 +350,13 @@ init_multiplexing()
     }
     else if(multiplexing_initialized)
     {
-        if(!is_master_thread())
+        if(!working())
         {
-            // fprintf(stderr,
-            //        "Warning!! Multiplexing is not enabled because it is not the master"
-            //        " thread\n");
-        }
-        else if(!working())
-        {
-            fprintf(stderr,
-                    "Warning!! Multiplexing is not enabled because it is not currently "
-                    "working\n");
+            static std::atomic<int32_t> _once;
+            if(_once++ == 0)
+                fprintf(stderr,
+                        "Warning!! Multiplexing is not enabled because of previous PAPI "
+                        "errors\n");
         }
     }
 #endif

@@ -283,7 +283,7 @@ TEST_F(cupti_tests, available)
 
 TEST_F(cupti_tests, kernels)
 {
-    cupti_event::get_device_initializer() = []() { return std::vector<int>({ 0 }); };
+    cupti_event::get_device_initializer() = []() { return 0; };
     cupti_event::get_event_initializer()  = []() {
         return std::vector<std::string>(
             { "active_warps", "active_cycles", "global_load", "global_store" });
@@ -373,24 +373,17 @@ TEST_F(cupti_tests, kernels)
 TEST_F(cupti_tests, streams)
 {
     num_iter *= 2;
-    cupti_event::get_device_initializer() = []() { return std::vector<int>({ 0 }); };
-    cupti_event::get_event_initializer()  = []() {
-        return std::vector<std::string>(
-            { "active_warps", "active_cycles", "global_load", "global_store" });
-    };
-    cupti_event::get_metric_initializer() = []() {
-        return std::vector<std::string>(
-            { "inst_per_warp", "branch_efficiency", "warp_execution_efficiency",
-              "flop_count_sp", "flop_count_sp_add", "flop_count_sp_mul",
-              "flop_count_sp_fma", "flop_sp_efficiency", "flop_count_dp",
-              "flop_count_dp_add", "flop_count_dp_mul", "flop_count_dp_fma",
-              "flop_dp_efficiency", "gld_efficiency", "gst_efficiency", "ldst_executed",
-              "ldst_issued" });
-    };
+    TIMEMORY_CONFIGURE(
+        cupti_event, { 0 },
+        { "active_warps", "active_cycles", "global_load", "global_store" },
+        { "inst_per_warp", "branch_efficiency", "warp_execution_efficiency",
+          "flop_count_sp", "flop_count_sp_add", "flop_count_sp_mul", "flop_count_sp_fma",
+          "flop_sp_efficiency", "flop_count_dp", "flop_count_dp_add", "flop_count_dp_mul",
+          "flop_count_dp_fma", "flop_dp_efficiency", "gld_efficiency", "gst_efficiency",
+          "ldst_executed", "ldst_issued" });
 
     // must initialize storage before creating the stream
     using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
-    tuple_t::init_storage();
 
     tim::cuda::stream_t stream;
     tim::cuda::stream_create(stream);
@@ -400,8 +393,8 @@ TEST_F(cupti_tests, streams)
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
     tuple_t timer(details::get_test_name());
-
     timer.start();
+    std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
         printf("[%s]> iteration %i...\n", __FUNCTION__, i);
@@ -411,10 +404,17 @@ TEST_F(cupti_tests, streams)
         details::KERNEL_B(data, num_data, stream);
         subtimer.stop();
         std::cout << subtimer << std::endl;
+        subtimers.push_back(subtimer);
     }
     timer.stop();
-    std::cout << timer << std::endl;
     tim::device::gpu::free(data);
+    printf("\n");
+
+    tuple_t subtot(details::get_test_name() + "_itr_subtotal");
+    for(const auto& itr : subtimers)
+        subtot += itr;
+    std::cout << subtot << std::endl;
+    std::cout << timer << std::endl;
     printf("\n");
 
     auto cupti_data   = timer.get<cupti_event>().get();
@@ -470,12 +470,8 @@ TEST_F(cupti_tests, streams)
 
 TEST_F(cupti_tests, roofline_activity)
 {
-    using roofline_t         = gpu_roofline<float>;
-    roofline_t::event_mode() = roofline_t::MODE::ACTIVITY;
-    using tuple_t            = tim::auto_tuple<real_clock, roofline_t>::component_type;
-
-    tuple_t timer(details::get_test_name(), true);
-    timer.start();
+    using roofline_t = gpu_roofline<float>;
+    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
 
     num_iter *= 2;
     uint64_t                         nstream = 1;
@@ -502,6 +498,9 @@ TEST_F(cupti_tests, roofline_activity)
 
     int64_t sleep_msec = 700;
 
+    roofline_t::configure(roofline_t::MODE::ACTIVITY);
+    tuple_t timer(details::get_test_name(), true);
+    timer.start();
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
@@ -539,51 +538,26 @@ TEST_F(cupti_tests, roofline_counters)
     using roofline_t = gpu_roofline<float>;
     using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
 
-    roofline_t::event_mode() = roofline_t::MODE::COUNTERS;
-    tuple_t::init_storage();
-
-    tuple_t timer(details::get_test_name(), true);
-    timer.start();
-
+    roofline_t::configure(roofline_t::MODE::COUNTERS);
     num_iter *= 2;
-    uint64_t                         nstream = 1;
-    std::vector<tim::cuda::stream_t> streams(nstream);
-    for(auto& itr : streams)
-        tim::cuda::stream_create(itr);
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data = tim::device::gpu::alloc<float>(num_data);
-    for(uint64_t i = 0; i < nstream; ++i)
-    {
-        auto _off      = i * (num_data / nstream);
-        auto _data     = data + _off;
-        auto _cpu_data = cpu_data.data() + _off;
-        auto _ndata    = (num_data / nstream);
-        if(i + 1 == nstream)
-            _ndata += num_data % nstream;
-        tim::cuda::memcpy(_data, _cpu_data, _ndata, tim::cuda::host_to_device_v,
-                          streams.at(i));
-    }
+    tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v);
 
-    for(auto& itr : streams)
-        tim::cuda::stream_sync(itr);
-
-    int64_t sleep_msec = 700;
-
+    tuple_t timer(details::get_test_name(), true);
+    timer.start();
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
         printf("[%s]> iteration %i...\n", __FUNCTION__, i);
         tuple_t subtimer(details::get_test_name() + "_itr", true);
         subtimer.start();
-        auto _stream = streams.at(i % nstream);
-        details::KERNEL_A(data, num_data, _stream);
-        details::KERNEL_B(data, num_data, _stream);
+        details::KERNEL_A(data, num_data);
+        details::KERNEL_B(data, num_data);
         subtimer.stop();
-        subtimers.push_back(subtimer);
+        std::cout << subtimer << std::endl;
     }
-    // add in a specific amount of sleep to validate that not recording time on CPU
-    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
     timer.stop();
 
     tuple_t subtot(details::get_test_name() + "_itr_subtotal");
@@ -598,6 +572,7 @@ TEST_F(cupti_tests, roofline_counters)
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     num_iter /= 2;
+    printf("\n");
 }
 
 //--------------------------------------------------------------------------------------//
@@ -606,12 +581,12 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    tim::settings::banner()       = false;
     tim::settings::scientific()   = true;
     tim::settings::timing_units() = "sec";
-    tim::settings::precision()    = 9;
-    tim::settings::width()        = 16;
+    tim::settings::precision()    = 3;
+    tim::settings::width()        = 8;
     tim::timemory_init(argc, argv);
+    tim::settings::banner() = false;
     return RUN_ALL_TESTS();
 }
 

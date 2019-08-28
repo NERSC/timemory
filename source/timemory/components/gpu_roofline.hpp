@@ -31,6 +31,7 @@
 #include "timemory/components/types.hpp"
 #include "timemory/details/cupti.hpp"
 #include "timemory/details/settings.hpp"
+#include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
 #include "timemory/mpl/policy.hpp"
@@ -63,38 +64,53 @@ namespace component
 //              gpu_roofline<double>
 //
 //
-template <typename _Tp>
+template <typename... _Types>
 struct gpu_roofline
-: public base<gpu_roofline<_Tp>,
+: public base<gpu_roofline<_Types...>,
               std::tuple<typename cupti_activity::value_type,
                          typename cupti_counters::value_type>,
               policy::global_init, policy::global_finalize, policy::thread_init,
               policy::thread_finalize, policy::global_finalize, policy::serialization>
 {
-    friend struct policy::wrapper<policy::global_init, policy::global_finalize,
-                                  policy::thread_init, policy::thread_finalize,
-                                  policy::global_finalize, policy::serialization>;
-
     using value_type = std::tuple<typename cupti_activity::value_type,
                                   typename cupti_counters::value_type>;
-    using this_type  = gpu_roofline<_Tp>;
+    using this_type  = gpu_roofline<_Types...>;
     using base_type =
         base<this_type, value_type, policy::global_init, policy::global_finalize,
              policy::thread_init, policy::thread_finalize, policy::global_finalize,
              policy::serialization>;
 
-    using size_type = std::size_t;
-
+    using size_type     = std::size_t;
     using counters_type = cupti_counters;
     using activity_type = cupti_activity;
-    using clock_type    = real_clock;
     using device_t      = device::gpu;
-    using result_type   = std::map<string_t, double>;
+    using result_type   = std::vector<double>;
+    using clock_type    = real_clock;
+    using types_tuple   = std::tuple<_Types...>;
 
-    using operation_counter_t  = tim::ert::operation_counter<device_t, _Tp, clock_type>;
-    using operation_function_t = std::function<operation_counter_t*()>;
-    using operation_counter_ptr_t     = std::shared_ptr<operation_counter_t>;
-    using operation_uint64_function_t = std::function<uint64_t()>;
+    using ert_data_t     = ert::exec_data;
+    using ert_params_t   = ert::exec_params;
+    using ert_data_ptr_t = std::shared_ptr<ert_data_t>;
+
+    // short-hand for variadic expansion
+    template <typename _Tp>
+    using ert_config_type = ert::configuration<device_t, _Tp, ert_data_t, clock_type>;
+    template <typename _Tp>
+    using ert_counter_type = ert::counter<device_t, _Tp, ert_data_t, clock_type>;
+    template <typename _Tp>
+    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, clock_type>;
+    template <typename _Tp>
+    using ert_callback_type = ert::callback<ert_executor_type<_Tp>>;
+
+    // variadic expansion for ERT types
+    using ert_config_t   = std::tuple<ert_config_type<_Types>...>;
+    using ert_counter_t  = std::tuple<ert_counter_type<_Types>...>;
+    using ert_executor_t = std::tuple<ert_executor_type<_Types>...>;
+    using ert_callback_t = std::tuple<ert_callback_type<_Types>...>;
+
+    static_assert(std::tuple_size<ert_config_t>::value ==
+                      std::tuple_size<types_tuple>::value,
+                  "Error! ert_config_t size does not match types_tuple size!");
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -111,6 +127,27 @@ struct gpu_roofline
 
     //----------------------------------------------------------------------------------//
 
+    using strvec_t           = std::vector<std::string>;
+    using events_callback_t  = std::function<strvec_t()>;
+    using metrics_callback_t = events_callback_t;
+
+    //----------------------------------------------------------------------------------//
+
+    static events_callback_t& get_events_callback()
+    {
+        static events_callback_t _instance = []() { return strvec_t{}; };
+        return _instance;
+    }
+
+    static metrics_callback_t& get_metrics_callback()
+    {
+        static metrics_callback_t _instance = []() { return strvec_t{}; };
+        return _instance;
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+
     static MODE& event_mode()
     {
         auto aslc = [](std::string str) {
@@ -121,10 +158,7 @@ struct gpu_roofline
 
         auto _get = [=]() {
             // check the standard variable
-            std::string _std = aslc(get_env<std::string>("TIMEMORY_ROOFLINE_MODE", "hw"));
-            // check the specific variable (to override)
-            std::string _env =
-                aslc(get_env<std::string>("TIMEMORY_GPU_ROOFLINE_MODE", _std));
+            std::string _env = settings::gpu_roofline_mode();
             return (_env == "op" || _env == "hw" || _env == "counters")
                        ? MODE::COUNTERS
                        : ((_env == "ai" || _env == "ac" || _env == "activity")
@@ -138,6 +172,63 @@ struct gpu_roofline
 
     //----------------------------------------------------------------------------------//
 
+    static void configure(const MODE& _mode, const int& _device = 0)
+    {
+        if(is_configured())
+            return;
+        is_configured() = true;
+
+        event_mode() = _mode;
+
+        if(event_mode() == MODE::ACTIVITY)
+        {
+            get_labels() = { std::string("runtime") };
+        } else
+        {
+            using strvec_t = std::vector<string_t>;
+
+            strvec_t events  = { "active_warps", "global_load", "global_store" };
+            strvec_t metrics = { "ldst_executed", "ldst_issued" };
+
+            if(is_one_of<float, types_tuple>::value)
+            {
+                for(string_t itr : { "flop_count_sp", "flop_count_sp_add",
+                                     "flop_count_sp_mul", "flop_count_sp_fma" })
+                    metrics.push_back(itr);
+            }
+
+            if(is_one_of<double, types_tuple>::value)
+            {
+                for(string_t itr : { "flop_count_dp", "flop_count_dp_add",
+                                     "flop_count_dp_mul", "flop_count_dp_fma" })
+                    metrics.push_back(itr);
+            }
+
+            // add in extra events
+            auto _extra_events = get_events_callback()();
+            for(const auto& itr : _extra_events)
+                events.push_back(itr);
+
+            // add in extra metrics
+            auto _extra_metrics = get_metrics_callback()();
+            for(const auto& itr : _extra_metrics)
+                metrics.push_back(itr);
+
+            counters_type::configure(_device, events, metrics);
+            get_labels() = counters_type::label_array();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static void configure()
+    {
+        if(!is_configured())
+            configure(event_mode());
+    }
+
+    //----------------------------------------------------------------------------------//
+
     static std::string get_mode_string()
     {
         return (event_mode() == MODE::COUNTERS) ? "counters" : "activity";
@@ -145,109 +236,24 @@ struct gpu_roofline
 
     //----------------------------------------------------------------------------------//
 
-    static operation_uint64_function_t& get_num_threads_finalizer()
+    static std::string get_type_string()
     {
-        static operation_uint64_function_t _instance = []() -> uint64_t {
-            return get_env<uint64_t>("TIMEMORY_ROOFLINE_NUM_THREADS", 1);
-        };
+        return apply<std::string>::join("_", demangle(typeid(_Types).name())...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static ert_config_t& get_finalizer()
+    {
+        static ert_config_t _instance;
         return _instance;
     }
 
     //----------------------------------------------------------------------------------//
 
-    static operation_uint64_function_t& get_num_streams_finalizer()
+    static ert_data_ptr_t& get_ert_data()
     {
-        static operation_uint64_function_t _instance = []() -> uint64_t {
-            return get_env<uint64_t>("TIMEMORY_ROOFLINE_NUM_STREAMS", 1);
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static operation_uint64_function_t& get_grid_size_finalizer()
-    {
-        static operation_uint64_function_t _instance = []() -> uint64_t {
-            return get_env<uint64_t>("TIMEMORY_ROOFLINE_GRID_SIZE", 0);
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static operation_uint64_function_t& get_block_size_finalizer()
-    {
-        static operation_uint64_function_t _instance = []() -> uint64_t {
-            return get_env<uint64_t>("TIMEMORY_ROOFLINE_BLOCK_SIZE", 32);
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static operation_uint64_function_t& get_alignment_finalizer()
-    {
-        static operation_uint64_function_t _instance = []() -> uint64_t {
-            return std::max<uint64_t>(32, sizeof(_Tp));
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static operation_function_t& get_finalizer()
-    {
-        static operation_function_t _instance = []() {
-            // vectorization number of ops
-            static constexpr const int SIZE_BITS = sizeof(_Tp) * 8;
-            static_assert(SIZE_BITS > 0, "Calculated bits size is not greater than zero");
-            static constexpr const int VEC = TIMEMORY_VEC / SIZE_BITS;
-            static_assert(VEC > 0, "Calculated vector size is zero");
-            // functions
-            auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-            auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-                a = b + c;
-            };
-            auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-                a = a * b + c;
-            };
-            // configuration sizes
-            auto ws_size    = 1000;
-            auto lm_size    = 100 * units::megabyte * sizeof(_Tp);
-            auto num_thread = get_num_threads_finalizer()();
-            auto num_stream = get_num_streams_finalizer()();
-            auto grid_size  = get_grid_size_finalizer()();
-            auto block_size = get_block_size_finalizer()();
-            auto align_size = get_alignment_finalizer()();
-            // execution parameters
-            ert::exec_params params(ws_size, lm_size, num_thread, num_stream, grid_size,
-                                    block_size);
-            // operation counter instance
-            auto op_counter = new operation_counter_t(params, align_size);
-            // set bytes per element
-            op_counter->bytes_per_element = sizeof(_Tp);
-            // set number of memory accesses per element from two functions
-            op_counter->memory_accesses_per_element = 2;
-            // sync device
-            cuda::device_sync();
-            // run the kernels
-            tim::ert::ops_main<1>(*op_counter, add_func, store_func);
-            // sync device
-            cuda::device_sync();
-            tim::ert::ops_main<VEC>(*op_counter, fma_func, store_func);
-            // sync device
-            cuda::device_sync();
-            // return the operation count data
-            return op_counter;
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    static operation_counter_ptr_t& get_operation_counter()
-    {
-        static operation_counter_ptr_t _instance;
+        static ert_data_ptr_t _instance = ert_data_ptr_t(new ert_data_t);
         return _instance;
     }
 
@@ -255,42 +261,18 @@ struct gpu_roofline
 
     static void invoke_global_init()
     {
-        static std::atomic<short> _once;
-        if(_once++ > 0)
-            return;
-
-        using tuple_type = counters_type::tuple_type;
-        using strvec_t   = std::vector<string_t>;
-
         if(event_mode() == MODE::ACTIVITY)
-        {
             activity_type::invoke_global_init();
-        } else
-        {
-            strvec_t events  = { "active_warps", "global_load", "global_store" };
-            strvec_t metrics = { "ldst_executed", "ldst_issued" };
-
-            if(std::is_same<float, _Tp>::value)
-            {
-                for(string_t itr : { "flop_count_sp", "flop_count_sp_add",
-                                     "flop_count_sp_mul", "flop_count_sp_fma" })
-                    metrics.push_back(itr);
-            }
-
-            if(std::is_same<double, _Tp>::value)
-            {
-                for(string_t itr : { "flop_count_dp", "flop_count_dp_add",
-                                     "flop_count_dp_mul", "flop_count_dp_fma" })
-                    metrics.push_back(itr);
-            }
-
-            counters_type::get_initializer() = [=]() {
-                return tuple_type(counters_type::get_device_initializer()(), events,
-                                  metrics);
-            };
-
+        else
             counters_type::invoke_global_init();
-        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tp, typename _Func>
+    static void set_executor_callback(_Func&& f)
+    {
+        ert_executor_type<_Tp>::get_callback() = std::forward<_Func>(f);
     }
 
     //----------------------------------------------------------------------------------//
@@ -298,19 +280,16 @@ struct gpu_roofline
     static void invoke_global_finalize()
     {
         if(event_mode() == MODE::ACTIVITY)
-        {
             activity_type::invoke_global_finalize();
-        } else
-        {
+        else
             counters_type::invoke_global_finalize();
-        }
 
         // run roofline peak generation
-        auto  op_counter_func = get_finalizer();
-        auto* op_counter      = op_counter_func();
-        get_operation_counter().reset(op_counter);
-        if(op_counter && (settings::verbose() > 0 || settings::debug()))
-            std::cout << *op_counter << std::endl;
+        auto ert_config = get_finalizer();
+        auto ert_data   = get_ert_data();
+        apply<void>::access<ert_executor_t>(ert_config, ert_data);
+        if(ert_data && (settings::verbose() > 0 || settings::debug()))
+            std::cout << *(ert_data) << std::endl;
     }
 
     //----------------------------------------------------------------------------------//
@@ -323,41 +302,36 @@ struct gpu_roofline
     template <typename _Archive>
     static void invoke_serialize(_Archive& ar, const unsigned int)
     {
-        auto& op_counter = get_operation_counter();
-        ar(serializer::make_nvp("roofline", op_counter));
+        auto& _ert_data = get_ert_data();
+        if(!_ert_data.get())  // for input
+            _ert_data.reset(new ert_data_t());
+        ar(serializer::make_nvp("roofline", *_ert_data.get()));
     }
 
     //----------------------------------------------------------------------------------//
 
-    static int64_t     unit() { return 1; }
-    static std::string label() { return "gpu_roofline_" + get_mode_string(); }
-    static std::string descript() { return "gpu roofline " + get_mode_string(); }
+    static int64_t unit()
+    {
+        if(event_mode() == MODE::ACTIVITY)
+            return activity_type::unit();
+        return counters_type::unit();
+    }
+
+    static std::string label()
+    {
+        return std::string("gpu_roofline_") + get_type_string() + "_" + get_mode_string();
+    }
+
+    static std::string description()
+    {
+        return std::string("gpu roofline ") + get_type_string() + "_" + get_mode_string();
+    }
+
     static std::string display_unit()
     {
-        std::stringstream ss;
-        ss << "(";
-        std::vector<std::string> labels;
-        switch(event_mode())
-        {
-            case MODE::ACTIVITY: labels.push_back(activity_type::get_label()); break;
-            case MODE::COUNTERS:
-            {
-                auto counters_labels = counters_type::label_array();
-                for(auto itr : counters_labels)
-                    labels.push_back(itr);
-                break;
-            }
-            default: break;
-        }
-
-        for(size_type i = 0; i < labels.size(); ++i)
-        {
-            ss << labels[i];
-            if(i + 1 < labels.size())
-                ss << " + ";
-        }
-        ss << ")";
-        return ss.str();
+        if(event_mode() == MODE::ACTIVITY)
+            return activity_type::display_unit();
+        return counters_type::display_unit();
     }
 
     //----------------------------------------------------------------------------------//
@@ -374,76 +348,38 @@ struct gpu_roofline
         return tmp;
     }
 
+private:
     //----------------------------------------------------------------------------------//
+
+    static bool& is_configured()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
 
 public:
-
     //----------------------------------------------------------------------------------//
 
-    gpu_roofline()
+    gpu_roofline() { configure(); }
+    ~gpu_roofline() {}
+
+    gpu_roofline(const gpu_roofline& rhs)
+    : base_type(rhs)
+    , m_data(rhs.m_data)
+    {}
+
+    gpu_roofline& operator=(const gpu_roofline& rhs)
     {
-        if(event_mode() == MODE::COUNTERS)
+        if(this != &rhs)
         {
-            const auto& _labels = counters_type::get_labels();
-            auto&       _value  = std::get<1>(value);
-            auto&       _accum  = std::get<1>(accum);
-            _value.resize(_labels.size());
-            _accum.resize(_labels.size());
-            for(size_type i = 0; i < _labels.size(); ++i)
-            {
-                _value[i].name = _labels[i];
-                _accum[i].name = _labels[i];
-            }
+            base_type::operator=(rhs);
+            m_data             = rhs.m_data;
         }
+        return *this;
     }
 
-    //----------------------------------------------------------------------------------//
-
-    result_type get_elapsed(const int64_t& _unit = clock_type::get_unit()) const
-    {
-        if(event_mode() == MODE::COUNTERS)
-            return result_type{};
-
-        auto&       _obj = (is_transient) ? accum : value;
-        auto&       obj  = std::get<0>(_obj);
-        result_type _ret;
-        _ret["runtime"] =
-            static_cast<double>(obj) * (static_cast<double>(_unit) / tim::units::sec);
-        return _ret;
-    }
-
-    //----------------------------------------------------------------------------------//
-
-    result_type get_counted() const
-    {
-        if(event_mode() == MODE::ACTIVITY)
-            return result_type{};
-
-        const auto& __data  = (is_transient) ? accum : value;
-        const auto& _data   = std::get<1>(__data);
-        const auto& _labels = counters_type::label_array();
-        result_type _ret;
-        uint64_t    _ntot = std::min<uint64_t>(_labels.size(), _data.size());
-
-        if(_labels.size() != _data.size())
-        {
-            fprintf(stderr,
-                    "[gpu_roofline]> Warning! Number of labels differ from number of "
-                    "data values!\n");
-        }
-
-        for(uint64_t i = 0; i < _ntot; ++i)
-        {
-            if(settings::debug())
-            {
-                std::cout << "    " << std::setw(28) << _labels[i] << " : "
-                          << std::setw(12) << std::setprecision(6) << _data[i]
-                          << std::endl;
-            }
-            _ret[_labels[i]] = cupti::get<double>(_data[i].data);
-        }
-        return _ret;
-    }
+    gpu_roofline(gpu_roofline&&) = default;
+    gpu_roofline& operator=(gpu_roofline&&) = default;
 
     //----------------------------------------------------------------------------------//
 
@@ -451,8 +387,8 @@ public:
     {
         switch(event_mode())
         {
-            case MODE::ACTIVITY: return get_elapsed(); break;
-            case MODE::COUNTERS: return get_counted(); break;
+            case MODE::ACTIVITY: return result_type({ m_data.activity->get() }); break;
+            case MODE::COUNTERS: return m_data.counters->get(); break;
             default: break;
         }
         return result_type{};
@@ -465,9 +401,18 @@ public:
         set_started();
         switch(event_mode())
         {
-            case MODE::ACTIVITY: std::get<0>(value) = activity_type::record(); break;
-            case MODE::COUNTERS: std::get<1>(value) = counters_type::record(); break;
-            default: break;
+            case MODE::ACTIVITY:
+            {
+                m_data.activity->start();
+                std::get<0>(value) = m_data.activity->get_value();
+                break;
+            }
+            case MODE::COUNTERS:
+            {
+                m_data.counters->start();
+                std::get<1>(value) = m_data.counters->get_value();
+                break;
+            }
         }
     }
 
@@ -475,28 +420,20 @@ public:
 
     void stop()
     {
-        value_type tmp;
         switch(event_mode())
         {
             case MODE::ACTIVITY:
             {
-                std::get<0>(tmp) = activity_type::record();
-                std::get<0>(accum) += (std::get<0>(tmp) - std::get<0>(value));
-                std::get<0>(value) = std::move(std::get<0>(tmp));
+                m_data.activity->stop();
+                std::get<0>(accum) = m_data.activity->get_accum();
+                std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
             case MODE::COUNTERS:
             {
-                std::get<1>(tmp) = counters_type::record();
-                if(std::get<1>(accum).size() == 0)
-                    std::get<1>(accum) = std::get<1>(tmp);
-                else
-                {
-                    for(uint64_t i = 0; i < std::get<1>(tmp).size(); ++i)
-                        std::get<1>(accum)[i] +=
-                            (std::get<1>(tmp)[i] - std::get<1>(value)[i]);
-                }
-                std::get<1>(value) = std::move(std::get<1>(tmp));
+                m_data.counters->stop();
+                std::get<1>(accum) = m_data.counters->get_accum();
+                std::get<1>(value) = m_data.counters->get_value();
                 break;
             }
         }
@@ -511,32 +448,19 @@ public:
         {
             case MODE::ACTIVITY:
             {
-                std::get<0>(accum) += std::get<0>(rhs.accum);
-                std::get<0>(value) += std::get<0>(rhs.value);
+                *m_data.activity += *rhs.m_data.activity;
+                std::get<0>(accum) = m_data.activity->get_accum();
+                std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
             case MODE::COUNTERS:
             {
-                auto& _accum = std::get<1>(accum);
-                auto& _value = std::get<1>(value);
-                if(_accum.empty())
-                    _accum = std::get<1>(rhs.accum);
-                else
-                {
-                    for(uint64_t i = 0; i < std::get<1>(rhs.accum).size(); ++i)
-                        std::get<1>(accum)[i] += std::get<1>(rhs.accum)[i];
-                }
-                if(_value.empty())
-                    _value = std::get<1>(rhs.value);
-                else
-                {
-                    for(uint64_t i = 0; i < std::get<1>(rhs.value).size(); ++i)
-                        std::get<1>(value)[i] += std::get<1>(rhs.value)[i];
-                }
+                *m_data.counters += *rhs.m_data.counters;
+                std::get<1>(accum) = m_data.counters->get_accum();
+                std::get<1>(value) = m_data.counters->get_value();
                 break;
             }
         }
-
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -550,20 +474,19 @@ public:
         {
             case MODE::ACTIVITY:
             {
-                std::get<0>(accum) -= std::get<0>(rhs.accum);
-                std::get<0>(value) -= std::get<0>(rhs.value);
+                *m_data.activity -= *rhs.m_data.activity;
+                std::get<0>(accum) = m_data.activity->get_accum();
+                std::get<0>(value) = m_data.activity->get_value();
                 break;
             }
             case MODE::COUNTERS:
             {
-                for(uint64_t i = 0; i < std::get<1>(accum).size(); ++i)
-                    std::get<1>(accum)[i] -= std::get<1>(rhs.accum)[i];
-                for(uint64_t i = 0; i < std::get<1>(value).size(); ++i)
-                    std::get<1>(value)[i] -= std::get<1>(rhs.value)[i];
+                *m_data.counters -= *rhs.m_data.counters;
+                std::get<1>(accum) = m_data.counters->get_accum();
+                std::get<1>(value) = m_data.counters->get_value();
                 break;
             }
         }
-
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -571,6 +494,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
+protected:
     using base_type::accum;
     using base_type::is_transient;
     using base_type::laps;
@@ -578,48 +502,31 @@ public:
     using base_type::set_stopped;
     using base_type::value;
 
+    friend struct policy::wrapper<policy::global_init, policy::global_finalize,
+                                  policy::thread_init, policy::thread_finalize,
+                                  policy::global_finalize, policy::serialization>;
+
+    friend struct base<this_type, value_type, policy::global_init,
+                       policy::global_finalize, policy::thread_init,
+                       policy::thread_finalize, policy::global_finalize,
+                       policy::serialization>;
+
+    friend class storage<this_type>;
+
 public:
     //==================================================================================//
     //
     //      representation as a string
     //
     //==================================================================================//
+
     string_t get_display() const
     {
-        if(event_mode() == MODE::COUNTERS)
-        {
-            auto _get_display = [&](std::ostream& os, const cupti::result& obj) {
-                auto _label = obj.name;
-                auto _prec  = base_type::get_precision();
-                auto _width = base_type::get_width();
-                auto _flags = base_type::get_format_flags();
-
-                std::stringstream ss, ssv, ssi;
-                ssv.setf(_flags);
-                ssv << std::setw(_width) << std::setprecision(_prec);
-                cupti::print(ssv, obj.data);
-                if(!_label.empty())
-                    ssi << " " << _label;
-                ss << ssv.str() << ssi.str();
-                os << ss.str();
-            };
-
-            const auto&       _data = (is_transient) ? accum : value;
-            std::stringstream ss;
-            for(size_type i = 0; i < std::get<1>(_data).size(); ++i)
-            {
-                _get_display(ss, std::get<1>(_data)[i]);
-                if(i + 1 < std::get<1>(_data).size())
-                    ss << ", ";
-            }
-            return ss.str();
-        }
-
-        auto              _val = (is_transient) ? accum : value;
-        auto              val  = std::get<0>(_val);
         std::stringstream ss;
-        ss << static_cast<float>(val / static_cast<float>(activity_type::ratio_t::den) *
-                                 base_type::get_unit());
+        if(event_mode() == MODE::COUNTERS)
+            return m_data.counters->get_display();
+        else
+            ss << m_data.activity->get_display();
         return ss.str();
     }
 
@@ -653,6 +560,13 @@ private:
     }
 
 private:
+    static std::vector<string_t>& get_labels()
+    {
+        static std::vector<string_t> _instance;
+        return _instance;
+    }
+
+private:
     union cupti_data
     {
         cupti_activity* activity = nullptr;
@@ -662,9 +576,8 @@ private:
         {
             switch(event_mode())
             {
-                case MODE::ACTIVITY: activity = new cupti_activity; break;
-                case MODE::COUNTERS: counters = new cupti_counters; break;
-                default: break;
+                case MODE::ACTIVITY: activity = new cupti_activity(); break;
+                case MODE::COUNTERS: counters = new cupti_counters(); break;
             }
         }
 
@@ -674,11 +587,115 @@ private:
             {
                 case MODE::ACTIVITY: delete activity; break;
                 case MODE::COUNTERS: delete counters; break;
-                default: break;
             }
         }
+
+        cupti_data(const cupti_data& rhs)
+        {
+            switch(event_mode())
+            {
+                case MODE::ACTIVITY: activity = new cupti_activity(*rhs.activity); break;
+                case MODE::COUNTERS: counters = new cupti_counters(*rhs.counters); break;
+            }
+        }
+
+        cupti_data(cupti_data&& rhs)
+        {
+            switch(event_mode())
+            {
+                case MODE::ACTIVITY:
+                    activity = nullptr;
+                    std::swap(activity, rhs.activity);
+                    break;
+                case MODE::COUNTERS:
+                    counters = nullptr;
+                    std::swap(counters, rhs.counters);
+                    break;
+            }
+        }
+
+        cupti_data& operator=(const cupti_data& rhs)
+        {
+            if(this == &rhs)
+                return *this;
+            switch(event_mode())
+            {
+                case MODE::ACTIVITY:
+                    delete activity;
+                    activity = new cupti_activity(*rhs.activity);
+                    break;
+                case MODE::COUNTERS:
+                    delete counters;
+                    counters = new cupti_counters(*rhs.counters);
+                    break;
+            }
+            return *this;
+        }
+
+        cupti_data& operator=(cupti_data&& rhs)
+        {
+            if(this == &rhs)
+                return *this;
+            switch(event_mode())
+            {
+                case MODE::ACTIVITY:
+                    delete activity;
+                    activity = nullptr;
+                    std::swap(activity, rhs.activity);
+                    break;
+                case MODE::COUNTERS:
+                    delete counters;
+                    counters = nullptr;
+                    std::swap(counters, rhs.counters);
+                    break;
+            }
+            return *this;
+        }
     };
-    // cupti_data m_data;
+
+    cupti_data m_data;
+
+public:
+    //----------------------------------------------------------------------------------//
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        auto _disp   = get_display();
+        auto _data   = get();
+        auto _labels = get_labels();
+
+        ar(serializer::make_nvp("is_transient", is_transient),
+           serializer::make_nvp("laps", laps), serializer::make_nvp("display", _disp),
+           serializer::make_nvp("mode", get_mode_string()),
+           serializer::make_nvp("type", get_type_string()));
+
+        ar.setNextName("repr_data");
+        ar.startNode();
+        auto litr = _labels.begin();
+        auto ditr = _data.begin();
+        for(; litr != _labels.end() && ditr != _data.end(); ++litr, ++ditr)
+            ar(serializer::make_nvp(*litr, *ditr));
+        ar.finishNode();
+
+        ar.setNextName("value");
+        ar.startNode();
+        ar.makeArray();
+        if(event_mode() == MODE::ACTIVITY)
+            ar(std::get<0>(value));
+        else
+            ar(std::get<1>(value));
+        ar.finishNode();
+
+        ar.setNextName("accum");
+        ar.startNode();
+        ar.makeArray();
+        if(event_mode() == MODE::ACTIVITY)
+            ar(std::get<0>(accum));
+        else
+            ar(std::get<1>(accum));
+        ar.finishNode();
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -686,6 +703,7 @@ private:
 //
 using gpu_roofline_sp_flops = gpu_roofline<float>;
 using gpu_roofline_dp_flops = gpu_roofline<double>;
+using gpu_roofline_flops    = gpu_roofline<float, double>;
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component
@@ -700,6 +718,10 @@ template <>
 struct requires_json<component::gpu_roofline_dp_flops> : std::true_type
 {};
 
+template <>
+struct requires_json<component::gpu_roofline_flops> : std::true_type
+{};
+
 #if !defined(TIMEMORY_USE_CUPTI)
 template <>
 struct is_available<component::gpu_roofline_sp_flops> : std::false_type
@@ -707,6 +729,10 @@ struct is_available<component::gpu_roofline_sp_flops> : std::false_type
 
 template <>
 struct is_available<component::gpu_roofline_dp_flops> : std::false_type
+{};
+
+template <>
+struct is_available<component::gpu_roofline_flops> : std::false_type
 {};
 #endif
 

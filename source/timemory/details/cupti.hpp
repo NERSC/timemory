@@ -80,6 +80,9 @@
 
 #else  // !defined(TIMEMORY_USE_CUPTI)
 
+// define TIMEMORY_EXTERNAL_CUPTI_DEFS if these are causing problems
+#    if !defined(TIMEMORY_EXTERNAL_CUPTI_DEFS)
+
 typedef enum
 {
     CUPTI_ACTIVITY_KIND_INVALID                       = 0,
@@ -133,6 +136,8 @@ typedef enum
     CUPTI_ACTIVITY_KIND_COUNT                         = 48,
     CUPTI_ACTIVITY_KIND_FORCE_INT                     = 0x7fffffff
 } _tim_activity_kind_t;
+
+#    endif  // !defined(TIMEMORY_EXTERNAL_CUPTI_DEFS)
 
 #    if !defined(CUDA_DRIVER_API_CALL)
 #        define CUDA_DRIVER_API_CALL(...)
@@ -273,6 +278,12 @@ struct unsigned_integer
         get(obj)  = value;
         obj.index = index;
     }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
+    }
     static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.unsigned_integer_v; }
 };
@@ -291,6 +302,12 @@ struct integer
         get(obj)  = value.metricValueInt64;
         obj.index = index;
     }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
+    }
     static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.integer_v; }
 };
@@ -308,6 +325,12 @@ struct percent
     {
         get(obj)  = value.metricValuePercent;
         obj.index = index;
+    }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
     }
     static void print(std::ostream& os, const metric& obj)
     {
@@ -332,6 +355,12 @@ struct floating
         get(obj)  = value.metricValueDouble;
         obj.index = index;
     }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
+    }
     static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.floating_v; }
 };
@@ -350,6 +379,12 @@ struct throughput
         get(obj)  = value.metricValueThroughput;
         obj.index = index;
     }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
+    }
     static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.throughput_v; }
 };
@@ -367,6 +402,12 @@ struct utilization
     {
         get(obj)  = value.metricValueUtilizationLevel;
         obj.index = index;
+    }
+    static void set(metric& lhs, const metric& rhs)
+    {
+        get(lhs)  = cget(rhs);
+        lhs.index = index;
+        lhs.count = rhs.count;
     }
     static void print(std::ostream& os, const metric& obj) { os << cget(obj); }
     static type get_data(const metric& obj) { return obj.data.utilization_v; }
@@ -410,6 +451,30 @@ _get(_Ret& val, const data_metric_t& lhs)
         val = static_cast<_Ret>(_Tp::get_data(lhs));
     else
         _get<_Ret, _Types...>(val, lhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) == 0), int>::type = 0>
+void
+_set(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(rhs.index == _Tp::index)
+        _Tp::set(lhs, rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Types,
+          typename std::enable_if<(sizeof...(_Types) > 0), int>::type = 0>
+void
+_set(data_metric_t& lhs, const data_metric_t& rhs)
+{
+    if(rhs.index == _Tp::index)
+        _Tp::set(lhs, rhs);
+    else
+        _set<_Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -532,6 +597,15 @@ get(const impl::data_metric_t& lhs)
 //--------------------------------------------------------------------------------------//
 
 inline void
+set(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
+{
+    impl::_set<data::unsigned_integer, data::integer, data::percent, data::floating,
+               data::throughput, data::utilization>(lhs, rhs);
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 plus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 {
     impl::_plus<data::unsigned_integer, data::integer, data::percent, data::floating,
@@ -556,20 +630,34 @@ struct result
     using data_t = data::metric;
 
     bool        is_event_value = true;
-    int         index          = 0;
     std::string name           = "unk";
     data_t      data;
 
-    result()              = default;
-    ~result()             = default;
-    result(const result&) = default;
-    result(result&&)      = default;
-    result& operator=(const result&) = default;
-    result& operator=(result&&) = default;
+    result()  = default;
+    ~result() = default;
+
+    result(const result& rhs)
+    : is_event_value(rhs.is_event_value)
+    , name(rhs.name)
+    {
+        set(data, rhs.data);
+    }
+
+    result& operator=(const result& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+        is_event_value = rhs.is_event_value;
+        name           = rhs.name;
+        set(data, rhs.data);
+        return *this;
+    }
+
+    result(result&&) = delete;
+    result& operator=(result&&) = delete;
 
     explicit result(const std::string& _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)
-    , index(_data.index)
     , name(_name)
     , data(_data)
     {
@@ -589,7 +677,7 @@ struct result
     void serialize(Archive& ar, const unsigned int)
     {
         ar(serializer::make_nvp("is_event_value", is_event_value),
-           serializer::make_nvp("index", index), serializer::make_nvp("name", name),
+           serializer::make_nvp("name", name),
            serializer::make_nvp("data", get<double>(data)));
     }
 
@@ -611,7 +699,7 @@ struct result
     result& operator-=(const result& rhs)
     {
         if(name == "unk")
-            return operator=(rhs);
+            operator=(rhs);
         minus(data, rhs.data);
         return *this;
     }
@@ -654,7 +742,8 @@ struct kernel_data_t
         return kernel_data_t(lhs) -= rhs;
     }
 };
-}
+}  // namespace impl
+
 struct profiler
 {
     using event_val_t  = impl::kernel_data_t::event_val_t;
@@ -698,13 +787,12 @@ namespace activity
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 class receiver
 {
 public:
     using mutex_type     = std::mutex;
     using lock_type      = std::unique_lock<mutex_type>;
-    using data_type      = std::list<_Tp*>;
+    using data_type      = std::list<void*>;
     using size_type      = typename data_type::size_type;
     using iterator       = typename data_type::iterator;
     using const_iterator = typename data_type::const_iterator;
@@ -775,20 +863,24 @@ public:
     receiver& operator=(const receiver&) = delete;
     receiver& operator=(receiver&&) = default;
 
-    inline void insert(_Tp* obj)
+    template <typename _Tp>
+    inline void insert(_Tp* _obj)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
+        void* obj = static_cast<void*>(_obj);
         if(find(obj) == end())
             m_data.insert(m_data.end(), obj);
     }
 
-    inline void remove(_Tp* obj)
+    template <typename _Tp>
+    inline void remove(_Tp* _obj)
     {
         lock_type lk(m_mutex, std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
+        void* obj = static_cast<void*>(_obj);
         for(auto itr = m_data.begin(); itr != m_data.end(); ++itr)
         {
             if(*itr == obj)
@@ -870,8 +962,10 @@ protected:
     const_iterator begin() const { return m_data.begin(); }
     const_iterator end() const { return m_data.end(); }
 
-    iterator find(const _Tp* obj)
+    template <typename _Tp>
+    iterator find(const _Tp* _obj)
     {
+        const void* obj = static_cast<const void*>(_obj);
         for(auto itr = begin(); itr != end(); ++itr)
         {
             if(*itr == obj)
@@ -880,8 +974,10 @@ protected:
         return end();
     }
 
-    const_iterator find(const _Tp* obj) const
+    template <typename _Tp>
+    const_iterator find(const _Tp* _obj) const
     {
+        const void* obj = static_cast<const void*>(_obj);
         for(auto itr = begin(); itr != end(); ++itr)
         {
             if(*itr == obj)
@@ -909,11 +1005,10 @@ start_timestamp()
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-inline receiver<_Tp>&
+inline receiver&
 get_receiver()
 {
-    static receiver<_Tp> _instance;
+    static receiver _instance;
     return _instance;
 }
 
@@ -969,7 +1064,6 @@ get_buffer_pool_limit()
 
 #if !defined(TIMEMORY_USE_CUPTI)
 
-template <typename _Tp>
 inline void
 initialize_trace(const std::vector<activity_kind_t>&)
 {
@@ -977,7 +1071,6 @@ initialize_trace(const std::vector<activity_kind_t>&)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 finalize_trace(const std::vector<activity_kind_t>&)
 {
@@ -1001,7 +1094,6 @@ stop_trace(_Tp*)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 request_buffer(uint8_t**, size_t*, size_t*)
 {
@@ -1009,7 +1101,6 @@ request_buffer(uint8_t**, size_t*, size_t*)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 buffer_completed(context_t, uint32_t, uint8_t*, size_t, size_t)
 {
@@ -1023,13 +1114,11 @@ inline void set_device_buffers(size_t, size_t) {}
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 initialize_trace(const std::vector<activity_kind_t>&);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 finalize_trace(const std::vector<activity_kind_t>&);
 
@@ -1047,13 +1136,11 @@ stop_trace(_Tp*);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 static void CUPTIAPI
             request_buffer(uint8_t**, size_t*, size_t*);
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 static void CUPTIAPI
             buffer_completed(CUcontext, uint32_t, uint8_t*, size_t, size_t);
 

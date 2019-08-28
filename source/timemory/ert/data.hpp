@@ -303,9 +303,10 @@ private:
 //
 struct exec_params
 {
-    exec_params(uint64_t _work_set = 16, uint64_t mem_max = 8 * cache_size::get_max(),
-                uint64_t _nthread = 1, uint64_t _nstream = 1, uint64_t _grid_size = 0,
-                uint64_t _block_size = 32)
+    explicit exec_params(uint64_t _work_set = 16,
+                         uint64_t mem_max   = 8 * cache_size::get_max(),
+                         uint64_t _nthread = 1, uint64_t _nstream = 1,
+                         uint64_t _grid_size = 0, uint64_t _block_size = 32)
     : working_set_min(_work_set)
     , memory_max(mem_max)
     , nthreads(_nthread)
@@ -315,15 +316,21 @@ struct exec_params
     {
     }
 
+    ~exec_params()                  = default;
+    exec_params(const exec_params&) = default;
+    exec_params(exec_params&&)      = default;
+    exec_params& operator=(const exec_params&) = default;
+    exec_params& operator=(exec_params&&) = default;
+
     uint64_t working_set_min = 16;
     uint64_t memory_max      = 8 * cache_size::get_max();  // default is 8 * L3 cache size
-    const uint64_t nthreads  = 1;
-    const uint64_t nrank     = tim::mpi::rank();
-    const uint64_t nproc     = tim::mpi::size();
-    uint64_t       nstreams  = 1;
-    uint64_t       grid_size = 0;
-    uint64_t       block_size = 32;
-    uint64_t       shmem_size = 0;
+    uint64_t nthreads        = 1;
+    uint64_t nrank           = tim::mpi::rank();
+    uint64_t nproc           = tim::mpi::size();
+    uint64_t nstreams        = 1;
+    uint64_t grid_size       = 0;
+    uint64_t block_size      = 32;
+    uint64_t shmem_size      = 0;
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
@@ -340,13 +347,129 @@ struct exec_params
 };
 
 //--------------------------------------------------------------------------------------//
+//  execution data -- reuse this for multiple types
+//
+class exec_data
+{
+public:
+    using value_type     = std::tuple<std::string, uint64_t, uint64_t, double, uint64_t,
+                                  uint64_t, double, double, double>;
+    using labels_type    = std::array<string_t, std::tuple_size<value_type>::value>;
+    using value_array    = std::vector<value_type>;
+    using iterator       = typename value_array::iterator;
+    using const_iterator = typename value_array::const_iterator;
+
+    static constexpr std::size_t size() { return std::tuple_size<value_type>::value; }
+
+    exec_data()                 = default;
+    ~exec_data()                = default;
+    exec_data(const exec_data&) = delete;
+    exec_data(exec_data&&)      = default;
+    exec_data& operator=(const exec_data&) = delete;
+    exec_data& operator=(exec_data&&) = default;
+
+    exec_data& operator+=(const value_type& entry)
+    {
+        {
+            std::unique_lock<std::mutex> lk(pmutex, std::defer_lock);
+            if(!lk.owns_lock())
+                lk.lock();
+            // std::cout << "Adding " << std::get<0>(entry) << "..." << std::endl;
+            m_values.push_back(entry);
+        }
+        return *this;
+    }
+    exec_data& operator+=(const exec_data& rhs)
+    {
+        {
+            std::unique_lock<std::mutex> lk(pmutex);
+            if(!lk.owns_lock())
+                lk.lock();
+            for(const auto& itr : rhs.m_values)
+                m_values.push_back(itr);
+        }
+        return *this;
+    }
+
+    void        set_labels(const labels_type& _labels) { m_labels = _labels; }
+    labels_type get_labels() const { return m_labels; }
+
+    iterator       begin() { return m_values.begin(); }
+    const_iterator begin() const { return m_values.begin(); }
+    iterator       end() { return m_values.end(); }
+    const_iterator end() const { return m_values.end(); }
+
+protected:
+    labels_type m_labels = {
+        "label",     "working-set",   "trials",      "seconds",     "total-bytes",
+        "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
+    };
+    value_array m_values;
+    std::mutex  pmutex;
+
+public:
+    friend std::ostream& operator<<(std::ostream& os, const exec_data& obj)
+    {
+        for(const auto& itr : obj.m_values)
+        {
+            os << std::setw(24) << std::get<0>(itr) << ": ";
+            obj.write<1>(os, itr, ", ", 10);
+            obj.write<2>(os, itr, ", ", 6);
+            obj.write<3>(os, itr, ", ", 12);
+            obj.write<4>(os, itr, ", ", 12);
+            obj.write<5>(os, itr, ", ", 12);
+            obj.write<6>(os, itr, ", ", 12);
+            obj.write<7>(os, itr, ", ", 12);
+            obj.write<8>(os, itr, "\n", 4);
+        }
+        return os;
+    }
+
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        // ar(serializer::make_nvp("labels", m_labels));
+        // using size_type = typename value_array::size_type;
+        // ar(cereal::make_size_tag(
+        //    static_cast<size_type>(m_values.size())));  // number of elements
+        constexpr auto sz = std::tuple_size<value_type>::value;
+        // for(size_type i = 0; i < m_values.size(); ++i)
+        ar.setNextName("ert");
+        ar.startNode();
+        ar.makeArray();
+        for(auto& itr : m_values)
+        {
+            ar.startNode();
+            _serialize(ar, itr, make_index_sequence<sz>{});
+            ar.finishNode();
+        }
+        ar.finishNode();
+    }
+
+private:
+    template <size_t _N>
+    void write(std::ostream& os, const value_type& ret, const string_t& _trailing,
+               const int32_t& _width) const
+    {
+        os << std::setw(10) << std::get<_N>(m_labels) << " = " << std::setw(_width)
+           << std::get<_N>(ret) << _trailing;
+    }
+
+    template <typename _Archive, size_t... _Idx>
+    void _serialize(_Archive& ar, value_type& _tuple, index_sequence<_Idx...>)
+    {
+        ar(serializer::make_nvp(std::get<_Idx>(m_labels), std::get<_Idx>(_tuple))...);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 //
 //      CPU -- initialize buffer
 //
 //--------------------------------------------------------------------------------------//
 
 template <typename _Device, typename _Tp, typename _Intp = int32_t,
-          enable_if_t<std::is_same<_Device, device::cpu>::value, int> = 0>
+          device::enable_if_cpu_t<_Device> = 0>
 void
 initialize_buffer(_Tp* A, const _Tp& value, const _Intp& nsize)
 {
@@ -368,7 +491,7 @@ initialize_buffer(_Tp* A, const _Tp& value, const _Intp& nsize)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Device, typename _Tp, typename _Intp = int32_t,
-          enable_if_t<std::is_same<_Device, device::gpu>::value, int> = 0>
+          device::enable_if_gpu_t<_Device> = 0>
 GLOBAL_CALLABLE void
 initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
 {
@@ -380,76 +503,80 @@ initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _Counter = tim::component::real_clock>
-class operation_counter
+template <typename _Device, typename _Tp, typename _ExecData = exec_data,
+          typename _Counter = component::real_clock>
+class counter
 {
 public:
     using string_t            = std::string;
-    using counter_type        = _Counter;
-    using counter_create_func = std::function<counter_type()>;
-    using units_type          = decltype(counter_type::unit());
-    using labels_type         = std::array<string_t, 8>;
     using mutex_t             = std::mutex;
     using lock_t              = std::unique_lock<mutex_t>;
-    using result_type = std::tuple<uint64_t, uint64_t, double, uint64_t, uint64_t, double,
-                                   double, double>;
-    using result_array = std::vector<result_type>;
-
-    template <typename _Up>
-    struct is_gpu_device
-    {
-        static constexpr bool value = std::is_same<_Up, device::gpu>::value;
-    };
-
-    template <typename _Up>
-    struct is_cpu_device
-    {
-        static constexpr bool value = std::is_same<_Up, device::cpu>::value;
-    };
+    using counter_type        = _Counter;
+    using counter_create_func = std::function<counter_type()>;
+    using exec_data_t         = _ExecData;
+    using units_type          = decltype(counter_type::unit());
+    using data_type           = typename exec_data_t::value_type;
+    using data_ptr_t          = std::shared_ptr<exec_data_t>;
+    using ull                 = unsigned long long;
 
 public:
-    operation_counter() = default;
+    counter() = default;
 
-    explicit operation_counter(const exec_params& _params, uint64_t _align = sizeof(_Tp))
+    explicit counter(const exec_params& _params, uint64_t _align = 8 * sizeof(_Tp),
+                     data_ptr_t _exec_data = nullptr)
     : params(_params)
     , align(_align)
+    , data(_exec_data)
     {
-        if(is_cpu_device<_Device>::value)
-            params.nstreams = 1;
+        compute_internal();
+    }
 
-        nsize = params.memory_max / params.nproc / params.nthreads / params.nstreams;
+    // overload how to create the counter
+    counter(const exec_params& _params, const counter_create_func& _func,
+            uint64_t _align = 8 * sizeof(_Tp), data_ptr_t _exec_data = nullptr)
+    : params(_params)
+    , align(_align)
+    , create_counter(_func)
+    , data(_exec_data)
+    {
+        compute_internal();
+    }
+
+    explicit counter(const exec_params& _params, data_ptr_t _exec_data,
+                     uint64_t _align = 8 * sizeof(_Tp))
+    : params(_params)
+    , align(_align)
+    , data(_exec_data)
+    {
+        compute_internal();
+    }
+
+    ~counter() {}
+
+private:
+    void compute_internal()
+    {
+        if(device::is_cpu<_Device>::value)
+            params.nstreams = 1;
+        nsize = params.memory_max / params.nproc / params.nthreads;
         nsize = nsize & (~(align - 1));
         nsize = nsize / sizeof(_Tp);
         nsize = std::max<uint64_t>(nsize, 1);
     }
 
-    // overload how to create the counter
-    operation_counter(const exec_params& _params, const counter_create_func& _func,
-                      uint64_t _align = sizeof(_Tp))
-    : params(_params)
-    , align(_align)
-    , create_counter(_func)
-    {
-        if(is_cpu_device<_Device>::value)
-            params.nstreams = 1;
-    }
-
-    ~operation_counter() { delete pmutex; }
-
 public:
     _Tp* get_buffer()
     {
-        using ull = long long unsigned;
+        // check alignment and
+        align = std::max<uint64_t>(align, 8 * sizeof(_Tp));
+        compute_internal();
 
         if(settings::debug())
-            printf("[%s]> nsize = %llu\n", __PRETTY_FUNCTION__, (ull) nsize);
-
+            printf("[%s]> nsize = %llu\n", __FUNCTION__, (ull) nsize);
         _Tp* buffer = allocate_aligned<_Tp, _Device>(nsize, align);
-
         if(settings::debug())
-            printf("[%s]> buffer = %p\n", __PRETTY_FUNCTION__, buffer);
-
-        device::params<_Device> params(0, 32, 0, 0);
+            printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
+        device::params<_Device> params(0, 512, 0, 0);
         device::launch(nsize, params, initialize_buffer<_Device, _Tp, uint64_t>, buffer,
                        _Tp(1), nsize);
         return buffer;
@@ -461,68 +588,56 @@ public:
 
     inline void record(counter_type& _counter, int n, int t, uint64_t nops)
     {
-        uint64_t working_set_size = n * params.nthreads * params.nproc * params.nstreams;
+        // std::cout << "Recording " << label << "..." << std::endl;
+        uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t total_bytes =
             t * working_set_size * bytes_per_element * memory_accesses_per_element;
-        uint64_t total_ops = t * working_set_size * nops;
-        auto     seconds   = _counter.get() * counter_units;
-        // lock before storing result
-        lock_t lk(*pmutex);
-        data.push_back(result_type(working_set_size * bytes_per_element, t, seconds,
-                                   total_bytes, total_ops, total_bytes / seconds,
+        uint64_t          total_ops = t * working_set_size * nops;
+        auto              seconds   = _counter.get() * counter_units;
+        std::stringstream ss;
+        if(label.length() > 0)
+            ss << label << "_" << nops;
+        else
+        {
+            if(nops > 1)
+                ss << "vector_" << nops;
+            else
+                ss << "scalar_" << nops;
+        }
+        data->operator+=(data_type(ss.str(), working_set_size * bytes_per_element, t,
+                                   seconds, total_bytes, total_ops, total_bytes / seconds,
                                    total_ops / seconds, nops));
     }
 
-    void        set_labels(const labels_type& _labels) { labels = _labels; }
-    labels_type get_labels() const { return labels; }
     void set_create_counter(counter_create_func& f) { create_counter = std::bind(f); }
 
 public:
-    exec_params  params                      = exec_params();
-    int          bytes_per_element           = 0;
-    int          memory_accesses_per_element = 0;
-    uint64_t     align                       = sizeof(_Tp);
-    uint64_t     nsize                       = 0;
-    units_type   counter_units               = tim::units::sec;
-    result_array data;
+    exec_params params                      = exec_params();
+    int         bytes_per_element           = 0;
+    int         memory_accesses_per_element = 0;
+    uint64_t    align                       = sizeof(_Tp);
+    uint64_t    nsize                       = 0;
+    units_type  counter_units               = tim::units::sec;
+    data_ptr_t  data                        = nullptr;
+    std::string label                       = "";
 
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        ar(serializer::make_nvp("params", params), serializer::make_nvp("labels", labels),
-           serializer::make_nvp("data", data));
+        if(!data.get())  // for input
+            data = data_ptr_t(new _ExecData());
+        ar(serializer::make_nvp("params", params), serializer::make_nvp("data", *data));
     }
 
 protected:
-    std::mutex* pmutex = new std::mutex;
-    labels_type labels =
-        labels_type({ { "working-set", "trials", "seconds", "total-bytes", "total-ops",
-                        "bytes-per-sec", "ops-per-sec", "ops-per-set" } });
     counter_create_func create_counter = []() -> counter_type { return counter_type(); };
 
 public:
-    friend std::ostream& operator<<(std::ostream& os, const operation_counter& obj)
+    friend std::ostream& operator<<(std::ostream& os, const counter& obj)
     {
-        for(const auto& itr : obj.data)
-        {
-            obj.write<0>(os, itr, ", ");
-            obj.write<1>(os, itr, ", ");
-            obj.write<2>(os, itr, ", ");
-            obj.write<3>(os, itr, ", ");
-            obj.write<4>(os, itr, ", ");
-            obj.write<5>(os, itr, ", ");
-            obj.write<6>(os, itr, ", ");
-            obj.write<7>(os, itr, "\n");
-        }
+        if(obj.data)
+            os << (*obj.data);
         return os;
-    }
-
-private:
-    template <size_t _N>
-    void write(std::ostream& os, const result_type& ret, const string_t& _trailing) const
-    {
-        os << std::setw(12) << std::get<_N>(labels) << " = " << std::setw(12)
-           << std::get<_N>(ret) << _trailing;
     }
 };
 

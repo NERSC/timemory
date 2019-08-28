@@ -95,9 +95,6 @@ template <typename _Tp, typename _Device,
 _Tp*
 allocate_aligned(std::size_t size, std::size_t alignment)
 {
-    if(settings::debug())
-        printf("Allocating memory with allocate_aligned...\n");
-
 #if defined(__INTEL_COMPILER)
     return static_cast<_Tp*>(_mm_malloc(size * sizeof(_Tp), alignment));
 #elif defined(_ISOC11_SOURCE)
@@ -121,8 +118,6 @@ template <typename _Tp, typename _Device,
 _Tp*
 allocate_aligned(std::size_t size, std::size_t)
 {
-    if(settings::debug())
-        printf("Allocating memory with cuda::malloc...\n");
     return cuda::malloc<_Tp>(size);
 }
 
@@ -134,8 +129,6 @@ template <typename _Tp, typename _Device,
 void
 free_aligned(_Tp* ptr)
 {
-    if(settings::debug())
-        printf("Freeing memory with allocate_aligned...\n");
 #if defined(__INTEL_COMPILER)
     _mm_free(static_cast<void*>(ptr));
 #elif defined(_ISOC11_SOURCE) || defined(_MACOS) || (_POSIX_C_SOURCE >= 200112L) ||      \
@@ -153,8 +146,6 @@ template <typename _Tp, typename _Device,
 void
 free_aligned(_Tp* ptr)
 {
-    if(settings::debug())
-        printf("Freeing memory with cuda::malloc...\n");
     cuda::free(ptr);
 }
 

@@ -16,7 +16,7 @@ target_compile_options(gpu-roofline-compile-options INTERFACE
     $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
 
 set(EXE_NAME test_gpu_roofline)
-set(COMPONENTS cuda cupti compile-options analysis-tools arch)
+set(COMPONENTS cuda cupti compile-options analysis-tools arch papi)
 set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA
@@ -34,13 +34,13 @@ target_link_libraries(gpu-fp-single INTERFACE gpu-roofline-compile-options)
 target_link_libraries(gpu-fp-double INTERFACE gpu-roofline-compile-options)
 
 # using single-precision
-add_executable(test-gpu-roofline-fib-single          ${EXE_NAME}.cpp)
-target_link_libraries(test-gpu-roofline-fib-single   timemory-gpu-roofline-example gpu-fp-single)
-set_target_properties(test-gpu-roofline-fib-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
+add_executable(test-gpu-roofline-single          ${EXE_NAME}.cpp)
+target_link_libraries(test-gpu-roofline-single   timemory-gpu-roofline-example gpu-fp-single)
+set_target_properties(test-gpu-roofline-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
 
 # using double-precision
-add_executable(test-gpu-roofline-fib-double          ${EXE_NAME}.cpp)
-target_link_libraries(test-gpu-roofline-fib-double   timemory-gpu-roofline-example gpu-fp-double)
-set_target_properties(test-gpu-roofline-fib-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
+add_executable(test-gpu-roofline-double          ${EXE_NAME}.cpp)
+target_link_libraries(test-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
+set_target_properties(test-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
-install(TARGETS test-gpu-roofline-fib-single test-gpu-roofline-fib-double DESTINATION bin)
+install(TARGETS test-gpu-roofline-single test-gpu-roofline-double DESTINATION bin)

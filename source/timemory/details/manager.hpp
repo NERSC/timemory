@@ -116,7 +116,7 @@ inline manager::manager()
 
     if(m_instance_count == 0)
     {
-        if(get_env("TIMEMORY_BANNER", settings::banner()))
+        if(settings::banner())
             printf(
                 "#--------------------- tim::manager initialized [%i] "
                 "---------------------#\n\n",
@@ -155,7 +155,7 @@ manager::exit_hook()
     {
         ptr->print(false, false);
         count = ptr->instance_count();
-        if(get_env("TIMEMORY_BANNER", settings::banner()))
+        if(settings::banner())
             printf(
                 "\n\n#---------------------- tim::manager destroyed [%i] "
                 "----------------------#\n",
@@ -389,5 +389,43 @@ inline void
 tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
 {
 }
+
+//======================================================================================//
+
+template <typename... _Types>
+struct tim::manager::initialize<std::tuple<_Types...>>
+{
+    static void storage()
+    {
+        tim::manager* _manager = tim::manager::instance();
+        _manager->initialize_storage<_Types...>();
+    }
+};
+
+//======================================================================================//
+
+template <typename _Tuple>
+void
+tim::settings::initialize_storage()
+{
+    tim::manager::initialize<_Tuple>::storage();
+}
+
+namespace tim
+{
+//--------------------------------------------------------------------------------------//
+// extra variadic initialization
+//
+template <typename... _Types>
+inline void
+timemory_init()
+{
+    using tuple_type = tuple_concat_t<_Types...>;
+    settings::initialize_storage<tuple_type>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace tim
 
 //======================================================================================//

@@ -81,65 +81,6 @@ using map_t    = std::map<_Key, _Mapped>;
 using strvec_t = std::vector<string_t>;
 
 //--------------------------------------------------------------------------------------//
-/*
-using stream_duration_t     = map_t<uint32_t, uint64_t>;
-using stream_duration_ptr_t = std::unique_ptr<stream_duration_t>;
-
-//--------------------------------------------------------------------------------------//
-
-static stream_duration_ptr_t&
-get_stream_kernel_duration()
-{
-    static thread_local stream_duration_ptr_t _instance =
-        stream_duration_ptr_t(new stream_duration_t);
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-static void CUPTIAPI
-            buffer_requested(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
-{
-    uint8_t* rawBuffer;
-
-    *size          = 16 * 1024;
-    rawBuffer      = (uint8_t*) malloc(*size + CUPTI_ALIGN_SIZE);
-    *buffer        = CUPTI_ALIGN_BUFFER(rawBuffer, CUPTI_ALIGN_SIZE);
-    *maxNumRecords = 0;
-    if(*buffer == nullptr)
-    {
-        throw std::runtime_error("Error: out of memory\n");
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-static void CUPTIAPI
-            buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer,
-                             size_t size , size_t validSize)
-{
-    consume_parameters(ctx, size);
-    CUpti_Activity* record = nullptr;
-
-    // since we launched only 1 kernel, we should have only 1 kernel record
-    CUPTI_CALL(cuptiActivityGetNextRecord(buffer, validSize, &record));
-
-    CUpti_ActivityKernel4* kernel = (CUpti_ActivityKernel4*) record;
-    if(kernel->kind != CUPTI_ACTIVITY_KIND_KERNEL)
-    {
-        std::stringstream ss;
-        ss << "Error: expected kernel activity record, got "
-           << static_cast<int>(kernel->kind);
-        throw std::runtime_error(os.str());
-    }
-
-    (*get_stream_kernel_duration())[streamId] = kernel->end - kernel->start;
-
-    free(buffer);
-}
-*/
-
-//--------------------------------------------------------------------------------------//
 
 namespace impl
 {
@@ -304,7 +245,7 @@ struct kernel_data_t
 // CUPTI subscriber
 //
 static void CUPTIAPI
-            get_value_callback(void* userdata, CUpti_CallbackDomain /*domain*/, CUpti_CallbackId cbid,
+            get_value_callback(void* userdata, CUpti_CallbackDomain domain, CUpti_CallbackId cbid,
                                const CUpti_CallbackData* cbInfo)
 {
     using map_type = map_t<uint64_t, kernel_data_t>;
@@ -325,6 +266,19 @@ static void CUPTIAPI
     {
         _LOG("Empty kernel name string. Skipping...");
         return;
+    }
+
+    if(cbInfo->context == nullptr)
+    {
+        _LOG("Null context...");
+        return;
+    }
+
+    if(domain == CUPTI_CB_DOMAIN_INVALID)
+    {
+        char buf[512];
+        sprintf(buf, "%s:%d: Invalid callback domain\n", __FILE__, __LINE__);
+        throw std::runtime_error(buf);
     }
 
     static std::mutex            mtx;
@@ -417,16 +371,13 @@ static void CUPTIAPI
                     CUPTI_CALL(cuptiEventGroupReadEvent(group, CUPTI_EVENT_READ_FLAG_NONE,
                                                         eventIds[j], &valuesSize,
                                                         values));
-
                     // sum collect event values from all instances
                     uint64_t sum = 0;
                     for(uint32_t k = 0; k < numInstances; k++)
                         sum += values[k];
-
                     // normalize the event value to represent the total number of
                     // domain instances on the device
                     uint64_t normalized = (sum * numTotalInstances) / numInstances;
-
                     pass_data.event_ids.push_back(eventIds[j]);
                     pass_data.event_values.push_back(normalized);
 
@@ -440,7 +391,7 @@ static void CUPTIAPI
                                                           &eventNameSize, eventName));
                         eventName[eventNameSize] = '\0';
                         _DBG("\t%s = %llu (", eventName, (unsigned long long) sum);
-                        for(int k = 0; k < numInstances && numInstances > 1; k++)
+                        for(uint32_t k = 0; k < numInstances && numInstances > 1; k++)
                         {
                             if(k != 0)
                                 _DBG(", ");
@@ -474,10 +425,13 @@ static void CUPTIAPI
 
 struct profiler
 {
-    using event_val_t  = impl::kernel_data_t::event_val_t;
-    using metric_val_t = impl::kernel_data_t::metric_val_t;
-    using results_t    = std::vector<result>;
-    using ulong_t      = unsigned long long;
+    using kernel_map_t     = map_t<uint64_t, impl::kernel_data_t>;
+    using metric_id_vector = std::vector<CUpti_MetricID>;
+    using event_id_vector  = std::vector<CUpti_EventID>;
+    using event_val_t      = impl::kernel_data_t::event_val_t;
+    using metric_val_t     = impl::kernel_data_t::metric_val_t;
+    using results_t        = std::vector<result>;
+    using ulong_t          = unsigned long long;
 
     profiler(const strvec_t& events, const strvec_t& metrics, const int device_num = 0)
     : m_device_num(device_num)
@@ -487,15 +441,17 @@ struct profiler
         int device_count = 0;
 
         // sync before starting
-        tim::cuda::device_sync();
+        cuda::device_sync();
 
         CUPTI_CALL(cuptiActivityEnable(CUPTI_ACTIVITY_KIND_KERNEL));
         CUDA_DRIVER_API_CALL(cuDeviceGetCount(&device_count));
+
         if(device_count == 0)
         {
             fprintf(stderr, "There is no device supporting CUDA.\n");
             return;
         }
+
         if(events.size() + metrics.size() == 0)
         {
             fprintf(stderr, "No events or metrics were specified\n");
@@ -507,7 +463,9 @@ struct profiler
 
         // Init device, context and setup callback
         CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, device_num));
-        CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
+        // CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
+        CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRetain(&m_context, m_device));
+
         if(m_metric_names.size() > 0)
         {
             for(size_t i = 0; i < m_metric_names.size(); ++i)
@@ -582,10 +540,14 @@ struct profiler
 
         m_kernel_data[impl::dummy_kernel_id] = dummy_data;
         cuptiEnableKernelReplayMode(m_context);
-        start();
-        device::params<device::default_device> p(1, 1, 0, 0);
-        device::launch(p, impl::warmup<int>);
-        stop();
+        static std::atomic<int> _once;
+        if(_once++ == 0)
+        {
+            start();
+            device::params<device::default_device> p(1, 1, 0, 0);
+            device::launch(p, impl::warmup<int>);
+            stop();
+        }
     }
 
     ~profiler()
@@ -605,36 +567,74 @@ struct profiler
             }
         }*/
 
+        if(m_is_running)
+            stop();
+
         cuptiDisableKernelReplayMode(m_context);
         CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
+        CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
     }
+
+    profiler(const profiler&) = delete;
+    profiler(profiler&&)      = delete;
+    profiler& operator=(const profiler&) = delete;
+    profiler& operator=(profiler&&) = delete;
 
     int passes() { return m_metric_passes + m_event_passes; }
 
+private:
+    using mutex_t = std::mutex;
+    using lock_t  = std::unique_lock<mutex_t>;
+
+    static mutex_t& get_mutex()
+    {
+        static mutex_t _instance;
+        return _instance;
+    }
+
+    static bool& is_subscribed()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    static std::atomic<int32_t>& subscribed_count()
+    {
+        static std::atomic<int32_t> _instance(0);
+        return _instance;
+    }
+
+public:
     void start()
     {
         if(m_is_running)
             return;
         m_is_running = true;
 
-        tim::cuda::device_sync();
+        cuda::device_sync();
 
-        CUPTI_CALL(cuptiSubscribe(&m_subscriber,
-                                  (CUpti_CallbackFunc) impl::get_value_callback,
-                                  &m_kernel_data));
+        if(!is_subscribed())
+        {
+            is_subscribed() = true;
+            CUPTI_CALL(cuptiSubscribe(&m_subscriber,
+                                      (CUpti_CallbackFunc) impl::get_value_callback,
+                                      &m_kernel_data));
 
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+            CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                           CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+            CUPTI_CALL(
+                cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
 
-        CUPTI_CALL(cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
-        CUPTI_CALL(
-            cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
+            CUPTI_CALL(
+                cuptiEnableCallback(1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
+            CUPTI_CALL(cuptiEnableCallback(
+                1, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
+        }
 
-        tim::cuda::device_sync();
+        cuda::device_sync();
     }
 
     void stop()
@@ -645,7 +645,26 @@ struct profiler
 
         using event_id_map_t = std::map<CUpti_EventID, uint64_t>;
 
-        tim::cuda::device_sync();
+        cuda::device_sync();
+
+        if(is_subscribed())
+        {
+            is_subscribed() = false;
+            // Disable callback and unsubscribe
+            CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                           CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
+            CUPTI_CALL(
+                cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
+            CUPTI_CALL(
+                cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                                    CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
+            CUPTI_CALL(cuptiEnableCallback(
+                0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
+                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
+            CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
+        }
+
         for(auto& k : m_kernel_data)
         {
             if(k.first == impl::dummy_kernel_id)
@@ -678,9 +697,10 @@ struct profiler
                     &metric_value);
                 if(_status != CUPTI_SUCCESS)
                 {
-                    fprintf(stderr, "Metric value retrieval failed for metric %s\n",
+                    char buff[512];
+                    sprintf(buff, "Metric value retrieval failed for metric %s\n",
                             m_metric_names[i].c_str());
-                    exit(-1);
+                    throw std::runtime_error(buff);
                 }
                 k.second.m_metric_values.push_back(metric_value);
             }
@@ -698,18 +718,6 @@ struct profiler
             for(size_t i = 0; i < m_event_ids.size(); ++i)
                 k.second.m_event_values.push_back(event_map[m_event_ids[i]]);
         }
-
-        // Disable callback and unsubscribe
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_v3020));
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_v7000));
-        CUPTI_CALL(cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                       CUPTI_RUNTIME_TRACE_CBID_cudaLaunch_ptsz_v7000));
-        CUPTI_CALL(
-            cuptiEnableCallback(0, m_subscriber, CUPTI_CB_DOMAIN_RUNTIME_API,
-                                CUPTI_RUNTIME_TRACE_CBID_cudaLaunchKernel_ptsz_v7000));
-        CUPTI_CALL(cuptiUnsubscribe(m_subscriber));
     }
 
     //----------------------------------------------------------------------------------//
@@ -850,21 +858,30 @@ struct profiler
     const strvec_t& get_metric_names() const { return m_metric_names; }
 
 private:
-    bool                                 m_is_running    = false;
-    int                                  m_device_num    = 0;
-    int                                  m_metric_passes = 0;
-    int                                  m_event_passes  = 0;
-    strvec_t                             m_event_names;
-    strvec_t                             m_metric_names;
-    std::vector<CUpti_MetricID>          m_metric_ids;
-    std::vector<CUpti_EventID>           m_event_ids;
-    CUcontext                            m_context;
-    CUdevice                             m_device;
-    CUpti_SubscriberHandle               m_subscriber;
-    CUpti_EventGroupSets*                m_metric_pass_data;
-    CUpti_EventGroupSets*                m_event_pass_data;
-    map_t<uint64_t, impl::kernel_data_t> m_kernel_data;
-    strvec_t                             m_kernel_names;
+    bool                   m_is_running    = false;
+    int                    m_device_num    = 0;
+    int                    m_metric_passes = 0;
+    int                    m_event_passes  = 0;
+    strvec_t               m_event_names;
+    strvec_t               m_metric_names;
+    metric_id_vector       m_metric_ids;
+    event_id_vector        m_event_ids;
+    CUcontext              m_context;
+    CUdevice               m_device;
+    CUpti_SubscriberHandle m_subscriber;
+    CUpti_EventGroupSets*  m_metric_pass_data;
+    CUpti_EventGroupSets*  m_event_pass_data;
+    kernel_map_t           m_kernel_data;
+    strvec_t               m_kernel_names;
+
+private:
+    /*
+    static CUpti_SubscriberHandle& get_subscriber()
+    {
+        static CUpti_SubscriberHandle _instance;
+        return _instance;
+    }
+    */
 };
 
 //--------------------------------------------------------------------------------------//
@@ -1203,7 +1220,6 @@ print(CUpti_Activity* record)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 static void CUPTIAPI
             request_buffer(uint8_t** buffer, size_t* size, size_t* maxNumRecords)
 {
@@ -1218,7 +1234,6 @@ static void CUPTIAPI
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 static void CUPTIAPI
             buffer_completed(CUcontext ctx, uint32_t streamId, uint8_t* buffer, size_t /*size*/,
                              size_t validSize)
@@ -1227,8 +1242,8 @@ static void CUPTIAPI
     CUpti_Activity* record = nullptr;
 
     // obtain lock to keep data from being removed during update
-    using lock_type = typename receiver<_Tp>::holder_type;
-    auto& _receiver = get_receiver<_Tp>();
+    using lock_type = typename receiver::holder_type;
+    auto& _receiver = get_receiver();
 
     if(validSize > 0)
     {
@@ -1311,7 +1326,6 @@ set_device_buffers(size_t _buffer_size, size_t _pool_limit)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 initialize_trace(const std::vector<activity_kind_t>& _kind_types)
 {
@@ -1320,7 +1334,7 @@ initialize_trace(const std::vector<activity_kind_t>& _kind_types)
         get_env("TIMEMORY_CUPTI_DEVICE_BUFFER_POOL_LIMIT", get_buffer_pool_limit());
 
     enable(_kind_types);
-    register_callbacks(request_buffer<_Tp>, buffer_completed<_Tp>);
+    register_callbacks(request_buffer, buffer_completed);
     set_device_buffers(f_buffer, f_pool_limit);
     start_timestamp() = cupti::activity::get_timestamp();
     init_driver();
@@ -1328,12 +1342,11 @@ initialize_trace(const std::vector<activity_kind_t>& _kind_types)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
 inline void
 finalize_trace(const std::vector<activity_kind_t>& _kind_types)
 {
     disable(_kind_types);
-    get_receiver<_Tp>().clear();
+    get_receiver().clear();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1342,7 +1355,7 @@ template <typename _Tp>
 inline void
 start_trace(_Tp* obj)
 {
-    auto& _receiver = get_receiver<_Tp>();
+    auto& _receiver = get_receiver();
     _receiver.insert(obj);
 }
 
@@ -1352,7 +1365,7 @@ template <typename _Tp>
 inline void
 stop_trace(_Tp* obj)
 {
-    auto& _receiver = get_receiver<_Tp>();
+    auto& _receiver = get_receiver();
     cuda::device_sync();
     CUPTI_CALL(cuptiActivityFlushAll(0));
     _receiver.remove(obj);

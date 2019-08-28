@@ -32,10 +32,16 @@
 #    define HOST_DEVICE_CALLABLE __host__ __device__
 #    define DEVICE_CALLABLE __device__
 #    define GLOBAL_CALLABLE __global__
+#    define HOST_DEVICE_CALLABLE_INLINE __host__ __device__ __inline__
+#    define DEVICE_CALLABLE_INLINE __device__ __inline__
+#    define GLOBAL_CALLABLE_INLINE __global__ __inline__
 #else
 #    define HOST_DEVICE_CALLABLE
 #    define DEVICE_CALLABLE
 #    define GLOBAL_CALLABLE
+#    define HOST_DEVICE_CALLABLE_INLINE inline
+#    define DEVICE_CALLABLE_INLINE inline
+#    define GLOBAL_CALLABLE_INLINE inline
 #endif
 
 #include <cstdint>
@@ -46,11 +52,20 @@ namespace tim
 {
 namespace device
 {
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Args>
 inline void
 consume_parameters(_Args&&...)
 {
 }
+
+//--------------------------------------------------------------------------------------//
+//
+template <bool B, class T = int>
+using enable_if_t = typename std::enable_if<B, T>::type;
+
+//--------------------------------------------------------------------------------------//
 
 struct cpu
 {
@@ -70,6 +85,8 @@ struct cpu
 
     static std::string name() { return "cpu"; }
 };
+
+//--------------------------------------------------------------------------------------//
 
 struct gpu
 {
@@ -107,25 +124,51 @@ struct gpu
 #endif
 };
 
+//--------------------------------------------------------------------------------------//
+
 #if defined(__NVCC__)
 using default_device = gpu;
 #else
 using default_device = cpu;
 #endif
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Up>
+struct is_gpu
+{
+    static constexpr bool value = std::is_same<_Up, device::gpu>::value;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Up>
+struct is_cpu
+{
+    static constexpr bool value = std::is_same<_Up, device::cpu>::value;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename U = int, bool B = true>
+using enable_if_gpu_t = enable_if_t<(is_gpu<T>::value == B), U>;
+
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename U = int, bool B = true>
+using enable_if_cpu_t = enable_if_t<(is_cpu<T>::value == B), U>;
+
+//--------------------------------------------------------------------------------------//
+
 namespace impl
 {
-//--------------------------------------------------------------------------------------//
-//
-template <bool B, class T = char>
-using enable_if_t = typename std::enable_if<B, T>::type;
-
-template <typename _Tp, bool _Val = true>
-using is_gpu_device = enable_if_t<(std::is_same<gpu, _Tp>::value == _Val)>;
+template <typename _Tp, typename _Intp, bool _Val = true>
+using enable_if_gpu_int_t =
+    enable_if_t<(is_gpu<_Tp>::value == _Val && std::is_integral<_Intp>::value)>;
 
 template <typename _Tp, typename _Intp, bool _Val = true>
-using is_int_and_gpu_device = enable_if_t<(std::is_same<gpu, _Tp>::value == _Val &&
-                                           std::is_integral<_Intp>::value)>;
+using enable_if_cpu_int_t =
+    enable_if_t<(is_cpu<_Tp>::value == _Val && std::is_integral<_Intp>::value)>;
 
 //--------------------------------------------------------------------------------------//
 //
@@ -224,7 +267,7 @@ struct params
 // execute a function with provided device parameters
 //
 template <typename _Device, typename _Func, typename... _Args,
-          impl::is_gpu_device<_Device, false> = 0>
+          enable_if_cpu_t<_Device> = 0>
 void
 launch(params<_Device>&, _Func&& _func, _Args&&... _args)
 {
@@ -235,7 +278,7 @@ launch(params<_Device>&, _Func&& _func, _Args&&... _args)
 // overload that passes size
 //
 template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          impl::is_int_and_gpu_device<_Device, _Intp, false> = 0>
+          impl::enable_if_cpu_int_t<_Device, _Intp> = 0>
 void
 launch(const _Intp&, params<_Device>&, _Func&& _func, _Args&&... _args)
 {
@@ -246,8 +289,8 @@ launch(const _Intp&, params<_Device>&, _Func&& _func, _Args&&... _args)
 // overload that passes size
 //
 template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          typename _Stream                                   = typename _Device::stream_t,
-          impl::is_int_and_gpu_device<_Device, _Intp, false> = 0>
+          typename _Stream                          = typename _Device::stream_t,
+          impl::enable_if_cpu_int_t<_Device, _Intp> = 0>
 void
 launch(const _Intp&, _Stream, params<_Device>&, _Func&& _func, _Args&&... _args)
 {
@@ -265,7 +308,7 @@ launch(const _Intp&, _Stream, params<_Device>&, _Func&& _func, _Args&&... _args)
 // execute a function with provided device parameters
 //
 template <typename _Device, typename _Func, typename... _Args,
-          impl::is_gpu_device<_Device, true> = 0>
+          enable_if_gpu_t<_Device> = 0>
 void
 launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
 {
@@ -286,7 +329,7 @@ launch(params<_Device>& _p, _Func&& _func, _Args&&... _args)
 // overload that passes size
 //
 template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          impl::is_int_and_gpu_device<_Device, _Intp, true> = 0>
+          impl::enable_if_gpu_int_t<_Device, _Intp> = 0>
 void
 launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args)
 {
@@ -309,8 +352,8 @@ launch(const _Intp& _nsize, params<_Device>& _p, _Func&& _func, _Args&&... _args
 // overload that passes size and stream
 //
 template <typename _Intp, typename _Device, typename _Func, typename... _Args,
-          typename _Stream                                  = typename _Device::stream_t,
-          impl::is_int_and_gpu_device<_Device, _Intp, true> = 0>
+          typename _Stream                                = typename _Device::stream_t,
+          impl::enable_if_gpu_int_t<_Device, _Intp, true> = 0>
 void
 launch(const _Intp& _nsize, _Stream _stream, params<_Device>& _p, _Func&& _func,
        _Args&&... _args)
@@ -352,8 +395,6 @@ template <typename _Device, typename _Intp>
 struct grid_strided_range<_Device, 0, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
-    template <bool B, typename T = char>
-    using enable_if_t = impl::enable_if_t<B, T>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
     template <typename _Dev                                       = _Device,
@@ -383,8 +424,6 @@ template <typename _Device, typename _Intp>
 struct grid_strided_range<_Device, 1, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
-    template <bool B, typename T = char>
-    using enable_if_t = impl::enable_if_t<B, T>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
     template <typename _Dev                                       = _Device,
@@ -414,8 +453,6 @@ template <typename _Device, typename _Intp>
 struct grid_strided_range<_Device, 2, _Intp> : impl::range<_Intp>
 {
     using base_type = impl::range<_Intp>;
-    template <bool B, typename T = char>
-    using enable_if_t = impl::enable_if_t<B, T>;
 
 #if defined(TIMEMORY_USE_CUDA) && defined(__NVCC__)
     template <typename _Dev                                       = _Device,

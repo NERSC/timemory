@@ -78,6 +78,7 @@ public:
     using graph_iterator = typename storage_type::iterator;
     using counted_type   = tim::counted_object<_Tp>;
 
+    // base()                          = default;
     base()                          = default;
     ~base()                         = default;
     explicit base(const this_type&) = default;
@@ -105,6 +106,22 @@ private:
     static void serialization_policy(_Archive& ar, const unsigned int ver)
     {
         policy_type::template invoke_serialize<_Tp, _Archive>(ar, ver);
+    }
+
+public:
+    static void initialize_storage()
+    {
+        using storage_type                 = storage<Type>;
+        static thread_local auto _instance = storage_type::instance();
+        consume_parameters(_instance);
+    }
+
+    template <typename... _Args>
+    static void configure(_Args&&...)
+    {
+        // this is generically allowable
+        static_assert(sizeof...(_Args) == 0,
+                      "Error! component::<Type>::configure not handled!");
     }
 
 public:
@@ -284,7 +301,7 @@ public:
                                     format_flags)
     CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, descript)
+    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
 
     //----------------------------------------------------------------------------------//
@@ -445,9 +462,9 @@ public:
         auto _disp = static_cast<const Type&>(*this).get_display();
         auto _data = static_cast<const Type&>(*this).get();
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _data),
-           serializer::make_nvp("value", value), serializer::make_nvp("accum", accum),
-           serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("display", _disp),
+           serializer::make_nvp("repr_data", _data), serializer::make_nvp("value", value),
+           serializer::make_nvp("accum", accum));
     }
 
     const int64_t&    nlaps() const { return laps; }

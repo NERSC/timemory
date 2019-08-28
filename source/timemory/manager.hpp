@@ -313,6 +313,18 @@ public:
     }
 
 public:
+    // used to expand a tuple in settings
+    template <typename... _Types>
+    struct initialize
+    {
+        static void storage()
+        {
+            manager* _manager = manager::instance();
+            _manager->initialize_storage<_Types...>();
+        }
+    };
+
+public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }
 

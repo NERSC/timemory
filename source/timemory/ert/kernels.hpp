@@ -53,8 +53,7 @@ namespace ert
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
-          typename _FuncStore,
-          enable_if_t<std::is_same<_Device, device::cpu>::value, int> = 0>
+          typename _FuncStore, device::enable_if_cpu_t<_Device> = 0>
 void
 ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
@@ -70,7 +69,7 @@ ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             _Tp beta = static_cast<_Tp>(0.8);
-            apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
@@ -84,8 +83,7 @@ ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
-          typename _FuncStore,
-          enable_if_t<std::is_same<_Device, device::gpu>::value, int> = 0>
+          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0>
 GLOBAL_CALLABLE void
 ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
@@ -101,7 +99,7 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             _Tp beta = static_cast<_Tp>(0.8);
-            apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
@@ -163,10 +161,10 @@ ops_kernel(_FuncOps&& ops_func, _FuncStore&& store_func, const _Intp& nsize, _Tp
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _Counter, typename _FuncOps, typename _FuncStore,
+          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
 void
-ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     using stream_list_t = std::vector<cuda::stream_t>;
@@ -178,31 +176,31 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
     if(settings::verbose() > 0 || settings::debug())
         printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
 
-    if(counter.bytes_per_element == 0)
+    if(_counter.bytes_per_element == 0)
         fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
                 __LINE__);
 
-    if(counter.memory_accesses_per_element == 0)
+    if(_counter.memory_accesses_per_element == 0)
         fprintf(stderr, "[%s:%i]> memory-accesses-per-element is not set!\n",
                 __FUNCTION__, __LINE__);
 
     // list of streams
     stream_list_t streams;
     // generate async streams if multiple streams were requested
-    if(counter.params.nstreams > 1)
+    if(_counter.params.nstreams > 1)
     {
         // fill with implicit stream
-        streams.resize(counter.params.nstreams, 0);
+        streams.resize(_counter.params.nstreams, 0);
         for(auto& itr : streams)
             cuda::stream_create(itr);
     }
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
         // allocate buffer
-        auto     buf = counter.get_buffer();
-        uint64_t n   = counter.params.working_set_min;
+        auto     buf = _counter.get_buffer();
+        uint64_t n   = _counter.params.working_set_min;
         // cache this
-        const uint64_t nstreams = std::max<uint64_t>(counter.params.nstreams, 1);
+        const uint64_t nstreams = std::max<uint64_t>(_counter.params.nstreams, 1);
         // create the launch parameters (ignored on CPU)
         //
         // if grid_size is zero (default), the launch command will calculate a grid-size
@@ -210,13 +208,22 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
         //
         //      grid_size = ((data_size + block_size - 1) / block_size)
         //
-        params_t params(counter.params.grid_size, counter.params.block_size,
-                        counter.params.shmem_size, 0);
+        params_t params(_counter.params.grid_size, _counter.params.block_size,
+                        _counter.params.shmem_size, 0);
         //
-        while(n <= counter.nsize)
+        if(n > _counter.nsize)
+        {
+            fprintf(stderr,
+                    "[%s@'%s':%i]> Warning! ERT not running any trials because working "
+                    "set min > nsize: %llu > %llu\n",
+                    TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__, (ull) n,
+                    (ull) _counter.nsize);
+        }
+
+        while(n <= _counter.nsize)
         {
             // working set - nsize
-            uint64_t ntrials = counter.nsize / n;
+            uint64_t ntrials = _counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
 
@@ -224,9 +231,8 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
             {
                 printf(
                     "[tim::ert::ops_main<%llu>]> number of trials: %llu, n = %llu, nsize "
-                    "= "
-                    "%llu\n",
-                    (ull) _Nops, (ull) ntrials, (ull) n, (ull) counter.nsize);
+                    "= %llu\n",
+                    (ull) _Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
             }
 
             // make sure all streams are synced
@@ -242,7 +248,7 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
                 fbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
-            _Counter ct = counter.get_counter();
+            _Counter ct = _counter.get_counter();
             // start the timer or anything else being recorded
             ct.start();
 
@@ -292,27 +298,27 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
             ct.stop();
             // store the result
             if(tid == 0)
-                counter.record(ct, n, ntrials, _Nops);
+                _counter.record(ct, n, ntrials, _Nops);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
         cuda::device_sync();
-        counter.destroy_buffer(buf);
+        _counter.destroy_buffer(buf);
     };
 
     mpi::barrier();  // synchronize MPI processes
     cuda::device_sync();
 
-    if(counter.params.nthreads > 1)
+    if(_counter.params.nthreads > 1)
     {
         // create synchronization barriers for the threads
-        thread_barrier fbarrier(counter.params.nthreads);
-        thread_barrier lbarrier(counter.params.nthreads);
+        thread_barrier fbarrier(_counter.params.nthreads);
+        thread_barrier lbarrier(_counter.params.nthreads);
 
         // list of threads
         thread_list_t threads;
         // create the threads
-        for(uint64_t i = 0; i < counter.params.nthreads; ++i)
+        for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
             threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
 
         // wait for threads to finish
@@ -326,22 +332,21 @@ ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func
 
     cuda::device_sync();
     mpi::barrier();  // synchronize MPI processes
-    // end the recursive loop
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
-          typename _Counter, typename _FuncOps, typename _FuncStore,
+          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-ops_main(operation_counter<_Device, _Tp, _Counter>& counter, _FuncOps&& ops_func,
+ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
     // execute a single parameter
-    ops_main<_Nops>(counter, ops_func, store_func);
+    ops_main<_Nops>(_counter, ops_func, store_func);
     // continue the recursive loop
-    ops_main<_Nextra...>(counter, ops_func, store_func);
+    ops_main<_Nextra...>(_counter, ops_func, store_func);
 }
 
 //--------------------------------------------------------------------------------------//

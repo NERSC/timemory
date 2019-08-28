@@ -22,6 +22,6 @@ ert_main(int argc, char** argv);
 
 using namespace tim::component;
 
-using roofline_t  = cpu_roofline<double, PAPI_DP_OPS>;
+using roofline_t  = cpu_roofline<double>;
 using auto_roof_t = tim::auto_tuple<roofline_t>;
 using comp_roof_t = typename auto_roof_t::component_type;

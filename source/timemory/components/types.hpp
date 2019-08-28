@@ -100,10 +100,10 @@ struct papi_tuple;
 template <std::size_t MaxNumEvents>
 struct papi_array;
 
-template <typename _Tp, int... EventTypes>
+template <typename... _Types>
 struct cpu_roofline;
 
-template <typename _Tp>
+template <typename... _Types>
 struct gpu_roofline;
 
 struct cupti_counters;

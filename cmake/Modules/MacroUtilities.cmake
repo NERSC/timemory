@@ -197,6 +197,12 @@ FUNCTION(ADD_GOOGLETEST TEST_NAME)
     # parse args
     cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
 
+    if(NOT TARGET google-test-debug-options)
+        add_library(google-test-debug-options INTERFACE)
+        target_compile_definitions(google-test-debug-options INTERFACE $<$<CONFIG:Debug>:DEBUG>)
+    endif()
+    list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
+
     CREATE_EXECUTABLE(
         TARGET_NAME     ${TEST_NAME}
         OUTPUT_NAME     ${TEST_NAME}

@@ -60,11 +60,19 @@ struct init_storage
     using base_type  = typename Type::base_type;
     using string_t   = std::string;
 
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(trait::is_available<_Up>::value), char> = 0>
     init_storage()
     {
         using storage_type    = storage<Type>;
         static auto _instance = storage_type::instance();
         consume_parameters(_instance);
+    }
+
+    template <typename _Up                                                  = _Tp,
+              enable_if_t<(trait::is_available<_Up>::value == false), char> = 0>
+    init_storage()
+    {
     }
 };
 
@@ -78,7 +86,7 @@ struct live_count
     using base_type  = typename Type::base_type;
     using string_t   = std::string;
 
-    live_count(base_type& obj, int64_t& counter) { counter = obj.m_count; }
+    live_count(base_type& obj, int64_t& _counter) { _counter = obj.m_count; }
 };
 
 //--------------------------------------------------------------------------------------//

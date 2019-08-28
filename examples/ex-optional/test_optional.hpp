@@ -39,7 +39,7 @@ using tim::component::thread_cpu_clock;
 using tim::component::thread_cpu_util;
 
 // some using statements
-using roofline_t = cpu_roofline<double, PAPI_DP_OPS>;
+using roofline_t = cpu_roofline<double>;
 using auto_tuple_t =
     tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, roofline_t>;
 using auto_tuple_thr = tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util,

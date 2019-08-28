@@ -33,6 +33,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/details/settings.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
@@ -74,17 +75,13 @@ struct cupti_counters
     using entry_type    = typename value_type::value_type;
     // short-hand for vectors
     using strvec_t  = std::vector<string_t>;
-    using intvec_t  = std::vector<int>;
     using profptr_t = std::shared_ptr<cupti::profiler>;
-    using profvec_t = std::vector<profptr_t>;
     /// a tuple of the <devices, events, metrics>
-    using tuple_type = std::tuple<intvec_t, strvec_t, strvec_t>;
-    /// a tuple of the available events and metrics on a specific device
-    using device_tuple_type = std::tuple<int, strvec_t, strvec_t>;
+    using tuple_type = std::tuple<int, strvec_t, strvec_t>;
     /// function for setting device, metrics, and events to record
     using event_func_t  = std::function<strvec_t()>;
     using metric_func_t = std::function<strvec_t()>;
-    using device_func_t = std::function<intvec_t()>;
+    using device_func_t = std::function<int()>;
     /// function for setting all of device, metrics, and events
     using initializer_type = std::function<tuple_type()>;
 
@@ -96,8 +93,7 @@ struct cupti_counters
     static event_func_t& get_event_initializer()
     {
         static event_func_t _instance = []() {
-            auto env = get_env<string_t>("TIMEMORY_CUPTI_EVENTS", "");
-            return delimit(env);
+            return delimit(settings::cupti_events());
         };
         return _instance;
     }
@@ -105,8 +101,7 @@ struct cupti_counters
     static metric_func_t& get_metric_initializer()
     {
         static metric_func_t _instance = []() {
-            auto env = get_env<string_t>("TIMEMORY_CUPTI_METRICS", "");
-            return delimit(env);
+            return delimit(settings::cupti_metrics());
         };
         return _instance;
     }
@@ -114,25 +109,9 @@ struct cupti_counters
     static device_func_t& get_device_initializer()
     {
         static device_func_t _instance = []() {
-            auto     env = get_env<string_t>("TIMEMORY_CUPTI_DEVICES", "");
-            intvec_t devices;
-            int      device_count = cuda::device_count();
-            if(env.length() > 0)
-            {
-                auto _devices = tim::delimit(env);
-                for(auto itr : _devices)
-                {
-                    auto dev = atoi(itr.c_str());
-                    if(dev < device_count)
-                        devices.push_back(dev);
-                }
-            }
-            if(devices.size() == 0)
-            {
-                devices.resize(device_count, 0);
-                std::iota(devices.begin(), devices.end(), 0);
-            }
-            return devices;
+            if(cuda::device_count() < 1)
+                return -1;
+            return settings::cupti_device();
         };
         return _instance;
     }
@@ -147,13 +126,26 @@ struct cupti_counters
         return _instance;
     }
 
-    static void invoke_global_init() { init(); }
+    static void configure()
+    {
+        if(_get_profiler().get() == nullptr)
+            init();
+    }
+    static void configure(int device, const strvec_t& events, const strvec_t& metrics)
+    {
+        get_initializer() = [=]() -> tuple_type {
+            return tuple_type(device, events, metrics);
+        };
+        if(_get_profiler().get() == nullptr)
+            init();
+    }
+    static void invoke_global_init() { configure(); }
     static void invoke_global_finalize() { clear(); }
 
-    static const profvec_t& get_profilers() { return _get_profilers(); }
+    static const profptr_t& get_profiler() { return _get_profiler(); }
     static const strvec_t&  get_events() { return _get_events(); }
     static const strvec_t&  get_metrics() { return _get_metrics(); }
-    static const intvec_t&  get_devices() { return _get_devices(); }
+    static const int&       get_device() { return _get_device(); }
     static const strvec_t&  get_labels() { return _get_labels(); }
 
     explicit cupti_counters()
@@ -169,35 +161,42 @@ struct cupti_counters
     }
 
     ~cupti_counters() {}
+    cupti_counters(const cupti_counters&) = default;
+    cupti_counters(cupti_counters&&)      = default;
+    cupti_counters& operator              =(const cupti_counters& rhs)
+    {
+        if(this != &rhs)
+            base_type::operator=(rhs);
+        return *this;
+    }
+    cupti_counters& operator=(cupti_counters&&) = default;
 
     static int64_t unit() { return 1; }
     // leave these empty
-    static string_t label() { return ""; }
-    static string_t descript() { return ""; }
+    static string_t label() { return "cupti_counters"; }
+    static string_t description() { return "CUpti Callback API for hardware counters"; }
     static string_t display_unit() { return ""; }
 
     static value_type record()
     {
         value_type tmp;
-        auto&      _profilers = _get_profilers();
-        auto&      _labels    = _get_labels();
-        for(size_type i = 0; i < _profilers.size(); ++i)
+        auto&      _profiler = _get_profiler();
+        auto&      _labels   = _get_labels();
+        _profiler->stop();
+        if(tmp.size() == 0)
         {
-            _profilers[i]->stop();
-            if(tmp.size() == 0)
-            {
-                tmp = _profilers[i]->get_events_and_metrics(_labels);
-            } else if(tmp.size() == _labels.size())
-            {
-                auto ret = _profilers[i]->get_events_and_metrics(_labels);
-                for(size_t j = 0; j < _labels.size(); ++j)
-                    tmp[j] += ret[j];
-            } else
-            {
-                fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
-                        __FUNCTION__, __FILE__, __LINE__);
-            }
+            tmp = _profiler->get_events_and_metrics(_labels);
+        } else if(tmp.size() == _labels.size())
+        {
+            auto ret = _profiler->get_events_and_metrics(_labels);
+            for(size_t j = 0; j < _labels.size(); ++j)
+                tmp[j] += ret[j];
+        } else
+        {
+            fprintf(stderr, "Warning! mis-matched size in cupti_event::%s @ %s:%i\n",
+                    TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__);
         }
+
         return tmp;
     }
 
@@ -255,13 +254,11 @@ struct cupti_counters
             if(!contains(entry))
                 arr.push_back(entry);
         };
-        for(const auto& profiler : get_profilers())
-        {
-            for(const auto& itr : profiler->get_event_names())
-                insert(itr);
-            for(const auto& itr : profiler->get_metric_names())
-                insert(itr);
-        }
+        auto profiler = get_profiler();
+        for(const auto& itr : profiler->get_event_names())
+            insert(itr);
+        for(const auto& itr : profiler->get_metric_names())
+            insert(itr);
         return arr;
     }
 
@@ -275,7 +272,7 @@ struct cupti_counters
     //
     static array_t<string_t> display_unit_array()
     {
-        return array_t<string_t>(get_profilers().size(), "");
+        return array_t<string_t>(get_labels().size(), "");
     }
 
     //----------------------------------------------------------------------------------//
@@ -292,10 +289,9 @@ struct cupti_counters
     void start()
     {
         set_started();
-        value            = record();
-        auto& _profilers = _get_profilers();
-        for(size_type i = 0; i < _profilers.size(); ++i)
-            _profilers[i]->start();
+        value           = record();
+        auto& _profiler = _get_profiler();
+        _profiler->start();
     }
 
     void stop()
@@ -317,23 +313,19 @@ struct cupti_counters
 
     this_type& operator+=(const this_type& rhs)
     {
-        auto& _labels = _get_labels();
-        if(accum.empty())
-        {
-            accum = rhs.accum;
-        } else
-        {
-            for(size_type i = 0; i < _labels.size(); ++i)
-                accum[i] += rhs.accum[i];
-        }
-        if(value.empty())
-        {
-            value = rhs.value;
-        } else
-        {
-            for(size_type i = 0; i < _labels.size(); ++i)
-                value[i] += rhs.value[i];
-        }
+        auto _combine = [](value_type& _data, const value_type& _other) {
+            auto& _labels = _get_labels();
+            if(_data.empty())
+                _data = _other;
+            else
+            {
+                for(size_type i = 0; i < _labels.size(); ++i)
+                    _data[i] += _other[i];
+            }
+        };
+
+        _combine(value, rhs.value);
+        _combine(accum, rhs.accum);
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -341,17 +333,18 @@ struct cupti_counters
 
     this_type& operator-=(const this_type& rhs)
     {
-        auto& _labels = _get_labels();
-        if(!accum.empty())
-        {
+        auto _combine = [](value_type& _data, const value_type& _other) {
+            auto& _labels = _get_labels();
+            // set to other
+            if(_data.empty())
+                _data = _other;
+            // subtract other (if data was empty, will contain zero data)
             for(size_type i = 0; i < _labels.size(); ++i)
-                accum[i] -= rhs.accum[i];
-        }
-        if(!value.empty())
-        {
-            for(size_type i = 0; i < _labels.size(); ++i)
-                value[i] -= rhs.value[i];
-        }
+                _data[i] -= _other[i];
+        };
+
+        _combine(value, rhs.value);
+        _combine(accum, rhs.accum);
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -383,7 +376,7 @@ struct cupti_counters
     template <typename _Archive>
     static void invoke_serialize(_Archive& ar, const unsigned int /*version*/)
     {
-        auto& _devices = _get_devices();
+        auto& _devices = _get_device();
         auto& _events  = _get_events();
         auto& _metrics = _get_metrics();
         auto& _labels  = _get_labels();
@@ -395,16 +388,6 @@ struct cupti_counters
     }
 
     //----------------------------------------------------------------------------------//
-    //
-    cupti_counters(const cupti_counters&) = default;
-    cupti_counters(cupti_counters&&)      = default;
-    cupti_counters& operator              =(const cupti_counters& rhs)
-    {
-        if(this != &rhs)
-            base_type::operator=(rhs);
-        return *this;
-    }
-    cupti_counters& operator=(cupti_counters&&) = default;
 
 private:
     template <typename _Tp>
@@ -433,9 +416,9 @@ private:
         }
     };
 
-    static profvec_t& _get_profilers()
+    static profptr_t& _get_profiler()
     {
-        static profvec_t _instance;
+        static profptr_t _instance = profptr_t(nullptr);
         return _instance;
     }
 
@@ -451,9 +434,9 @@ private:
         return _instance;
     }
 
-    static intvec_t& _get_devices()
+    static int& _get_device()
     {
-        static intvec_t _instance;
+        static int _instance;
         return _instance;
     }
 
@@ -473,13 +456,11 @@ private:
             if(!contains(entry))
                 arr.push_back(entry);
         };
-        for(const auto& profiler : get_profilers())
-        {
-            for(const auto& itr : profiler->get_event_names())
-                insert(itr);
-            for(const auto& itr : profiler->get_metric_names())
-                insert(itr);
-        }
+        auto profiler = get_profiler();
+        for(const auto& itr : profiler->get_event_names())
+            insert(itr);
+        for(const auto& itr : profiler->get_metric_names())
+            insert(itr);
         return arr;
     }
 
@@ -493,21 +474,23 @@ private:
         return cupti::available_metrics(cupti::get_device(devid));
     }
 
-    static device_tuple_type get_available(const tuple_type&, int);
+    static tuple_type get_available(const tuple_type&, int);
 
     static void init()
     {
         cupti::init_driver();
+        cuda::device_sync();
         clear();
-        auto& _profilers = _get_profilers();
-        auto& _events    = _get_events();
-        auto& _metrics   = _get_metrics();
-        auto& _devices   = _get_devices();
-        auto& _labels    = _get_labels();
+
+        auto& _profiler = _get_profiler();
+        auto& _events   = _get_events();
+        auto& _metrics  = _get_metrics();
+        auto& _device   = _get_device();
+        auto& _labels   = _get_labels();
 
         auto _init = get_initializer()();
 
-        _devices = std::get<0>(_init);
+        _device  = std::get<0>(_init);
         _events  = std::get<1>(_init);
         _metrics = std::get<2>(_init);
 
@@ -518,135 +501,57 @@ private:
         strset_t _used_evts;
         strset_t _used_mets;
 
-        for(const auto& _device : _devices)
-        {
-            auto  _dev_init = get_available(_init, _device);
-            auto& _dev      = std::get<0>(_dev_init);
+        auto  _dev_init = get_available(_init, _device);
+        auto& _dev      = std::get<0>(_dev_init);
 
-            // if < 0, no metrics or events available/specified
-            if(_dev < 0)
-                continue;
+        // if < 0, no metrics or events available/specified
+        if(_dev >= 0)
+        {
+            if(settings::debug())
+                printf("Creating CUPTI hardware profiler for device %i...\n", _device);
 
             auto& _evt = std::get<1>(_dev_init);
             auto& _met = std::get<2>(_dev_init);
 
-            _profilers.push_back(profptr_t(new cupti::profiler(_evt, _met, _dev)));
-
-            _used_devs.insert(_dev);
-            for(const auto& itr : _evt)
-                _used_evts.insert(itr);
-            for(const auto& itr : _met)
-                _used_mets.insert(itr);
+            if(_evt.size() > 0 && _met.size() > 0)
+            {
+                _profiler.reset(new cupti::profiler(_evt, _met, _dev));
+                _used_devs.insert(_dev);
+                for(const auto& itr : _evt)
+                    _used_evts.insert(itr);
+                for(const auto& itr : _met)
+                    _used_mets.insert(itr);
+            }
         }
 
         _labels = generate_labels();
-        if(settings::verbose() > 0 || settings::debug())
+        if(_used_devs.size() > 0)
         {
-            std::cout << "Devices : " << writer<intset_t>(_used_devs) << std::endl;
-            std::cout << "Event   : " << writer<strset_t>(_used_evts) << std::endl;
-            std::cout << "Metrics : " << writer<strset_t>(_used_mets) << std::endl;
-            std::cout << "Labels  : " << writer<strvec_t>(_labels) << std::endl;
+            if(settings::verbose() > 0 || settings::debug())
+            {
+                std::cout << "Devices : " << writer<intset_t>(_used_devs) << std::endl;
+                std::cout << "Event   : " << writer<strset_t>(_used_evts) << std::endl;
+                std::cout << "Metrics : " << writer<strset_t>(_used_mets) << std::endl;
+                std::cout << "Labels  : " << writer<strvec_t>(_labels) << std::endl;
+            }
         }
     }
 
     static void clear()
     {
-        _get_devices().clear();
         _get_metrics().clear();
         _get_events().clear();
-        _get_profilers().clear();
+        _get_profiler().reset();
     }
 };
-
-/*
-#else
-struct cupti_counters
-: public base<cupti_counters, std::vector<cupti::result>, policy::thread_init,
-              policy::thread_finalize, policy::serialization>
-{
-    using value_type = std::vector<cupti::result>;
-    using this_type  = cupti_counters;
-    using base_type  = base<this_type, value_type, policy::thread_init,
-                           policy::thread_finalize, policy::serialization>;
-
-    // reproduce some aliases here
-    using strvec_t = std::vector<string_t>;
-    using intvec_t = std::vector<int>;
-    /// a tuple of the <devices, events, metrics>
-    using tuple_type = std::tuple<intvec_t, strvec_t, strvec_t>;
-    /// function for setting device, metrics, and events to record
-    using event_func_t  = std::function<strvec_t()>;
-    using metric_func_t = std::function<strvec_t()>;
-    using device_func_t = std::function<intvec_t()>;
-    /// function for setting all of device, metrics, and events
-    using initializer_type = std::function<tuple_type()>;
-
-    template <typename _Tp>
-    using array_t = std::vector<_Tp>;
-
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    template <typename _Archive>
-    static void invoke_serialize(_Archive&, const unsigned int)
-    {}
-
-    static void              invoke_thread_init() {}
-    static void              invoke_thread_finalize() {}
-    static array_t<string_t> label_array() { return array_t<string_t>{}; }
-    static array_t<string_t> descript_array() { return array_t<string_t>{}; }
-    static array_t<string_t> display_unit_array() { return array_t<string_t>{}; }
-    static array_t<int64_t>  unit_array() { return array_t<int64_t>{}; }
-    static int64_t           unit() { return 1; }
-    static std::string       label() { return "cupti_counters"; }
-    static std::string       descript() { return "cupti_counters"; }
-    static std::string       display_unit() { return ""; }
-    static value_type        record() { return value_type{}; }
-    value_type               get_display() const { return value_type{}; }
-    value_type               get() const { return value_type{}; }
-    void                     start() {}
-    void                     stop() {}
-
-    static event_func_t& get_event_initializer()
-    {
-        static event_func_t _instance = []() { return strvec_t{}; };
-        return _instance;
-    }
-
-    static metric_func_t& get_metric_initializer()
-    {
-        static metric_func_t _instance = []() { return strvec_t{}; };
-        return _instance;
-    }
-
-    static device_func_t& get_device_initializer()
-    {
-        static device_func_t _instance = []() { return intvec_t{}; };
-        return _instance;
-    }
-
-    static initializer_type& get_initializer()
-    {
-        static auto _lambda_instance = []() -> tuple_type {
-            return tuple_type(get_device_initializer()(), get_event_initializer()(),
-                              get_metric_initializer()());
-        };
-        static initializer_type _instance = _lambda_instance;
-        return _instance;
-    }
-};
-#endif
-*/
 
 //--------------------------------------------------------------------------------------//
 
-inline cupti_counters::device_tuple_type
+inline cupti_counters::tuple_type
 cupti_counters::get_available(const tuple_type& _init, int devid)
 {
     if(devid < 0 || devid >= cuda::device_count())
-        return device_tuple_type(-1, strvec_t(), strvec_t());
+        return tuple_type(-1, strvec_t(), strvec_t());
 
     // handle events
     strvec_t    _events       = std::get<1>(_init);
@@ -688,7 +593,7 @@ cupti_counters::get_available(const tuple_type& _init, int devid)
 
     // determine total
     auto ntot = _events.size() + _metrics.size();
-    return device_tuple_type((ntot == 0) ? -1 : devid, _events, _metrics);
+    return tuple_type((ntot == 0) ? -1 : devid, _events, _metrics);
 }
 
 //--------------------------------------------------------------------------------------//

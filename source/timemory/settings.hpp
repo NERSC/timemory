@@ -102,6 +102,7 @@ tim::settings::toupper(std::string str)
 #include "timemory/components.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/signals.hpp"
 #include "timemory/utility/utility.hpp"
 
 namespace tim
@@ -118,18 +119,27 @@ using complete_tuple_t = std::tuple<
     component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
     component::real_clock, component::stack_rss, component::system_clock,
     component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_clock, component::voluntary_context_switch, component::written_bytes>;
+    component::user_clock, component::voluntary_context_switch, component::written_bytes,
+    component::gpu_roofline_dp_flops, component::gpu_roofline_sp_flops>;
 
 namespace settings
 {
 template <typename _Tuple = tim::complete_tuple_t>
 void
 process();
-}
-}
+
+template <typename _Tuple = tim::complete_tuple_t>
+void
+initialize_storage();
+}  // namespace settings
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
+//
+// Nearly all variables will parse env when first access but this allows provides a
+// way to reparse the environment so that default settings (possibly from previous
+// invocation) can be overwritten
 //
 inline void
 tim::settings::parse()
@@ -379,6 +389,16 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
     tim::settings::output_path() = exe_name;
     // allow environment overrides
     tim::settings::parse();
+
+    if(tim::settings::enable_signal_handler())
+    {
+        auto default_signals = tim::signal_settings::get_default();
+        for(auto& itr : default_signals)
+            tim::signal_settings::enable(itr);
+        // should return default and any modifications from environment
+        auto enabled_signals = tim::signal_settings::get_enabled();
+        tim::enable_signal_detection(enabled_signals);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -402,6 +422,7 @@ tim::timemory_finalize()
 #if defined(__INTEL_COMPILER)
     apply<void>::type_access<operation::print_storage, complete_tuple_t>();
 #endif
+    tim::disable_signal_detection();
 }
 //--------------------------------------------------------------------------------------//
 

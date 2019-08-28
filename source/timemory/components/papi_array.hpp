@@ -51,21 +51,24 @@ struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>,
               policy::thread_init, policy::thread_finalize>
 {
-    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
-
     using size_type  = std::size_t;
     using event_list = std::vector<int>;
     using value_type = std::array<long long, MaxNumEvents>;
     using entry_type = typename value_type::value_type;
-    using base_type  = base<papi_array<MaxNumEvents>, value_type, policy::thread_init,
-                           policy::thread_finalize>;
     using this_type  = papi_array<MaxNumEvents>;
+    using base_type =
+        base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
     using get_initializer_t = std::function<event_list()>;
 
     static const short                   precision = 3;
     static const short                   width     = 12;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::scientific | std::ios_base::dec | std::ios_base::showpoint;
+
+    template <typename _Tp>
+    using array_t = std::array<_Tp, MaxNumEvents>;
+
+    //----------------------------------------------------------------------------------//
 
     static bool initialize_papi()
     {
@@ -87,45 +90,59 @@ struct papi_array
         }
         return _working;
     }
-    static int& event_set()
-    {
-        static thread_local int _instance = PAPI_NULL;
-        return _instance;
-    }
 
-    static bool& enable_multiplex()
-    {
-        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
-        return _instance;
-    }
+    //----------------------------------------------------------------------------------//
+
+    static int event_set() { return _event_set(); }
+
+    //----------------------------------------------------------------------------------//
 
     static get_initializer_t& get_initializer()
     {
         static get_initializer_t _instance = []() {
-            auto events_str = get_env<string_t>("TIMEMORY_PAPI_EVENTS", "");
-            if(settings::verbose() > 0 || settings::debug())
+            papi::init();
+            auto events_str = settings::papi_events();
+
+            if(settings::verbose() > 1 || settings::debug())
             {
-                printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
-                       events_str.c_str());
+                static std::atomic<int> _once;
+                if(_once++ == 0)
+                {
+                    printf("[papi_array]> TIMEMORY_PAPI_EVENTS: '%s'...\n",
+                           events_str.c_str());
+                }
             }
+
             std::vector<string_t> events_str_list = delimit(events_str);
             std::vector<int>      events_list;
             for(const auto& itr : events_str_list)
             {
                 int evt_code = papi::get_event_code(itr);
-                if(settings::debug())
+                if(evt_code == PAPI_NOT_INITED)  // defined as zero
                 {
-                    printf("[papi_array] creating event '%s' with code '%i'...\n",
-                           itr.c_str(), evt_code);
+                    std::stringstream ss;
+                    ss << "[papi_array] Error creating event with ID: " << itr;
+                    throw std::runtime_error(ss.str());
+                } else
+                {
+                    if(settings::debug())
+                        printf(
+                            "[papi_array] Successfully created event '%s' with code "
+                            "'%i'...\n",
+                            itr.c_str(), evt_code);
+                    events_list.push_back(evt_code);
                 }
-                events_list.push_back(evt_code);
             }
             return events_list;
         };
         return _instance;
     }
 
+    //----------------------------------------------------------------------------------//
+
     static event_list get_events() { return get_initializer()(); }
+
+    //----------------------------------------------------------------------------------//
 
     static void invoke_thread_init()
     {
@@ -134,15 +151,13 @@ struct papi_array
         auto events = get_events();
         if(events.size() > 0)
         {
-            papi::create_event_set(&event_set());
-            // papi::add_events(event_set(), events.data(), events.size());
-            for(auto itr : events)
-            {
-                papi::add_event(event_set(), itr);
-            }
-            papi::start(event_set(), enable_multiplex());
+            papi::create_event_set(&_event_set());
+            papi::add_events(event_set(), events.data(), events.size());
+            papi::start(event_set(), settings::papi_multiplexing());
         }
     }
+
+    //----------------------------------------------------------------------------------//
 
     static void invoke_thread_finalize()
     {
@@ -155,12 +170,11 @@ struct papi_array
             papi::stop(event_set(), values.data());
             papi::remove_events(event_set(), events.data(), events.size());
             papi::destroy_event_set(event_set());
-            event_set() = PAPI_NULL;
+            _event_set() = PAPI_NULL;
         }
     }
 
-    template <typename _Tp>
-    using array_t = std::array<_Tp, MaxNumEvents>;
+    //----------------------------------------------------------------------------------//
 
     explicit papi_array()
     : events(get_events())
@@ -169,17 +183,22 @@ struct papi_array
         apply<void>::set_value(accum, 0);
     }
 
-    ~papi_array() {}
+    //----------------------------------------------------------------------------------//
 
+    ~papi_array() {}
     papi_array(const papi_array& rhs) = default;
-    this_type& operator=(const this_type& rhs) = default;
-    papi_array(papi_array&& rhs)               = default;
+    papi_array(papi_array&& rhs)      = default;
+    this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&&) = default;
 
     // data types
     event_list events;
 
+    //----------------------------------------------------------------------------------//
+
     std::size_t size() { return events.size(); }
+
+    //----------------------------------------------------------------------------------//
 
     static value_type record()
     {
@@ -189,6 +208,8 @@ struct papi_array
             papi::read(event_set(), read_value.data());
         return read_value;
     }
+
+    //----------------------------------------------------------------------------------//
 
     template <typename _Tp = double>
     std::vector<_Tp> get() const
@@ -210,6 +231,8 @@ struct papi_array
         value = record();
     }
 
+    //----------------------------------------------------------------------------------//
+
     void stop()
     {
         auto tmp = record();
@@ -218,6 +241,8 @@ struct papi_array
         value = std::move(tmp);
         set_stopped();
     }
+
+    //----------------------------------------------------------------------------------//
 
     this_type& operator+=(const this_type& rhs)
     {
@@ -230,6 +255,8 @@ struct papi_array
         return *this;
     }
 
+    //----------------------------------------------------------------------------------//
+
     this_type& operator-=(const this_type& rhs)
     {
         for(size_type i = 0; i < events.size(); ++i)
@@ -241,12 +268,20 @@ struct papi_array
         return *this;
     }
 
+    //----------------------------------------------------------------------------------//
+
+protected:
     using base_type::accum;
     using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
+
+    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
+    friend struct base<this_type, value_type, policy::thread_init,
+                       policy::thread_finalize>;
+    friend class storage<this_type>;
 
 public:
     //==================================================================================//
@@ -256,7 +291,7 @@ public:
     //==================================================================================//
 
     static std::string label() { return "papi" + std::to_string(event_set()); }
-    static std::string descript() { return ""; }
+    static std::string description() { return ""; }
     static std::string display_unit() { return ""; }
     static int64_t     unit() { return 1; }
 
@@ -331,6 +366,8 @@ public:
         return arr;
     }
 
+    //----------------------------------------------------------------------------------//
+
     string_t get_display() const
     {
         if(events.size() == 0)
@@ -366,6 +403,8 @@ public:
         return ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
+
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         if(obj.events.size() == 0)
@@ -388,6 +427,15 @@ public:
             ss_extra << " " << _label;
         os << ss_value.str() << ss_extra.str();
         return os;
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+
+    static int& _event_set()
+    {
+        static thread_local int _instance = PAPI_NULL;
+        return _instance;
     }
 };
 

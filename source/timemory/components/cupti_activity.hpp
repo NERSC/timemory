@@ -71,7 +71,7 @@ struct cupti_activity
     using ratio_t          = std::nano;
     using size_type        = std::size_t;
     using string_t         = std::string;
-    using receiver_type    = cupti::activity::receiver<cupti_activity>;
+    using receiver_type    = cupti::activity::receiver;
     using kind_vector_type = std::vector<cupti::activity_kind_t>;
     using initializer_type = std::function<kind_vector_type()>;
 
@@ -82,23 +82,19 @@ struct cupti_activity
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "cupti_activity"; }
-    static std::string descript() { return "CUpti Activity API"; }
+    static std::string description() { return "CUpti Activity API"; }
     static std::string display_unit() { return "sec"; }
 
-    static int32_t& get_initializer_level()
-    {
-        static int32_t _instance = 1;
-        return _instance;
-    }
+    //----------------------------------------------------------------------------------//
 
     static initializer_type& get_initializer()
     {
         static auto _lambda_instance = []() -> kind_vector_type {
             std::vector<cupti::activity_kind_t> _kinds;
-            auto lvl = get_env("TIMEMORY_CUPTI_ACTIVITY_LEVEL", get_initializer_level());
+            auto                                lvl = settings::cupti_activity_level();
 
             /// look up integer codes in <timemory/details/cupti.hpp>
-            auto vec = delimit(get_env<string_t>("TIMEMORY_CUPTI_ACTIVITY_KINDS", ""));
+            auto vec = delimit(settings::cupti_activity_kinds());
             for(const auto& itr : vec)
             {
                 int iactivity = atoi(itr.c_str());
@@ -155,33 +151,41 @@ struct cupti_activity
         return _instance;
     }
 
+    //----------------------------------------------------------------------------------//
+
     static kind_vector_type get_kind_types()
     {
         static kind_vector_type _instance = get_initializer()();
         return _instance;
     }
 
-    static value_type record()
-    {
-        return cupti::activity::get_receiver<this_type>().get();
-    }
+    //----------------------------------------------------------------------------------//
 
     static void invoke_global_init()
     {
         static std::atomic<short> _once;
         if(_once++ > 0)
             return;
-        cupti::activity::initialize_trace<this_type>(get_kind_types());
+        cupti::activity::initialize_trace(get_kind_types());
         cupti::init_driver();
     }
 
+    //----------------------------------------------------------------------------------//
+
     static void invoke_global_finalize()
     {
-        cupti::activity::finalize_trace<this_type>(get_kind_types());
+        cupti::activity::finalize_trace(get_kind_types());
     }
 
+    //----------------------------------------------------------------------------------//
+
+    static value_type record() { return cupti::activity::get_receiver().get(); }
+
+    //----------------------------------------------------------------------------------//
+
+public:
     // make sure it is removed
-    ~cupti_activity() { cupti::activity::get_receiver<this_type>().remove(this); }
+    ~cupti_activity() { cupti::activity::get_receiver().remove(this); }
 
     //----------------------------------------------------------------------------------//
     // start
@@ -193,6 +197,8 @@ struct cupti_activity
         value = record();
     }
 
+    //----------------------------------------------------------------------------------//
+
     void stop()
     {
         cupti::activity::stop_trace(this);
@@ -202,18 +208,22 @@ struct cupti_activity
         set_stopped();
     }
 
-    float get_display() const
+    //----------------------------------------------------------------------------------//
+
+    double get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
 
-    float get() const
+    //----------------------------------------------------------------------------------//
+
+    double get() const
     {
         auto val = (is_transient) ? accum : value;
-        return static_cast<float>(val / static_cast<float>(ratio_t::den) *
-                                  base_type::get_unit());
+        return static_cast<double>(val / static_cast<double>(ratio_t::den) *
+                                   base_type::get_unit());
     }
 };
 

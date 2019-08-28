@@ -59,7 +59,7 @@ struct trip_count : public base<trip_count>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "trip_count"; }
-    static std::string descript() { return "trip counts"; }
+    static std::string description() { return "trip counts"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return 1; }
 
@@ -94,7 +94,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "nvtx_marker"; }
-    static std::string descript() { return "NVTX markers"; }
+    static std::string description() { return "NVTX markers"; }
     static std::string display_unit() { return ""; }
     static int8_t      record() { return 0; }
 
@@ -103,7 +103,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 
     static bool& use_device_sync()
     {
-        static bool _instance = get_env("TIMEMORY_NVTX_MARKER_DEVICE_SYNC", true);
+        static bool _instance = settings::nvtx_marker_device_sync();
         return _instance;
     }
 

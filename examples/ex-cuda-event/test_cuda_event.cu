@@ -1260,7 +1260,7 @@ test_9_cupti_counters()
     std::cout << "Metric names: \n\t"
               << array_to_string(metric_names, ", ", wmet, 200 / wmet) << std::endl;
 
-    cupti_counters::get_device_initializer() = []() { return std::vector<int>({ 0 }); };
+    cupti_counters::get_device_initializer() = []() { return 0; };
     cupti_counters::get_event_initializer()  = []() {
         return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
                                           "global_store", "gld_inst_32bit",
@@ -1274,8 +1274,8 @@ test_9_cupti_counters()
                                           "gld_efficiency", "gst_efficiency" });
     };
 
-    using _Tp                 = double;
-    using operation_counter_t = tim::ert::operation_counter<tim::device::gpu, _Tp>;
+    using _Tp       = double;
+    using counter_t = tim::ert::counter<tim::device::gpu, _Tp>;
 
     auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
     auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
@@ -1286,7 +1286,7 @@ test_9_cupti_counters()
     };
 
     tim::ert::exec_params params(16, 64 * 64);
-    auto                  op_counter = new operation_counter_t(params, 64);
+    auto                  _counter = new counter_t(params, 64);
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data;
@@ -1299,9 +1299,9 @@ test_9_cupti_counters()
     for(int i = 0; i < num_iter; ++i)
     {
         printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
-        tim::ert::ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::ops_main<2, 4, 8>(*op_counter, fma_func, store_func);
-        std::cout << *op_counter << std::endl;
+        tim::ert::ops_main<1>(*_counter, add_func, store_func);
+        tim::ert::ops_main<2, 4, 8>(*_counter, fma_func, store_func);
+        std::cout << *_counter << std::endl;
         KERNEL_A(data, num_data);
         KERNEL_B(data, num_data);
     }

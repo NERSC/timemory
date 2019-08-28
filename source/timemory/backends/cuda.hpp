@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <limits>
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
@@ -51,21 +52,36 @@
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
     {                                                                                    \
-        tim::cuda::error_t err = apiFuncCall;                                            \
-        if(err != tim::cuda::success_v && (int) err != 0)                                \
+        ::tim::cuda::error_t err = apiFuncCall;                                          \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
         {                                                                                \
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                    __FILE__, __LINE__, #apiFuncCall, tim::cuda::get_error_string(err)); \
+                    __FILE__, __LINE__, #apiFuncCall,                                    \
+                    ::tim::cuda::get_error_string(err));                                 \
+        }                                                                                \
+    }
+
+// this a macro so we can pre-declare
+#define CUDA_RUNTIME_API_CALL_THROW(apiFuncCall)                                         \
+    {                                                                                    \
+        ::tim::cuda::error_t err = apiFuncCall;                                          \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
+        {                                                                                \
+            char errmsg[std::numeric_limits<uint16_t>::max()];                           \
+            sprintf(errmsg, "%s:%d: error: function '%s' failed with error: %s.\n",      \
+                    __FILE__, __LINE__, #apiFuncCall,                                    \
+                    ::tim::cuda::get_error_string(err));                                 \
+            throw std::runtime_error(errmsg);                                            \
         }                                                                                \
     }
 
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_CHECK_ERROR(err)                                                    \
     {                                                                                    \
-        if(err != tim::cuda::success_v && (int) err != 0)                                \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
         {                                                                                \
             fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",          \
-                    __FILE__, __LINE__, (int) err, tim::cuda::get_error_string(err));    \
+                    __FILE__, __LINE__, (int) err, ::tim::cuda::get_error_string(err));  \
         }                                                                                \
     }
 
@@ -198,7 +214,7 @@ inline void
 device_sync()
 {
 #if defined(TIMEMORY_USE_CUDA)
-    CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
+    CUDA_RUNTIME_API_CALL_THROW(cudaDeviceSynchronize());
 #endif
 }
 
@@ -212,6 +228,22 @@ device_reset()
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+/// get the size of the L2 cache (in bytes)
+inline int
+device_l2_cache_size(int dev = 0)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    if(device_count() == 0)
+        return 0;
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    return deviceProp.l2CacheSize;
+#else
+    consume_parameters(dev);
+    return 0;
+#endif
+}
 //--------------------------------------------------------------------------------------//
 //
 //      functions dealing with cuda streams

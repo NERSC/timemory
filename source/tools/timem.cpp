@@ -450,8 +450,8 @@ main(int argc, char** argv)
                 events_list.push_back(tim::papi::get_event_code(itr));
             return events_list;
         };
-        papi_array_t::enable_multiplex() = tim::get_env("TIMEM_PAPI_MULTIPLEX", false);
-        get_papi_array()                 = new papi_array_t();
+        tim::settings::papi_multiplexing() = tim::get_env("TIMEM_PAPI_MULTIPLEX", true);
+        get_papi_array()                   = new papi_array_t();
     }
 
     get_measure()->start();

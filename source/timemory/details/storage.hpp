@@ -337,7 +337,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
         auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
         std::cerr << "Failure to merge graphs!" << std::endl;
         auto g = graph();
-        graph().insert_subgraph_after(m_data.current(), itr->data().head());
+        graph().insert_subgraph_after(_data().current(), itr->data().head());
     }
 }
 
@@ -357,9 +357,9 @@ void tim::storage<ObjectType>::external_print(std::false_type)
     {
         merge();
 
-        auto _iter_beg = m_data.graph().begin();
-        auto _iter_end = m_data.graph().end();
-        m_data.graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
+        auto _iter_beg = _data().graph().begin();
+        auto _iter_end = _data().graph().end();
+        _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
 
         ObjectType::thread_finalize_policy();
         ObjectType::global_finalize_policy();
@@ -382,12 +382,12 @@ void tim::storage<ObjectType>::external_print(std::false_type)
         }
 
         int64_t _min = std::numeric_limits<int64_t>::max();
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
             _min = std::min<int64_t>(itr.depth(), _min);
 
         if(!(_min < 0))
         {
-            for(auto& itr : m_data.graph())
+            for(auto& itr : _data().graph())
                 itr.depth() -= 1;
         }
 
@@ -453,12 +453,12 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             return _prefix;
         };
 
-        m_data.current()   = m_data.head();
+        _data().current()  = _data().head();
         int64_t _width     = ObjectType::get_width();
         int64_t _max_depth = 0;
         int64_t _max_laps  = 0;
         // find the max width
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
         {
             if(itr.depth() < 0)
                 continue;
@@ -476,7 +476,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
 
         std::stringstream _oss;
         // std::stringstream _mss;
-        for(auto pitr = m_data.graph().begin(); pitr != m_data.graph().end(); ++pitr)
+        for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
         {
             auto itr = *pitr;
             if(itr.depth() < 0)
@@ -493,7 +493,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                 // the sum of the exclusive values
                 get_return_type exclusive_values;
                 // continue while not at end of graph until first sibling is encountered
-                while(eitr->depth() != itr.depth() && eitr != m_data.graph().end())
+                while(eitr->depth() != itr.depth() && eitr != _data().graph().end())
                 {
                     // if one level down, this is an exclusive value
                     if(eitr->depth() == itr.depth() + 1)
@@ -632,7 +632,7 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
     // convert graph to a deque
     auto convert_graph = [&]() {
         array_type _list;
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
         {
             if(itr.depth() < 0)
                 continue;
@@ -642,14 +642,27 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
     };
 
     auto graph_list = convert_graph();
-    auto data_type  = type_id<value_type>::value(m_data.head()->obj().value);
+    auto data_type  = type_id<value_type>::value(_data().head()->obj().value);
     ar(serializer::make_nvp("type", ObjectType::label()),
-       serializer::make_nvp("descript", ObjectType::descript()),
+       serializer::make_nvp("description", ObjectType::description()),
        serializer::make_nvp("unit_value", ObjectType::unit()),
        serializer::make_nvp("unit_repr", ObjectType::display_unit()),
        serializer::make_nvp("dtype", data_type));
     ObjectType::serialization_policy(ar, version);
-    ar(serializer::make_nvp("graph", graph_list));
+    // ar(serializer::make_nvp("graph", graph_list));
+    ar.setNextName("graph");
+    ar.startNode();
+    ar.makeArray();
+    for(auto& itr : graph_list)
+    {
+        ar.startNode();
+        ar(serializer::make_nvp("hash", std::get<0>(itr)),
+           serializer::make_nvp("prefix", std::get<2>(itr)),
+           serializer::make_nvp("depth", std::get<3>(itr)),
+           serializer::make_nvp("entry", std::get<1>(itr)));
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 
 //======================================================================================//
@@ -667,7 +680,7 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     // convert graph to a deque
     auto convert_graph = [&]() {
         array_type _list;
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
             _list.push_back(itr);
         return _list;
     };
@@ -676,17 +689,31 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
     ObjectType& obj           = std::get<1>(graph_list.front());
-    auto        data_type     = type_id<value_type>::value(m_data.head()->obj().value);
+    auto        data_type     = type_id<value_type>::value(_data().head()->obj().value);
     auto        labels        = obj.label_array();
     auto        descripts     = obj.descript_array();
     auto        units         = obj.unit_array();
     auto        display_units = obj.display_unit_array();
-    ar(serializer::make_nvp("type", labels), serializer::make_nvp("descript", descripts),
+    ar(serializer::make_nvp("type", labels),
+       serializer::make_nvp("description", descripts),
        serializer::make_nvp("unit_value", units),
        serializer::make_nvp("unit_repr", display_units),
        serializer::make_nvp("dtype", data_type));
     ObjectType::serialization_policy(ar, version);
-    ar(serializer::make_nvp("graph", graph_list));
+    // ar(serializer::make_nvp("graph", graph_list));
+    ar.setNextName("graph");
+    ar.startNode();
+    ar.makeArray();
+    for(auto& itr : graph_list)
+    {
+        ar.startNode();
+        ar(serializer::make_nvp("hash", std::get<0>(itr)),
+           serializer::make_nvp("prefix", std::get<2>(itr)),
+           serializer::make_nvp("depth", std::get<3>(itr)),
+           serializer::make_nvp("entry", std::get<1>(itr)));
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 
 //======================================================================================//

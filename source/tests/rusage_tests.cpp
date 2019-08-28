@@ -242,7 +242,7 @@ main(int argc, char** argv)
     // preform allocation only once here
     tim::settings::precision()    = 9;
     tim::settings::memory_units() = memory_unit.second;
-    tim::settings::process();
+    tim::timemory_init(argc, argv);
 
     details::allocate();
 

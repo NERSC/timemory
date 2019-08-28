@@ -518,6 +518,18 @@ using str = tim::apply<std::string>;
 #    endif
 
 //--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_CONFIGURE(type, ...)
+ *
+ * Invoke a (static) configuration function for type to override the default behaviors
+ *
+ * Usage:
+ *
+ *      TIMEMORY_CONFIGURE(papi_array_t, PAPI_LST_INS)
+ *
+ */
+#    define TIMEMORY_CONFIGURE(type, ...) type::configure(__VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
 
 #endif  // !defined(TIMEMORY_MACROS)
 

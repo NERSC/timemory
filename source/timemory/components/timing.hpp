@@ -56,7 +56,7 @@ struct real_clock : public base<real_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "real"; }
-    static std::string descript() { return "wall time"; }
+    static std::string description() { return "wall time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
@@ -109,7 +109,7 @@ struct system_clock : public base<system_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "sys"; }
-    static std::string descript() { return "system time"; }
+    static std::string description() { return "system time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             get_display() const
@@ -152,7 +152,7 @@ struct user_clock : public base<user_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "user"; }
-    static std::string descript() { return "user time"; }
+    static std::string description() { return "user time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             get_display() const
@@ -195,7 +195,7 @@ struct cpu_clock : public base<cpu_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "cpu"; }
-    static std::string descript() { return "cpu time"; }
+    static std::string description() { return "cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
     double             get_display() const
@@ -235,7 +235,7 @@ struct monotonic_clock : public base<monotonic_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "monotonic_clock"; }
-    static std::string descript() { return "monotonic time"; }
+    static std::string description() { return "monotonic time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
@@ -279,7 +279,7 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "monotonic_raw_clock"; }
-    static std::string descript() { return "monotonic raw time"; }
+    static std::string description() { return "monotonic raw time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
@@ -324,7 +324,7 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "thread_cpu"; }
-    static std::string descript() { return "thread cpu time"; }
+    static std::string description() { return "thread cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             get_display() const
@@ -365,7 +365,7 @@ struct process_cpu_clock : public base<process_cpu_clock>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "process_cpu"; }
-    static std::string descript() { return "process cpu time"; }
+    static std::string description() { return "process cpu time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
     double             get_display() const
@@ -411,7 +411,7 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_util"; }
-    static std::string descript() { return "cpu utilization"; }
+    static std::string description() { return "cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
     {
@@ -484,7 +484,7 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "proc_cpu_util"; }
-    static std::string descript() { return "process cpu utilization"; }
+    static std::string description() { return "process cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
     {
@@ -557,7 +557,7 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "thread_cpu_util"; }
-    static std::string descript() { return "thread cpu utilization"; }
+    static std::string description() { return "thread cpu utilization"; }
     static std::string display_unit() { return "%"; }
     static value_type  record()
     {

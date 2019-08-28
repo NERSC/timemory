@@ -261,6 +261,21 @@ struct custom_unit_printing<component::written_bytes> : std::true_type
 {
 };
 
+template <>
+struct custom_unit_printing<component::cupti_counters> : std::true_type
+{
+};
+
+template <typename... _Types>
+struct custom_unit_printing<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+/*
+template <typename... _Types>
+struct custom_unit_printing<component::cpu_roofline<_Types...>> : std::true_type
+{
+};
+*/
 //--------------------------------------------------------------------------------------//
 //      custom_label_printing
 //--------------------------------------------------------------------------------------//
@@ -274,6 +289,25 @@ template <>
 struct custom_label_printing<component::written_bytes> : std::true_type
 {
 };
+
+template <>
+struct custom_laps_printing<component::cupti_counters> : std::true_type
+{
+};
+
+template <typename... _Types>
+struct custom_label_printing<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+/*
+template <typename... _Types>
+struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//		custom_laps_printing
+//--------------------------------------------------------------------------------------//
 
 template <>
 struct custom_laps_printing<component::trip_count> : std::true_type
@@ -588,13 +622,13 @@ struct is_available<component::papi_array<MaxNumEvents>> : std::false_type
 {
 };
 
-template <typename _Tp, int... EventTypes>
-struct is_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_type
+template <typename... _Types>
+struct is_available<component::cpu_roofline<_Types...>> : std::false_type
 {
 };
 
-template <typename _Tp, int... EventTypes>
-struct requires_json<component::cpu_roofline<_Tp, EventTypes...>> : std::true_type
+template <typename... _Types>
+struct requires_json<component::cpu_roofline<_Types...>> : std::true_type
 {
 };
 
@@ -627,8 +661,8 @@ struct is_available<component::cupti_activity> : std::false_type
 {
 };
 
-template <typename _Tp>
-struct is_available<component::gpu_roofline<_Tp>> : std::false_type
+template <typename... _Types>
+struct is_available<component::gpu_roofline<_Types...>> : std::false_type
 {
 };
 

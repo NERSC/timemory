@@ -338,6 +338,7 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    tim::timemory_init(argc, argv);
     return RUN_ALL_TESTS();
 }
 

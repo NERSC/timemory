@@ -48,7 +48,7 @@ int
 main(int argc, char** argv)
 {
     papi_array_t::get_initializer() = []() {
-        return std::vector<int>({ PAPI_TOT_CYC, PAPI_L3_DCM, PAPI_L1_DCM });
+        return std::vector<int>({ PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS });
     };
 
     // runtime customization of auto_list_t initialization

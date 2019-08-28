@@ -57,7 +57,8 @@ def parse_args(add_run_args=False):
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
         parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                            choices=["cpu_roofline"], default="cpu_roofline")
+                            choices=["cpu_roofline", "gpu_roofline", "gpu_roofline_float",
+                            "gpu_roofline_double", "gpu_roofline_float_double"], default="cpu_roofline")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
@@ -172,10 +173,16 @@ def run(args, cmd):
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
 
-    args.arithmetic_intensity = os.path.join(
-        output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
-    args.operations = os.path.join(
-        output_path, "{}{}_op.json".format(output_prefix, args.rtype))
+    if "gpu_roofline" in args.rtype:
+        args.arithmetic_intensity = os.path.join(
+            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
+        args.operations = os.path.join(
+            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
+    else:
+        args.arithmetic_intensity = os.path.join(
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
+        args.operations = os.path.join(
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
 
 
 if __name__ == "__main__":

@@ -289,12 +289,12 @@ main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
 
-    tim::timemory_init(argc, argv);
     tim::settings::file_output()      = false;
     tim::settings::cout_output()      = true;
     tim::settings::json_output()      = false;
     tim::settings::timing_precision() = 6;
     tim::settings::debug()            = true;
+    tim::timemory_init(argc, argv);
 
     return RUN_ALL_TESTS();
 }

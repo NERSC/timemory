@@ -125,10 +125,8 @@ tim::cuda::device_query()
                deviceProp.memoryBusWidth);
 
         if(deviceProp.l2CacheSize)
-        {
             printf("  L2 Cache Size:                                 %d bytes\n",
                    deviceProp.l2CacheSize);
-        }
 
 #    else
         // This only available in CUDA 4.0-4.2 (but these were only exposed in
