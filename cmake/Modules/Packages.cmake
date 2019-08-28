@@ -446,31 +446,36 @@ if(TIMEMORY_USE_CUDA)
             endif()
         endif()
 
-        add_interface_library(timemory-cuda-7)
-        target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_20,code=sm_20
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
-            -gencode=arch=compute_52,code=compute_52
-            >)
+        option(TIMEMORY_DEPRECATED_CUDA_SUPPORT "Enable support for old CUDA flags" OFF)
+        mark_as_advanced(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
 
-        add_interface_library(timemory-cuda-8)
-        target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_20,code=sm_20
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
-            -gencode=arch=compute_60,code=sm_60
-            -gencode=arch=compute_61,code=sm_61
-            -gencode=arch=compute_61,code=compute_61
-            >)
+        if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
+            add_interface_library(timemory-cuda-7)
+            target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+                -gencode=arch=compute_20,code=sm_20
+                -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_50,code=sm_50
+                -gencode=arch=compute_52,code=sm_52
+                -gencode=arch=compute_52,code=compute_52
+                >)
+
+            add_interface_library(timemory-cuda-8)
+            target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+                -gencode=arch=compute_20,code=sm_20
+                -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_50,code=sm_50
+                -gencode=arch=compute_52,code=sm_52
+                -gencode=arch=compute_60,code=sm_60
+                -gencode=arch=compute_61,code=sm_61
+                -gencode=arch=compute_61,code=compute_61
+                >)
+        endif()
 
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_50,code=sm_50
             -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
@@ -481,9 +486,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-10)
         target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
+            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -498,10 +501,16 @@ if(TIMEMORY_USE_CUDA)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-10)
         elseif(CUDA_MAJOR_VERSION MATCHES 9)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-9)
-        elseif(CUDA_MAJOR_VERSION MATCHES 8)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
-        elseif(CUDA_MAJOR_VERSION MATCHES 7)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+        else()
+            if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
+                if(CUDA_MAJOR_VERSION MATCHES 8)
+                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
+                elseif(CUDA_MAJOR_VERSION MATCHES 7)
+                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+                endif()
+            else()
+                message(WARNING "CUDA version < 9 detected. Enable TIMEMORY_DEPRECATED_CUDA_SUPPORT")
+            endif()
         endif()
 
         #   30, 32      + Kepler support

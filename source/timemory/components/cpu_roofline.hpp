@@ -71,6 +71,9 @@ struct cpu_roofline
               policy::thread_init, policy::thread_finalize, policy::global_finalize,
               policy::serialization>
 {
+    // static_assert(is_one_of<cuda::fp16_t, std::tuple<_Types...>>::value,
+    //              "Error! No CPU roofline support for cuda::fp16_t");
+
     using size_type  = std::size_t;
     using event_type = std::vector<int>;
     using array_type = std::vector<long long>;

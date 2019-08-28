@@ -70,6 +70,7 @@ using enable_if_t = typename std::enable_if<B, T>::type;
 struct cpu
 {
     using stream_t = cuda::stream_t;
+    using fp16_t   = float;
 
     template <typename _Tp>
     static _Tp* alloc(std::size_t nsize)
@@ -92,6 +93,7 @@ struct gpu
 {
 #if defined(TIMEMORY_USE_CUDA)
     using stream_t = cuda::stream_t;
+    using fp16_t   = cuda::fp16_t;
 
     template <typename _Tp>
     static _Tp* alloc(std::size_t nsize)
@@ -108,6 +110,8 @@ struct gpu
     static std::string name() { return "gpu"; }
 #else
     using stream_t = int;
+    using fp16_t   = float;
+
     template <typename _Tp>
     static _Tp* alloc(std::size_t nsize)
     {

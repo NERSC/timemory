@@ -23,6 +23,10 @@
 // SOFTWARE.
 //
 
+#if ROOFLINE_FP_BYTES == 2
+#    define TIMEMORY_CUDA_FP16
+#endif
+
 #include <chrono>
 #include <iostream>
 #include <random>
@@ -38,14 +42,27 @@ using namespace tim::component;
 #endif
 
 #if ROOFLINE_FP_BYTES == 8
-using float_type = double;
+
+using float_type     = double;
+using cpu_float_type = double;
+
 #elif ROOFLINE_FP_BYTES == 4
-using float_type = float;
+
+using float_type     = float;
+using cpu_float_type = float;
+
+#elif ROOFLINE_FP_BYTES == 2
+
+using float_type     = tim::device::gpu::fp16_t;
+using cpu_float_type = tim::device::cpu::fp16_t;
+
 #else
-#    error "ROOFLINE_FP_BYTES must be either 4 or 8"
+
+#    error "ROOFLINE_FP_BYTES must be either 2, 4, or 8"
+
 #endif
 
-using cpu_roofline_t = cpu_roofline<float_type>;
+using cpu_roofline_t = cpu_roofline<cpu_float_type>;
 using gpu_roofline_t = gpu_roofline<float_type>;
 using fib_list_t     = std::vector<int64_t>;
 using auto_tuple_t =
@@ -65,35 +82,17 @@ using default_device = device_t;
 #endif
 
 //--------------------------------------------------------------------------------------//
-//
-template <typename _Tp>
-DEVICE_CALLABLE inline void
-add_func(_Tp& a, const _Tp& b, const _Tp& c)
-{
-    a = b + c;
-}
-//--------------------------------------------------------------------------------------//
-//
-template <typename _Tp>
-DEVICE_CALLABLE inline void
-fma_func(_Tp& a, const _Tp& b, const _Tp& c)
-{
-    a = a * b + c;
-}
-
-//--------------------------------------------------------------------------------------//
-// saxpy calculation
+// amypx calculation
 //
 template <typename _Tp>
 GLOBAL_CALLABLE void
-saxpy(int64_t n, _Tp a, _Tp* x, _Tp* y, int64_t nitr)
+amypx(int64_t n, _Tp* x, _Tp* y, int64_t nitr)
 {
     auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
     for(int64_t j = 0; j < nitr; ++j)
     {
         for(int i = range.begin(); i < range.end(); i += range.stride())
-            y[i] = a * y[i] + x[i];
-        // fma_func<_Tp>(y[i], a, x[i]);
+            y[i] = static_cast<_Tp>(2.0) * y[i] + x[i];
     }
 }
 
@@ -106,13 +105,13 @@ void customize_gpu_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t
 
 template <typename _Tp>
 void
-exec_saxpy(int64_t data_size, int64_t nitr, params_t params, const _Tp& factor)
+exec_amypx(int64_t data_size, int64_t nitr, params_t params)
 {
     auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
 
     _Tp* y = tim::cuda::malloc<_Tp>(data_size);
     _Tp* x = tim::cuda::malloc<_Tp>(data_size);
-    tim::device::launch(data_size, params, saxpy<_Tp>, data_size, factor, x, y, 1);
+    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, 1);
     tim::cuda::device_sync();
     tim::device::launch(data_size, params,
                         tim::ert::initialize_buffer<device_t, _Tp, int64_t>, y, 0.0,
@@ -122,8 +121,8 @@ exec_saxpy(int64_t data_size, int64_t nitr, params_t params, const _Tp& factor)
                         data_size);
     tim::cuda::device_sync();
 
-    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "saxpy_", label);
-    tim::device::launch(data_size, params, saxpy<_Tp>, data_size, factor, x, y, nitr);
+    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
+    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, nitr);
     tim::cuda::device_sync();
     TIMEMORY_CALIPER_APPLY(0, stop);
 
@@ -142,26 +141,25 @@ main(int argc, char** argv)
     tim::cuda::device_query();
     tim::cuda::set_device(0);
 
-    int64_t    num_threads   = NUM_THREADS;               // default number of threads
-    int64_t    num_streams   = NUM_STREAMS;               // default number of streams
-    int64_t    working_size  = 1 * tim::units::megabyte;  // default working set size
-    int64_t    memory_factor = 10;                        // default multiple of 500 MB
-    int64_t    iterations    = 1000;
-    int64_t    block_size    = 1024;
-    int64_t    grid_size     = 0;
-    int64_t    data_size     = 10000000;
-    float_type factor        = 2.0;
+    int64_t num_threads   = NUM_THREADS;               // default number of threads
+    int64_t num_streams   = NUM_STREAMS;               // default number of streams
+    int64_t working_size  = 1 * tim::units::megabyte;  // default working set size
+    int64_t memory_factor = 10;                        // default multiple of 500 MB
+    int64_t iterations    = 1000;
+    int64_t block_size    = 1024;
+    int64_t grid_size     = 0;
+    int64_t data_size     = 10000000;
 
     auto usage = [&]() {
         using lli = long long int;
         printf(
             "\n%s [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = %lli] [%s = "
             "%lli] "
-            "[%s = %lli] [%s = %lli] [%s = %f]\n\n",
+            "[%s = %lli] [%s = %lli]\n\n",
             argv[0], "num_threads", (lli) num_threads, "num_streams", (lli) num_streams,
             "working_size", (lli) working_size, "memory_factor", (lli) memory_factor,
             "iterations", (lli) iterations, "block_size", (lli) block_size, "grid_size",
-            (lli) grid_size, "data_size", (lli) data_size, "factor", factor);
+            (lli) grid_size, "data_size", (lli) data_size);
     };
 
     for(auto i = 0; i < argc; ++i)
@@ -188,13 +186,15 @@ main(int argc, char** argv)
         grid_size = atol(argv[curr_arg++]);
     if(argc > curr_arg)
         data_size = atol(argv[curr_arg++]);
-    if(argc > curr_arg)
-        factor = (float_type) atol(argv[curr_arg++]);
 
     usage();
 
     customize_gpu_roofline<float_type>(num_threads, working_size, memory_factor,
                                        num_streams, grid_size, block_size);
+
+    // ensure cpu version also runs the same number of threads
+    using cpu_ert_config_t = typename cpu_roofline_t::ert_config_type<cpu_float_type>;
+    cpu_ert_config_t::get_num_threads() = [=]() { return num_threads; };
 
     params_t params(grid_size, block_size, 0, 0);
 
@@ -216,15 +216,21 @@ main(int argc, char** argv)
     _main.report_at_exit(true);
 
     //
-    // run saxpy calculations
+    // run amypx calculations
     //
-    exec_saxpy<float>(data_size / 2, iterations * 2, params, factor);
-    exec_saxpy<float>(data_size, iterations, params, factor);
-    exec_saxpy<float>(data_size * 2, iterations / 2, params, factor);
+    using fp16_t = tim::device::gpu::fp16_t;
 
-    exec_saxpy<double>(data_size / 2, iterations * 2, params, factor);
-    exec_saxpy<double>(data_size, iterations, params, factor);
-    exec_saxpy<double>(data_size * 2, iterations / 2, params, factor);
+    exec_amypx<fp16_t>(data_size / 2, iterations * 2, params);
+    exec_amypx<fp16_t>(data_size, iterations, params);
+    exec_amypx<fp16_t>(data_size * 2, iterations / 2, params);
+
+    exec_amypx<float>(data_size / 2, iterations * 2, params);
+    exec_amypx<float>(data_size, iterations, params);
+    exec_amypx<float>(data_size * 2, iterations / 2, params);
+
+    exec_amypx<double>(data_size / 2, iterations * 2, params);
+    exec_amypx<double>(data_size, iterations, params);
+    exec_amypx<double>(data_size * 2, iterations / 2, params);
 
     //
     // stop the overall timing
@@ -262,10 +268,6 @@ customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory
     ert_config_t::get_num_streams() = [=]() { return num_streams; };
     ert_config_t::get_block_size()  = [=]() { return block_size; };
     ert_config_t::get_grid_size()   = [=]() { return grid_size; };
-
-    // ensure cpu version also runs the same number of threads
-    using cpu_ert_config_t              = typename cpu_roofline_t::ert_config_type<_Tp>;
-    cpu_ert_config_t::get_num_threads() = [=]() { return num_threads; };
 
     //
     // fully customize the roofline

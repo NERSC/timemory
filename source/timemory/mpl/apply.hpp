@@ -44,6 +44,8 @@
 #    define TIMEMORY_DEVICE_LAMBDA __device__
 #else
 #    define TIMEMORY_LAMBDA
+#    define TIMEMORY_HOST_LAMBDA
+#    define TIMEMORY_DEVICE_LAMBDA
 #endif
 
 //======================================================================================//

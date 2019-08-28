@@ -40,11 +40,20 @@
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
+#    include <cuda_fp16.h>
+#    include <cuda_fp16.hpp>
 #    include <cuda_runtime_api.h>
 #endif
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include <cupti.h>
+#endif
+
+#if defined(TIMEMORY_USE_CUDA) && (defined(__NVCC__) || defined(__CUDACC__)) &&          \
+    (__CUDA_ARCH__ >= 530 || !defined(__CUDA_ARCH__))
+#    if !defined(TIMEMORY_CUDA_FP16)
+#        define TIMEMORY_CUDA_FP16
+#    endif
 #endif
 
 #include "timemory/utility/utility.hpp"
@@ -119,6 +128,13 @@ static const int host_to_host_v     = 0;
 static const int host_to_device_v   = 1;
 static const int device_to_host_v   = 2;
 static const int device_to_device_v = 3;
+#endif
+
+// half-precision floating point
+#if !defined(TIMEMORY_CUDA_FP16)
+using fp16_t = float;
+#else
+using fp16_t                        = half;
 #endif
 
 //--------------------------------------------------------------------------------------//

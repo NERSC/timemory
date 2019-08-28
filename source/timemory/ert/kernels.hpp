@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/details/settings.hpp"
@@ -106,6 +107,42 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
     }
 }
 
+//--------------------------------------------------------------------------------------//
+//
+//      GPU -- multiple trial
+//
+//--------------------------------------------------------------------------------------//
+/*
+template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
+          typename _FuncStore,
+          enable_if_t<(std::is_same<_Device, device::gpu>::value &&
+                       std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
+GLOBAL_CALLABLE void
+ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
+           _FuncStore&& store_func)
+{
+    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
+    constexpr size_t NUM_REP = _Nrep / 2;
+    constexpr size_t MOD_REP = _Nrep % 2;
+    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+
+    //_Tp alpha = static_cast<_Tp>(0.5);
+    __half alpha = __float2half(static_cast<float>(0.5));
+    for(_Intp j = 0; j < ntrials; ++j)
+    {
+        for(auto i = range.begin(); i < range.end(); i += range.stride())
+        {
+            //_Tp beta = static_cast<_Tp>(0.8);
+            __half beta = __float2half(static_cast<float>(0.8));
+            //apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i],
+alpha); beta = __hfma(beta, A[i], alpha); A[i] = beta;
+            //store_func(A[i], beta);
+        }
+        // alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
+        alpha = __hmul(alpha, __float2half(static_cast<float>(1.0 - 1.0e-8)));
+    }
+}
+*/
 //--------------------------------------------------------------------------------------//
 //
 //      CPU -- single trial

@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/details/settings.hpp"
@@ -329,14 +330,14 @@ struct executor<device::gpu, _Tp, _ExecData, _Counter>
     static void execute(counter_type& _counter)
     {
         // functions
-        auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
+        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
             a = b + c;
         };
         // auto mult_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
         //    a = b * c;
         //};
-        auto fma_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
+        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
             a = a * b + c;
         };
 

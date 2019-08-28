@@ -24,14 +24,22 @@ set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
 
 find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
 
+add_library(gpu-fp-half   INTERFACE)
 add_library(gpu-fp-single INTERFACE)
 add_library(gpu-fp-double INTERFACE)
 
+target_compile_definitions(gpu-fp-half   INTERFACE ROOFLINE_FP_BYTES=2)
 target_compile_definitions(gpu-fp-single INTERFACE ROOFLINE_FP_BYTES=4)
 target_compile_definitions(gpu-fp-double INTERFACE ROOFLINE_FP_BYTES=8)
 
+target_link_libraries(gpu-fp-half   INTERFACE gpu-roofline-compile-options)
 target_link_libraries(gpu-fp-single INTERFACE gpu-roofline-compile-options)
 target_link_libraries(gpu-fp-double INTERFACE gpu-roofline-compile-options)
+
+# using half-precision
+add_executable(test-gpu-roofline-half            ${EXE_NAME}.cpp)
+target_link_libraries(test-gpu-roofline-half     timemory-gpu-roofline-example gpu-fp-half)
+set_target_properties(test-gpu-roofline-half     PROPERTIES OUTPUT_NAME ${EXE_NAME}.hp)
 
 # using single-precision
 add_executable(test-gpu-roofline-single          ${EXE_NAME}.cpp)
@@ -43,4 +51,10 @@ add_executable(test-gpu-roofline-double          ${EXE_NAME}.cpp)
 target_link_libraries(test-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
 set_target_properties(test-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
-install(TARGETS test-gpu-roofline-single test-gpu-roofline-double DESTINATION bin)
+install(
+    TARGETS
+        test-gpu-roofline-half
+        test-gpu-roofline-single
+        test-gpu-roofline-double
+    DESTINATION
+        bin)

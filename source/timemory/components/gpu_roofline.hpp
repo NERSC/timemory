@@ -188,7 +188,30 @@ public:
             using strvec_t = std::vector<string_t>;
 
             strvec_t events  = { "active_warps", "global_load", "global_store" };
-            strvec_t metrics = { "ldst_executed", "ldst_issued" };
+            strvec_t metrics = { "ldst_executed",
+                                 "ldst_issued",
+                                 "gld_transactions",
+                                 "gst_transactions",
+                                 "atomic_transactions",
+                                 "local_load_transactions",
+                                 "local_store_transactions",
+                                 "shared_load_transactions",
+                                 "shared_store_transactions",
+                                 "l2_read_transactions",
+                                 "l2_write_transactions",
+                                 "dram_read_transactions",
+                                 "dram_write_transactions",
+                                 "system_read_transactions",
+                                 "system_write_transactions" };
+
+#if defined(TIMEMORY_CUDA_FP16)
+            if(is_one_of<cuda::fp16_t, types_tuple>::value)
+            {
+                for(string_t itr : { "flop_count_hp", "flop_count_hp_add",
+                                     "flop_count_hp_mul", "flop_count_hp_fma" })
+                    metrics.push_back(itr);
+            }
+#endif
 
             if(is_one_of<float, types_tuple>::value)
             {
