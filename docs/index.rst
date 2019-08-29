@@ -21,7 +21,7 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
-`TiMemory <https://github.com/jrmadsen/TiMemory.git>`_ C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities.
+`TiMemory <https://github.com/NERSC/timemory.git>`_ C / C++ / CUDA / Python Timing + Memory + Hardware Counter Utilities.
 
 .. image:: https://anaconda.org/jrmadsen/TiMemory/badges/license.svg
    :target: https://anaconda.org/jrmadsen/TiMemory
@@ -30,8 +30,8 @@ Indices and tables
 Build Status
 ############
 
-.. image:: https://travis-ci.org/jrmadsen/TiMemory.svg?branch=master
-   :target: https://travis-ci.org/jrmadsen/TiMemory
+.. image:: https://travis-ci.org/NERSC/timemory.svg?branch=master
+   :target: https://travis-ci.org/NERSC/timemory
 
 .. image:: https://ci.appveyor.com/api/projects/status/p7m76ovx7sg781pf/branch/master?svg=true
    :target: https://ci.appveyor.com/project/jrmadsen/TiMemory/branch/master
@@ -77,9 +77,9 @@ Features
 Contribute
 ==========
 
-* Issue Tracker: https://github.com/jrmadsen/TiMemory/issues
-* Documentation: https://TiMemory.readthedocs.io/en/latest/
-* Source Code: https://github.com/jrmadsen/TiMemory/tree/master
+* Issue Tracker: https://github.com/NERSC/timemory/issues
+* Documentation: https://timemory.readthedocs.io/en/latest/
+* Source Code: https://github.com/NERSC/timemory/tree/master
 
 Table of Contents
 =================
@@ -103,7 +103,7 @@ License
 =======
 
 The project is licensed under the
-`MIT <https://github.com/jrmadsen/TiMemory/blob/master/LICENSE>`_ license.
+`MIT <https://github.com/NERSC/timemory/blob/master/LICENSE>`_ license.
 
 
 Indices and tables

@@ -139,7 +139,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_LABEL(...)
  *
- * helper macro for "__FUNCTION__" + ... + '@__FILE__':__LINE__" tagging
+ * helper macro for "__FUNCTION__" + ... + @'__FILE__':__LINE__" tagging
  *
  * Usage:
  *
