@@ -432,7 +432,7 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
     auto env_result = tim::get_env(env_var, default_env);
     initialize(obj, enumerate_components(tim::delimit(env_result)));
 }
-}
+}  // namespace env
 
 //--------------------------------------------------------------------------------------//
 

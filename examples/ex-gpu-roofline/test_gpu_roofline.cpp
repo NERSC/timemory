@@ -71,6 +71,7 @@ using device_t       = tim::device::gpu;
 using params_t       = tim::device::params<device_t>;
 using stream_t       = tim::cuda::stream_t;
 using default_device = device_t;
+using fp16_t         = tim::cuda::fp16_t;
 
 // unless specified number of threads, use the number of available cores
 #if !defined(NUM_THREADS)
@@ -97,6 +98,24 @@ amypx(int64_t n, _Tp* x, _Tp* y, int64_t nitr)
 }
 
 //--------------------------------------------------------------------------------------//
+// amypx calculation
+//
+template <>
+GLOBAL_CALLABLE void
+amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
+{
+    auto range = tim::device::grid_strided_range<default_device, 0, int32_t>(n);
+    for(int64_t j = 0; j < nitr; ++j)
+    {
+        for(int i = range.begin(); i < range.end(); i += range.stride())
+        {
+            fp16_t a = { 2.0, 2.0 };
+            y[i]     = a * y[i] + x[i];
+        }
+    }
+}
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 void customize_gpu_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
@@ -119,6 +138,36 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params)
     tim::device::launch(data_size, params,
                         tim::ert::initialize_buffer<device_t, _Tp, int64_t>, x, 1.0,
                         data_size);
+    tim::cuda::device_sync();
+
+    TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);
+    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, nitr);
+    tim::cuda::device_sync();
+    TIMEMORY_CALIPER_APPLY(0, stop);
+
+    tim::cuda::free(x);
+    tim::cuda::free(y);
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <>
+void
+exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params)
+{
+    using _Tp  = fp16_t;
+    auto label = TIMEMORY_JOIN("_", data_size, nitr, tim::demangle(typeid(_Tp).name()));
+
+    _Tp* y = tim::cuda::malloc<_Tp>(data_size);
+    _Tp* x = tim::cuda::malloc<_Tp>(data_size);
+    tim::device::launch(data_size, params, amypx<_Tp>, data_size, x, y, 1);
+    tim::cuda::device_sync();
+    tim::device::launch(data_size, params,
+                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, y,
+                        _Tp({ 0.0, 0.0 }), data_size);
+    tim::device::launch(data_size, params,
+                        tim::ert::initialize_buffer<device_t, _Tp, int64_t>, x,
+                        _Tp({ 1.0, 1.0 }), data_size);
     tim::cuda::device_sync();
 
     TIMEMORY_BLANK_CALIPER(0, auto_tuple_t, "amypx_", label);

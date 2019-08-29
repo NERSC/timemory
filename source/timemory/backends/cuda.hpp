@@ -132,9 +132,19 @@ static const int device_to_device_v = 3;
 
 // half-precision floating point
 #if !defined(TIMEMORY_CUDA_FP16)
+/*
+struct half2
+{
+    operator float&() { return value; }
+    operator float() { return value; }
+    operator const float&() const { return value; }
+private:
+    float value;
+};
+*/
 using fp16_t = float;
 #else
-using fp16_t                        = half;
+using fp16_t                        = half2;
 #endif
 
 //--------------------------------------------------------------------------------------//

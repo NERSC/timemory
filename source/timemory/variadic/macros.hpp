@@ -53,7 +53,7 @@ namespace tim
 {
 // e.g. tim::str::join(...)
 using str = tim::apply<std::string>;
-}
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 

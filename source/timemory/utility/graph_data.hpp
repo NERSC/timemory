@@ -136,4 +136,4 @@ private:
     iterator m_current = nullptr;
     iterator m_head    = nullptr;
 };
-}
+}  // namespace tim

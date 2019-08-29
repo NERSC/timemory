@@ -165,8 +165,8 @@ struct requires_json : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
-}  // trait
-}  // tim
+}  // namespace trait
+}  // namespace tim
 
 //======================================================================================//
 //
@@ -717,5 +717,5 @@ struct external_output_handling<component::caliper> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-}  // component
-}  // tim
+}  // namespace trait
+}  // namespace tim

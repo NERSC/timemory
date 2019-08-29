@@ -9,33 +9,34 @@ AlignOperands: true
 AlignTrailingComments: true
 AllowShortCaseLabelsOnASingleLine: true
 AllowShortFunctionsOnASingleLine: All
-AllowShortIfStatementsOnASingleLine: false
-AllowShortLoopsOnASingleLine: false
+AllowShortIfStatementsOnASingleLine: true
+AllowShortLoopsOnASingleLine: true
 AlwaysBreakAfterDefinitionReturnType: TopLevel
 AlwaysBreakAfterReturnType: TopLevel
-AlwaysBreakBeforeMultilineStrings: true
+AlwaysBreakBeforeMultilineStrings: false
 AlwaysBreakTemplateDeclarations: true
 BasedOnStyle: Mozilla
 BinPackArguments: true
 BinPackParameters: true
 BraceWrapping:
-    AfterClass:             true
+    AfterClass:             false
     AfterControlStatement:  true
-    AfterEnum:              true
+    AfterEnum:              false
     AfterFunction:          true
-    AfterNamespace:         true
-    AfterStruct:            true
-    AfterUnion:             true
-    AfterExternBlock:       true
+    AfterNamespace:         false
+    AfterStruct:            false
+    AfterUnion:             false
+    AfterExternBlock:       false
     BeforeCatch:            false
     BeforeElse:             false
     IndentBraces:           false
     SplitEmptyFunction:     false
     SplitEmptyRecord:       false
     SplitEmptyNamespace:    false
-BreakBeforeBraces: Allman
+BreakBeforeBraces: Custom
 BreakBeforeInheritanceComma: true
 ColumnLimit: 90
+CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0
 ContinuationIndentWidth: 4

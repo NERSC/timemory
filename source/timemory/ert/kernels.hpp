@@ -84,7 +84,8 @@ ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func
 //--------------------------------------------------------------------------------------//
 
 template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
-          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0>
+          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0,
+          enable_if_t<!(std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
 GLOBAL_CALLABLE void
 ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
@@ -109,40 +110,41 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
 
 //--------------------------------------------------------------------------------------//
 //
-//      GPU -- multiple trial
+//      GPU -- multiple trial -- packed (2) half-precision
 //
 //--------------------------------------------------------------------------------------//
-/*
+
 template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
-          typename _FuncStore,
-          enable_if_t<(std::is_same<_Device, device::gpu>::value &&
-                       std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
+          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0,
+          enable_if_t<(std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
 GLOBAL_CALLABLE void
 ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
 {
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
-    constexpr size_t NUM_REP = _Nrep / 2;
-    constexpr size_t MOD_REP = _Nrep % 2;
-    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
+    constexpr size_t NUM_REP = _Nrep / 4;
+    constexpr size_t MOD_REP = _Nrep % 4;
+    auto             range   = device::grid_strided_range<_Device, 0, int32_t>(nsize);
 
-    //_Tp alpha = static_cast<_Tp>(0.5);
-    __half alpha = __float2half(static_cast<float>(0.5));
-    for(_Intp j = 0; j < ntrials; ++j)
+    //__half2 alpha = __floats2half2_rn(0.5, 0.5);
+    _Tp alpha = { 0.5, 0.5 };
+    for(int32_t j = 0; j < ntrials; ++j)
     {
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
-            //_Tp beta = static_cast<_Tp>(0.8);
-            __half beta = __float2half(static_cast<float>(0.8));
-            //apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i],
-alpha); beta = __hfma(beta, A[i], alpha); A[i] = beta;
-            //store_func(A[i], beta);
+            //__half2 beta = __floats2half2_rn(0.8, 0.8);
+            // for(int32_t k = 0; k < NUM_REP + MOD_REP; ++k)
+            //    beta = __hfma2(beta, A[i], alpha);
+            _Tp beta = { 0.8, 0.8 };
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
+            store_func(A[i], beta);
+            // A[i] = beta;
         }
-        // alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
-        alpha = __hmul(alpha, __float2half(static_cast<float>(1.0 - 1.0e-8)));
+        alpha *= { 1.0 - 1.0e-8, 1.0 - 1.0e-8 };
+        // alpha = __hmul2(alpha, __floats2half2_rn(1.0 - 1.0e-8, 1.0 - 1.0e-8));
     }
 }
-*/
+
 //--------------------------------------------------------------------------------------//
 //
 //      CPU -- single trial
@@ -196,7 +198,9 @@ ops_kernel(_FuncOps&& ops_func, _FuncStore&& store_func, const _Intp& nsize, _Tp
 }
 */
 //--------------------------------------------------------------------------------------//
-
+///
+///     This is the "main" function for ERT
+///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
           typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
@@ -204,11 +208,13 @@ void
 ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
          _FuncStore&& store_func)
 {
-    using stream_list_t = std::vector<cuda::stream_t>;
-    using thread_list_t = std::vector<std::thread>;
-    using params_t      = device::params<_Device>;
-    using _Intp         = int32_t;
-    using ull           = long long unsigned;
+    using stream_list_t   = std::vector<cuda::stream_t>;
+    using thread_list_t   = std::vector<std::thread>;
+    using device_params_t = device::params<_Device>;
+    using _Intp           = int32_t;
+    using ull             = long long unsigned;
+
+    constexpr bool is_gpu = std::is_same<_Device, device::gpu>::value;
 
     if(settings::verbose() > 0 || settings::debug())
         printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
@@ -233,6 +239,8 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
     }
 
     auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        // execute the callback
+        _counter.configure(tid);
         // allocate buffer
         auto     buf = _counter.get_buffer();
         uint64_t n   = _counter.params.working_set_min;
@@ -245,8 +253,8 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
         //
         //      grid_size = ((data_size + block_size - 1) / block_size)
         //
-        params_t params(_counter.params.grid_size, _counter.params.block_size,
-                        _counter.params.shmem_size, 0);
+        device_params_t dev_params(_counter.params.grid_size, _counter.params.block_size,
+                                   _counter.params.shmem_size, 0);
         //
         if(n > _counter.nsize)
         {
@@ -272,13 +280,18 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
                     (ull) _Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
             }
 
-            // make sure all streams are synced
-            for(auto& itr : streams)
-                cuda::stream_sync(itr);
+            auto _itr_params = _counter.params;
 
-            // sync the streams
-            if(nstreams < 2)
-                cuda::device_sync();
+            if(is_gpu)
+            {
+                // make sure all streams are synced
+                for(auto& itr : streams)
+                    cuda::stream_sync(itr);
+
+                // sync the streams
+                if(nstreams < 2)
+                    cuda::device_sync();
+            }
 
             // wait master thread notifies to proceed
             if(fbarrier)
@@ -302,49 +315,62 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
                     int32_t _n      = nchunk + ((i + 1 == nstreams) ? nmodulo : 0);
                     auto    _buf    = buf + offset;
                     auto    _stream = streams.at(i % streams.size());
+                    auto    _params = dev_params;  // copy of the parameters
                     device::launch(
-                        _n, _stream, params,
+                        _n, _stream, _params,
                         ops_kernel<_Nops, _Device, _Intp, _Tp, _FuncOps, _FuncStore>,
                         ntrials, _n, _buf, std::forward<_FuncOps>(ops_func),
                         std::forward<_FuncStore>(store_func));
+                    if(i == 0)
+                        _itr_params.grid_size = _params.grid;
+                    else
+                        _itr_params.grid_size =
+                            std::max<int64_t>(_itr_params.grid_size, _params.grid);
                 }
             }
             else
             {
                 device::launch(
-                    n, params,
+                    n, dev_params,
                     ops_kernel<_Nops, _Device, _Intp, _Tp, _FuncOps, _FuncStore>, ntrials,
                     n, buf, std::forward<_FuncOps>(ops_func),
                     std::forward<_FuncStore>(store_func));
+
+                _itr_params.grid_size = dev_params.grid;
             }
 
-            for(auto& itr : streams)
-                cuda::stream_sync(itr);
+            if(is_gpu)
+            {
+                for(auto& itr : streams)
+                    cuda::stream_sync(itr);
 
-            // sync the streams
-            if(nstreams < 2)
-                cuda::device_sync();
+                // sync the streams
+                if(nstreams < 2)
+                    cuda::device_sync();
+            }
 
             // wait master thread notifies to proceed
             if(lbarrier)
                 lbarrier->spin_wait();
 
-            cuda::device_sync();
-
             // stop the timer or anything else being recorded
             ct.stop();
             // store the result
             if(tid == 0)
-                _counter.record(ct, n, ntrials, _Nops);
+                _counter.record(ct, n, ntrials, _Nops, _itr_params);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        cuda::device_sync();
+
+        if(is_gpu)
+            cuda::device_sync();
         _counter.destroy_buffer(buf);
     };
 
     mpi::barrier();  // synchronize MPI processes
-    cuda::device_sync();
+
+    if(is_gpu)
+        cuda::device_sync();
 
     if(_counter.params.nthreads > 1)
     {
@@ -367,12 +393,17 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
         _opfunc(0, nullptr, nullptr);
     }
 
-    cuda::device_sync();
+    if(is_gpu)
+        cuda::device_sync();
+
     mpi::barrier();  // synchronize MPI processes
 }
 
 //--------------------------------------------------------------------------------------//
-
+///
+///     This is invokes the "main" function for ERT for all the desired "FLOPs" that
+///     are unrolled in the kernel
+///
 template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
           typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
           enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>

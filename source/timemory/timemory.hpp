@@ -164,7 +164,7 @@ using recommended_list_t = recommended_auto_list_t::component_type;
 using recommended_auto_hybrid_t = auto_hybrid<recommended_tuple_t, recommended_list_t>;
 
 using recommended_hybrid_t = component_hybrid<recommended_tuple_t, recommended_list_t>;
-}
+}  // namespace tim
 
 //======================================================================================//
 
@@ -211,6 +211,50 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_STORAGE(priority_context_switch)
 
 #    endif  // defined(TIMEMORY_EXTERN_INIT)
+
+//======================================================================================//
+
+#    include <fstream>
+#    include <sstream>
+#    include <string>
+
+#    include "timemory/backends/mpi.hpp"
+#    include "timemory/utility/serializer.hpp"
+
+//======================================================================================//
+
+namespace tim
+{
+namespace ert
+{
+inline void
+serialize(std::string fname, const exec_data& obj)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa.setNextName("rank");
+        oa.startNode();
+        auto rank = tim::mpi::rank();
+        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("data", obj));
+        oa.finishNode();
+    }
+    fname = settings::compose_output_filename(fname, ".json");
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+        ofs << ss.str() << std::endl;
+    else
+    {
+        throw std::runtime_error(std::string("Error opening output file: " + fname));
+    }
+}
+}  // namespace ert
+}  // namespace tim
 
 //======================================================================================//
 

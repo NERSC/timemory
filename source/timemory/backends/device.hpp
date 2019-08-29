@@ -124,7 +124,7 @@ struct gpu
         delete[] ptr;
     }
 
-    static std::string name() { return "cpu"; }
+    static std::string name() { return "gpu_on_cpu"; }
 #endif
 };
 

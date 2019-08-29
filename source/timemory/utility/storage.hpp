@@ -65,7 +65,7 @@ namespace tim
 namespace cupti
 {
 struct result;
-}  // cupti
+}  // namespace cupti
 
 //--------------------------------------------------------------------------------------//
 //

@@ -21,3 +21,5 @@ add_subdirectory(ex-cpu-roofline)
 add_subdirectory(ex-gpu-roofline)
 add_subdirectory(ex-cuda-event)
 add_subdirectory(ex-caliper)
+add_subdirectory(ex-ert)
+

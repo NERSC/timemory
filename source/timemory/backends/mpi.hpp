@@ -101,7 +101,7 @@ is_initialized()
 //--------------------------------------------------------------------------------------//
 
 inline void
-initialize(int argc, char** argv)
+initialize(int& argc, char**& argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
