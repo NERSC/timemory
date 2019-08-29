@@ -125,7 +125,7 @@ struct configuration
 
     static get_uint64_t& get_max_data_size()
     {
-        static get_uint64_t _instance = []() {
+        static get_uint64_t _instance = []() -> uint64_t {
             if(settings::ert_max_data_size() > 0)
                 return settings::ert_max_data_size();
             static constexpr bool is_gpu = device::is_gpu<_Device>::value;

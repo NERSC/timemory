@@ -773,10 +773,10 @@ struct profiler
     const strvec_t& get_metric_names() const { return m_metric_names; }
 
 private:
-    bool     m_is_running    = false;
-    int      m_device_num    = 0;
-    int      m_metric_passes = 0;
-    int      m_event_passes  = 0;
+    // bool     m_is_running    = false;
+    // int      m_device_num    = 0;
+    // int      m_metric_passes = 0;
+    // int      m_event_passes  = 0;
     strvec_t m_event_names;
     strvec_t m_metric_names;
 };
