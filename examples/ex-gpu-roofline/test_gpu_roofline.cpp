@@ -338,7 +338,7 @@ customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory
             ert_params_t params(working_size, memory_factor * lm_size, num_threads,
                                 num_streams, grid_size, block_size);
             // create the operation _counter
-            ert_counter_t _counter(params, 64, data);
+            ert_counter_t _counter(params, data, 64);
             return _counter;
         };
 

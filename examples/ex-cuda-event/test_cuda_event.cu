@@ -1285,8 +1285,9 @@ test_9_cupti_counters()
         a = a * b + c;
     };
 
-    tim::ert::exec_params params(16, 64 * 64);
-    auto                  _counter = new counter_t(params, 64);
+    tim::ert::exec_params                params(16, 64 * 64);
+    std::shared_ptr<tim::ert::exec_data> exec_data(new tim::ert::exec_data);
+    auto                                 _counter = new counter_t(params, exec_data, 64);
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data;
