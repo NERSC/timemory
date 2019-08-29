@@ -311,9 +311,9 @@ public:
         // ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, mult_func, store_func);
 
         // set the label
-        _counter.label = "scalar_fma_" + dtype;
+        // _counter.label = "scalar_fma_" + dtype;
         // run the kernels
-        ops_main<1>(_counter, fma_func, store_func);
+        // ops_main<1>(_counter, fma_func, store_func);
 
         // set the label
         _counter.label = "vector_fma_" + dtype;
@@ -438,9 +438,9 @@ public:
         // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
 
         // set the label
-        _counter.label = "scalar_fma_" + dtype;
+        // _counter.label = "scalar_fma_" + dtype;
         // run the kernels
-        ops_main<1>(_counter, fma_func, store_func);
+        // ops_main<1>(_counter, fma_func, store_func);
 
         // set the label
         _counter.label = "vector_fma_" + dtype;
@@ -569,9 +569,9 @@ public:
         // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
 
         // set the label
-        _counter.label = "scalar_fma_" + dtype;
+        // _counter.label = "scalar_fma_" + dtype;
         // run the kernels
-        ops_main<1>(_counter, fma_func, store_func);
+        // ops_main<1>(_counter, fma_func, store_func);
 
         // set the label
         _counter.label = "vector_fma_" + dtype;
