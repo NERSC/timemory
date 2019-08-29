@@ -121,27 +121,21 @@ GLOBAL_CALLABLE void
 ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
            _FuncStore&& store_func)
 {
-    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
+    // divide by four instead of two here because fp16_t is a packed operation
     constexpr size_t NUM_REP = _Nrep / 4;
     constexpr size_t MOD_REP = _Nrep % 4;
     auto             range   = device::grid_strided_range<_Device, 0, int32_t>(nsize);
 
-    //__half2 alpha = __floats2half2_rn(0.5, 0.5);
     _Tp alpha = { 0.5, 0.5 };
     for(int32_t j = 0; j < ntrials; ++j)
     {
         for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
-            //__half2 beta = __floats2half2_rn(0.8, 0.8);
-            // for(int32_t k = 0; k < NUM_REP + MOD_REP; ++k)
-            //    beta = __hfma2(beta, A[i], alpha);
             _Tp beta = { 0.8, 0.8 };
             apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
             store_func(A[i], beta);
-            // A[i] = beta;
         }
         alpha *= { 1.0 - 1.0e-8, 1.0 - 1.0e-8 };
-        // alpha = __hmul2(alpha, __floats2half2_rn(1.0 - 1.0e-8, 1.0 - 1.0e-8));
     }
 }
 

@@ -164,6 +164,7 @@ manager::exit_hook()
     }
     tim::papi::shutdown();
     // tim::cupti::shutdown();
+    tim::mpi::finalize();
 }
 
 //======================================================================================//

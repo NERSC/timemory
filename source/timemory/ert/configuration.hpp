@@ -296,24 +296,9 @@ public:
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_add_" + dtype;
-        // run the kernels
-        // ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, add_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_mult_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, mult_func, store_func);
-
-        // set the label
         // _counter.label = "vector_mult_" + dtype;
         // run the kernels
         // ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, mult_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_fma_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, fma_func, store_func);
 
         // set the label
         _counter.label = "vector_fma_" + dtype;
@@ -423,155 +408,9 @@ public:
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_add_" + dtype;
-        // run the kernels
-        // ops_main<4, 16, 64, 128, 256, 512>(_counter, add_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_mult_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, mult_func, store_func);
-
-        // set the label
         // _counter.label = "vector_mult_" + dtype;
         // run the kernels
         // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_fma_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, fma_func, store_func);
-
-        // set the label
-        _counter.label = "vector_fma_" + dtype;
-        // run the kernels
-        ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
-    }
-};
-
-//======================================================================================//
-
-template <typename _ExecData, typename _Counter>
-struct executor<device::gpu, cuda::fp16_t, _ExecData, _Counter>
-{
-    using _Device = device::gpu;
-    using _Tp     = cuda::fp16_t;
-
-    static_assert(std::is_same<_Device, device::gpu>::value,
-                  "Error! Device should be gpu");
-
-    //----------------------------------------------------------------------------------//
-    // useful aliases
-    //
-    using configuration_type = configuration<_Device, _Tp, _ExecData, _Counter>;
-    using counter_type       = counter<_Device, _Tp, _ExecData, _Counter>;
-    using this_type          = executor<_Device, _Tp, _ExecData, _Counter>;
-    using callback_type      = std::function<void(counter_type&)>;
-
-public:
-    //----------------------------------------------------------------------------------//
-    //  standard invocation with no callback specialization
-    //
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data)
-    {
-        try
-        {
-            auto _counter = config.executor(_data);
-            callback(_counter);
-        }
-        catch(std::exception& e)
-        {
-            std::cerr << "\n\nEXCEPTION:\n";
-            std::cerr << "\t" << e.what() << "\n\n" << std::endl;
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    //  specialize the counter callback
-    //
-    template <typename _Func>
-    executor(configuration_type& config, std::shared_ptr<_ExecData> _data,
-             _Func&& _counter_callback)
-    {
-        try
-        {
-            auto _counter = config.executor(_data);
-            _counter.set_callback(std::forward<_Func>(_counter_callback));
-            callback(_counter);
-        }
-        catch(std::exception& e)
-        {
-            std::cerr << "\n\nEXCEPTION:\n";
-            std::cerr << "\t" << e.what() << "\n\n" << std::endl;
-        }
-    }
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    callback_type callback = get_callback();
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    static callback_type& get_callback()
-    {
-        static callback_type _instance = [](counter_type& _counter) {
-            this_type::execute(_counter);
-        };
-        return _instance;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // The enclosing parent function for an extended __host__ __device__
-    // lambda must allow its address to be taken
-    static void execute(counter_type& _counter)
-    {
-        // functions
-        auto store_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
-        auto add_func   = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-            a = b + c;
-            // a = __hadd2(b, c);
-        };
-        // auto mult_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-        //    a = b * c;
-        //};
-        auto fma_func = [] TIMEMORY_DEVICE_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
-            a = a * b + c;
-            // a = __hfma2(a, b, c);
-        };
-
-        auto dtype = demangle(typeid(_Tp).name());
-
-        // set bytes per element
-        _counter.bytes_per_element = sizeof(_Tp);
-        // set number of memory accesses per element from two functions
-        _counter.memory_accesses_per_element = 2;
-
-        // set the label
-        _counter.label = "scalar_add_" + dtype;
-        // run the kernels
-        ops_main<1>(_counter, add_func, store_func);
-
-        // set the label
-        // _counter.label = "vector_add_" + dtype;
-        // run the kernels
-        // ops_main<4, 16, 64, 128, 256, 512>(_counter, add_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_mult_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, mult_func, store_func);
-
-        // set the label
-        // _counter.label = "vector_mult_" + dtype;
-        // run the kernels
-        // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
-
-        // set the label
-        // _counter.label = "scalar_fma_" + dtype;
-        // run the kernels
-        // ops_main<1>(_counter, fma_func, store_func);
 
         // set the label
         _counter.label = "vector_fma_" + dtype;

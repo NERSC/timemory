@@ -71,7 +71,7 @@ using init_list_t    = std::set<uint64_t>;
 template <typename _Tp, typename _Device>
 void
 run_ert(ert_data_ptr_t, int64_t num_threads, int64_t min_size, int64_t max_data,
-        int64_t num_streams = 0, int64_t block_size = 0, bool multi_device = false);
+        int64_t num_streams = 0, int64_t block_size = 0, int64_t num_gpus = 0);
 
 //--------------------------------------------------------------------------------------//
 
@@ -81,6 +81,10 @@ main(int argc, char** argv)
     settings::verbose() = 1;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
     mpi::initialize(argc, argv);
+
+    // determine how many GPUs to execute on (or on CPU if zero)
+    int num_gpus = cuda::device_count();
+    if(num_gpus > 0 && argc > 1) num_gpus = std::min<int>(num_gpus, atoi(argv[1]));
 
     auto data  = ert_data_ptr_t(new ert_data_t());
     auto nproc = mpi::size();
@@ -101,23 +105,33 @@ main(int argc, char** argv)
         if(entry > 0) cpu_num_threads.insert(entry);
     }
 
-    // execute the single-precision ERT calculations
-    for(auto nthread : cpu_num_threads)
-        run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
-
-    // execute the double-precision ERT calculations
-    for(auto nthread : cpu_num_threads)
-        run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
-
-    if(cuda::device_count() > 0)
+    if(num_gpus < 1)
     {
+        // execute the single-precision ERT calculations
+        for(auto nthread : cpu_num_threads)
+            run_ert<float, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
+
+        // execute the double-precision ERT calculations
+        for(auto nthread : cpu_num_threads)
+            run_ert<double, device::cpu>(data, nthread, cpu_min_size, cpu_max_data);
+    } else  // num_gpus >= 1
+    {
+        // execute the half-precision ERT calculations
+        for(auto nthread : cpu_num_threads)
+            for(auto nstream : gpu_num_streams)
+                for(auto block : gpu_block_sizes)
+                {
+                    run_ert<fp16_t, device::gpu>(data, nthread, gpu_min_size,
+                                                 gpu_max_data, nstream, block, num_gpus);
+                }
+
         // execute the single-precision ERT calculations
         for(auto nthread : cpu_num_threads)
             for(auto nstream : gpu_num_streams)
                 for(auto block : gpu_block_sizes)
                 {
                     run_ert<float, device::gpu>(data, nthread, gpu_min_size, gpu_max_data,
-                                                nstream, block);
+                                                nstream, block, num_gpus);
                 }
 
         // execute the double-precision ERT calculations
@@ -126,24 +140,8 @@ main(int argc, char** argv)
                 for(auto block : gpu_block_sizes)
                 {
                     run_ert<double, device::gpu>(data, nthread, gpu_min_size,
-                                                 gpu_max_data, nstream, block);
+                                                 gpu_max_data, nstream, block, num_gpus);
                 }
-    }
-
-    if(cuda::device_count() > 1)
-    {
-        // execute the single-precision ERT calculations on multiple GPUs
-        for(auto nthread : cpu_num_threads)
-        {
-            if(nthread == 1) continue;
-            for(auto nstream : gpu_num_streams)
-                for(auto block : gpu_block_sizes)
-                {
-                    cuda::set_device(0);  // ensure we always start on GPU 0
-                    run_ert<float, device::gpu>(data, nthread, gpu_min_size, gpu_max_data,
-                                                nstream, block, true);
-                }
-        }
     }
 
     std::string fname = "ert_results";
@@ -157,17 +155,17 @@ main(int argc, char** argv)
 template <typename _Tp, typename _Device>
 void
 run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_data,
-        int64_t num_streams, int64_t block_size, bool multi_device)
+        int64_t num_streams, int64_t block_size, int64_t num_gpus)
 {
     // create a label for this test
     auto dtype = tim::demangle(typeid(_Tp).name());
     auto htype = _Device::name();
-    auto label =
-        TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, min_size, max_data);
+    auto label = TIMEMORY_JOIN("_", __FUNCTION__, dtype, htype, num_threads, "threads",
+                               min_size, "min-ws", max_data, "max-size");
     if(std::is_same<_Device, device::gpu>::value)
     {
-        label = TIMEMORY_JOIN("_", label, num_streams, block_size);
-        if(multi_device) label += "_multi_device";
+        label = TIMEMORY_JOIN("_", label, num_gpus, "gpus", num_streams, "streams",
+                              block_size, "thr-per-blk");
     }
 
     printf("\n[ert-example]> Executing %s...\n", label.c_str());
@@ -190,7 +188,7 @@ run_ert(ert_data_ptr_t data, int64_t num_threads, int64_t min_size, int64_t max_
     // create a callback function that sets the device based on the thread-id
     //
     auto set_counter_device = [=](uint64_t tid, ert_counter_type&) {
-        if(multi_device) cuda::set_device(tid % cuda::device_count());
+        if(num_gpus > 0) cuda::set_device(tid % num_gpus);
     };
 
     //
