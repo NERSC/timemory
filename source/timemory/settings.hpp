@@ -59,42 +59,12 @@ timemory_finalize();
 
 namespace settings
 {
-//--------------------------------------------------------------------------------------//
-
-inline string_t tolower(string_t);
-inline string_t toupper(string_t);
 inline void
 parse();
-inline string_t
-get_output_prefix();
-inline string_t
-compose_output_filename(const std::string& _tag, std::string _ext);
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace settings
-
 }  // namespace tim
 
 //======================================================================================//
-
-inline std::string
-tim::settings::tolower(std::string str)
-{
-    for(auto& itr : str)
-        itr = ::tolower(itr);
-    return str;
-}
-
-//======================================================================================//
-
-inline std::string
-tim::settings::toupper(std::string str)
-{
-    for(auto& itr : str)
-        itr = ::toupper(itr);
-    return str;
-}
 
 //======================================================================================//
 
@@ -199,8 +169,8 @@ tim::settings::process()
 {
     using namespace tim::component;
     using category_timing  = impl::filter_false<trait::is_timing_category, _Tuple>;
-    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
     using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
+    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
     using has_memory_units = impl::filter_false<trait::uses_memory_units, _Tuple>;
 
     //------------------------------------------------------------------------//
@@ -328,37 +298,6 @@ tim::settings::process()
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::settings::string_t
-tim::settings::get_output_prefix()
-{
-    auto dir = output_path();
-    auto ret = makedir(dir);
-    return (ret == 0) ? path_t(dir + string_t("/") + output_prefix())
-                      : path_t(string_t("./") + output_prefix());
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline tim::settings::string_t
-tim::settings::compose_output_filename(const std::string& _tag, std::string _ext)
-{
-    auto _prefix      = get_output_prefix();
-    auto _rank_suffix = (!mpi::is_initialized())
-                            ? std::string("")
-                            : (std::string("_") + std::to_string(mpi::rank()));
-    if(_ext.find('.') != 0)
-        _ext = std::string(".") + _ext;
-    auto plast = _prefix.length() - 1;
-    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
-        _prefix += "_";
-    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
-    while(fpath.find("//") != std::string::npos)
-        fpath.replace(fpath.find("//"), 2, "/");
-    return std::move(fpath);
-}
-
-//--------------------------------------------------------------------------------------//
-
 inline void
 tim::timemory_init(int argc, char** argv, const std::string& _prefix,
                    const std::string& _suffix)
@@ -378,8 +317,6 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
         if(exe_name.find(ext) != std::string::npos)
             exe_name.erase(exe_name.find(ext), ext.length() + 1);
     }
-
-    gperf::profiler_start(exe_name);
 
     exe_name = _prefix + exe_name + _suffix;
     for(auto& itr : exe_name)

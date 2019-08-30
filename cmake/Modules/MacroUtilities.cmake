@@ -193,7 +193,7 @@ FUNCTION(ADD_GOOGLETEST TEST_NAME)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
-    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS)
+    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
     # parse args
     cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
 
@@ -226,6 +226,7 @@ FUNCTION(ADD_GOOGLETEST TEST_NAME)
             COMMAND             ${TEST_COMMAND}
             WORKING_DIRECTORY   ${CMAKE_CURRENT_LIST_DIR}
             ${TEST_OPTIONS})
+        SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
 
 ENDFUNCTION()

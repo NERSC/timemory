@@ -41,11 +41,6 @@
 #include <numeric>
 #include <utility>
 
-// default vectorization width
-#if !defined(TIMEMORY_VEC)
-#    define TIMEMORY_VEC 256
-#endif
-
 //======================================================================================//
 
 namespace tim

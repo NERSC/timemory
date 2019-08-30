@@ -56,6 +56,8 @@ struct base;
 // general
 struct trip_count;
 struct nvtx_marker;
+struct gperf_heap_profiler;
+struct gperf_cpu_profiler;
 
 // timing
 struct real_clock;

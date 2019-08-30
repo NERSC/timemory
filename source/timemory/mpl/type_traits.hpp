@@ -717,5 +717,70 @@ struct external_output_handling<component::caliper> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_HEAP_PROFILER or
+//  TIMEMORY_USE_GPERF
+//
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+
+//--------------------------------------------------------------------------------------//
+//
+/*
+template <>
+struct requires_prefix<component::gperf_heap_profiler> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct external_output_handling<component::gperf_heap_profiler> : std::true_type
+{
+};
+
+#else
+
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct is_available<component::gperf_heap_profiler> : std::false_type
+{
+};
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_CPU_PROFILER or
+//  TIMEMORY_USE_GPERF
+//
+
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+
+//--------------------------------------------------------------------------------------//
+//
+/*
+template <>
+struct requires_prefix<component::gperf_cpu_profiler> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
+{
+};
+
+#else
+
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct is_available<component::gperf_cpu_profiler> : std::false_type
+{
+};
+
+#endif
+
+//--------------------------------------------------------------------------------------//
 }  // namespace trait
 }  // namespace tim

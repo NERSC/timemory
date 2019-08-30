@@ -36,6 +36,7 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"

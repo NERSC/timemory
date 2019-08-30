@@ -24,6 +24,7 @@
 
 #pragma once
 
+#include "timemory/backends/mpi.hpp"     // only depends on below
 #include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
 #include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
@@ -262,6 +263,59 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, disable_all_signals, "TIMEMORY_DISABLE_ALL_SI
 //--------------------------------------------------------------------------------------//
 
 TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
+
+//--------------------------------------------------------------------------------------//
+
+inline string_t
+tolower(string_t str)
+{
+    for(auto& itr : str)
+        itr = ::tolower(itr);
+    return str;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline string_t
+toupper(string_t str)
+{
+    for(auto& itr : str)
+        itr = ::toupper(itr);
+    return str;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline string_t
+get_output_prefix()
+{
+    auto dir = output_path();
+    auto ret = makedir(dir);
+    return (ret == 0) ? path_t(dir + string_t("/") + output_prefix())
+                      : path_t(string_t("./") + output_prefix());
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline string_t
+compose_output_filename(const string_t& _tag, string_t _ext)
+{
+    auto _prefix      = get_output_prefix();
+    auto _rank_suffix = (!mpi::is_initialized())
+                            ? string_t("")
+                            : (string_t("_") + std::to_string(mpi::rank()));
+    if(_ext.find('.') != 0)
+        _ext = string_t(".") + _ext;
+    auto plast = _prefix.length() - 1;
+    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
+        _prefix += "_";
+    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
+    while(fpath.find("//") != string_t::npos)
+        fpath.replace(fpath.find("//"), 2, "/");
+    return std::move(fpath);
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace settings
 }  // namespace tim

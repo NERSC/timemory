@@ -35,6 +35,11 @@
 #include <cstdint>
 #include <functional>
 
+// default vectorization width
+#if !defined(TIMEMORY_VEC)
+#    define TIMEMORY_VEC 256
+#endif
+
 namespace tim
 {
 namespace ert

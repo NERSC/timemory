@@ -34,9 +34,11 @@ add_interface_library(timemory-cudart-static)
 add_interface_library(timemory-cuda-nvtx)
 add_interface_library(timemory-caliper)
 
-add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
+add_interface_library(timemory-gperftools)
+add_interface_library(timemory-gperftools-cpu)
+add_interface_library(timemory-gperftools-heap)
 
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
@@ -52,6 +54,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cudart-device
     timemory-coverage
     timemory-gperftools
+    timemory-gperftools-cpu
+    timemory-gperftools-heap
     timemory-santizier)
 
 add_interface_library(timemory-extensions)
@@ -657,14 +661,27 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(gperftools QUIET COMPONENTS ${TIMEMORY_GPERF_COMPONENTS})
+set(_GPERF_COMPONENTS ${TIMEMORY_GPERF_COMPONENTS} profiler tcmalloc)
+list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
+find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
 
 if(gperftools_FOUND)
     set(_HAS_PROFILER OFF)
     set(_HAS_TCMALLOC OFF)
     if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
         "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_CPU_PROFILER)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF_CPU_PROFILER)
+        if(gperftools_PROFILER_LIBRARY)
+            target_compile_definitions(timemory-gperftools-cpu INTERFACE
+                TIMEMORY_USE_GPERF_CPU_PROFILER)
+            target_include_directories(timemory-gperftools-cpu INTERFACE
+                ${gperftools_INCLUDE_DIRS})
+            target_link_libraries(timemory-gperftools-cpu INTERFACE
+                ${gperftools_PROFILER_LIBRARY})
+        else()
+            inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
+        endif()
         set(_HAS_PROFILER ON)
     endif()
     if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
@@ -672,14 +689,28 @@ if(gperftools_FOUND)
         "tcmalloc_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
         "tcmalloc_minimal" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
         "tcmalloc_minimal_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_HEAP_PROFILER)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF_HEAP_PROFILER)
+        if(gperftools_TCMALLOC_LIBRARY)
+            target_compile_definitions(timemory-gperftools-heap INTERFACE
+                TIMEMORY_USE_GPERF_HEAP_PROFILER)
+            target_include_directories(timemory-gperftools-heap INTERFACE
+                ${gperftools_INCLUDE_DIRS})
+            target_link_libraries(timemory-gperftools-heap INTERFACE
+                ${gperftools_TCMALLOC_LIBRARY})
+        else()
+            inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
+        endif()
         set(_HAS_TCMALLOC ON)
     endif()
     if(_HAS_PROFILER AND _HAS_TCMALLOC)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF)
     endif()
-    target_include_directories(timemory-gperftools INTERFACE ${gperftools_INCLUDE_DIRS})
-    target_link_libraries(timemory-gperftools INTERFACE ${gperftools_LIBRARIES})
+    target_include_directories(timemory-gperftools INTERFACE
+        ${gperftools_INCLUDE_DIRS})
+    target_link_libraries(timemory-gperftools INTERFACE
+        ${gperftools_LIBRARIES})
 else()
     set(TIMEMORY_USE_GPERF OFF)
     inform_empty_interface(timemory-gperftools "gperftools")

@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
+#include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
 #include <algorithm>
 #include <cstdint>
@@ -53,8 +53,6 @@
 #    define MPI_Comm_split(...)
 #    define MPI_Comm_split_type(...)
 #endif
-
-#include "timemory/utility/utility.hpp"
 
 namespace tim
 {
