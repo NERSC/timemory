@@ -140,58 +140,6 @@ ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
 }
 
 //--------------------------------------------------------------------------------------//
-//
-//      CPU -- single trial
-//
-//--------------------------------------------------------------------------------------//
-/*
-template <size_t _Nrep, typename _Device, typename _FuncOps, typename _FuncStore,
-          typename _Intp, typename _Tp,
-          enable_if_t<std::is_same<_Device, device::cpu>::value, int> = 0>
-void
-ops_kernel(_FuncOps&& ops_func, _FuncStore&& store_func, const _Intp& nsize, _Tp* A,
-           const _Tp& alpha)
-{
-    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
-    constexpr size_t NUM_REP = _Nrep / 2;
-    constexpr size_t MOD_REP = _Nrep % 2;
-    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
-
-    for(auto i = range.begin(); i < range.end(); i += range.stride())
-    {
-        _Tp beta = static_cast<_Tp>(0.8);
-        apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
-        store_func(A[i], beta);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//      GPU -- single trial
-//
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Nrep, typename _Device, typename _FuncOps, typename _FuncStore,
-          typename _Intp, typename _Tp,
-          enable_if_t<std::is_same<_Device, device::gpu>::value, int> = 0>
-GLOBAL_CALLABLE void
-ops_kernel(_FuncOps&& ops_func, _FuncStore&& store_func, const _Intp& nsize, _Tp* A,
-           const _Tp& alpha)
-{
-    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
-    constexpr size_t NUM_REP = _Nrep / 2;
-    constexpr size_t MOD_REP = _Nrep % 2;
-    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
-
-    for(auto i = range.begin(); i < range.end(); i += range.stride())
-    {
-        _Tp beta = static_cast<_Tp>(0.8);
-        apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
-        store_func(A[i], beta);
-    }
-}
-*/
-//--------------------------------------------------------------------------------------//
 ///
 ///     This is the "main" function for ERT
 ///
@@ -349,6 +297,7 @@ ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_fu
 
             // stop the timer or anything else being recorded
             ct.stop();
+
             // store the result
             if(tid == 0)
                 _counter.record(ct, n, ntrials, _Nops, _itr_params);

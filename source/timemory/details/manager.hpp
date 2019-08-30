@@ -393,18 +393,6 @@ tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
 
 //======================================================================================//
 
-template <typename... _Types>
-struct tim::manager::initialize<std::tuple<_Types...>>
-{
-    static void storage()
-    {
-        tim::manager* _manager = tim::manager::instance();
-        _manager->initialize_storage<_Types...>();
-    }
-};
-
-//======================================================================================//
-
 template <typename _Tuple>
 void
 tim::settings::initialize_storage()

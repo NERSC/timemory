@@ -181,11 +181,9 @@ public:
     }
 
 protected:
-    labels_type m_labels = {
-        "label",       "working-set", "trials",        "seconds",
-        "total-bytes", "total-ops",   "bytes-per-sec", "ops-per-sec",
-        "ops-per-set", "device",      "dtype",         "exec-params"
-    };
+    labels_type m_labels = { { "label", "working-set", "trials", "seconds", "total-bytes",
+                               "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
+                               "device", "dtype", "exec-params" } };
     value_array m_values;
     std::mutex  pmutex;
 

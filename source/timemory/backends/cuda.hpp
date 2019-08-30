@@ -139,16 +139,16 @@ struct half2
     half2()             = default;
     ~half2()            = default;
     half2(const half2&) = default;
-    half2(half2&)       = default;
+    half2(half2&&)      = default;
     half2& operator=(const half2&) = default;
-    half2& operator=(half2&) = default;
+    half2& operator=(half2&&) = default;
 
     half2(float val)
-    : value(value_type({ val, val }))
+    : value{ val, val }
     {
     }
     half2(float lhs, float rhs)
-    : value(value_type({ lhs, rhs }))
+    : value{ lhs, rhs }
     {
     }
     half2& operator+=(const float& rhs)
