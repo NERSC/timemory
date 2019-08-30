@@ -100,7 +100,7 @@ def get_peak_bandwidth(roof_data):
         if ref_intensity == 0:
             ref_intensity = intensity
         if intensity != ref_intensity:
-            break
+            continue
         work_set.append(element["working-set"])
         bandwidth_data.append(element["bytes-per-sec"]/GIGABYTE)
     fraction = 1.05
@@ -240,8 +240,8 @@ def get_hotspots(op_data, ai_data):
             bandwidth = get_bandwidth(op_repr)
         elif op_type == "cpu":
             flop = get_flops(op_repr)
-            #if flop is None:
-            #    flop = get_flops(op_repr, ["counted"])
+            if flop is None:
+                flop = get_flops(op_repr, ["counted"])
 
         if ai_type == "cpu":
             bandwidth = get_bandwidth(ai_repr)

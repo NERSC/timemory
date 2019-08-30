@@ -239,49 +239,6 @@
     template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
     tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
 
-/*
-// Accept any number of args >= N, but expand to just the Nth one.
-// Here, N == 6.
-#define TIMEMORY_GET_NTH_ARG(_1, _2, _3, _4, _5, _6, _7, _8, _9, _10, N, ...) N
-
-// Define some macros to help us create overrides based on the
-// arity of a for-each-style macro.
-#define TIMEMORY_FE_0(_call, ...)
-#define TIMEMORY_FE_1(_call, x) _call(x);
-#define TIMEMORY_FE_2(_call, x, ...) _call(x) TIMEMORY_FE_1(_call, __VA_ARGS__)
-#define TIMEMORY_FE_3(_call, x, ...) _call(x) TIMEMORY_FE_2(_call, __VA_ARGS__)
-#define TIMEMORY_FE_4(_call, x, ...) _call(x) TIMEMORY_FE_3(_call, __VA_ARGS__)
-#define TIMEMORY_FE_5(_call, x, ...) _call(x) TIMEMORY_FE_4(_call, __VA_ARGS__)
-#define TIMEMORY_FE_6(_call, x, ...) _call(x) TIMEMORY_FE_5(_call, __VA_ARGS__)
-#define TIMEMORY_FE_7(_call, x, ...) _call(x) TIMEMORY_FE_6(_call, __VA_ARGS__)
-#define TIMEMORY_FE_8(_call, x, ...) _call(x) TIMEMORY_FE_7(_call, __VA_ARGS__)
-#define TIMEMORY_FE_9(_call, x, ...) _call(x) TIMEMORY_FE_8(_call, __VA_ARGS__)
-#define TIMEMORY_FE_10(_call, x, ...) _call(x) TIMEMORY_FE_9(_call, __VA_ARGS__)
-*/
-/*
- * Provide a for-each construct for variadic macros. Supports up
- * to 9 args.
- *
- * Example usage1:
- *     #define FWD_DECLARE_CLASS(cls) class cls;
- *     CALL_MACRO_X_FOR_EACH(FWD_DECLARE_CLASS, Foo, Bar)
- *
- * Example usage 2:
- *     #define START_NS(ns) namespace ns {
- *     #define END_NS(ns) }
- *     #define MY_NAMESPACES System, Net, Http
- *     CALL_MACRO_X_FOR_EACH(START_NS, MY_NAMESPACES)
- *     typedef foo int;
- *     CALL_MACRO_X_FOR_EACH(END_NS, MY_NAMESPACES)
- */
-/*
-#define CALL_MACRO_X_FOR_EACH(x, ...)                                                    \
-    TIMEMORY_GET_NTH_ARG("ignored", ##__VA_ARGS__, TIMEMORY_FE_9, TIMEMORY_FE_8,         \
-                         TIMEMORY_FE_7, TIMEMORY_FE_6, TIMEMORY_FE_5, TIMEMORY_FE_4,     \
-                         TIMEMORY_FE_3, TIMEMORY_FE_2, TIMEMORY_FE_1, TIMEMORY_FE_0)     \
-    (x, ##__VA_ARGS__)
-*/
-
 //======================================================================================//
 //
 //      Quick way to create a globally accessible setting

@@ -49,10 +49,16 @@ set_target_properties(test-gpu-roofline-single   PROPERTIES OUTPUT_NAME ${EXE_NA
 # using double-precision
 add_executable(test-gpu-roofline-double          ${EXE_NAME}.cpp)
 target_link_libraries(test-gpu-roofline-double   timemory-gpu-roofline-example gpu-fp-double)
-set_target_properties(test-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
+set_target_properties(test-gpu-roofline-double   PROPERTIES OUTPUT_NAME ${EXE_NAME}.dp)
+
+# using double-precision
+add_executable(test-gpu-roofline                 ${EXE_NAME}.cpp)
+target_link_libraries(test-gpu-roofline          timemory-gpu-roofline-example)
+set_target_properties(test-gpu-roofline          PROPERTIES OUTPUT_NAME ${EXE_NAME})
 
 install(
     TARGETS
+        test-gpu-roofline
         test-gpu-roofline-half
         test-gpu-roofline-single
         test-gpu-roofline-double

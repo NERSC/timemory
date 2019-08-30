@@ -158,7 +158,7 @@ public:
 
         auto _get = [=]() {
             // check the standard variable
-            std::string _env = settings::gpu_roofline_mode();
+            std::string _env = aslc(settings::gpu_roofline_mode());
             return (_env == "op" || _env == "hw" || _env == "counters")
                        ? MODE::COUNTERS
                        : ((_env == "ai" || _env == "ac" || _env == "activity")
@@ -342,12 +342,17 @@ public:
 
     static std::string label()
     {
-        return std::string("gpu_roofline_") + get_type_string() + "_" + get_mode_string();
+        if(settings::roofline_type_labels_gpu())
+            return std::string("gpu_roofline_") + get_type_string() + "_" +
+                   get_mode_string();
+        else
+            return std::string("gpu_roofline_") + get_mode_string();
     }
 
     static std::string description()
     {
-        return std::string("gpu roofline ") + get_type_string() + "_" + get_mode_string();
+        return "GPU Roofline " + get_type_string() + " " +
+               std::string((event_mode() == MODE::COUNTERS) ? "Counters" : "Activity");
     }
 
     static std::string display_unit()
@@ -724,15 +729,20 @@ public:
 //--------------------------------------------------------------------------------------//
 // Shorthand aliases for common roofline types
 //
+using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 using gpu_roofline_sp_flops = gpu_roofline<float>;
 using gpu_roofline_dp_flops = gpu_roofline<double>;
-using gpu_roofline_flops    = gpu_roofline<float, double>;
+using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
 //--------------------------------------------------------------------------------------//
 }  // namespace component
 
 namespace trait
 {
+template <>
+struct requires_json<component::gpu_roofline_hp_flops> : std::true_type
+{};
+
 template <>
 struct requires_json<component::gpu_roofline_sp_flops> : std::true_type
 {};
@@ -746,6 +756,10 @@ struct requires_json<component::gpu_roofline_flops> : std::true_type
 {};
 
 #if !defined(TIMEMORY_USE_CUPTI)
+template <>
+struct is_available<component::gpu_roofline_hp_flops> : std::false_type
+{};
+
 template <>
 struct is_available<component::gpu_roofline_sp_flops> : std::false_type
 {};

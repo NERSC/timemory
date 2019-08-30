@@ -273,6 +273,25 @@ get_event_code(const std::string& event_code_str)
 
 //--------------------------------------------------------------------------------------//
 
+inline std::string
+get_event_code_name(int event_code)
+{
+#if defined(TIMEMORY_USE_PAPI) && defined(_UNIX)
+    static const uint64_t BUFFER_SIZE = 1024;
+    char                  event_code_char[BUFFER_SIZE];
+    int                   retval = PAPI_event_code_to_name(event_code, event_code_char);
+    std::stringstream     ss;
+    ss << "Warning!! Failure converting event code " << event_code << " to a name";
+    working() = check(retval, ss.str());
+    return (retval == PAPI_OK) ? std::string(event_code_char) : "";
+#else
+    consume_parameters(event_code);
+    return "";
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline event_info_t
 get_event_info(int evt_type)
 {
@@ -593,30 +612,36 @@ reset(int event_set)
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 add_event(int event_set, int event)
 {
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
     init();
-    int retval = PAPI_add_event(event_set, event);
-    working()  = check(retval, "Warning!! Failure to add event to event set");
+    int  retval   = PAPI_add_event(event_set, event);
+    bool _working = check(retval, "Warning!! Failure to add event to event set");
+    working()     = _working;
+    return _working;
 #else
     consume_parameters(event_set, event);
+    return false;
 #endif
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline void
+inline bool
 remove_event(int event_set, int event)
 {
     // add single PAPI preset or native hardware event to an event set
 #if defined(TIMEMORY_USE_PAPI)
-    int retval = PAPI_remove_event(event_set, event);
-    working()  = check(retval, "Warning!! Failure to remove event from event set");
+    int  retval   = PAPI_remove_event(event_set, event);
+    bool _working = check(retval, "Warning!! Failure to remove event from event set");
+    working()     = _working;
+    return _working;
 #else
     consume_parameters(event_set, event);
+    return false;
 #endif
 }
 

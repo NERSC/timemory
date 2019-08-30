@@ -98,6 +98,22 @@ struct exec_params
            serializer::make_nvp("block_size", block_size),
            serializer::make_nvp("shmem_size", shmem_size));
     }
+
+    friend std::ostream& operator<<(std::ostream& os, const exec_params& obj)
+    {
+        std::stringstream ss;
+        ss << "working_set_min = " << obj.working_set_min << ", "
+           << "memory_max = " << obj.memory_max << ", "
+           << "nthreads = " << obj.nthreads << ", "
+           << "nrank = " << obj.nrank << ", "
+           << "nproc = " << obj.nproc << ", "
+           << "nstreams = " << obj.nstreams << ", "
+           << "grid_size = " << obj.grid_size << ", "
+           << "block_size = " << obj.block_size << ", "
+           << "shmem_size = " << obj.shmem_size;
+        os << ss.str();
+        return os;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -106,14 +122,14 @@ struct exec_params
 class exec_data
 {
 public:
-    using value_type     = std::tuple<std::string, uint64_t, uint64_t, double, uint64_t,
-                                  uint64_t, double, double, double, exec_params>;
+    using value_type =
+        std::tuple<std::string, uint64_t, uint64_t, double, uint64_t, uint64_t, double,
+                   double, double, std::string, std::string, exec_params>;
     using labels_type    = std::array<string_t, std::tuple_size<value_type>::value>;
     using value_array    = std::vector<value_type>;
+    using size_type      = typename value_array::size_type;
     using iterator       = typename value_array::iterator;
     using const_iterator = typename value_array::const_iterator;
-
-    static constexpr std::size_t size() { return std::tuple_size<value_type>::value; }
 
     //----------------------------------------------------------------------------------//
     //
@@ -127,9 +143,9 @@ public:
 public:
     //----------------------------------------------------------------------------------//
     //
-    void        set_labels(const labels_type& _labels) { m_labels = _labels; }
-    labels_type get_labels() const { return m_labels; }
-
+    void           set_labels(const labels_type& _labels) { m_labels = _labels; }
+    labels_type    get_labels() const { return m_labels; }
+    size_type      size() { return m_values.size(); }
     iterator       begin() { return m_values.begin(); }
     const_iterator begin() const { return m_values.begin(); }
     iterator       end() { return m_values.end(); }
@@ -165,9 +181,11 @@ public:
     }
 
 protected:
-    labels_type m_labels = { "label",       "working-set", "trials",        "seconds",
-                             "total-bytes", "total-ops",   "bytes-per-sec", "ops-per-sec",
-                             "ops-per-set", "exec_params" };
+    labels_type m_labels = {
+        "label",       "working-set", "trials",        "seconds",
+        "total-bytes", "total-ops",   "bytes-per-sec", "ops-per-sec",
+        "ops-per-set", "device",      "dtype",         "exec-params"
+    };
     value_array m_values;
     std::mutex  pmutex;
 
@@ -176,18 +194,21 @@ public:
     //
     friend std::ostream& operator<<(std::ostream& os, const exec_data& obj)
     {
+        std::stringstream ss;
         for(const auto& itr : obj.m_values)
         {
-            os << std::setw(24) << std::get<0>(itr) << ": ";
-            obj.write<1>(os, itr, ", ", 10);
-            obj.write<2>(os, itr, ", ", 6);
-            obj.write<3>(os, itr, ", ", 12);
-            obj.write<4>(os, itr, ", ", 12);
-            obj.write<5>(os, itr, ", ", 12);
-            obj.write<6>(os, itr, ", ", 12);
-            obj.write<7>(os, itr, ", ", 12);
-            obj.write<8>(os, itr, "\n", 4);
+            ss << std::setw(24) << std::get<0>(itr) << " (device: " << std::get<9>(itr)
+               << ", dtype = " << std::get<10>(itr) << "): ";
+            obj.write<1>(ss, itr, ", ", 10);
+            obj.write<2>(ss, itr, ", ", 6);
+            obj.write<3>(ss, itr, ", ", 12);
+            obj.write<4>(ss, itr, ", ", 12);
+            obj.write<5>(ss, itr, ", ", 12);
+            obj.write<6>(ss, itr, ", ", 12);
+            obj.write<7>(ss, itr, ", ", 12);
+            obj.write<8>(ss, itr, "\n", 4);
         }
+        os << ss.str();
         return os;
     }
 
@@ -308,8 +329,8 @@ public:
     //----------------------------------------------------------------------------------//
     // overload how to create the counter with a callback function
     //
-    counter(const exec_params& _params, const callback_type& _func,
-            data_ptr_t _exec_data = nullptr, uint64_t _align = 8 * sizeof(_Tp))
+    counter(const exec_params& _params, const callback_type& _func, data_ptr_t _exec_data,
+            uint64_t _align = 8 * sizeof(_Tp))
     : params(_params)
     , align(_align)
     , configure_callback(_func)
@@ -398,36 +419,39 @@ public:
         uint64_t working_set_size = n * params.nthreads * params.nproc;
         uint64_t total_bytes =
             t * working_set_size * bytes_per_element * memory_accesses_per_element;
-        uint64_t          total_ops = t * working_set_size * nops;
-        auto              seconds   = _counter.get() * counter_units;
+        uint64_t total_ops = t * working_set_size * nops;
+        auto     seconds   = _counter.get() * counter_units;
+
         std::stringstream ss;
-        if(label.length() > 0)
-            ss << label << "_" << nops;
-        else
+        ss << label;
+        if(label.length() == 0)
         {
             if(nops > 1)
-                ss << "vector_" << nops;
+                ss << "vector_op";
             else
-                ss << "scalar_" << nops;
+                ss << "scalar_op";
         }
         data->operator+=(data_type(ss.str(), working_set_size * bytes_per_element, t,
                                    seconds, total_bytes, total_ops, total_bytes / seconds,
-                                   total_ops / seconds, nops, _itrp));
+                                   total_ops / seconds, nops, _Device::name(),
+                                   tim::demangle(typeid(_Tp).name()), _itrp));
     }
 
     //----------------------------------------------------------------------------------//
     //
-    /*template <typename _Func>
+    template <typename _Func>
     void set_callback(_Func&& _f)
     {
-        configure_callback = callback_type(std::forward<_Func>(_f));
-    }*/
+        configure_callback = std::forward<_Func>(_f);
+    }
 
+    /*
     template <typename _Func>
     void set_callback(_Func&& f)
     {
         configure_callback = std::bind(f, _1, _2);
     }
+    */
 
     //----------------------------------------------------------------------------------//
     //      provide ability to write to JSON/XML
@@ -445,10 +469,23 @@ public:
     //
     friend std::ostream& operator<<(std::ostream& os, const counter& obj)
     {
-        if(obj.data)
-            os << (*obj.data);
+        std::stringstream ss;
+        ss << obj.params << ", "
+           << "bytes_per_element = " << obj.bytes_per_element << ", "
+           << "memory_accesses_per_element = " << obj.memory_accesses_per_element << ", "
+           << "alignment = " << obj.align << ", "
+           << "nsize = " << obj.nsize << ", "
+           << "label = " << obj.label << ", "
+           << "data entries = " << ((obj.data.get()) ? obj.data->size() : 0);
+        os << ss.str();
         return os;
     }
+
+    //----------------------------------------------------------------------------------//
+    //  Get the data pointer
+    //
+    data_ptr_t&       get_data() { return data; }
+    const data_ptr_t& get_data() const { return data; }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -460,7 +497,7 @@ public:
     uint64_t    align                       = sizeof(_Tp);
     uint64_t    nsize                       = 0;
     units_type  counter_units               = tim::units::sec;
-    data_ptr_t  data                        = nullptr;
+    data_ptr_t  data                        = data_ptr_t(new data_ptr_t);
     std::string label                       = "";
 
 protected:

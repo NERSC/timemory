@@ -79,6 +79,7 @@ public:
 
     static void invoke_thread_init()
     {
+        papi::init();
         // set overhead to zero
         apply<void>::set_value(get_overhead_values(), 0);
         int events[] = { EventTypes... };

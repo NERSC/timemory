@@ -135,8 +135,27 @@ struct configuration
     //----------------------------------------------------------------------------------//
     /// configure the number of threads, number of streams, block size, grid size, and
     /// alignment
-    static void configure(uint64_t nthreads, uint64_t nstreams, uint64_t block_size,
-                          uint64_t grid_size = 0, uint64_t alignment = sizeof(_Tp))
+    template <typename Dev                                            = _Device,
+              enable_if_t<std::is_same<Dev, device::cpu>::value, int> = 0>
+    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(_Tp),
+                          uint64_t nstreams = 0, uint64_t block_size = 0,
+                          uint64_t grid_size = 0)
+    {
+        get_num_threads() = [=]() -> uint64_t { return nthreads; };
+        get_num_streams() = [=]() -> uint64_t { return nstreams; };
+        get_grid_size()   = [=]() -> uint64_t { return grid_size; };
+        get_block_size()  = [=]() -> uint64_t { return block_size; };
+        get_alignment()   = [=]() -> uint64_t { return alignment; };
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// configure the number of threads, number of streams, block size, grid size, and
+    /// alignment
+    template <typename Dev                                            = _Device,
+              enable_if_t<std::is_same<Dev, device::gpu>::value, int> = 0>
+    static void configure(uint64_t nthreads, uint64_t alignment = sizeof(_Tp),
+                          uint64_t nstreams = 1, uint64_t block_size = 1024,
+                          uint64_t grid_size = 0)
     {
         get_num_threads() = [=]() -> uint64_t { return nthreads; };
         get_num_streams() = [=]() -> uint64_t { return nstreams; };
@@ -283,25 +302,23 @@ public:
         auto add_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
         auto fma_func = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
 
-        auto dtype = demangle(typeid(_Tp).name());
-
         // set bytes per element
         _counter.bytes_per_element = sizeof(_Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
         // set the label
-        _counter.label = "scalar_add_" + dtype;
+        _counter.label = "scalar_add";
         // run the kernels
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_mult_" + dtype;
+        // _counter.label = "vector_mult";
         // run the kernels
         // ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, mult_func, store_func);
 
         // set the label
-        _counter.label = "vector_fma_" + dtype;
+        _counter.label = "vector_fma";
         // run the kernels
         ops_main<VEC / 2, VEC, 2 * VEC, 4 * VEC>(_counter, fma_func, store_func);
     }
@@ -395,25 +412,23 @@ public:
             a = a * b + c;
         };
 
-        auto dtype = demangle(typeid(_Tp).name());
-
         // set bytes per element
         _counter.bytes_per_element = sizeof(_Tp);
         // set number of memory accesses per element from two functions
         _counter.memory_accesses_per_element = 2;
 
         // set the label
-        _counter.label = "scalar_add_" + dtype;
+        _counter.label = "scalar_add";
         // run the kernels
         ops_main<1>(_counter, add_func, store_func);
 
         // set the label
-        // _counter.label = "vector_mult_" + dtype;
+        // _counter.label = "vector_mult";
         // run the kernels
         // ops_main<4, 16, 64, 128, 256, 512>(_counter, mult_func, store_func);
 
         // set the label
-        _counter.label = "vector_fma_" + dtype;
+        _counter.label = "vector_fma";
         // run the kernels
         ops_main<4, 16, 64, 128, 256, 512>(_counter, fma_func, store_func);
     }

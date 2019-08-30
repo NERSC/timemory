@@ -132,17 +132,102 @@ static const int device_to_device_v = 3;
 
 // half-precision floating point
 #if !defined(TIMEMORY_CUDA_FP16)
-/*
+
+// make a different type
 struct half2
 {
-    operator float&() { return value; }
-    operator float() { return value; }
-    operator const float&() const { return value; }
+    half2()             = default;
+    ~half2()            = default;
+    half2(const half2&) = default;
+    half2(half2&)       = default;
+    half2& operator=(const half2&) = default;
+    half2& operator=(half2&) = default;
+
+    half2(float val)
+    : value(value_type({ val, val }))
+    {
+    }
+    half2(float lhs, float rhs)
+    : value(value_type({ lhs, rhs }))
+    {
+    }
+    half2& operator+=(const float& rhs)
+    {
+        value[0] += rhs;
+        value[1] += rhs;
+        return *this;
+    }
+    half2& operator-=(const float& rhs)
+    {
+        value[0] -= rhs;
+        value[1] -= rhs;
+        return *this;
+    }
+    half2& operator*=(const float& rhs)
+    {
+        value[0] *= rhs;
+        value[1] *= rhs;
+        return *this;
+    }
+    half2& operator/=(const float& rhs)
+    {
+        value[0] /= rhs;
+        value[1] /= rhs;
+        return *this;
+    }
+
+    half2& operator+=(const half2& rhs)
+    {
+        value[0] += rhs[0];
+        value[1] += rhs[1];
+        return *this;
+    }
+    half2& operator-=(const half2& rhs)
+    {
+        value[0] -= rhs[0];
+        value[1] -= rhs[1];
+        return *this;
+    }
+    half2& operator*=(const half2& rhs)
+    {
+        value[0] *= rhs[0];
+        value[1] *= rhs[1];
+        return *this;
+    }
+    half2& operator/=(const half2& rhs)
+    {
+        value[0] /= rhs[0];
+        value[1] /= rhs[1];
+        return *this;
+    }
+    friend half2 operator+(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) += rhs;
+    }
+    friend half2 operator-(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) -= rhs;
+    }
+    friend half2 operator*(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) *= rhs;
+    }
+    friend half2 operator/(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) /= rhs;
+    }
+
+    float&       operator[](int idx) { return value[idx % 2]; }
+    const float& operator[](int idx) const { return value[idx % 2]; }
+
 private:
-    float value;
+    using value_type = std::array<float, 2>;
+    value_type value;
 };
-*/
-using fp16_t = float;
+
+using __half2 = half2;
+using fp16_t  = half2;
+
 #else
 using fp16_t                        = half2;
 #endif

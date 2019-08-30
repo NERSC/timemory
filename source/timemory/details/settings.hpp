@@ -175,6 +175,18 @@ TIMEMORY_ENV_STATIC_ACCESSOR(string_t, cpu_roofline_events,
 TIMEMORY_ENV_STATIC_ACCESSOR(string_t, gpu_roofline_events,
                              "TIMEMORY_ROOFLINE_EVENTS_GPU", "")
 
+/// roofline labels/descriptions/output-files encode the list of data types
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels, "TIMEMORY_ROOFLINE_TYPE_LABELS",
+                             false)
+
+/// set the roofline mode when running ERT on CPU
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels_cpu,
+                             "TIMEMORY_ROOFLINE_TYPE_LABELS_CPU", roofline_type_labels())
+
+/// set the roofline mode when running ERT on GPU
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, roofline_type_labels_gpu,
+                             "TIMEMORY_ROOFLINE_TYPE_LABELS_GPU", roofline_type_labels())
+
 //--------------------------------------------------------------------------------------//
 //      ERT
 //--------------------------------------------------------------------------------------//

@@ -120,6 +120,7 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CALIPER: obj.template init<caliper>(); break;
             case CPU_CLOCK: obj.template init<cpu_clock>(); break;
             case CPU_ROOFLINE_DP_FLOPS: obj.template init<cpu_roofline_dp_flops>(); break;
+            case CPU_ROOFLINE_FLOPS: obj.template init<cpu_roofline_flops>(); break;
             case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
             case CPU_UTIL: obj.template init<cpu_util>(); break;
             case CUDA_EVENT: obj.template init<cuda_event>(); break;
@@ -127,6 +128,10 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
             case CURRENT_RSS: obj.template init<current_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
+            case GPU_ROOFLINE_DP_FLOPS: obj.template init<gpu_roofline_dp_flops>(); break;
+            case GPU_ROOFLINE_FLOPS: obj.template init<gpu_roofline_flops>(); break;
+            case GPU_ROOFLINE_HP_FLOPS: obj.template init<gpu_roofline_hp_flops>(); break;
+            case GPU_ROOFLINE_SP_FLOPS: obj.template init<gpu_roofline_sp_flops>(); break;
             case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
             case MONOTONIC_RAW_CLOCK: obj.template init<monotonic_raw_clock>(); break;
             case NUM_IO_IN: obj.template init<num_io_in>(); break;
@@ -200,6 +205,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CPU_ROOFLINE_DP_FLOPS);
         }
+        else if(itr == "cpu_roofline_flops")
+        {
+            vec.push_back(CPU_ROOFLINE_FLOPS);
+        }
         else if(itr == "cpu_roofline_single" || itr == "cpu_roofline_sp" ||
                 itr == "cpu_roofline_sp_flops")
         {
@@ -228,6 +237,22 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         else if(itr == "data_rss")
         {
             vec.push_back(DATA_RSS);
+        }
+        else if(itr == "gpu_roofline_dp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_DP_FLOPS);
+        }
+        else if(itr == "gpu_roofline_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_FLOPS);
+        }
+        else if(itr == "gpu_roofline_hp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_HP_FLOPS);
+        }
+        else if(itr == "gpu_roofline_sp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_SP_FLOPS);
         }
         else if(itr == "monotonic_clock")
         {
@@ -339,16 +364,18 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 stderr,
                 "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
                 "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
-                "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
-                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti_activity', "
-                "'cupti_counters', 'current_rss', 'data_rss', 'monotonic_clock', "
-                "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
-                "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
-                "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
-                "'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
-                "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
-                "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
-                "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
+                "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
+                "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
+                "'cupti_activity', 'cupti_counters', 'current_rss', 'data_rss', "
+                "'gpu_roofline_dp_flops', 'gpu_roofline_flops', 'gpu_roofline_hp_flops', "
+                "'gpu_roofline_sp_flops', 'monotonic_clock', 'monotonic_raw_clock', "
+                "'num_io_in', 'num_io_out', 'num_major_page_faults', "
+                "'num_minor_page_faults', 'num_msg_recv', 'num_msg_sent', 'num_signals', "
+                "'num_swap', 'nvtx', 'nvtx_marker', 'papi', 'papi_array', "
+                "'papi_array_t', 'peak_rss', 'priority_context_switch', "
+                "'process_cpu_clock', 'process_cpu_util', 'read_bytes', 'real_clock', "
+                "'stack_rss', 'sys_clock', 'system_clock', 'thread_cpu_clock', "
+                "'thread_cpu_util', 'trip_count', 'user_clock', "
                 "'voluntary_context_switch', 'write_bytes', 'written_bytes']\n",
                 itr.c_str());
         }

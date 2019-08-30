@@ -32,8 +32,6 @@ components = [
     "priority_context_switch",
     "cuda_event",
     "papi_array_t",
-    "cpu_roofline_sp_flops",
-    "cpu_roofline_dp_flops",
     "caliper",
     "trip_count",
     "read_bytes",
@@ -41,6 +39,13 @@ components = [
     "cupti_counters",
     "cupti_activity",
     "nvtx_marker",
+    "cpu_roofline_sp_flops",
+    "cpu_roofline_dp_flops",
+    "cpu_roofline_flops",
+    "gpu_roofline_hp_flops",
+    "gpu_roofline_sp_flops",
+    "gpu_roofline_dp_flops",
+    "gpu_roofline_flops",
 ]
 
 #
@@ -74,8 +79,10 @@ recommended_types = {
               "current_rss", "peak_rss", "read_bytes", "written_bytes",
               "num_minor_page_faults", "num_major_page_faults",
               "voluntary_context_switch", "priority_context_switch"],
-    "list": ["caliper", "papi_array_t", "cuda_event", "nvtx_marker",
-             "cupti_counters", "cupti_activity"],
+    "list": ["caliper", "papi_array_t",
+             "cuda_event", "nvtx_marker",
+             "cupti_counters", "cupti_activity",
+             "cpu_roofline_flops", "gpu_roofline_flops"],
 }
 
 traits = {

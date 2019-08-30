@@ -71,8 +71,8 @@ struct cpu_roofline
               policy::thread_init, policy::thread_finalize, policy::global_finalize,
               policy::serialization>
 {
-    // static_assert(is_one_of<cuda::fp16_t, std::tuple<_Types...>>::value,
-    //              "Error! No CPU roofline support for cuda::fp16_t");
+    static_assert(!is_one_of<cuda::fp16_t, std::tuple<_Types...>>::value,
+                  "Error! No CPU roofline support for cuda::fp16_t");
 
     using size_type  = std::size_t;
     using event_type = std::vector<int>;
@@ -200,39 +200,81 @@ struct cpu_roofline
 
     static void invoke_thread_init()
     {
-        // start PAPI counters
+        papi::init();
+
+        // create the hardware counter events to accumulate
+        event_type _events;
         if(event_mode() == MODE::OP)
         {
+            //
+            // add in user callback events BEFORE presets based on type so that
+            // the user can override the counters being used
+            //
+            auto _extra_events = get_events_callback()(event_mode());
+            for(const auto& itr : _extra_events)
+                _events.push_back(itr);
+
+            //
+            //  add some presets based on data types
+            //
             if(is_one_of<float, types_tuple>::value)
-                _events_ptr()->push_back(PAPI_SP_OPS);
+                _events.push_back(PAPI_SP_OPS);
             if(is_one_of<double, types_tuple>::value)
-                _events_ptr()->push_back(PAPI_DP_OPS);
+                _events.push_back(PAPI_DP_OPS);
+
         } else if(event_mode() == MODE::AI)
         {
-            _events_ptr()->push_back(PAPI_LST_INS);
+            //
+            //  add the load/store hardware counter
+            //
+            _events.push_back(PAPI_LST_INS);
+
+            //
+            // add in user callback events AFTER load/store so that load/store
+            // instructions are always counted
+            //
+            auto _extra_events = get_events_callback()(event_mode());
+            for(const auto& itr : _extra_events)
+                _events.push_back(itr);
         }
 
-        // add in extra events
-        auto _extra_events = get_events_callback()(event_mode());
-        for(const auto& itr : _extra_events)
-            _events_ptr()->push_back(itr);
-
         papi::create_event_set(_event_set_ptr());
-        papi::add_events(event_set(), _events_ptr()->data(), size());
-        papi::start(event_set(), settings::papi_multiplexing());
+        if(event_set() == PAPI_NULL)
+        {
+            fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
+        } else
+        {
+            for(auto itr : _events)
+            {
+                if(papi::add_event(event_set(), itr))
+                {
+                    _events_ptr()->push_back(itr);
+                    if(settings::verbose() > 1 || settings::debug())
+                        printf("[cpu_roofline]> Added event %s\n",
+                               papi::get_event_code_name(itr).c_str());
+                } else
+                    fprintf(stderr, "[cpu_roofline]> Failed to add event %s\n",
+                            papi::get_event_code_name(itr).c_str());
+            }
+            if(_events_ptr()->size() > 0)
+                papi::start(event_set(), settings::papi_multiplexing());
+        }
     }
 
     //----------------------------------------------------------------------------------//
 
     static void invoke_thread_finalize()
     {
-        // store these for later
-        _label_array() = label_array();
-        // stop PAPI counters
-        array_type event_values(events().size(), 0);
-        papi::stop(event_set(), event_values.data());
-        papi::remove_events(event_set(), _events_ptr()->data(), events().size());
-        papi::destroy_event_set(event_set());
+        if(event_set() != PAPI_NULL && events().size() > 0)
+        {
+            // store these for later
+            _label_array() = label_array();
+            // stop PAPI counters
+            array_type event_values(events().size(), 0);
+            papi::stop(event_set(), event_values.data());
+            papi::remove_events(event_set(), _events_ptr()->data(), events().size());
+            papi::destroy_event_set(event_set());
+        }
         delete _events_ptr();
         delete _event_set_ptr();
         _events_ptr()    = nullptr;
@@ -292,14 +334,20 @@ struct cpu_roofline
 
     static std::string label()
     {
-        return "cpu_roofline_" + get_type_string() + "_" + get_mode_string();
+        if(settings::roofline_type_labels_cpu())
+            return std::string("cpu_roofline_") + get_type_string() + "_" +
+                   get_mode_string();
+        else
+            return std::string("cpu_roofline_") + get_mode_string();
     }
 
     //----------------------------------------------------------------------------------//
 
     static std::string description()
     {
-        return "cpu roofline " + get_type_string() + " " + get_mode_string();
+        return "CPU Roofline " + get_type_string() + " " +
+               std::string((event_mode() == MODE::OP) ? "Counters"
+                                                      : "Arithmetic Intensity");
     }
 
     //----------------------------------------------------------------------------------//
@@ -645,6 +693,10 @@ template <>
 struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
 {};
 
+template <>
+struct requires_json<component::cpu_roofline_flops> : std::true_type
+{};
+
 #if !defined(TIMEMORY_USE_PAPI)
 template <>
 struct is_available<component::cpu_roofline_sp_flops> : std::false_type
@@ -652,6 +704,10 @@ struct is_available<component::cpu_roofline_sp_flops> : std::false_type
 
 template <>
 struct is_available<component::cpu_roofline_dp_flops> : std::false_type
+{};
+
+template <>
+struct is_available<component::cpu_roofline_flops> : std::false_type
 {};
 #endif
 

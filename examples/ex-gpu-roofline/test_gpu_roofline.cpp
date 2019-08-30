@@ -37,50 +37,40 @@
 
 using namespace tim::component;
 
-#if !defined(ROOFLINE_FP_BYTES)
-#    define ROOFLINE_FP_BYTES 8
-#endif
-
-#if ROOFLINE_FP_BYTES == 8
-
-using float_type     = double;
-using cpu_float_type = double;
-
-#elif ROOFLINE_FP_BYTES == 4
-
-using float_type     = float;
-using cpu_float_type = float;
-
-#elif ROOFLINE_FP_BYTES == 2
-
-using float_type     = tim::device::gpu::fp16_t;
-using cpu_float_type = tim::device::cpu::fp16_t;
-
-#else
-
-#    error "ROOFLINE_FP_BYTES must be either 2, 4, or 8"
-
-#endif
-
-using cpu_roofline_t = cpu_roofline<cpu_float_type>;
-using gpu_roofline_t = gpu_roofline<float_type>;
-using fib_list_t     = std::vector<int64_t>;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
 using device_t       = tim::device::gpu;
 using params_t       = tim::device::params<device_t>;
 using stream_t       = tim::cuda::stream_t;
 using default_device = device_t;
 using fp16_t         = tim::cuda::fp16_t;
 
-// unless specified number of threads, use the number of available cores
-#if !defined(NUM_THREADS)
-#    define NUM_THREADS 1
+//--------------------------------------------------------------------------------------//
+
+#if ROOFLINE_FP_BYTES == 8
+
+using gpu_roofline_t = gpu_roofline_dp_flops;
+using cpu_roofline_t = cpu_roofline_dp_flops;
+
+#elif ROOFLINE_FP_BYTES == 4
+
+using gpu_roofline_t = gpu_roofline_sp_flops;
+using cpu_roofline_t = cpu_roofline_sp_flops;
+
+#elif ROOFLINE_FP_BYTES == 2
+
+using gpu_roofline_t = gpu_roofline_hp_flops;
+using cpu_roofline_t = cpu_roofline_sp_flops;
+
+#else
+
+using gpu_roofline_t = gpu_roofline_flops;
+using cpu_roofline_t = cpu_roofline_flops;
+
 #endif
 
-#if !defined(NUM_STREAMS)
-#    define NUM_STREAMS 1
-#endif
+//--------------------------------------------------------------------------------------//
+
+using auto_tuple_t =
+    tim::auto_tuple<real_clock, cpu_clock, cpu_util, gpu_roofline_t, cpu_roofline_t>;
 
 //--------------------------------------------------------------------------------------//
 // amypx calculation
@@ -118,7 +108,7 @@ amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
-void customize_gpu_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
+void customize_roofline(int64_t, int64_t, int64_t, int64_t, int64_t, int64_t);
 
 //--------------------------------------------------------------------------------------//
 
@@ -190,8 +180,8 @@ main(int argc, char** argv)
     tim::cuda::device_query();
     tim::cuda::set_device(0);
 
-    int64_t num_threads   = NUM_THREADS;               // default number of threads
-    int64_t num_streams   = NUM_STREAMS;               // default number of streams
+    int64_t num_threads   = 1;                         // default number of threads
+    int64_t num_streams   = 1;                         // default number of streams
     int64_t working_size  = 1 * tim::units::megabyte;  // default working set size
     int64_t memory_factor = 10;                        // default multiple of 500 MB
     int64_t iterations    = 1000;
@@ -238,25 +228,20 @@ main(int argc, char** argv)
 
     usage();
 
-    customize_gpu_roofline<float_type>(num_threads, working_size, memory_factor,
-                                       num_streams, grid_size, block_size);
+    customize_roofline<fp16_t>(num_threads, working_size, memory_factor, num_streams,
+                               grid_size, block_size);
+    customize_roofline<float>(num_threads, working_size, memory_factor, num_streams,
+                              grid_size, block_size);
+    customize_roofline<double>(num_threads, working_size, memory_factor, num_streams,
+                               grid_size, block_size);
 
     // ensure cpu version also runs the same number of threads
-    using cpu_ert_config_t = typename cpu_roofline_t::ert_config_type<cpu_float_type>;
-    cpu_ert_config_t::get_num_threads() = [=]() { return num_threads; };
+    tim::settings::ert_num_threads_cpu() = num_threads;
 
     params_t params(grid_size, block_size, 0, 0);
 
     real_clock total;
     total.start();
-
-    std::vector<stream_t> streams;
-    if(num_streams > 1)
-    {
-        streams.resize(num_streams);
-        for(auto& itr : streams)
-            tim::cuda::stream_create(itr);
-    }
 
     //
     // overall timing
@@ -299,24 +284,23 @@ main(int argc, char** argv)
 
 template <typename _Tp>
 void
-customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor,
-                       int64_t num_streams, int64_t grid_size, int64_t block_size)
+customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor,
+                   int64_t num_streams, int64_t grid_size, int64_t block_size)
 {
-    using ert_params_t   = typename gpu_roofline_t::ert_params_t;
-    using ert_data_t     = typename gpu_roofline_t::ert_data_t;
-    using ert_data_ptr_t = typename gpu_roofline_t::ert_data_ptr_t;
-    using ert_counter_t  = typename gpu_roofline_t::ert_counter_type<_Tp>;
-    using ert_config_t   = typename gpu_roofline_t::ert_config_type<_Tp>;
-    using ert_executor_t = typename gpu_roofline_t::ert_executor_type<_Tp>;
+    using namespace tim;
+    using counter_t         = component::real_clock;
+    using ert_data_t        = ert::exec_data;
+    using ert_params_t      = ert::exec_params;
+    using ert_data_ptr_t    = std::shared_ptr<ert_data_t>;
+    using ert_executor_type = ert::executor<device_t, _Tp, ert_data_t, counter_t>;
+    using ert_config_type   = typename ert_executor_type::configuration_type;
+    using ert_counter_type  = typename ert_executor_type::counter_type;
 
     //
     // simple modifications to override method number of threads, number of streams,
     // block size, and grid size
     //
-    ert_config_t::get_num_threads() = [=]() { return num_threads; };
-    ert_config_t::get_num_streams() = [=]() { return num_streams; };
-    ert_config_t::get_block_size()  = [=]() { return block_size; };
-    ert_config_t::get_grid_size()   = [=]() { return grid_size; };
+    ert_config_type::configure(num_threads, 64, num_streams, block_size, grid_size);
 
     //
     // fully customize the roofline
@@ -324,26 +308,19 @@ customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory
     if(tim::get_env<bool>("CUSTOMIZE_ROOFLINE", false))
     {
         // overload the finalization function that runs ERT calculations
-        ert_config_t::get_executor() = [=](ert_data_ptr_t data) {
-            // test getting the cache info
-            auto lm_size = 500 * tim::units::megabyte;
-            // log the cache info
-            std::cout << "[INFO]> max cache size: " << (lm_size / tim::units::kilobyte)
-                      << " KB\n"
-                      << std::endl;
-            // log how many threads were used
-            printf("[INFO]> Running ERT with %li threads...\n\n",
-                   static_cast<long>(num_threads));
+        ert_config_type::get_executor() = [=](ert_data_ptr_t data) {
+            auto lm_size = 100 * units::megabyte;
             // create the execution parameters
             ert_params_t params(working_size, memory_factor * lm_size, num_threads,
                                 num_streams, grid_size, block_size);
             // create the operation _counter
-            ert_counter_t _counter(params, data, 64);
+            ert_counter_type _counter(params, data, 64);
+            std::cout << _counter << std::endl;
             return _counter;
         };
 
         // does the execution of ERT
-        auto callback = [=](ert_counter_t& _counter) {
+        auto callback = [=](ert_counter_type& _counter) {
             // these are the kernel functions we want to calculate the peaks with
             auto store_func = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b) { a = b; };
             auto add_func   = [] TIMEMORY_LAMBDA(_Tp & a, const _Tp& b, const _Tp& c) {
@@ -362,11 +339,6 @@ customize_gpu_roofline(int64_t num_threads, int64_t working_size, int64_t memory
             _counter.label = "scalar_add";
             // run the operation _counter kernels
             tim::ert::ops_main<1>(_counter, add_func, store_func);
-
-            // set the label
-            _counter.label = "vector_add";
-            // run the operation _counter kernels
-            tim::ert::ops_main<4, 8, 16>(_counter, add_func, store_func);
 
             // set the label
             _counter.label = "vector_fma";

@@ -53,6 +53,10 @@ def parse_args(add_run_args=False):
                         default=os.getcwd())
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
+    parser.add_argument("-T", "--title", type=str, help="Title for the plot", default="Roofline")
+    parser.add_argument("-P", "--plot-dimensions", type=int,
+                        help="Image dimensions: Width, Height, DPI",
+                        default=[1600, 1200, 90], nargs=3)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
@@ -83,7 +87,9 @@ def plot(args):
         fai = open(args.arithmetic_intensity, 'r')
         fop = open(args.operations, 'r')
         _roofline.plot_roofline(json.load(fai), json.load(fop), args.display,
-                                args.output_file, args.format, args.output_dir)
+                                fname, args.format, fdir, args.title,
+                                args.plot_dimensions[0], args.plot_dimensions[1],
+                                args.plot_dimensions[2])
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()

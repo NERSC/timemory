@@ -109,18 +109,20 @@ namespace tim
 {
 using complete_tuple_t = std::tuple<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
-    component::cpu_roofline_sp_flops, component::cpu_util, component::cuda_event,
-    component::cupti_activity, component::cupti_counters, component::current_rss,
-    component::data_rss, component::monotonic_clock, component::monotonic_raw_clock,
-    component::num_io_in, component::num_io_out, component::num_major_page_faults,
-    component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
-    component::num_signals, component::num_swap, component::nvtx_marker,
-    component::papi_array_t, component::peak_rss, component::priority_context_switch,
-    component::process_cpu_clock, component::process_cpu_util, component::read_bytes,
-    component::real_clock, component::stack_rss, component::system_clock,
-    component::thread_cpu_clock, component::thread_cpu_util, component::trip_count,
-    component::user_clock, component::voluntary_context_switch, component::written_bytes,
-    component::gpu_roofline_dp_flops, component::gpu_roofline_sp_flops>;
+    component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
+    component::cuda_event, component::cupti_activity, component::cupti_counters,
+    component::current_rss, component::data_rss, component::gpu_roofline_dp_flops,
+    component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
+    component::gpu_roofline_sp_flops, component::monotonic_clock,
+    component::monotonic_raw_clock, component::num_io_in, component::num_io_out,
+    component::num_major_page_faults, component::num_minor_page_faults,
+    component::num_msg_recv, component::num_msg_sent, component::num_signals,
+    component::num_swap, component::nvtx_marker, component::papi_array_t,
+    component::peak_rss, component::priority_context_switch, component::process_cpu_clock,
+    component::process_cpu_util, component::read_bytes, component::real_clock,
+    component::stack_rss, component::system_clock, component::thread_cpu_clock,
+    component::thread_cpu_util, component::trip_count, component::user_clock,
+    component::voluntary_context_switch, component::written_bytes>;
 
 namespace settings
 {
