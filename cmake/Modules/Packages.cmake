@@ -642,8 +642,9 @@ endif()
 #                               NVTX
 #
 #----------------------------------------------------------------------------------------#
-
-find_package(NVTX QUIET)
+if(TIMEMORY_USE_NVTX)
+    find_package(NVTX QUIET)
+endif()
 
 if(NVTX_FOUND)
     target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
