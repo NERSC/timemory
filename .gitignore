@@ -57,3 +57,4 @@ timing_report*
 
 # stashed source tree
 /.stash
+/source/tests/timemory-*output

@@ -72,10 +72,10 @@ public:
 
 public:
     inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
-                              const language_t& lang           = language_t::cxx(),
-                              bool              report_at_exit = false);
+                              const language_t& lang = language_t::cxx(),
+                              bool report_at_exit    = settings::destructor_report());
     inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
-                              bool report_at_exit = false);
+                              bool report_at_exit = settings::destructor_report());
     inline ~auto_list();
 
     // copy and move

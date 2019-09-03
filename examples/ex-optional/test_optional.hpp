@@ -30,20 +30,17 @@
 #    include <timemory/timemory.hpp>
 
 using tim::component::cpu_clock;
-using tim::component::cpu_roofline;
 using tim::component::cpu_util;
 using tim::component::current_rss;
 using tim::component::peak_rss;
 using tim::component::real_clock;
-using tim::component::thread_cpu_clock;
-using tim::component::thread_cpu_util;
 
 // some using statements
-using roofline_t = cpu_roofline<double>;
-using auto_tuple_t =
-    tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, roofline_t>;
-using auto_tuple_thr = tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util,
-                                       peak_rss, current_rss, roofline_t>;
+using tuple_t =
+    tim::component_tuple<real_clock, cpu_clock, cpu_util, current_rss, peak_rss>;
+using list_t = tim::auto_timer_list_t;
+
+using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 
 #else
 

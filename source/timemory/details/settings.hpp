@@ -265,6 +265,13 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, disable_all_signals, "TIMEMORY_DISABLE_ALL_SI
 TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
 
 //--------------------------------------------------------------------------------------//
+//     For auto_* types
+//--------------------------------------------------------------------------------------//
+
+/// default setting for auto_{list,tuple,hybrid} "report_at_exit" member variable
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
+
+//--------------------------------------------------------------------------------------//
 
 inline string_t
 tolower(string_t str)
