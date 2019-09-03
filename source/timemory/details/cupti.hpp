@@ -633,8 +633,8 @@ struct result
     std::string name           = "unk";
     data_t      data;
 
-    result()              = default;
-    ~result()             = default;
+    result()  = default;
+    ~result() = default;
 
     result(const result& rhs)
     : is_event_value(rhs.is_event_value)
