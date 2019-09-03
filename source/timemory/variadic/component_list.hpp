@@ -589,53 +589,44 @@ public:
         return std::get<_N>(m_data);
     }
 
-    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
+    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     _Tp& get()
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    template <typename _Tp, enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
     _Tp*& get()
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, tim::enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
+    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     const _Tp& get() const
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, tim::enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    template <typename _Tp, enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
     const _Tp* get() const
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
     //----------------------------------------------------------------------------------//
+    ///  initialize a type that is in variadic list AND is available
+    ///
     template <typename _Tp, typename... _Args,
-              tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
+              enable_if_t<(trait::is_available<_Tp>::value == true), int>       = 0>
     void init(_Args&&... _args)
     {
-        if(!trait::is_available<_Tp>::value)
-        {
-            static std::atomic<int> _count;
-            if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
-            {
-                std::string _id = tim::demangle(typeid(_Tp).name());
-                printf("[component_list::init]> skipping unavailable type '%s'...\n",
-                       _id.c_str());
-            }
-            return;
-        }
-
         auto&& _obj = get<_Tp>();
         if(!_obj)
         {
             if(settings::debug())
             {
-                std::string _id = tim::demangle(typeid(_Tp).name());
+                std::string _id = demangle(typeid(_Tp).name());
                 printf("[component_list::init]> initializing type '%s'...\n",
                        _id.c_str());
             }
@@ -647,7 +638,7 @@ public:
             static std::atomic<int> _count;
             if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
             {
-                std::string _id = tim::demangle(typeid(_Tp).name());
+                std::string _id = demangle(typeid(_Tp).name());
                 printf(
                     "[component_list::init]> skipping re-initialization of type"
                     " \"%s\"...\n",
@@ -656,8 +647,27 @@ public:
         }
     }
 
+    //----------------------------------------------------------------------------------//
+    ///  "initialize" a type that is in variadic list BUT is NOT available
+    ///
     template <typename _Tp, typename... _Args,
-              tim::enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
+              enable_if_t<(trait::is_available<_Tp>::value == false), int>      = 0>
+    void init(_Args&&...)
+    {
+        static std::atomic<int> _count;
+        if((settings::verbose() > 1 || settings::debug()) && _count++ == 0)
+        {
+            std::string _id = demangle(typeid(_Tp).name());
+            printf("[component_list::init]> skipping unavailable type '%s'...\n",
+                   _id.c_str());
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Tp, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void init(_Args&&...)
     {
     }
@@ -681,15 +691,31 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    //
+    /// apply a member function to a type that is in variadic list AND is available
+    ///
     template <typename _Tp, typename _Func, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
+              enable_if_t<(trait::is_available<_Tp>::value == true), int>       = 0>
     void type_apply(_Func&& _func, _Args&&... _args)
     {
         auto&& _obj = get<_Tp>();
-        ((*_obj).*(_func))(std::forward<_Args>(_args)...);
+        if(_obj != nullptr)
+            ((*_obj).*(_func))(std::forward<_Args>(_args)...);
     }
 
+    //----------------------------------------------------------------------------------//
+    /// "apply" a member function to a type that is in variadic list BUT is NOT available
+    ///
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
+              enable_if_t<(trait::is_available<_Tp>::value == false), int>      = 0>
+    void type_apply(_Func&&, _Args&&...)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// invoked when a request to apply a member function to a type not in variadic list
+    ///
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<(is_one_of<_Tp, reference_type>::value == false), int> = 0>
     void type_apply(_Func&&, _Args&&...)
