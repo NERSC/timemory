@@ -633,8 +633,8 @@ struct result
     std::string name           = "unk";
     data_t      data;
 
-    result()  = default;
-    ~result() = default;
+    result()              = default;
+    ~result()             = default;
 
     result(const result& rhs)
     : is_event_value(rhs.is_event_value)
@@ -653,8 +653,8 @@ struct result
         return *this;
     }
 
-    result(result&&) = delete;
-    result& operator=(result&&) = delete;
+    result(result&&) = default;
+    result& operator=(result&&) = default;
 
     explicit result(const std::string& _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)
