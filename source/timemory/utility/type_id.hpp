@@ -54,6 +54,8 @@ struct result;
 //======================================================================================//
 // static functions that return a string identifying the data type (used in Python plot)
 //
+// * DEPRECATED *
+//
 template <typename _Tp>
 struct type_id
 {

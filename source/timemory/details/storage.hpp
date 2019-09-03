@@ -625,7 +625,6 @@ void
 tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
                                     const unsigned int version)
 {
-    using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::deque<tuple_type>;
 
@@ -642,14 +641,11 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
     };
 
     auto graph_list = convert_graph();
-    auto data_type  = type_id<value_type>::value(_data().head()->obj().value);
     ar(serializer::make_nvp("type", ObjectType::label()),
        serializer::make_nvp("description", ObjectType::description()),
        serializer::make_nvp("unit_value", ObjectType::unit()),
-       serializer::make_nvp("unit_repr", ObjectType::display_unit()),
-       serializer::make_nvp("dtype", data_type));
+       serializer::make_nvp("unit_repr", ObjectType::display_unit()));
     ObjectType::serialization_policy(ar, version);
-    // ar(serializer::make_nvp("graph", graph_list));
     ar.setNextName("graph");
     ar.startNode();
     ar.makeArray();
@@ -673,7 +669,6 @@ void
 tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
                                     const unsigned int version)
 {
-    using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::deque<tuple_type>;
 
@@ -689,7 +684,6 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
     ObjectType& obj           = std::get<1>(graph_list.front());
-    auto        data_type     = type_id<value_type>::value(_data().head()->obj().value);
     auto        labels        = obj.label_array();
     auto        descripts     = obj.descript_array();
     auto        units         = obj.unit_array();
@@ -697,10 +691,8 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     ar(serializer::make_nvp("type", labels),
        serializer::make_nvp("description", descripts),
        serializer::make_nvp("unit_value", units),
-       serializer::make_nvp("unit_repr", display_units),
-       serializer::make_nvp("dtype", data_type));
+       serializer::make_nvp("unit_repr", display_units));
     ObjectType::serialization_policy(ar, version);
-    // ar(serializer::make_nvp("graph", graph_list));
     ar.setNextName("graph");
     ar.startNode();
     ar.makeArray();

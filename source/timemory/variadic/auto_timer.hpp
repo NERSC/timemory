@@ -52,7 +52,8 @@ using auto_timer_list_t =
                    component::cupti_counters, component::cpu_roofline_flops,
                    component::cpu_roofline_sp_flops, component::cpu_roofline_dp_flops,
                    component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
-                   component::gpu_roofline_sp_flops, component::gpu_roofline_dp_flops>;
+                   component::gpu_roofline_sp_flops, component::gpu_roofline_dp_flops,
+                   component::gperf_cpu_profiler, component::gperf_heap_profiler>;
 
 using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 

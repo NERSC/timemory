@@ -46,6 +46,8 @@ components = [
     "gpu_roofline_sp_flops",
     "gpu_roofline_dp_flops",
     "gpu_roofline_flops",
+    "gperf_cpu_profiler",
+    "gperf_heap_profiler",
 ]
 
 #
@@ -67,8 +69,13 @@ mangled_enums = {
 mangled_strings = {
     "system_clock": ["sys_clock"],
     "papi_array_t": ["papi_array", "papi"],
+    "cpu_roofline_flops": ["cpu_roofline"],
+    "gpu_roofline_flops": ["gpu_roofline"],
     "cpu_roofline_sp_flops": ["cpu_roofline_sp", "cpu_roofline_single"],
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
+    "gpu_roofline_sp_flops": ["gpu_roofline_sp", "gpu_roofline_single"],
+    "gpu_roofline_dp_flops": ["gpu_roofline_dp", "gpu_roofline_double"],
+    "gpu_roofline_hp_flops": ["gpu_roofline_hp", "gpu_roofline_half"],
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
     "nvtx_marker": ["nvtx"],
@@ -82,7 +89,8 @@ recommended_types = {
     "list": ["caliper", "papi_array_t",
              "cuda_event", "nvtx_marker",
              "cupti_counters", "cupti_activity",
-             "cpu_roofline_flops", "gpu_roofline_flops"],
+             "cpu_roofline_flops", "gpu_roofline_flops",
+             "gperf_cpu_profiler", "gperf_heap_profiler"],
 }
 
 traits = {

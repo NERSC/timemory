@@ -225,24 +225,28 @@ class timemory_data():
     """
     # ------------------------------------------------------------------------ #
 
-    def __init__(self, func, obj, dtype='int'):
+    def __init__(self, func, obj):
         """
         initialize data from JSON object
         """
         self.func = func
         self.is_transient = obj['is_transient']
         self.laps = obj['laps']
-        if isinstance(obj['display'], dict):
-            self.display = []
-            for key, item in obj['display'].items():
-                self.display.append(item)
+        if isinstance(obj['repr_data'], dict):
+            self.data = []
+            for key, item in obj['repr_data'].items():
+                self.data.append(item)
+        elif isinstance(obj['repr_data'], list):
+            self.data = obj['repr_data']
         else:
-            self.display = obj['display']
+            self.data = obj['repr_data']
 
         if isinstance(obj['value'], dict):
             self.value = []
             for key, item in obj['value'].items():
                 self.value.append(item)
+        elif isinstance(obj['value'], list):
+            self.data = obj['value']
         else:
             self.value = obj['value']
 
@@ -250,6 +254,8 @@ class timemory_data():
             self.accum = []
             for key, item in obj['accum'].items():
                 self.accum.append(item)
+        elif isinstance(obj['accum'], list):
+            self.data = obj['accum']
         else:
             self.accum = obj['accum']
 
@@ -272,8 +278,8 @@ class timemory_data():
         """
         printing data
         """
-        return "\"{}\" : laps = {}, value = {}, accum = {}, display = {}".format(
-            self.func, self.laps, self.value, self.accum, self.display)
+        return "\"{}\" : laps = {}, value = {}, accum = {}, data = {}".format(
+            self.func, self.laps, self.value, self.accum, self.data)
 
     # ------------------------------------------------------------------------ #
     def __repr__(self):
@@ -290,7 +296,7 @@ class timemory_data():
         self.laps += rhs.laps
         self.value += rhs.value
         self.accum += rhs.accum
-        self.display += rhs.display
+        self.data += rhs.data
         return self
 
     # ------------------------------------------------------------------------ #
@@ -300,7 +306,7 @@ class timemory_data():
         """
         self.value -= rhs.value
         self.accum -= rhs.accum
-        self.display -= rhs.display
+        self.data -= rhs.data
         # this is a weird situation
         if self.laps != rhs.laps:
             self.laps = max(self.laps, rhs.laps)
@@ -314,7 +320,7 @@ class timemory_data():
         self.laps = 0
         self.value = 0
         self.accum = 0
-        self.display = 0.0
+        self.data = 0.0
 
     # ------------------------------------------------------------------------ #
     def __getitem__(self, key):
@@ -352,7 +358,6 @@ class plot_data():
                  title="",
                  units="",
                  ctype="",
-                 dtype="",
                  description="",
                  plot_params=plot_parameters(),
                  output_name=None):
@@ -368,11 +373,10 @@ class plot_data():
 
         self.units = _convert(units)
         self.ctype = _convert(ctype)
-        self.dtype = _convert(dtype)
         self.description = _convert(description)
 
         self.nitems = 1
-        if "array" in self.dtype and isinstance(self.ctype, list):
+        if isinstance(self.ctype, list):
             self.nitems = len(self.ctype)
 
         self.timemory_functions = timemory_functions
@@ -458,7 +462,8 @@ class plot_data():
         Construct the title for the plot
         """
         return '"{}"\n@ MPI procs = {}, Threads/proc = {}'.format(self.title,
-                                                                  self.mpi_size, int(self.concurrency))
+                                                                  self.mpi_size,
+                                                                  int(self.concurrency))
 
 
 #==============================================================================#
@@ -476,16 +481,13 @@ def read(json_obj, plot_params=plot_parameters()):
     print('num ranks = {}'.format(nranks))
 
     data1 = data0['rank']
-    # nrank = data1['rank_id']        # rank number
     nthrd = data1['concurrency']    # concurrency
     rdata = data1['data']           # rank data
     ctype = rdata['type']           # collection type
-    cdesc = rdata['descript']       # collection description
-    dtype = rdata['dtype']          # collection data type
-    # unitv = rdata['unit_value']     # collection unit value
+    cdesc = rdata['description']    # collection description
     unitr = rdata['unit_repr']      # collection unit display repr
     gdata = rdata['graph']          # graph data
-    ngraph = len(gdata)              # number of graph entries
+    ngraph = len(gdata)             # number of graph entries
     roofl = rdata['roofline'] if 'roofline' in rdata else None
 
     if roofl is not None:
@@ -497,7 +499,7 @@ def read(json_obj, plot_params=plot_parameters()):
     # loop over ranks
     for i in range(0, ngraph):
         _data = gdata[i]
-        tag = _data['tuple_element2']
+        tag = _data['prefix']
 
         def _replace(_tag, _a, _b, _n=0):
             _c = 0
@@ -508,7 +510,7 @@ def read(json_obj, plot_params=plot_parameters()):
                     break
             return _tag
 
-        tfunc = timemory_data(tag, _data['tuple_element1'], dtype)
+        tfunc = timemory_data(tag, _data['entry'])
 
         if not tag in timemory_functions:
             # create timemory_data object if doesn't exist yet
@@ -525,7 +527,6 @@ def read(json_obj, plot_params=plot_parameters()):
                      mpi_size=nranks,
                      description=cdesc,
                      ctype=ctype,
-                     dtype=dtype,
                      units=unitr,
                      timemory_functions=timemory_functions,
                      plot_params=plot_params)
@@ -572,7 +573,7 @@ def plot_generic(_plot_data, _type_min, _type_unit, idx=0):
 
     for func, obj in _plot_data.items():
         ytics.append('{} x [ {} counts ]'.format(func, obj.laps))
-        avgs.append(get_obj_idx(obj.display, idx))
+        avgs.append(get_obj_idx(obj.data, idx))
         stds.append(0.0)
 
     # the x locations for the groups

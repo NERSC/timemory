@@ -45,8 +45,10 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
-#include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"
+
+// this is deprecated mostly because it is not extensible
+#include "timemory/utility/type_id.hpp"
 
 //--------------------------------------------------------------------------------------//
 

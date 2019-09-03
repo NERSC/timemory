@@ -128,6 +128,8 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
             case CURRENT_RSS: obj.template init<current_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
+            case GPERF_CPU_PROFILER: obj.template init<gperf_cpu_profiler>(); break;
+            case GPERF_HEAP_PROFILER: obj.template init<gperf_heap_profiler>(); break;
             case GPU_ROOFLINE_DP_FLOPS: obj.template init<gpu_roofline_dp_flops>(); break;
             case GPU_ROOFLINE_FLOPS: obj.template init<gpu_roofline_flops>(); break;
             case GPU_ROOFLINE_HP_FLOPS: obj.template init<gpu_roofline_hp_flops>(); break;
@@ -205,7 +207,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CPU_ROOFLINE_DP_FLOPS);
         }
-        else if(itr == "cpu_roofline_flops")
+        else if(itr == "cpu_roofline" || itr == "cpu_roofline_flops")
         {
             vec.push_back(CPU_ROOFLINE_FLOPS);
         }
@@ -238,19 +240,30 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(DATA_RSS);
         }
-        else if(itr == "gpu_roofline_dp_flops")
+        else if(itr == "gperf_cpu_profiler")
+        {
+            vec.push_back(GPERF_CPU_PROFILER);
+        }
+        else if(itr == "gperf_heap_profiler")
+        {
+            vec.push_back(GPERF_HEAP_PROFILER);
+        }
+        else if(itr == "gpu_roofline_double" || itr == "gpu_roofline_dp" ||
+                itr == "gpu_roofline_dp_flops")
         {
             vec.push_back(GPU_ROOFLINE_DP_FLOPS);
         }
-        else if(itr == "gpu_roofline_flops")
+        else if(itr == "gpu_roofline" || itr == "gpu_roofline_flops")
         {
             vec.push_back(GPU_ROOFLINE_FLOPS);
         }
-        else if(itr == "gpu_roofline_hp_flops")
+        else if(itr == "gpu_roofline_half" || itr == "gpu_roofline_hp" ||
+                itr == "gpu_roofline_hp_flops")
         {
             vec.push_back(GPU_ROOFLINE_HP_FLOPS);
         }
-        else if(itr == "gpu_roofline_sp_flops")
+        else if(itr == "gpu_roofline_single" || itr == "gpu_roofline_sp" ||
+                itr == "gpu_roofline_sp_flops")
         {
             vec.push_back(GPU_ROOFLINE_SP_FLOPS);
         }
@@ -363,11 +376,14 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
             fprintf(
                 stderr,
                 "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
-                "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
+                "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
                 "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
                 "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
                 "'cupti_activity', 'cupti_counters', 'current_rss', 'data_rss', "
-                "'gpu_roofline_dp_flops', 'gpu_roofline_flops', 'gpu_roofline_hp_flops', "
+                "'gperf_cpu_profiler', 'gperf_heap_profiler', 'gpu_roofline', "
+                "'gpu_roofline_double', 'gpu_roofline_dp', 'gpu_roofline_dp_flops', "
+                "'gpu_roofline_flops', 'gpu_roofline_half', 'gpu_roofline_hp', "
+                "'gpu_roofline_hp_flops', 'gpu_roofline_single', 'gpu_roofline_sp', "
                 "'gpu_roofline_sp_flops', 'monotonic_clock', 'monotonic_raw_clock', "
                 "'num_io_in', 'num_io_out', 'num_major_page_faults', "
                 "'num_minor_page_faults', 'num_msg_recv', 'num_msg_sent', 'num_signals', "

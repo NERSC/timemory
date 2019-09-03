@@ -133,7 +133,8 @@ using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
     component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
     component::cuda_event, component::cupti_activity, component::cupti_counters,
-    component::current_rss, component::data_rss, component::gpu_roofline_dp_flops,
+    component::current_rss, component::data_rss, component::gperf_cpu_profiler,
+    component::gperf_heap_profiler, component::gpu_roofline_dp_flops,
     component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
     component::gpu_roofline_sp_flops, component::monotonic_clock,
     component::monotonic_raw_clock, component::num_io_in, component::num_io_out,
@@ -152,7 +153,8 @@ using recommended_auto_list_t =
     auto_list<component::caliper, component::papi_array_t, component::cuda_event,
               component::nvtx_marker, component::cupti_counters,
               component::cupti_activity, component::cpu_roofline_flops,
-              component::gpu_roofline_flops>;
+              component::gpu_roofline_flops, component::gperf_cpu_profiler,
+              component::gperf_heap_profiler>;
 
 using recommended_list_t = recommended_auto_list_t::component_type;
 
