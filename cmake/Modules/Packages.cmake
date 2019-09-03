@@ -748,6 +748,7 @@ if(caliper_FOUND)
     if(TIMEMORY_BUILD_CALIPER)
         target_include_directories(timemory-caliper INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/caliper/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
         target_link_libraries(timemory-caliper INTERFACE caliper)
         if(WITH_CUPTI)
