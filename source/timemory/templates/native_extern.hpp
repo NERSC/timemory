@@ -60,43 +60,4 @@ TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::num_signals)
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::priority_context_switch)
 
-//--------------------------------------------------------------------------------------//
-// auto_timer_t
-//
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock, tim::component::cpu_clock,
-                              tim::component::cpu_util)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock, tim::component::cpu_clock,
-                              tim::component::cpu_util, tim::component::current_rss,
-                              tim::component::peak_rss)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::cpu_clock, tim::component::cpu_util,
-                              tim::component::current_rss, tim::component::peak_rss)
-
-//--------------------------------------------------------------------------------------//
-// miscellaneous
-//
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::cpu_clock,
-                              tim::component::cpu_util)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::user_clock)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::cpu_clock, tim::component::cpu_util,
-                              tim::component::peak_rss, tim::component::current_rss)
-
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::real_clock, tim::component::system_clock,
-                              tim::component::thread_cpu_clock,
-                              tim::component::thread_cpu_util,
-                              tim::component::process_cpu_clock,
-                              tim::component::process_cpu_util, tim::component::peak_rss,
-                              tim::component::current_rss)
-
 //======================================================================================//
