@@ -2,7 +2,6 @@
 
 language: python
 
-
 # The apt packages here install our compiled code dependencies.
 matrix:
   include:
@@ -15,7 +14,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.6'
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -38,7 +37,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.6'
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -61,7 +60,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.6'
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -84,7 +83,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.6'
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -106,7 +105,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.6'
+      python: "3.6"
       addons:
         apt:
           sources:
@@ -135,7 +134,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.7'
+      python: "3.7"
       addons:
         apt:
           sources:
@@ -158,7 +157,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.7'
+      python: "3.7"
       addons:
         apt:
           sources:
@@ -181,7 +180,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.7'
+      python: "3.7"
       addons:
         apt:
           sources:
@@ -204,7 +203,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.7'
+      python: "3.7"
       addons:
         apt:
           sources:
@@ -226,7 +225,7 @@ matrix:
     - os: linux
       dist: xenial
       sudo: false
-      python: '3.7'
+      python: "3.7"
       addons:
         apt:
           sources:
@@ -249,53 +248,58 @@ matrix:
     # ------------------------------------------------------------------------ #
 
 before_install:
-    - eval "${MATRIX_EVAL}"
-    - export CC=${CC}
-    - export CXX=${CXX}
-    - export TIMEMORY_VERBOSE=4
-    - export TIMEMORY_OUTPUT_TOTAL=1
-    - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
-    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-    - bash miniconda.sh -b -p ${HOME}/miniconda
-    - export PATH="${HOME}/miniconda/bin:${PATH}"
-    - conda config --add channels conda-forge
-    - conda config --set always_yes yes --set changeps1 no
-    - conda update conda
-    - echo "CC = ${CC} $(${CC} -dumpversion)"
-    - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
-    - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
-    - echo "PYBINPATH = ${PYBINPATH}"
-    - echo "PYROOTPATH = ${PYROOTPATH}"
-    - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
+  - eval "${MATRIX_EVAL}"
+  - export CC=${CC}
+  - export CXX=${CXX}
+  - export TIMEMORY_VERBOSE=4
+  - export TIMEMORY_OUTPUT_TOTAL=1
+  - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
+  - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
+  - bash miniconda.sh -b -p ${HOME}/miniconda
+  - export PATH="${HOME}/miniconda/bin:${PATH}"
+  - conda config --add channels conda-forge
+  - conda config --set always_yes yes --set changeps1 no
+  - conda update conda
+  - echo "CC = ${CC} $(${CC} -dumpversion)"
+  - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
+  - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
+  - echo "PYBINPATH = ${PYBINPATH}"
+  - echo "PYROOTPATH = ${PYROOTPATH}"
+  - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
 
 install:
-    - eval "${MATRIX_EVAL}"
-    - env
-    - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
-    - source activate pyctest
-    - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
-    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
-    - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-    - python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV
-    - python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV
-    # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
+  - eval "${MATRIX_EVAL}"
+  - env
+  - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
+  - source activate pyctest
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
+  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
+  - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
+  - if [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then
+    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV;
+    else
+    python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV;
+    fi
+  # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
 
 script:
-    - eval "${MATRIX_EVAL}"
-    - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
-    - python setup.py install --build-type=${BUILD_TYPE} -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF
-    - python -c "import timemory; print(timemory.__file__)"
-    - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+  - eval "${MATRIX_EVAL}"
+  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
+  - python setup.py install --build-type=${BUILD_TYPE} -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF
+  - python -c "import timemory; print(timemory.__file__)"
+  - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 
 after_success:
-    # Create lcov report
-    # capture coverage info
-    - lcov --directory . --capture --output-file coverage.info
-    # filter out system and extra files.
-    # To also not include test code in coverage add them with full path to the patterns: '*/tests/*'
-    - lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' --output-file coverage.info
-    # output coverage data for debugging (optional)
-    - lcov --list coverage.info
-    # Uploading to CodeCov
-    # '-f' specifies file(s) to use and disables manual coverage gathering and file search which has already been done above
-    - bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"
+  - SUBMIT_COVERAGE=1
+  - if [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then SUBMIT_COVERAGE=0; fi
+  # Create lcov report
+  # capture coverage info
+  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --directory . --capture --output-file coverage.info ; fi
+  # filter out system and extra files.
+  # To also not include test code in coverage add them with full path to the patterns: '*/tests/*'
+  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --remove coverage.info '/usr/*' "${HOME}"'/.cache/*' --output-file coverage.info; fi
+  # output coverage data for debugging (optional)
+  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --list coverage.info; fi
+  # Uploading to CodeCov
+  # '-f' specifies file(s) to use and disables manual coverage gathering and file search which has already been done above
+  - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then bash <(curl -s https://codecov.io/bash) -f coverage.info || echo "Codecov did not collect coverage reports"; fi
