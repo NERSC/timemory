@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 project(TiMemory-CXX-Basic-Example LANGUAGES CXX)
 
 set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cxx-basic-example)
-set(COMPONENTS compile-options analysis-tools)
+set(COMPONENTS compile-options analysis-tools papi)
 option(USE_CALIPER "Enable TiMemory Caliper" ON)
 if(USE_CALIPER)
     list(APPEND COMPONENTS caliper)

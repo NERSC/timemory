@@ -75,9 +75,11 @@ def get_peak_flops(roof_data, flop_info):
     flops_data = []
 
     for element in roof_data:
-        flops_data.append(element["tuple_element6"]/GIGABYTE)
+        flops_data.append(element["ops-per-sec"]/GIGABYTE)
     info_list = re.sub(r'[^\w]', ' ', flop_info).split()
-    info = info_list[0] + " GFLOPs/sec"
+    info = "GFLOPs/sec"
+    if len(info_list) > 0:
+        info = info_list[0] + " GFLOPs/sec"
     peak_flops = [max(flops_data), info]
     return peak_flops
 
@@ -94,13 +96,13 @@ def get_peak_bandwidth(roof_data):
 
     # Read bandwidth raw data
     for element in roof_data:
-        intensity = element["tuple_element7"]
+        intensity = element["ops-per-set"]
         if ref_intensity == 0:
             ref_intensity = intensity
         if intensity != ref_intensity:
-            break
-        work_set.append(element["tuple_element0"])
-        bandwidth_data.append(element["tuple_element5"]/GIGABYTE)
+            continue
+        work_set.append(element["working-set"])
+        bandwidth_data.append(element["bytes-per-sec"]/GIGABYTE)
     fraction = 1.05
     samples = 10000
 
@@ -164,31 +166,92 @@ def get_hotspots(op_data, ai_data):
     """
     Get the hotspots information
     """
+    op_data_type = op_data["type"]
+    ai_data_type = ai_data["type"]
+
+    op_type = None
+    ai_type = None
+    if "cpu_roofline" in op_data_type:
+        op_type = "cpu"
+    if "cpu_roofline" in ai_data_type:
+        ai_type = "cpu"
+    if "gpu_roofline" in op_data_type:
+        op_type = "gpu"
+    if "gpu_roofline" in ai_data_type:
+        ai_type = "gpu"
+
     op_graph_data = op_data["graph"]
     ai_graph_data = ai_data["graph"]
     hotspots = []
 
     avg_runtime = 0.0
     max_runtime = 0.0
-    for i in range(0, len(op_graph_data)):
-        op_runtime = float(
-            op_graph_data[0]["tuple_element1"]["accum"]["second"])
-        ai_runtime = float(
-            ai_graph_data[0]["tuple_element1"]["accum"]["second"])
-        avg_runtime += 0.5 * (op_runtime + ai_runtime)
-        max_runtime = max([max_runtime, 0.5 * (op_runtime + ai_runtime)])
+    max_length = min([len(op_graph_data), len(ai_graph_data)])
+    all_runtime = []
 
-    if len(op_graph_data) > 1:
+    def get_runtime(_data, extra=[]):
+        opts = ["runtime", "elapsed"] + extra
+        for opt in opts:
+            if opt in _data:
+                return float(_data[opt])
+        return None
+
+    def get_flops(_data, extra=[]):
+        opts = ["flops", "counted_ops", "flop_count", "flop_count_sp", "flop_count_dp",
+                "flop_count_hp", "DP operations", "SP operations"] + extra
+        for opt in opts:
+            if opt in _data:
+                return float(_data[opt])
+        return None
+
+    def get_bandwidth(_data, extra=[]):
+        opts = ["bandwidth", "counted_ins", "ldst_executed", "L/S completed"] + extra
+        for opt in opts:
+            if opt in _data:
+                return float(_data[opt])
+        return None
+
+    for i in range(0, max_length):
+        ai_repr = ai_graph_data[i]["entry"]["repr_data"]
+        op_repr = op_graph_data[i]["entry"]["repr_data"]
+        all_runtime += filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
+
+    for rt in all_runtime:
+        avg_runtime += rt
+
+    if len(all_runtime) > 1:
+        max_runtime = max(all_runtime)
         avg_runtime -= max_runtime
-        avg_runtime /= len(op_graph_data) - 1
+        avg_runtime /= len(all_runtime) - 1.0
 
-    for i in range(0, min([len(op_graph_data), len(ai_graph_data)])):
-        runtime = float(op_graph_data[i]["tuple_element1"]["accum"]["second"])
-        flop = float(op_graph_data[i]["tuple_element1"]
-                     ["accum"]["first"]["value0"])
-        bandwidth = float(
-            ai_graph_data[i]["tuple_element1"]["accum"]["first"]["value1"])
-        label = op_graph_data[i]["tuple_element2"]
+    for i in range(0, max_length):
+        runtimes = []
+        flop = None
+        bandwidth = None
+
+        ai_repr = ai_graph_data[i]["entry"]["repr_data"]
+        op_repr = op_graph_data[i]["entry"]["repr_data"]
+
+        label = op_graph_data[i]["prefix"]
+        runtimes += filter(None, [get_runtime(ai_repr), get_runtime(op_repr)])
+
+        if op_type == "gpu":
+            flop = get_flops(op_repr)
+            bandwidth = get_bandwidth(op_repr)
+        elif op_type == "cpu":
+            flop = get_flops(op_repr)
+            if flop is None:
+                flop = get_flops(op_repr, ["counted"])
+
+        if ai_type == "cpu":
+            bandwidth = get_bandwidth(ai_repr)
+            if bandwidth is None:
+                bandwidth = get_bandwidth(ai_repr, ["counted"])
+
+        runtime = 0.0
+        for rt in runtimes:
+            runtime += rt
+        runtime /= len(runtimes)
 
         intensity = flop / bandwidth
         flop = flop / GIGABYTE / runtime
@@ -254,8 +317,8 @@ def plot_roofline(ai_data, op_data, display=False, fname="roofline",
     """
     Plot the roofline
     """
-    band_data = ai_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
-    flop_data = op_data["rank"]["data"]["roofline"]["ptr_wrapper"]["data"]["data"]
+    band_data = ai_data["rank"]["data"]["roofline"]["ert"]
+    flop_data = op_data["rank"]["data"]["roofline"]["ert"]
     flop_info = op_data["rank"]["data"]["unit_repr"]
 
     peak_band = get_peak_bandwidth(band_data)

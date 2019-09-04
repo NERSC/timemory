@@ -193,9 +193,15 @@ FUNCTION(ADD_GOOGLETEST TEST_NAME)
     endif()
     include(GoogleTest)
     # list of arguments taking multiple values
-    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS)
+    set(multival_args SOURCES PROPERTIES LINK_LIBRARIES COMMAND OPTIONS ENVIRONMENT)
     # parse args
     cmake_parse_arguments(TEST "DISCOVER_TESTS;ADD_TESTS" "" "${multival_args}" ${ARGN})
+
+    if(NOT TARGET google-test-debug-options)
+        add_library(google-test-debug-options INTERFACE)
+        target_compile_definitions(google-test-debug-options INTERFACE $<$<CONFIG:Debug>:DEBUG>)
+    endif()
+    list(APPEND TEST_LINK_LIBRARIES google-test-debug-options)
 
     CREATE_EXECUTABLE(
         TARGET_NAME     ${TEST_NAME}
@@ -220,6 +226,7 @@ FUNCTION(ADD_GOOGLETEST TEST_NAME)
             COMMAND             ${TEST_COMMAND}
             WORKING_DIRECTORY   ${CMAKE_CURRENT_LIST_DIR}
             ${TEST_OPTIONS})
+        SET_TESTS_PROPERTIES(${TEST_NAME} PROPERTIES ENVIRONMENT "${TEST_ENVIRONMENT}")
     endif()
 
 ENDFUNCTION()

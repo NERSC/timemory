@@ -24,6 +24,8 @@
 
 #pragma once
 
+#include "timemory/backends/cuda.hpp"
+#include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/details/settings.hpp"
 #include "timemory/ert/data.hpp"
@@ -41,46 +43,34 @@
 #include <type_traits>
 #include <utility>
 
-#if defined(_OPENMP)
-#    include <omp.h>
-#    define OMP_BARRIER _Pragma("omp barrier")
-#    define OMP_MASTER _Pragma("omp master")
-#    define OMP_PARALLEL _Pragma("omp parallel")
-#    define OMP_GET_THREAD_NUM() omp_get_thread_num()
-#    define OMP_GET_NUM_THREADS() omp_get_num_threads()
-#else
-#    define OMP_BARRIER
-#    define OMP_MASTER
-#    define OMP_PARALLEL
-#    define OMP_GET_THREAD_NUM() 0
-#    define OMP_GET_NUM_THREADS() 1
-#endif
-
 namespace tim
 {
 namespace ert
 {
 //--------------------------------------------------------------------------------------//
+//
+//      CPU -- multiple trial
+//
+//--------------------------------------------------------------------------------------//
 
-template <size_t _Nrep, typename _FuncOps, typename _FuncStore, typename _Tp,
-          typename _Intp = int32_t>
+template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
+          typename _FuncStore, device::enable_if_cpu_t<_Device> = 0>
 void
-cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Intp nsize,
-               _Tp* A)
+ops_kernel(const _Intp& ntrials, const _Intp& nsize, _Tp* A, _FuncOps&& ops_func,
+           _FuncStore&& store_func)
 {
-    // ASSUME_ALIGNED_MEMORY(A, ERT_ALIGN);
     // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
     constexpr size_t NUM_REP = _Nrep / 2;
     constexpr size_t MOD_REP = _Nrep % 2;
-    // static_assert(_Nrep % 2 == 0, "Error! Unrolling an odd number is not supported");
+    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
 
     _Tp alpha = static_cast<_Tp>(0.5);
     for(_Intp j = 0; j < ntrials; ++j)
     {
-        for(_Intp i = 0; i < nsize; ++i)
+        for(auto i = range.begin(); i < range.end(); i += range.stride())
         {
             _Tp beta = static_cast<_Tp>(0.8);
-            apply<void>::unroll<NUM_REP + MOD_REP>(ops_func, beta, A[i], alpha);
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
             store_func(A[i], beta);
         }
         alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
@@ -88,71 +78,254 @@ cpu_ops_kernel(_Intp ntrials, _FuncOps&& ops_func, _FuncStore&& store_func, _Int
 }
 
 //--------------------------------------------------------------------------------------//
+//
+//      GPU -- multiple trial
+//
+//--------------------------------------------------------------------------------------//
 
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
-          typename _FuncOps, typename _FuncStore,
-          tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
-void
-cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func,
-             _FuncStore&& store_func)
+template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
+          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0,
+          enable_if_t<!(std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
+GLOBAL_CALLABLE void
+ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
+           _FuncStore&& store_func)
 {
-    using thread_list_t = std::vector<std::thread>;
+    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
+    constexpr size_t NUM_REP = _Nrep / 2;
+    constexpr size_t MOD_REP = _Nrep % 2;
+    auto             range   = device::grid_strided_range<_Device, 0, _Intp>(nsize);
 
-    if(counter.bytes_per_element == 0)
+    _Tp alpha = static_cast<_Tp>(0.5);
+    for(_Intp j = 0; j < ntrials; ++j)
+    {
+        for(auto i = range.begin(); i < range.end(); i += range.stride())
+        {
+            _Tp beta = static_cast<_Tp>(0.8);
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
+            store_func(A[i], beta);
+        }
+        alpha *= static_cast<_Tp>(1.0 - 1.0e-8);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+//
+//      GPU -- multiple trial -- packed (2) half-precision
+//
+//--------------------------------------------------------------------------------------//
+
+template <size_t _Nrep, typename _Device, typename _Intp, typename _Tp, typename _FuncOps,
+          typename _FuncStore, device::enable_if_gpu_t<_Device> = 0,
+          enable_if_t<(std::is_same<_Tp, cuda::fp16_t>::value)> = 0>
+GLOBAL_CALLABLE void
+ops_kernel(_Intp ntrials, _Intp nsize, _Tp* A, _FuncOps&& ops_func,
+           _FuncStore&& store_func)
+{
+    // divide by four instead of two here because fp16_t is a packed operation
+    constexpr size_t NUM_REP = _Nrep / 4;
+    constexpr size_t MOD_REP = _Nrep % 4;
+    auto             range   = device::grid_strided_range<_Device, 0, int32_t>(nsize);
+
+    _Tp alpha = { 0.5, 0.5 };
+    for(int32_t j = 0; j < ntrials; ++j)
+    {
+        for(auto i = range.begin(); i < range.end(); i += range.stride())
+        {
+            _Tp beta = { 0.8, 0.8 };
+            apply<void>::unroll<NUM_REP + MOD_REP, _Device>(ops_func, beta, A[i], alpha);
+            store_func(A[i], beta);
+        }
+        alpha *= { 1.0 - 1.0e-8, 1.0 - 1.0e-8 };
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+///
+///     This is the "main" function for ERT
+///
+template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
+          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
+          enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
+void
+ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
+         _FuncStore&& store_func)
+{
+    using stream_list_t   = std::vector<cuda::stream_t>;
+    using thread_list_t   = std::vector<std::thread>;
+    using device_params_t = device::params<_Device>;
+    using _Intp           = int32_t;
+    using ull             = long long unsigned;
+
+    constexpr bool is_gpu = std::is_same<_Device, device::gpu>::value;
+
+    if(settings::verbose() > 0 || settings::debug())
+        printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
+
+    if(_counter.bytes_per_element == 0)
         fprintf(stderr, "[%s:%i]> bytes-per-element is not set!\n", __FUNCTION__,
                 __LINE__);
-    if(counter.memory_accesses_per_element == 0)
+
+    if(_counter.memory_accesses_per_element == 0)
         fprintf(stderr, "[%s:%i]> memory-accesses-per-element is not set!\n",
                 __FUNCTION__, __LINE__);
 
-    auto _cpu_op = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
-        auto     buf = counter.get_buffer();
-        uint64_t n   = counter.params.working_set_min;
-        while(n <= counter.nsize)
+    // list of streams
+    stream_list_t streams;
+    // generate async streams if multiple streams were requested
+    if(_counter.params.nstreams > 1)
+    {
+        // fill with implicit stream
+        streams.resize(_counter.params.nstreams, 0);
+        for(auto& itr : streams)
+            cuda::stream_create(itr);
+    }
+
+    auto _opfunc = [&](uint64_t tid, thread_barrier* fbarrier, thread_barrier* lbarrier) {
+        // execute the callback
+        _counter.configure(tid);
+        // allocate buffer
+        auto     buf = _counter.get_buffer();
+        uint64_t n   = _counter.params.working_set_min;
+        // cache this
+        const uint64_t nstreams = std::max<uint64_t>(_counter.params.nstreams, 1);
+        // create the launch parameters (ignored on CPU)
+        //
+        // if grid_size is zero (default), the launch command will calculate a grid-size
+        // as follows:
+        //
+        //      grid_size = ((data_size + block_size - 1) / block_size)
+        //
+        device_params_t dev_params(_counter.params.grid_size, _counter.params.block_size,
+                                   _counter.params.shmem_size, 0);
+        //
+        if(n > _counter.nsize)
+        {
+            fprintf(stderr,
+                    "[%s@'%s':%i]> Warning! ERT not running any trials because working "
+                    "set min > nsize: %llu > %llu\n",
+                    TIMEMORY_ERROR_FUNCTION_MACRO, __FILE__, __LINE__, (ull) n,
+                    (ull) _counter.nsize);
+        }
+
+        while(n <= _counter.nsize)
         {
             // working set - nsize
-            uint64_t ntrials = counter.nsize / n;
+            uint64_t ntrials = _counter.nsize / n;
             if(ntrials < 1)
                 ntrials = 1;
+
+            if(settings::debug() && tid == 0)
+            {
+                printf(
+                    "[tim::ert::ops_main<%llu>]> number of trials: %llu, n = %llu, nsize "
+                    "= %llu\n",
+                    (ull) _Nops, (ull) ntrials, (ull) n, (ull) _counter.nsize);
+            }
+
+            auto _itr_params = _counter.params;
+
+            if(is_gpu)
+            {
+                // make sure all streams are synced
+                for(auto& itr : streams)
+                    cuda::stream_sync(itr);
+
+                // sync the streams
+                if(nstreams < 2)
+                    cuda::device_sync();
+            }
 
             // wait master thread notifies to proceed
             if(fbarrier)
                 fbarrier->spin_wait();
 
             // get instance of object measuring something during the calculation
-            _Counter ct = counter.get_counter();
+            _Counter ct = _counter.get_counter();
             // start the timer or anything else being recorded
             ct.start();
 
-            cpu_ops_kernel<_Nops>(ntrials, std::forward<_FuncOps>(ops_func),
-                                  std::forward<_FuncStore>(store_func), n, buf);
+            // only do this more complicated mess if we need to
+            if(nstreams > 1)
+            {
+                auto nchunk  = n / nstreams;
+                auto nmodulo = n % nstreams;
+                for(uint64_t i = 0; i < nstreams; ++i)
+                {
+                    // calculate the buffer offset
+                    auto offset = i * nchunk;
+                    // calculate the size of the subchunk
+                    int32_t _n      = nchunk + ((i + 1 == nstreams) ? nmodulo : 0);
+                    auto    _buf    = buf + offset;
+                    auto    _stream = streams.at(i % streams.size());
+                    auto    _params = dev_params;  // copy of the parameters
+                    device::launch(
+                        _n, _stream, _params,
+                        ops_kernel<_Nops, _Device, _Intp, _Tp, _FuncOps, _FuncStore>,
+                        ntrials, _n, _buf, std::forward<_FuncOps>(ops_func),
+                        std::forward<_FuncStore>(store_func));
+                    if(i == 0)
+                        _itr_params.grid_size = _params.grid;
+                    else
+                        _itr_params.grid_size =
+                            std::max<int64_t>(_itr_params.grid_size, _params.grid);
+                }
+            }
+            else
+            {
+                device::launch(
+                    n, dev_params,
+                    ops_kernel<_Nops, _Device, _Intp, _Tp, _FuncOps, _FuncStore>, ntrials,
+                    n, buf, std::forward<_FuncOps>(ops_func),
+                    std::forward<_FuncStore>(store_func));
+
+                _itr_params.grid_size = dev_params.grid;
+            }
+
+            if(is_gpu)
+            {
+                for(auto& itr : streams)
+                    cuda::stream_sync(itr);
+
+                // sync the streams
+                if(nstreams < 2)
+                    cuda::device_sync();
+            }
 
             // wait master thread notifies to proceed
             if(lbarrier)
                 lbarrier->spin_wait();
+
             // stop the timer or anything else being recorded
             ct.stop();
+
             // store the result
             if(tid == 0)
-                counter.record(ct, n, ntrials, _Nops);
+                _counter.record(ct, n, ntrials, _Nops, _itr_params);
 
             n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
         }
-        counter.destroy_buffer(buf);
+
+        if(is_gpu)
+            cuda::device_sync();
+        _counter.destroy_buffer(buf);
     };
 
-    tim::mpi::barrier();  // i.e. OMP_MASTER
+    mpi::barrier();  // synchronize MPI processes
 
-    if(counter.params.nthreads > 1)
+    if(is_gpu)
+        cuda::device_sync();
+
+    if(_counter.params.nthreads > 1)
     {
         // create synchronization barriers for the threads
-        thread_barrier fbarrier(counter.params.nthreads);
-        thread_barrier lbarrier(counter.params.nthreads);
+        thread_barrier fbarrier(_counter.params.nthreads);
+        thread_barrier lbarrier(_counter.params.nthreads);
 
-        // launch the threads
+        // list of threads
         thread_list_t threads;
-        for(uint64_t i = 0; i < counter.params.nthreads; ++i)
-            threads.push_back(std::thread(_cpu_op, i, &fbarrier, &lbarrier));
+        // create the threads
+        for(uint64_t i = 0; i < _counter.params.nthreads; ++i)
+            threads.push_back(std::thread(_opfunc, i, &fbarrier, &lbarrier));
 
         // wait for threads to finish
         for(auto& itr : threads)
@@ -160,123 +333,34 @@ cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func
     }
     else
     {
-        _cpu_op(0, nullptr, nullptr);
+        _opfunc(0, nullptr, nullptr);
     }
 
-    tim::mpi::barrier();  // i.e. OMP_MASTER
-    // end the recursive loop
+    if(is_gpu)
+        cuda::device_sync();
+
+    mpi::barrier();  // synchronize MPI processes
 }
 
 //--------------------------------------------------------------------------------------//
-
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Counter,
-          typename _FuncOps, typename _FuncStore,
-          tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
+///
+///     This is invokes the "main" function for ERT for all the desired "FLOPs" that
+///     are unrolled in the kernel
+///
+template <size_t _Nops, size_t... _Nextra, typename _Device, typename _Tp,
+          typename _ExecData, typename _Counter, typename _FuncOps, typename _FuncStore,
+          enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
 void
-cpu_ops_main(cpu::operation_counter<_Tp, _Counter>& counter, _FuncOps&& ops_func,
-             _FuncStore&& store_func)
-{
-    if(settings::verbose() > 0 || settings::debug())
-        printf("[%s] Executing %li ops...\n", __FUNCTION__, (long int) _Nops);
-    // execute a single parameter
-    cpu_ops_main<_Nops>(counter, ops_func, store_func);
-    // continue the recursive loop
-    cpu_ops_main<_Nextra...>(counter, ops_func, store_func);
-}
-
-//--------------------------------------------------------------------------------------//
-#if defined(__NVCC__)
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Nrep, typename _Func, typename _Tp, typename _Intp = int32_t>
-__global__ void
-gpu_ops_kernel(_Intp ntrials, _Func&& func, _Intp nsize, _Tp* A, int* bytes_per_element,
-               int* memory_accesses_per_element)
-{
-    // divide by two here because macros halve, e.g. ERT_FLOP == 4 means 2 calls
-    constexpr size_t NUM_REP = _Nrep / 2;
-    constexpr size_t MOD_REP = _Nrep % 2;
-
-    _Intp i0      = blockIdx.x * blockDim.x + threadIdx.x;
-    _Intp istride = blockDim.x * gridDim.x;
-
-    if(i0 == 0)
-    {
-        *bytes_per_element           = sizeof(_Tp);
-        *memory_accesses_per_element = 2;
-    }
-
-    for(_Intp j = 0; j < ntrials; ++j)
-    {
-        _Tp alpha = 0.5;
-        for(_Intp i = i0; i < nsize; i += istride)
-        {
-            _Tp beta = 0.8;
-            apply<void>::unroll<NUM_REP + MOD_REP>(func, beta, A[i], alpha);
-            A[i] = beta;
-        }
-        alpha *= (1.0 - 1.0e-8);
-    }
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
-          tim::enable_if_t<(sizeof...(_Nextra) == 0), int> = 0>
-void
-gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
-{
-    OMP_PARALLEL
-    {
-        auto     buf          = counter.initialize();
-        uint64_t n            = counter.params.working_set_min;
-        int*     counter_data = cuda::malloc<int>(2);
-        while(n <= counter.nsize)
-        {
-            // working set - nsize
-            uint64_t ntrials = counter.nsize / n;
-            if(ntrials < 1)
-                ntrials = 1;
-
-            OMP_MASTER { tim::mpi::barrier(); }
-            OMP_BARRIER
-            counter.start();
-            gpu_ops_kernel<_Nops><<<counter.grid_size, counter.block_size, counter.shmem,
-                                    counter.stream>>>(ntrials, std::forward<_Func>(func),
-                                                      n, buf, &counter_data[0],
-                                                      &counter_data[1]);
-            cuda::stream_sync(counter.stream);
-            OMP_BARRIER
-            OMP_MASTER { tim::mpi::barrier(); }
-            counter.stop(n, ntrials, _Nops);
-
-            n = ((1.1 * n) == n) ? (n + 1) : (1.1 * n);
-        }
-        cuda::memcpy<int>(&counter.bytes_per_element, counter_data + 0, 1,
-                          cuda::device_to_host_v, counter.stream);
-        cuda::memcpy<int>(&counter.memory_accesses_per_element, counter_data + 1, 1,
-                          cuda::device_to_host_v, counter.stream);
-        cuda::stream_sync(counter.stream);
-        cuda::free(counter_data);
-    }
-    tim::mpi::barrier();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <size_t _Nops, size_t... _Nextra, typename _Tp, typename _Func,
-          tim::enable_if_t<(sizeof...(_Nextra) > 0), int> = 0>
-void
-gpu_ops_main(gpu::operation_counter<_Tp>& counter, _Func&& func)
+ops_main(counter<_Device, _Tp, _ExecData, _Counter>& _counter, _FuncOps&& ops_func,
+         _FuncStore&& store_func)
 {
     // execute a single parameter
-    gpu_ops_main<_Nops>(counter, func);
+    ops_main<_Nops>(_counter, ops_func, store_func);
     // continue the recursive loop
-    gpu_ops_main<_Nextra...>(counter, func);
+    ops_main<_Nextra...>(_counter, ops_func, store_func);
 }
 
-#endif
+//--------------------------------------------------------------------------------------//
 
 }  // namespace ert
 }  // namespace tim

@@ -49,9 +49,9 @@ static written_bytes wb;
 static auto          tot_size = nelements * sizeof(int64_t) / memory_unit.first;
 static auto          tot_rw   = nelements * sizeof(floating_t) / memory_unit.first;
 
-static const float peak_tolerance = 5 * tim::units::MiB;
-static const float curr_tolerance = 5 * tim::units::MiB;
-static const float byte_tolerance = tot_rw;  // macOS is not dependable
+static const double peak_tolerance = 5 * tim::units::MiB;
+static const double curr_tolerance = 5 * tim::units::MiB;
+static const double byte_tolerance = tot_rw;  // macOS is not dependable
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
@@ -242,7 +242,7 @@ main(int argc, char** argv)
     // preform allocation only once here
     tim::settings::precision()    = 9;
     tim::settings::memory_units() = memory_unit.second;
-    tim::settings::process();
+    tim::timemory_init(argc, argv);
 
     details::allocate();
 

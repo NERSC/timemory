@@ -46,7 +46,7 @@ struct caliper : public base<caliper, int8_t>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "caliper"; }
-    static std::string descript() { return "caliper"; }
+    static std::string description() { return "caliper"; }
     static std::string display_unit() { return ""; }
 
     static value_type record() { return 0; }

@@ -24,12 +24,14 @@
 
 #include "gtest/gtest.h"
 
+#include <timemory/mpl/apply.hpp>
+#include <timemory/timemory.hpp>
+
 #include <array>
 #include <chrono>
 #include <iostream>
 #include <random>
 #include <thread>
-#include <timemory/mpl/apply.hpp>
 #include <vector>
 
 static const double epsilon = 1.1 * std::numeric_limits<double>::epsilon();
@@ -67,6 +69,7 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    tim::timemory_init(argc, argv);
     return RUN_ALL_TESTS();
 }
 

@@ -33,6 +33,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -108,13 +109,13 @@ struct cuda_event : public base<cuda_event, float>
 
     static int64_t     unit() { return units::sec; }
     static std::string label() { return "cuda_event"; }
-    static std::string descript() { return "event time"; }
+    static std::string description() { return "event time"; }
     static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
 
     static uint64_t& get_batched_marker_size()
     {
-        static uint64_t _instance = get_env("TIMEMORY_CUDA_EVENT_MARKERS", 5);
+        static uint64_t _instance = settings::cuda_event_batch_size();
         return _instance;
     }
 

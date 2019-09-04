@@ -47,6 +47,8 @@ namespace tim
 {
 namespace details
 {
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 bool
 is_finite(const _Tp& val)
@@ -58,12 +60,16 @@ is_finite(const _Tp& val)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 inline std::atomic<int>&
 storage_once_flag()
 {
     static std::atomic<int> _instance;
     return _instance;
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Pred, typename _Tp>
 void
@@ -72,11 +78,19 @@ reduce_merge(_Pred lhs, _Pred rhs)
     *lhs += *rhs;
 }
 
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 struct combine_plus
 {
     combine_plus(_Tp& lhs, const _Tp& rhs) { lhs += rhs; }
 };
+
+//--------------------------------------------------------------------------------------//
+//
+//      Combining daughter data
+//
+//--------------------------------------------------------------------------------------//
 
 template <typename... _Types>
 void
@@ -85,6 +99,8 @@ combine(std::tuple<_Types...>& lhs, const std::tuple<_Types...>& rhs)
     using apply_t = std::tuple<combine_plus<_Types>...>;
     apply<void>::access2<apply_t>(lhs, rhs);
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
@@ -96,6 +112,24 @@ combine(_Container<_Tp, _ExtraArgs...>& lhs, const _Container<_Tp, _ExtraArgs...
         lhs[i] += rhs[i];
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+void
+combine(std::map<_Key, _Mapped, _ExtraArgs...>&       lhs,
+        const std::map<_Key, _Mapped, _ExtraArgs...>& rhs)
+{
+    for(auto itr : rhs)
+    {
+        if(lhs.find(itr.first) != lhs.end())
+            lhs.find(itr.first)->second += itr.second;
+        else
+            lhs[itr.first] = itr.second;
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
 void
@@ -104,6 +138,12 @@ combine(_Tp& lhs, const _Tp& rhs)
     lhs += rhs;
 }
 
+//--------------------------------------------------------------------------------------//
+//
+//      Computing percentage that excludes daughters
+//
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 std::tuple<_Types...>
 compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
@@ -111,6 +151,8 @@ compute_percentage(const std::tuple<_Types...>&, const std::tuple<_Types...>&)
     std::tuple<_Types...> _one;
     return _one;
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container, typename _Ret = _Tp>
@@ -128,6 +170,28 @@ compute_percentage(const _Container<_Tp, _ExtraArgs...>& lhs,
     return perc;
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+std::map<_Key, _Mapped, _ExtraArgs...>
+compute_percentage(const std::map<_Key, _Mapped, _ExtraArgs...>& lhs,
+                   const std::map<_Key, _Mapped, _ExtraArgs...>& rhs)
+{
+    std::map<_Key, _Mapped, _ExtraArgs...> perc;
+    for(auto itr : lhs)
+    {
+        if(rhs.find(itr.first) != rhs.end())
+        {
+            auto ritr = rhs.find(itr.first)->second;
+            if(itr.second > 0)
+                perc[itr.first] = (1.0 - (itr.second / ritr)) * 100.0;
+        }
+    }
+    return perc;
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp, typename _Ret = _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
 _Ret
@@ -135,6 +199,12 @@ compute_percentage(_Tp& lhs, const _Tp& rhs)
 {
     return (rhs > 0) ? ((1.0 - (lhs / rhs)) * 100.0) : 0.0;
 }
+
+//--------------------------------------------------------------------------------------//
+//
+//      Printing percentage that excludes daughters
+//
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _ExtraArgs,
           template <typename, typename...> class _Container>
@@ -159,11 +229,40 @@ print_percentage(std::ostream& os, const _Container<_Tp, _ExtraArgs...>& obj)
     os << ss.str();
 }
 
+//--------------------------------------------------------------------------------------//
+
+template <typename _Key, typename _Mapped, typename... _ExtraArgs>
+void
+print_percentage(std::ostream& os, const std::map<_Key, _Mapped, _ExtraArgs...>& obj)
+{
+    // negative values appear when multiple threads are involved.
+    // This needs to be addressed
+    for(auto itr = obj.begin(); itr != obj.end(); ++itr)
+        if(itr->second < 0.0 || !is_finite(itr->second))
+            return;
+
+    std::stringstream ss;
+    ss << "(exclusive: ";
+    for(auto itr = obj.begin(); itr != obj.end(); ++itr)
+    {
+        size_t i = std::distance(obj.begin(), itr);
+        ss << std::setprecision(1) << std::fixed << std::setw(5) << itr->second << "%";
+        if(i + 1 < obj.size())
+            ss << ", ";
+    }
+    ss << ")";
+    os << ss.str();
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 void
 print_percentage(std::ostream&, const std::tuple<_Types...>&)
 {
 }
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp,
           typename std::enable_if<(!std::is_class<_Tp>::value), int>::type = 0>
@@ -182,8 +281,12 @@ print_percentage(std::ostream& os, const _Tp& obj)
     os << ss.str();
 }
 
+//--------------------------------------------------------------------------------------//
+
 }  // namespace details
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
 
 template <typename ObjectType>
 void
@@ -234,7 +337,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
         auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
         std::cerr << "Failure to merge graphs!" << std::endl;
         auto g = graph();
-        graph().insert_subgraph_after(m_data.current(), itr->data().head());
+        graph().insert_subgraph_after(_data().current(), itr->data().head());
     }
 }
 
@@ -253,6 +356,11 @@ void tim::storage<ObjectType>::external_print(std::false_type)
     else if(settings::auto_output())
     {
         merge();
+
+        auto _iter_beg = _data().graph().begin();
+        auto _iter_end = _data().graph().end();
+        _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
+
         ObjectType::thread_finalize_policy();
         ObjectType::global_finalize_policy();
 
@@ -274,12 +382,12 @@ void tim::storage<ObjectType>::external_print(std::false_type)
         }
 
         int64_t _min = std::numeric_limits<int64_t>::max();
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
             _min = std::min<int64_t>(itr.depth(), _min);
 
         if(!(_min < 0))
         {
-            for(auto& itr : m_data.graph())
+            for(auto& itr : _data().graph())
                 itr.depth() -= 1;
         }
 
@@ -345,12 +453,12 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             return _prefix;
         };
 
-        m_data.current()   = m_data.head();
+        _data().current()  = _data().head();
         int64_t _width     = ObjectType::get_width();
         int64_t _max_depth = 0;
         int64_t _max_laps  = 0;
         // find the max width
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
         {
             if(itr.depth() < 0)
                 continue;
@@ -368,7 +476,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
 
         std::stringstream _oss;
         // std::stringstream _mss;
-        for(auto pitr = m_data.graph().begin(); pitr != m_data.graph().end(); ++pitr)
+        for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
         {
             auto itr = *pitr;
             if(itr.depth() < 0)
@@ -385,7 +493,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                 // the sum of the exclusive values
                 get_return_type exclusive_values;
                 // continue while not at end of graph until first sibling is encountered
-                while(eitr->depth() != itr.depth() && eitr != m_data.graph().end())
+                while(eitr->depth() != itr.depth() && eitr != _data().graph().end())
                 {
                     // if one level down, this is an exclusive value
                     if(eitr->depth() == itr.depth() + 1)
@@ -517,14 +625,13 @@ void
 tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
                                     const unsigned int version)
 {
-    using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::deque<tuple_type>;
 
     // convert graph to a deque
     auto convert_graph = [&]() {
         array_type _list;
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
         {
             if(itr.depth() < 0)
                 continue;
@@ -534,14 +641,24 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
     };
 
     auto graph_list = convert_graph();
-    auto data_type  = type_id<value_type>::value(m_data.head()->obj().value);
     ar(serializer::make_nvp("type", ObjectType::label()),
-       serializer::make_nvp("descript", ObjectType::descript()),
+       serializer::make_nvp("description", ObjectType::description()),
        serializer::make_nvp("unit_value", ObjectType::unit()),
-       serializer::make_nvp("unit_repr", ObjectType::display_unit()),
-       serializer::make_nvp("dtype", data_type));
+       serializer::make_nvp("unit_repr", ObjectType::display_unit()));
     ObjectType::serialization_policy(ar, version);
-    ar(serializer::make_nvp("graph", graph_list));
+    ar.setNextName("graph");
+    ar.startNode();
+    ar.makeArray();
+    for(auto& itr : graph_list)
+    {
+        ar.startNode();
+        ar(serializer::make_nvp("hash", std::get<0>(itr)),
+           serializer::make_nvp("prefix", std::get<2>(itr)),
+           serializer::make_nvp("depth", std::get<3>(itr)),
+           serializer::make_nvp("entry", std::get<1>(itr)));
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 
 //======================================================================================//
@@ -552,14 +669,13 @@ void
 tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
                                     const unsigned int version)
 {
-    using value_type = typename ObjectType::value_type;
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::deque<tuple_type>;
 
     // convert graph to a deque
     auto convert_graph = [&]() {
         array_type _list;
-        for(const auto& itr : m_data.graph())
+        for(const auto& itr : _data().graph())
             _list.push_back(itr);
         return _list;
     };
@@ -568,17 +684,28 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
     if(graph_list.size() == 0)
         return;
     ObjectType& obj           = std::get<1>(graph_list.front());
-    auto        data_type     = type_id<value_type>::value(m_data.head()->obj().value);
     auto        labels        = obj.label_array();
     auto        descripts     = obj.descript_array();
     auto        units         = obj.unit_array();
     auto        display_units = obj.display_unit_array();
-    ar(serializer::make_nvp("type", labels), serializer::make_nvp("descript", descripts),
+    ar(serializer::make_nvp("type", labels),
+       serializer::make_nvp("description", descripts),
        serializer::make_nvp("unit_value", units),
-       serializer::make_nvp("unit_repr", display_units),
-       serializer::make_nvp("dtype", data_type));
+       serializer::make_nvp("unit_repr", display_units));
     ObjectType::serialization_policy(ar, version);
-    ar(serializer::make_nvp("graph", graph_list));
+    ar.setNextName("graph");
+    ar.startNode();
+    ar.makeArray();
+    for(auto& itr : graph_list)
+    {
+        ar.startNode();
+        ar(serializer::make_nvp("hash", std::get<0>(itr)),
+           serializer::make_nvp("prefix", std::get<2>(itr)),
+           serializer::make_nvp("depth", std::get<3>(itr)),
+           serializer::make_nvp("entry", std::get<1>(itr)));
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 
 //======================================================================================//

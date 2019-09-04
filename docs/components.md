@@ -57,20 +57,33 @@ The components in the "resource usage" category are provided by POSIX `rusage` (
 
 > Namespace: `tim::component`
 
-| Component Name    | Category      | Dependencies | Description                                                                 |
-| ----------------- | ------------- | ------------ | --------------------------------------------------------------------------- |
-| **`cuda_event`**  | timing        | CUDA runtime | Elapsed time between two points in a CUDA stream                            |
-| **`nvtx_marker`** | external tool | CUDA runtime | Inserts CUDA NVTX markers into the code for `nvprof` and/or `NsightSystems` |
+| Component Name       | Category      | Dependencies | Description                                                                 |
+| -------------------- | ------------- | ------------ | --------------------------------------------------------------------------- |
+| **`cuda_event`**     | timing        | CUDA runtime | Elapsed time between two points in a CUDA stream                            |
+| **`nvtx_marker`**    | external tool | CUDA runtime | Inserts CUDA NVTX markers into the code for `nvprof` and/or `NsightSystems` |
+| **`cupti_counters`** | GPU           | CUDA, CUPTI  | Provides NVIDIA GPU hardware counters for events and metrics                |
+| **`cupti_activity`** | GPU           | CUDA, CUPTI  | Provides high-precision runtime activity tracing                            |
+
+## gperftools Components
+
+> Namespace: `tim::component`
+
+| Component Name            | Category                          | Dependencies                              | Description                           |
+| ------------------------- | --------------------------------- | ----------------------------------------- | ------------------------------------- |
+| **`gperf_cpu_profiler`**  | external tool for CPU sampling    | gperftools "profiler" library and headers | Starts/stops gperftools CPU profiler  |
+| **`gperf_heap_profiler`** | external tool for memory tracking | gperftools "tcmalloc" library and headers | Starts/stops gperftools heap profiler |
 
 ## Hardware Counter Components
 
 > Namespace: `tim::component`
 
-| Component Name    | Category | Template Specification      | Dependencies | Description                                                                             |
-| ----------------- | -------- | --------------------------- | ------------ | --------------------------------------------------------------------------------------- |
-| **`papi_tuple`**  | CPU      | `papi_tuple<EventTypes...>` | PAPI         | Variadic list of compile-time specified list of PAPI preset types (e.g. `PAPI_TOT_CYC`) |
-| **`papi_array`**  | CPU      | `papi_array<N>`             | PAPI         | Variable set of PAPI counters up to size _N_. Supports native hardware counter types    |
-| **`cupti_event`** | GPU      |                             | CUDA, CUPTI  | Provides NVIDIA GPU hardware counters for events and metrics                            |
+| Component Name                         | Category | Template Specification      | Dependencies | Description                                                                             |
+| -------------------------------------- | -------- | --------------------------- | ------------ | --------------------------------------------------------------------------------------- |
+| **`papi_tuple`**                       | CPU      | `papi_tuple<EventTypes...>` | PAPI         | Variadic list of compile-time specified list of PAPI preset types (e.g. `PAPI_TOT_CYC`) |
+| **`papi_array`**<sup>[[3]](#fn3)</sup> | CPU      | `papi_array<N>`             | PAPI         | Variable set of PAPI counters up to size _N_. Supports native hardware counter types    |
+| **`cupti_counters`**                   | GPU      |                             | CUDA, CUPTI  | Provides NVIDIA GPU hardware counters for events and metrics                            |
+
+<a name="fn3">[3]</a>: `tim::component::papi_array_t` is pre-defined as `tim::component::papi_array<32>`
 
 ## Miscellaneous Components
 
@@ -95,23 +108,28 @@ One can examine the resultant Roofline figure in order to determine both the imp
 
 More documentation can be found [here](https://docs.nersc.gov/programming/performance-debugging-tools/roofline/).
 
-| Component Name     | Category | Template Specification              | Dependencies | Description                                                     |
-| ------------------ | -------- | ----------------------------------- | ------------ | --------------------------------------------------------------- |
-| **`cpu_roofline`** | CPU      | `cpu_roofline<Type, EventTypes...>` | PAPI         | Records the rate at which the hardware counters are accumulated |
+| Component Name     | Category | Template Specification   | Dependencies | Description                                                     |
+| ------------------ | -------- | ------------------------ | ------------ | --------------------------------------------------------------- |
+| **`cpu_roofline`** | CPU      | `cpu_roofline<Types...>` | PAPI         | Records the rate at which the hardware counters are accumulated |
+| **`gpu_roofline`** | CPU      | `gpu_roofline<Types...>` | CUDA, CUPTI  | Records the rate at which the hardware counters are accumulated |
 
 The roofline components provided by TiMemory execute a workflow during application termination that calculates the theoretical peak for the roofline.
-A pre-defined set of algorithms for the theoretical peak are provided but these can be customized assigning a custom function pointer to
-`tim::component::cpu_roofline<Type, EventTypes...>::get_finalize_function()`. An example can be found in `timemory/examples/ex-roofline/test_cpu_roofline.cpp`
-file of the source code within the `customize_roofline` function.
+A pre-defined set of algorithms for the theoretical peak are provided but these can be customized.
+An example can be found in `timemory/examples/ex-cpu-roofline/test_cpu_roofline.cpp` and `timemory/examples/ex-gpu-roofline/test_gpu_roofline.cpp`.
 
 ### Pre-defined Types
 
 > Namespace: `tim::component`
 
-| Component Name              | Underlying Template Specification   | Description                     |
-| --------------------------- | ----------------------------------- | ------------------------------- |
-| **`cpu_roofline_dp_flops`** | `cpu_roofline<double, PAPI_DP_OPS>` | Rate of double-precision FLOP/s |
-| **`cpu_roofline_sp_flops`** | `cpu_roofline<float, PAPI_SP_OPS>`  | Rate of single-precision FLOP/s |
+| Component Name              | Underlying Template Specification           | Description                                        |
+| --------------------------- | ------------------------------------------- | -------------------------------------------------- |
+| **`cpu_roofline_flops`**    | `cpu_roofline<float, double>`               | Rate of single- and double-precision FLOP/s        |
+| **`cpu_roofline_dp_flops`** | `cpu_roofline<double>`                      | Rate of double-precision FLOP/s                    |
+| **`cpu_roofline_sp_flops`** | `cpu_roofline<float>`                       | Rate of single-precision FLOP/s                    |
+| **`gpu_roofline_flops`**    | `gpu_roofline<cuda::fp16_t, float, double>` | Rate of half-, single- and double-precision FLOP/s |
+| **`gpu_roofline_dp_flops`** | `gpu_roofline<double>`                      | Rate of double-precision FLOP/s                    |
+| **`gpu_roofline_sp_flops`** | `gpu_roofline<float>`                       | Rate of single-precision FLOP/s                    |
+| **`gpu_roofline_hp_flops`** | `gpu_roofline<cuda::fp16_t>`                | Rate of half-precision FLOP/s                      |
 
 ## Variadic Component Wrappers
 

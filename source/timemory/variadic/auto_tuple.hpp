@@ -70,10 +70,10 @@ public:
 
 public:
     inline explicit auto_tuple(const string_t&, const int64_t& lineno = 0,
-                               const language_t& lang           = language_t::cxx(),
-                               bool              report_at_exit = false);
+                               const language_t& lang = language_t::cxx(),
+                               bool report_at_exit    = settings::destructor_report());
     inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
-                               bool report_at_exit = false);
+                               bool report_at_exit = settings::destructor_report());
     inline ~auto_tuple();
 
     // copy and move
@@ -113,6 +113,7 @@ public:
     inline const string_t&  key() const { return m_temporary_object.key(); }
     inline const language&  lang() const { return m_temporary_object.lang(); }
     inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
+    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     template <std::size_t _N>

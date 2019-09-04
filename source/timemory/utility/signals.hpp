@@ -157,8 +157,11 @@ disable_signal_detection();
 inline void
 update_signal_detection(const signal_settings::signal_set_t& _signals)
 {
-    disable_signal_detection();
-    enable_signal_detection(_signals);
+    if(settings::allow_signal_handler())
+    {
+        disable_signal_detection();
+        enable_signal_detection(_signals);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -432,6 +435,13 @@ termination_signal_message(int sig, siginfo_t* sinfo, std::ostream& os)
 inline bool
 enable_signal_detection(signal_settings::signal_set_t operations)
 {
+    if(!settings::allow_signal_handler())
+    {
+        if(signal_settings::is_active())
+            disable_signal_detection();
+        return false;
+    }
+
     // don't re-enable
     if(signal_settings::is_active())
         return false;

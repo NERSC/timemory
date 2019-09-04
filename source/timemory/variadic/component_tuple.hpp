@@ -463,6 +463,7 @@ public:
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
+    void              rekey(const string_t& _key) { compute_identifier(_key, m_lang); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
@@ -605,9 +606,9 @@ protected:
         apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
 
-private:
-    void init_manager();
-    void init_storage()
+public:
+    static void init_manager();
+    static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, data_type>();
     }

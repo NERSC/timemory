@@ -61,16 +61,16 @@ struct peak_rss : public base<peak_rss>
 
     static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "peak_rss"; }
-    static std::string descript() { return "max resident set size"; }
+    static std::string description() { return "max resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_peak_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -104,16 +104,16 @@ struct current_rss : public base<current_rss>
 
     static int64_t     unit() { return units::megabyte; }
     static std::string label() { return "current_rss"; }
-    static std::string descript() { return "current resident set size"; }
+    static std::string description() { return "current resident set size"; }
     static std::string display_unit() { return "MB"; }
     static value_type  record() { return get_current_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -148,16 +148,16 @@ struct stack_rss : public base<stack_rss>
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "stack_rss"; }
-    static std::string descript() { return "integral unshared stack size"; }
+    static std::string description() { return "integral unshared stack size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_stack_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -190,16 +190,16 @@ struct data_rss : public base<data_rss>
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "data_rss"; }
-    static std::string descript() { return "integral unshared data size"; }
+    static std::string description() { return "integral unshared data size"; }
     static std::string display_unit() { return "KB"; }
     static value_type  record() { return get_data_rss(); }
-    float              get_display() const
+    double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
-        return val / static_cast<float>(base_type::get_unit());
+        return val / static_cast<double>(base_type::get_unit());
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -230,7 +230,7 @@ struct num_swap : public base<num_swap>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "num_swap"; }
-    static std::string descript() { return "swaps out of main memory"; }
+    static std::string description() { return "swaps out of main memory"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_swap(); }
     value_type         get_display() const
@@ -238,8 +238,8 @@ struct num_swap : public base<num_swap>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -269,7 +269,7 @@ struct num_io_in : public base<num_io_in>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "io_in"; }
-    static std::string descript() { return "block input operations"; }
+    static std::string description() { return "block input operations"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_in(); }
     value_type         get_display() const
@@ -277,8 +277,8 @@ struct num_io_in : public base<num_io_in>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -308,7 +308,7 @@ struct num_io_out : public base<num_io_out>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "io_out"; }
-    static std::string descript() { return "block output operations"; }
+    static std::string description() { return "block output operations"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_io_out(); }
     value_type         get_display() const
@@ -316,8 +316,8 @@ struct num_io_out : public base<num_io_out>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -348,7 +348,7 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "minor_page_flts"; }
-    static std::string descript() { return "page reclaims"; }
+    static std::string description() { return "page reclaims"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_minor_page_faults(); }
     value_type         get_display() const
@@ -356,8 +356,8 @@ struct num_minor_page_faults : public base<num_minor_page_faults>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -387,7 +387,7 @@ struct num_major_page_faults : public base<num_major_page_faults>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "major_page_flts"; }
-    static std::string descript() { return "page faults"; }
+    static std::string description() { return "page faults"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_major_page_faults(); }
     value_type         get_display() const
@@ -395,8 +395,8 @@ struct num_major_page_faults : public base<num_major_page_faults>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -426,7 +426,7 @@ struct num_msg_sent : public base<num_msg_sent>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_sent"; }
-    static std::string descript() { return "messages sent"; }
+    static std::string description() { return "messages sent"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_messages_sent(); }
     value_type         get_display() const
@@ -434,8 +434,8 @@ struct num_msg_sent : public base<num_msg_sent>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -465,7 +465,7 @@ struct num_msg_recv : public base<num_msg_recv>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "num_msg_recv"; }
-    static std::string descript() { return "messages received"; }
+    static std::string description() { return "messages received"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_messages_received(); }
     value_type         get_display() const
@@ -473,8 +473,8 @@ struct num_msg_recv : public base<num_msg_recv>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -504,7 +504,7 @@ struct num_signals : public base<num_signals>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "num_signals"; }
-    static std::string descript() { return "signals delievered"; }
+    static std::string description() { return "signals delievered"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_signals(); }
     value_type         get_display() const
@@ -512,8 +512,8 @@ struct num_signals : public base<num_signals>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -545,7 +545,7 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "vol_cxt_swch"; }
-    static std::string descript() { return "voluntary context switches"; }
+    static std::string description() { return "voluntary context switches"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_voluntary_context_switch(); }
     value_type         get_display() const
@@ -553,8 +553,8 @@ struct voluntary_context_switch : public base<voluntary_context_switch>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -588,7 +588,7 @@ struct priority_context_switch : public base<priority_context_switch>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "prio_cxt_swch"; }
-    static std::string descript() { return "priority context switches"; }
+    static std::string description() { return "priority context switches"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return get_num_priority_context_switch(); }
     value_type         get_display() const
@@ -596,8 +596,8 @@ struct priority_context_switch : public base<priority_context_switch>
         auto val = (is_transient) ? accum : value;
         return val;
     }
-    float get() const { return get_display(); }
-    void  start()
+    double get() const { return get_display(); }
+    void   start()
     {
         set_started();
         value = record();
@@ -624,7 +624,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<read_bytes, value_type>;
     using timer_type  = real_clock;
-    using result_type = std::tuple<int64_t, float>;
+    using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
     static const short                   width     = 5;
@@ -633,7 +633,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "read_bytes"; }
-    static std::string descript() { return "physical I/O reads"; }
+    static std::string description() { return "physical I/O reads"; }
     static std::string display_unit() { return "kB"; }
 
     static value_type record()
@@ -671,9 +671,9 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto val = (is_transient) ? accum : value;
 
         auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<float>(std::get<1>(val) /
-                                        static_cast<float>(timer_type::ratio_t::den) *
-                                        timer_type::get_unit());
+        auto delta = static_cast<double>(std::get<1>(val) /
+                                         static_cast<double>(timer_type::ratio_t::den) *
+                                         timer_type::get_unit());
         return result_type(data, data / delta);
     }
 
@@ -703,7 +703,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     using value_type  = std::tuple<int64_t, int64_t>;
     using base_type   = base<written_bytes, value_type>;
     using timer_type  = real_clock;
-    using result_type = std::tuple<int64_t, float>;
+    using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
     static const short                   width     = 5;
@@ -712,7 +712,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 
     static int64_t     unit() { return units::kilobyte; }
     static std::string label() { return "written_bytes"; }
-    static std::string descript() { return "physical I/O writes"; }
+    static std::string description() { return "physical I/O writes"; }
     static std::string display_unit() { return "kB"; }
 
     static value_type record()
@@ -750,9 +750,9 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto val = (is_transient) ? accum : value;
 
         auto data  = std::get<0>(val) / base_type::get_unit();
-        auto delta = static_cast<float>(std::get<1>(val) /
-                                        static_cast<float>(timer_type::ratio_t::den) *
-                                        timer_type::get_unit());
+        auto delta = static_cast<double>(std::get<1>(val) /
+                                         static_cast<double>(timer_type::ratio_t::den) *
+                                         timer_type::get_unit());
         return result_type(data, data / delta);
     }
 

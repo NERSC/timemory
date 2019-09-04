@@ -1,8 +1,8 @@
 version: 1.0.{build}
 
 image:
-- Visual Studio 2015
-- Visual Studio 2017
+  - Visual Studio 2015
+  - Visual Studio 2017
 
 test: on
 
@@ -10,90 +10,91 @@ build:
   parallel: true
 
 platform:
-- x64
+  - x64
 
 environment:
   matrix:
-  - PYTHON: 36
-    CPP: 17
-    CONFIG: Debug
-  - CONDA: 36
-    CPP: 17
-    CONFIG: Release
+    - PYTHON: 36
+      CPP: 17
+      CONFIG: Debug
+    - CONDA: 36
+      CPP: 17
+      CONFIG: Release
 
 matrix:
   exclude:
-  - image: Visual Studio 2015
-    CPP: latest
+    - image: Visual Studio 2015
+      CPP: 17
+      CONFIG: Debug
 
 install:
-# Configure environment
-- ps: |
-    # CMake architecture
-    if ($env:PLATFORM -eq "x64") {
-      $env:CMAKE_ARCH = "x64"
-    }
-
-    # CMake generator
-    if ($env:APPVEYOR_JOB_NAME -like "*Visual Studio 2017*") {
-      $env:CMAKE_GENERATOR = "Visual Studio 15 2017"
-      $env:CXXFLAGS = "-permissive-"
-    } else {
-      $env:CMAKE_GENERATOR = "Visual Studio 14 2015"
-    }
-
-    # Python environment
-    if ($env:PYTHON) {
+  # Configure environment
+  - ps: |
+      # CMake architecture
       if ($env:PLATFORM -eq "x64") {
-        $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
-        $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
-        $env:TIMEMORY_USE_MPI = "ON"
-      } else {
-        $env:PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts"
-        $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
-        $env:TIMEMORY_USE_MPI = "ON"
+        $env:CMAKE_ARCH = "x64"
       }
-      python -m pip install --disable-pip-version-check --user --upgrade pip wheel
-    } elseif ($env:CONDA) {
-      if ($env:PLATFORM -eq "x64") {
-        $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts"
-        $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
-        $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
-        $env:TIMEMORY_USE_MPI = "ON"
-      } else {
-        $env:PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts;$env:PATH"
-        $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts"
-        $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
-        $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
-        $env:TIMEMORY_USE_MPI = "OFF"
-      }
-      conda update -y -q -n base conda
-      conda config --add channels conda-forge
-      conda install -y -q pip setuptools scikit-build numpy matplotlib pillow pyctest
-    }
-    # pip installation
-    $env:TIMEMORY_DEBUG = 4
-    mkdir "C:\Users\appveyor\CTestTemp"
-    $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
-# Install MS-MPI
-- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe' -FileName "./MSMpiSetup.exe"
-- ps: ./MSMpiSetup.exe -unattend
-# Install MS-MPI SDK
-- ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi' -FileName "msmpisdk.msi"
-- ps: ./msmpisdk.msi /passive
-- ps: |
-    $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
-    $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:\Program Files (x86)\Microsoft SDKs\MPI;$env:CMAKE_PREFIX_PATH"
+      # CMake generator
+      if ($env:APPVEYOR_JOB_NAME -like "*Visual Studio 2017*") {
+        $env:CMAKE_GENERATOR = "Visual Studio 15 2017"
+        $env:CXXFLAGS = "-permissive-"
+      } else {
+        $env:CMAKE_GENERATOR = "Visual Studio 14 2015"
+      }
+
+      # Python environment
+      if ($env:PYTHON) {
+        if ($env:PLATFORM -eq "x64") {
+          $env:PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
+          $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON-x64;C:\Python$env:PYTHON-x64\Scripts"
+          $env:PYTHON_EXE = "C:\Python$env:PYTHON-x64\python.exe"
+          $env:TIMEMORY_USE_MPI = "ON"
+        } else {
+          $env:PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts;C:\Users\appveyor\AppData\Roaming\Python\Python$env:PYTHON\Scripts;$env:PATH"
+          $env:CMAKE_PREFIX_PATH = "C:\Python$env:PYTHON;C:\Python$env:PYTHON\Scripts"
+          $env:PYTHON_EXE = "C:\Python$env:PYTHON\python.exe"
+          $env:TIMEMORY_USE_MPI = "ON"
+        }
+        python -m pip install --disable-pip-version-check --user --upgrade pip wheel
+      } elseif ($env:CONDA) {
+        if ($env:PLATFORM -eq "x64") {
+          $env:PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts;$env:PATH"
+          $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA-x64;C:\Miniconda$env:CONDA-x64\Scripts"
+          $env:PYTHONHOME = "C:\Miniconda$env:CONDA-x64"
+          $env:PYTHON_EXE = "C:\Miniconda$env:CONDA-x64\python.exe"
+          $env:TIMEMORY_USE_MPI = "ON"
+        } else {
+          $env:PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts;$env:PATH"
+          $env:CMAKE_PREFIX_PATH = "C:\Miniconda$env:CONDA;C:\Miniconda$env:CONDA\Scripts"
+          $env:PYTHONHOME = "C:\Miniconda$env:CONDA"
+          $env:PYTHON_EXE = "C:\Miniconda$env:CONDA\python.exe"
+          $env:TIMEMORY_USE_MPI = "OFF"
+        }
+        conda update -y -q -n base conda
+        conda config --add channels conda-forge
+        conda install -y -q pip setuptools scikit-build numpy matplotlib pillow pyctest
+      }
+      # pip installation
+      $env:TIMEMORY_DEBUG = 4
+      mkdir "C:\Users\appveyor\CTestTemp"
+      $env:TEMP = "C:\Users\appveyor\CTestTemp"
+
+  # Install MS-MPI
+  - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/MSMpiSetup.exe' -FileName "./MSMpiSetup.exe"
+  - ps: ./MSMpiSetup.exe -unattend
+  # Install MS-MPI SDK
+  - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi' -FileName "msmpisdk.msi"
+  - ps: ./msmpisdk.msi /passive
+  - ps: |
+      $env:PATH = "C:\Program Files\Microsoft MPI\Bin;$env:PATH"
+      $env:CMAKE_PREFIX_PATH = "C:\Program Files\Microsoft MPI;C:\Program Files (x86)\Microsoft SDKs\MPI;$env:CMAKE_PREFIX_PATH"
 
 build_script:
-- mkdir build-timemory
-- cd build-timemory
-- ls "C:\Program Files (x86)\Microsoft SDKs"
-- cmake
+  - mkdir build-timemory
+  - cd build-timemory
+  - ls "C:\Program Files (x86)\Microsoft SDKs"
+  - cmake
     -DCMAKE_BUILD_TYPE="%CONFIG%"
     -DCMAKE_INSTALL_PREFIX=..\install-timemory
     -DPYTHON_EXECUTABLE="%PYTHON_EXE%"
@@ -105,9 +106,12 @@ build_script:
     -DMPIEXEC="C:\Program Files\Microsoft MPI\Bin\mpiexec.exe"
     -DMPI_CXX_INCLUDE_PATH="C:\Program Files (x86)\Microsoft SDKs\MPI\Include"
     .. -G "%CMAKE_GENERATOR%" -A "%CMAKE_ARCH%"
-- set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
-- cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
-- cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
-- ls
-- .\outputs\runtime\%CONFIG%\test_cxx_overhead.exe
-- .\outputs\runtime\%CONFIG%\test_cxx_tuple.exe
+  - set MSBuildLogger="C:\Program Files\AppVeyor\BuildAgent\Appveyor.MSBuildLogger.dll"
+  - cmake --build . --config "%CONFIG%" --target ALL_BUILD -- /m /v:m /logger:%MSBuildLogger%
+  - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
+  - ls
+  - .\outputs\runtime\%CONFIG%\test_cxx_basic.exe
+  - .\outputs\runtime\%CONFIG%\test_cxx_optional_on.exe
+  - .\outputs\runtime\%CONFIG%\test_cxx_optional_off.exe
+  - .\outputs\runtime\%CONFIG%\test_cxx_overhead.exe
+  - .\outputs\runtime\%CONFIG%\test_cxx_tuple.exe

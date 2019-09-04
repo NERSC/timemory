@@ -35,10 +35,14 @@
 #include "timemory/utility/utility.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
+#include <limits>
 
 #if defined(TIMEMORY_USE_CUDA)
 #    include <cuda.h>
+#    include <cuda_fp16.h>
+#    include <cuda_fp16.hpp>
 #    include <cuda_runtime_api.h>
 #endif
 
@@ -46,26 +50,48 @@
 #    include <cupti.h>
 #endif
 
+#if defined(TIMEMORY_USE_CUDA) && (defined(__NVCC__) || defined(__CUDACC__)) &&          \
+    (__CUDA_ARCH__ >= 530 || !defined(__CUDA_ARCH__))
+#    if !defined(TIMEMORY_CUDA_FP16)
+#        define TIMEMORY_CUDA_FP16
+#    endif
+#endif
+
 #include "timemory/utility/utility.hpp"
 
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_API_CALL(apiFuncCall)                                               \
     {                                                                                    \
-        tim::cuda::error_t err = apiFuncCall;                                            \
-        if(err != tim::cuda::success_v)                                                  \
+        ::tim::cuda::error_t err = apiFuncCall;                                          \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
         {                                                                                \
             fprintf(stderr, "%s:%d: error: function '%s' failed with error: %s.\n",      \
-                    __FILE__, __LINE__, #apiFuncCall, tim::cuda::get_error_string(err)); \
+                    __FILE__, __LINE__, #apiFuncCall,                                    \
+                    ::tim::cuda::get_error_string(err));                                 \
+        }                                                                                \
+    }
+
+// this a macro so we can pre-declare
+#define CUDA_RUNTIME_API_CALL_THROW(apiFuncCall)                                         \
+    {                                                                                    \
+        ::tim::cuda::error_t err = apiFuncCall;                                          \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
+        {                                                                                \
+            char errmsg[std::numeric_limits<uint16_t>::max()];                           \
+            sprintf(errmsg, "%s:%d: error: function '%s' failed with error: %s.\n",      \
+                    __FILE__, __LINE__, #apiFuncCall,                                    \
+                    ::tim::cuda::get_error_string(err));                                 \
+            throw std::runtime_error(errmsg);                                            \
         }                                                                                \
     }
 
 // this a macro so we can pre-declare
 #define CUDA_RUNTIME_CHECK_ERROR(err)                                                    \
     {                                                                                    \
-        if(err != tim::cuda::success_v)                                                  \
+        if(err != ::tim::cuda::success_v && (int) err != 0)                              \
         {                                                                                \
-            fprintf(stderr, "%s:%d: error check failed with: %s.\n", __FILE__, __LINE__, \
-                    tim::cuda::get_error_string(err));                                   \
+            fprintf(stderr, "%s:%d: error check failed with: code %i -- %s.\n",          \
+                    __FILE__, __LINE__, (int) err, ::tim::cuda::get_error_string(err));  \
         }                                                                                \
     }
 
@@ -103,6 +129,108 @@ static const int host_to_host_v     = 0;
 static const int host_to_device_v   = 1;
 static const int device_to_host_v   = 2;
 static const int device_to_device_v = 3;
+#endif
+
+// half-precision floating point
+#if !defined(TIMEMORY_CUDA_FP16)
+
+// make a different type
+struct half2
+{
+    half2()             = default;
+    ~half2()            = default;
+    half2(const half2&) = default;
+    half2(half2&&)      = default;
+    half2& operator=(const half2&) = default;
+    half2& operator=(half2&&) = default;
+
+    half2(float val)
+    : value{ { val, val } }
+    {
+    }
+    half2(float lhs, float rhs)
+    : value{ { lhs, rhs } }
+    {
+    }
+    half2& operator+=(const float& rhs)
+    {
+        value[0] += rhs;
+        value[1] += rhs;
+        return *this;
+    }
+    half2& operator-=(const float& rhs)
+    {
+        value[0] -= rhs;
+        value[1] -= rhs;
+        return *this;
+    }
+    half2& operator*=(const float& rhs)
+    {
+        value[0] *= rhs;
+        value[1] *= rhs;
+        return *this;
+    }
+    half2& operator/=(const float& rhs)
+    {
+        value[0] /= rhs;
+        value[1] /= rhs;
+        return *this;
+    }
+
+    half2& operator+=(const half2& rhs)
+    {
+        value[0] += rhs[0];
+        value[1] += rhs[1];
+        return *this;
+    }
+    half2& operator-=(const half2& rhs)
+    {
+        value[0] -= rhs[0];
+        value[1] -= rhs[1];
+        return *this;
+    }
+    half2& operator*=(const half2& rhs)
+    {
+        value[0] *= rhs[0];
+        value[1] *= rhs[1];
+        return *this;
+    }
+    half2& operator/=(const half2& rhs)
+    {
+        value[0] /= rhs[0];
+        value[1] /= rhs[1];
+        return *this;
+    }
+    friend half2 operator+(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) += rhs;
+    }
+    friend half2 operator-(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) -= rhs;
+    }
+    friend half2 operator*(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) *= rhs;
+    }
+    friend half2 operator/(const half2& lhs, const half2& rhs)
+    {
+        return half2(lhs) /= rhs;
+    }
+
+    float&       operator[](int idx) { return value[idx % 2]; }
+    const float& operator[](int idx) const { return value[idx % 2]; }
+
+private:
+    using value_type = std::array<float, 2>;
+    value_type value;
+};
+
+using __half2 = half2;
+using fp16_t  = half2;
+
+#else
+using fp16_t                        = half2;
 #endif
 
 //--------------------------------------------------------------------------------------//
@@ -198,7 +326,7 @@ inline void
 device_sync()
 {
 #if defined(TIMEMORY_USE_CUDA)
-    CUDA_RUNTIME_API_CALL(cudaDeviceSynchronize());
+    CUDA_RUNTIME_API_CALL_THROW(cudaDeviceSynchronize());
 #endif
 }
 
@@ -212,6 +340,22 @@ device_reset()
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+/// get the size of the L2 cache (in bytes)
+inline int
+device_l2_cache_size(int dev = 0)
+{
+#if defined(TIMEMORY_USE_CUDA)
+    if(device_count() == 0)
+        return 0;
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    return deviceProp.l2CacheSize;
+#else
+    consume_parameters(dev);
+    return 0;
+#endif
+}
 //--------------------------------------------------------------------------------------//
 //
 //      functions dealing with cuda streams
@@ -349,14 +493,18 @@ inline _Tp*
 malloc(size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    _Tp* arr;
+    void* arr;
     CUDA_RUNTIME_API_CALL(cudaMalloc(&arr, n * sizeof(_Tp)));
-    return arr;
+    if(!arr)
+        throw std::bad_alloc();
+    return static_cast<_Tp*>(arr);
 #else
     consume_parameters(n);
     return nullptr;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda malloc host (pinned memory)
 template <typename _Tp>
@@ -364,13 +512,17 @@ inline _Tp*
 malloc_host(size_t n)
 {
 #if defined(TIMEMORY_USE_CUDA)
-    _Tp* arr;
+    void* arr;
     CUDA_RUNTIME_API_CALL(cudaMallocHost(&arr, n * sizeof(_Tp)));
-    return arr;
+    if(!arr)
+        throw std::bad_alloc();
+    return static_cast<_Tp*>(arr);
 #else
     return new _Tp[n];
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda malloc
 template <typename _Tp>
@@ -386,6 +538,8 @@ free(_Tp*& arr)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda malloc
 template <typename _Tp>
 inline void
@@ -399,6 +553,8 @@ free_host(_Tp*& arr)
     arr = nullptr;
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda memcpy
 template <typename _Tp>
@@ -414,6 +570,8 @@ memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda memcpy
 template <typename _Tp>
 inline error_t
@@ -428,6 +586,8 @@ memcpy(_Tp* dst, const _Tp* src, size_t n, memcpy_t from_to, stream_t stream)
 #endif
 }
 
+//--------------------------------------------------------------------------------------//
+
 /// cuda memset
 template <typename _Tp>
 inline error_t
@@ -439,6 +599,8 @@ memset(_Tp* dst, const int& value, size_t n)
     return std::memset(dst, value, n * sizeof(_Tp));
 #endif
 }
+
+//--------------------------------------------------------------------------------------//
 
 /// cuda memset
 template <typename _Tp>

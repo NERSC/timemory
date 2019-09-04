@@ -36,14 +36,19 @@
 
 //--------------------------------------------------------------------------------------//
 
+#include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/graph.hpp"
+#include "timemory/utility/graph_data.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
 #include "timemory/utility/utility.hpp"
+
+// this is deprecated mostly because it is not extensible
+#include "timemory/utility/type_id.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -58,10 +63,15 @@
 
 namespace tim
 {
+//--------------------------------------------------------------------------------------//
+//
 namespace cupti
 {
 struct result;
-}
+}  // namespace cupti
+
+//--------------------------------------------------------------------------------------//
+//
 namespace details
 {
 template <typename StorageType>
@@ -76,6 +86,8 @@ template <typename _Tp>
 using storage_singleton_t = singleton<_Tp, storage_smart_pointer<_Tp>>;
 
 }  // namespace details
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 details::storage_singleton_t<_Tp>&
@@ -96,78 +108,6 @@ get_noninit_storage_singleton()
 }
 
 //======================================================================================//
-// static functions that return a string identifying the data type (used in Python plot)
-//
-template <typename _Tp>
-struct type_id
-{
-    template <typename Type = _Tp, enable_if_t<(std::is_integral<Type>::value), int> = 0>
-    static std::string value(const Type&)
-    {
-        return "int";
-    }
-
-    template <typename Type                                           = _Tp,
-              enable_if_t<(std::is_floating_point<Type>::value), int> = 0>
-    static std::string value(const Type&)
-    {
-        return "float";
-    }
-
-    template <typename SubType, enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::pair<SubType, SubType>&)
-    {
-        return "int_pair";
-    }
-
-    template <typename SubType,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::pair<SubType, SubType>&)
-    {
-        return "float_pair";
-    }
-
-    template <typename... _Types>
-    static std::string value(const std::tuple<_Types...>&)
-    {
-        return "tuple";
-    }
-
-    template <typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::array<SubType, SubTypeSize>&)
-    {
-        return "int_array";
-    }
-
-    template <typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::array<SubType, SubTypeSize>&)
-    {
-        return "float_array";
-    }
-
-    template <typename _Up, typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
-    {
-        return "int_array_pair";
-    }
-
-    template <typename _Up, typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
-    {
-        return "float_array_pair";
-    }
-
-    static std::string value(const std::vector<cupti::result>&)
-    {
-        return "result_vector";
-    }
-};
-
-//======================================================================================//
 
 template <typename ObjectType>
 class storage
@@ -182,21 +122,18 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using graph_node_tuple = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-    using count_type       = counted_object<ObjectType>;
+    using count_type    = counted_object<ObjectType>;
 
-    //----------------------------------------------------------------------------------//
-    //
-    //  the node type
-    //
-    //----------------------------------------------------------------------------------//
+    using graph_node_tuple = std::tuple<int64_t, ObjectType, std::string, int64_t>;
+
     class graph_node : public graph_node_tuple
     {
     public:
-        using this_type      = graph_node;
-        using base_type      = graph_node_tuple;
-        using obj_value_type = typename ObjectType::value_type;
-        using obj_base_type  = typename ObjectType::base_type;
+        using this_type       = graph_node;
+        using base_type       = graph_node_tuple;
+        using data_value_type = typename ObjectType::value_type;
+        using data_base_type  = typename ObjectType::base_type;
+        using string_t        = std::string;
 
         int64_t&    id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
@@ -251,150 +188,18 @@ public:
         {
             auto&       _obj = obj();
             const auto& _rhs = rhs.obj();
-            static_cast<obj_base_type&>(_obj) += static_cast<const obj_base_type&>(_rhs);
+            static_cast<data_base_type&>(_obj) +=
+                static_cast<const data_base_type&>(_rhs);
             return *this;
         }
     };
 
-    //----------------------------------------------------------------------------------//
-    using graph_t        = tim::graph<graph_node>;
+public:
+    using graph_node_t   = graph_node;
+    using graph_data_t   = graph_data<graph_node_t>;
+    using graph_t        = typename graph_data_t::graph_t;
     using iterator       = typename graph_t::iterator;
     using const_iterator = typename graph_t::const_iterator;
-
-    //----------------------------------------------------------------------------------//
-    //
-    //  graph instance + current node + head node
-    //
-    //----------------------------------------------------------------------------------//
-    class graph_data
-    {
-    public:
-        using this_type = graph_data;
-
-    public:
-        graph_data() = default;
-
-        explicit graph_data(const graph_node& rhs)
-        : m_has_head(true)
-        , m_depth(0)
-        {
-            m_head    = m_graph.set_head(rhs);
-            m_depth   = 0;
-            m_current = m_head;
-        }
-
-        ~graph_data() { m_graph.clear(); }
-
-        // allow move and copy construct
-        explicit graph_data(const this_type&) = default;
-        graph_data& operator=(this_type&&) = default;
-
-        // delete copy-assignment
-        graph_data& operator=(const this_type&) = delete;
-
-        bool has_head() const { return m_has_head; }
-
-        const int64_t& depth() const { return m_depth; }
-        const graph_t& graph() const { return m_graph; }
-
-        int64_t&  depth() { return m_depth; }
-        graph_t&  graph() { return m_graph; }
-        iterator& current() { return m_current; }
-        iterator& head() { return m_head; }
-
-        iterator       begin() { return m_graph.begin(); }
-        iterator       end() { return m_graph.end(); }
-        const_iterator begin() const { return m_graph.cbegin(); }
-        const_iterator end() const { return m_graph.cend(); }
-        const_iterator cbegin() const { return m_graph.cbegin(); }
-        const_iterator cend() const { return m_graph.cend(); }
-
-        inline void clear()
-        {
-            m_has_head = false;
-            m_depth    = 0;
-            m_graph.clear();
-            m_current = nullptr;
-            m_head    = nullptr;
-        }
-
-        inline void reset()
-        {
-            m_graph.erase_children(m_head);
-            m_depth   = 0;
-            m_current = m_head;
-        }
-
-        inline iterator pop_graph()
-        {
-            if(m_depth > 0 && !m_graph.is_head(m_current))
-            {
-                --m_depth;
-                m_current = graph_t::parent(m_current);
-            }
-            else if(m_depth == 0)
-            {
-                m_current = m_head;
-            }
-            return m_current;
-        }
-
-        inline iterator append_child(graph_node& node)
-        {
-            ++m_depth;
-            return (m_current = m_graph.append_child(m_current, node));
-        }
-
-    private:
-        bool     m_has_head = false;
-        int64_t  m_depth    = 0;
-        graph_t  m_graph;
-        iterator m_current = nullptr;
-        iterator m_head    = nullptr;
-    };
-
-public:
-    //----------------------------------------------------------------------------------//
-    //
-    //
-    //
-    //----------------------------------------------------------------------------------//
-
-    storage()
-    {
-        instance_count()++;
-        static std::atomic<short> _once;
-        short                     _once_num = _once++;
-        if(_once_num > 0 && !singleton_t::is_master(this))
-        {
-            m_data           = graph_data(*master_instance()->current());
-            m_data.head()    = master_instance()->data().current();
-            m_data.current() = master_instance()->data().current();
-            m_data.depth()   = master_instance()->data().depth();
-            ObjectType::thread_init_policy();
-        }
-        else
-        {
-            graph_node node(0, ObjectType(), "> [tot] total", 0);
-            m_data         = graph_data(node);
-            m_data.depth() = 0;
-            m_node_ids.insert(std::make_pair(0, m_data.current()));
-            ObjectType::global_init_policy();
-            ObjectType::thread_init_policy();
-        }
-    }
-
-    ~storage()
-    {
-        if(!singleton_t::is_master(this))
-            singleton_t::master_instance()->merge(this);
-    }
-
-    explicit storage(const this_type&) = delete;
-    explicit storage(this_type&&)      = default;
-
-    this_type& operator=(const this_type&) = delete;
-    this_type& operator=(this_type&& rhs) = default;
 
     static pointer instance() { return get_singleton().instance(); }
     static pointer master_instance() { return get_singleton().master_instance(); }
@@ -404,22 +209,59 @@ public:
         return get_noninit_singleton().master_instance();
     }
 
-    // there is always a head node that should not be counted
-    bool          empty() const { return (m_data.graph().size() <= 1); }
-    inline size_t size() const { return m_data.graph().size() - 1; }
-
-    const graph_data& data() const { return m_data; }
-    const graph_t&    graph() const { return m_data.graph(); }
-    const int64_t&    depth() const { return m_data.depth(); }
-
-    graph_data& data() { return m_data; }
-    iterator&   current() { return m_data.current(); }
-    graph_t&    graph() { return m_data.graph(); }
-
 public:
     //----------------------------------------------------------------------------------//
     //
-    iterator pop() { return m_data.pop_graph(); }
+    storage()
+    {
+        instance_count()++;
+        static std::atomic<short> _once;
+        short                     _once_num = _once++;
+        if(_once_num > 0 && !singleton_t::is_master(this))
+        {
+            ObjectType::thread_init_policy();
+        }
+        else
+        {
+            ObjectType::global_init_policy();
+            ObjectType::thread_init_policy();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    ~storage()
+    {
+        if(!singleton_t::is_master(this))
+            singleton_t::master_instance()->merge(this);
+        delete __graph_data_instance;
+        __graph_data_instance = nullptr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    explicit storage(const this_type&) = delete;
+    explicit storage(this_type&&)      = delete;
+
+    //----------------------------------------------------------------------------------//
+    //
+    this_type& operator=(const this_type&) = delete;
+    this_type& operator=(this_type&& rhs) = delete;
+
+public:
+    //----------------------------------------------------------------------------------//
+    // there is always a head node that should not be counted
+    //
+    bool empty() const { return (_data().graph().size() <= 1); }
+
+    //----------------------------------------------------------------------------------//
+    // there is always a head node that should not be counted
+    //
+    inline size_t size() const { return _data().graph().size() - 1; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    iterator pop() { return _data().pop_graph(); }
 
     //----------------------------------------------------------------------------------//
     //
@@ -427,51 +269,51 @@ public:
     {
         // lambda for updating settings
         auto _update = [&](iterator itr) {
-            exists         = true;
-            m_data.depth() = itr->depth();
-            return (m_data.current() = itr);
+            exists          = true;
+            _data().depth() = itr->depth();
+            return (_data().current() = itr);
         };
 
         if(m_node_ids.find(hash_id) != m_node_ids.end() &&
-           m_node_ids.find(hash_id)->second->depth() == m_data.depth())
+           m_node_ids.find(hash_id)->second->depth() == _data().depth())
         {
             _update(m_node_ids.find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node node(hash_id, obj, m_data.depth());
+        graph_node_t node(hash_id, obj, _data().depth());
 
         // lambda for inserting child
         auto _insert_child = [&]() {
             exists       = false;
-            node.depth() = m_data.depth() + 1;
-            auto itr     = m_data.append_child(node);
+            node.depth() = _data().depth() + 1;
+            auto itr     = _data().append_child(node);
             return itr;
         };
 
         // if first instance
-        if(!m_data.has_head() || (this == master_instance() && m_node_ids.size() == 0))
+        if(!_data().has_head() || (this == master_instance() && m_node_ids.size() == 0))
         {
             if(this == master_instance())
             {
-                m_data         = graph_data(node);
-                exists         = false;
-                m_data.depth() = 0;
-                m_node_ids.insert(std::make_pair(hash_id, m_data.current()));
-                return m_data.current();
+                _data()         = graph_data_t(node);
+                exists          = false;
+                _data().depth() = 0;
+                m_node_ids.insert(std::make_pair(hash_id, _data().current()));
+                return _data().current();
             }
             else
             {
-                m_data           = graph_data(*master_instance()->current());
-                m_data.head()    = master_instance()->data().current();
-                m_data.current() = master_instance()->data().current();
-                m_data.depth()   = master_instance()->data().depth();
+                _data()           = graph_data_t(*master_instance()->current());
+                _data().head()    = master_instance()->data().current();
+                _data().current() = master_instance()->data().current();
+                _data().depth()   = master_instance()->data().depth();
                 return _insert_child();
             }
         }
         else
         {
-            auto current   = m_data.current();
+            auto current   = _data().current();
             auto nchildren = graph_t::number_of_children(current);
 
             if(hash_id == current->id())
@@ -480,10 +322,8 @@ public:
                 return current;
             }
             else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-            {
                 return _insert_child();
-            }
-            else if(m_data.graph().is_valid(current))
+            else if(_data().graph().is_valid(current))
             {
                 // check siblings
                 for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
@@ -493,25 +333,19 @@ public:
                         continue;
                     // check hash id's
                     if(hash_id == itr->id())
-                    {
                         return _update(itr);
-                    }
                 }
 
                 // check children
                 if(nchildren == 0)
-                {
                     return _insert_child();
-                }
                 else
                 {
                     auto fchild = graph_t::child(current, 0);
                     for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {
                         if(hash_id == itr->id())
-                        {
                             return _update(itr);
-                        }
                     }
                 }
             }
@@ -523,7 +357,7 @@ public:
     //
     iterator insert(int64_t hash_id, const ObjectType& obj, const string_t& prefix)
     {
-        hash_id *= (m_data.depth() >= 0) ? (m_data.depth() + 1) : 1;
+        hash_id *= (_data().depth() >= 0) ? (_data().depth() + 1) : 1;
         bool exists = false;
         auto itr    = insert(hash_id, obj, exists);
         if(!exists)
@@ -533,7 +367,39 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    void set_prefix(const string_t& _prefix) { m_data.current()->prefix() = _prefix; }
+    void set_prefix(const string_t& _prefix) { _data().current()->prefix() = _prefix; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int version)
+    {
+        typename tim::trait::array_serialization<ObjectType>::type type;
+        constexpr auto uses_external = trait::external_output_handling<ObjectType>::value;
+        if(!uses_external)
+            serialize<Archive>(type, ar, version);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void print()
+    {
+        typename trait::external_output_handling<ObjectType>::type type;
+        external_print(type);
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    const graph_data_t& data() const { return _data(); }
+    const graph_t&      graph() const { return _data().graph(); }
+    const int64_t&      depth() const { return _data().depth(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    graph_data_t& data() { return _data(); }
+    iterator&     current() { return _data().current(); }
+    graph_t&      graph() { return _data().graph(); }
 
 protected:
     friend struct details::storage_deleter<this_type>;
@@ -564,10 +430,6 @@ protected:
 
     void merge(this_type* itr);
 
-protected:
-    graph_data                            m_data;
-    std::unordered_map<int64_t, iterator> m_node_ids;
-
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
     static singleton_t& get_noninit_singleton()
@@ -581,23 +443,6 @@ private:
         return _counter;
     }
 
-public:
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        typename tim::trait::array_serialization<ObjectType>::type type;
-        constexpr auto uses_external = trait::external_output_handling<ObjectType>::value;
-        if(!uses_external)
-            serialize<Archive>(type, ar, version);
-    }
-
-    void print()
-    {
-        typename trait::external_output_handling<ObjectType>::type type;
-        external_print(type);
-    }
-
-protected:
     // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
     void serialize(std::true_type, Archive&, const unsigned int);
@@ -611,6 +456,30 @@ protected:
 
     // tim::trait::external_output_handling<ObjectType>::type == FALSE
     void external_print(std::false_type);
+
+    graph_data_t& _data()
+    {
+        if(__graph_data_instance == nullptr && !singleton_t::is_master(this))
+        {
+            __graph_data_instance = new graph_data_t(*master_instance()->current());
+            __graph_data_instance->head()    = master_instance()->current();
+            __graph_data_instance->current() = master_instance()->current();
+            __graph_data_instance->depth()   = master_instance()->depth();
+        }
+        else if(__graph_data_instance == nullptr)
+        {
+            graph_node_t node(0, ObjectType(), "> [tot] total", 0);
+            __graph_data_instance          = new graph_data_t(node);
+            __graph_data_instance->depth() = 0;
+            m_node_ids.insert(std::make_pair(0, __graph_data_instance->current()));
+        }
+        return *__graph_data_instance;
+    }
+
+    const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
+
+    mutable graph_data_t*                 __graph_data_instance = nullptr;
+    std::unordered_map<int64_t, iterator> m_node_ids;
 };
 
 //--------------------------------------------------------------------------------------//

@@ -56,6 +56,8 @@ struct base;
 // general
 struct trip_count;
 struct nvtx_marker;
+struct gperf_heap_profiler;
+struct gperf_cpu_profiler;
 
 // timing
 struct real_clock;
@@ -100,10 +102,14 @@ struct papi_tuple;
 template <std::size_t MaxNumEvents>
 struct papi_array;
 
-template <typename _Tp, int... EventTypes>
+template <typename... _Types>
 struct cpu_roofline;
 
-struct cupti_event;
+template <typename... _Types>
+struct gpu_roofline;
+
+struct cupti_counters;
+struct cupti_activity;
 
 // caliper
 struct caliper;
@@ -139,6 +145,9 @@ struct reset;
 
 template <typename _Tp>
 struct measure;
+
+template <typename _Ret, typename _Lhs, typename _Rhs>
+struct compose;
 
 template <typename _Tp>
 struct start;

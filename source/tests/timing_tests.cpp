@@ -36,8 +36,8 @@ using mutex_t   = std::mutex;
 using lock_t    = std::unique_lock<mutex_t>;
 using condvar_t = std::condition_variable;
 
-static const float util_tolerance  = 2.5f;
-static const float timer_tolerance = 0.01f;
+static const double util_tolerance  = 2.5;
+static const double timer_tolerance = 0.01;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
@@ -110,7 +110,7 @@ TEST_F(timing_tests, wall_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -124,7 +124,7 @@ TEST_F(timing_tests, monotonic_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -138,7 +138,7 @@ TEST_F(timing_tests, monotonic_raw_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -153,7 +153,7 @@ TEST_F(timing_tests, system_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -168,7 +168,7 @@ TEST_F(timing_tests, user_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -182,7 +182,7 @@ TEST_F(timing_tests, cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -197,7 +197,7 @@ TEST_F(timing_tests, cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(75.0f, obj.get(), util_tolerance);
+    ASSERT_NEAR(75.0, obj.get(), util_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -212,7 +212,7 @@ TEST_F(timing_tests, thread_cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(0.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(0.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -229,7 +229,7 @@ TEST_F(timing_tests, thread_cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(50.0f, obj.get(), util_tolerance);
+    ASSERT_NEAR(50.0, obj.get(), util_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -243,7 +243,7 @@ TEST_F(timing_tests, process_cpu_timer)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(1.0f, obj.get(), timer_tolerance);
+    ASSERT_NEAR(1.0, obj.get(), timer_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -260,7 +260,7 @@ TEST_F(timing_tests, process_cpu_utilization)
     obj.stop();
     std::cout << "\n[" << details::get_test_name() << "]> result: " << obj << "\n"
               << std::endl;
-    ASSERT_NEAR(150.0f, obj.get(), util_tolerance);
+    ASSERT_NEAR(150.0, obj.get(), util_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -269,6 +269,7 @@ int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
+    tim::timemory_init(argc, argv);
     return RUN_ALL_TESTS();
 }
 

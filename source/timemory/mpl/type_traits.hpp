@@ -165,8 +165,8 @@ struct requires_json : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
-}  // trait
-}  // tim
+}  // namespace trait
+}  // namespace tim
 
 //======================================================================================//
 //
@@ -217,7 +217,17 @@ struct array_serialization<component::papi_array<MaxNumEvents>> : std::true_type
 };
 
 template <>
-struct array_serialization<component::cupti_event> : std::true_type
+struct array_serialization<component::cupti_counters> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//      start_priority
+//--------------------------------------------------------------------------------------//
+
+/// component::cuda_event should be stopped before other types
+template <>
+struct start_priority<component::cupti_activity> : std::true_type
 {
 };
 
@@ -228,6 +238,12 @@ struct array_serialization<component::cupti_event> : std::true_type
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cuda_event> : std::true_type
+{
+};
+
+/// component::cuda_event should be stopped before other types
+template <>
+struct stop_priority<component::cupti_activity> : std::true_type
 {
 };
 
@@ -245,6 +261,21 @@ struct custom_unit_printing<component::written_bytes> : std::true_type
 {
 };
 
+template <>
+struct custom_unit_printing<component::cupti_counters> : std::true_type
+{
+};
+
+template <typename... _Types>
+struct custom_unit_printing<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+/*
+template <typename... _Types>
+struct custom_unit_printing<component::cpu_roofline<_Types...>> : std::true_type
+{
+};
+*/
 //--------------------------------------------------------------------------------------//
 //      custom_label_printing
 //--------------------------------------------------------------------------------------//
@@ -258,6 +289,25 @@ template <>
 struct custom_label_printing<component::written_bytes> : std::true_type
 {
 };
+
+template <>
+struct custom_laps_printing<component::cupti_counters> : std::true_type
+{
+};
+
+template <typename... _Types>
+struct custom_label_printing<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+/*
+template <typename... _Types>
+struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//		custom_laps_printing
+//--------------------------------------------------------------------------------------//
 
 template <>
 struct custom_laps_printing<component::trip_count> : std::true_type
@@ -310,6 +360,11 @@ struct is_timing_category<component::process_cpu_clock> : std::true_type
 
 template <>
 struct is_timing_category<component::cuda_event> : std::true_type
+{
+};
+
+template <>
+struct is_timing_category<component::cupti_activity> : std::true_type
 {
 };
 
@@ -446,6 +501,11 @@ struct uses_timing_units<component::cuda_event> : std::true_type
 {
 };
 
+template <>
+struct uses_timing_units<component::cupti_activity> : std::true_type
+{
+};
+
 //--------------------------------------------------------------------------------------//
 //		uses_memory_units
 //--------------------------------------------------------------------------------------//
@@ -562,13 +622,13 @@ struct is_available<component::papi_array<MaxNumEvents>> : std::false_type
 {
 };
 
-template <typename _Tp, int... EventTypes>
-struct is_available<component::cpu_roofline<_Tp, EventTypes...>> : std::false_type
+template <typename... _Types>
+struct is_available<component::cpu_roofline<_Types...>> : std::false_type
 {
 };
 
-template <typename _Tp, int... EventTypes>
-struct requires_json<component::cpu_roofline<_Tp, EventTypes...>> : std::true_type
+template <typename... _Types>
+struct requires_json<component::cpu_roofline<_Types...>> : std::true_type
 {
 };
 
@@ -592,7 +652,17 @@ struct is_available<component::cuda_event> : std::false_type
 #if !defined(TIMEMORY_USE_CUPTI)
 
 template <>
-struct is_available<component::cupti_event> : std::false_type
+struct is_available<component::cupti_counters> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::cupti_activity> : std::false_type
+{
+};
+
+template <typename... _Types>
+struct is_available<component::gpu_roofline<_Types...>> : std::false_type
 {
 };
 
@@ -647,5 +717,70 @@ struct external_output_handling<component::caliper> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-}  // component
-}  // tim
+//  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_HEAP_PROFILER or
+//  TIMEMORY_USE_GPERF
+//
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
+
+//--------------------------------------------------------------------------------------//
+//
+/*
+template <>
+struct requires_prefix<component::gperf_heap_profiler> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct external_output_handling<component::gperf_heap_profiler> : std::true_type
+{
+};
+
+#else
+
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct is_available<component::gperf_heap_profiler> : std::false_type
+{
+};
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_CPU_PROFILER or
+//  TIMEMORY_USE_GPERF
+//
+
+#if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+
+//--------------------------------------------------------------------------------------//
+//
+/*
+template <>
+struct requires_prefix<component::gperf_cpu_profiler> : std::true_type
+{
+};
+*/
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct external_output_handling<component::gperf_cpu_profiler> : std::true_type
+{
+};
+
+#else
+
+//--------------------------------------------------------------------------------------//
+//
+template <>
+struct is_available<component::gperf_cpu_profiler> : std::false_type
+{
+};
+
+#endif
+
+//--------------------------------------------------------------------------------------//
+}  // namespace trait
+}  // namespace tim

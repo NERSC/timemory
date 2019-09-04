@@ -34,9 +34,11 @@ add_interface_library(timemory-cudart-static)
 add_interface_library(timemory-cuda-nvtx)
 add_interface_library(timemory-caliper)
 
-add_interface_library(timemory-gperftools)
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
+add_interface_library(timemory-gperftools)
+add_interface_library(timemory-gperftools-cpu)
+add_interface_library(timemory-gperftools-heap)
 
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
@@ -52,6 +54,8 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-cudart-device
     timemory-coverage
     timemory-gperftools
+    timemory-gperftools-cpu
+    timemory-gperftools-heap
     timemory-santizier)
 
 add_interface_library(timemory-extensions)
@@ -446,31 +450,36 @@ if(TIMEMORY_USE_CUDA)
             endif()
         endif()
 
-        add_interface_library(timemory-cuda-7)
-        target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_20,code=sm_20
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
-            -gencode=arch=compute_52,code=compute_52
-            >)
+        option(TIMEMORY_DEPRECATED_CUDA_SUPPORT "Enable support for old CUDA flags" OFF)
+        mark_as_advanced(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
 
-        add_interface_library(timemory-cuda-8)
-        target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_20,code=sm_20
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
-            -gencode=arch=compute_60,code=sm_60
-            -gencode=arch=compute_61,code=sm_61
-            -gencode=arch=compute_61,code=compute_61
-            >)
+        if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
+            add_interface_library(timemory-cuda-7)
+            target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+                -gencode=arch=compute_20,code=sm_20
+                -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_50,code=sm_50
+                -gencode=arch=compute_52,code=sm_52
+                -gencode=arch=compute_52,code=compute_52
+                >)
+
+            add_interface_library(timemory-cuda-8)
+            target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
+                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
+                -gencode=arch=compute_20,code=sm_20
+                -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_50,code=sm_50
+                -gencode=arch=compute_52,code=sm_52
+                -gencode=arch=compute_60,code=sm_60
+                -gencode=arch=compute_61,code=sm_61
+                -gencode=arch=compute_61,code=compute_61
+                >)
+        endif()
 
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
+            $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_50,code=sm_50
             -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
@@ -481,9 +490,7 @@ if(TIMEMORY_USE_CUDA)
 
         add_interface_library(timemory-cuda-10)
         target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_50,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
+            $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -498,10 +505,16 @@ if(TIMEMORY_USE_CUDA)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-10)
         elseif(CUDA_MAJOR_VERSION MATCHES 9)
             target_link_libraries(timemory-cuda INTERFACE timemory-cuda-9)
-        elseif(CUDA_MAJOR_VERSION MATCHES 8)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
-        elseif(CUDA_MAJOR_VERSION MATCHES 7)
-            target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+        else()
+            if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
+                if(CUDA_MAJOR_VERSION MATCHES 8)
+                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-8)
+                elseif(CUDA_MAJOR_VERSION MATCHES 7)
+                    target_link_libraries(timemory-cuda INTERFACE timemory-cuda-7)
+                endif()
+            else()
+                message(WARNING "CUDA version < 9 detected. Enable TIMEMORY_DEPRECATED_CUDA_SUPPORT")
+            endif()
         endif()
 
         #   30, 32      + Kepler support
@@ -629,8 +642,9 @@ endif()
 #                               NVTX
 #
 #----------------------------------------------------------------------------------------#
-
-find_package(NVTX QUIET)
+if(TIMEMORY_USE_NVTX)
+    find_package(NVTX QUIET)
+endif()
 
 if(NVTX_FOUND)
     target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
@@ -648,24 +662,56 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-find_package(gperftools QUIET COMPONENTS ${TIMEMORY_GPERF_COMPONENTS})
+set(_GPERF_COMPONENTS ${TIMEMORY_GPERF_COMPONENTS} profiler tcmalloc)
+list(REMOVE_DUPLICATES _GPERF_COMPONENTS)
+find_package(gperftools QUIET COMPONENTS ${_GPERF_COMPONENTS})
 
 if(gperftools_FOUND)
     set(_HAS_PROFILER OFF)
     set(_HAS_TCMALLOC OFF)
-    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_CPU_PROFILER)
+    if("profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF_CPU_PROFILER)
+        if(gperftools_PROFILER_LIBRARY)
+            target_compile_definitions(timemory-gperftools-cpu INTERFACE
+                TIMEMORY_USE_GPERF_CPU_PROFILER)
+            target_include_directories(timemory-gperftools-cpu INTERFACE
+                ${gperftools_INCLUDE_DIRS})
+            target_link_libraries(timemory-gperftools-cpu INTERFACE
+                ${gperftools_PROFILER_LIBRARY})
+        else()
+            inform_empty_interface(timemory-gperftools-cpu "gperftools-cpu")
+        endif()
         set(_HAS_PROFILER ON)
     endif()
-    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF_HEAP_PROFILER)
+    if("tcmalloc" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_and_profiler" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_minimal" IN_LIST TIMEMORY_GPERF_COMPONENTS OR
+        "tcmalloc_minimal_debug" IN_LIST TIMEMORY_GPERF_COMPONENTS)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF_HEAP_PROFILER)
+        if(gperftools_TCMALLOC_LIBRARY)
+            target_compile_definitions(timemory-gperftools-heap INTERFACE
+                TIMEMORY_USE_GPERF_HEAP_PROFILER)
+            target_include_directories(timemory-gperftools-heap INTERFACE
+                ${gperftools_INCLUDE_DIRS})
+            target_link_libraries(timemory-gperftools-heap INTERFACE
+                ${gperftools_TCMALLOC_LIBRARY})
+        else()
+            inform_empty_interface(timemory-gperftools-heap "gperftools-heap")
+        endif()
         set(_HAS_TCMALLOC ON)
     endif()
     if(_HAS_PROFILER AND _HAS_TCMALLOC)
-        target_compile_definitions(timemory-gperftools INTERFACE TIMEMORY_USE_GPERF)
+        target_compile_definitions(timemory-gperftools INTERFACE
+            TIMEMORY_USE_GPERF)
     endif()
-    target_include_directories(timemory-gperftools INTERFACE ${gperftools_INCLUDE_DIRS})
-    target_link_libraries(timemory-gperftools INTERFACE ${gperftools_LIBRARIES})
+    target_include_directories(timemory-gperftools INTERFACE
+        ${gperftools_INCLUDE_DIRS})
+    target_link_libraries(timemory-gperftools INTERFACE
+        ${gperftools_LIBRARIES})
 else()
     set(TIMEMORY_USE_GPERF OFF)
     inform_empty_interface(timemory-gperftools "gperftools")
@@ -702,6 +748,7 @@ if(caliper_FOUND)
     if(TIMEMORY_BUILD_CALIPER)
         target_include_directories(timemory-caliper INTERFACE
             $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/external/caliper/include>
+            $<BUILD_INTERFACE:${PROJECT_BINARY_DIR}/external/caliper/include>
             $<INSTALL_INTERFACE:${CMAKE_INSTALL_PREFIX}/include>)
         target_link_libraries(timemory-caliper INTERFACE caliper)
         if(WITH_CUPTI)

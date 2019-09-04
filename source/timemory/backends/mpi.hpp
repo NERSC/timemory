@@ -31,8 +31,8 @@
 
 #pragma once
 
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/utility.hpp"
+#include "timemory/utility/macros.hpp"   // macro definitions w/ no internal deps
+#include "timemory/utility/utility.hpp"  // generic functions w/ no internal deps
 
 #include <algorithm>
 #include <cstdint>
@@ -53,8 +53,6 @@
 #    define MPI_Comm_split(...)
 #    define MPI_Comm_split_type(...)
 #endif
-
-#include "timemory/utility/utility.hpp"
 
 namespace tim
 {
@@ -88,12 +86,26 @@ is_supported()
 
 //--------------------------------------------------------------------------------------//
 
+inline bool&
+is_finalized()
+{
+#if defined(TIMEMORY_USE_MPI)
+    static bool _instance = false;
+#else
+    static bool _instance = true;
+#endif
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
 inline bool
 is_initialized()
 {
     int32_t _init = 0;
 #if defined(TIMEMORY_USE_MPI)
-    MPI_Initialized(&_init);
+    if(!is_finalized())
+        MPI_Initialized(&_init);
 #endif
     return (_init != 0) ? true : false;
 }
@@ -101,7 +113,7 @@ is_initialized()
 //--------------------------------------------------------------------------------------//
 
 inline void
-initialize(int argc, char** argv)
+initialize(int& argc, char**& argv)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(!is_initialized())
@@ -116,8 +128,17 @@ initialize(int argc, char** argv)
 inline void
 finalize()
 {
+    // is_initialized has a check against is_finalized(), if manually invoking
+    // MPI_Finalize() [not recommended bc timemory will do it when MPI support is enabled]
+    // then set that value to true, e.g.
+    //          tim::mpi::is_finalized() = true;
 #if defined(TIMEMORY_USE_MPI)
-    MPI_Finalize();
+    if(is_initialized())
+    {
+        MPI_Finalize();
+        is_finalized() = true;  // to try to avoid calling MPI_Initialized(...) after
+        // finalized
+    }
 #endif
 }
 

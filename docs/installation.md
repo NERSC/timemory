@@ -14,7 +14,7 @@
 
 | Description            | Command                                                                  |
 | :--------------------- | :----------------------------------------------------------------------- |
-| Clone the repository   | `git clone https://github.com/jrmadsen/TiMemory.git timemory`            |
+| Clone the repository   | `git clone https://github.com/NERSC/timemory.git timemory`            |
 | Create build directory | `mkdir build-timemory && cd build-timemory`                              |
 | Run CMake              | `cmake -DCMAKE_INSTALL_PREFIX=/opt/timemory <CMAKE_OPTIONS> ../timemory` |
 | Build and install      | `cmake --build . --target ALL && cmake --build . --target INSTALL`       |

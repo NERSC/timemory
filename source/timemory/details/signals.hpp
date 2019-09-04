@@ -33,6 +33,8 @@
 #include <sstream>
 #include <string>
 
+#include "timemory/details/settings.hpp"
+
 namespace tim
 {
 //======================================================================================//
@@ -139,22 +141,20 @@ signal_settings::check_environment()
 
     for(auto itr : _list)
     {
-        int _enable  = get_env<int>("SIGNAL_ENABLE_" + itr.first, 0);
-        int _disable = get_env<int>("SIGNAL_DISABLE_" + itr.first, 0);
+        auto _enable  = get_env("SIGNAL_ENABLE_" + itr.first, false);
+        auto _disable = get_env("SIGNAL_DISABLE_" + itr.first, false);
 
-        if(_enable > 0)
+        if(_enable)
             signal_settings::enable(itr.second);
-        if(_disable > 0)
+        if(_disable)
             signal_settings::disable(itr.second);
     }
 
-    int _enable_all = get_env<int>("SIGNAL_ENABLE_ALL", 0);
-    if(_enable_all > 0)
+    if(settings::enable_all_signals())
         for(const auto& itr : f_signals().signals_disabled)
             signal_settings::enable(itr);
 
-    int _disable_all = get_env<int>("SIGNAL_DISABLE_ALL", 0);
-    if(_disable_all > 0)
+    if(settings::disable_all_signals())
         for(const auto& itr : f_signals().signals_enabled)
             signal_settings::disable(itr);
 }
@@ -167,7 +167,7 @@ signal_settings::str(const sys_signal& _type)
     using descript_tuple_t = std::tuple<std::string, int, std::string>;
 
     std::stringstream ss;
-    auto              descript = [&](const descript_tuple_t& _data) {
+    auto              _descript = [&](const descript_tuple_t& _data) {
         ss << " Signal: " << std::get<0>(_data) << " (error code: " << std::get<1>(_data)
            << ") " << std::get<2>(_data);
     };
@@ -214,7 +214,7 @@ signal_settings::str(const sys_signal& _type)
     for(const auto& itr : descript_data)
         if(std::get<1>(itr) == key)
         {
-            descript(itr);
+            _descript(itr);
             break;
         }
 

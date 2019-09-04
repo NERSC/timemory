@@ -53,7 +53,7 @@ namespace tim
 {
 // e.g. tim::str::join(...)
 using str = tim::apply<std::string>;
-}
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 
@@ -139,7 +139,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_LABEL(...)
  *
- * helper macro for "__FUNCTION__" + ... + '@__FILE__':__LINE__" tagging
+ * helper macro for "__FUNCTION__" + ... + @'__FILE__':__LINE__" tagging
  *
  * Usage:
  *
@@ -516,6 +516,18 @@ using str = tim::apply<std::string>;
 #        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)
 #        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)
 #    endif
+
+//--------------------------------------------------------------------------------------//
+/*! \def TIMEMORY_CONFIGURE(type, ...)
+ *
+ * Invoke a (static) configuration function for type to override the default behaviors
+ *
+ * Usage:
+ *
+ *      TIMEMORY_CONFIGURE(papi_array_t, PAPI_LST_INS)
+ *
+ */
+#    define TIMEMORY_CONFIGURE(type, ...) type::configure(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 

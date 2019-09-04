@@ -34,12 +34,13 @@
 // general components
 #include "timemory/components/caliper.hpp"
 #include "timemory/components/cuda_event.hpp"
+#include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
 // hardware counter components
-#include "timemory/components/cupti_event.hpp"
+#include "timemory/components/cupti_counters.hpp"
 #include "timemory/components/papi_array.hpp"
 #include "timemory/components/papi_tuple.hpp"
 
@@ -119,12 +120,20 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CALIPER: obj.template init<caliper>(); break;
             case CPU_CLOCK: obj.template init<cpu_clock>(); break;
             case CPU_ROOFLINE_DP_FLOPS: obj.template init<cpu_roofline_dp_flops>(); break;
+            case CPU_ROOFLINE_FLOPS: obj.template init<cpu_roofline_flops>(); break;
             case CPU_ROOFLINE_SP_FLOPS: obj.template init<cpu_roofline_sp_flops>(); break;
             case CPU_UTIL: obj.template init<cpu_util>(); break;
             case CUDA_EVENT: obj.template init<cuda_event>(); break;
-            case CUPTI_EVENT: obj.template init<cupti_event>(); break;
+            case CUPTI_ACTIVITY: obj.template init<cupti_activity>(); break;
+            case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
             case CURRENT_RSS: obj.template init<current_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
+            case GPERF_CPU_PROFILER: obj.template init<gperf_cpu_profiler>(); break;
+            case GPERF_HEAP_PROFILER: obj.template init<gperf_heap_profiler>(); break;
+            case GPU_ROOFLINE_DP_FLOPS: obj.template init<gpu_roofline_dp_flops>(); break;
+            case GPU_ROOFLINE_FLOPS: obj.template init<gpu_roofline_flops>(); break;
+            case GPU_ROOFLINE_HP_FLOPS: obj.template init<gpu_roofline_hp_flops>(); break;
+            case GPU_ROOFLINE_SP_FLOPS: obj.template init<gpu_roofline_sp_flops>(); break;
             case MONOTONIC_CLOCK: obj.template init<monotonic_clock>(); break;
             case MONOTONIC_RAW_CLOCK: obj.template init<monotonic_raw_clock>(); break;
             case NUM_IO_IN: obj.template init<num_io_in>(); break;
@@ -198,6 +207,10 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CPU_ROOFLINE_DP_FLOPS);
         }
+        else if(itr == "cpu_roofline" || itr == "cpu_roofline_flops")
+        {
+            vec.push_back(CPU_ROOFLINE_FLOPS);
+        }
         else if(itr == "cpu_roofline_single" || itr == "cpu_roofline_sp" ||
                 itr == "cpu_roofline_sp_flops")
         {
@@ -211,9 +224,13 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CUDA_EVENT);
         }
-        else if(itr == "cupti" || itr == "cupti_event")
+        else if(itr == "cupti_activity")
         {
-            vec.push_back(CUPTI_EVENT);
+            vec.push_back(CUPTI_ACTIVITY);
+        }
+        else if(itr == "cupti_counters")
+        {
+            vec.push_back(CUPTI_COUNTERS);
         }
         else if(itr == "current_rss")
         {
@@ -222,6 +239,33 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         else if(itr == "data_rss")
         {
             vec.push_back(DATA_RSS);
+        }
+        else if(itr == "gperf_cpu_profiler")
+        {
+            vec.push_back(GPERF_CPU_PROFILER);
+        }
+        else if(itr == "gperf_heap_profiler")
+        {
+            vec.push_back(GPERF_HEAP_PROFILER);
+        }
+        else if(itr == "gpu_roofline_double" || itr == "gpu_roofline_dp" ||
+                itr == "gpu_roofline_dp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_DP_FLOPS);
+        }
+        else if(itr == "gpu_roofline" || itr == "gpu_roofline_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_FLOPS);
+        }
+        else if(itr == "gpu_roofline_half" || itr == "gpu_roofline_hp" ||
+                itr == "gpu_roofline_hp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_HP_FLOPS);
+        }
+        else if(itr == "gpu_roofline_single" || itr == "gpu_roofline_sp" ||
+                itr == "gpu_roofline_sp_flops")
+        {
+            vec.push_back(GPU_ROOFLINE_SP_FLOPS);
         }
         else if(itr == "monotonic_clock")
         {
@@ -332,17 +376,22 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
             fprintf(
                 stderr,
                 "Unknown component label: %s. Valid choices are: ['cali', 'caliper', "
-                "'cpu_clock', 'cpu_roofline_double', 'cpu_roofline_dp', "
-                "'cpu_roofline_dp_flops', 'cpu_roofline_single', 'cpu_roofline_sp', "
-                "'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', 'cupti', "
-                "'cupti_event', 'current_rss', 'data_rss', 'monotonic_clock', "
-                "'monotonic_raw_clock', 'num_io_in', 'num_io_out', "
-                "'num_major_page_faults', 'num_minor_page_faults', 'num_msg_recv', "
-                "'num_msg_sent', 'num_signals', 'num_swap', 'nvtx', 'nvtx_marker', "
-                "'papi', 'papi_array', 'papi_array_t', 'peak_rss', "
-                "'priority_context_switch', 'process_cpu_clock', 'process_cpu_util', "
-                "'read_bytes', 'real_clock', 'stack_rss', 'sys_clock', 'system_clock', "
-                "'thread_cpu_clock', 'thread_cpu_util', 'trip_count', 'user_clock', "
+                "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
+                "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
+                "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
+                "'cupti_activity', 'cupti_counters', 'current_rss', 'data_rss', "
+                "'gperf_cpu_profiler', 'gperf_heap_profiler', 'gpu_roofline', "
+                "'gpu_roofline_double', 'gpu_roofline_dp', 'gpu_roofline_dp_flops', "
+                "'gpu_roofline_flops', 'gpu_roofline_half', 'gpu_roofline_hp', "
+                "'gpu_roofline_hp_flops', 'gpu_roofline_single', 'gpu_roofline_sp', "
+                "'gpu_roofline_sp_flops', 'monotonic_clock', 'monotonic_raw_clock', "
+                "'num_io_in', 'num_io_out', 'num_major_page_faults', "
+                "'num_minor_page_faults', 'num_msg_recv', 'num_msg_sent', 'num_signals', "
+                "'num_swap', 'nvtx', 'nvtx_marker', 'papi', 'papi_array', "
+                "'papi_array_t', 'peak_rss', 'priority_context_switch', "
+                "'process_cpu_clock', 'process_cpu_util', 'read_bytes', 'real_clock', "
+                "'stack_rss', 'sys_clock', 'system_clock', 'thread_cpu_clock', "
+                "'thread_cpu_util', 'trip_count', 'user_clock', "
                 "'voluntary_context_switch', 'write_bytes', 'written_bytes']\n",
                 itr.c_str());
         }
@@ -426,7 +475,7 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
     auto env_result = tim::get_env(env_var, default_env);
     initialize(obj, enumerate_components(tim::delimit(env_result)));
 }
-}
+}  // namespace env
 
 //--------------------------------------------------------------------------------------//
 

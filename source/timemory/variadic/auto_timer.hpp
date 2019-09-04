@@ -44,13 +44,16 @@ namespace tim
 
 using auto_timer_tuple_t =
     component_tuple<component::real_clock, component::system_clock, component::user_clock,
-                    component::cpu_clock, component::cpu_util, component::current_rss,
-                    component::peak_rss>;
+                    component::cpu_util, component::current_rss, component::peak_rss>;
 
 using auto_timer_list_t =
-    component_list<component::caliper, component::papi_array_t,
+    component_list<component::caliper, component::papi_array_t, component::cuda_event,
+                   component::nvtx_marker, component::cupti_activity,
+                   component::cupti_counters, component::cpu_roofline_flops,
                    component::cpu_roofline_sp_flops, component::cpu_roofline_dp_flops,
-                   component::cuda_event, component::cupti_event>;
+                   component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
+                   component::gpu_roofline_sp_flops, component::gpu_roofline_dp_flops,
+                   component::gperf_cpu_profiler, component::gperf_heap_profiler>;
 
 using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 

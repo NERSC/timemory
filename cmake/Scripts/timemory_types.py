@@ -32,14 +32,22 @@ components = [
     "priority_context_switch",
     "cuda_event",
     "papi_array_t",
-    "cpu_roofline_sp_flops",
-    "cpu_roofline_dp_flops",
     "caliper",
     "trip_count",
     "read_bytes",
     "written_bytes",
-    "cupti_event",
+    "cupti_counters",
+    "cupti_activity",
     "nvtx_marker",
+    "cpu_roofline_sp_flops",
+    "cpu_roofline_dp_flops",
+    "cpu_roofline_flops",
+    "gpu_roofline_hp_flops",
+    "gpu_roofline_sp_flops",
+    "gpu_roofline_dp_flops",
+    "gpu_roofline_flops",
+    "gperf_cpu_profiler",
+    "gperf_heap_profiler",
 ]
 
 #
@@ -61,11 +69,15 @@ mangled_enums = {
 mangled_strings = {
     "system_clock": ["sys_clock"],
     "papi_array_t": ["papi_array", "papi"],
+    "cpu_roofline_flops": ["cpu_roofline"],
+    "gpu_roofline_flops": ["gpu_roofline"],
     "cpu_roofline_sp_flops": ["cpu_roofline_sp", "cpu_roofline_single"],
     "cpu_roofline_dp_flops": ["cpu_roofline_dp", "cpu_roofline_double"],
+    "gpu_roofline_sp_flops": ["gpu_roofline_sp", "gpu_roofline_single"],
+    "gpu_roofline_dp_flops": ["gpu_roofline_dp", "gpu_roofline_double"],
+    "gpu_roofline_hp_flops": ["gpu_roofline_hp", "gpu_roofline_half"],
     "caliper": ["cali"],
     "written_bytes": ["write_bytes"],
-    "cupti_event": ["cupti"],
     "nvtx_marker": ["nvtx"],
 }
 
@@ -74,7 +86,11 @@ recommended_types = {
               "current_rss", "peak_rss", "read_bytes", "written_bytes",
               "num_minor_page_faults", "num_major_page_faults",
               "voluntary_context_switch", "priority_context_switch"],
-    "list": ["caliper", "papi_array_t", "cuda_event", "cupti_event"],
+    "list": ["caliper", "papi_array_t",
+             "cuda_event", "nvtx_marker",
+             "cupti_counters", "cupti_activity",
+             "cpu_roofline_flops", "gpu_roofline_flops",
+             "gperf_cpu_profiler", "gperf_heap_profiler"],
 }
 
 traits = {
@@ -89,6 +105,7 @@ traits = {
         "thread_cpu_clock",
         "process_cpu_clock",
         "cuda_event",
+        "cupti_activity",
     ]),
     "is_memory_category": ("std::true_type",
     [
@@ -120,6 +137,7 @@ traits = {
         "thread_cpu_clock",
         "process_cpu_clock",
         "cuda_event",
+        "cupti_activity",
     ]),
     "uses_memory_units": ("std::true_type",
     [

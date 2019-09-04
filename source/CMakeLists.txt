@@ -48,7 +48,6 @@ set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
 set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
 set(CUDA_LIBRARY_SOURCES ${cuda_sources})
 
-
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
@@ -122,7 +121,7 @@ if(TIMEMORY_USE_CUDA)
         SOURCES             ${CUDA_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS
-        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart)
+        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart timemory-cupti)
 
     build_library(
         TYPE                STATIC
@@ -133,7 +132,7 @@ if(TIMEMORY_USE_CUDA)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CUDA_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart-static)
+        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart-static timemory-cupti)
 
     if(WIN32)
         # make sure on Windows, static is built first. There is something weird

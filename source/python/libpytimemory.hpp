@@ -930,8 +930,8 @@ auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
 {
     return new ::pytim::decorators::auto_timer(key, add_args, is_class, report_at_exit);
 }
-}
-}
+}  // namespace init
+}  // namespace decorators
 
 //======================================================================================//
 

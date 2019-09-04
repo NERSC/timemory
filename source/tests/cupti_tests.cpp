@@ -24,8 +24,10 @@
 
 #include "gtest/gtest.h"
 
-#include <timemory/backends/device.hpp>
-#include <timemory/components/cupti_event.hpp>
+// #if !defined(DEBUG)
+// #    define DEBUG
+// #endif
+
 #include <timemory/timemory.hpp>
 
 #include <chrono>
@@ -42,10 +44,10 @@ using default_device = tim::device::default_device;
 using params_t       = tim::device::params<default_device>;
 
 static const auto num_data = 96;
-static const auto num_iter = 10;
+static auto       num_iter = 10;
 static const auto num_blck = 64;
 static const auto num_grid = 2;
-static const auto epsilon  = std::numeric_limits<float>::epsilon();
+static const auto epsilon  = 10 * std::numeric_limits<float>::epsilon();
 
 //--------------------------------------------------------------------------------------//
 
@@ -150,6 +152,7 @@ KERNEL_A(T* arr, int size, tim::cuda::stream_t stream = 0)
     // of 128
     params_t params(num_grid, num_blck, 0, stream);
     tim::device::launch(params, impl::KERNEL_A<T>, arr, size);
+    // impl::KERNEL_A<T><<<num_grid, num_blck, 0, stream>>>(arr, size);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -160,6 +163,7 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
     // this kernel is designed for (64.0 / 2.0) * (size / (64.0 * 2.0)) operations
     params_t params(num_blck, num_grid, 0, stream);
     tim::device::launch(params, impl::KERNEL_B<T>, arr, size / 2);
+    // impl::KERNEL_B<T><<<num_blck, num_grid, 0, stream>>>(arr, size / 2);
 }
 
 }  // namespace details
@@ -169,6 +173,82 @@ KERNEL_B(T* arr, int size, tim::cuda::stream_t stream = 0)
 class cupti_tests : public ::testing::Test
 {
 };
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cupti_tests, activity)
+{
+    using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    tuple_t timer(details::get_test_name(), true);
+    timer.start();
+
+    num_iter *= 2;
+    uint64_t                         nstream = 1;
+    std::vector<tim::cuda::stream_t> streams(nstream);
+    for(auto& itr : streams)
+        tim::cuda::stream_create(itr);
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    for(uint64_t i = 0; i < nstream; ++i)
+    {
+        auto _off      = i * (num_data / nstream);
+        auto _data     = data + _off;
+        auto _cpu_data = cpu_data.data() + _off;
+        auto _ndata    = (num_data / nstream);
+        if(i + 1 == nstream)
+            _ndata += num_data % nstream;
+        tim::cuda::memcpy(_data, _cpu_data, _ndata, tim::cuda::host_to_device_v,
+                          streams.at(i));
+    }
+
+    for(auto& itr : streams)
+        tim::cuda::stream_sync(itr);
+
+    int64_t sleep_msec = 700;
+
+    std::vector<tuple_t> subtimers;
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        tuple_t subtimer(details::get_test_name() + "_itr", true);
+        subtimer.start();
+        auto _stream = streams.at(i % nstream);
+        details::KERNEL_A(data, num_data, _stream);
+        details::KERNEL_B(data, num_data, _stream);
+        subtimer.stop();
+        subtimers.push_back(subtimer);
+    }
+    // add in a specific amount of sleep to validate that not recording time on CPU
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
+    timer.stop();
+
+    tuple_t subtot(details::get_test_name() + "_itr_subtotal");
+    for(const auto& itr : subtimers)
+    {
+        std::cout << itr << std::endl;
+        subtot += itr;
+    }
+    std::cout << subtot << std::endl;
+    std::cout << timer << std::endl;
+
+    auto& rc = timer.get<real_clock>();
+    auto& ca = timer.get<cupti_activity>();
+
+    double rc_msec = rc.get() * tim::units::msec;
+    double ca_msec = ca.get() * tim::units::msec;
+
+    double expected_diff = sleep_msec;
+    double expected_tol  = 0.05 * expected_diff;
+    double real_diff     = rc_msec - ca_msec;
+
+    tim::device::gpu::free(data);
+    tim::cuda::device_sync();
+    cupti_activity::invoke_global_finalize();
+    num_iter /= 2;
+
+    ASSERT_NEAR(real_diff, expected_diff, expected_tol);
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -203,30 +283,32 @@ TEST_F(cupti_tests, available)
 
 TEST_F(cupti_tests, kernels)
 {
-    cupti_event::get_device_setter() = []() { return std::vector<int>({ 0 }); };
-    cupti_event::get_event_setter()  = []() {
-        return std::vector<std::string>({ "active_warps", "active_cycles", "global_load",
-                                          "global_store", "gld_inst_32bit",
-                                          "gst_inst_32bit" });
+    cupti_event::get_device_initializer() = []() { return 0; };
+    cupti_event::get_event_initializer()  = []() {
+        return std::vector<std::string>(
+            { "active_warps", "active_cycles", "global_load", "global_store" });
     };
-    cupti_event::get_metric_setter() = []() {
-        return std::vector<std::string>({ "inst_per_warp", "branch_efficiency",
-                                          "warp_execution_efficiency", "flop_count_sp",
-                                          "flop_sp_efficiency", "gld_efficiency",
-                                          "gst_efficiency" });
+    cupti_counters::get_metric_initializer() = []() {
+        return std::vector<std::string>(
+            { "inst_per_warp", "branch_efficiency", "warp_execution_efficiency",
+              "flop_count_sp", "flop_count_sp_add", "flop_count_sp_mul",
+              "flop_count_sp_fma", "flop_sp_efficiency", "flop_count_dp",
+              "flop_count_dp_add", "flop_count_dp_mul", "flop_count_dp_fma",
+              "flop_dp_efficiency", "gld_efficiency", "gst_efficiency", "ldst_executed",
+              "ldst_issued" });
     };
 
     std::vector<float> cpu_data(num_data, 0);
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
+    using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
     tuple_t timer(details::get_test_name());
 
     timer.start();
     for(int i = 0; i < num_iter; ++i)
     {
-        printf("\n[%s]> iteration %i...\n", __FUNCTION__, i);
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
         details::KERNEL_A(data, num_data);
         details::KERNEL_B(data, num_data);
     }
@@ -235,6 +317,104 @@ TEST_F(cupti_tests, kernels)
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
     tim::cuda::device_reset();
+    printf("\n");
+
+    auto cupti_data   = timer.get<cupti_counters>().get();
+    auto cupti_labels = timer.get<cupti_counters>().label_array();
+    std::cout << "CUPTI: data size = " << cupti_data.size()
+              << ", label size = " << cupti_labels.size() << "\n"
+              << std::endl;
+
+    double num_active = num_blck * num_grid;
+    double ratio      = num_data / static_cast<double>(num_active);
+
+    auto A_glob_load     = (2.0 * num_grid) * ratio;
+    auto B_glob_load     = (1.0 * num_blck / num_grid) * ratio;
+    auto A_glob_store    = (2.0 * num_grid) * ratio;
+    auto B_glob_store    = (1.0 * num_blck / num_grid) * ratio;
+    auto A_warp_eff      = (num_blck % 32 == 0) ? 1.0 : ((num_blck % 32) / 32.0);
+    auto B_warp_eff      = (num_grid % 32 == 0) ? 1.0 : ((num_grid % 32) / 32.0);
+    auto A_flop_count_sp = 2.00 * num_data;
+    auto B_flop_count_sp = 0.75 * num_data;
+    // these are inherent to kernel design
+    auto A_glob_load_eff  = 100.0;
+    auto B_glob_load_eff  = 25.0;
+    auto A_glob_store_eff = 100.0;
+    auto B_glob_store_eff = 25.0;
+
+    std::map<std::string, double> cupti_map;
+    for(uint64_t i = 0; i < cupti_data.size(); ++i)
+    {
+        std::cout << "    " << std::setw(28) << cupti_labels[i] << " : " << std::setw(12)
+                  << std::setprecision(6) << cupti_data[i] << std::endl;
+        cupti_map[cupti_labels[i]] = cupti_data[i];
+    }
+
+    auto global_load      = num_iter * (A_glob_load + B_glob_load);
+    auto global_store     = num_iter * (A_glob_store + B_glob_store);
+    auto warp_eff         = 0.5 * (A_warp_eff + B_warp_eff) * 100.0;
+    auto global_load_eff  = 0.5 * (A_glob_load_eff + B_glob_load_eff);
+    auto global_store_eff = 0.5 * (A_glob_store_eff + B_glob_store_eff);
+    auto flop_count_sp    = num_iter * (A_flop_count_sp + B_flop_count_sp);
+
+    printf("A flop = %f\n", A_flop_count_sp);
+    printf("B flop = %f\n", B_flop_count_sp);
+
+    ASSERT_NEAR(cupti_map["global_load"], global_load, epsilon);
+    ASSERT_NEAR(cupti_map["global_store"], global_store, epsilon);
+    ASSERT_NEAR(cupti_map["warp_execution_efficiency"], warp_eff, epsilon);
+    ASSERT_NEAR(cupti_map["gld_efficiency"], global_load_eff, epsilon);
+    ASSERT_NEAR(cupti_map["gst_efficiency"], global_store_eff, epsilon);
+    ASSERT_NEAR(cupti_map["flop_count_sp"], flop_count_sp, epsilon);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cupti_tests, streams)
+{
+    num_iter *= 2;
+    TIMEMORY_CONFIGURE(
+        cupti_event, { 0 },
+        { "active_warps", "active_cycles", "global_load", "global_store" },
+        { "inst_per_warp", "branch_efficiency", "warp_execution_efficiency",
+          "flop_count_sp", "flop_count_sp_add", "flop_count_sp_mul", "flop_count_sp_fma",
+          "flop_sp_efficiency", "flop_count_dp", "flop_count_dp_add", "flop_count_dp_mul",
+          "flop_count_dp_fma", "flop_dp_efficiency", "gld_efficiency", "gst_efficiency",
+          "ldst_executed", "ldst_issued" });
+
+    // must initialize storage before creating the stream
+    using tuple_t = tim::auto_tuple<real_clock, cupti_event>::component_type;
+
+    tim::cuda::stream_t stream;
+    tim::cuda::stream_create(stream);
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
+
+    tuple_t timer(details::get_test_name());
+    timer.start();
+    std::vector<tuple_t> subtimers;
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        tuple_t subtimer(details::get_test_name() + "_itr");
+        subtimer.start();
+        details::KERNEL_A(data, num_data, stream);
+        details::KERNEL_B(data, num_data, stream);
+        subtimer.stop();
+        std::cout << subtimer << std::endl;
+        subtimers.push_back(subtimer);
+    }
+    timer.stop();
+    tim::device::gpu::free(data);
+    printf("\n");
+
+    tuple_t subtot(details::get_test_name() + "_itr_subtotal");
+    for(const auto& itr : subtimers)
+        subtot += itr;
+    std::cout << subtot << std::endl;
+    std::cout << timer << std::endl;
     printf("\n");
 
     auto cupti_data   = timer.get<cupti_event>().get();
@@ -288,12 +468,125 @@ TEST_F(cupti_tests, kernels)
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(cupti_tests, roofline_activity)
+{
+    using roofline_t = gpu_roofline<float>;
+    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+
+    num_iter *= 2;
+    uint64_t                         nstream = 1;
+    std::vector<tim::cuda::stream_t> streams(nstream);
+    for(auto& itr : streams)
+        tim::cuda::stream_create(itr);
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    for(uint64_t i = 0; i < nstream; ++i)
+    {
+        auto _off      = i * (num_data / nstream);
+        auto _data     = data + _off;
+        auto _cpu_data = cpu_data.data() + _off;
+        auto _ndata    = (num_data / nstream);
+        if(i + 1 == nstream)
+            _ndata += num_data % nstream;
+        tim::cuda::memcpy(_data, _cpu_data, _ndata, tim::cuda::host_to_device_v,
+                          streams.at(i));
+    }
+
+    for(auto& itr : streams)
+        tim::cuda::stream_sync(itr);
+
+    int64_t sleep_msec = 700;
+
+    roofline_t::configure(roofline_t::MODE::ACTIVITY);
+    tuple_t timer(details::get_test_name(), true);
+    timer.start();
+    std::vector<tuple_t> subtimers;
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        tuple_t subtimer(details::get_test_name() + "_itr", true);
+        subtimer.start();
+        auto _stream = streams.at(i % nstream);
+        details::KERNEL_A(data, num_data, _stream);
+        details::KERNEL_B(data, num_data, _stream);
+        subtimer.stop();
+        subtimers.push_back(subtimer);
+    }
+    // add in a specific amount of sleep to validate that not recording time on CPU
+    std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
+    timer.stop();
+
+    tuple_t subtot(details::get_test_name() + "_itr_subtotal");
+    for(const auto& itr : subtimers)
+    {
+        std::cout << itr << std::endl;
+        subtot += itr;
+    }
+    std::cout << subtot << std::endl;
+    std::cout << timer << std::endl;
+
+    tim::device::gpu::free(data);
+    tim::cuda::device_sync();
+    num_iter /= 2;
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(cupti_tests, roofline_counters)
+{
+    using roofline_t = gpu_roofline<float>;
+    using tuple_t    = tim::auto_tuple<real_clock, roofline_t>::component_type;
+
+    roofline_t::configure(roofline_t::MODE::COUNTERS);
+    num_iter *= 2;
+
+    std::vector<float> cpu_data(num_data, 0);
+    float*             data = tim::device::gpu::alloc<float>(num_data);
+    tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v);
+
+    tuple_t timer(details::get_test_name(), true);
+    timer.start();
+    std::vector<tuple_t> subtimers;
+    for(int i = 0; i < num_iter; ++i)
+    {
+        printf("[%s]> iteration %i...\n", __FUNCTION__, i);
+        tuple_t subtimer(details::get_test_name() + "_itr", true);
+        subtimer.start();
+        details::KERNEL_A(data, num_data);
+        details::KERNEL_B(data, num_data);
+        subtimer.stop();
+        std::cout << subtimer << std::endl;
+    }
+    timer.stop();
+
+    tuple_t subtot(details::get_test_name() + "_itr_subtotal");
+    for(const auto& itr : subtimers)
+    {
+        std::cout << itr << std::endl;
+        subtot += itr;
+    }
+    std::cout << subtot << std::endl;
+    std::cout << timer << std::endl;
+
+    tim::device::gpu::free(data);
+    tim::cuda::device_sync();
+    num_iter /= 2;
+    printf("\n");
+}
+
+//--------------------------------------------------------------------------------------//
+
 int
 main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
-    auto manager = tim::manager::instance();
-    tim::consume_parameters(manager);
+    tim::settings::scientific()   = true;
+    tim::settings::timing_units() = "sec";
+    tim::settings::precision()    = 3;
+    tim::settings::width()        = 8;
+    tim::timemory_init(argc, argv);
+    tim::settings::banner() = false;
     return RUN_ALL_TESTS();
 }
 

@@ -32,11 +32,25 @@
 #include <timemory/utility/testing.hpp>
 
 using namespace tim::component;
-using float_type   = double;
+
+#if !defined(ROOFLINE_FP_BYTES)
+#    define ROOFLINE_FP_BYTES 8
+#endif
+
+#if ROOFLINE_FP_BYTES == 8
+using float_type = double;
+#elif ROOFLINE_FP_BYTES == 4
+using float_type = float;
+#else
+#    error "ROOFLINE_FP_BYTES must be either 4 or 8"
+#endif
+
+using roofline_t   = cpu_roofline<float_type>;
 using fib_list_t   = std::vector<int64_t>;
-using roofline_t   = cpu_roofline<float_type, PAPI_DP_OPS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, cpu_util, roofline_t>;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, roofline_t>;
+using device_t     = tim::device::cpu;
+using roofline_ert_config_t = typename roofline_t::ert_config_type<float_type>;
 
 // unless specified number of threads, use the number of available cores
 #if !defined(NUM_THREADS)
@@ -52,7 +66,8 @@ random_fibonacci(float_type n);
 void
 check(auto_list_t& l);
 void
-     check_const(const auto_list_t& l);
+check_const(const auto_list_t& l);
+template <typename _Tp>
 void customize_roofline(int64_t, int64_t, int64_t);
 
 //--------------------------------------------------------------------------------------//
@@ -65,8 +80,8 @@ main(int argc, char** argv)
     tim::print_env();
 
     int64_t    num_threads   = NUM_THREADS;         // default number of threads
-    int64_t    working_size  = 16;                  // default working set size
-    int64_t    memory_factor = 8;                   // default multiple of max cache size
+    int64_t    working_size  = 32;                  // default working set size
+    int64_t    memory_factor = 16;                  // default multiple of max cache size
     fib_list_t fib_values    = { { 35, 38, 43 } };  // default values for fibonacci calcs
 
     if(argc > 1)
@@ -85,18 +100,13 @@ main(int argc, char** argv)
     //
     // override method for determining how many threads to run
     //
-    roofline_t::get_finalize_threads_function() = [=]() { return num_threads; };
+    roofline_ert_config_t::get_num_threads() = [=]() { return num_threads; };
 
     //
     // allow for customizing the roofline
     //
     if(tim::get_env("CUSTOMIZE_ROOFLINE", true))
-        customize_roofline(num_threads, working_size, memory_factor);
-
-    //
-    // initialize the storage for components that only are recorded in worker threads
-    //
-    // tim::manager::instance()->initialize_storage<thread_cpu_clock, thread_cpu_util>();
+        customize_roofline<float_type>(num_threads, working_size, memory_factor);
 
     //
     // execute fibonacci in a thread
@@ -223,44 +233,70 @@ check(auto_list_t& l)
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tp>
 void
 customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_factor)
 {
-    // overload the finalization function that runs ERT calculations
-    roofline_t::get_finalizer() = [=]() {
-        using _Tp = float_type;
-        // these are the kernel functions we want to calculate the peaks with
-        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
-        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
-        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+    using ert_params_t   = typename roofline_t::ert_params_t;
+    using ert_data_ptr_t = typename roofline_t::ert_data_ptr_t;
+    using ert_counter_t  = typename roofline_t::ert_counter_type<_Tp>;
+
+    // sets up the configuration
+    roofline_ert_config_t::get_executor() = [=](ert_data_ptr_t data) {
         // test getting the cache info
         auto l1_size = tim::ert::cache_size::get<1>();
         auto l2_size = tim::ert::cache_size::get<2>();
         auto l3_size = tim::ert::cache_size::get<3>();
         auto lm_size = tim::ert::cache_size::get_max();
+
+        auto     dtype      = tim::demangle(typeid(_Tp).name());
+        uint64_t align_size = 64;
+        uint64_t max_size   = memory_factor * lm_size;
+
         // log the cache info
         std::cout << "[INFO]> L1 cache size: " << (l1_size / tim::units::kilobyte)
                   << " KB, L2 cache size: " << (l2_size / tim::units::kilobyte)
                   << " KB, L3 cache size: " << (l3_size / tim::units::kilobyte)
                   << " KB, max cache size: " << (lm_size / tim::units::kilobyte)
-                  << " KB\n"
+                  << " KB\n\n"
+                  << "[INFO]> num-threads      : " << num_threads << "\n"
+                  << "[INFO]> min-working-set  : " << working_size << " B\n"
+                  << "[INFO]> max-data-size    : " << max_size << " B\n"
+                  << "[INFO]> alignment        : " << align_size << "\n"
+                  << "[INFO]> data type        : " << dtype << "\n"
                   << std::endl;
-        // log how many threads were used
-        printf("[INFO]> Running ERT with %li threads...\n\n",
-               static_cast<long>(num_threads));
-        // create the execution parameters
-        tim::ert::exec_params params(working_size, memory_factor * lm_size, num_threads);
-        // create the operation counter
-        auto op_counter = new tim::ert::cpu::operation_counter<_Tp>(params, 64);
-        // set bytes per element
-        op_counter->bytes_per_element = sizeof(_Tp);
-        // set number of memory accesses per element from two functions
-        op_counter->memory_accesses_per_element = 2;
-        // run the operation counter kernels
-        tim::ert::cpu_ops_main<1>(*op_counter, add_func, store_func);
-        tim::ert::cpu_ops_main<4, 5, 6, 7, 8>(*op_counter, fma_func, store_func);
-        // return this data for processing
-        return op_counter;
+
+        ert_params_t  params(working_size, max_size, num_threads);
+        ert_counter_t _counter(params, data, align_size);
+
+        return _counter;
     };
+
+    // does the execution of ERT
+    auto callback = [=](ert_counter_t& _counter) {
+        // these are the kernel functions we want to calculate the peaks with
+        auto store_func = [](_Tp& a, const _Tp& b) { a = b; };
+        auto add_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = b + c; };
+        auto fma_func   = [](_Tp& a, const _Tp& b, const _Tp& c) { a = a * b + c; };
+
+        // set bytes per element
+        _counter.bytes_per_element = sizeof(_Tp);
+        // set number of memory accesses per element from two functions
+        _counter.memory_accesses_per_element = 2;
+
+        // set the label
+        _counter.label = "scalar_add";
+        // run the operation _counter kernels
+        tim::ert::ops_main<1>(_counter, add_func, store_func);
+
+        // set the label
+        _counter.label = "vector_fma";
+        // run the kernels (<4> is ideal for avx, <8> is ideal for KNL)
+        tim::ert::ops_main<2, 4, 6, 8, 16, 32>(_counter, fma_func, store_func);
+    };
+
+    // set the callback
+    roofline_t::set_executor_callback<_Tp>(callback);
 }
+
 //--------------------------------------------------------------------------------------//

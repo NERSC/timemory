@@ -39,9 +39,10 @@ namespace impl
 //
 //======================================================================================//
 
-template <typename...>
+template <typename... Types>
 struct tuple_concat
 {
+    using type = std::tuple<Types...>;
 };
 
 //--------------------------------------------------------------------------------------//
@@ -70,9 +71,17 @@ struct tuple_concat<std::tuple<Ts0...>, std::tuple<Ts1...>, Rest...>
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... Ts>
-using tuple_concat_t = typename tuple_concat<Ts...>::type;
+}  // namespace impl
 
+//--------------------------------------------------------------------------------------//
+
+template <typename... Ts>
+using tuple_concat_t = typename impl::tuple_concat<Ts...>::type;
+
+//--------------------------------------------------------------------------------------//
+
+namespace impl
+{
 //======================================================================================//
 //
 //      filter if predicate evaluates to false (result)

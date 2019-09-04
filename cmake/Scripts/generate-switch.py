@@ -12,10 +12,10 @@ def generate_case_label(component, indent_tabs=3, spaces=4, reference=True, temp
     """
     enumeration = mangled_enums.get(component, component)
 
-    spacer = " "*spaces           # a spacer of spaces length
-    atab = "{}".format(spacer)  # the generic tab
-    ftab = atab*indent_tabs     # the first tab level
-    stab = atab*(indent_tabs+1)  # the second tab level
+    spacer = " "*spaces             # a spacer of spaces length
+    atab = "{}".format(spacer)      # the generic tab
+    ftab = atab*indent_tabs         # the first tab level
+    stab = atab*(indent_tabs+1)     # the second tab level
 
     init_str = "." if reference else "->"
     if template:
@@ -88,6 +88,12 @@ if __name__ == "__main__":
         outdata += "{}".format(generate_case_label(component,
                                                    args.tabs_per_indent, args.spaces_per_tab,
                                                    not args.pointer, not args.specialized))
+    outdata = outdata.strip("\n");
+    spacer = " "*args.spaces_per_tab    # a spacer of spaces length
+    atab = "{}".format(spacer)          # the generic tab
+    ftab = atab*args.tabs_per_indent    # the first tab level
+
+    outdata += "\n{}case TIMEMORY_COMPONENTS_END:\n{}default: break;".format(ftab, ftab)
 
     if subdata is not None:
         try:

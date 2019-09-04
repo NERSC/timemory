@@ -70,10 +70,10 @@ public:
 
 public:
     inline explicit auto_hybrid(const string_t&, const int64_t& lineno = 0,
-                                const language_t& lang           = language_t::cxx(),
-                                bool              report_at_exit = false);
+                                const language_t& lang = language_t::cxx(),
+                                bool report_at_exit    = settings::destructor_report());
     inline explicit auto_hybrid(component_type& tmp, const int64_t& lineno = 0,
-                                bool report_at_exit = false);
+                                bool report_at_exit = settings::destructor_report());
     inline ~auto_hybrid();
 
     // copy and move
@@ -100,6 +100,15 @@ public:
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
+
+    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline const data_type& data() const { return m_temporary_object.data(); }
+    inline int64_t          laps() const { return m_temporary_object.laps(); }
+    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
+    inline const string_t&  key() const { return m_temporary_object.key(); }
+    inline const language&  lang() const { return m_temporary_object.lang(); }
+    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
+    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }

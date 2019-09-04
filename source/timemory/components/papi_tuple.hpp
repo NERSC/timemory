@@ -48,14 +48,12 @@ struct papi_tuple
 : public base<papi_tuple<EventTypes...>, std::array<long long, sizeof...(EventTypes)>,
               policy::thread_init, policy::thread_finalize>
 {
-    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
-
     using size_type  = std::size_t;
     using value_type = std::array<long long, sizeof...(EventTypes)>;
     using entry_type = typename value_type::value_type;
-    using base_type  = base<papi_tuple<EventTypes...>, value_type, policy::thread_init,
-                           policy::thread_finalize>;
     using this_type  = papi_tuple<EventTypes...>;
+    using base_type =
+        base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
 
     static const size_type num_events = sizeof...(EventTypes);
     template <typename _Tp>
@@ -75,12 +73,13 @@ public:
     }
     static bool& enable_multiplex()
     {
-        static thread_local bool _instance = get_env("TIMEMORY_PAPI_MULTIPLEX", true);
+        static thread_local bool _instance = settings::papi_multiplexing();
         return _instance;
     }
 
     static void invoke_thread_init()
     {
+        papi::init();
         // set overhead to zero
         apply<void>::set_value(get_overhead_values(), 0);
         int events[] = { EventTypes... };
@@ -138,12 +137,18 @@ private:
 public:
     static value_type get_overhead() { return get_overhead_values(); }
 
+protected:
     using base_type::accum;
     using base_type::is_transient;
     using base_type::laps;
     using base_type::set_started;
     using base_type::set_stopped;
     using base_type::value;
+
+    friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
+    friend struct base<this_type, value_type, policy::thread_init,
+                       policy::thread_finalize>;
+    friend class storage<this_type>;
 
 public:
     //==================================================================================//
@@ -231,7 +236,7 @@ public:
 
     // leave these empty
     static std::string label() { return "papi" + std::to_string(event_set()); }
-    static std::string descript() { return ""; }
+    static std::string description() { return ""; }
     static std::string display_unit() { return ""; }
     static int64_t     unit() { return 1; }
 
@@ -251,8 +256,9 @@ public:
             _accum[i] = accum[i];
         }
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("value", _value),
-           serializer::make_nvp("accum", _accum), serializer::make_nvp("display", _disp));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _disp),
+           serializer::make_nvp("value", _value), serializer::make_nvp("accum", _accum),
+           serializer::make_nvp("display", _disp));
     }
 
     entry_type get_display(int evt_type) const

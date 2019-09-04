@@ -59,42 +59,12 @@ timemory_finalize();
 
 namespace settings
 {
-//--------------------------------------------------------------------------------------//
-
-inline string_t tolower(string_t);
-inline string_t toupper(string_t);
 inline void
 parse();
-inline string_t
-get_output_prefix();
-inline string_t
-compose_output_filename(const std::string& _tag, std::string _ext);
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace settings
-
 }  // namespace tim
 
 //======================================================================================//
-
-inline std::string
-tim::settings::tolower(std::string str)
-{
-    for(auto& itr : str)
-        itr = ::tolower(itr);
-    return str;
-}
-
-//======================================================================================//
-
-inline std::string
-tim::settings::toupper(std::string str)
-{
-    for(auto& itr : str)
-        itr = ::toupper(itr);
-    return str;
-}
 
 //======================================================================================//
 
@@ -102,18 +72,22 @@ tim::settings::toupper(std::string str)
 #include "timemory/components.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/units.hpp"
+#include "timemory/utility/signals.hpp"
 #include "timemory/utility/utility.hpp"
 
 namespace tim
 {
 using complete_tuple_t = std::tuple<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
-    component::cpu_roofline_sp_flops, component::cpu_util, component::cuda_event,
-    component::cupti_event, component::current_rss, component::data_rss,
-    component::monotonic_clock, component::monotonic_raw_clock, component::num_io_in,
-    component::num_io_out, component::num_major_page_faults,
-    component::num_minor_page_faults, component::num_msg_recv, component::num_msg_sent,
-    component::num_signals, component::num_swap, component::papi_array_t,
+    component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
+    component::cuda_event, component::cupti_activity, component::cupti_counters,
+    component::current_rss, component::data_rss, component::gpu_roofline_dp_flops,
+    component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
+    component::gpu_roofline_sp_flops, component::monotonic_clock,
+    component::monotonic_raw_clock, component::num_io_in, component::num_io_out,
+    component::num_major_page_faults, component::num_minor_page_faults,
+    component::num_msg_recv, component::num_msg_sent, component::num_signals,
+    component::num_swap, component::nvtx_marker, component::papi_array_t,
     component::peak_rss, component::priority_context_switch, component::process_cpu_clock,
     component::process_cpu_util, component::read_bytes, component::real_clock,
     component::stack_rss, component::system_clock, component::thread_cpu_clock,
@@ -125,11 +99,19 @@ namespace settings
 template <typename _Tuple = tim::complete_tuple_t>
 void
 process();
-}
-}
+
+template <typename _Tuple = tim::complete_tuple_t>
+void
+initialize_storage();
+}  // namespace settings
+}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 // function to parse the environment for settings
+//
+// Nearly all variables will parse env when first access but this allows provides a
+// way to reparse the environment so that default settings (possibly from previous
+// invocation) can be overwritten
 //
 inline void
 tim::settings::parse()
@@ -187,8 +169,8 @@ tim::settings::process()
 {
     using namespace tim::component;
     using category_timing  = impl::filter_false<trait::is_timing_category, _Tuple>;
-    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
     using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
+    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
     using has_memory_units = impl::filter_false<trait::uses_memory_units, _Tuple>;
 
     //------------------------------------------------------------------------//
@@ -316,37 +298,6 @@ tim::settings::process()
 
 //--------------------------------------------------------------------------------------//
 
-inline tim::settings::string_t
-tim::settings::get_output_prefix()
-{
-    auto dir = output_path();
-    auto ret = makedir(dir);
-    return (ret == 0) ? path_t(dir + string_t("/") + output_prefix())
-                      : path_t(string_t("./") + output_prefix());
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline tim::settings::string_t
-tim::settings::compose_output_filename(const std::string& _tag, std::string _ext)
-{
-    auto _prefix      = get_output_prefix();
-    auto _rank_suffix = (!mpi::is_initialized())
-                            ? std::string("")
-                            : (std::string("_") + std::to_string(mpi::rank()));
-    if(_ext.find('.') != 0)
-        _ext = std::string(".") + _ext;
-    auto plast = _prefix.length() - 1;
-    if(_prefix.length() > 0 && _prefix[plast] != '/' && isalnum(_prefix[plast]))
-        _prefix += "_";
-    auto fpath = path_t(_prefix + _tag + _rank_suffix + _ext);
-    while(fpath.find("//") != std::string::npos)
-        fpath.replace(fpath.find("//"), 2, "/");
-    return std::move(fpath);
-}
-
-//--------------------------------------------------------------------------------------//
-
 inline void
 tim::timemory_init(int argc, char** argv, const std::string& _prefix,
                    const std::string& _suffix)
@@ -367,8 +318,6 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
             exe_name.erase(exe_name.find(ext), ext.length() + 1);
     }
 
-    gperf::profiler_start(exe_name);
-
     exe_name = _prefix + exe_name + _suffix;
     for(auto& itr : exe_name)
     {
@@ -379,6 +328,16 @@ tim::timemory_init(int argc, char** argv, const std::string& _prefix,
     tim::settings::output_path() = exe_name;
     // allow environment overrides
     tim::settings::parse();
+
+    if(tim::settings::enable_signal_handler())
+    {
+        auto default_signals = tim::signal_settings::get_default();
+        for(auto& itr : default_signals)
+            tim::signal_settings::enable(itr);
+        // should return default and any modifications from environment
+        auto enabled_signals = tim::signal_settings::get_enabled();
+        tim::enable_signal_detection(enabled_signals);
+    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -402,6 +361,7 @@ tim::timemory_finalize()
 #if defined(__INTEL_COMPILER)
     apply<void>::type_access<operation::print_storage, complete_tuple_t>();
 #endif
+    tim::disable_signal_detection();
 }
 //--------------------------------------------------------------------------------------//
 

@@ -8,7 +8,7 @@ endif()
 project(TiMemory-C-Example LANGUAGES C)
 
 set(EXE_NAME test_c_timing)
-set(COMPONENTS c static compile-options analysis-tools)
+set(COMPONENTS c shared compile-options analysis-tools)
 
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)

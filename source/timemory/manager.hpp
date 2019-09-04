@@ -71,8 +71,8 @@ inline void
 initialize()
 {
 #if defined(TIMEMORY_USE_CUPTI)
-    unsigned int init_flags = 0;
-    cuInit(init_flags);
+    // unsigned int init_flags = 0;
+    // cuInit(init_flags);
 #endif
 }
 }  // namespace cupti
@@ -313,6 +313,28 @@ public:
     }
 
 public:
+    // used to expand a tuple in settings
+    template <typename... _Types>
+    struct initialize
+    {
+        static void storage()
+        {
+            manager* _manager = manager::instance();
+            _manager->initialize_storage<_Types...>();
+        }
+    };
+
+    template <typename... _Types>
+    struct initialize<std::tuple<_Types...>>
+    {
+        static void storage()
+        {
+            manager* _manager = manager::instance();
+            _manager->initialize_storage<_Types...>();
+        }
+    };
+
+public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }
 
@@ -422,16 +444,28 @@ struct manager_deleter
 };
 
 //--------------------------------------------------------------------------------------//
+
 inline manager::singleton_t&
 manager_singleton()
 {
     static manager::singleton_t _instance = manager::singleton_t::instance();
     return _instance;
 }
+
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details
-
+/*
+template <typename... _Types>
+struct manager::initialize<std::tuple<_Types...>>
+{
+    static void storage()
+    {
+        manager* _manager = manager::instance();
+        _manager->initialize_storage<_Types...>();
+    }
+};
+*/
 //======================================================================================//
 
 }  // namespace tim

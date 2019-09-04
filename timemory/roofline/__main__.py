@@ -53,11 +53,17 @@ def parse_args(add_run_args=False):
                         default=os.getcwd())
     parser.add_argument("--format", type=str,
                         help="Image format", default="png")
+    parser.add_argument("-T", "--title", type=str, help="Title for the plot", default="Roofline")
+    parser.add_argument("-P", "--plot-dimensions", type=int,
+                        help="Image dimensions: Width, Height, DPI",
+                        default=[1600, 1200, 90], nargs=3)
     if add_run_args:
         parser.add_argument("-p", "--preload", help="Enable preloading libtimemory.so",
                             action='store_true')
         parser.add_argument("-t", "--rtype", help="Roofline type", type=str,
-                            choices=["cpu_roofline"], default="cpu_roofline")
+                            choices=["cpu_roofline", "gpu_roofline", "gpu_roofline_float",
+                            "gpu_roofline_double", "gpu_roofline_float_double",
+                            "gpu_roofline___half"], default="cpu_roofline")
         parser.add_argument("-k", "--keep-going", help="Continue despite execution errors",
                             action='store_true')
         parser.add_argument("-r", "--rerun", help="Re-run this mode and not the other", type=str,
@@ -81,7 +87,9 @@ def plot(args):
         fai = open(args.arithmetic_intensity, 'r')
         fop = open(args.operations, 'r')
         _roofline.plot_roofline(json.load(fai), json.load(fop), args.display,
-                                args.output_file, args.format, args.output_dir)
+                                fname, args.format, fdir, args.title,
+                                args.plot_dimensions[0], args.plot_dimensions[1],
+                                args.plot_dimensions[2])
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -172,10 +180,16 @@ def run(args, cmd):
         ret = p.wait()
         handle_error(ret, cmd, args.keep_going)
 
-    args.arithmetic_intensity = os.path.join(
-        output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
-    args.operations = os.path.join(
-        output_path, "{}{}_op.json".format(output_prefix, args.rtype))
+    if "gpu_roofline" in args.rtype:
+        args.arithmetic_intensity = os.path.join(
+            output_path, "{}{}_activity.json".format(output_prefix, args.rtype))
+        args.operations = os.path.join(
+            output_path, "{}{}_counters.json".format(output_prefix, args.rtype))
+    else:
+        args.arithmetic_intensity = os.path.join(
+            output_path, "{}{}_ai.json".format(output_prefix, args.rtype))
+        args.operations = os.path.join(
+            output_path, "{}{}_op.json".format(output_prefix, args.rtype))
 
 
 if __name__ == "__main__":

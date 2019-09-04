@@ -116,7 +116,7 @@ inline manager::manager()
 
     if(m_instance_count == 0)
     {
-        if(get_env("TIMEMORY_BANNER", settings::banner()))
+        if(settings::banner())
             printf(
                 "#--------------------- tim::manager initialized [%i] "
                 "---------------------#\n\n",
@@ -155,7 +155,7 @@ manager::exit_hook()
     {
         ptr->print(false, false);
         count = ptr->instance_count();
-        if(get_env("TIMEMORY_BANNER", settings::banner()))
+        if(settings::banner())
             printf(
                 "\n\n#---------------------- tim::manager destroyed [%i] "
                 "----------------------#\n",
@@ -164,6 +164,7 @@ manager::exit_hook()
     }
     tim::papi::shutdown();
     // tim::cupti::shutdown();
+    tim::mpi::finalize();
 }
 
 //======================================================================================//
@@ -338,15 +339,15 @@ manager::get_communicator_group()
 #if defined(DEBUG)
     if(tim::settings::verbose() > 1 || settings::debug())
     {
-        int32_t local_mpi_rank  = mpi::rank(local_mpi_comm);
-        int32_t local_mpi::size = mpi::size(local_mpi_comm);
-        int32_t local_mpi_file  = mpi::rank() / local_mpi::size;
+        int32_t local_mpi_rank = mpi::rank(local_mpi_comm);
+        int32_t local_mpi_size = mpi::size(local_mpi_comm);
+        int32_t local_mpi_file = mpi::rank() / local_mpi_size;
 
         std::stringstream _info;
         _info << "\t" << mpi::rank() << " Rank      : " << mpi::rank() << std::endl;
         _info << "\t" << mpi::rank() << " Size      : " << mpi::size() << std::endl;
         _info << "\t" << mpi::rank() << " Node      : " << mpi_node_count << std::endl;
-        _info << "\t" << mpi::rank() << " Local Size: " << local_mpi::size << std::endl;
+        _info << "\t" << mpi::rank() << " Local Size: " << local_mpi_size << std::endl;
         _info << "\t" << mpi::rank() << " Local Rank: " << local_mpi_rank << std::endl;
         _info << "\t" << mpi::rank() << " Local File: " << local_mpi_file << std::endl;
         std::cout << "tim::manager::" << __FUNCTION__ << "\n" << _info.str();
@@ -389,5 +390,31 @@ inline void
 tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
 {
 }
+
+//======================================================================================//
+
+template <typename _Tuple>
+void
+tim::settings::initialize_storage()
+{
+    tim::manager::initialize<_Tuple>::storage();
+}
+
+namespace tim
+{
+//--------------------------------------------------------------------------------------//
+// extra variadic initialization
+//
+template <typename... _Types>
+inline void
+timemory_init()
+{
+    using tuple_type = tuple_concat_t<_Types...>;
+    settings::initialize_storage<tuple_type>();
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace tim
 
 //======================================================================================//

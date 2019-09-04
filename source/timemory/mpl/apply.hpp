@@ -40,14 +40,24 @@
 
 #if defined(__NVCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
+#    define TIMEMORY_HOST_LAMBDA __host__
+#    define TIMEMORY_DEVICE_LAMBDA __device__
 #else
 #    define TIMEMORY_LAMBDA
+#    define TIMEMORY_HOST_LAMBDA
+#    define TIMEMORY_DEVICE_LAMBDA
 #endif
 
 //======================================================================================//
 
 namespace tim
 {
+namespace device
+{
+struct cpu;
+struct gpu;
+}  // namespace device
+
 //======================================================================================//
 
 // for pre-C++14 tuple expansion to arguments
@@ -126,7 +136,7 @@ struct _Make_integer_sequence<_Tp, _Num, _Index_tuple<_Idx...>>
 
 //--------------------------------------------------------------------------------------//
 
-}  // impl
+}  // namespace impl
 
 //======================================================================================//
 
@@ -295,20 +305,42 @@ struct _apply_impl<void>
 {
     //----------------------------------------------------------------------------------//
     // unroll
-    template <size_t _N, typename _Func, typename... _Args,
-              typename std::enable_if<(_N == 1), char>::type = 0>
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N == 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
     TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
         std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
     }
 
-    template <size_t _N, typename _Func, typename... _Args,
-              typename std::enable_if<(_N > 1), char>::type = 0>
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N > 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
     TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
         std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
-        unroll<_N - 1, _Func, _Args...>(std::forward<_Func>(__func),
-                                        std::forward<_Args>(__args)...);
+        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
+                                                 std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // unroll
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N == 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+    }
+
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N > 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
+                                                 std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -495,10 +527,21 @@ struct apply<void>
 {
     //----------------------------------------------------------------------------------//
 
-    template <size_t _N, typename _Func, typename... _Args>
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              enable_if_t<std::is_same<_Device, device::gpu>::value, char> = 0>
     TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
     {
-        _apply_impl<void>::template unroll<_N, _Func, _Args...>(
+        _apply_impl<void>::template unroll<_N, _Device, _Func, _Args...>(
+            std::forward<_Func>(__func), std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              enable_if_t<std::is_same<_Device, device::cpu>::value, char> = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        _apply_impl<void>::template unroll<_N, _Device, _Func, _Args...>(
             std::forward<_Func>(__func), std::forward<_Args>(__args)...);
     }
 

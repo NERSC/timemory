@@ -1,11 +1,9 @@
 # use IN_LIST so this is required
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
-# cmake_policy(SET CMP0057 NEW)
-
-if(CMAKE_VERSION VERSION_LESS 3.10)
-    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
-endif()
+#if(CMAKE_VERSION VERSION_LESS 3.10)
+#    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
+#endif()
 
 include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
 
@@ -53,16 +51,6 @@ if(@PROJECT_NAME@_ONETIME_MESSAGE)
     if(NOT @PROJECT_NAME@_FIND_QUIETLY)
         set(_ENABLED ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
         set(_DISABLED ${@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES})
-        # foreach(_LIB ${_ENABLED})
-        #     if(${_LIB} IN_LIST _DISABLED)
-        #         list(REMOVE_ITEM _ENABLED ${_LIB})
-        #     endif()
-        # endforeach()
-        # message(STATUS "")
-        # message(STATUS "@PROJECT_NAME@ has the following INTERFACE libraries enabled:")
-        # foreach(_LIB ${_ENABLED})
-        #     message(STATUS "    ${_LIB}")
-        # endforeach()
         message(STATUS "")
         message(STATUS "@PROJECT_NAME@ was not compiled with support for the following INTERFACE libraries (empty INTERFACE targets):")
         foreach(_LIB ${_DISABLED})
@@ -202,6 +190,21 @@ endif()
 # if build interface library is enabled and COMPONENTS were specified
 if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERFACE_LIBRARY)
 
+    if(TIMEMORY_ENABLE_OPTIONS)
+        foreach(_TYPE CALIPER PAPI MPI GPERFTOOLS GPERFTOOLS_CPU GPERFTOOLS_HEAP
+            VECTOR EXTERN_INIT EXTERN_TEMPLATES)
+            string(TOLOWER "${_TYPE}" _COMP)
+            string(REPLACE "_" "-" _COMP "${_COMP}")
+            if(USE_${_TYPE})
+                list(APPEND @PROJECT_NAME@_FIND_COMPONENTS ${_COMP})
+            elseif(DEFINED USE_${_TYPE} AND NOT USE_${_TYPE})
+                if("${_COMP}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+                    list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS "${_COMP}")
+                endif()
+            endif()
+        endforeach()
+    endif()
+
     set(_LINK )
     set(_LANGUAGES )
     set(_COMPONENT_LIST )
@@ -297,13 +300,13 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
                  set(_CUDART ON)
             endif()
 
-            if(_CUDART AND _CUDART_DEV)
-                set(_MSG "Requesting linking to cudadevrt (device runtime) and")
-                set(_MSG "${_MSG} cudart/cudart_static. This has been found to cause")
-                set(_MSG "${_MSG} compilation error in CUDA 10.1")
-                message(AUTHOR_WARNING "${_MSG}")
-                unset(_MSG)
-            endif()
+            #if(_CUDART AND _CUDART_DEV)
+            #    set(_MSG "Requesting linking to cudadevrt (device runtime) and")
+            #    set(_MSG "${_MSG} cudart/cudart_static. This has been found to cause")
+            #    set(_MSG "${_MSG} compilation error in CUDA 10.1")
+            #    message(AUTHOR_WARNING "${_MSG}")
+            #    unset(_MSG)
+            #endif()
 
             if(_CUDART)
                 if("${_LINK}" STREQUAL "static")
@@ -357,9 +360,5 @@ find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR
     ${_@PROJECT_NAME@_MISSING_COMPONENTS}
     @PROJECT_NAME@_LIBRARIES)
-
-if(APPLE)
-    # set(CMAKE_INCLUDE_SYSTEM_FLAG_${LANG} "-isystem ")
-endif(APPLE)
 
 unset(TIMEMORY_INSTALL_TREE)

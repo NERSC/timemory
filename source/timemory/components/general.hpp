@@ -26,6 +26,7 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/backends/gperf.hpp"
 #include "timemory/backends/nvtx.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
@@ -37,6 +38,11 @@
 
 namespace tim
 {
+template <typename... _Types>
+class component_list;
+template <typename... _Types>
+class component_tuple;
+
 namespace component
 {
 //--------------------------------------------------------------------------------------//
@@ -49,7 +55,8 @@ namespace component
 struct trip_count : public base<trip_count>
 {
     using value_type = int64_t;
-    using base_type  = base<trip_count, value_type>;
+    using this_type  = trip_count;
+    using base_type  = base<this_type, value_type>;
 
     static const short                   precision = 0;
     static const short                   width     = 5;
@@ -58,7 +65,7 @@ struct trip_count : public base<trip_count>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "trip_count"; }
-    static std::string descript() { return "trip counts"; }
+    static std::string description() { return "trip counts"; }
     static std::string display_unit() { return ""; }
     static value_type  record() { return 1; }
 
@@ -79,12 +86,166 @@ struct trip_count : public base<trip_count>
 };
 
 //--------------------------------------------------------------------------------------//
+// start/stop gperftools cpu profiler
+//
+struct gperf_cpu_profiler
+: public base<gperf_cpu_profiler, int8_t, policy::thread_init, policy::global_finalize>
+{
+    using value_type = int8_t;
+    using this_type  = gperf_cpu_profiler;
+    using base_type =
+        base<this_type, value_type, policy::thread_init, policy::global_finalize>;
+
+    static const short                   precision = 0;
+    static const short                   width     = 5;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t     unit() { return 1; }
+    static std::string label() { return "gperf_cpu_profiler"; }
+    static std::string description() { return "gperftools cpu profiler"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return 0; }
+
+    value_type get_display() const { return 0; }
+    value_type get() const { return 0; }
+
+    static void invoke_thread_init() { gperf::cpu::register_thread(); }
+
+    static void invoke_global_finalize()
+    {
+        if(gperf::cpu::is_running())
+        {
+            gperf::cpu::profiler_flush();
+            gperf::cpu::profiler_stop();
+        }
+    }
+
+    void start()
+    {
+        set_started();
+        if(!gperf::cpu::is_running())
+        {
+            index      = this_type::get_index()++;
+            auto fname = settings::compose_output_filename(
+                label() + "_" + std::to_string(index), ".dat");
+            auto ret = gperf::cpu::profiler_start(fname);
+            if(ret == 0)
+                fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
+                        fname.c_str());
+        }
+    }
+
+    void stop()
+    {
+        if(index >= 0)
+        {
+            gperf::cpu::profiler_flush();
+            gperf::cpu::profiler_stop();
+        }
+        set_stopped();
+    }
+
+protected:
+    int32_t index = -1;  // if this is >= zero, then we flush and stop
+
+    template <typename... _Types>
+    friend class component_tuple;
+
+    template <typename... _Types>
+    friend class component_list;
+
+private:
+    static std::atomic<int64_t>& get_index()
+    {
+        static std::atomic<int64_t> _instance;
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+// start/stop gperftools cpu profiler
+//
+struct gperf_heap_profiler
+: public base<gperf_heap_profiler, int8_t, policy::global_finalize>
+{
+    using value_type = int8_t;
+    using this_type  = gperf_heap_profiler;
+    using base_type  = base<this_type, value_type, policy::global_finalize>;
+
+    static const short                   precision = 0;
+    static const short                   width     = 5;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t     unit() { return 1; }
+    static std::string label() { return "gperf_heap_profiler"; }
+    static std::string description() { return "gperftools heap profiler"; }
+    static std::string display_unit() { return ""; }
+    static value_type  record() { return 1; }
+
+    value_type get_display() const { return accum; }
+    value_type get() const { return accum; }
+
+    static void invoke_global_finalize()
+    {
+        if(gperf::heap::is_running())
+        {
+            gperf::heap::profiler_flush("global_finalize");
+            gperf::heap::profiler_stop();
+        }
+    }
+
+    void start()
+    {
+        set_started();
+        if(!gperf::heap::is_running())
+        {
+            index      = this_type::get_index()++;
+            auto fname = settings::compose_output_filename(label(), ".dat");
+            auto ret   = gperf::heap::profiler_start(fname);
+            if(ret > 0)
+                fprintf(stderr, "[gperf_heap_profiler]> Error starting %s...",
+                        prefix.c_str());
+        }
+    }
+
+    void stop()
+    {
+        if(index >= 0)
+        {
+            gperf::heap::profiler_flush(prefix);
+            gperf::heap::profiler_stop();
+        }
+        set_stopped();
+    }
+
+protected:
+    std::string prefix;
+    int32_t     index = -1;  // if this is >= zero, then we flush and stop
+
+    template <typename... _Types>
+    friend class component_tuple;
+
+    template <typename... _Types>
+    friend class component_list;
+
+private:
+    static std::atomic<int64_t>& get_index()
+    {
+        static std::atomic<int64_t> _instance;
+        return _instance;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 // adds NVTX markers
 //
 struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 {
     using value_type = int8_t;
-    using base_type  = base<nvtx_marker, value_type, policy::thread_init>;
+    using this_type  = nvtx_marker;
+    using base_type  = base<this_type, value_type, policy::thread_init>;
 
     static const short                   precision    = 0;
     static const short                   width        = 5;
@@ -92,7 +253,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 
     static int64_t     unit() { return 1; }
     static std::string label() { return "nvtx_marker"; }
-    static std::string descript() { return "NVTX markers"; }
+    static std::string description() { return "NVTX markers"; }
     static std::string display_unit() { return ""; }
     static int8_t      record() { return 0; }
 
@@ -101,7 +262,7 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 
     static bool& use_device_sync()
     {
-        static bool _instance = get_env("TIMEMORY_NVTX_MARKER_DEVICE_SYNC", true);
+        static bool _instance = settings::nvtx_marker_device_sync();
         return _instance;
     }
 
@@ -190,6 +351,8 @@ private:
 
     bool has_attribute = false;
 };
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace component
 }  // namespace tim
