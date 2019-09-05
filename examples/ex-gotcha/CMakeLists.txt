@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(timemory-gotcha-Example LANGUAGES CXX CUDA)
+project(timemory-gotcha-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory::gotcha-example)
 set(COMPONENTS compile-options arch vector mpi gotcha)
