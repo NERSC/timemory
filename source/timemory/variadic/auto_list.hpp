@@ -98,13 +98,15 @@ public:
 
     // partial interface to underlying component_list
     inline void record() { m_temporary_object.record(); }
-    inline void start() { m_temporary_object.start(); }
+    inline void start() { m_temporary_object.conditional_start(); }
     inline void stop() { m_temporary_object.stop(); }
     inline void push() { m_temporary_object.push(); }
     inline void pop() { m_temporary_object.pop(); }
     inline void reset() { m_temporary_object.reset(); }
     inline void mark_begin() { m_temporary_object.mark_begin(); }
     inline void mark_end() { m_temporary_object.mark_end(); }
+    inline void conditional_start() { m_temporary_object.conditional_start(); }
+    inline void conditional_stop() { m_temporary_object.conditional_stop(); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }

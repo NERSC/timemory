@@ -1,14 +1,14 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 # this is for internal use
-if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory")
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     if(NOT "CUDA" IN_LIST LANGUAGES OR NOT CMAKE_CUDA_COMPILER OR NOT TIMEMORY_USE_CUDA)
         return()
     endif()
 endif()
 
-project(TiMemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
+project(timemory-CUDA-Event-Example LANGUAGES C CXX CUDA)
 
 set(EXE_NAME test_cuda_event)
 set(COMPONENTS cuda cuda-nvtx threading compile-options analysis-tools)
@@ -34,8 +34,8 @@ if(USE_LOGGING)
     target_compile_definitions(logging INTERFACE $<$<CONFIG:Debug>:DEBUG>)
 endif()
 
-set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cuda-event-example)
-find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
+set(timemory_FIND_COMPONENTS_INTERFACE timemory-cuda-event-example)
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cu)

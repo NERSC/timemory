@@ -1,8 +1,8 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(TiMemory-Optional-Example LANGUAGES C CXX)
+project(timemory-Optional-Example LANGUAGES C CXX)
 
-find_package(TiMemory REQUIRED COMPONENTS compile-options analysis-tools papi caliper)
+find_package(timemory REQUIRED COMPONENTS compile-options analysis-tools papi caliper)
 
 file(GLOB sources ${PROJECT_SOURCE_DIR}/*.cpp ${PROJECT_SOURCE_DIR}/*.hpp)
 

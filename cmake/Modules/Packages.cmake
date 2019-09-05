@@ -33,6 +33,7 @@ add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
 add_interface_library(timemory-cuda-nvtx)
 add_interface_library(timemory-caliper)
+add_interface_library(timemory-gotcha)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -90,7 +91,7 @@ endfunction()
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory headers
+#                               timemory headers
 #
 #----------------------------------------------------------------------------------------#
 
@@ -106,7 +107,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory exceptions
+#                               timemory exceptions
 #
 #----------------------------------------------------------------------------------------#
 
@@ -115,7 +116,7 @@ target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 
 #----------------------------------------------------------------------------------------#
 #
-#                        TiMemory extern initializaiton
+#                        timemory extern initializaiton
 #
 #----------------------------------------------------------------------------------------#
 
@@ -127,7 +128,7 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory extern-templates
+#                               timemory extern-templates
 #
 #----------------------------------------------------------------------------------------#
 
@@ -764,4 +765,38 @@ if(caliper_FOUND)
 else()
     set(TIMEMORY_USE_CALIPER OFF)
     inform_empty_interface(timemory-caliper "caliper")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               GOTCHA
+#
+#----------------------------------------------------------------------------------------#
+if(UNIX AND NOT APPLE)
+    if(TIMEMORY_BUILD_GOTCHA)
+        set(gotcha_FOUND ON)
+        checkout_git_submodule(RECURSIVE
+            RELATIVE_PATH external/gotcha
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
+        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS Gotcha)
+    else()
+        find_package(gotcha QUIET)
+        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha)
+    endif()
+else()
+    set(gotcha_FOUND OFF)
+endif()
+
+if(gotcha_FOUND)
+    target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
+    if(TIMEMORY_BUILD_GOTCHA)
+        target_link_libraries(timemory-gotcha INTERFACE Gotcha)
+    else()
+        target_link_libraries(timemory-gotcha INTERFACE gotcha)
+    endif()
+else()
+    set(TIMEMORY_USE_GOTCHA OFF)
+    inform_empty_interface(timemory-gotcha "GOTCHA")
 endif()

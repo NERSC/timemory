@@ -4,9 +4,9 @@ cmake_policy(SET CMP0042 NEW)
 cmake_policy(SET CMP0048 NEW)
 
 #----------------------------------------------------------------------------------------#
-#   TiMemory examples project
+#   timemory examples project
 #
-project(TiMemory-Examples C CXX)
+project(timemory-Examples C CXX)
 
 #----------------------------------------------------------------------------------------#
 #   Add the examples
@@ -22,4 +22,4 @@ add_subdirectory(ex-gpu-roofline)
 add_subdirectory(ex-cuda-event)
 add_subdirectory(ex-caliper)
 add_subdirectory(ex-ert)
-
+add_subdirectory(ex-gotcha)

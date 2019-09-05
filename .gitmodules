@@ -10,3 +10,6 @@
 [submodule "external/caliper"]
 	path = external/caliper
 	url = https://github.com/jrmadsen/Caliper.git
+[submodule "external/gotcha"]
+	path = external/gotcha
+	url = https://github.com/jrmadsen/GOTCHA.git

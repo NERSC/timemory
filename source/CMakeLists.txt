@@ -237,7 +237,7 @@ export(
         ${TIMEMORY_INTERFACE_LIBRARIES}
         ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
     FILE
-        ${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake)
+        ${CMAKE_BINARY_DIR}/timemoryBuild.cmake)
 
 
 #----------------------------------------------------------------------------------------#

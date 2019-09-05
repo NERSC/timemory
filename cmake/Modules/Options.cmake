@@ -3,7 +3,7 @@ include_guard(DIRECTORY)
 
 ##########################################################################################
 #
-#        TiMemory Options
+#        timemory Options
 #
 ##########################################################################################
 
@@ -126,6 +126,10 @@ add_option(TIMEMORY_BUILD_GTEST
     "Enable GoogleTest" OFF)
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
+if(UNIX AND NOT APPLE)
+    add_option(TIMEMORY_BUILD_GOTCHA
+        "Enable building GOTCHA (set to OFF for external)" ON)
+endif()
 
 # Features
 
@@ -135,7 +139,7 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
 endif()
 
-# TiMemory options
+# timemory options
 add_option(TIMEMORY_USE_EXCEPTIONS
     "Signal handler throws exceptions (default: exit)" OFF  ${_FEATURE})
 add_option(TIMEMORY_USE_EXTERN_INIT
@@ -162,6 +166,10 @@ add_option(TIMEMORY_USE_NVTX
     "Enable NVTX marking API" ${_USE_CUDA} ${_FEATURE})
 add_option(TIMEMORY_USE_CALIPER
     "Enable Caliper" ${_BUILD_CALIPER} ${_FEATURE})
+if(UNIX AND NOT APPLE)
+    add_option(TIMEMORY_USE_GOTCHA
+        "Enable GOTCHA" ON ${_FEATURE})
+endif()
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

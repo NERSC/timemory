@@ -114,6 +114,9 @@ struct cupti_activity;
 // caliper
 struct caliper;
 
+template <size_t _N, typename _Components, typename _Differentiator = void>
+struct gotcha;
+
 }  // component
 
 //======================================================================================//

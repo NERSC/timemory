@@ -717,6 +717,23 @@ struct external_output_handling<component::caliper> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+//  disable if not enabled via preprocessor TIMEMORY_USE_GOTCHA
+//
+#if !defined(TIMEMORY_USE_GOTCHA)
+
+template <size_t _N, typename _Comp, typename _Diff>
+struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
+{
+};
+
+#endif  // TIMEMORY_USE_GOTCHA
+
+template <size_t _N, typename _Comp, typename _Diff>
+struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_HEAP_PROFILER or
 //  TIMEMORY_USE_GPERF
 //

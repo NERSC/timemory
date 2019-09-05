@@ -36,6 +36,7 @@
 #include "timemory/components/cuda_event.hpp"
 #include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/general.hpp"
+#include "timemory/components/gotcha.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
