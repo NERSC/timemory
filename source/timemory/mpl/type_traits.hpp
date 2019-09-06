@@ -165,6 +165,22 @@ struct requires_json : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates the type is a gotcha... ONLY gotcha should set to TRUE!
+///
+template <typename _Tp>
+struct is_gotcha : std::false_type
+{
+};
+
+template <typename _Trait>
+inline std::string
+as_string()
+{
+    constexpr bool _val = _Trait::value;
+    return (_val) ? "true" : "false";
+}
+
+//--------------------------------------------------------------------------------------//
 }  // namespace trait
 }  // namespace tim
 
@@ -179,7 +195,9 @@ namespace tim
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
-//      record_max
+//
+//                              RECORD MAX
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -203,7 +221,9 @@ struct record_max<component::data_rss> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//      array_serialization
+//
+//                              ARRAY SERIALIZATION
+//
 //--------------------------------------------------------------------------------------//
 
 template <int... EventTypes>
@@ -222,7 +242,9 @@ struct array_serialization<component::cupti_counters> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//      start_priority
+//
+//                              START PRIORITY
+//
 //--------------------------------------------------------------------------------------//
 
 /// component::cuda_event should be stopped before other types
@@ -232,7 +254,9 @@ struct start_priority<component::cupti_activity> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//      stop_priority
+//
+//                              STOP PRIORITY
+//
 //--------------------------------------------------------------------------------------//
 
 /// component::cuda_event should be stopped before other types
@@ -248,7 +272,9 @@ struct stop_priority<component::cupti_activity> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//      custom_unit_printing
+//
+//                              CUSTOM UNIT PRINTING
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -276,8 +302,11 @@ struct custom_unit_printing<component::cpu_roofline<_Types...>> : std::true_type
 {
 };
 */
+
 //--------------------------------------------------------------------------------------//
-//      custom_label_printing
+//
+//                              CUSTOM LABEL PRINTING
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -305,8 +334,11 @@ struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_typ
 {
 };
 */
+
 //--------------------------------------------------------------------------------------//
-//		custom_laps_printing
+//
+//                              CUSTOM LAPS PRINTING
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -315,7 +347,9 @@ struct custom_laps_printing<component::trip_count> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//		is_timing_category
+//
+//                              IS TIMING CATEGORY
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -369,7 +403,9 @@ struct is_timing_category<component::cupti_activity> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//		is_memory_category
+//
+//                              IS MEMORY CATEGORY
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -453,7 +489,9 @@ struct is_memory_category<component::written_bytes> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//		uses_timing_units
+//
+//                              USES TIMING UNITS
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -507,7 +545,9 @@ struct uses_timing_units<component::cupti_activity> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
-//		uses_memory_units
+//
+//                              USES MEMORY UNITS
+//
 //--------------------------------------------------------------------------------------//
 
 template <>
@@ -540,6 +580,10 @@ struct uses_memory_units<component::written_bytes> : std::true_type
 {
 };
 
+//--------------------------------------------------------------------------------------//
+//
+//                              NOT UNIX (i.e. Windows)
+//
 //--------------------------------------------------------------------------------------//
 // if not UNIX (i.e. Windows)
 //
@@ -608,6 +652,10 @@ struct is_available<component::written_bytes> : std::false_type
 #endif
 
 //--------------------------------------------------------------------------------------//
+//
+//                              PAPI / CPU_ROOFLINE
+//
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
 //
 #if !defined(TIMEMORY_USE_PAPI)
@@ -635,6 +683,10 @@ struct requires_json<component::cpu_roofline<_Types...>> : std::true_type
 #endif  // TIMEMORY_USE_PAPI
 
 //--------------------------------------------------------------------------------------//
+//
+//                              CUDA
+//
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUDA
 //
 #if !defined(TIMEMORY_USE_CUDA)
@@ -646,6 +698,10 @@ struct is_available<component::cuda_event> : std::false_type
 
 #endif  // TIMEMORY_USE_CUDA
 
+//--------------------------------------------------------------------------------------//
+//
+//                              CUPTI / GPU ROOFLINE
+//
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
 //
@@ -693,6 +749,10 @@ struct external_output_handling<component::nvtx_marker> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+//
+//                              CALIPER
+//
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_CALIPER
 //
 #if !defined(TIMEMORY_USE_CALIPER)
@@ -717,6 +777,10 @@ struct external_output_handling<component::caliper> : std::true_type
 };
 
 //--------------------------------------------------------------------------------------//
+//
+//                              GOTCHA
+//
+//--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_GOTCHA
 //
 #if !defined(TIMEMORY_USE_GOTCHA)
@@ -733,6 +797,15 @@ struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true
 {
 };
 
+template <size_t _N, typename _Comp, typename _Diff>
+struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//
+//                              GPERFTOOLS
+//
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_GPERF_HEAP_PROFILER or
 //  TIMEMORY_USE_GPERF

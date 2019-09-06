@@ -295,4 +295,14 @@ template <template <typename...> class Operator, typename _Tuple>
 using standard_stop_modifiers =
     impl::operation_filter_true<trait::stop_priority, Operator, _Tuple>;
 
+//======================================================================================//
+//
+//      trait::num_gotchas
+//
+//======================================================================================//
+
+/// filter out any types that are not available
+template <typename... Types>
+using filter_gotchas = impl::filter_false<trait::is_gotcha, std::tuple<Types...>>;
+
 }  // namespace tim

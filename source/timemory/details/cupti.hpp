@@ -858,10 +858,25 @@ public:
     ~receiver() = default;
 
     receiver(const receiver&) = delete;
-    receiver(receiver&&)      = default;
-
     receiver& operator=(const receiver&) = delete;
-    receiver& operator=(receiver&&) = default;
+
+    receiver(receiver&& rhs)
+    : m_external_hold(rhs.m_external_hold)
+    , m_elapsed(rhs.m_elapsed)
+    {
+        std::swap(m_data, rhs.m_data);
+    }
+
+    receiver& operator=(receiver&& rhs)
+    {
+        if(this == &rhs)
+            return *this;
+
+        m_external_hold = rhs.m_external_hold;
+        m_elapsed       = rhs.m_elapsed;
+        std::swap(m_data, rhs.m_data);
+        return *this;
+    }
 
     template <typename _Tp>
     inline void insert(_Tp* _obj)

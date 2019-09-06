@@ -51,6 +51,10 @@ template <size_type _Nt, typename _Components, typename _Differentiator>
 struct gotcha
 : public base<gotcha<_Nt, _Components, _Differentiator>, int8_t, policy::global_init>
 {
+    static_assert(_Components::contains_gotcha == false,
+                  "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
+                  "cannot include another gotcha_component");
+
     using value_type = int8_t;
     using this_type  = gotcha<_Nt, _Components, _Differentiator>;
     using base_type  = base<this_type, value_type, policy::global_init>;
@@ -61,6 +65,7 @@ struct gotcha
     using binding_t = ::tim::gotcha::binding_t;
     using wrappee_t = ::tim::gotcha::wrappee_t;
     using wrappid_t = ::tim::gotcha::string_t;
+    using error_t   = ::tim::gotcha::error_t;
 
     // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
@@ -88,36 +93,74 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args>
-    static _Ret wrap(_Args&&... _args)
+    static _Ret wrap(_Args... _args)
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto _orig = (_Ret(*)(_Args && ...)) gotcha_get_wrappee(get_wrappees()[_N]);
+        typedef _Ret (*func_t)(_Args...);
+        func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
+
+        /*
+        //#if defined(GOTCHA_DEBUG)
+        if(settings::debug())
+            printf("typeid: %s\n", demangle(typeid(_orig).name()).c_str());
+        auto _sargs = apply<std::string>::join(", ", _args...);
+        printf("args: %s\n", _sargs.c_str());
+        //#endif
+        */
+
         _Components _obj(get_tool_ids()[_N], true);
         _obj.start();  // destructor will stop
-        return _orig(std::forward<_Args>(_args)...);
+
+        // auto func = std::bind<_Ret>(_orig, std::forward<_Args>(_args)...);
+        // return func();
+        return (*_orig)(std::forward<_Args>(_args)...);
+        // return (_orig)(std::move(_args)...);
+        // return (*_orig)(_args...);
+
+        // _Ret _ret = (*_orig)(_args...);
+        // _obj.stop();
+        // std::cout << "result: " << _ret << std::endl;
+        // return _ret;
 #else
         consume_parameters(_args...);
-        return _Ret{};
+        printf("NOT GOOD!\n");
+        return _Ret();
 #endif
     }
 
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename... _Args>
-    static void wrap_void(_Args&&... _args)
+    static void wrap_void(_Args... _args)
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto _orig = (void (*)(_Args && ...)) gotcha_get_wrappee(get_wrappees()[_N]);
+        auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
+
+#    if defined(GOTCHA_DEBUG)
+        if(settings::debug())
+            printf("typeid: %s\n", demangle(typeid(_orig).name()).c_str());
+#    endif
         _Components _obj(get_tool_ids()[_N], true);
         _obj.start();
-        _orig(std::forward<_Args>(_args)...);
+        _orig(_args...);
+        _obj.stop();
 #else
         consume_parameters(_args...);
 #endif
     }
 
+    //----------------------------------------------------------------------------------//
+    /*
+    template <size_t _N, typename _Ret, typename... _Args>
+    static binding_t construct_binder(const std::string& _fname)
+    {
+        auto& _wrappees = get_wrappees();
+        return binding_t{ _fname.c_str(), (void*) this_type::wrap<_N, _Ret, _Args...>,
+                          &_wrappees[_N] };
+    }
+    */
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args,
@@ -144,20 +187,21 @@ struct gotcha
 
     template <size_t _N, typename _Ret, typename... _Args>
     static void configure(const std::string& fname, int _priority = 0,
-                          const std::string& _tool = "timemory")
+                          const std::string& _tool = "")
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _bindings = get_bindings();
         auto& _wrap_ids = get_wrap_ids();
         auto& _tool_ids = get_tool_ids();
         auto& _fill_ids = get_filled();
+        // auto& _wrappees = get_wrappees();
 
         if(!_fill_ids[_N])
         {
-            static int _incr = _priority;
-            _priority        = _incr++;
+            // static int _incr = _priority;
+            // _priority        = _incr++;
 
-            auto _label = fname;
+            auto _label = demangle(fname);
             if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
             {
                 _label = _tool + "/" + _label;
@@ -197,7 +241,8 @@ struct gotcha
                     << get_wrap_ids()[_N] << "' returned error code "
                     << static_cast<int>(ret) << ": " << ::tim::gotcha::get_error(ret)
                     << "\n";
-                throw std::runtime_error(msg.str());
+                std::cerr << msg.str() << std::endl;
+                // throw std::runtime_error(msg.str());
             }
         }
     }
@@ -208,7 +253,7 @@ struct gotcha
     struct instrument
     {
         static void generate(const std::string& fname, int _priority = 0,
-                             const std::string& _tool = "timemory")
+                             const std::string& _tool = "")
         {
             this_type::configure<_N, _Ret, _Args...>(fname, _priority, _tool);
         }
@@ -217,12 +262,12 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args>
-    struct instrument<_N, _Ret, std::tuple<_Args&&...>>
+    struct instrument<_N, _Ret, std::tuple<_Args...>>
     {
         static void generate(const std::string& fname, int _priority = 0,
-                             const std::string& _tool = "timemory")
+                             const std::string& _tool = "")
         {
-            this_type::configure<_N, _Ret, _Args&&...>(fname, _priority, _tool);
+            this_type::configure<_N, _Ret, _Args...>(fname, _priority, _tool);
         }
     };
 

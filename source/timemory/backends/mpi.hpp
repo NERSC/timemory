@@ -36,6 +36,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <unordered_map>
 
 #if defined(TIMEMORY_USE_MPI)
 #    include <mpi.h>
@@ -71,6 +72,9 @@ using info_t = int32_t;
 static const comm_t  comm_world_v       = MPI_COMM_WORLD;
 static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+
+template <typename _Tp>
+using communicator_map_t = std::unordered_map<comm_t, _Tp>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -150,7 +154,20 @@ rank(comm_t comm = comm_world_v)
     int32_t _rank = 0;
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_rank(comm, &_rank);
+    {
+        // this is used to guard against the queries that might happen after an
+        // application calls MPI_Finalize() directly
+        static communicator_map_t<int32_t> _instance;
+        if(_instance.find(comm) == _instance.end())
+        {
+            MPI_Comm_rank(comm, &_rank);
+            _instance[comm] = _rank;
+        }
+        else
+        {
+            _rank = _instance[comm];
+        }
+    }
 #else
     consume_parameters(comm);
 #endif
@@ -165,7 +182,20 @@ size(comm_t comm = comm_world_v)
     int32_t _size = 1;
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_size(comm, &_size);
+    {
+        // this is used to guard against the queries that might happen after an
+        // application calls MPI_Finalize() directly
+        static communicator_map_t<int32_t> _instance;
+        if(_instance.find(comm) == _instance.end())
+        {
+            MPI_Comm_size(comm, &_size);
+            _instance[comm] = _size;
+        }
+        else
+        {
+            _size = _instance[comm];
+        }
+    }
 #else
     consume_parameters(comm);
 #endif

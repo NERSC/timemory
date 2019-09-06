@@ -68,6 +68,8 @@ public:
     using base_type      = component_type;
     using language_t     = language;
 
+    static constexpr bool contains_gotcha = component_type::contains_gotcha;
+
 public:
     inline explicit auto_hybrid(const string_t&, const int64_t& lineno = 0,
                                 const language_t& lang = language_t::cxx(),

@@ -180,7 +180,7 @@ endif()
 add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
 unset(_TLS_DESCRIPT)
 
-if(${PROJECT_NAME}_MASTER_PROJECT AND TIMEMORY_USE_GPERF)
+if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
 endif()
 

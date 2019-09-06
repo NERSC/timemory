@@ -82,6 +82,10 @@ public:
     using list_data_type  = typename list_type::data_type;
     using data_type       = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
 
+    // used by gotcha component to prevent recursion
+    static constexpr bool contains_gotcha =
+        (_CompTuple::contains_gotcha || _CompList::contains_gotcha);
+
 public:
     using auto_type = auto_hybrid<tuple_type, list_type>;
 

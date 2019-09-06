@@ -70,6 +70,8 @@ public:
     using tuple_type     = implemented<Types...>;
     using init_func_t    = std::function<void(this_type&)>;
 
+    static constexpr bool contains_gotcha = component_type::contains_gotcha;
+
 public:
     inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
                               const language_t& lang = language_t::cxx(),

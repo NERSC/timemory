@@ -41,10 +41,12 @@
 //--------------------------------------------------------------------------------------//
 // make the namespace usage a little clearer
 //
-namespace settings {
+namespace settings
+{
 using namespace tim::settings;
 }
-namespace mpi {
+namespace mpi
+{
 using namespace tim::mpi;
 }
 
@@ -124,7 +126,8 @@ add_gotcha(const std::string& fname)
 
     get_size<_Nt>()++;
     _wrappids[_N] = fname;
-    gotcha_binding_t _binding{ fname.c_str(), (void*) wrapper<_N, _Nt, _Ret, _Args...>, &_wrappees.at(_N) };
+    gotcha_binding_t _binding{ fname.c_str(), (void*) wrapper<_N, _Nt, _Ret, _Args...>,
+                               &_wrappees.at(_N) };
     _bindings[_N] = std::move(_binding);
 }
 
@@ -185,8 +188,8 @@ init()
         {
             std::cout << "Wrapped: " << get_wrappids<_Nt>()[i]
                       << ", wrapped pointer: " << _bindings.at(i).wrapper_pointer
-                      << ", function_handle: " << _bindings.at(i).function_handle << ", name: " << _bindings.at(i).name
-                      << std::endl;
+                      << ", function_handle: " << _bindings.at(i).function_handle
+                      << ", name: " << _bindings.at(i).name << std::endl;
         }
     }
 

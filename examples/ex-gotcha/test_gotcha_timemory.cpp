@@ -41,10 +41,12 @@
 //--------------------------------------------------------------------------------------//
 // make the namespace usage a little clearer
 //
-namespace settings {
+namespace settings
+{
 using namespace tim::settings;
 }
-namespace mpi {
+namespace mpi
+{
 using namespace tim::mpi;
 }
 
@@ -66,18 +68,26 @@ init()
     gotcha_t::configure<5, int, MPI_Comm, int*>("MPI_Comm_size");
     gotcha_t::configure<6, int, int*, char***, int, int*>("MPI_Init_thread");
     gotcha_t::configure<7, int, void*, int, MPI_Datatype, int, MPI_Comm>("MPI_Bcast");
-    gotcha_t::configure<8, int, void*, void*, int, MPI_Datatype, MPI_Op, MPI_Comm>("MPI_Scan");
-    gotcha_t::configure<9, int, void*, void*, int, MPI_Datatype, MPI_Op, MPI_Comm>("MPI_Allreduce");
-    gotcha_t::configure<10, int, void*, void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm>("MPI_Reduce");
-    gotcha_t::configure<11, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm>("MPI_Alltoall");
-    gotcha_t::configure<12, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, MPI_Comm>("MPI_Allgather");
-    gotcha_t::configure<13, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm>("MPI_Gather");
-    gotcha_t::configure<14, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm>("MPI_Scatter");
-    gotcha_t::configure<15, int, void*, int, MPI_Datatype, void*, int*, int*, MPI_Datatype, MPI_Comm>("MPI_Allgatherv");
-    gotcha_t::configure<16, int, void*, int, MPI_Datatype, void*, int*, int*, MPI_Datatype, int, MPI_Comm>(
-        "MPI_Gatherv");
-    gotcha_t::configure<17, int, void*, int*, int*, MPI_Datatype, void*, int, MPI_Datatype, int, MPI_Comm>(
-        "MPI_Scatterv");
+    gotcha_t::configure<8, int, void*, void*, int, MPI_Datatype, MPI_Op, MPI_Comm>(
+        "MPI_Scan");
+    gotcha_t::configure<9, int, void*, void*, int, MPI_Datatype, MPI_Op, MPI_Comm>(
+        "MPI_Allreduce");
+    gotcha_t::configure<10, int, void*, void*, int, MPI_Datatype, MPI_Op, int, MPI_Comm>(
+        "MPI_Reduce");
+    gotcha_t::configure<11, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype,
+                        MPI_Comm>("MPI_Alltoall");
+    gotcha_t::configure<12, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype,
+                        MPI_Comm>("MPI_Allgather");
+    gotcha_t::configure<13, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, int,
+                        MPI_Comm>("MPI_Gather");
+    gotcha_t::configure<14, int, void*, int, MPI_Datatype, void*, int, MPI_Datatype, int,
+                        MPI_Comm>("MPI_Scatter");
+    gotcha_t::configure<15, int, void*, int, MPI_Datatype, void*, int*, int*,
+                        MPI_Datatype, MPI_Comm>("MPI_Allgatherv");
+    gotcha_t::configure<16, int, void*, int, MPI_Datatype, void*, int*, int*,
+                        MPI_Datatype, int, MPI_Comm>("MPI_Gatherv");
+    gotcha_t::configure<17, int, void*, int*, int*, MPI_Datatype, void*, int,
+                        MPI_Datatype, int, MPI_Comm>("MPI_Scatterv");
 
     gotcha_t::configure();
 }

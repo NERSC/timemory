@@ -96,6 +96,10 @@ public:
     static constexpr bool is_component_list  = true;
     static constexpr bool is_component_tuple = false;
 
+    // used by gotcha component to prevent recursion
+    static constexpr bool contains_gotcha =
+        (std::tuple_size<filter_gotchas<Types...>>::value != 0);
+
 public:
     using auto_type = auto_list<Types...>;
     // using op_count_t = tim::modifiers<operation::pointer_counter, Types...>;

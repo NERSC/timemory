@@ -33,9 +33,9 @@ BraceWrapping:
     SplitEmptyFunction:     false
     SplitEmptyRecord:       false
     SplitEmptyNamespace:    false
-BreakBeforeBraces: Custom
+BreakBeforeBraces: Allman
 BreakBeforeInheritanceComma: true
-ColumnLimit: 120
+ColumnLimit: 90
 CompactNamespaces: true
 ConstructorInitializerAllOnOneLineOrOnePerLine: false
 ConstructorInitializerIndentWidth: 0

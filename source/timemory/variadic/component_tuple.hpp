@@ -90,6 +90,10 @@ public:
     static constexpr bool is_component_list  = false;
     static constexpr bool is_component_tuple = true;
 
+    // used by gotcha component to prevent recursion
+    static constexpr bool contains_gotcha =
+        (std::tuple_size<filter_gotchas<Types...>>::value != 0);
+
 public:
     // modifier types
     using insert_node_t      = modifiers<operation::insert_node, Types...>;

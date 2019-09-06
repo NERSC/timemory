@@ -43,14 +43,27 @@
 #else
 
 ///
-/// The representation of a Gotcha action
-/// as it passes through the pipeline
+/// The representation of a Gotcha action as it passes through the pipeline
 ///
 typedef struct __gotcha_binding_timemory
 {
     const char* name            = nullptr;  //!< The name of the function being wrapped
     void*       wrapper_pointer = nullptr;  //!< A pointer to the wrapper function
     void*       function_handle = nullptr;  //!< A pointer to the function being wrapped
+
+    __gotcha_binding_timemory(const char* _name, void* _wrap, void* _handle)
+    : name(_name)
+    , wrapper_pointer(_wrap)
+    , function_handle(_handle)
+    {
+    }
+
+    __gotcha_binding_timemory()                                 = default;
+    ~__gotcha_binding_timemory()                                = default;
+    __gotcha_binding_timemory(const __gotcha_binding_timemory&) = default;
+    __gotcha_binding_timemory(__gotcha_binding_timemory&&)      = default;
+    __gotcha_binding_timemory& operator=(const __gotcha_binding_timemory&) = default;
+    __gotcha_binding_timemory& operator=(__gotcha_binding_timemory&&) = default;
 } _gotcha_binding_timemory;
 
 //======================================================================================//
@@ -58,7 +71,6 @@ typedef struct __gotcha_binding_timemory
 ///
 /// The representation of an error (or success) of a Gotcha action
 ///
-
 typedef enum __gotcha_error_timemory
 {
     GOTCHA_SUCCESS = 0,         //!< The call succeeded
