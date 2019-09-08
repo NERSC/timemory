@@ -157,15 +157,15 @@ rank(comm_t comm = comm_world_v)
     {
         // this is used to guard against the queries that might happen after an
         // application calls MPI_Finalize() directly
-        static communicator_map_t<int32_t> _instance;
-        if(_instance.find(comm) == _instance.end())
+        static communicator_map_t<int32_t>* _instance = new communicator_map_t<int32_t>();
+        if(_instance->find(comm) == _instance->end())
         {
             MPI_Comm_rank(comm, &_rank);
-            _instance[comm] = _rank;
+            (*_instance)[comm] = _rank;
         }
         else
         {
-            _rank = _instance[comm];
+            _rank = (*_instance)[comm];
         }
     }
 #else
@@ -185,15 +185,15 @@ size(comm_t comm = comm_world_v)
     {
         // this is used to guard against the queries that might happen after an
         // application calls MPI_Finalize() directly
-        static communicator_map_t<int32_t> _instance;
-        if(_instance.find(comm) == _instance.end())
+        static communicator_map_t<int32_t>* _instance = new communicator_map_t<int32_t>();
+        if(_instance->find(comm) == _instance->end())
         {
             MPI_Comm_size(comm, &_size);
-            _instance[comm] = _size;
+            (*_instance)[comm] = _size;
         }
         else
         {
-            _size = _instance[comm];
+            _size = (*_instance)[comm];
         }
     }
 #else

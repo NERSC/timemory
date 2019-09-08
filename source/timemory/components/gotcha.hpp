@@ -31,6 +31,17 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 
+namespace std
+{
+template <typename T, typename U>
+ostream&
+operator<<(ostream& os, const tuple<T, U>& p)
+{
+    os << "(" << std::get<0>(p) << "," << std::get<1>(p) << ")";
+    return os;
+}
+}  // namespace std
+
 //======================================================================================//
 
 namespace tim
@@ -100,28 +111,30 @@ struct gotcha
         typedef _Ret (*func_t)(_Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
 
-        /*
-        //#if defined(GOTCHA_DEBUG)
-        if(settings::debug())
-            printf("typeid: %s\n", demangle(typeid(_orig).name()).c_str());
-        auto _sargs = apply<std::string>::join(", ", _args...);
-        printf("args: %s\n", _sargs.c_str());
-        //#endif
-        */
+        auto _atype = apply<std::string>::join(", ", demangle(typeid(_args).name())...);
+        auto _rtype = demangle(typeid(_Ret).name());
+
+        printf("\n[%s]> wrappee: %s\n", __FUNCTION__, demangle(typeid(_orig).name()).c_str());
+        printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(), _atype.c_str());
 
         _Components _obj(get_tool_ids()[_N], true);
         _obj.start();  // destructor will stop
 
-        // auto func = std::bind<_Ret>(_orig, std::forward<_Args>(_args)...);
-        // return func();
-        return (*_orig)(std::forward<_Args>(_args)...);
+        // return (*_orig)(std::forward<_Args>(_args)...);
         // return (_orig)(std::move(_args)...);
         // return (*_orig)(_args...);
+        _Ret _ret = (*_orig)(_args...);
 
-        // _Ret _ret = (*_orig)(_args...);
-        // _obj.stop();
-        // std::cout << "result: " << _ret << std::endl;
-        // return _ret;
+        _obj.stop();
+
+        if(settings::verbose() > 0 || settings::debug())
+        {
+            auto _sargs = apply<std::string>::join(", ", _args...);
+            std::cout << "[" << __FUNCTION__ << "]> "<< "args: (" << _sargs << ") "
+                      << "result: " << _ret << std::endl;
+        }
+
+        return _ret;
 #else
         consume_parameters(_args...);
         printf("NOT GOOD!\n");

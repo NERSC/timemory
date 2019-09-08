@@ -37,6 +37,15 @@ namespace ext
 using tuple_t = std::tuple<float, double>;
 
 tuple_t
-do_work(int);
+do_exp_work(int);
+
+tuple_t
+do_cos_work(int, const std::pair<float, double>&);
+
+tuple_t
+do_cos_work_ref(int, std::pair<float, double>&);
+
+tuple_t
+do_cos_work_cref(int, const std::pair<float, double>&);
 
 }  // namespace ext

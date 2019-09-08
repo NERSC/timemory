@@ -421,6 +421,16 @@ struct _apply_impl
         _ss << std::forward<_Arg>(_arg);
         return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
     }
+
+    // don't prefix
+    template <typename _Sep, typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
+              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0>
+    static _Ret join(std::stringstream&, const _Sep&, _Args&&...)
+    {
+        return _Ret();
+    }
+
     //----------------------------------------------------------------------------------//
 };
 

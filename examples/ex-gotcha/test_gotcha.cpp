@@ -60,37 +60,146 @@ using namespace tim::trait;
 
 using namespace tim::component;
 
-using auto_timer_t = tim::auto_timer;
+using auto_timer_t = tim::component_tuple<real_clock, cpu_clock>;
 // this should fail
 // using auto_tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, gotcha<1,
 // auto_timer_t, int>>;
-using auto_tuple_t =
-    tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss, current_rss>;
+using auto_tuple_t = tim::component_tuple<real_clock, cpu_clock, peak_rss>;
 
 constexpr size_t _Pn = 3;
 constexpr size_t _Mn = 15;
 constexpr size_t _Sn = 8;
+constexpr size_t _Cn = 12;
 
 using put_gotcha_t = tim::component::gotcha<_Pn, auto_timer_t>;
 using std_gotcha_t = tim::component::gotcha<_Sn, auto_timer_t, int>;
+using cos_gotcha_t = tim::component::gotcha<_Cn, auto_timer_t>;
 using mpi_gotcha_t = tim::component::gotcha<_Mn, auto_tuple_t>;
+
+//======================================================================================//
+
+template <typename _Tp>
+struct type_id
+{
+    using string_t = std::string;
+    static std::string name() { return typeid(_Tp).name(); }
+};
+
+template <typename _Tp>
+struct type_id<const _Tp>
+{
+    using string_t = std::string;
+    static std::string name() { return string_t("K") + typeid(_Tp).name(); }
+};
+
+template <typename _Tp>
+struct type_id<const _Tp&>
+{
+    using string_t = std::string;
+    static std::string name() { return string_t("RK") + typeid(_Tp).name(); }
+};
+
+template <typename _Tp>
+struct type_id<_Tp&>
+{
+    using string_t = std::string;
+    static std::string name() { return string_t("R") + typeid(_Tp).name(); }
+};
+
+//======================================================================================//
+
+template <typename... _Args>
+struct cxx_mangler
+{
+    static std::string mangle(std::string func)
+    {
+        std::string ret   = "_Z";
+        auto        delim = tim::delimit(func, ":()<>");
+        if(delim.size() > 1) ret += "N";
+        for(const auto& itr : delim)
+        {
+            ret += std::to_string(itr.length());
+            ret += itr;
+        }
+        ret += "E";
+        auto arg_string = TIMEMORY_JOIN("", type_id<_Args>::name()...);
+        ret += arg_string;
+        printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+        return ret;
+    }
+};
+
+template <typename... _Args>
+struct cxx_mangler<std::tuple<_Args...>>
+{
+    static std::string mangle(std::string func)
+    {
+        return cxx_mangler<_Args...>::mangle(func);
+    }
+};
+
+template <typename _Func,
+          typename _Tuple = typename tim::function_traits<_Func>::arg_tuple>
+std::string
+mangle(const std::string& func)
+{
+    return cxx_mangler<_Tuple>::mangle(func);
+}
 
 //======================================================================================//
 
 void
 init()
 {
+    // Mangled name generation:
+    /**
+    TIMEMORY_INC=../source
+    CEREAL_INC=../external/cereal/include
+    SRC_DIR=../examples/ex-gotcha
+    FILE=test_gotcha_lib
+    g++ -S -fverbose-asm -I${TIMEMORY_INC} -I${CEREAL_INC} ${SRC_DIR}/${FILE}.cpp
+    as -alhnd ${FILE}.s > ${FILE}.asm
+    grep '\.globl' ${FILE}.asm
+    **/
+
+    std::string exp_func   = "ext::do_exp_work";
+    std::string cos_func   = "ext::do_cos_work";
+    std::string cosR_func  = "ext::do_cos_work_ref";
+    std::string cosRK_func = "ext::do_cos_work_cref";
+
+    std::string real_exp_mangle   = "_ZN3ext10do_exp_workEi";
+    std::string real_cos_mangle   = "_ZN3ext11do_cos_workEiRKSt4pairIfdE";
+    std::string real_cosR_mangle  = "_ZN3ext15do_cos_work_refEiRSt4pairIfdE";
+    std::string real_cosRK_mangle = "_ZN3ext16do_cos_work_crefEiRKSt4pairIfdE";
+
+    std::string test_exp_mangle   = mangle<decltype(ext::do_exp_work)>(exp_func);
+    std::string test_cos_mangle   = mangle<decltype(ext::do_cos_work)>(cos_func);
+    std::string test_cosR_mangle  = mangle<decltype(ext::do_cos_work_ref)>(cosR_func);
+    std::string test_cosRK_mangle = mangle<decltype(ext::do_cos_work_cref)>(cosRK_func);
+
+    printf("[real]>      %24s  -->  %s\n", exp_func.c_str(), real_exp_mangle.c_str());
+    printf("[test]>      %24s  -->  %s\n", exp_func.c_str(), test_exp_mangle.c_str());
+    printf("[real]>      %24s  -->  %s\n", cos_func.c_str(), real_cos_mangle.c_str());
+    printf("[test]>      %24s  -->  %s\n", cos_func.c_str(), test_cos_mangle.c_str());
+    printf("[real]> (R)  %24s  -->  %s\n", cosR_func.c_str(), real_cosR_mangle.c_str());
+    printf("[test]> (R)  %24s  -->  %s\n", cosR_func.c_str(), test_cosR_mangle.c_str());
+    printf("[real]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), real_cosRK_mangle.c_str());
+    printf("[test]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), test_cosRK_mangle.c_str());
+
+
     put_gotcha_t::configure<0, int, const char*>("puts");
 
-    // TIMEMORY_GOTCHA(std_gotcha_t, 0, sinf);
+    // TIMEMORY_GOTCHA(std_gotcha_t, 0, cosf);
     // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
-    std_gotcha_t::configure<1, double, double>("sin");
+    std_gotcha_t::configure<1, double, double>("cos");
     std_gotcha_t::configure<3, double, double>("exp");
+    std_gotcha_t::configure<2, ext::tuple_t, int>(test_exp_mangle);
 
-    std_gotcha_t::configure<4, ext::tuple_t, int>("_ZN3ext7do_workEi");
+    cos_gotcha_t::configure<1, ext::tuple_t, int, ext::tuple_t>(test_cos_mangle);
+    cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosR_mangle);
+    cos_gotcha_t::configure<3, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle);
 
     // mpi_gotcha_t::configure<0, int, int*, char***>("MPI_Init");
-
     TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Init);
     TIMEMORY_GOTCHA(mpi_gotcha_t, 1, MPI_Barrier);
     mpi_gotcha_t::configure<2, int, MPI_Comm, int*>("MPI_Comm_rank");
@@ -117,19 +226,18 @@ init()
 
 int
 main(int argc, char** argv)
-{
-    settings::verbose() = 1;
-    tim::timemory_init(argc, argv);  // parses environment, sets output paths
-
+{    
     init();
 
-    PRINT_HERE("backend MPI_Init");
+    settings::width()        = 12;
+    settings::precision()    = 6;
+    settings::timing_units() = "msec";
+    settings::memory_units() = "kB";
+    settings::verbose()      = 1;
+    tim::timemory_init(argc, argv);  // parses environment, sets output paths
+
     mpi::initialize(argc, argv);
-
-    PRINT_HERE("direct  MPI_Barrier");
     MPI_Barrier(MPI_COMM_WORLD);
-
-    PRINT_HERE("backend MPI_Barrier");
     mpi::barrier();
 
     int size = 1;
@@ -150,13 +258,26 @@ main(int argc, char** argv)
     printf("mpi rank = %i\n", (int) rank);
     printf("mpi ((rank + 1) * (size + 1)) = %i\n", (int) rank_size);
 
-    int nitr = 10;
+    int nitr = 5;
     if(argc > 1) nitr = atoi(argv[1]);
 
-    auto _sqrt = ext::do_work(nitr);
+    auto _pair = std::pair<float, double>(0., 0.);
+    auto _cos  = ext::do_cos_work(nitr, std::ref(_pair));
+    printf("[iterations=%i]>      single-precision cos = %f\n", nitr, std::get<0>(_cos));
+    printf("[iterations=%i]>      double-precision cos = %f\n", nitr, std::get<1>(_cos));
 
-    printf("[iterations=%i]> single-precision work = %f\n", nitr, std::get<0>(_sqrt));
-    printf("[iterations=%i]> double-precision work = %f\n", nitr, std::get<1>(_sqrt));
+    auto _R = ext::do_cos_work_ref(nitr, _pair);
+    printf("[iterations=%i]> (R)  single-precision cos = %f\n", nitr, std::get<0>(_R));
+    printf("[iterations=%i]> (R)  double-precision cos = %f\n", nitr, std::get<1>(_R));
+
+    auto _RK = ext::do_cos_work_cref(nitr, _pair);
+    printf("[iterations=%i]> (RK) single-precision cos = %f\n", nitr, std::get<0>(_RK));
+    printf("[iterations=%i]> (RK) double-precision cos = %f\n", nitr, std::get<1>(_RK));
+
+    auto _exp = ext::do_exp_work(nitr);
+    printf("[iterations=%i]>      single-precision exp = %f\n", nitr, std::get<0>(_exp));
+    printf("[iterations=%i]>      double-precision exp = %f\n", nitr, std::get<1>(_exp));
+
 }
 
 //======================================================================================//
