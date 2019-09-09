@@ -186,18 +186,17 @@ init()
     printf("[real]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), real_cosRK_mangle.c_str());
     printf("[test]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), test_cosRK_mangle.c_str());
 
-
     put_gotcha_t::configure<0, int, const char*>("puts");
 
     // TIMEMORY_GOTCHA(std_gotcha_t, 0, cosf);
-    // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
     std_gotcha_t::configure<1, double, double>("cos");
+    // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
     std_gotcha_t::configure<3, double, double>("exp");
-    std_gotcha_t::configure<2, ext::tuple_t, int>(test_exp_mangle);
+    std_gotcha_t::configure<4, ext::tuple_t, int>(test_exp_mangle);
 
-    cos_gotcha_t::configure<1, ext::tuple_t, int, ext::tuple_t>(test_cos_mangle);
-    cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosR_mangle);
-    cos_gotcha_t::configure<3, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle);
+    cos_gotcha_t::configure<0, ext::tuple_t, int, ext::tuple_t>(test_cos_mangle);
+    cos_gotcha_t::configure<1, ext::tuple_t, int, ext::tuple_t>(test_cosR_mangle);
+    cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle);
 
     // mpi_gotcha_t::configure<0, int, int*, char***>("MPI_Init");
     TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Init);
@@ -218,6 +217,8 @@ init()
            trait::as_string<trait::is_available<put_gotcha_t>>().c_str());
     printf("std gotcha is available: %s\n",
            trait::as_string<trait::is_available<std_gotcha_t>>().c_str());
+    printf("cos gotcha is available: %s\n",
+           trait::as_string<trait::is_available<cos_gotcha_t>>().c_str());
     printf("mpi gotcha is available: %s\n",
            trait::as_string<trait::is_available<mpi_gotcha_t>>().c_str());
 }
@@ -226,7 +227,7 @@ init()
 
 int
 main(int argc, char** argv)
-{    
+{
     init();
 
     settings::width()        = 12;
@@ -263,21 +264,25 @@ main(int argc, char** argv)
 
     auto _pair = std::pair<float, double>(0., 0.);
     auto _cos  = ext::do_cos_work(nitr, std::ref(_pair));
+    printf("\n");
     printf("[iterations=%i]>      single-precision cos = %f\n", nitr, std::get<0>(_cos));
     printf("[iterations=%i]>      double-precision cos = %f\n", nitr, std::get<1>(_cos));
 
     auto _R = ext::do_cos_work_ref(nitr, _pair);
+    printf("\n");
     printf("[iterations=%i]> (R)  single-precision cos = %f\n", nitr, std::get<0>(_R));
     printf("[iterations=%i]> (R)  double-precision cos = %f\n", nitr, std::get<1>(_R));
 
     auto _RK = ext::do_cos_work_cref(nitr, _pair);
+    printf("\n");
     printf("[iterations=%i]> (RK) single-precision cos = %f\n", nitr, std::get<0>(_RK));
     printf("[iterations=%i]> (RK) double-precision cos = %f\n", nitr, std::get<1>(_RK));
 
     auto _exp = ext::do_exp_work(nitr);
+    printf("\n");
     printf("[iterations=%i]>      single-precision exp = %f\n", nitr, std::get<0>(_exp));
     printf("[iterations=%i]>      double-precision exp = %f\n", nitr, std::get<1>(_exp));
-
+    printf("\n");
 }
 
 //======================================================================================//

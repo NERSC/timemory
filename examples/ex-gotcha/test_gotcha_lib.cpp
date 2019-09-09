@@ -34,7 +34,7 @@ namespace ext
 
 template <typename _Tp, typename _Func, typename _Incr>
 _Tp
-work(int nitr, _Func&& func, _Incr&& incr)
+work(const std::string& fname, int nitr, _Func&& func, _Incr&& incr)
 {
     _Tp val = 2.0;
     _Tp sum = 0.0;
@@ -42,8 +42,8 @@ work(int nitr, _Func&& func, _Incr&& incr)
     for(int i = 0; i < nitr; ++i)
     {
         sum += func(val);
-        printf("[itr: %i]> %6s func(%10.6f) = %15.2f\n", i,
-               tim::demangle(typeid(_Tp).name()).c_str(), val, sum);
+        printf("\t[itr: %i]> %-6s %-4s(%6.3f) = %15.2f\n", i,
+               tim::demangle(typeid(_Tp).name()).c_str(), fname.c_str(), val, sum);
         val = incr(val, i + 1);
     }
     return sum;
@@ -54,12 +54,18 @@ work(int nitr, _Func&& func, _Incr&& incr)
 tuple_t
 do_exp_work(int nitr)
 {
+    printf("\n");
+    PRINT_HERE("");
+    printf("\n");
+
     auto fsum = work<float>(
-        nitr, [](float val) -> float { return ::expf(val); },
+        "expf", nitr, [](float val) -> float { return ::expf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
+    printf("\n");
+
     auto dsum = work<double>(
-        nitr, [](double val) -> double { return exp(val); },
+        "exp", nitr, [](double val) -> double { return exp(val); },
         [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
@@ -71,19 +77,26 @@ do_exp_work(int nitr)
 tuple_t
 do_cos_work(int nitr, const std::pair<float, double>& pair)
 {
+    printf("\n");
     PRINT_HERE("");
+    printf("\n");
+
     auto fsum = work<float>(
-        nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
+    printf("\n");
+
     auto dsum = work<double>(
-        nitr, [](double val) -> double { return cos(val); },
+        "cos", nitr, [](double val) -> double { return cos(val); },
         [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     auto _pair = pair;
     auto _R    = ext::do_cos_work_ref(nitr, _pair);
+
+    printf("\n");
     printf("[iterations=%i]> (R)  single-precision cos = %f\n", nitr, std::get<0>(_R));
     printf("[iterations=%i]> (R)  double-precision cos = %f\n", nitr, std::get<1>(_R));
 
@@ -95,18 +108,25 @@ do_cos_work(int nitr, const std::pair<float, double>& pair)
 tuple_t
 do_cos_work_ref(int nitr, std::pair<float, double>& _pair)
 {
+    printf("\n");
     PRINT_HERE("");
+    printf("\n");
+
     auto fsum = work<float>(
-        nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
+    printf("\n");
+
     auto dsum = work<double>(
-        nitr, [](double val) -> double { return cos(val); },
+        "cos", nitr, [](double val) -> double { return cos(val); },
         [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));
 
     auto _RK = ext::do_cos_work_cref(nitr, _pair);
+
+    printf("\n");
     printf("[iterations=%i]> (RK) single-precision cos = %f\n", nitr, std::get<0>(_RK));
     printf("[iterations=%i]> (RK) double-precision cos = %f\n", nitr, std::get<1>(_RK));
 
@@ -118,13 +138,18 @@ do_cos_work_ref(int nitr, std::pair<float, double>& _pair)
 tuple_t
 do_cos_work_cref(int nitr, const std::pair<float, double>&)
 {
+    printf("\n");
     PRINT_HERE("");
+    printf("\n");
+
     auto fsum = work<float>(
-        nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
+    printf("\n");
+
     auto dsum = work<double>(
-        nitr, [](double val) -> double { return cos(val); },
+        "cos", nitr, [](double val) -> double { return cos(val); },
         [](double val, int i) -> double { return val + 0.25 * i; });
 
     std::this_thread::sleep_for(std::chrono::milliseconds(500));

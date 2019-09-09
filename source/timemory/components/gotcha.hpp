@@ -114,8 +114,14 @@ struct gotcha
         auto _atype = apply<std::string>::join(", ", demangle(typeid(_args).name())...);
         auto _rtype = demangle(typeid(_Ret).name());
 
-        printf("\n[%s]> wrappee: %s\n", __FUNCTION__, demangle(typeid(_orig).name()).c_str());
-        printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(), _atype.c_str());
+        if(settings::verbose() > 1 || settings::debug())
+        {
+            printf("\n");
+            printf("[%s]>   wrappee: %s\n", __FUNCTION__,
+                   demangle(typeid(_orig).name()).c_str());
+            printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(),
+                   _atype.c_str());
+        }
 
         _Components _obj(get_tool_ids()[_N], true);
         _obj.start();  // destructor will stop
@@ -127,17 +133,17 @@ struct gotcha
 
         _obj.stop();
 
-        if(settings::verbose() > 0 || settings::debug())
+        if(settings::verbose() > 1 || settings::debug())
         {
             auto _sargs = apply<std::string>::join(", ", _args...);
-            std::cout << "[" << __FUNCTION__ << "]> "<< "args: (" << _sargs << ") "
-                      << "result: " << _ret << std::endl;
+            std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs << ") "
+                      << "result: " << _ret << "\n" << std::endl;
         }
 
         return _ret;
 #else
         consume_parameters(_args...);
-        printf("NOT GOOD!\n");
+        PRINT_HERE("should not be here!");
         return _Ret();
 #endif
     }

@@ -102,11 +102,11 @@ done
 #   UPDATE ALTERNATIVES -- CLANG
 #-----------------------------------------------------------------------------#
 priority=10
-for i in 5 6 7 ${COMPILER_VERSION}
+for i in 5.0 6.0 7.0 7 8 9 10 ${COMPILER_VERSION}
 do
-    if [ -n "$(which clang-${i}.0)" ]; then
-        run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}.0) ${priority} \
-            --slave /usr/bin/clang++ clang++ $(which clang++-${i}.0)
+    if [ -n "$(which clang-${i})" ]; then
+        run-verbose update-alternatives --install /usr/bin/clang clang $(which clang-${i}) ${priority} \
+            --slave /usr/bin/clang++ clang++ $(which clang++-${i})
         run-verbose priority=$(( ${priority}+10 ))
     fi
 done
