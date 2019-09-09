@@ -38,7 +38,7 @@
 - Flexible and easily extensible interface: none of the components are restricted to a certain data type
 - Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
 - Direct access to performance data in native data structures for language
-- High-performance: template meta-programming and lambda result in extensive inlining
+- High-performance: template meta-programming and lambdas result in extensive inlining
 - Ability to arbitrarily switch and combine different measurement types anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
@@ -46,7 +46,7 @@
     - CPU hardware counters via PAPI without an explicit PAPI dependency and zero `#ifdef`
     - GPU hardware counters via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
     - Generating a roofline for performance-critical sections
-    - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper)
+    - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper) including [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
     - Colored CUDA NVTX markers
     - Memory usage
     - Wall-clock, cpu-clock, system-clock timing
@@ -54,6 +54,7 @@
     - Number of context switches
     - Trip counts
     - CUDA kernel runtime(s)
+    - [GOTCHA](https://github.com/LLNL/GOTCHA) wrappers around external library function calls
 
 ## Table of contents
 

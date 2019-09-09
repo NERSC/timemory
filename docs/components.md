@@ -93,9 +93,16 @@ These components provide tools similar to TiMemory but are commonly used to enab
 to provide __*optional*__ support for these tools (via template filtering and/or CMake COMPONENTS).
 In the future, there is planned support for features from [LIKWID](https://github.com/RRZE-HPC/likwid).
 
-| Component Name | Category                                                                   | Dependences                                        | Description                                            |
-| -------------- | -------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
-| **`caliper`**  | timing, memory, annotation, MPI, CUDA, PAPI call-stack unwinding, sampling | [Caliper Toolkit](https://github.com/LLNL/Caliper) | Caliper is a flexible application introspection system |
+| Component Name                     | Category                                                                   | Dependences                                        | Description                                            |
+| ---------------------------------- | -------------------------------------------------------------------------- | -------------------------------------------------- | ------------------------------------------------------ |
+| **`caliper`**                      | timing, memory, annotation, MPI, CUDA, PAPI call-stack unwinding, sampling | [Caliper Toolkit](https://github.com/LLNL/Caliper) | Caliper is a flexible application introspection system |
+| **`gotcha`**<sup>[[4]](#fn4)</sup> | All (specify other components)                                             | [GOTCHA](https://github.com/LLNL/GOTCHA)           | wrap external function calls with timemory components  |
+
+<a name="fn4">[4]</a>: Requires at least two template parameters: `gotcha<Size, Tools, Diff = void>`
+where `Size` is the maximum number of external functions to be wrapped,
+`Tools` is a [variadic component wrapper](#variadic-component-wrappers), and
+`Diff` is an optional template parameter for differentiating `gotcha` components with equivalent `Size` and `Tools`
+parameters but wrap different functions. Note: the `Tools` type cannot contain other `gotcha` components.
 
 ## Roofline Components
 
@@ -121,15 +128,15 @@ An example can be found in `timemory/examples/ex-cpu-roofline/test_cpu_roofline.
 
 > Namespace: `tim::component`
 
-| Component Name              | Underlying Template Specification           | Description                                        |
-| --------------------------- | ------------------------------------------- | -------------------------------------------------- |
-| **`cpu_roofline_flops`**    | `cpu_roofline<float, double>`               | Rate of single- and double-precision FLOP/s        |
-| **`cpu_roofline_dp_flops`** | `cpu_roofline<double>`                      | Rate of double-precision FLOP/s                    |
-| **`cpu_roofline_sp_flops`** | `cpu_roofline<float>`                       | Rate of single-precision FLOP/s                    |
-| **`gpu_roofline_flops`**    | `gpu_roofline<cuda::fp16_t, float, double>` | Rate of half-, single- and double-precision FLOP/s |
-| **`gpu_roofline_dp_flops`** | `gpu_roofline<double>`                      | Rate of double-precision FLOP/s                    |
-| **`gpu_roofline_sp_flops`** | `gpu_roofline<float>`                       | Rate of single-precision FLOP/s                    |
-| **`gpu_roofline_hp_flops`** | `gpu_roofline<cuda::fp16_t>`                | Rate of half-precision FLOP/s                      |
+| Component Name              | Underlying Template Specification     | Description                                        |
+| --------------------------- | ------------------------------------- | -------------------------------------------------- |
+| **`cpu_roofline_flops`**    | `cpu_roofline<float, double>`         | Rate of single- and double-precision FLOP/s        |
+| **`cpu_roofline_dp_flops`** | `cpu_roofline<double>`                | Rate of double-precision FLOP/s                    |
+| **`cpu_roofline_sp_flops`** | `cpu_roofline<float>`                 | Rate of single-precision FLOP/s                    |
+| **`gpu_roofline_flops`**    | `gpu_roofline<fp16_t, float, double>` | Rate of half-, single- and double-precision FLOP/s |
+| **`gpu_roofline_dp_flops`** | `gpu_roofline<double>`                | Rate of double-precision FLOP/s                    |
+| **`gpu_roofline_sp_flops`** | `gpu_roofline<float>`                 | Rate of single-precision FLOP/s                    |
+| **`gpu_roofline_hp_flops`** | `gpu_roofline<fp16_t>`                | Rate of half-precision FLOP/s                      |
 
 ## Variadic Component Wrappers
 
