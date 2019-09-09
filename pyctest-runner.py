@@ -351,17 +351,28 @@ def run_pyctest():
                   "LABELS": pyctest.PROJECT_NAME,
                   "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
 
-    if not args.coverage and not pyctest.BUILD_TYPE == "Debug":
-        pyctest.test(construct_name("test-cxx-overhead"),
-                     construct_command(["./test_cxx_overhead"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                      "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test-cxx-overhead"),
+                 construct_command(["./test_cxx_overhead"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                 "LABELS": pyctest.PROJECT_NAME})
 
-        pyctest.test(construct_name("test-cpu-roofline"),
-                     construct_command(["./test_cpu_roofline"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                      "LABELS": pyctest.PROJECT_NAME,
-                      "TIMEOUT": "300"})
+    pyctest.test(construct_name("test-cpu-roofline"),
+                 construct_command(["./test_cpu_roofline"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                 "LABELS": pyctest.PROJECT_NAME,
+                 "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-caliper"),
+                 construct_command(["./test_caliper"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-gotcha"),
+                 construct_command(["./test_gotcha"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))

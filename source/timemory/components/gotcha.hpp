@@ -31,6 +31,8 @@
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 
+#include <cassert>
+
 namespace std
 {
 template <typename T, typename U>
@@ -234,6 +236,15 @@ struct gotcha
 
             error_t _ret = ::tim::gotcha::set_priority(_label, _priority);
             assert(_ret == GOTCHA_SUCCESS);
+            if(_ret != GOTCHA_SUCCESS)
+            {
+                std::stringstream msg;
+                msg << "set_priority at index '" << _N << "' for function '"
+                    << get_wrap_ids()[_N] << "' returned error code "
+                    << static_cast<int>(_ret) << ": " << ::tim::gotcha::get_error(_ret)
+                    << "\n";
+                std::cerr << msg.str() << std::endl;
+            }
 
             if(settings::debug())
             {
@@ -253,6 +264,7 @@ struct gotcha
             }
 
             auto ret = ::tim::gotcha::wrap(_bindings[_N], _tool_ids[_N]);
+            assert(ret == GOTCHA_SUCCESS);
             if(ret != GOTCHA_SUCCESS)
             {
                 std::stringstream msg;
