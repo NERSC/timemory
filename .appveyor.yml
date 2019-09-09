@@ -111,7 +111,7 @@ build_script:
   - cmake --build . --config "%CONFIG%" --target INSTALL -- /m /v:m /logger:%MSBuildLogger%
   - ls
   - .\outputs\runtime\%CONFIG%\test_cxx_basic.exe
-  - .\outputs\runtime\%CONFIG%\test_cxx_optional_on.exe
-  - .\outputs\runtime\%CONFIG%\test_cxx_optional_off.exe
+  - .\outputs\runtime\%CONFIG%\test_optional_on.exe
+  - .\outputs\runtime\%CONFIG%\test_optional_off.exe
   - .\outputs\runtime\%CONFIG%\test_cxx_overhead.exe
   - .\outputs\runtime\%CONFIG%\test_cxx_tuple.exe
