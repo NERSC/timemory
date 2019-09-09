@@ -73,7 +73,7 @@ install:
         }
         conda update -y -q -n base conda
         conda config --add channels conda-forge
-        conda install -y -q pip setuptools scikit-build numpy matplotlib pillow pyctest
+        conda install -y -q pip setuptools scikit-build numpy matplotlib pillow
       }
       # pip installation
       $env:TIMEMORY_DEBUG = 4
