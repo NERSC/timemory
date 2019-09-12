@@ -34,7 +34,7 @@ using namespace tim::component;
 // using auto_tuple_t = tim::auto_tuple<real_clock>;
 using namespace tim::component;
 
-using auto_tuple_t  = tim::auto_tuple<real_clock, system_clock, user_clock, trip_count>;
+using auto_tuple_t  = tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count>;
 using timer_tuple_t = typename tim::auto_tuple<real_clock>::component_type;
 
 using papi_tuple_t = papi_array<8>;
@@ -63,7 +63,18 @@ struct basic_pointer
 struct blank_pointer
 {
 };
+struct measure
+{
+};
 }  // namespace mode
+
+//======================================================================================//
+
+static bool& do_print_result()
+{
+    static bool _instance = true;
+    return _instance;
+}
 
 //======================================================================================//
 
@@ -95,13 +106,27 @@ fibonacci(int64_t n, int64_t)
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::blank>::value, int> = 0>
+template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::measure>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
         nmeasure += auto_tuple_t::size();
+        return (n < 2) ? n
+                       : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
+    }
+    return fibonacci(n);
+}
+
+//======================================================================================//
+
+template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::blank>::value, int> = 0>
+int64_t
+fibonacci(int64_t n, int64_t cutoff)
+{
+    if(n > cutoff)
+    {
         TIMEMORY_BLANK_OBJECT(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
@@ -117,7 +142,6 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        nmeasure += auto_tuple_t::size();
         TIMEMORY_BASIC_OBJECT(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
@@ -134,7 +158,6 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        nmeasure += auto_tuple_t::size();
         TIMEMORY_BLANK_POINTER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
@@ -151,7 +174,6 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        nmeasure += auto_tuple_t::size();
         TIMEMORY_BASIC_POINTER(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
@@ -176,6 +198,7 @@ run(int64_t n, int64_t cutoff)
     auto        signature   = TIMEMORY_LABEL(" [with timing = ", space, with_timing, "]");
 
     nmeasure = 0;
+    fibonacci<mode::measure>(n, cutoff);
 
     timer_tuple_t timer(signature, false);
     timer.start();
@@ -185,7 +208,8 @@ run(int64_t n, int64_t cutoff)
     int64_t nuniq =
         (is_blank) ? ((n - cutoff) * auto_tuple_t::size()) : (is_basic) ? nmeasure : 0;
 
-    print_result(signature, result, nmeasure, nuniq);
+    if(do_print_result())
+        print_result(signature, result, nmeasure, nuniq);
     return result_type(timer, nmeasure, nuniq);
 }
 
@@ -198,6 +222,7 @@ void launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measur
     int64_t nmeas = 0;
     int64_t nuniq = 0;
 
+    do_print_result() = true;
     for(int i = 0; i < nitr; ++i)
     {
         auto&& ret = run<_Tp>(nfib, cutoff);
@@ -208,6 +233,7 @@ void launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measur
             nuniq = std::get<2>(ret);
             ex_measure += std::get<1>(ret);
             ex_unique += std::get<2>(ret);
+            do_print_result() = false;
         }
         else
         {
@@ -273,6 +299,7 @@ main(int argc, char** argv)
     //----------------------------------------------------------------------------------//
     //      run without timing
     //----------------------------------------------------------------------------------//
+    do_print_result() = true;
     for(int i = 0; i < nitr; ++i)
     {
         auto&& ret = run<mode::none>(nfib, nfib);
@@ -281,6 +308,7 @@ main(int argc, char** argv)
             timer_list.push_back(std::get<0>(ret));
             ex_measure += std::get<1>(ret);
             ex_unique += std::get<2>(ret);
+            do_print_result() = false;
         }
         else
         {
