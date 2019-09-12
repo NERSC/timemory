@@ -24,62 +24,64 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-
 #include "timemory/mpl/apply.hpp"
-#include "timemory/utility/macros.hpp"
+#include "timemory/utility/type_id.hpp"
+#include "timemory/utility/utility.hpp"
 
-//--------------------------------------------------------------------------------------//
-
-#include <array>
-#include <cstdint>
-#include <deque>
-#include <mutex>
 #include <string>
-#include <thread>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
-#include <vector>
+#include <tuple>
 
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-//  base overload
-//
-template <typename _Tp>
-struct type_id
+
+namespace impl
 {
-    using string_t = std::string;
-    static std::string name() { return typeid(_Tp).name(); }
+template <typename... _Args>
+struct mangler
+{
+    static std::string mangle(std::string func)
+    {
+        std::string ret   = "_Z";
+        auto        delim = delimit(func, ":()<>");
+        if(delim.size() > 1)
+            ret += "N";
+        for(const auto& itr : delim)
+        {
+            ret += std::to_string(itr.length());
+            ret += itr;
+        }
+        ret += "E";
+        auto arg_string = apply<std::string>::join("", type_id<_Args>::name()...);
+        ret += arg_string;
+        printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
+        return ret;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<const _Tp>
+template <typename... _Args>
+struct mangler<std::tuple<_Args...>>
 {
-    using string_t = std::string;
-    static std::string name() { return string_t("K") + typeid(_Tp).name(); }
+    static std::string mangle(std::string func)
+    {
+        return mangler<_Args...>::mangle(func);
+    }
 };
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<const _Tp&>
-{
-    using string_t = std::string;
-    static std::string name() { return string_t("RK") + typeid(_Tp).name(); }
-};
+}  // namespace impl
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tp>
-struct type_id<_Tp&>
+template <typename _Func, typename _Tuple = typename function_traits<_Func>::arg_tuple>
+std::string
+mangle(const std::string& func)
 {
-    using string_t = std::string;
-    static std::string name() { return string_t("R") + typeid(_Tp).name(); }
-};
+    return impl::mangler<_Tuple>::mangle(func);
+}
 
 //--------------------------------------------------------------------------------------//
 

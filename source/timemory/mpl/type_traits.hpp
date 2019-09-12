@@ -172,6 +172,17 @@ struct is_gotcha : std::false_type
 {
 };
 
+//--------------------------------------------------------------------------------------//
+/// trait that designates the type supports calling a function with a certain
+/// set of argument types (passed via a tuple)
+///
+template <typename _Tp, typename _Tuple>
+struct supports_args : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _Trait>
 inline std::string
 as_string()

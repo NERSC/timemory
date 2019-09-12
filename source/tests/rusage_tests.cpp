@@ -77,6 +77,7 @@ random_entry(const std::vector<_Tp>& v)
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
     return v.at(dist(rng));
 }
+
 void
 allocate()
 {

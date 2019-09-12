@@ -78,6 +78,7 @@ c_timemory_create_auto_tuple(const char* tag, int lineno, ...)
 {
     if(!cxx_timemory_enabled())
         return NULL;
+
     const int max_size       = (int) TIMEMORY_COMPONENTS_END;
     int       num_components = 0;
     int*      components     = (int*) malloc(max_size * sizeof(int));
@@ -92,10 +93,12 @@ c_timemory_create_auto_tuple(const char* tag, int lineno, ...)
         components[i] = comp;
     }
     va_end(args);
+
     void* ptr = NULL;
     if(num_components > 0)
         ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
     free(components);
+
     return ptr;
 }
 

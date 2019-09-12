@@ -238,20 +238,22 @@ public:
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_begin()
+    template <typename... _Args>
+    void mark_begin(_Args&&... _args)
     {
-        m_tuple.mark_begin();
-        m_list.mark_begin();
+        m_tuple.mark_begin(std::forward<_Args>(_args)...);
+        m_list.mark_begin(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_end()
+    template <typename... _Args>
+    void mark_end(_Args&&... _args)
     {
-        m_tuple.mark_end();
-        m_list.mark_end();
+        m_tuple.mark_end(std::forward<_Args>(_args)...);
+        m_list.mark_end(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//

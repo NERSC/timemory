@@ -355,4 +355,21 @@ private:
 //--------------------------------------------------------------------------------------//
 
 }  // namespace component
+
+//--------------------------------------------------------------------------------------//
+
+namespace trait
+{
+template <>
+struct supports_args<component::nvtx_marker, std::tuple<>> : std::true_type
+{
+};
+
+template <>
+struct supports_args<component::nvtx_marker, std::tuple<cuda::stream_t>> : std::true_type
+{
+};
+}  // namespace trait
+
+//--------------------------------------------------------------------------------------//
 }  // namespace tim

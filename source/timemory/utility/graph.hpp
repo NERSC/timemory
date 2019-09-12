@@ -194,8 +194,13 @@ public:
     public:
         sibling_iterator();
         sibling_iterator(graph_node*);
-        sibling_iterator(const sibling_iterator&);
         sibling_iterator(const iterator_base&);
+
+        sibling_iterator(const sibling_iterator&) = default;
+        sibling_iterator(sibling_iterator&&) = default;
+
+        sibling_iterator& operator=(const sibling_iterator&) = default;
+        sibling_iterator& operator=(sibling_iterator&&) = default;
 
         bool              operator==(const sibling_iterator&) const;
         bool              operator!=(const sibling_iterator&) const;
@@ -2651,15 +2656,6 @@ graph<T, AllocatorT>::sibling_iterator::sibling_iterator(const iterator_base& ot
 : iterator_base(other.node)
 {
     m_set_parent();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::sibling_iterator::sibling_iterator(const sibling_iterator& other)
-: iterator_base(other)
-, m_parent(other.m_parent)
-{
 }
 
 //--------------------------------------------------------------------------------------//

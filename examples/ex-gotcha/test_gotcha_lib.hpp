@@ -24,13 +24,8 @@
 
 #pragma once
 
-#if !defined(DEBUG)
-#    define DEBUG
-#endif
-
-#include "timemory/timemory.hpp"
-
 #include <tuple>
+#include <utility>
 
 namespace ext
 {

@@ -95,6 +95,11 @@ struct dummy
 #    define TIMEMORY_CALIPER_APPLY(...)
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
 
+// define a static object with a caliper reference
+#    define TIMEMORY_STATIC_BLANK_CALIPER(...)
+#    define TIMEMORY_STATIC_BASIC_CALIPER(...)
+#    define TIMEMORY_STATIC_CALIPER(...)
+
 // define an object
 #    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
 #    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
@@ -106,7 +111,12 @@ struct dummy
 #    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
 #    define TIMEMORY_DEBUG_OBJECT(...)
 
-// for CUDA
+// unique pointers
+# define TIMEMORY_BLANK_POINTER(...)
+# define TIMEMORY_BASIC_POINTER(...)
+# define TIMEMORY_POINTER(...)
+
+// deprecated
 #    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
 #    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
 

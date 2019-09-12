@@ -523,7 +523,32 @@ struct mark_begin
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    mark_begin(Type& obj) { obj.mark_begin(); }
+    template <typename _Up = _Tp, enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_begin(Type& obj)
+    {
+        obj.mark_begin();
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_begin(Type&)
+    {
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_begin(Type& obj, _Args&&... _args)
+    {
+        obj.mark_begin(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_begin(Type&, _Args&&...)
+    {
+    }
+
 };
 
 //--------------------------------------------------------------------------------------//
@@ -535,7 +560,34 @@ struct mark_end
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    mark_end(Type& obj) { obj.mark_end(); }
+    template <typename _Up = _Tp, enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_end(Type& obj)
+    {
+        obj.mark_end();
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_end(Type&)
+    {
+    }
+
+    // mark_end(Type& obj) { obj.mark_end(); }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_end(Type& obj, _Args&&... _args)
+    {
+        obj.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_end(Type&, _Args&&...)
+    {
+    }
+
 };
 
 //--------------------------------------------------------------------------------------//

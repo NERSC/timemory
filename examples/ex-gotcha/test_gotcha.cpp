@@ -35,6 +35,7 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstring>
+#include <random>
 #include <set>
 #include <string>
 #include <unistd.h>
@@ -67,86 +68,23 @@ using auto_timer_t = tim::component_tuple<real_clock, cpu_clock>;
 using auto_tuple_t = tim::component_tuple<real_clock, cpu_clock, peak_rss>;
 
 constexpr size_t _Pn = 3;
-constexpr size_t _Mn = 15;
+constexpr size_t _Mn = 10;
 constexpr size_t _Sn = 8;
-constexpr size_t _Cn = 12;
+constexpr size_t _Cn = 8;
 
 using put_gotcha_t = tim::component::gotcha<_Pn, auto_timer_t>;
 using std_gotcha_t = tim::component::gotcha<_Sn, auto_timer_t, int>;
 using cos_gotcha_t = tim::component::gotcha<_Cn, auto_timer_t>;
 using mpi_gotcha_t = tim::component::gotcha<_Mn, auto_tuple_t>;
 
-//======================================================================================//
+using gotcha_tuple_t =
+    tim::auto_tuple<put_gotcha_t, std_gotcha_t, cos_gotcha_t, mpi_gotcha_t>;
 
-template <typename _Tp>
-struct type_id
-{
-    using string_t = std::string;
-    static std::string name() { return typeid(_Tp).name(); }
-};
-
-template <typename _Tp>
-struct type_id<const _Tp>
-{
-    using string_t = std::string;
-    static std::string name() { return string_t("K") + typeid(_Tp).name(); }
-};
-
-template <typename _Tp>
-struct type_id<const _Tp&>
-{
-    using string_t = std::string;
-    static std::string name() { return string_t("RK") + typeid(_Tp).name(); }
-};
-
-template <typename _Tp>
-struct type_id<_Tp&>
-{
-    using string_t = std::string;
-    static std::string name() { return string_t("R") + typeid(_Tp).name(); }
-};
+using tim::mangle;
 
 //======================================================================================//
-
-template <typename... _Args>
-struct cxx_mangler
-{
-    static std::string mangle(std::string func)
-    {
-        std::string ret   = "_Z";
-        auto        delim = tim::delimit(func, ":()<>");
-        if(delim.size() > 1) ret += "N";
-        for(const auto& itr : delim)
-        {
-            ret += std::to_string(itr.length());
-            ret += itr;
-        }
-        ret += "E";
-        auto arg_string = TIMEMORY_JOIN("", type_id<_Args>::name()...);
-        ret += arg_string;
-        printf("[generated_mangle]> %s --> %s\n", func.c_str(), ret.c_str());
-        return ret;
-    }
-};
-
-template <typename... _Args>
-struct cxx_mangler<std::tuple<_Args...>>
-{
-    static std::string mangle(std::string func)
-    {
-        return cxx_mangler<_Args...>::mangle(func);
-    }
-};
-
-template <typename _Func,
-          typename _Tuple = typename tim::function_traits<_Func>::arg_tuple>
-std::string
-mangle(const std::string& func)
-{
-    return cxx_mangler<_Tuple>::mangle(func);
-}
-
-//======================================================================================//
+// void
+// init() __attribute__((constructor));
 
 void
 init()
@@ -186,32 +124,39 @@ init()
     printf("[real]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), real_cosRK_mangle.c_str());
     printf("[test]> (RK) %24s  -->  %s\n", cosRK_func.c_str(), test_cosRK_mangle.c_str());
 
-    put_gotcha_t::configure<0, int, const char*>("puts");
+    put_gotcha_t::get_initializer() = [=]() {
+        put_gotcha_t::configure<0, int, const char*>("puts");
+    };
 
-    // TIMEMORY_GOTCHA(std_gotcha_t, 0, cosf);
-    std_gotcha_t::configure<1, double, double>("cos");
-    // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
-    std_gotcha_t::configure<3, double, double>("exp");
-    std_gotcha_t::configure<4, ext::tuple_t, int>(test_exp_mangle);
+    std_gotcha_t::get_initializer() = [=]() {
+        // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
+        std_gotcha_t::configure<0, double, double>("exp", 1, "math");
+        std_gotcha_t::configure<1, ext::tuple_t, int>(test_exp_mangle, 2, "math");
+    };
 
-    cos_gotcha_t::configure<0, ext::tuple_t, int, ext::tuple_t>(test_cos_mangle);
-    cos_gotcha_t::configure<1, ext::tuple_t, int, ext::tuple_t>(test_cosR_mangle);
-    cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle);
+    cos_gotcha_t::get_initializer() = [=]() {
+        cos_gotcha_t::configure<0, ext::tuple_t, int, ext::tuple_t>(test_cos_mangle, 0,
+                                                                    "math");
+        cos_gotcha_t::configure<1, ext::tuple_t, int, ext::tuple_t>(test_cosR_mangle, 0,
+                                                                    "math");
+        cos_gotcha_t::configure<2, ext::tuple_t, int, ext::tuple_t>(test_cosRK_mangle, 0,
+                                                                    "math");
+        std_gotcha_t::configure<4, double, double>("cos", 0, "math");
+    };
 
-    // mpi_gotcha_t::configure<0, int, int*, char***>("MPI_Init");
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Init);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 1, MPI_Barrier);
-    mpi_gotcha_t::configure<2, int, MPI_Comm, int*>("MPI_Comm_rank");
-    mpi_gotcha_t::configure<3, int, MPI_Comm, int*>("MPI_Comm_size");
-    mpi_gotcha_t::configure<4, int>("MPI_Finalize");
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 5, MPI_Bcast);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 6, MPI_Scan);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 7, MPI_Allreduce);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 8, MPI_Reduce);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 9, MPI_Alltoall);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 10, MPI_Allgather);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 11, MPI_Gather);
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 12, MPI_Scatter);
+    mpi_gotcha_t::get_initializer() = [=]() {
+#if defined(TIMEMORY_USE_MPI)
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Barrier);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 1, MPI_Bcast);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 2, MPI_Scan);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 3, MPI_Allreduce);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 4, MPI_Reduce);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 5, MPI_Alltoall);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 6, MPI_Allgather);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 7, MPI_Gather);
+        TIMEMORY_GOTCHA(mpi_gotcha_t, 8, MPI_Scatter);
+#endif
+    };
 
     printf("put gotcha is available: %s\n",
            trait::as_string<trait::is_available<put_gotcha_t>>().c_str());
@@ -229,31 +174,40 @@ int
 main(int argc, char** argv)
 {
     init();
+    TIMEMORY_BASIC_OBJECT(gotcha_tuple_t, "");
 
     settings::width()        = 12;
     settings::precision()    = 6;
     settings::timing_units() = "msec";
     settings::memory_units() = "kB";
-    settings::verbose()      = 1;
+    settings::verbose()      = 2;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
 
+    puts("Testing...");
     mpi::initialize(argc, argv);
+
+#if defined(TIMEMORY_USE_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
-    mpi::barrier();
+#endif
 
-    int size = 1;
     int rank = 0;
+    int size = 1;
 
-    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#if defined(TIMEMORY_USE_MPI)
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+#endif
+
+    mpi::barrier();
 
     size = std::max<int>(size, mpi::size());
     rank = std::max<int>(rank, mpi::rank());
 
     auto rank_size = (rank + 1) * (size + 1);
 
+#if defined(TIMEMORY_USE_MPI)
     MPI_Barrier(MPI_COMM_WORLD);
-    mpi::barrier();
+#endif
 
     printf("mpi size = %i\n", (int) size);
     printf("mpi rank = %i\n", (int) rank);
@@ -283,6 +237,37 @@ main(int argc, char** argv)
     printf("[iterations=%i]>      single-precision exp = %f\n", nitr, std::get<0>(_exp));
     printf("[iterations=%i]>      double-precision exp = %f\n", nitr, std::get<1>(_exp));
     printf("\n");
+
+    int nsize = 1000;
+    if(argc > 2) nsize = atoi(argv[2]);
+
+    std::vector<double> recvbuf(nsize, 0.0);
+    std::vector<double> sendbuf(nsize, 0.0);
+    std::mt19937        rng;
+    rng.seed((rank + 1) * std::random_device()());
+    auto dist = [&]() { return std::generate_canonical<double, 10>(rng); };
+    std::generate(sendbuf.begin(), sendbuf.end(), [&]() { return dist(); });
+
+#if defined(TIMEMORY_USE_MPI)
+    MPI_Allreduce(sendbuf.data(), recvbuf.data(), nsize, MPI_DOUBLE, MPI_SUM,
+                  MPI_COMM_WORLD);
+#else
+    std::copy(sendbuf.begin(), sendbuf.end(), recvbuf.begin());
+#endif
+
+    double sum = std::accumulate(recvbuf.begin(), recvbuf.end(), 0.0);
+    for(int i = 0; i < size; ++i)
+    {
+        mpi::barrier();
+        if(i == rank)
+        {
+            printf("[%i]> sum = %8.2f\n", rank, sum);
+            printf("\n[%i]> printing storage...\n", rank);
+            tim::complete_list_t::print_storage();
+            tim::settings::auto_output() = false;
+        }
+        mpi::barrier();
+    }
 }
 
 //======================================================================================//

@@ -44,6 +44,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -145,20 +146,23 @@ public:
     explicit component_list(const string_t&   key,
                             const language_t& lang = language_t::cxx(),
                             const int64_t& ncount = 0, const int64_t& nhash = 0,
-                            bool store = true)
-    : m_store(store)
+                            bool store = true, bool enabled = settings::enabled())
+    : m_store((enabled) ? store : false)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
+    , m_hash((nhash == 0 && enabled) ? string_hash()(key) : nhash)
     , m_key(key)
     , m_lang(lang)
     , m_identifier("")
     {
-        apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-        get_initializer()(*this);
+        if(enabled)
+        {
+            apply<void>::set_value(m_data, nullptr);
+            compute_identifier(key, lang);
+            init_manager();
+            init_storage();
+            get_initializer()(*this);
+        }
     }
 
     ~component_list()
@@ -341,22 +345,24 @@ public:
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_begin()
+    template <typename... _Args>
+    void mark_begin(_Args&&... _args)
     {
         using apply_types = std::tuple<
             operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_end()
+    template <typename... _Args>
+    void mark_end(_Args&&... _args)
     {
         using apply_types =
             std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -365,11 +371,9 @@ public:
     this_type& record()
     {
         ++m_laps;
-        {
-            using apply_types = std::tuple<
-                operation::pointer_operator<Types, operation::record<Types>>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::record<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
         return *this;
     }
 
@@ -574,7 +578,7 @@ public:
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
-    void              rekey(const string_t& _key) { compute_identifier(_key, m_lang); }
+    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }

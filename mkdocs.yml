@@ -1,18 +1,27 @@
 site_name: TiMemory
 nav:
-    - Home: index.md
-    - About: about.md
-    - Features: features.md
-    - Installation: installation.md
-    - Components: components.md
-    - Getting Started:
-        - Overview: getting_started/overview.md
-        - Project Integration: getting_started/integrating.md
-        - Basics: getting_started/basics.md
-        - Custom Components: getting_started/custom_components.md
-        - Roofline: getting_started/roofline.md
-    - Overhead: overhead.md
-    - Doxygen: doxygen-docs/index.html
+  - Home: index.md
+  - About: about.md
+  - Features: features.md
+  - Installation: installation.md
+  - Components:
+      - Overview: components/overview.md
+      - Supported Components: components/supported.md
+      - Native Components: components/native.md
+      - System Dependent Components: components/os-dependent.md
+      - GOTCHA: components/gotcha.md
+      - PAPI: components/papi.md
+      - CUDA/CUPTI: components/cuda.md
+      - Roofline: components/roofline.md
+      - Bundling Components: components/bundling.md
+  - Getting Started:
+      - Overview: getting_started/overview.md
+      - Project Integration: getting_started/integrating.md
+      - Basics: getting_started/basics.md
+      - Custom Components: getting_started/custom_components.md
+      - Roofline: getting_started/roofline.md
+  - Overhead: overhead.md
+  - Doxygen: doxygen-docs/index.html
 
 #theme: readthedocs
 #theme: bootswatch

@@ -179,7 +179,7 @@ if(TIMEMORY_BUILD_C)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-cxx-shared)
+        LINK_LIBRARIES      timemory-headers PRIVATE timemory-compile-options timemory-cxx-shared)
 
     build_library(
         TYPE                STATIC
@@ -190,7 +190,7 @@ if(TIMEMORY_BUILD_C)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-cxx-static)
+        LINK_LIBRARIES      timemory-headers PRIVATE timemory-compile-options timemory-cxx-static)
 
     target_link_libraries(timemory-c-shared PRIVATE timemory-analysis-tools)
     target_link_libraries(timemory-c-static PRIVATE timemory-analysis-tools)

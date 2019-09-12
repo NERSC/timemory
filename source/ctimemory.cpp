@@ -112,9 +112,12 @@ extern "C" tim_api void*
 cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
                                const int* components)
 {
+    if(!tim::settings::enabled())
+        return nullptr;
     using namespace tim::component;
-    std::string      key_tag(timer_tag);
-    auto             obj = new auto_list_t(key_tag, tim::language::c(), lineno);
+    std::string key_tag(timer_tag);
+    auto        obj = new auto_list_t(key_tag, tim::language::c(), lineno);
+#if defined(DEBUG)
     std::vector<int> _components;
     for(int i = 0; i < num_components; ++i)
     {
@@ -122,6 +125,10 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
             printf("[%s]> Adding component %i...\n", __FUNCTION__, components[i]);
         _components.push_back(components[i]);
     }
+#else
+    std::vector<int> _components(num_components, 0);
+    std::memcpy(_components.data(), components, num_components * sizeof(int));
+#endif
     tim::initialize(*obj, _components);
     obj->start();
     return static_cast<void*>(obj);

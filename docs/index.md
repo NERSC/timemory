@@ -61,8 +61,8 @@
 1. [About](about) -- About the TiMemory project
 2. [Features](features) -- Features supported and provided by TiMemory
 3. [Installation](installation) -- How to install TiMemory
-4. [Components](components) -- Available components in TiMemory and their wrappers
-5. [Getting Started](getting_started) -- How to get started using TiMemory
+4. [Components](components/overview) -- Available components in TiMemory and their wrappers
+5. [Getting Started](getting_started/overview) -- How to get started using TiMemory
     - Project integration, basic syntax, custom components, generating a roofline
 6. [Runtime Overhead](overhead) -- Analysis of runtime overhead of TiMemory
 7. [Doxygen Documentation](doxygen-xml) -- Doxygen source code documentation

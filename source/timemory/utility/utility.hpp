@@ -32,6 +32,7 @@
 #pragma once
 
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
 
 // C library
 #include <cctype>
@@ -309,7 +310,7 @@ public:
     using env_pair_t = std::pair<string_t, string_t>;
 
 public:
-    static env_settings* GetInstance()
+    static env_settings* instance()
     {
         static env_settings* _instance = new env_settings();
         return _instance;
@@ -357,6 +358,15 @@ public:
         return os;
     }
 
+    //----------------------------------------------------------------------------------//
+    // serialization
+    //
+    template <typename Archive>
+    void serialize(Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp("environment", m_env));
+    }
+
 private:
     env_map_t       m_env;
     mutable mutex_t m_mutex;
@@ -375,11 +385,11 @@ get_env(const std::string& env_id, _Tp _default = _Tp())
         std::istringstream iss(str_var);
         _Tp                var = _Tp();
         iss >> var;
-        env_settings::GetInstance()->insert<_Tp>(env_id, var);
+        env_settings::instance()->insert<_Tp>(env_id, var);
         return var;
     }
     // record default value
-    env_settings::GetInstance()->insert<_Tp>(env_id, _default);
+    env_settings::instance()->insert<_Tp>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -397,11 +407,11 @@ get_env(const std::string& env_id, std::string _default)
     {
         std::stringstream ss;
         ss << env_var;
-        env_settings::GetInstance()->insert(env_id, ss.str());
+        env_settings::instance()->insert(env_id, ss.str());
         return ss.str();
     }
     // record default value
-    env_settings::GetInstance()->insert(env_id, _default);
+    env_settings::instance()->insert(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -428,11 +438,11 @@ get_env(const std::string& env_id, bool _default)
             if(var == "off" || var == "false")
                 val = false;
         }
-        env_settings::GetInstance()->insert<bool>(env_id, val);
+        env_settings::instance()->insert<bool>(env_id, val);
         return val;
     }
     // record default value
-    env_settings::GetInstance()->insert<bool>(env_id, _default);
+    env_settings::instance()->insert<bool>(env_id, _default);
 
     // return default if not specified in environment
     return _default;
@@ -443,7 +453,7 @@ get_env(const std::string& env_id, bool _default)
 inline void
 print_env(std::ostream& os = std::cout)
 {
-    os << (*env_settings::GetInstance());
+    os << (*env_settings::instance());
 }
 
 //--------------------------------------------------------------------------------------//

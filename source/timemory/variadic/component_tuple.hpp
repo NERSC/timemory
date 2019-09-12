@@ -44,6 +44,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -160,18 +161,21 @@ public:
     explicit component_tuple(const string_t&   key,
                              const language_t& lang = language_t::cxx(),
                              const int64_t& ncount = 0, const int64_t& nhash = 0,
-                             bool store = true)
-    : m_store(store)
+                             bool store = true, bool enabled = settings::enabled())
+    : m_store((enabled) ? store : false)
     , m_laps(0)
     , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
+    , m_hash((nhash == 0 && enabled) ? string_hash()(key) : nhash)
     , m_lang(lang)
     , m_key(key)
     , m_identifier("")
     {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
+        if(enabled)
+        {
+            compute_identifier(key, lang);
+            init_manager();
+            init_storage();
+        }
     }
 
     ~component_tuple() { pop(); }
@@ -280,13 +284,15 @@ public:
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_begin() { apply<void>::access<mark_begin_t>(m_data); }
+    template <typename... _Args>
+    void mark_begin(_Args&&... _args) { apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...); }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_end() { apply<void>::access<mark_end_t>(m_data); }
+    template <typename... _Args>
+    void mark_end(_Args&&... _args) { apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...); }
 
     //----------------------------------------------------------------------------------//
     // recording
@@ -467,7 +473,7 @@ public:
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
-    void              rekey(const string_t& _key) { compute_identifier(_key, m_lang); }
+    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
@@ -527,7 +533,7 @@ protected:
     int64_t           m_laps         = 0;
     int64_t           m_count        = 0;
     int64_t           m_hash         = 0;
-    const language_t  m_lang         = language_t::cxx();
+    language_t        m_lang         = language_t::cxx();
     string_t          m_key          = "";
     string_t          m_identifier   = "";
     mutable data_type m_data;

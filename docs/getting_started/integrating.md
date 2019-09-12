@@ -191,8 +191,16 @@ struct dummy
 #    define TIMEMORY_BLANK_CALIPER(...)
 #    define TIMEMORY_BASIC_CALIPER(...)
 #    define TIMEMORY_CALIPER(...)
+
+// invoke member function on caliper reference
 #    define TIMEMORY_CALIPER_APPLY(...)
+// invoke member function on specific type in caliper reference
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+
+// define a static object with a caliper reference
+#    define TIMEMORY_STATIC_BLANK_CALIPER(...)
+#    define TIMEMORY_STATIC_BASIC_CALIPER(...)
+#    define TIMEMORY_STATIC_CALIPER(...)
 
 // define an object
 #    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
@@ -200,12 +208,11 @@ struct dummy
 #    define TIMEMORY_INSTANCE(...) tim::dummy()
 
 // debug only
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
+#    define TIMEMORY_DEBUG_BLANK_OBJECT(...)
 #    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
 #    define TIMEMORY_DEBUG_OBJECT(...)
 
-// for CUDA
+// deprecated
 #    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
 #    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
 

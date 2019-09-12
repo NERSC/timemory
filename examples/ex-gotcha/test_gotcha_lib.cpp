@@ -24,8 +24,11 @@
 
 #include "test_gotcha_lib.hpp"
 
+#include <timemory/timemory.hpp>
+
 #include <chrono>
 #include <cmath>
+#include <string>
 #include <thread>
 
 namespace ext
@@ -59,7 +62,7 @@ do_exp_work(int nitr)
     printf("\n");
 
     auto fsum = work<float>(
-        "expf", nitr, [](float val) -> float { return ::expf(val); },
+        "expf", nitr, [](float val) -> float { return expf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
     printf("\n");
@@ -82,7 +85,7 @@ do_cos_work(int nitr, const std::pair<float, double>& pair)
     printf("\n");
 
     auto fsum = work<float>(
-        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
     printf("\n");
@@ -113,7 +116,7 @@ do_cos_work_ref(int nitr, std::pair<float, double>& _pair)
     printf("\n");
 
     auto fsum = work<float>(
-        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
     printf("\n");
@@ -143,7 +146,7 @@ do_cos_work_cref(int nitr, const std::pair<float, double>&)
     printf("\n");
 
     auto fsum = work<float>(
-        "cosf", nitr, [](float val) -> float { return ::cosf(val); },
+        "cosf", nitr, [](float val) -> float { return cosf(val); },
         [](float val, int i) -> float { return val + 0.25 * i; });
 
     printf("\n");

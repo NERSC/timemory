@@ -92,7 +92,9 @@ Table of Contents
    features
    installation
    integrating
-   components
+   components/overview
+   components/supported
+   components/bundling
    getting_started
    customization
    roofline

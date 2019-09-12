@@ -1,6 +1,6 @@
 # Roofline
 
-An overview of the roofline components can be found [here](../components.md#roofline-components).
+An overview of the roofline components can be found [here](../components/roofline.md).
 
 In general, a roofline plot requires measuring two quantities (NOTE: MOI == metric-of-interest):
 

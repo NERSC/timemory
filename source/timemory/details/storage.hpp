@@ -709,3 +709,29 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
 }
 
 //======================================================================================//
+
+template <typename _Tp>
+void
+tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa.setNextName("rank");
+        oa.startNode();
+        auto rank = tim::mpi::rank();
+        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("concurrency", concurrency));
+        oa(cereal::make_nvp("data", obj));
+        oa(cereal::make_nvp("environment", *env_settings::instance()));
+        oa.finishNode();
+    }
+    std::ofstream ofs(fname.c_str());
+    ofs << ss.str() << std::endl;
+}
+
+//======================================================================================//

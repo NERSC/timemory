@@ -414,12 +414,41 @@ struct _apply_impl
 
     // don't prefix
     template <typename _Sep, typename _Arg, typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
+              enable_if_t<(sizeof...(_Args) > 0), int>                  = 0>
     static _Ret join(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
                      _Args&&... __args)
     {
         _ss << std::forward<_Arg>(_arg);
         return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
+    }
+
+    template <typename _Tp, bool _Val = true>
+    using enable_if_string_t =
+        enable_if_t<(std::is_same<_Tp, std::string>::value ||
+                     std::is_same<_Tp, char*>::value ||
+                     std::is_same<_Tp, const char*>::value) == _Val,
+                    int>;
+
+    // don't prefix
+    template <typename _Sep, typename _Arg, typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
+              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0,
+              enable_if_string_t<_Arg, false>                           = 0>
+    static _Ret join(std::stringstream&, const _Sep&, _Arg&& _arg, _Args&&...)
+    {
+        return std::to_string(_arg);
+    }
+
+    // don't prefix
+    // if _Ret is string and _Arg is
+    template <typename _Sep, typename _Arg, typename... _Args,
+              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
+              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0,
+              enable_if_string_t<_Arg, true>                            = 0>
+    static _Arg join(std::stringstream&, const _Sep&, _Arg&& _arg, _Args&&...)
+    {
+        return _arg;
     }
 
     // don't prefix

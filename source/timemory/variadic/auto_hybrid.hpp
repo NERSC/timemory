@@ -91,16 +91,47 @@ public:
     inline component_type&       component_tuple() { return m_temporary_object; }
     inline const component_type& component_tuple() const { return m_temporary_object; }
 
-    // partial interface to underlying component_tuple
-    inline void record() { m_temporary_object.record(); }
-    inline void start() { m_temporary_object.conditional_start(); }
-    inline void stop() { m_temporary_object.stop(); }
-    inline void push() { m_temporary_object.push(); }
-    inline void pop() { m_temporary_object.pop(); }
-    inline void mark_begin() { m_temporary_object.mark_begin(); }
-    inline void mark_end() { m_temporary_object.mark_end(); }
-    inline void conditional_start() { m_temporary_object.conditional_start(); }
-    inline void conditional_stop() { m_temporary_object.conditional_stop(); }
+    // partial interface to underlying component_hybrid
+    inline void record()
+    {
+        if(m_enabled)
+            m_temporary_object.record();
+    }
+    inline void start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void stop()
+    {
+        if(m_enabled)
+            m_temporary_object.stop();
+    }
+    inline void push()
+    {
+        if(m_enabled)
+            m_temporary_object.push();
+    }
+    inline void pop()
+    {
+        if(m_enabled)
+            m_temporary_object.pop();
+    }
+    inline void conditional_start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void conditional_stop()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_stop();
+    }
+
+    template <typename... _Args>
+    inline void mark_begin(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_begin(std::forward<_Args>(_args)...); }
+    template <typename... _Args>
+    inline void mark_end(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_end(std::forward<_Args>(_args)...); }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
