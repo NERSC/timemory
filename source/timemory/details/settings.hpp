@@ -59,15 +59,15 @@ namespace settings
 
 using string_t = std::string;
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 //
 //                  GENERAL SETTINGS THAT APPLY TO MULTIPLE COMPONENTS
 //
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 // logical settings
 TIMEMORY_STATIC_ACCESSOR(bool, suppress_parsing, false)
-TIMEMORY_ENV_STATIC_ACCESSOR(bool, enabled, "TIMEMORY_ENABLED", true)
+TIMEMORY_ENV_STATIC_ACCESSOR(bool, enabled, "TIMEMORY_ENABLED", TIMEMORY_DEFAULT_ENABLED)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, auto_output, "TIMEMORY_AUTO_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, file_output, "TIMEMORY_FILE_OUTPUT", true)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, text_output, "TIMEMORY_TEXT_OUTPUT", true)
@@ -104,11 +104,11 @@ TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_path, "TIMEMORY_OUTPUT_PATH",
 TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_prefix, "TIMEMORY_OUTPUT_PREFIX",
                              "")  // file prefix
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 //
 //                          COMPONENTS SPECIFIC SETTINGS
 //
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 //--------------------------------------------------------------------------------------//
 //      PAPI
@@ -334,6 +334,3 @@ compose_output_filename(const string_t& _tag, string_t _ext)
 #        define TIMEMORY_ERROR_FUNCTION_MACRO __FUNCTION__
 #    endif
 #endif
-
-//#undef TIMEMORY_STATIC_ACCESSOR
-//#undef TIMEMORY_ENV_STATIC_ACCESSOR

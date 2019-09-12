@@ -437,30 +437,35 @@ private:
                    _atype.c_str());
         }
 
-        _Components _obj(get_tool_ids()[_N], true);
-        _obj.start();  // destructor will stop
-
-        // return (*_orig)(std::forward<_Args>(_args)...);
-        // return (_orig)(std::move(_args)...);
-        // return (*_orig)(_args...);
-        _Ret _ret = (*_orig)(_args...);
-
-        _obj.stop();
-
-        if(settings::verbose() > 1 || settings::debug())
+        if(_orig)
         {
-            auto _sargs = apply<std::string>::join(", ", _args...);
-            std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs << ") "
-                      << "result: " << _ret << "\n"
-                      << std::endl;
-        }
+            _Components _obj(get_tool_ids()[_N], true);
+            _obj.start();  // destructor will stop
 
-        return _ret;
+            // return (*_orig)(std::forward<_Args>(_args)...);
+            // return (_orig)(std::move(_args)...);
+            // return (*_orig)(_args...);
+            _Ret _ret = (*_orig)(_args...);
+
+            _obj.stop();
+
+            if(settings::verbose() > 1 || settings::debug())
+            {
+                auto _sargs = apply<std::string>::join(", ", _args...);
+                std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs << ") "
+                          << "result: " << _ret << "\n"
+                          << std::endl;
+            }
+
+            return _ret;
+        }
+        if(settings::debug())
+            PRINT_HERE("nullptr to original function!");
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");
-        return _Ret();
 #endif
+        return _Ret{};
     }
 
     //----------------------------------------------------------------------------------//
@@ -470,13 +475,20 @@ private:
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
-        auto        _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
-        _Components _obj(get_tool_ids()[_N], true);
-        _obj.start();
-        _orig(_args...);
-        _obj.stop();
+        auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
+        if(_orig)
+        {
+            _Components _obj(get_tool_ids()[_N], true);
+            _obj.start();
+            _orig(_args...);
+            _obj.stop();
+        } else if(settings::debug())
+        {
+            PRINT_HERE("nullptr to original function!");
+        }
 #else
         consume_parameters(_args...);
+        PRINT_HERE("should not be here!");
 #endif
     }
 

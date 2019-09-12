@@ -40,9 +40,12 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-papi
     timemory-cupti
     timemory-cudart
+    timemory-cuda-nvtx
     timemory-cudart-device
-    timemory-python-compile-options
     timemory-caliper
+    timemory-gperftools-cpu
+    timemory-gperftools-heap
+    timemory-python-compile-options
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)

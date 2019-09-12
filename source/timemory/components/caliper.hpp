@@ -34,24 +34,15 @@ namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, int8_t>
+struct caliper : public base<caliper, void>
 {
     // timemory component api
-    using value_type = int8_t;
+    using value_type = void;
     using base_type  = base<caliper, value_type>;
 
-    static const short                   precision    = 0;
-    static const short                   width        = 0;
-    static const std::ios_base::fmtflags format_flags = {};
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "caliper"; }
     static std::string description() { return "caliper"; }
-    static std::string display_unit() { return ""; }
-
-    static value_type record() { return 0; }
-    float             get_display() const { return 0.0f; }
-    float             get() const { return get_display(); }
+    static value_type  record() {}
 
     caliper(const std::string& _channel = get_channel(),
             const int& _attributes = get_attributes(), const std::string& _prefix = "")

@@ -197,7 +197,7 @@ public:
         sibling_iterator(const iterator_base&);
 
         sibling_iterator(const sibling_iterator&) = default;
-        sibling_iterator(sibling_iterator&&) = default;
+        sibling_iterator(sibling_iterator&&)      = default;
 
         sibling_iterator& operator=(const sibling_iterator&) = default;
         sibling_iterator& operator=(sibling_iterator&&) = default;

@@ -388,6 +388,20 @@ public:
         external_print(type);
     }
 
+private:
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive>
+    void _serialize(_Archive& ar)
+    {
+        auto _label = ObjectType::label();
+        if(singleton_t::is_master(this))
+            merge();
+        ar(cereal::make_nvp(_label, *this));
+    }
+
+    friend class manager;
+
 public:
     //----------------------------------------------------------------------------------//
     //

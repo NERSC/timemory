@@ -108,8 +108,8 @@ struct dummy
 #    define TIMEMORY_DEBUG_OBJECT(...)
 
 // pointers
-# define TIMEMORY_BLANK_POINTER(...)
-# define TIMEMORY_BASIC_POINTER(...)
-# define TIMEMORY_POINTER(...)
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
 
 #endif

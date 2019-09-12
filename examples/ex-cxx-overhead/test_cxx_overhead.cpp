@@ -70,7 +70,8 @@ struct measure
 
 //======================================================================================//
 
-static bool& do_print_result()
+static bool&
+do_print_result()
 {
     static bool _instance = true;
     return _instance;
@@ -106,7 +107,8 @@ fibonacci(int64_t n, int64_t)
 
 //======================================================================================//
 
-template <typename _Tp, tim::enable_if_t<std::is_same<_Tp, mode::measure>::value, int> = 0>
+template <typename _Tp,
+          tim::enable_if_t<std::is_same<_Tp, mode::measure>::value, int> = 0>
 int64_t
 fibonacci(int64_t n, int64_t cutoff)
 {
@@ -216,8 +218,9 @@ run(int64_t n, int64_t cutoff)
 //======================================================================================//
 
 template <typename _Tp>
-void launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure, int64_t& ex_unique,
-            std::vector<timer_tuple_t>& timer_list)
+void
+launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measure,
+       int64_t& ex_unique, std::vector<timer_tuple_t>& timer_list)
 {
     int64_t nmeas = 0;
     int64_t nuniq = 0;
@@ -241,13 +244,13 @@ void launch(const int nitr, const int nfib, const int cutoff, int64_t& ex_measur
         }
     }
 
-    std::string prefix = std::to_string(nuniq) + " unique measurements and " + std::to_string(nmeas) +
-             " total measurements (" + tim::demangle(typeid(_Tp).name()) + ")";
+    std::string prefix = std::to_string(nuniq) + " unique measurements and " +
+                         std::to_string(nmeas) + " total measurements (" +
+                         tim::demangle(typeid(_Tp).name()) + ")";
     timer_list.push_back((timer_list.back() / nitr) - (timer_list.at(0) / nitr));
     timer_list.push_back(timer_list.back() / nmeas);
     timer_list.at(timer_list.size() - 2).rekey("difference vs. " + prefix);
     timer_list.at(timer_list.size() - 1).rekey("average overhead of " + prefix);
-
 }
 //======================================================================================//
 

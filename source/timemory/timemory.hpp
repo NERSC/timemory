@@ -112,9 +112,9 @@ struct dummy
 #    define TIMEMORY_DEBUG_OBJECT(...)
 
 // unique pointers
-# define TIMEMORY_BLANK_POINTER(...)
-# define TIMEMORY_BASIC_POINTER(...)
-# define TIMEMORY_POINTER(...)
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
 
 // deprecated
 #    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)

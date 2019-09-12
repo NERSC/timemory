@@ -272,13 +272,11 @@ namespace trait
 {
 template <>
 struct supports_args<component::cuda_event, std::tuple<>> : std::true_type
-{
-};
+{};
 
 template <>
 struct supports_args<component::cuda_event, std::tuple<cuda::stream_t>> : std::true_type
-{
-};
+{};
 }  // namespace trait
 
 //--------------------------------------------------------------------------------------//

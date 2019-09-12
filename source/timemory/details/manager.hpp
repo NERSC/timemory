@@ -41,10 +41,6 @@
 #include <sstream>
 #include <thread>
 
-#if !defined(TIMEMORY_DEFAULT_ENABLED)
-#    define TIMEMORY_DEFAULT_ENABLED true
-#endif
-
 //======================================================================================//
 
 namespace tim
@@ -153,7 +149,6 @@ manager::exit_hook()
     int32_t count = 0;
     if(ptr)
     {
-        ptr->print(false, false);
         count = ptr->instance_count();
         if(settings::banner())
             printf(
@@ -373,31 +368,11 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-template <typename Head, typename... Tail>
-inline void
-tim::manager::print(const tim::component_tuple<Head, Tail...>&)
-{
-    auto storage = tim::storage<Head>::instance();
-    if(storage && !storage->empty())
-        storage->print();
-    using tail_obj_t = PopFront<tim::component_tuple<Head, Tail...>>;
-    print(tail_obj_t());
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
-{
-}
-
-//======================================================================================//
-
 template <typename _Tuple>
 void
 tim::settings::initialize_storage()
 {
-    tim::manager::initialize<_Tuple>::storage();
+    tim::manager::get_storage<_Tuple>::initialize();
 }
 
 namespace tim

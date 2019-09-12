@@ -67,6 +67,7 @@ public:
     using string_hash    = std::hash<string_t>;
     using base_type      = component_type;
     using language_t     = language;
+    using type_tuple     = typename component_type::type_tuple;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -129,9 +130,17 @@ public:
     }
 
     template <typename... _Args>
-    inline void mark_begin(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_begin(std::forward<_Args>(_args)...); }
+    inline void mark_begin(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+    }
     template <typename... _Args>
-    inline void mark_end(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_end(std::forward<_Args>(_args)...); }
+    inline void mark_end(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }

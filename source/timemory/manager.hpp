@@ -250,20 +250,9 @@ public:
     static int32_t total_instance_count() { return f_manager_instance_count().load(); }
 
     void merge(pointer);
-    void print(bool ign_cutoff, bool endline);
     void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
 
     static void exit_hook();
-    static void print(const tim::component_tuple<>&) {}
-
-    template <typename Head, typename... Tail>
-    static void print(const tim::component_tuple<Head, Tail...>&);
-
-    template <typename ComponentTuple_t>
-    static void print()
-    {
-        print(ComponentTuple_t());
-    }
 
 private:
     template <typename _Tp, typename... _Tail,
@@ -284,22 +273,57 @@ private:
 
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _print_storage()
+    {
+        auto ret = storage<_Tp>::noninit_instance();
+        if(ret && !ret->empty())
+            ret->print();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _print_storage()
+    {
+        _print_storage<_Tp>();
+        _print_storage<_Tail...>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
-        auto ret = storage<_Tp>::instance();
-        ret->data().clear();
+        auto ret = storage<_Tp>::noninit_instance();
+        if(ret)
+            ret->data().clear();
     }
 
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void _clear()
     {
-        auto ret = storage<_Tp>::instance();
-        ret->data().clear();
+        _clear<_Tp>();
         _clear<_Tail...>();
     }
 
+    template <typename _Archive, typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _serialize(_Archive& ar)
+    {
+        auto ret = storage<_Tp>::noninit_instance();
+        if(ret && !ret->empty())
+            ret->_serialize(ar);
+    }
+
+    template <typename _Archive, typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _serialize(_Archive& ar)
+    {
+        _serialize<_Archive, _Tp>(ar);
+        _serialize<_Archive, _Tail...>(ar);
+    }
+
 public:
+    /*
     template <typename... _Types>
     void initialize_storage()
     {
@@ -311,28 +335,97 @@ public:
     {
         _clear<_Types...>();
     }
+    */
 
 public:
     // used to expand a tuple in settings
     template <typename... _Types>
-    struct initialize
+    struct get_storage
     {
-        static void storage()
+        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
+        static constexpr auto spacing = indent::space;
+        static std::string    serialize()
+        {
+            manager*          _manager = manager::instance();
+            std::stringstream ss;
+            {
+                // args: precision, spacing, indent size
+                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+                cereal::JSONOutputArchive          oa(ss, opts);
+                oa.setNextName("rank");
+                oa.startNode();
+                auto rank = mpi::rank();
+                oa(cereal::make_nvp("rank_id", rank));
+                _manager->_serialize<decltype(oa), _Types...>(oa);
+                oa.finishNode();
+            }
+            return ss.str();
+        }
+
+        static void initialize()
         {
             manager* _manager = manager::instance();
-            _manager->initialize_storage<_Types...>();
+            _manager->_init_storage<_Types...>();
+        }
+
+        static void clear()
+        {
+            manager* _manager = manager::instance();
+            _manager->_clear<_Types...>();
+        }
+
+        static void print()
+        {
+            manager* _manager = manager::instance();
+            _manager->_print_storage<_Types...>();
         }
     };
 
     template <typename... _Types>
-    struct initialize<std::tuple<_Types...>>
+    struct get_storage<std::tuple<_Types...>>
     {
-        static void storage()
+        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
+        static constexpr auto spacing = indent::space;
+        static std::string    serialize()
+        {
+            manager*          _manager = manager::instance();
+            std::stringstream ss;
+            {
+                // args: precision, spacing, indent size
+                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+                cereal::JSONOutputArchive          oa(ss, opts);
+                oa.setNextName("rank");
+                oa.startNode();
+                auto rank = mpi::rank();
+                oa(cereal::make_nvp("rank_id", rank));
+                _manager->_serialize<decltype(oa), _Types...>(oa);
+                oa.finishNode();
+            }
+            return ss.str();
+        }
+
+        static void initialize()
         {
             manager* _manager = manager::instance();
-            _manager->initialize_storage<_Types...>();
+            _manager->_init_storage<_Types...>();
+        }
+
+        static void clear()
+        {
+            manager* _manager = manager::instance();
+            _manager->_clear<_Types...>();
+        }
+
+        static void print()
+        {
+            manager* _manager = manager::instance();
+            _manager->_print_storage<_Types...>();
         }
     };
+
+private:
+    template <typename... _Types>
+    friend struct get_storage;
 
 public:
     // Public member functions

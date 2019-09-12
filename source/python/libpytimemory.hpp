@@ -935,6 +935,46 @@ auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
 
 //======================================================================================//
 
+template <typename _Tuple>
+struct construct_dict
+{
+    using Type = _Tuple;
+
+    construct_dict(_Tuple& _tup, py::dict& _dict)
+    {
+        auto _label = std::get<0>(_tup);
+        if(_label.size() > 0)
+            _dict[_label.c_str()] = std::get<1>(_tup);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct dict
+{
+    static py::dict construct(std::tuple<_Types...>& _tup)
+    {
+        using apply_types = std::tuple<construct_dict<_Types>...>;
+        py::dict _dict;
+        ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
+        return _dict;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct dict<std::tuple<_Types...>>
+{
+    static py::dict construct(std::tuple<_Types...>& _tup)
+    {
+        return dict<_Types...>::construct(_tup);
+    }
+};
+
+//======================================================================================//
+
 }  // namespace pytim
 
 //======================================================================================//

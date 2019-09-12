@@ -81,11 +81,15 @@ class component_tuple
     friend class component_hybrid;
 
 public:
-    using size_type   = int64_t;
-    using language_t  = tim::language;
-    using string_hash = std::hash<string_t>;
-    using this_type   = component_tuple<Types...>;
-    using data_type   = implemented<Types...>;
+    using size_type        = int64_t;
+    using language_t       = tim::language;
+    using string_hash      = std::hash<string_t>;
+    using this_type        = component_tuple<Types...>;
+    using data_type        = implemented<Types...>;
+    using type_tuple       = implemented<Types...>;
+    using data_value_tuple = std::tuple<decltype(std::declval<Types>().get())...>;
+    using data_label_tuple =
+        std::tuple<std::tuple<std::string, decltype(std::declval<Types>().get())>...>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = false;
@@ -121,6 +125,7 @@ public:
     using stand_cond_stop_t  = modifiers<operation::conditional_standard_stop, Types...>;
     using mark_begin_t       = modifiers<operation::mark_begin, Types...>;
     using mark_end_t         = modifiers<operation::mark_end, Types...>;
+    using get_data_t         = modifiers<operation::get_data, Types...>;
 
 public:
     using auto_type = auto_tuple<Types...>;
@@ -239,6 +244,26 @@ public:
     void measure() { apply<void>::access<measure_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_value_tuple get()
+    {
+        conditional_stop();
+        data_value_tuple _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_label_tuple get_labeled()
+    {
+        conditional_stop();
+        data_label_tuple _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
+    }
+
+    //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
@@ -285,14 +310,20 @@ public:
     // structures)
     //
     template <typename... _Args>
-    void mark_begin(_Args&&... _args) { apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...); }
+    void mark_begin(_Args&&... _args)
+    {
+        apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
+    }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
     template <typename... _Args>
-    void mark_end(_Args&&... _args) { apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...); }
+    void mark_end(_Args&&... _args)
+    {
+        apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
+    }
 
     //----------------------------------------------------------------------------------//
     // recording

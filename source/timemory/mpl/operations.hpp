@@ -523,19 +523,21 @@ struct mark_begin
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    template <typename _Up                                                       = _Tp,
+              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_begin(Type& obj)
     {
         obj.mark_begin();
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    template <typename _Up                                                        = _Tp,
+              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_begin(Type&)
     {
     }
 
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_begin(Type& obj, _Args&&... _args)
     {
@@ -543,12 +545,11 @@ struct mark_begin
     }
 
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_begin(Type&, _Args&&...)
     {
     }
-
 };
 
 //--------------------------------------------------------------------------------------//
@@ -560,13 +561,15 @@ struct mark_end
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    template <typename _Up = _Tp, enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    template <typename _Up                                                       = _Tp,
+              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_end(Type& obj)
     {
         obj.mark_end();
     }
 
-    template <typename _Up = _Tp, enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    template <typename _Up                                                        = _Tp,
+              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
     explicit mark_end(Type&)
     {
     }
@@ -574,7 +577,7 @@ struct mark_end
     // mark_end(Type& obj) { obj.mark_end(); }
 
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
               enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_end(Type& obj, _Args&&... _args)
     {
@@ -582,12 +585,11 @@ struct mark_end
     }
 
     template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
-              enable_if_t<(sizeof...(_Args) > 0), int> = 0,
+              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
               enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
     mark_end(Type&, _Args&&...)
     {
     }
-
 };
 
 //--------------------------------------------------------------------------------------//
@@ -703,6 +705,67 @@ struct divide
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct get_data
+{
+    using Type            = _Tp;
+    using DataType        = decltype(std::declval<Type>().get());
+    using LabeledDataType = std::tuple<std::string, decltype(std::declval<Type>().get())>;
+
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    get_data(Type& _obj, DataType& _dst)
+    {
+        _dst = _obj.get();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    get_data(Type&, DataType&)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    get_data(Type& _obj, LabeledDataType& _dst)
+    {
+        _dst = LabeledDataType(Type::label(), _obj.get());
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    get_data(Type&, LabeledDataType&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct print
 {
     using Type       = _Tp;
@@ -711,13 +774,15 @@ struct print
     using widths_t   = std::vector<int64_t>;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available and using internal output handling
+    // shorthand for available, non-void, using internal output handling
     //
     template <typename _Up>
     struct is_enabled
     {
+        using _Vp                   = typename _Up::value_type;
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value));
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
     };
 
     //----------------------------------------------------------------------------------//
@@ -849,13 +914,15 @@ struct print_storage
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available and using internal output handling
+    // shorthand for available, non-void, using internal output handling
     //
     template <typename _Up>
     struct is_enabled
     {
+        using _Vp                   = typename _Up::value_type;
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value));
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
     };
 
     //----------------------------------------------------------------------------------//
@@ -1033,10 +1100,20 @@ struct pointer_counter
 template <typename _Tp>
 struct set_width
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_width(const _Up& val)
     {
         _Tp::get_width() = val;
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_width(const _Up&)
+    {
     }
 };
 
@@ -1045,10 +1122,20 @@ struct set_width
 template <typename _Tp>
 struct set_precision
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_precision(const _Up& val)
     {
         _Tp::get_precision() = val;
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_precision(const _Up&)
+    {
     }
 };
 
@@ -1057,12 +1144,25 @@ struct set_precision
 template <typename _Tp>
 struct set_format_flags
 {
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Vp                                        = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_format_flags(const std::ios_base::fmtflags& add_flags,
                      const std::ios_base::fmtflags& remove_flags =
                          (std::ios_base::fixed & std::ios_base::scientific))
     {
         _Tp::get_format_flags() &= remove_flags;
         _Tp::get_format_flags() |= add_flags;
+    }
+
+    template <typename _Vp                                       = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_format_flags(const std::ios_base::fmtflags&,
+                     const std::ios_base::fmtflags& = (std::ios_base::fixed &
+                                                       std::ios_base::scientific))
+    {
     }
 };
 
@@ -1071,18 +1171,35 @@ struct set_format_flags
 template <typename _Tp>
 struct set_units
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_units(const _Up& val, const std::string& str)
     {
         _Tp::get_unit()         = val;
         _Tp::get_display_unit() = str;
     }
 
-    template <typename _Up>
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_units(const std::tuple<std::string, _Up>& val)
     {
         _Tp::get_display_unit() = std::get<0>(val);
         _Tp::get_unit()         = std::get<1>(val);
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_units(const _Up&, const std::string&)
+    {
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_units(const std::tuple<std::string, _Up>&)
+    {
     }
 };
 

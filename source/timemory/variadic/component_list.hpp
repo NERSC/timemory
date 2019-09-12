@@ -82,16 +82,20 @@ class component_list
     friend class component_hybrid;
 
 public:
-    using size_type      = int64_t;
-    using this_type      = component_list<Types...>;
-    using data_type      = std::tuple<Types*...>;
-    using reference_type = std::tuple<Types...>;
-    using string_hash    = std::hash<string_t>;
-    using counter_type   = tim::counted_object<this_type>;
-    using counter_void   = tim::counted_object<void>;
-    using hashed_type    = tim::hashed_object<this_type>;
-    using language_t     = tim::language;
-    using init_func_t    = std::function<void(this_type&)>;
+    using size_type        = int64_t;
+    using this_type        = component_list<Types...>;
+    using data_type        = std::tuple<Types*...>;
+    using reference_type   = std::tuple<Types...>;
+    using type_tuple       = implemented<Types...>;
+    using string_hash      = std::hash<string_t>;
+    using counter_type     = tim::counted_object<this_type>;
+    using counter_void     = tim::counted_object<void>;
+    using hashed_type      = tim::hashed_object<this_type>;
+    using language_t       = tim::language;
+    using init_func_t      = std::function<void(this_type&)>;
+    using data_value_tuple = std::tuple<decltype(std::declval<Types>().get())...>;
+    using data_label_tuple =
+        std::tuple<std::tuple<std::string, decltype(std::declval<Types>().get())>...>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = true;
@@ -285,6 +289,30 @@ public:
         using apply_types =
             std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
         apply<void>::access<apply_types>(m_data);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_value_tuple get()
+    {
+        conditional_stop();
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::get_data<Types>>...>;
+        data_value_tuple _ret_data;
+        apply<void>::access2<apply_types>(m_data, _ret_data);
+        return _ret_data;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_label_tuple get_labeled()
+    {
+        conditional_stop();
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::get_data<Types>>...>;
+        data_label_tuple _ret_data;
+        apply<void>::access2<apply_types>(m_data, _ret_data);
+        return _ret_data;
     }
 
     //----------------------------------------------------------------------------------//

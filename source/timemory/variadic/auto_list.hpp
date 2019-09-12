@@ -57,18 +57,21 @@ class auto_list
 , public hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type = component_list<Types...>;
-    using this_type      = auto_list<Types...>;
-    using data_type      = typename component_type::data_type;
-    using counter_type   = counted_object<this_type>;
-    using counter_void   = counted_object<void>;
-    using hashed_type    = hashed_object<this_type>;
-    using string_t       = std::string;
-    using string_hash    = std::hash<string_t>;
-    using base_type      = component_type;
-    using language_t     = language;
-    using tuple_type     = implemented<Types...>;
-    using init_func_t    = std::function<void(this_type&)>;
+    using component_type   = component_list<Types...>;
+    using this_type        = auto_list<Types...>;
+    using data_type        = typename component_type::data_type;
+    using counter_type     = counted_object<this_type>;
+    using counter_void     = counted_object<void>;
+    using hashed_type      = hashed_object<this_type>;
+    using string_t         = std::string;
+    using string_hash      = std::hash<string_t>;
+    using base_type        = component_type;
+    using language_t       = language;
+    using tuple_type       = implemented<Types...>;
+    using init_func_t      = std::function<void(this_type&)>;
+    using type_tuple       = typename component_type::type_tuple;
+    using data_value_tuple = typename component_type::data_value_tuple;
+    using data_label_tuple = typename component_type::data_label_tuple;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -136,9 +139,31 @@ public:
     }
 
     template <typename... _Args>
-    inline void mark_begin(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_begin(std::forward<_Args>(_args)...); }
+    inline void mark_begin(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+    }
     template <typename... _Args>
-    inline void mark_end(_Args&&... _args) { if(m_enabled) m_temporary_object.mark_end(std::forward<_Args>(_args)...); }
+    inline void mark_end(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    data_value_tuple get()
+    {
+        if(m_enabled)
+            return m_temporary_object.get();
+        return data_value_tuple{};
+    }
+
+    data_label_tuple get_labeled()
+    {
+        if(m_enabled)
+            return m_temporary_object.get_labeled();
+        return data_label_tuple{};
+    }
 
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }

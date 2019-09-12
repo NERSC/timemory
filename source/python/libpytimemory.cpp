@@ -247,18 +247,23 @@ PYBIND11_MODULE(libpytimemory, tim)
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
         if(fname.length() > 0)
-        {
             set_output(fname);
-        }
 
-        tim::manager::print<tim::rusage_components_t>();
-        tim::manager::print<tim::timing_components_t>();
+        using type_tuple = typename auto_list_t::type_tuple;
+        tim::manager::get_storage<type_tuple>::print();
 
         if(fname.length() > 0)
         {
             tim::settings::output_path()   = _path;
             tim::settings::output_prefix() = _prefix;
         }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json = [&]() {
+        using type_tuple = typename auto_list_t::type_tuple;
+        auto json_str    = manager_t::get_storage<type_tuple>::serialize();
+        auto json_module = py::module::import("json");
+        return json_module.attr("loads")(json_str);
     };
     //----------------------------------------------------------------------------------//
     auto set_rusage_child = [&]() {
@@ -347,6 +352,8 @@ PYBIND11_MODULE(libpytimemory, tim)
             "Parse the environment and use argv[0] to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
+    //----------------------------------------------------------------------------------//
+    tim.def("get", _as_json, "Get the storage data");
 
     //==================================================================================//
     //
@@ -403,6 +410,18 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("reset", [&](py::object self) { self.cast<tim_timer_t*>()->reset(); },
               "Reset the timer");
     //----------------------------------------------------------------------------------//
+    timer.def("get_raw",
+              [&](py::object self) { return self.cast<tim_timer_t*>()->get(); },
+              "Get the timer data");
+    //----------------------------------------------------------------------------------//
+    timer.def("get",
+              [&](py::object self) {
+                  auto&& _tup           = self.cast<tim_timer_t*>()->get_labeled();
+                  using data_label_type = tim::decay_t<decltype(_tup)>;
+                  return pytim::dict<data_label_type>::construct(_tup);
+              },
+              "Get the timer data");
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -445,13 +464,25 @@ PYBIND11_MODULE(libpytimemory, tim)
                    py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     auto_timer.def("__str__",
-                   [&](py::object _pyauto_timer) {
+                   [&](py::object self) {
                        std::stringstream _ss;
-                       auto_timer_t* _auto_timer = _pyauto_timer.cast<auto_timer_t*>();
-                       _ss << _auto_timer->get_component_type();
+                       auto_timer_t*     _self = self.cast<auto_timer_t*>();
+                       _ss << _self->get_component_type();
                        return _ss.str();
                    },
                    "Print the auto timer");
+    //----------------------------------------------------------------------------------//
+    auto_timer.def("get_raw",
+                   [&](py::object self) { return self.cast<auto_timer_t*>()->get(); },
+                   "Get the component list data");
+    //----------------------------------------------------------------------------------//
+    auto_timer.def("get",
+                   [&](py::object self) {
+                       auto&& _tup           = self.cast<auto_timer_t*>()->get_labeled();
+                       using data_label_type = tim::decay_t<decltype(_tup)>;
+                       return pytim::dict<data_label_type>::construct(_tup);
+                   },
+                   "Get the component list data");
     //----------------------------------------------------------------------------------//
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
@@ -468,23 +499,23 @@ PYBIND11_MODULE(libpytimemory, tim)
                   py::arg("added_args") = false, py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_list.def("start",
-                  [&](py::object pytimer) { pytimer.cast<component_list_t*>()->start(); },
+                  [&](py::object self) { self.cast<component_list_t*>()->start(); },
                   "Start component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("stop",
-                  [&](py::object pytimer) { pytimer.cast<component_list_t*>()->stop(); },
+                  [&](py::object self) { self.cast<component_list_t*>()->stop(); },
                   "Stop component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("report",
-                  [&](py::object pytimer) {
-                      std::cout << *(pytimer.cast<component_list_t*>()) << std::endl;
+                  [&](py::object self) {
+                      std::cout << *(self.cast<component_list_t*>()) << std::endl;
                   },
                   "Report component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("__str__",
-                  [&](py::object pytimer) {
+                  [&](py::object self) {
                       std::stringstream ss;
-                      ss << *(pytimer.cast<component_list_t*>());
+                      ss << *(self.cast<component_list_t*>());
                       return ss.str();
                   },
                   "Stringify component tuple");
@@ -494,14 +525,25 @@ PYBIND11_MODULE(libpytimemory, tim)
                   "Reset the component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("__str__",
-                  [&](py::object _pyauto_tuple) {
+                  [&](py::object self) {
                       std::stringstream _ss;
-                      component_list_t* _auto_tuple =
-                          _pyauto_tuple.cast<component_list_t*>();
-                      _ss << *_auto_tuple;
+                      component_list_t* _self = self.cast<component_list_t*>();
+                      _ss << *_self;
                       return _ss.str();
                   },
                   "Print the component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("get_raw",
+                  [&](py::object self) { return self.cast<component_list_t*>()->get(); },
+                  "Get the component list data");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("get",
+                  [&](py::object self) {
+                      auto&& _tup = self.cast<component_list_t*>()->get_labeled();
+                      using data_label_type = tim::decay_t<decltype(_tup)>;
+                      return pytim::dict<data_label_type>::construct(_tup);
+                  },
+                  "Get the component list data");
     //----------------------------------------------------------------------------------//
     comp_decorator.def(py::init(&pytim::init::component_decorator), "Initialization",
                        py::return_value_policy::automatic);
@@ -585,6 +627,18 @@ PYBIND11_MODULE(libpytimemory, tim)
                   },
                   "Return the current rss usage",
                   py::arg("units") = units.attr("megabyte"));
+    //----------------------------------------------------------------------------------//
+    rss_usage.def("get_raw",
+                  [&](py::object self) { return self.cast<rss_usage_t*>()->get(); },
+                  "Return the rss usage data");
+    //----------------------------------------------------------------------------------//
+    rss_usage.def("get",
+                  [&](py::object self) {
+                      auto&& _tup           = self.cast<rss_usage_t*>()->get_labeled();
+                      using data_label_type = tim::decay_t<decltype(_tup)>;
+                      return pytim::dict<data_label_type>::construct(_tup);
+                  },
+                  "Return the rss usage data");
 
     //==================================================================================//
     //
