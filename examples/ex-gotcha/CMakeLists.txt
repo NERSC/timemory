@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+if(WIN32)
+	return()
+endif()
+
 project(timemory-gotcha-Example LANGUAGES C CXX)
 
 include(GNUInstallDirs)

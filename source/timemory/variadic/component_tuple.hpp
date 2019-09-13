@@ -80,6 +80,30 @@ class component_tuple
     template <typename _TupleC, typename _ListC>
     friend class component_hybrid;
 
+    struct _impl
+    {
+        template <typename... _ImplTypes>
+        struct _data_tuple
+        {
+            using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
+            using label_type = std::tuple<
+                std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+        };
+
+        template <typename... _ImplTypes>
+        struct _data_tuple<std::tuple<_ImplTypes...>>
+        {
+            using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
+            using label_type = std::tuple<
+                std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+        };
+    };
+
+	template <typename _Tuple>
+	using data_value_t = typename _impl::_data_tuple<_Tuple>::value_type;
+    template <typename _Tuple>
+    using data_label_t = typename _impl::_data_tuple<_Tuple>::label_type;
+
 public:
     using size_type        = int64_t;
     using language_t       = tim::language;
@@ -87,9 +111,8 @@ public:
     using this_type        = component_tuple<Types...>;
     using data_type        = implemented<Types...>;
     using type_tuple       = implemented<Types...>;
-    using data_value_tuple = std::tuple<decltype(std::declval<Types>().get())...>;
-    using data_label_tuple =
-        std::tuple<std::tuple<std::string, decltype(std::declval<Types>().get())>...>;
+    using data_value_tuple = data_value_t<data_type>;
+    using data_label_tuple = data_label_t<data_type>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = false;
