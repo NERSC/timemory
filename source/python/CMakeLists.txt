@@ -44,7 +44,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-cudart-device
     timemory-caliper
     timemory-gperftools-cpu
-    timemory-gperftools-heap
+    # timemory-gperftools-heap
     timemory-python-compile-options
     PRIVATE pybind11::module)
 

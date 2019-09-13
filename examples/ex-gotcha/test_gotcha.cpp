@@ -129,7 +129,7 @@ init()
     };
 
     std_gotcha_t::get_initializer() = [=]() {
-        // TIMEMORY_GOTCHA(std_gotcha_t, 2, expf);
+        // TIMEMORY_C_GOTCHA(std_gotcha_t, 2, expf);
         std_gotcha_t::configure<0, double, double>("exp", 1, "math");
         std_gotcha_t::configure<1, ext::tuple_t, int>(test_exp_mangle, 2, "math");
     };
@@ -146,15 +146,15 @@ init()
 
     mpi_gotcha_t::get_initializer() = [=]() {
 #if defined(TIMEMORY_USE_MPI)
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Barrier);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 1, MPI_Bcast);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 2, MPI_Scan);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 3, MPI_Allreduce);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 4, MPI_Reduce);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 5, MPI_Alltoall);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 6, MPI_Allgather);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 7, MPI_Gather);
-        TIMEMORY_GOTCHA(mpi_gotcha_t, 8, MPI_Scatter);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 0, MPI_Barrier);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 1, MPI_Bcast);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 2, MPI_Scan);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 3, MPI_Allreduce);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 4, MPI_Reduce);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 5, MPI_Alltoall);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 6, MPI_Allgather);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 7, MPI_Gather);
+        TIMEMORY_C_GOTCHA(mpi_gotcha_t, 8, MPI_Scatter);
 #endif
     };
 

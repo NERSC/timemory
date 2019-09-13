@@ -43,6 +43,13 @@ operator<<(ostream& os, const tuple<T, U>& p)
     os << "(" << std::get<0>(p) << "," << std::get<1>(p) << ")";
     return os;
 }
+template <typename T, typename U>
+ostream&
+operator<<(ostream& os, const pair<T, U>& p)
+{
+    os << "(" << p.first << "," << p.second << ")";
+    return os;
+}
 }  // namespace std
 
 //======================================================================================//
@@ -112,7 +119,7 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args>
-    static void construct(const std::string& fname, int _priority = 0,
+    static void construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
@@ -129,7 +136,7 @@ struct gotcha
             // static int _incr = _priority;
             // _priority        = _incr++;
 
-            auto _label = demangle(fname);
+            auto _label = demangle(_func);
             if(_tool.length() > 0 && _label.find(_tool + "/") != 0)
             {
                 _label = _tool + "/" + _label;
@@ -139,12 +146,12 @@ struct gotcha
 
             _tool_ids[_N] = _label;
             _fill_ids[_N] = true;
-            _wrap_ids[_N] = fname;
+            _wrap_ids[_N] = _func;
 
             error_t ret_prio = ::tim::gotcha::set_priority(_label, _priority);
             check_error<_N>(ret_prio, "set priority");
 
-            _bindings[_N] = std::move(construct_binder<_N, _Ret, _Args...>(fname));
+            _bindings[_N] = std::move(construct_binder<_N, _Ret, _Args...>(_func));
 
             error_t ret_wrap = ::tim::gotcha::wrap(_bindings[_N], _tool_ids[_N]);
             check_error<_N>(ret_wrap, "binding");
@@ -175,39 +182,39 @@ struct gotcha
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args>
-    static void configure(const std::string& fname, int _priority = 0,
+    static void configure(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
-        construct<_N, _Ret, _Args...>(fname, _priority, _tool);
+        construct<_N, _Ret, _Args...>(_func, _priority, _tool);
     }
 
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Ret, typename... _Args>
-    static void revert(std::string fname = "")
+    static void revert(std::string _func = "")
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         auto& _fill_ids = get_filled();
         auto& _wrappids = get_wrap_ids();
 
-        if(_fill_ids[_N] && (fname.empty() || _wrappids[_N] == fname))
+        if(_fill_ids[_N] && (_func.empty() || _wrappids[_N] == _func))
         {
             auto& _wrappees = get_wrappees();
             auto& _bindings = get_bindings();
 
-            if(fname.empty())
-                fname = _wrappids[_N];
+            if(_func.empty())
+                _func = _wrappids[_N];
 
             get_filled()[_N] = false;
             auto      _orig  = gotcha_get_wrappee(_wrappees[_N]);
             wrappee_t _dummy = 0x0;
-            _bindings[_N]    = { fname.c_str(), _orig, &_dummy };
+            _bindings[_N]    = { _func.c_str(), _orig, &_dummy };
             error_t ret_wrap = ::tim::gotcha::wrap(_bindings[_N], _wrappids[_N]);
             check_error<_N>(ret_wrap, "unwrap binding");
         }
 #else
-        consume_parameters(fname);
+        consume_parameters(_func);
 #endif
         get_destructors()[_N] = []() {};
     }
@@ -270,10 +277,10 @@ public:
     template <size_t _N, typename _Ret, typename... _Args>
     struct instrument
     {
-        static void generate(const std::string& fname, int _priority = 0,
-                             const std::string& _tool = "")
+        static void generate(const std::string& _func, const std::string& _tool = "",
+                             int _priority = 0)
         {
-            this_type::configure<_N, _Ret, _Args...>(fname, _priority, _tool);
+            this_type::configure<_N, _Ret, _Args...>(_func, _priority, _tool);
         }
     };
 
@@ -282,10 +289,10 @@ public:
     template <size_t _N, typename _Ret, typename... _Args>
     struct instrument<_N, _Ret, std::tuple<_Args...>>
     {
-        static void generate(const std::string& fname, int _priority = 0,
-                             const std::string& _tool = "")
+        static void generate(const std::string& _func, const std::string& _tool = "",
+                             int _priority = 0)
         {
-            this_type::configure<_N, _Ret, _Args...>(fname, _priority, _tool);
+            this_type::configure<_N, _Ret, _Args...>(_func, _priority, _tool);
         }
     };
 
@@ -397,10 +404,10 @@ private:
 
     template <size_t _N, typename _Ret, typename... _Args,
               typename std::enable_if<!(std::is_same<_Ret, void>::value), int>::type = 0>
-    static binding_t construct_binder(const std::string& _fname)
+    static binding_t construct_binder(const std::string& _func)
     {
         auto& _wrappees = get_wrappees();
-        return binding_t{ _fname.c_str(), (void*) this_type::wrap<_N, _Ret, _Args...>,
+        return binding_t{ _func.c_str(), (void*) this_type::wrap<_N, _Ret, _Args...>,
                           &_wrappees[_N] };
     }
 
@@ -408,10 +415,10 @@ private:
 
     template <size_t _N, typename _Ret, typename... _Args,
               typename std::enable_if<(std::is_same<_Ret, void>::value), int>::type = 0>
-    static binding_t construct_binder(const std::string& _fname)
+    static binding_t construct_binder(const std::string& _func)
     {
         auto& _wrappees = get_wrappees();
-        return binding_t{ _fname.c_str(), (void*) this_type::wrap_void<_N, _Args...>,
+        return binding_t{ _func.c_str(), (void*) this_type::wrap_void<_N, _Args...>,
                           &_wrappees[_N] };
     }
 
@@ -501,7 +508,35 @@ private:
 
 //--------------------------------------------------------------------------------------//
 
-#define TIMEMORY_GOTCHA(type, idx, func)                                                 \
+///
+/// attempt to generate a GOTCHA wrapper for a C function (unmangled)
+///
+#define TIMEMORY_C_GOTCHA(type, idx, func)                                               \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
                      ::tim::function_traits<decltype(func)>::arg_tuple>::                \
         generate(TIMEMORY_STRINGIZE(func))
+
+///
+/// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name
+/// in general, mangling template function is not supported
+///
+#define TIMEMORY_CXX_GOTCHA(type, idx, func)                                             \
+    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
+                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+        generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)))
+
+///
+/// TIMEMORY_C_GOTCHA + ability to pass priority and tool name
+///
+#define TIMEMORY_C_GOTCHA_TOOL(type, idx, func, ...)                                     \
+    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
+                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+        generate(TIMEMORY_STRINGIZE(func), __VA_ARGS__)
+
+///
+/// TIMEMORY_CXX_GOTCHA + ability to pass priority and tool name
+///
+#define TIMEMORY_CXX_GOTCHA_TOOL(type, idx, func, ...)                                   \
+    type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
+                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+        generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)), __VA_ARGS__)

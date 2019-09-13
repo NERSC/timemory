@@ -32,6 +32,8 @@ endif()
 
 message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
 
+add_subdirectory(external)
+
 add_googletest(macro_tests
     DISCOVER_TESTS
     SOURCES         macro_tests.cpp
@@ -117,3 +119,11 @@ if(_HAS_TCMALLOC)
         LINK_LIBRARIES  timemory-headers    timemory-arch   timemory-compile-options
                         timemory-gperftools-heap)
 endif()
+
+add_googletest(gotcha_tests
+    DISCOVER_TESTS
+    SOURCES         gotcha_tests.cpp
+    LINK_LIBRARIES  timemory-headers    timemory-compile-options
+                    timemory-gotcha     timemory-mpi
+                    timemory-papi       timemory-vector
+                    timemory-arch       gotcha-tests-lib)

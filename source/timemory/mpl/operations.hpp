@@ -955,6 +955,19 @@ struct serialization
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(base_type& obj, _Archive& ar, const unsigned int version)
     {
         auto _disp = static_cast<const Type&>(obj).get_display();
@@ -968,6 +981,11 @@ struct serialization
            serializer::make_nvp("unit.value", Type::unit()),
            serializer::make_nvp("unit.repr", Type::display_unit()));
         consume_parameters(version);
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    serialization(base_type&, _Archive&, const unsigned int)
+    {
     }
 };
 

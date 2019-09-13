@@ -357,9 +357,6 @@ void tim::storage<ObjectType>::external_print(std::false_type)
     {
         merge();
 
-        if(empty())
-            return;
-
         auto _iter_beg = _data().graph().begin();
         auto _iter_end = _data().graph().end();
         _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
@@ -625,8 +622,43 @@ void tim::storage<ObjectType>::external_print(std::true_type)
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize(std::false_type, Archive&, const unsigned int)
+tim::storage<ObjectType>::serialize_me(std::false_type, Archive& ar,
+                                       const unsigned int version)
 {
+    using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
+    using array_type = std::deque<tuple_type>;
+
+    // convert graph to a deque
+    auto convert_graph = [&]() {
+        array_type _list;
+        for(const auto& itr : _data().graph())
+        {
+            if(itr.depth() < 0)
+                continue;
+            _list.push_back(itr);
+        }
+        return _list;
+    };
+
+    auto graph_list = convert_graph();
+    ar(serializer::make_nvp("type", ObjectType::label()),
+       serializer::make_nvp("description", ObjectType::description()),
+       serializer::make_nvp("unit_value", ObjectType::unit()),
+       serializer::make_nvp("unit_repr", ObjectType::display_unit()));
+    ObjectType::serialization_policy(ar, version);
+    ar.setNextName("graph");
+    ar.startNode();
+    ar.makeArray();
+    for(auto& itr : graph_list)
+    {
+        ar.startNode();
+        ar(serializer::make_nvp("hash", std::get<0>(itr)),
+           serializer::make_nvp("prefix", std::get<2>(itr)),
+           serializer::make_nvp("depth", std::get<3>(itr)),
+           serializer::make_nvp("entry", std::get<1>(itr)));
+        ar.finishNode();
+    }
+    ar.finishNode();
 }
 
 //======================================================================================//
@@ -634,8 +666,8 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive&, const unsigned in
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
-                                    const unsigned int version)
+tim::storage<ObjectType>::serialize_me(std::true_type, Archive& ar,
+                                       const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::deque<tuple_type>;

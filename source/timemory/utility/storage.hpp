@@ -371,36 +371,11 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    template <typename Archive>
-    void serialize(Archive& ar, const unsigned int version)
-    {
-        typename tim::trait::array_serialization<ObjectType>::type type;
-        constexpr auto uses_external = trait::external_output_handling<ObjectType>::value;
-        if(!uses_external)
-            serialize<Archive>(type, ar, version);
-    }
-
-    //----------------------------------------------------------------------------------//
-    //
     void print()
     {
         typename trait::external_output_handling<ObjectType>::type type;
         external_print(type);
     }
-
-private:
-    //----------------------------------------------------------------------------------//
-    //
-    template <typename _Archive>
-    void _serialize(_Archive& ar)
-    {
-        auto _label = ObjectType::label();
-        if(singleton_t::is_master(this))
-            merge();
-        ar(cereal::make_nvp(_label, *this));
-    }
-
-    friend class manager;
 
 public:
     //----------------------------------------------------------------------------------//
@@ -444,6 +419,64 @@ protected:
 
     void merge(this_type* itr);
 
+protected:
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Tp>
+    struct write_serialization
+    {
+        template <typename _Up>
+        struct is_enabled
+        {
+            using _Vp = typename _Up::value_type;
+            static constexpr bool value =
+                (trait::is_available<_Up>::value &&
+                 !(trait::external_output_handling<_Up>::value) &&
+                 !(std::is_same<_Vp, void>::value));
+        };
+
+        using storage_t = this_type;
+
+        template <typename _Archive, typename _Type = ObjectType,
+                  typename std::enable_if<(is_enabled<_Type>::value), char>::type = 0>
+        static void serialize(storage_t& _obj, _Archive& ar, const unsigned int version)
+        {
+            typename tim::trait::array_serialization<ObjectType>::type type;
+            _obj.serialize_me(type, ar, version);
+        }
+
+        template <typename _Archive, typename _Type = ObjectType,
+                  typename std::enable_if<!(is_enabled<_Type>::value), char>::type = 0>
+        static void serialize(storage_t&, _Archive&, const unsigned int)
+        {
+        }
+    };
+
+    friend struct write_serialization<this_type>;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive>
+    void serialize(_Archive& ar, const unsigned int version)
+    {
+        write_serialization<this_type>::serialize(*this, ar, version);
+    }
+
+private:
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive>
+    void _serialize(_Archive& ar)
+    {
+        auto _label = ObjectType::label();
+        if(singleton_t::is_master(this))
+            merge();
+        ar(cereal::make_nvp(_label, *this));
+    }
+
+    friend class manager;
+
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
     static singleton_t& get_noninit_singleton()
@@ -459,11 +492,11 @@ private:
 
     // tim::trait::array_serialization<ObjectType>::type == TRUE
     template <typename Archive>
-    void serialize(std::true_type, Archive&, const unsigned int);
+    void serialize_me(std::true_type, Archive&, const unsigned int);
 
     // tim::trait::array_serialization<ObjectType>::type == FALSE
     template <typename Archive>
-    void serialize(std::false_type, Archive&, const unsigned int);
+    void serialize_me(std::false_type, Archive&, const unsigned int);
 
     // tim::trait::external_output_handling<ObjectType>::type == TRUE
     void external_print(std::true_type);
