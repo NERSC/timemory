@@ -769,7 +769,7 @@ public:
         return base<Type>(lhs) -= rhs;
     }
 
-    friend std::ostream& operator<<(std::ostream& os, const this_type& obj) { return os; }
+    friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
     //----------------------------------------------------------------------------------//
     // serialization
