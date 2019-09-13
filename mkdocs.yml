@@ -24,17 +24,44 @@ nav:
   - Doxygen: doxygen-docs/index.html
 
 #theme: readthedocs
+#theme: alabaster
 #theme: bootswatch
 #theme: windmill
 #theme: moonstone
 #theme: ivory
-#theme: alabaster
 
 #theme: nature
-theme: cinder
+#theme: cinder
 #theme: inspired
 #theme: cluster
 #theme: juice
+
+## has horizontal
+# theme: windmill
+
+# theme: nature
+# theme: moonstone
+# theme: material
+# theme: juice
+# theme: ivory
+# theme: inspired
+# theme: cluster
+theme: cinder
+# theme: amelia
+# theme: cerulean
+# theme: cosmo
+# theme: cyborg
+# theme: flatly
+# theme: journal
+# theme: readable
+# theme: simplex
+# theme: slate
+# theme: spacelab
+# theme: united
+# theme: yeti
+# theme: bootstrap4
+# theme: bootstrap
+# theme: alabaster
 
 #markdown_extensions:
 #    - smarty
