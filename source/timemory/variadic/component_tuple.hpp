@@ -99,10 +99,10 @@ class component_tuple
         };
     };
 
-	template <typename _Tuple>
-	using data_value_t = typename _impl::_data_tuple<_Tuple>::value_type;
     template <typename _Tuple>
-    using data_label_t = typename _impl::_data_tuple<_Tuple>::label_type;
+    using data_value_t = typename _impl::template _data_tuple<_Tuple>::value_type;
+    template <typename _Tuple>
+    using data_label_t = typename _impl::template _data_tuple<_Tuple>::label_type;
 
 public:
     using size_type        = int64_t;

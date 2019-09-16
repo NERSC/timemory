@@ -98,49 +98,21 @@ ENDMACRO()
 
 
 #-----------------------------------------------------------------------
-# GENERAL
-#-----------------------------------------------------------------------
-# function add_feature(<NAME> <DOCSTRING>)
-#          Add a project feature, whose activation is specified by the
-#          existence of the variable <NAME>, to the list of enabled/disabled
-#          features, plus a docstring describing the feature
+# function add_enabled_interface(<NAME>)
+#          Mark an interface library as enabled
 #
-FUNCTION(ADD_FEATURE _var _description)
-  set(EXTRA_DESC "")
-  foreach(currentArg ${ARGN})
-      if(NOT "${currentArg}" STREQUAL "${_var}" AND
-         NOT "${currentArg}" STREQUAL "${_description}")
-          set(EXTRA_DESC "${EXTA_DESC}${currentArg}")
-      endif()
-  endforeach()
-
-  set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_FEATURES ${_var})
-  set_property(GLOBAL PROPERTY ${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
-ENDFUNCTION()
-
-
 FUNCTION(ADD_ENABLED_INTERFACE _var)
     set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_ENABLED_INTERFACES ${_var})
 ENDFUNCTION()
 
+
+#-----------------------------------------------------------------------
+# function add_disabled_interface(<NAME>)
+#          Mark an interface as disabled
+#
 FUNCTION(ADD_DISABLED_INTERFACE _var)
     set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_DISABLED_INTERFACES ${_var})
 ENDFUNCTION()
-
-
-#----------------------------------------------------------------------------------------#
-# function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
-#          Add an option and add as a feature if NO_FEATURE is not provided
-#
-FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
-    SET(_FEATURE ${ARGN})
-    OPTION(${_NAME} "${_MESSAGE}" ${_DEFAULT})
-    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
-        ADD_FEATURE(${_NAME} "${_MESSAGE}")
-    ELSE()
-        MARK_AS_ADVANCED(${_NAME})
-    ENDIF()
-ENDFUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
 
 
 #------------------------------------------------------------------------------#
@@ -423,6 +395,41 @@ macro(BUILD_LIBRARY)
     unset(COMPILED_TYPES)
 
 endmacro(BUILD_LIBRARY)
+
+
+#-----------------------------------------------------------------------
+# function add_feature(<NAME> <DOCSTRING>)
+#          Add a project feature, whose activation is specified by the
+#          existence of the variable <NAME>, to the list of enabled/disabled
+#          features, plus a docstring describing the feature
+#
+FUNCTION(ADD_FEATURE _var _description)
+  set(EXTRA_DESC "")
+  foreach(currentArg ${ARGN})
+      if(NOT "${currentArg}" STREQUAL "${_var}" AND
+         NOT "${currentArg}" STREQUAL "${_description}")
+          set(EXTRA_DESC "${EXTA_DESC}${currentArg}")
+      endif()
+  endforeach()
+
+  set_property(GLOBAL APPEND PROPERTY ${PROJECT_NAME}_FEATURES ${_var})
+  set_property(GLOBAL PROPERTY ${_var}_DESCRIPTION "${_description}${EXTRA_DESC}")
+ENDFUNCTION()
+
+
+#----------------------------------------------------------------------------------------#
+# function add_option(<OPTION_NAME> <DOCSRING> <DEFAULT_SETTING> [NO_FEATURE])
+#          Add an option and add as a feature if NO_FEATURE is not provided
+#
+FUNCTION(ADD_OPTION _NAME _MESSAGE _DEFAULT)
+    SET(_FEATURE ${ARGN})
+    OPTION(${_NAME} "${_MESSAGE}" ${_DEFAULT})
+    IF(NOT "${_FEATURE}" STREQUAL "NO_FEATURE")
+        ADD_FEATURE(${_NAME} "${_MESSAGE}")
+    ELSE()
+        MARK_AS_ADVANCED(${_NAME})
+    ENDIF()
+ENDFUNCTION()
 
 
 #----------------------------------------------------------------------------------------#

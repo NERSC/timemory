@@ -55,13 +55,13 @@ work(int64_t nitr, _Func&& func, _Incr&& incr)
 std::tuple<float, double>
 do_work(int64_t nitr, const std::pair<float, double>& p)
 {
-    auto fsum =
-        work<float>(nitr, [](float val) -> float { return cosf(val); },
-                    [&](float val, int64_t i) -> float { return val + p.first * i; });
+    auto fsum = work<float>(
+        nitr, [](float val) -> float { return cosf(val); },
+        [&](float val, int64_t i) -> float { return val + p.first * i; });
 
-    auto dsum =
-        work<double>(nitr, [](double val) -> double { return cos(val); },
-                     [&](double val, int64_t i) -> double { return val + p.second * i; });
+    auto dsum = work<double>(
+        nitr, [](double val) -> double { return cos(val); },
+        [&](double val, int64_t i) -> double { return val + p.second * i; });
 
     return std::tuple<float, double>(fsum, dsum);
 }
