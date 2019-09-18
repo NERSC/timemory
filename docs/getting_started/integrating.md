@@ -352,7 +352,7 @@ Linux:
 
 ```shell
 export TIMEMORY_COMPONENTS="real_clock, cpu_clock, cpu_util, cpu_roofline_dp_flops"
-export LD_PRELOAD=/usr/local/lib/libtimemory-preload.so
+export LD_PRELOAD=/usr/local/lib/libtimemory.so
 ./myexe
 ```
 
@@ -361,6 +361,6 @@ macOS:
 ```shell
 export TIMEMORY_COMPONENTS="real_clock, cpu_clock, cpu_util, cpu_roofline_dp_flops"
 export DYLD_FORCE_FLAT_NAMESPACE=1
-export DYLD_INSERT_LIBRARIES=/usr/local/lib/libtimemory-preload.dylib
+export DYLD_INSERT_LIBRARIES=/usr/local/lib/libtimemory.dylib
 ./myexe
 ```
