@@ -72,7 +72,7 @@ fibonacci(long n)
 void
 do_sleep(long n)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
 }
 
@@ -80,7 +80,7 @@ do_sleep(long n)
 void
 consume(long n)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     // a mutex held by one lock
     mutex_t mutex;
     // acquire lock
@@ -101,7 +101,7 @@ template <typename _Tp>
 size_t
 random_entry(const std::vector<_Tp>& v)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::mt19937 rng;
     rng.seed(std::random_device()());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
@@ -112,7 +112,7 @@ random_entry(const std::vector<_Tp>& v)
 void
 allocate(int64_t nfactor)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::vector<int64_t> v(nfactor * page_size, 35);
     auto                 ret  = fibonacci(0);
     long                 nfib = details::random_entry(v);
@@ -152,7 +152,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "100", 1);
-        TIMEMORY_BLANK_OBJECT(auto_tuple_t, details::get_test_name(), "_", 0);
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name(), "_", 0);
         details::consume(1000);
         details::allocate(50);
     }
@@ -160,7 +160,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "500", 1);
-        TIMEMORY_BLANK_OBJECT(auto_list_t, details::get_test_name(), "_", 1);
+        TIMEMORY_BLANK_MARKER(auto_list_t, details::get_test_name(), "_", 1);
         details::consume(1000);
         details::allocate(50);
     }
@@ -168,7 +168,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "2000", 1);
-        TIMEMORY_BLANK_OBJECT(auto_hybrid_t, details::get_test_name(), "_", 2);
+        TIMEMORY_BLANK_MARKER(auto_hybrid_t, details::get_test_name(), "_", 2);
         details::consume(1000);
         details::allocate(50);
     }

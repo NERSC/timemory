@@ -328,54 +328,54 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
                 __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_OBJECT(c_str, ...)
+/*! \def TIMEMORY_BASIC_MARKER(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_BASIC_OBJECT("", WALL_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_BASIC_MARKER("", WALL_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_OBJECT(timer);
+ *          FREE_TIMEMORY_MARKER(timer);
  *      }
  *
  */
-#        define TIMEMORY_BASIC_OBJECT(c_str, ...)                                        \
+#        define TIMEMORY_BASIC_MARKER(c_str, ...)                                        \
             c_timemory_create_auto_tuple(                                                \
                 c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
                 __LINE__, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BLANK_OBJECT(c_str, ...)
+/*! \def TIMEMORY_BLANK_MARKER(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_BLANK_OBJECT("id", WALL_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_BLANK_MARKER("id", WALL_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_OBJECT(timer);
+ *          FREE_TIMEMORY_MARKER(timer);
  *      }
  *
  */
-#        define TIMEMORY_BLANK_OBJECT(c_str, ...)                                        \
+#        define TIMEMORY_BLANK_MARKER(c_str, ...)                                        \
             c_timemory_create_auto_tuple(c_str, __LINE__, __VA_ARGS__,                   \
                                          TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_OBJECT(c_str, ...)
+/*! \def TIMEMORY_MARKER(c_str, ...)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_OBJECT("", WALL_CLOCK, SYS_CLOCK, CPU_CLOCK);
+ *          void* timer = new TIMEMORY_MARKER("", WALL_CLOCK, SYS_CLOCK, CPU_CLOCK);
  *          ...
- *          FREE_TIMEMORY_OBJECT(timer);
+ *          FREE_TIMEMORY_MARKER(timer);
  *      }
  *
  */
-#        define TIMEMORY_OBJECT(c_str, ...)                                              \
+#        define TIMEMORY_MARKER(c_str, ...)                                              \
             c_timemory_create_auto_tuple(                                                \
                 c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__,       \
                 __VA_ARGS__, TIMEMORY_COMPONENTS_END)
@@ -396,18 +396,18 @@ c_timemory_auto_str(const char*, const char*, const char*, int);
             c_timemory_delete_auto_timer((void*) ctimer)
 
 //--------------------------------------------------------------------------------------//
-/*! \def FREE_TIMEMORY_OBJECT(ctimer)
+/*! \def FREE_TIMEMORY_MARKER(ctimer)
  *
  * Usage:
  *
  *      void some_func()
  *      {
- *          void* timer = new TIMEMORY_OBJECT("", WALL_CLOCK);
+ *          void* timer = new TIMEMORY_MARKER("", WALL_CLOCK);
  *          ...
- *          FREE_TIMEMORY_OBJECT(timer);
+ *          FREE_TIMEMORY_MARKER(timer);
  *      }
  */
-#        define FREE_TIMEMORY_OBJECT(ctimer) c_timemory_delete_auto_tuple((void*) ctimer)
+#        define FREE_TIMEMORY_MARKER(ctimer) c_timemory_delete_auto_tuple((void*) ctimer)
 
 //--------------------------------------------------------------------------------------//
 

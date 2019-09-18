@@ -288,60 +288,6 @@ auto_tuple<Types...>::~auto_tuple()
 
 //======================================================================================//
 
-//  DEPRECATED use macros in timemory/variadic/macros.hpp!
-/// DEPRECATED
-#define TIMEMORY_BLANK_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BLANK_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_AUTO_TUPLE(auto_tuple_type, ...)                                        \
-    TIMEMORY_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// caliper versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
-
-/// DEPRECATED
-#define TIMEMORY_BLANK_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
-    TIMEMORY_BLANK_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_BASIC_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                      \
-    TIMEMORY_BASIC_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_AUTO_TUPLE_CALIPER(id, auto_tuple_type, ...)                            \
-    TIMEMORY_CALIPER(id, auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// instance versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
-
-/// DEPRECATED
-#define TIMEMORY_BLANK_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
-    TIMEMORY_BLANK_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_BASIC_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                         \
-    TIMEMORY_BASIC_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_AUTO_TUPLE_INSTANCE(auto_tuple_type, ...)                               \
-    TIMEMORY_INSTANCE(auto_tuple_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// debug versions -- DEPRECATED use macros in timemory/variadic/macros.hpp!
-
-/// DEPRECATED
-#define TIMEMORY_DEBUG_BASIC_AUTO_TUPLE(auto_tuple_type, ...)                            \
-    TIMEMORY_DEBUG_BASIC_OBJECT(auto_tuple_type, __VA_ARGS__)
-
-/// DEPRECATED
-#define TIMEMORY_DEBUG_AUTO_TUPLE(auto_tuple_type, ...)                                  \
-    TIMEMORY_DEBUG_OBJECT(auto_tuple_type, __VA_ARGS__)
-
 //--------------------------------------------------------------------------------------//
 // variadic versions
 

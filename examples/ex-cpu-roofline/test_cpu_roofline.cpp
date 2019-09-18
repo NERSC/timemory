@@ -131,7 +131,7 @@ main(int argc, char** argv)
     //
     // overall timing
     //
-    auto _main = TIMEMORY_BLANK_INSTANCE(auto_tuple_t, "overall_timer");
+    auto _main = TIMEMORY_BLANK_HANDLE(auto_tuple_t, "overall_timer");
     _main.report_at_exit(true);
     real_clock total;
     total.start();

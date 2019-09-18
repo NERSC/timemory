@@ -82,7 +82,7 @@ fibonacci(int32_t n)
 int64_t
 time_fibonacci(int32_t n)
 {
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
     return fibonacci(n);
 }
 //--------------------------------------------------------------------------------------//
@@ -206,7 +206,7 @@ void
 test_1_usage()
 {
     print_info(__FUNCTION__);
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
 
     full_measurement_t _use_beg("");
     full_measurement_t _use_delta("");
@@ -304,10 +304,10 @@ test_2_timing()
     std::stringstream    lambda_ss;
 
     {
-        TIMEMORY_OBJECT(auto_tuple_t, "");
+        TIMEMORY_MARKER(auto_tuple_t, "");
 
         auto run_fib = [&](long n) {
-            TIMEMORY_OBJECT(auto_tuple_t, "");
+            TIMEMORY_MARKER(auto_tuple_t, "");
             measurement_t _tm("", false);
             _tm.start();
             ret += time_fibonacci(n);
@@ -362,7 +362,7 @@ test_3_auto_tuple()
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n) {
-        // TIMEMORY_OBJECT(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+        // TIMEMORY_MARKER(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
         ret += time_fibonacci(n);
     };
 
@@ -431,12 +431,12 @@ int main()
 
     {
         // uses C++ scoping for start/stop
-        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_A");
+        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_A");
         func_A();
     }
 
     {
-        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_B");
+        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_B");
         func_B();
     }
 

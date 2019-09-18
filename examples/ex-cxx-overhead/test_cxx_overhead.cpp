@@ -129,7 +129,7 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        TIMEMORY_BLANK_OBJECT(auto_tuple_t, __FUNCTION__);
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, __FUNCTION__);
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
     }
@@ -144,7 +144,7 @@ fibonacci(int64_t n, int64_t cutoff)
 {
     if(n > cutoff)
     {
-        TIMEMORY_BASIC_OBJECT(auto_tuple_t, "[", n, "]");
+        TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", n, "]");
         return (n < 2) ? n
                        : (fibonacci<_Tp>(n - 1, cutoff) + fibonacci<_Tp>(n - 2, cutoff));
     }

@@ -432,17 +432,19 @@ private:
         typedef _Ret (*func_t)(_Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
 
-        auto _atype = apply<std::string>::join(", ", demangle(typeid(_args).name())...);
-        auto _rtype = demangle(typeid(_Ret).name());
-
-        if(settings::verbose() > 1 || settings::debug())
+#    if defined(DEBUG)
+        if(settings::verbose() > 2 || settings::debug())
         {
+            auto _atype =
+                apply<std::string>::join(", ", demangle(typeid(_args).name())...);
+            auto _rtype = demangle(typeid(_Ret).name());
             printf("\n");
             printf("[%s]>   wrappee: %s\n", __FUNCTION__,
                    demangle(typeid(_orig).name()).c_str());
             printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(),
                    _atype.c_str());
         }
+#    endif
 
         if(_orig)
         {
@@ -456,13 +458,15 @@ private:
 
             _obj.stop();
 
-            if(settings::verbose() > 1 || settings::debug())
+#    if defined(DEBUG)
+            if(settings::verbose() > 2 || settings::debug())
             {
                 auto _sargs = apply<std::string>::join(", ", _args...);
                 std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs << ") "
                           << "result: " << _ret << "\n"
                           << std::endl;
             }
+#    endif
 
             return _ret;
         }

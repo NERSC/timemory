@@ -173,7 +173,7 @@ int
 main(int argc, char** argv)
 {
     init();
-    TIMEMORY_BASIC_OBJECT(gotcha_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(gotcha_tuple_t, "");
 
     settings::width()        = 12;
     settings::precision()    = 6;

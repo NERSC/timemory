@@ -15,7 +15,7 @@ In C++ and Python, TiMemory can be added in one line of code (once the type is d
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss>;
 void some_function()
 {
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
     // ...
 }
 ```
@@ -26,7 +26,7 @@ void some_function()
 using auto_tuple_t = tim::auto_tuple<real_clock, cpu_clock, peak_rss, cuda_event>;
 void some_function()
 {
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
     // ...
 }
 ```
@@ -44,9 +44,9 @@ def some_function():
 In C, TiMemory requires only two lines of code
 
 ```c
-void* timer = TIMEMORY_OBJECT("", WALL_CLOCK, SYS_CLOCK, USER_CLOCK, PEAK_RSS, CUDA_EVENT);
+void* timer = TIMEMORY_MARKER("", WALL_CLOCK, SYS_CLOCK, USER_CLOCK, PEAK_RSS, CUDA_EVENT);
 // ...
-FREE_TIMEMORY_OBJECT(timer);
+FREE_TIMEMORY_MARKER(timer);
 ```
 
 When the application terminates, output to text and JSON is automated or controlled via
@@ -98,7 +98,7 @@ using comp_tuple_t = typename auto_tuple_t::component_type;
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_OBJECT(real_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(real_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 

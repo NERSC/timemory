@@ -29,8 +29,8 @@
  * Usage with macros (recommended):
  *    \param TIMEMORY_AUTO_TIMER("")
  *    \param TIMEMORY_BASIC_AUTO_TIMER("")
- *    \param auto t = TIMEMORY_AUTO_TIMER_INSTANCE("")
- *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_INSTANCE("")
+ *    \param auto t = TIMEMORY_AUTO_TIMER_HANDLE("")
+ *    \param auto t = TIMEMORY_BASIC_AUTO_TIMER_HANDLE("")
  */
 
 #pragma once
@@ -63,29 +63,29 @@ using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TIMER(...) TIMEMORY_BLANK_OBJECT(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_TIMER(...) TIMEMORY_BLANK_MARKER(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TIMER(...) TIMEMORY_BASIC_OBJECT(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BASIC_AUTO_TIMER(...) TIMEMORY_BASIC_MARKER(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_OBJECT(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_MARKER(tim::auto_timer, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // instance versions
 
-#define TIMEMORY_BLANK_AUTO_TIMER_INSTANCE(...)                                          \
-    TIMEMORY_BLANK_INSTANCE(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)                                            \
+    TIMEMORY_BLANK_HANDLE(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TIMER_INSTANCE(...)                                          \
-    TIMEMORY_BASIC_INSTANCE(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)                                            \
+    TIMEMORY_BASIC_HANDLE(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER_INSTANCE(...) TIMEMORY_INSTANCE(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER_HANDLE(...) TIMEMORY_HANDLE(tim::auto_timer, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // debug versions
 
 #define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)                                             \
-    TIMEMORY_DEBUG_BASIC_OBJECT(tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_DEBUG_BASIC_MARKER(tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_AUTO_TIMER(...) TIMEMORY_DEBUG_OBJECT(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_DEBUG_AUTO_TIMER(...) TIMEMORY_DEBUG_MARKER(tim::auto_timer, __VA_ARGS__)
 
 //======================================================================================//

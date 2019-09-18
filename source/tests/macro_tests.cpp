@@ -98,7 +98,7 @@ class macro_tests : public ::testing::Test
 
 TEST_F(macro_tests, blank_object)
 {
-    TIMEMORY_BLANK_OBJECT(auto_tuple_t, details::get_test_name());
+    TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
     timemory_variable_101.stop();
@@ -123,7 +123,7 @@ TEST_F(macro_tests, blank_object)
 
 TEST_F(macro_tests, basic_object)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "_", details::get_test_name());
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "_", details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
     timemory_variable_126.stop();

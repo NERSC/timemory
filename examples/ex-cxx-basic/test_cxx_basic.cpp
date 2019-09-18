@@ -95,7 +95,7 @@ main(int argc, char** argv)
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_OBJECT(real_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(real_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 

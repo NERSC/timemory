@@ -115,27 +115,27 @@ using str = tim::apply<std::string>;
 
 //======================================================================================//
 //
-//                      OBJECT MACROS
+//                      MARKER MACROS
 //
 //======================================================================================//
 
-#    define TIMEMORY_BLANK_OBJECT(type, ...)                                             \
+#    define TIMEMORY_BLANK_MARKER(type, ...)                                             \
         type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BASIC_OBJECT(type, ...)                                             \
+#    define TIMEMORY_BASIC_MARKER(type, ...)                                             \
         type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), \
                                   __LINE__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_OBJECT(type, ...)                                                   \
+#    define TIMEMORY_MARKER(type, ...)                                                   \
         type _AUTO_NAME(__LINE__)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
 
 //======================================================================================//
 //
-//                      OBJECT POINTER MACROS
+//                      POINTER MACROS
 //
 //======================================================================================//
 
@@ -213,23 +213,21 @@ using str = tim::apply<std::string>;
 
 //======================================================================================//
 //
-//                      INSTANCE MACROS
+//                      HANDLE MACROS
 //
 //======================================================================================//
 
-//--------------------------------------------------------------------------------------//
-
-#    define TIMEMORY_BLANK_INSTANCE(type, ...)                                           \
+#    define TIMEMORY_BLANK_HANDLE(type, ...)                                             \
         type(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_BASIC_INSTANCE(type, ...)                                           \
+#    define TIMEMORY_BASIC_HANDLE(type, ...)                                             \
         type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_INSTANCE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+#    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
 
 //======================================================================================//
 //
@@ -241,39 +239,34 @@ using str = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#        define TIMEMORY_DEBUG_BASIC_OBJECT(type, ...)                                   \
-            type _AUTO_NAME(__LINE__)(                                                   \
-                TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
+#        define TIMEMORY_DEBUG_BLANK_MARKER(type, ...)                                   \
+            TIMEMORY_BASIC_MARKER(type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
-#        define TIMEMORY_DEBUG_OBJECT(type, ...)                                         \
-            type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__,           \
-                                                    __VA_ARGS__,                         \
-                                                    _AUTO_STR(__FILE__, _LINE_STRING)),  \
-                                      __LINE__)
+#        define TIMEMORY_DEBUG_BASIC_MARKER(type, ...)                                   \
+            TIMEMORY_BASIC_MARKER(type, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
+
+#        define TIMEMORY_DEBUG_MARKER(type, ...) TIMEMORY_MARKER(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
 #    else
-#        define TIMEMORY_DEBUG_BASIC_OBJECT(type, ...)
-#        define TIMEMORY_DEBUG_OBJECT(type, ...)
+#        define TIMEMORY_DEBUG_BLANK_MARKER(type, ...)
+#        define TIMEMORY_DEBUG_BASIC_MARKER(type, ...)
+#        define TIMEMORY_DEBUG_MARKER(type, ...)
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-/// \deprecated
-#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                               \
-        TIMEMORY_CALIPER_APPLY(id, mark_begin, stream)
-
-//--------------------------------------------------------------------------------------//
-
-/// \deprecated
-#    define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                                 \
-        TIMEMORY_CALIPER_APPLY(id, mark_end, stream)
-
-//--------------------------------------------------------------------------------------//
-
 #    define TIMEMORY_CONFIGURE(type, ...) type::configure(__VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+// deprecated macros
+#    include "timemory/details/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 

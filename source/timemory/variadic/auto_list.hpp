@@ -328,48 +328,6 @@ auto_list<Types...>::~auto_list()
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_BLANK_OBJECT(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST(auto_list_type, ...)                                          \
-    TIMEMORY_OBJECT(auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// caliper versions
-
-#define TIMEMORY_BLANK_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
-    TIMEMORY_BLANK_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
-    TIMEMORY_BASIC_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST_CALIPER(id, auto_list_type, ...)                              \
-    TIMEMORY_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// instance versions
-
-#define TIMEMORY_BLANK_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
-    TIMEMORY_BLANK_INSTANCE(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
-    TIMEMORY_BASIC_INSTANCE(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST_INSTANCE(auto_list_type, ...)                                 \
-    TIMEMORY_INSTANCE(auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// debug versions
-
-#define TIMEMORY_DEBUG_BASIC_AUTO_LIST(auto_list_type, ...)                              \
-    TIMEMORY_DEBUG_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_DEBUG_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_DEBUG_OBJECT(auto_list_type, __VA_ARGS__)
-
 //--------------------------------------------------------------------------------------//
 // variadic versions
 

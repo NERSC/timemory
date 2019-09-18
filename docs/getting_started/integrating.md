@@ -156,7 +156,7 @@ void                              print_env() {}
 template <typename... _Args> void timemory_init(_Args...) {}
 void                              timemory_finalize() {}
 
-/// this provides "functionality" for *_INSTANCE macros
+/// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
@@ -183,9 +183,14 @@ struct dummy
 #    define TIMEMORY_LABEL(...) std::string("")
 
 // define an object
-#    define TIMEMORY_BLANK_OBJECT(...)
-#    define TIMEMORY_BASIC_OBJECT(...)
-#    define TIMEMORY_OBJECT(...)
+#    define TIMEMORY_BLANK_MARKER(...)
+#    define TIMEMORY_BASIC_MARKER(...)
+#    define TIMEMORY_MARKER(...)
+
+// define an unique pointer object
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
 
 // define an object with a caliper reference
 #    define TIMEMORY_BLANK_CALIPER(...)
@@ -203,19 +208,14 @@ struct dummy
 #    define TIMEMORY_STATIC_CALIPER(...)
 
 // define an object
-#    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_INSTANCE(...) tim::dummy()
+#    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
+#    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
+#    define TIMEMORY_HANDLE(...) tim::dummy()
 
 // debug only
-#    define TIMEMORY_DEBUG_BLANK_OBJECT(...)
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
-
-// deprecated
-#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
-#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
-
+#    define TIMEMORY_DEBUG_BLANK_MARKER(...)
+#    define TIMEMORY_DEBUG_BASIC_MARKER(...)
+#    define TIMEMORY_DEBUG_MARKER(...)
 #endif
 ```
 
@@ -240,10 +240,10 @@ struct dummy
 #    define FREE_TIMEMORY_AUTO_TIMER(...)
 
 // modern
-#    define TIMEMORY_BASIC_OBJECT(...) NULL
-#    define TIMEMORY_BLANK_OBJECT(...) NULL
-#    define TIMEMORY_OBJECT(...) NULL
-#    define FREE_TIMEMORY_OBJECT(...)
+#    define TIMEMORY_BASIC_MARKER(...) NULL
+#    define TIMEMORY_BLANK_MARKER(...) NULL
+#    define TIMEMORY_MARKER(...) NULL
+#    define FREE_TIMEMORY_MARKER(...)
 
 #endif
 
