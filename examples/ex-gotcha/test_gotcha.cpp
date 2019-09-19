@@ -23,10 +23,6 @@
 // SOFTWARE.
 //
 
-#if !defined(DEBUG)
-#    define DEBUG
-#endif
-
 #include "test_gotcha_lib.hpp"
 #include <timemory/timemory.hpp>
 
@@ -179,7 +175,7 @@ main(int argc, char** argv)
     settings::precision()    = 6;
     settings::timing_units() = "msec";
     settings::memory_units() = "kB";
-    settings::verbose()      = 2;
+    settings::verbose()      = 1;
     tim::timemory_init(argc, argv);  // parses environment, sets output paths
 
     puts("Testing...");

@@ -435,14 +435,18 @@ private:
 #    if defined(DEBUG)
         if(settings::verbose() > 2 || settings::debug())
         {
-            auto _atype =
-                apply<std::string>::join(", ", demangle(typeid(_args).name())...);
-            auto _rtype = demangle(typeid(_Ret).name());
-            printf("\n");
-            printf("[%s]>   wrappee: %s\n", __FUNCTION__,
-                   demangle(typeid(_orig).name()).c_str());
-            printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(),
-                   _atype.c_str());
+            static std::atomic<int32_t> _count;
+            if(_count++ < 50)
+            {
+                auto _atype =
+                    apply<std::string>::join(", ", demangle(typeid(_args).name())...);
+                auto _rtype = demangle(typeid(_Ret).name());
+                printf("\n");
+                printf("[%s]>   wrappee: %s\n", __FUNCTION__,
+                       demangle(typeid(_orig).name()).c_str());
+                printf("[%s]> signature: %s (*)(%s)\n", __FUNCTION__, _rtype.c_str(),
+                       _atype.c_str());
+            }
         }
 #    endif
 
@@ -461,10 +465,15 @@ private:
 #    if defined(DEBUG)
             if(settings::verbose() > 2 || settings::debug())
             {
-                auto _sargs = apply<std::string>::join(", ", _args...);
-                std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs << ") "
-                          << "result: " << _ret << "\n"
-                          << std::endl;
+                static std::atomic<int32_t> _count;
+                if(_count++ < 50)
+                {
+                    auto _sargs = apply<std::string>::join(", ", _args...);
+                    std::cout << "[" << __FUNCTION__ << "]>      args: (" << _sargs
+                              << ") "
+                              << "result: " << _ret << "\n"
+                              << std::endl;
+                }
             }
 #    endif
 
