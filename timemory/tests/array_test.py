@@ -236,7 +236,7 @@ def measure(name, _time = 1):
 # ---------------------------------------------------------------------------- #
 def run_test():
     timemory.enable_signal_detection()
-    timemory.options.output_dir = "test_output"
+    timemory.settings.output_dir = "test_output"
 
     rss = timemory.rss_usage()
     rss.record()
@@ -251,7 +251,7 @@ def run_test():
 
     manager = timemory.manager()
     print('\nTiming report:\n{}'.format(manager))
-    options.set_output("timing_array_test/")
+    timemory.settings.output_path = "timemory_array_test"
     #manager.report(ign_cutoff = True)
     #plotting.plot(files=[fserial], display=False, output_dir=options.output_dir)
 

@@ -52,6 +52,7 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/macros.hpp"
@@ -656,29 +657,29 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  default="", type=str,
                                  help="Filename prefix without path")
 
-             parser.add_argument('--disable-timers', required=False,
+             parser.add_argument('--disable', required=False,
                                  action='store_false',
-                                 dest='use_timers',
-                                 help="Disable timers for script")
+                                 dest='enabled',
+                                 help="Disable timemory for script")
 
-             parser.add_argument('--enable-timers', required=False,
+             parser.add_argument('--enable', required=False,
                                  action='store_true',
-                                 dest='use_timers', help="Enable timers for script")
+                                 dest='enabled', help="Enable timemory for script")
 
-             parser.add_argument('--disable-timer-serialization',
+             parser.add_argument('--disable-serialization',
                                  required=False, action='store_false',
-                                 dest='serial_file',
+                                 dest='serialize',
                                  help="Disable serialization for timers")
 
-             parser.add_argument('--enable-timer-serialization',
+             parser.add_argument('--enable-serialization',
                                  required=False, action='store_true',
-                                 dest='serial_file',
+                                 dest='serialize',
                                  help="Enable serialization for timers")
 
-             parser.add_argument('--max-timer-depth',
-                                 help="Maximum timer depth",
+             parser.add_argument('--max-depth',
+                                 help="Maximum depth",
                                  type=int,
-                                 default=timemory.options.default_max_depth())
+                                 default=timemory.settings.max_depth)
 
              parser.add_argument('--enable-dart',
                                  help="Print DartMeasurementFile tag for plots",
@@ -688,8 +689,8 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  help="Write a CTestNotes.cmake file for TiMemory ASCII output",
                                  required=False, action='store_true')
 
-             parser.set_defaults(use_timers=True)
-             parser.set_defaults(serial_file=True)
+             parser.set_defaults(enabled=True)
+             parser.set_defaults(serialize=True)
              parser.set_defaults(enable_dart=False)
              parser.set_defaults(write_ctest_notes=False)
              )",
@@ -709,19 +710,16 @@ parse_args(py::object args)
              import timemory
 
              # Function to add default output arguments
-             timemory.options.use_timers = args.use_timers
-             timemory.options.max_timer_depth = args.max_timer_depth
+             timemory.settings.enabled = args.enabled
+             timemory.settings.output_path = args.output_path
+             timemory.settings.output_prefix = args.output_prefix
+             timemory.settings.max_depth = args.max_depth
+             timemory.settings.json_output = args.serialize
              timemory.options.echo_dart = args.enable_dart
              timemory.options.ctest_notes = args.write_ctest_notes
-             timemory.options.output_path = args.output_path
-             timemory.options.output_prefix = args.output_prefix
-             timemory.toggle(args.use_timers)
-             timemory.set_max_depth(args.max_timer_depth)
-
-             _enable_serial = args.serial_file
+             _enable_serial = args.serialize
              )",
              py::globals(), locals);
-    tim::settings::json_output() = locals["_enable_serial"].cast<bool>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -971,6 +969,19 @@ struct dict<std::tuple<_Types...>>
     {
         return dict<_Types...>::construct(_tup);
     }
+};
+
+//======================================================================================//
+
+struct settings
+{
+    bool& suppress_parsing() { return ::tim::settings::suppress_parsing(); }
+    bool& enabled() { return ::tim::settings::enabled(); }
+    bool& auto_output() { return ::tim::settings::auto_output(); }
+    bool& file_output() { return ::tim::settings::file_output(); }
+    bool& text_output() { return ::tim::settings::text_output(); }
+    bool& json_output() { return ::tim::settings::json_output(); }
+    bool& cout_output() { return ::tim::settings::cout_output(); }
 };
 
 //======================================================================================//
