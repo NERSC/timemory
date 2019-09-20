@@ -16,7 +16,7 @@ environment:
   matrix:
     - PYTHON: 36
       CPP: 17
-      CONFIG: Debug
+      CONFIG: MinSizeRel
     - CONDA: 36
       CPP: 17
       CONFIG: Release
@@ -75,7 +75,7 @@ install:
         conda install -y -q pip setuptools scikit-build numpy matplotlib pillow
       }
       # pip installation
-      $env:TIMEMORY_DEBUG = 4
+      $env:TIMEMORY_VERBOSE = 2
       mkdir "C:\Users\appveyor\CTestTemp"
       $env:TEMP = "C:\Users\appveyor\CTestTemp"
 
