@@ -75,13 +75,14 @@ void customize_roofline(int64_t, int64_t, int64_t);
 int
 main(int argc, char** argv)
 {
+    tim::settings::verbose()     = 1;
     tim::settings::json_output() = true;
     tim::timemory_init(argc, argv);
     tim::print_env();
 
-    int64_t    num_threads   = NUM_THREADS;         // default number of threads
-    int64_t    working_size  = 32;                  // default working set size
-    int64_t    memory_factor = 16;                  // default multiple of max cache size
+    int64_t    num_threads   = 2;                   // default number of threads
+    int64_t    working_size  = 64;                  // default working set size
+    int64_t    memory_factor = 2;                   // default multiple of max cache size
     fib_list_t fib_values    = { { 35, 38, 43 } };  // default values for fibonacci calcs
 
     if(argc > 1)
@@ -292,7 +293,7 @@ customize_roofline(int64_t num_threads, int64_t working_size, int64_t memory_fac
         // set the label
         _counter.label = "vector_fma";
         // run the kernels (<4> is ideal for avx, <8> is ideal for KNL)
-        tim::ert::ops_main<2, 4, 6, 8, 16, 32>(_counter, fma_func, store_func);
+        tim::ert::ops_main<4, 8>(_counter, fma_func, store_func);
     };
 
     // set the callback

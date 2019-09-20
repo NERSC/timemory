@@ -228,7 +228,7 @@ def run_pyctest():
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
                 pyctest.BUILD_TYPE = "Debug"
-        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;")
+        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
@@ -354,13 +354,13 @@ def run_pyctest():
     pyctest.test(construct_name("test-cxx-overhead"),
                  construct_command(["./test_cxx_overhead"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                 "LABELS": pyctest.PROJECT_NAME})
+                  "LABELS": pyctest.PROJECT_NAME})
 
     pyctest.test(construct_name("test-cpu-roofline"),
                  construct_command(["./test_cpu_roofline"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                 "LABELS": pyctest.PROJECT_NAME,
-                 "TIMEOUT": "300"})
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
 
     pyctest.test(construct_name("test-caliper"),
                  construct_command(["./test_caliper"], args),
