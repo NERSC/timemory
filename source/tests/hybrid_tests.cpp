@@ -41,7 +41,6 @@
 using namespace tim::component;
 using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
-using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
@@ -58,10 +57,10 @@ static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.fir
 
 // acceptable absolute error
 static const float util_tolerance  = 2.5;
-static const float timer_tolerance = 0.015;
+static const float timer_tolerance = 0.02125;
 static const float peak_tolerance  = 5 * tim::units::MiB;
 // acceptable relative error
-static const float util_epsilon  = 0.1;
+static const float util_epsilon  = 0.5;
 static const float timer_epsilon = 0.02;
 
 #define CHECK_AVAILABLE(type)                                                            \
@@ -106,11 +105,9 @@ consume(long n)
     // associate but defer
     lock_t try_lk(mutex, std::defer_lock);
     // get current time
-    auto now = std::chrono::system_clock::now();
-    // get elapsed
-    auto until = now + std::chrono::milliseconds(n);
+    auto now = std::chrono::steady_clock::now();
     // try until time point
-    while(std::chrono::system_clock::now() < until)
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
         try_lk.try_lock();
 }
 

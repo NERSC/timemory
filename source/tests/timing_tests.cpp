@@ -32,12 +32,11 @@
 #include <thread>
 
 using namespace tim::component;
-using mutex_t   = std::mutex;
-using lock_t    = std::unique_lock<mutex_t>;
-using condvar_t = std::condition_variable;
+using mutex_t = std::mutex;
+using lock_t  = std::unique_lock<mutex_t>;
 
 static const double util_tolerance  = 2.5;
-static const double timer_tolerance = 0.01;
+static const double timer_tolerance = 0.015;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
@@ -77,11 +76,9 @@ consume(long n)
     // associate but defer
     lock_t try_lk(mutex, std::defer_lock);
     // get current time
-    auto now = std::chrono::system_clock::now();
-    // get elapsed
-    auto until = now + std::chrono::milliseconds(n);
+    auto now = std::chrono::steady_clock::now();
     // try until time point
-    while(std::chrono::system_clock::now() < until)
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
         try_lk.try_lock();
 }
 }  // namespace details
