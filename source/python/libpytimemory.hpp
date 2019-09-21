@@ -79,11 +79,10 @@ using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using auto_timer_t =
-    tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+using auto_timer_t = tim::auto_timer;
 
 using auto_usage_t =
-    tim::auto_tuple<current_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
+    tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                     voluntary_context_switch, priority_context_switch>;
 using auto_list_t = tim::complete_auto_list_t;
 
@@ -365,60 +364,25 @@ manager()
 //--------------------------------------------------------------------------------------//
 
 tim_timer_t*
-timer(std::string prefix = "")
+timer(std::string key, int line, bool report_at_exit)
 {
-    if(prefix.empty())
-    {
-        std::stringstream keyss;
-        keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
-        prefix = keyss.str();
-    }
-
-    auto op_line = get_line(1);
-    return new tim_timer_t(prefix, op_line, tim::language::pyc());
+    return new tim_timer_t(key, line, tim::language::pyc(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(const std::string& key, bool report_at_exit, int nback, bool added_args,
-           py::args args, py::kwargs kwargs)
+auto_timer(std::string key, int line, bool report_at_exit)
 {
-    tim::consume_parameters(args, kwargs);
-    std::stringstream keyss;
-    keyss << get_func(nback);
-
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << get_file(nback + 1);
-        keyss << ":";
-        keyss << get_line(nback);
-    }
-    auto op_line = get_line(1);
-    return new auto_timer_t(keyss.str(), op_line, tim::language::pyc(), report_at_exit);
+    return new auto_timer_t(key, line, tim::language::pyc(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 rss_usage_t*
-rss_usage(std::string prefix = "", bool record = false)
+rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
 {
-    if(prefix.empty())
-    {
-        std::stringstream keyss;
-        keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
-        prefix = keyss.str();
-    }
-    auto         op_line = get_line(1);
-    rss_usage_t* _rss    = new rss_usage_t(prefix, op_line, tim::language::pyc());
+    rss_usage_t* _rss = new rss_usage_t(key, line, tim::language::pyc(), report_at_exit);
     if(record)
         _rss->measure();
     return _rss;
@@ -427,97 +391,36 @@ rss_usage(std::string prefix = "", bool record = false)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-component_list(py::list components, const std::string& key, bool report_at_exit,
-               int nback, bool added_args, py::args args, py::kwargs kwargs)
+component_list(py::list components, std::string key, int line, bool report_at_exit)
 {
-    tim::consume_parameters(args, kwargs);
-    std::stringstream keyss;
-    keyss << get_func(nback);
-
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << get_file(nback + 1);
-        keyss << ":";
-        keyss << get_line(nback);
-    }
-    auto op_line = get_line(1);
-    return create_component_list(keyss.str(), op_line, tim::language::pyc(),
-                                 report_at_exit, components_enum_to_vec(components));
+    return create_component_list(key, line, tim::language::pyc(), report_at_exit,
+                                 components_enum_to_vec(components));
 }
 
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
-timer_decorator(const std::string& func, const std::string& file, int line,
-                const std::string& key, bool added_args, bool report_at_exit)
+timer_decorator(const std::string& key, int line, bool report_at_exit)
 {
     auto_timer_decorator* _ptr = new auto_timer_decorator();
     if(!auto_timer_t::is_enabled())
         return _ptr;
-
-    std::stringstream keyss;
-    if(func != "<module>")
-        keyss << func;
-
-    // add arguments to end of function
-    if(added_args)
-        keyss << key;
-    else if(func != "<module>" && key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << file;
-        keyss << ":";
-        keyss << line;
-    }
-    return &(*_ptr = new auto_timer_t(keyss.str(), line, tim::language::pyc(),
-                                      report_at_exit));
+    return &(*_ptr = new auto_timer_t(key, line, tim::language::pyc(), report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
 
 component_list_decorator*
-component_decorator(py::list components, const std::string& func, const std::string& file,
-                    int line, const std::string& key, bool added_args,
+component_decorator(py::list components, const std::string& key, int line,
                     bool report_at_exit)
 {
     component_list_decorator* _ptr = new component_list_decorator();
     if(!manager_t::is_enabled())
         return _ptr;
 
-    std::stringstream keyss;
-    keyss << func;
-
-    // add arguments to end of function
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << file;
-        keyss << ":";
-        keyss << line;
-    }
-    return &(*_ptr = create_component_list(keyss.str(), line, tim::language::pyc(),
-                                           report_at_exit,
-                                           components_enum_to_vec(components)));
+    return &(*_ptr =
+                 create_component_list(key, line, tim::language::pyc(), report_at_exit,
+                                       components_enum_to_vec(components)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -765,7 +668,7 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 }  // namespace opt
 
 //======================================================================================//
-
+/*
 namespace decorators
 {
 class base_decorator
@@ -785,8 +688,8 @@ public:
         auto locals = py::dict("func"_a = func, "args"_a = args, "kwargs"_a = kwargs);
         py::exec(R"(
                  is_class = False
-                 if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
-                     is_class = True
+                 if len(args) > 0 and args[0] is not None and
+inspect.isclass(type(args[0])): is_class = True
                  )",
                  py::globals(), locals);
         m_is_class = locals["is_class"].cast<bool>();
@@ -871,14 +774,11 @@ public:
 
                  @wraps(_func)
                  def _function_wrapper(func = _func, _key = _key, _is_class = _is_class,
-                                       _add_args = _add_args, _file = _file, _line = _line,
-                                       _report_at_exit = _report_at_exit,
-                                       *args, **kwargs):
+                                       _add_args = _add_args, _file = _file, _line =
+_line, _report_at_exit = _report_at_exit, *args, **kwargs):
 
-                     if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
-                         _is_class = True
-                     else:
-                         _is_class = False
+                     if len(args) > 0 and args[0] is not None and
+inspect.isclass(type(args[0])): _is_class = True else: _is_class = False
 
                      _str = ''
                      if _is_class and len(args) > 0 and args[0] is not None:
@@ -930,7 +830,7 @@ auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
 }
 }  // namespace init
 }  // namespace decorators
-
+*/
 //======================================================================================//
 
 template <typename _Tuple>

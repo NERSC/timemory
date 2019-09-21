@@ -44,7 +44,7 @@ using tuple_t = tim::component_tuple<real_clock, gperf_cpu_profiler, gperf_heap_
 using list_t  = tim::component_list<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
-using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, current_rss>;
+using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, page_rss>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, mem_list_t>;
 
 //--------------------------------------------------------------------------------------//
@@ -135,7 +135,7 @@ protected:
         };
 
         mem_list_t::get_initializer() = [](mem_list_t& obj) {
-            obj.initialize<cpu_clock, cpu_util, peak_rss, current_rss>();
+            obj.initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
         };
     }
 };

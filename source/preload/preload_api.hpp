@@ -75,7 +75,7 @@ using namespace tim::component;
 using auto_list_t = tim::auto_list<
     real_clock, system_clock, user_clock, cpu_clock, monotonic_clock, monotonic_raw_clock,
     thread_cpu_clock, process_cpu_clock, cpu_util, thread_cpu_util, process_cpu_util,
-    current_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
+    page_rss, peak_rss, stack_rss, data_rss, num_swap, num_io_in, num_io_out,
     num_minor_page_faults, num_major_page_faults, num_msg_sent, num_msg_recv, num_signals,
     voluntary_context_switch, priority_context_switch, cuda_event,
     papi_array<CPU_HW_COUNTERS>, cpu_roofline_sp_flops, cpu_roofline_dp_flops>;
@@ -103,6 +103,6 @@ using comp_list_t = typename auto_list_t::component_type;
 inline string_t
 get_default_components()
 {
-    return "real_clock, user_clock, system_clock, cpu_util, current_rss, peak_rss, "
+    return "real_clock, user_clock, system_clock, cpu_util, page_rss, peak_rss, "
            "cuda_event";
 }

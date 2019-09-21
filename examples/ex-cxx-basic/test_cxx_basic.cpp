@@ -73,7 +73,8 @@ main(int argc, char** argv)
     //  Provide some work
     //
     std::vector<long> fibvalues;
-    for(int i = 1; i < argc; ++i) fibvalues.push_back(atol(argv[i]));
+    for(int i = 1; i < argc; ++i)
+        fibvalues.push_back(atol(argv[i]));
     if(fibvalues.empty())
         fibvalues = { 15, 20, 25 };
 
@@ -88,7 +89,7 @@ main(int argc, char** argv)
         auto ret = fibonacci(n);
         // manually stop the auto_tuple_t
         TIMEMORY_CALIPER_APPLY(fib, stop);
-        printf("\nfibonacci(%i) = %li\n", n, (long int) ret);
+        printf("\nfibonacci(%li) = %li\n", n, (long int) ret);
     }
     // stop and print
     main.stop();

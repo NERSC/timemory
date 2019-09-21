@@ -79,7 +79,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("cuda_event", CUDA_EVENT)
         .value("cupti_activity", CUPTI_ACTIVITY)
         .value("cupti_counters", CUPTI_COUNTERS)
-        .value("current_rss", CURRENT_RSS)
+        .value("page_rss", PAGE_RSS)
         .value("data_rss", DATA_RSS)
         .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
         .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
@@ -202,15 +202,16 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Class declarations
     //
     //==================================================================================//
-    py::class_<manager_wrapper>               man(tim, "manager");
-    py::class_<tim_timer_t>                   timer(tim, "timer");
-    py::class_<auto_timer_t>                  auto_timer(tim, "auto_timer");
-    py::class_<component_list_t>              comp_list(tim, "component_tuple");
-    py::class_<auto_timer_decorator>          timer_decorator(tim, "timer_decorator");
-    py::class_<component_list_decorator>      comp_decorator(tim, "component_decorator");
-    py::class_<rss_usage_t>                   rss_usage(tim, "rss_usage");
-    py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim, "decorate_timer");
-    py::class_<pytim::settings>               settings(tim, "settings");
+    py::class_<manager_wrapper>          man(tim, "manager");
+    py::class_<tim_timer_t>              timer(tim, "timer");
+    py::class_<auto_timer_t>             auto_timer(tim, "auto_timer");
+    py::class_<component_list_t>         comp_list(tim, "component_tuple");
+    py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
+    py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
+    py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
+    // py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim,
+    // "decorate_timer");
+    py::class_<pytim::settings> settings(tim, "settings");
 
     //==================================================================================//
     //
@@ -407,30 +408,31 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                          TIMER
     //
     //==================================================================================//
-    timer.def(py::init(&pytim::init::timer), "Initialization",
-              py::return_value_policy::take_ownership, py::arg("prefix") = "");
+    timer.def(py::init(&pytim::init::timer), "Initialization", py::arg("key") = "",
+              py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+              py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     timer.def("real_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<0>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get_lhs().get<real_clock>();
+                  return obj.get();
               },
               "Elapsed wall clock");
     //----------------------------------------------------------------------------------//
     timer.def("sys_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<1>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get_lhs().get<system_clock>();
+                  return obj.get();
               },
               "Elapsed system clock");
     //----------------------------------------------------------------------------------//
     timer.def("user_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<2>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get_lhs().get<user_clock>();
+                  return obj.get();
               },
               "Elapsed user time");
     //----------------------------------------------------------------------------------//
@@ -500,15 +502,15 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     auto_timer.def(py::init(&pytim::init::auto_timer), "Initialization",
-                   py::arg("key") = "", py::arg("report_at_exit") = false,
-                   py::arg("nback") = 1, py::arg("added_args") = false,
+                   py::arg("key") = "", py::arg("line") = pytim::get_line(1),
+                   py::arg("report_at_exit") = false,
                    py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     auto_timer.def("__str__",
                    [&](py::object self) {
                        std::stringstream _ss;
                        auto_timer_t*     _self = self.cast<auto_timer_t*>();
-                       _ss << _self->get_component_type();
+                       _ss << *_self;
                        return _ss.str();
                    },
                    "Print the auto timer");
@@ -531,13 +533,13 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
-    //                      TIMEMORY_COMPONENT TUPLE
+    //                      TIMEMORY COMPONENT_TUPLE
     //
     //==================================================================================//
     comp_list.def(py::init(&pytim::init::component_list), "Initialization",
                   py::arg("components") = py::list(), py::arg("key") = "",
-                  py::arg("report_at_exit") = false, py::arg("nback") = 1,
-                  py::arg("added_args") = false, py::return_value_policy::take_ownership);
+                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+                  py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_list.def("start",
                   [&](py::object self) { self.cast<component_list_t*>()->start(); },
@@ -595,12 +597,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                      AUTO TIMER DECORATOR
     //
     //==================================================================================//
+    /*
     decorate_auto_timer.def(
         py::init(&pytim::decorators::init::auto_timer), "Initialization",
-        py::arg("key") = "", py::arg("add_args") = false, py::arg("is_class") = false,
+        py::arg("key") = "", py::arg("line") = pytim::get_line(1),
         py::arg("report_at_exit") = false, py::return_value_policy::take_ownership);
     decorate_auto_timer.def("__call__", &pytim::decorators::auto_timer::call,
                             "Call operator");
+                            */
 
     //----------------------------------------------------------------------------------//
 
@@ -610,9 +614,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     rss_usage.def(py::init(&pytim::init::rss_usage),
-                  "Initialization of RSS measurement class",
-                  py::return_value_policy::take_ownership, py::arg("prefix") = "",
-                  py::arg("record") = false);
+                  "Initialization of RSS measurement class", py::arg("key") = "",
+                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+                  py::arg("record") = false, py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     rss_usage.def("record", [&](py::object self) { self.cast<rss_usage_t*>()->record(); },
                   "Record the RSS usage");

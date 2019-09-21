@@ -86,16 +86,16 @@ struct peak_rss : public base<peak_rss>
 };
 
 //--------------------------------------------------------------------------------------//
-/// \class current_rss
+/// \class page_rss
 /// \brief
 /// this struct measures the resident set size (RSS) currently allocated in pages of
 /// memory. Unlike the peak_rss, this value will fluctuate as memory gets freed and
 /// allocated
 //
-struct current_rss : public base<current_rss>
+struct page_rss : public base<page_rss>
 {
     using value_type = int64_t;
-    using base_type  = base<current_rss, value_type>;
+    using base_type  = base<page_rss, value_type>;
 
     static const short                   precision = 1;
     static const short                   width     = 5;
@@ -103,10 +103,10 @@ struct current_rss : public base<current_rss>
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
     static int64_t     unit() { return units::megabyte; }
-    static std::string label() { return "current_rss"; }
-    static std::string description() { return "current resident set size"; }
+    static std::string label() { return "page_rss"; }
+    static std::string description() { return "resident set size of memory pages"; }
     static std::string display_unit() { return "MB"; }
-    static value_type  record() { return get_current_rss(); }
+    static value_type  record() { return get_page_rss(); }
     double             get_display() const
     {
         auto val = (is_transient) ? accum : value;
@@ -127,6 +127,8 @@ struct current_rss : public base<current_rss>
         set_stopped();
     }
 };
+
+using current_rss = page_rss;
 
 //--------------------------------------------------------------------------------------//
 /// \class stack_rss

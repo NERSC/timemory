@@ -60,7 +60,7 @@
 #    include <stdio.h>
 #    include <windows.h>
 #else
-#    error "Cannot define get_peak_rss() or get_current_rss() for an unknown OS."
+#    error "Cannot define get_peak_rss() or get_page_rss() for an unknown OS."
 #endif
 
 // RSS - Resident set size (physical memory use, not in swap)
@@ -94,7 +94,7 @@ get_rusage_pid()
 int64_t
 get_peak_rss();
 int64_t
-get_current_rss();
+get_page_rss();
 int64_t
 get_stack_rss();
 int64_t

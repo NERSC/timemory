@@ -17,7 +17,7 @@ components = [
     "process_cpu_util",
     "thread_cpu_util",
     "peak_rss",
-    "current_rss",
+    "page_rss",
     "stack_rss",
     "data_rss",
     "num_swap",
@@ -83,7 +83,7 @@ mangled_strings = {
 
 recommended_types = {
     "tuple": ["real_clock", "system_clock", "user_clock", "cpu_util",
-              "current_rss", "peak_rss", "read_bytes", "written_bytes",
+              "page_rss", "peak_rss", "read_bytes", "written_bytes",
               "num_minor_page_faults", "num_major_page_faults",
               "voluntary_context_switch", "priority_context_switch"],
     "list": ["caliper", "papi_array_t",
@@ -110,7 +110,7 @@ traits = {
     "is_memory_category": ("std::true_type",
     [
         "peak_rss",
-        "current_rss",
+        "page_rss",
         "stack_rss",
         "data_rss",
         "num_swap",
@@ -142,7 +142,7 @@ traits = {
     "uses_memory_units": ("std::true_type",
     [
         "peak_rss",
-        "current_rss",
+        "page_rss",
         "stack_rss",
         "data_rss",
         "read_bytes",

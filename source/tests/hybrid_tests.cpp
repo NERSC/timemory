@@ -45,7 +45,7 @@ using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
 using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using list_t = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, current_rss,
+using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                    papi_array_t, cuda_event, cupti_counters, caliper>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = auto_hybrid_t::component_type;
@@ -279,7 +279,7 @@ main(int argc, char** argv)
     };
 
     list_t::get_initializer() = [](list_t& l) {
-        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, papi_array_t,
+        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss, papi_array_t,
                      caliper>();
     };
 

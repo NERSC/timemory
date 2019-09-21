@@ -44,7 +44,7 @@ namespace tim
 
 using auto_timer_tuple_t =
     component_tuple<component::real_clock, component::system_clock, component::user_clock,
-                    component::cpu_util, component::current_rss, component::peak_rss>;
+                    component::cpu_util, component::page_rss, component::peak_rss>;
 
 using auto_timer_list_t =
     component_list<component::caliper, component::papi_array_t, component::cuda_event,

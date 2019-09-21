@@ -44,9 +44,9 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, caliper, papi_tuple_t>;
+                                     peak_rss, page_rss, caliper, papi_tuple_t>;
 using full_measurement_t =
-    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+    tim::component_tuple<peak_rss, page_rss, stack_rss, data_rss, num_swap, num_io_in,
                          num_io_out, num_minor_page_faults, num_major_page_faults,
                          num_msg_sent, num_msg_recv, num_signals,
                          voluntary_context_switch, priority_context_switch, papi_tuple_t>;
@@ -63,7 +63,7 @@ using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu
 // measure multiple clock time + resident set sizes
 using full_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, current_rss, caliper, papi_tuple_t>;
+                    process_cpu_util, peak_rss, page_rss, caliper, papi_tuple_t>;
 
 // measure wall-clock, thread cpu-clock + process cpu-utilization
 using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
@@ -391,16 +391,16 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_LABEL(""));
+    tim::component_tuple<page_rss, peak_rss> prss(TIMEMORY_LABEL(""));
     {
-        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
+        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", page_rss, peak_rss);
         // just record the peak rss
         prss.measure();
         std::cout << "  Current rss: " << prss << std::endl;
     }
 
     {
-        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", current_rss, peak_rss);
+        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", page_rss, peak_rss);
         // do something, where you want delta peak rss
         auto                 n = 10000000;
         std::vector<int64_t> v(n, 10);

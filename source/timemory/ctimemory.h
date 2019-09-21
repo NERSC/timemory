@@ -143,7 +143,7 @@ enum TIMEMORY_COMPONENT
     CUDA_EVENT               = 6,
     CUPTI_ACTIVITY           = 7,
     CUPTI_COUNTERS           = 8,
-    CURRENT_RSS              = 9,
+    PAGE_RSS                 = 9,
     DATA_RSS                 = 10,
     GPERF_CPU_PROFILER       = 11,
     GPERF_HEAP_PROFILER      = 12,

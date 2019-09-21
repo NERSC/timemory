@@ -45,7 +45,7 @@
 using namespace tim::component;
 
 using auto_timer_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                          current_rss, peak_rss>;
+                                          page_rss, peak_rss>;
 
 using auto_list_t = tim::complete_list_t;
 
@@ -99,9 +99,7 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
 {
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    char*       _timer_tag = (char*) timer_tag;
-    free(_timer_tag);
-    auto* obj = new auto_timer_t(key_tag, tim::language::c(), lineno);
+    auto*       obj = new auto_timer_t(key_tag, tim::language::c(), lineno);
     obj->start();
     return (void*) obj;
 }
@@ -202,7 +200,7 @@ static std::string spacer = "---------------------------------------------------
 inline std::string
 get_default_components()
 {
-    return "real_clock, user_clock, system_clock, cpu_util, current_rss, peak_rss, "
+    return "real_clock, user_clock, system_clock, cpu_util, page_rss, peak_rss, "
            "cuda_event";
 }
 

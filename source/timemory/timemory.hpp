@@ -143,7 +143,7 @@ using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
     component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
     component::cuda_event, component::cupti_activity, component::cupti_counters,
-    component::current_rss, component::data_rss, component::gperf_cpu_profiler,
+    component::page_rss, component::data_rss, component::gperf_cpu_profiler,
     component::gperf_heap_profiler, component::gpu_roofline_dp_flops,
     component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
     component::gpu_roofline_sp_flops, component::monotonic_clock,
@@ -170,7 +170,7 @@ using recommended_list_t = recommended_auto_list_t::component_type;
 
 using recommended_auto_tuple_t =
     auto_tuple<component::real_clock, component::system_clock, component::user_clock,
-               component::cpu_util, component::current_rss, component::peak_rss,
+               component::cpu_util, component::page_rss, component::peak_rss,
                component::read_bytes, component::written_bytes,
                component::num_minor_page_faults, component::num_major_page_faults,
                component::voluntary_context_switch, component::priority_context_switch>;
@@ -209,7 +209,7 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_util)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cuda_event)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_activity)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_counters)
-TIMEMORY_DECLARE_EXTERN_STORAGE(current_rss)
+TIMEMORY_DECLARE_EXTERN_STORAGE(page_rss)
 TIMEMORY_DECLARE_EXTERN_STORAGE(data_rss)
 TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_dp_flops)
 TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_flops)

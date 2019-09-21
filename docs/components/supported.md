@@ -19,18 +19,18 @@ Bundling components is provided through the variadic component wrappers. It is r
 
 These components are available on all operating systems (Windows, macOS, Linux).
 
-| C++ (object)        | C (enum)          | Python (enum)                        |
-| ------------------- | ----------------- | ------------------------------------ |
-| **`wall_clock`**    | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`**  |
-| **`user_clock`**    | **`USER_CLOCK`**  | **`timemory.component.user_clock`**  |
-| **`system_clock`**  | **`SYS_CLOCK`**   | **`timemory.component.sys_clock`**   |
-| **`cpu_clock`**     | **`CPU_CLOCK`**   | **`timemory.component.cpu_clock`**   |
-| **`cpu_util`**      | **`CPU_UTIL`**    | **`timemory.component.cpu_util`**    |
-| **`current_rss`**   | **`CURRENT_RSS`** | **`timemory.component.current_rss`** |
-| **`peak_rss`**      | **`PEAK_RSS`**    | **`timemory.component.peak_rss`**    |
-| **`trip_count`**    | **`TRIP_COUNT`**  | **`timemory.component.trip_count`**  |
-| **`real_clock`**    | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`**  |
-| **`virtual_clock`** | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`**  |
+| C++ (object)        | C (enum)          | Python (enum)                       |
+| ------------------- | ----------------- | ----------------------------------- |
+| **`wall_clock`**    | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`** |
+| **`user_clock`**    | **`USER_CLOCK`**  | **`timemory.component.user_clock`** |
+| **`system_clock`**  | **`SYS_CLOCK`**   | **`timemory.component.sys_clock`**  |
+| **`cpu_clock`**     | **`CPU_CLOCK`**   | **`timemory.component.cpu_clock`**  |
+| **`cpu_util`**      | **`CPU_UTIL`**    | **`timemory.component.cpu_util`**   |
+| **`page_rss`**      | **`CURRENT_RSS`** | **`timemory.component.page_rss`**   |
+| **`peak_rss`**      | **`PEAK_RSS`**    | **`timemory.component.peak_rss`**   |
+| **`trip_count`**    | **`TRIP_COUNT`**  | **`timemory.component.trip_count`** |
+| **`real_clock`**    | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`** |
+| **`virtual_clock`** | **`WALL_CLOCK`**  | **`timemory.component.wall_clock`** |
 
 [Detailed documentation](native.md)
 

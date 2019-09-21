@@ -29,7 +29,7 @@ Example:
 ```c++
 using papi_tuple_t = papi_tuple<0, PAPI_TOT_CYC, PAPI_TOT_INS>;
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                       peak_rss, current_rss, papi_tuple_t>;
+                                       peak_rss, page_rss, papi_tuple_t>;
 
 void some_function()
 {

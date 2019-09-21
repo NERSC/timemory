@@ -11,6 +11,6 @@ These components are available on all operating systems (Windows, macOS, Linux).
 | **`cpu_util`**      | timing   | Native       | Percentage of CPU time vs. wall-clock time                                                                   |
 | **`wall_clock`**    | timing   | Native       | Alias to `real_clock` for convenience                                                                        |
 | **`virtual_clock`** | timing   | Native       | Alias to `real_clock` since time is a construct of our consciousness                                         |
-| **`current_rss`**   | memory   | Native       | The total size of the pages of memory allocated excluding swap                                               |
+| **`page_rss`**      | memory   | Native       | The total size of the pages of memory allocated excluding swap                                               |
 | **`peak_rss`**      | memory   | Native       | The peak amount of utilized memory (resident-set size) at that point of execution ("high-water" memory mark) |
 | **`trip_count`**    | counting | Native       | Recording the number of trips through a section of code                                                      |

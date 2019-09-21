@@ -217,7 +217,7 @@ struct record_max<component::peak_rss> : std::true_type
 };
 
 template <>
-struct record_max<component::current_rss> : std::true_type
+struct record_max<component::page_rss> : std::true_type
 {
 };
 
@@ -425,7 +425,7 @@ struct is_memory_category<component::peak_rss> : std::true_type
 };
 
 template <>
-struct is_memory_category<component::current_rss> : std::true_type
+struct is_memory_category<component::page_rss> : std::true_type
 {
 };
 
@@ -567,7 +567,7 @@ struct uses_memory_units<component::peak_rss> : std::true_type
 };
 
 template <>
-struct uses_memory_units<component::current_rss> : std::true_type
+struct uses_memory_units<component::page_rss> : std::true_type
 {
 };
 

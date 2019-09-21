@@ -72,17 +72,22 @@ class component_hybrid
     friend class manager;
 
 public:
-    using size_type       = int64_t;
-    using language_t      = tim::language;
-    using string_hash     = std::hash<string_t>;
-    using tuple_type      = _CompTuple;
-    using list_type       = _CompList;
-    using this_type       = component_hybrid<tuple_type, list_type>;
-    using tuple_data_type = typename tuple_type::data_type;
-    using list_data_type  = typename list_type::data_type;
-    using data_type       = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
-    using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
+    using size_type        = int64_t;
+    using language_t       = tim::language;
+    using string_hash      = std::hash<string_t>;
+    using tuple_type       = _CompTuple;
+    using list_type        = _CompList;
+    using this_type        = component_hybrid<tuple_type, list_type>;
+    using tuple_data_type  = typename tuple_type::data_type;
+    using list_data_type   = typename list_type::data_type;
+    using data_type        = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
+    using type_tuple       = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
+    using data_value_tuple = decltype(std::tuple_cat(std::declval<_CompTuple>().get(),
+                                                     std::declval<_CompList>().get()));
+    using data_label_tuple =
+        decltype(std::tuple_cat(std::declval<_CompTuple>().get_labeled(),
+                                std::declval<_CompList>().get_labeled()));
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
@@ -208,6 +213,17 @@ public:
     {
         m_tuple.measure();
         m_list.measure();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_value_tuple get() { return std::tuple_cat(m_tuple.get(), m_list.get()); }
+
+    //----------------------------------------------------------------------------------//
+    // get tuple of data recorded
+    data_label_tuple get_labeled()
+    {
+        return std::tuple_cat(m_tuple.get_labeled(), m_list.get_labeled());
     }
 
     //----------------------------------------------------------------------------------//

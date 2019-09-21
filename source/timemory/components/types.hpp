@@ -74,7 +74,7 @@ struct thread_cpu_util;
 
 // resource usage
 struct peak_rss;
-struct current_rss;
+struct page_rss;
 struct stack_rss;
 struct data_rss;
 struct num_swap;
@@ -274,8 +274,8 @@ class component_list;
 //  category configurations
 //
 using rusage_components_t = component_tuple<
-    component::current_rss, component::peak_rss, component::stack_rss,
-    component::data_rss, component::num_swap, component::num_io_in, component::num_io_out,
+    component::page_rss, component::peak_rss, component::stack_rss, component::data_rss,
+    component::num_swap, component::num_io_in, component::num_io_out,
     component::num_minor_page_faults, component::num_major_page_faults,
     component::num_msg_sent, component::num_msg_recv, component::num_signals,
     component::voluntary_context_switch, component::priority_context_switch>;
@@ -291,7 +291,7 @@ using timing_components_t =
 //  standard configurations
 //
 using standard_rusage_t =
-    component_tuple<component::current_rss, component::peak_rss, component::num_io_in,
+    component_tuple<component::page_rss, component::peak_rss, component::num_io_in,
                     component::num_io_out, component::num_minor_page_faults,
                     component::num_major_page_faults, component::priority_context_switch,
                     component::voluntary_context_switch>;
