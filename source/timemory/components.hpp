@@ -481,3 +481,8 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+// tim::component::get_enum<T>::value
+//
+#include "timemory/details/components.hpp"

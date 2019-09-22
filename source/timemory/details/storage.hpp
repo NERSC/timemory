@@ -580,6 +580,20 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             std::cout << _oss.str() << std::flush;
         }
 
+        if(settings::dart_output() && _oss.str().length() > 0)
+        {
+            printf("\n");
+            for(auto& itr : _data().graph())
+            {
+                if(itr.depth() < 0)
+                    continue;
+                auto _obj    = itr.obj();
+                auto _prefix = itr.prefix();
+                auto _depth  = itr.depth();
+                operation::echo_measurement<ObjectType>(_obj, _prefix, _depth);
+            }
+        }
+
         instance_count().store(0);
     }
     else
@@ -731,7 +745,8 @@ tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurr
         oa.finishNode();
     }
     std::ofstream ofs(fname.c_str());
-    ofs << ss.str() << std::endl;
+    if(ofs)
+        ofs << ss.str() << std::endl;
 }
 
 //======================================================================================//

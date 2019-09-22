@@ -992,6 +992,199 @@ struct serialization
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct echo_measurement
+{
+    using Type           = _Tp;
+    using value_type     = typename Type::value_type;
+    using base_type      = typename Type::base_type;
+    using attributes_t   = std::map<string_t, string_t>;
+    using strset_t       = std::set<string_t>;
+    using stringstream_t = std::stringstream;
+
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// generate an attribute
+    ///
+    static string_t attribute_string(const string_t& key, const string_t& item)
+    {
+        return apply<string_t>::join("", key, "=", "\"", item, "\"");
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// replace matching values in item with str
+    ///
+    static string_t replace(string_t& item, const string_t& str, const strset_t& values)
+    {
+        for(const auto& itr : values)
+        {
+            while(item.find(itr) != string_t::npos)
+                item = item.replace(item.find(itr), itr.length(), str);
+        }
+        return item;
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// convert to lowercase
+    ///
+    static string_t lowercase(string_t _str)
+    {
+        for(auto& itr : _str)
+            itr = tolower(itr);
+        return _str;
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// convert to uppercase
+    ///
+    static string_t uppercase(string_t _str)
+    {
+        for(auto& itr : _str)
+            itr = toupper(itr);
+        return _str;
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// check if str contains any of the string items
+    ///
+    static bool contains(const string_t& str, const strset_t& items)
+    {
+        for(const auto& itr : items)
+        {
+            if(lowercase(str).find(itr) != string_t::npos)
+                return true;
+        }
+        return false;
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// shorthand for apply<string_t>::join(...)
+    ///
+    template <typename... _Args>
+    static string_t join(const std::string& _delim, _Args&&... _args)
+    {
+        return apply<string_t>::join(_delim, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate a name attribute
+    ///
+    template <typename... _Args>
+    static string_t generate_name(const string_t& _prefix, string_t _unit,
+                                  const uint64_t& _depth, _Args&&... _args)
+    {
+        auto _extra    = join("_", std::forward<_Args>(_args)...);
+        auto _label    = join("", "[", uppercase(Type::label()), "]");
+        _unit          = replace(_unit, "", { " " });
+        string_t _name = (_extra.length() > 0) ? join("_", _extra, _prefix, _depth, _unit)
+                                               : join("_", _prefix, _depth, _unit);
+        auto _ret = join(" ", _label, _name);
+        _ret      = replace(_ret, "_", { "__" });
+        if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
+            _ret.erase(_ret.length() - 1);
+        return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// assumes type is not a iterable
+    ///
+    template <typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<_Up>::value), char>                      = 0,
+              enable_if_t<!(tim::trait::array_serialization<_Up>::value), int> = 0>
+    echo_measurement(_Up& obj, string_t prefix, const uint64_t& depth)
+    {
+        prefix = replace(prefix, "[c]", { "[_c_]" });
+        prefix = replace(prefix, "", { "> [" });
+        prefix = replace(prefix, "", { "|_" });
+        prefix = replace(prefix, "_",
+                         { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
+        prefix = replace(prefix, "_", { "__" });
+
+        auto _unit = Type::display_unit();
+        auto name  = generate_name(prefix, _unit, depth);
+        auto _data = obj.get();
+
+        attributes_t   attributes = { { "name", name }, { "type", "numeric/double" } };
+        stringstream_t ss;
+        ss << "<DartMeasurement";
+        for(const auto& itr : attributes)
+            ss << " " << attribute_string(itr.first, itr.second);
+        ss << ">" << _data << "</DartMeasurement>\n";
+        std::cout << ss.str() << std::flush;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// assumes type is iterable
+    ///
+    template <typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<_Up>::value), char>                     = 0,
+              enable_if_t<(tim::trait::array_serialization<_Up>::value), int> = 0>
+    echo_measurement(_Up& obj, string_t prefix, const uint64_t& depth)
+    {
+        prefix = replace(prefix, "[c]", { "[_c_]" });
+        prefix = replace(prefix, "", { "> [" });
+        prefix = replace(prefix, "", { "|_" });
+        prefix = replace(prefix, "_",
+                         { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
+        prefix = replace(prefix, "_", { "__" });
+
+        auto _data = obj.get();
+
+        attributes_t   attributes = { { "type", "numeric/double" } };
+        stringstream_t ss;
+
+        uint64_t idx     = 0;
+        auto     _labels = obj.label_array();
+        auto     _units  = obj.display_unit_array();
+        for(auto& itr : _data)
+        {
+            string_t _extra = "";
+            string_t _unit  = "";
+            if(idx < _labels.size())
+            {
+                _extra = _labels.at(idx);
+                _unit  = _units.at(idx);
+            }
+            ++idx;
+            attributes["name"] = generate_name(prefix, _unit, depth, _extra);
+            ss << "<DartMeasurement";
+            for(const auto& itr : attributes)
+                ss << " " << attribute_string(itr.first, itr.second);
+            ss << ">" << itr << "</DartMeasurement>\n";
+        }
+
+        std::cout << ss.str() << std::flush;
+
+        /*
+        ar.setNextName("NamedMeasurement");
+        ar.startNode();
+        ar.appendAttribute("type", "numeric/double");
+        ar.appendAttribute("name", name.c_str());
+        ar(serializer::make_nvp("Value", _data));
+        ar.finishNode();
+        */
+    }
+
+    template <typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    echo_measurement(_Up&, string_t, const uint64_t&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct copy
 {
     using Type       = _Tp;

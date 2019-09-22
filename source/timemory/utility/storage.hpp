@@ -38,6 +38,7 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/details/components.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/graph.hpp"
@@ -214,6 +215,7 @@ public:
     //
     storage()
     {
+        component::properties<ObjectType>::has_storage() = true;
         instance_count()++;
         static std::atomic<short> _once;
         short                     _once_num = _once++;

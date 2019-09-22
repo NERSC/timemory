@@ -182,6 +182,15 @@ struct supports_args : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates the type supports changing the record() static function
+/// per-instance
+///
+template <typename _Tp>
+struct supports_custom_record : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -686,8 +695,45 @@ struct is_available<component::cpu_roofline<_Types...>> : std::false_type
 {
 };
 
+template <>
+struct is_available<component::cpu_roofline_sp_flops> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::cpu_roofline_dp_flops> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::cpu_roofline_flops> : std::false_type
+{
+};
+
+#else
+
 template <typename... _Types>
 struct requires_json<component::cpu_roofline<_Types...>> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::cpu_roofline_flops> : std::true_type
+{
+};
+
+template <typename... _Types>
+struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_type
 {
 };
 
@@ -730,6 +776,53 @@ struct is_available<component::cupti_activity> : std::false_type
 
 template <typename... _Types>
 struct is_available<component::gpu_roofline<_Types...>> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::gpu_roofline_hp_flops> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::gpu_roofline_sp_flops> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::gpu_roofline_dp_flops> : std::false_type
+{
+};
+
+template <>
+struct is_available<component::gpu_roofline_flops> : std::false_type
+{
+};
+
+#else
+
+template <typename... _Types>
+struct requires_json<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::gpu_roofline_hp_flops> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::gpu_roofline_sp_flops> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::gpu_roofline_dp_flops> : std::true_type
+{
+};
+
+template <>
+struct requires_json<component::gpu_roofline_flops> : std::true_type
 {
 };
 

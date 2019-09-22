@@ -89,6 +89,9 @@ public:
         decltype(std::tuple_cat(std::declval<_CompTuple>().get_labeled(),
                                 std::declval<_CompList>().get_labeled()));
 
+    using tuple_type_list = typename tuple_type::data_type;
+    using list_type_list  = typename list_type::reference_type;
+
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
         (_CompTuple::contains_gotcha || _CompList::contains_gotcha);
@@ -444,6 +447,28 @@ public:
     {
         tuple_type::print_storage();
         list_type::print_storage();
+    }
+
+public:
+    template <typename _Tp,
+              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
+    auto get() -> decltype(std::declval<_CompTuple>().template get<_Tp>())
+    {
+        return m_tuple.template get<_Tp>();
+    }
+
+    template <typename _Tp,
+              enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
+    auto get() -> decltype(std::declval<_CompList>().template get<_Tp>())
+    {
+        return m_list.template get<_Tp>();
+    }
+
+    template <typename _Tp, enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value ||
+                                          is_one_of<_Tp, list_type_list>::value),
+                                        int> = 0>
+    void get()
+    {
     }
 
 public:

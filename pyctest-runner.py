@@ -100,6 +100,9 @@ def configure():
     if platform.system() != "Linux":
         args.no_papi = True
 
+    # always echo dart measurements
+    os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
+
     return args
 
 
@@ -370,6 +373,24 @@ def run_pyctest():
 
     pyctest.test(construct_name("test-gotcha"),
                  construct_command(["./test_gotcha"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-c-minimal"),
+                 construct_command(["./test_c_minimal"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-cxx-minimal"),
+                 construct_command(["./test_cxx_minimal"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-python-minimal"),
+                 construct_command([sys.executable, "./test_python_minimal"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
                   "LABELS": pyctest.PROJECT_NAME,
                   "TIMEOUT": "300"})

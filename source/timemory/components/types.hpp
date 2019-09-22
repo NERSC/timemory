@@ -29,6 +29,8 @@
 #include <string>
 #include <type_traits>
 
+#include "timemory/backends/cuda.hpp"
+
 //======================================================================================//
 //
 namespace tim
@@ -116,6 +118,18 @@ struct caliper;
 
 template <size_t _N, typename _Components, typename _Differentiator = void>
 struct gotcha;
+
+// aliases
+using papi_array_t = papi_array<32>;
+
+using cpu_roofline_sp_flops = cpu_roofline<float>;
+using cpu_roofline_dp_flops = cpu_roofline<double>;
+using cpu_roofline_flops    = cpu_roofline<float, double>;
+
+using gpu_roofline_sp_flops = gpu_roofline<float>;
+using gpu_roofline_dp_flops = gpu_roofline<double>;
+using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
+using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
 }  // component
 

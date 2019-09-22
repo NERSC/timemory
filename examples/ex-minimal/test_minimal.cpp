@@ -33,5 +33,6 @@ int main(int, char** argv)
     long ans = fib(43);
     TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
     ans += fib(43);
+
     return ans * 0;
 }

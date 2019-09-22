@@ -727,52 +727,6 @@ public:
 };
 
 //--------------------------------------------------------------------------------------//
-// Shorthand aliases for common roofline types
-//
-using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
-using gpu_roofline_sp_flops = gpu_roofline<float>;
-using gpu_roofline_dp_flops = gpu_roofline<double>;
-using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
-
-//--------------------------------------------------------------------------------------//
 }  // namespace component
-
-namespace trait
-{
-template <>
-struct requires_json<component::gpu_roofline_hp_flops> : std::true_type
-{};
-
-template <>
-struct requires_json<component::gpu_roofline_sp_flops> : std::true_type
-{};
-
-template <>
-struct requires_json<component::gpu_roofline_dp_flops> : std::true_type
-{};
-
-template <>
-struct requires_json<component::gpu_roofline_flops> : std::true_type
-{};
-
-#if !defined(TIMEMORY_USE_CUPTI)
-template <>
-struct is_available<component::gpu_roofline_hp_flops> : std::false_type
-{};
-
-template <>
-struct is_available<component::gpu_roofline_sp_flops> : std::false_type
-{};
-
-template <>
-struct is_available<component::gpu_roofline_dp_flops> : std::false_type
-{};
-
-template <>
-struct is_available<component::gpu_roofline_flops> : std::false_type
-{};
-#endif
-
-}  // namespace trait
 
 }  // namespace tim

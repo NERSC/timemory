@@ -70,6 +70,8 @@ public:
     using type_tuple       = typename component_type::type_tuple;
     using data_value_tuple = typename component_type::data_value_tuple;
     using data_label_tuple = typename component_type::data_label_tuple;
+    using tuple_type_list  = typename component_type::tuple_type_list;
+    using list_type_list   = typename component_type::list_type_list;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -185,6 +187,22 @@ public:
     const tuple_type& get_lhs() const { return m_temporary_object.get_tuple(); }
     list_type&        get_rhs() { return m_temporary_object.get_list(); }
     const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
+
+    template <typename _Tp, enable_if_t<(is_one_of<_Tp, tuple_type_list>::value ||
+                                         is_one_of<_Tp, list_type_list>::value),
+                                        int> = 0>
+    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    {
+        return m_temporary_object.template get<_Tp>();
+    }
+
+    template <typename _Tp, enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value ||
+                                          is_one_of<_Tp, list_type_list>::value),
+                                        int> = 0>
+    _Tp* get()
+    {
+        return nullptr;
+    }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)

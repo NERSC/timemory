@@ -152,9 +152,9 @@ In general, there are two steps and an optional third if you want to use the pre
 
 namespace tim
 {
-void                              print_env() {}
 template <typename... _Args> void timemory_init(_Args...) {}
-void                              timemory_finalize() {}
+inline void                       timemory_finalize() {}
+inline void                       print_env() {}
 
 /// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
@@ -176,11 +176,18 @@ struct dummy
     template <typename... _Args> void mark_end(_Args&&...) {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
+
 }  // namespace tim
 
-// creates a label
+// startup/shutdown/configure
+#    define TIMEMORY_INIT(...)
+#    define TIMEMORY_FINALIZE()
+#    define TIMEMORY_CONFIGURE(...)
+
+// label creation
 #    define TIMEMORY_BASIC_LABEL(...) std::string("")
 #    define TIMEMORY_LABEL(...) std::string("")
+#    define TIMEMORY_JOIN(...) std::string("")
 
 // define an object
 #    define TIMEMORY_BLANK_MARKER(...)
@@ -197,25 +204,40 @@ struct dummy
 #    define TIMEMORY_BASIC_CALIPER(...)
 #    define TIMEMORY_CALIPER(...)
 
-// invoke member function on caliper reference
-#    define TIMEMORY_CALIPER_APPLY(...)
-// invoke member function on specific type in caliper reference
-#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
-
 // define a static object with a caliper reference
 #    define TIMEMORY_STATIC_BLANK_CALIPER(...)
 #    define TIMEMORY_STATIC_BASIC_CALIPER(...)
 #    define TIMEMORY_STATIC_CALIPER(...)
 
-// define an object
+// invoke member function on caliper reference or type within reference
+#    define TIMEMORY_CALIPER_APPLY(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+
+// get an object
 #    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
 #    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
 #    define TIMEMORY_HANDLE(...) tim::dummy()
+
+// get a pointer to an object
+#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_POINTER_HANDLE(...) nullptr
 
 // debug only
 #    define TIMEMORY_DEBUG_BLANK_MARKER(...)
 #    define TIMEMORY_DEBUG_BASIC_MARKER(...)
 #    define TIMEMORY_DEBUG_MARKER(...)
+
+// auto-timers
+#    define TIMEMORY_BLANK_AUTO_TIMER(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_AUTO_TIMER(...)
+#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_DEBUG_AUTO_TIMER(...)
+
 #endif
 ```
 

@@ -78,6 +78,7 @@ public:
     using graph_iterator = typename storage_type::iterator;
     using counted_type   = tim::counted_object<_Tp>;
 
+public:
     // base()                          = default;
     base()                          = default;
     ~base()                         = default;
@@ -295,15 +296,6 @@ public:
         return false;
     }
 
-    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
-    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
-    CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
-                                    format_flags)
-    CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
-
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
@@ -479,6 +471,26 @@ protected:
     value_type     accum        = value_type();
     int64_t        laps         = 0;
     graph_iterator graph_itr;
+
+public:
+    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
+    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
+    CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
+                                    format_flags)
+    CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
+    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
+    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
+    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
+
+    /*
+    // these are available but currently unused
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, enabled, settings::enabled())
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, auto_output, settings::auto_output())
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, file_output, settings::file_output())
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, text_output, settings::text_output())
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, json_output, settings::json_output())
+    CREATE_STATIC_FUNCTION_ACCESSOR(bool, cout_output, settings::cout_output())
+    */
 };
 
 //--------------------------------------------------------------------------------------//

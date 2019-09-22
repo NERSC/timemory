@@ -34,17 +34,17 @@
 
 namespace tim
 {
-void
-print_env()
-{
-}
 template <typename... _Args>
 void
 timemory_init(_Args...)
 {
 }
-void
+inline void
 timemory_finalize()
+{
+}
+inline void
+print_env()
 {
 }
 
@@ -79,46 +79,64 @@ struct dummy
 };
 }  // namespace tim
 
-// creates a label
+// startup/shutdown/configure
+#    define TIMEMORY_INIT(...)
+#    define TIMEMORY_FINALIZE()
+#    define TIMEMORY_CONFIGURE(...)
+
+// label creation
 #    define TIMEMORY_BASIC_LABEL(...) std::string("")
 #    define TIMEMORY_LABEL(...) std::string("")
+#    define TIMEMORY_JOIN(...) std::string("")
 
 // define an object
 #    define TIMEMORY_BLANK_MARKER(...)
 #    define TIMEMORY_BASIC_MARKER(...)
 #    define TIMEMORY_MARKER(...)
 
+// define an unique pointer object
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
+
 // define an object with a caliper reference
 #    define TIMEMORY_BLANK_CALIPER(...)
 #    define TIMEMORY_BASIC_CALIPER(...)
 #    define TIMEMORY_CALIPER(...)
-#    define TIMEMORY_CALIPER_APPLY(...)
-#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
 
 // define a static object with a caliper reference
 #    define TIMEMORY_STATIC_BLANK_CALIPER(...)
 #    define TIMEMORY_STATIC_BASIC_CALIPER(...)
 #    define TIMEMORY_STATIC_CALIPER(...)
 
-// define an object
+// invoke member function on caliper reference or type within reference
+#    define TIMEMORY_CALIPER_APPLY(...)
+#    define TIMEMORY_CALIPER_TYPE_APPLY(...)
+
+// get an object
 #    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
 #    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
 #    define TIMEMORY_HANDLE(...) tim::dummy()
 
+// get a pointer to an object
+#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_POINTER_HANDLE(...) nullptr
+
 // debug only
-#    define TIMEMORY_DEBUG_BASIC_MARKER(...)
-#    define TIMEMORY_DEBUG_MARKER(...)
+#    define TIMEMORY_DEBUG_BLANK_MARKER(...)
 #    define TIMEMORY_DEBUG_BASIC_MARKER(...)
 #    define TIMEMORY_DEBUG_MARKER(...)
 
-// unique pointers
-#    define TIMEMORY_BLANK_POINTER(...)
-#    define TIMEMORY_BASIC_POINTER(...)
-#    define TIMEMORY_POINTER(...)
-
-// deprecated
-#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
-#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
+// auto-timers
+#    define TIMEMORY_BLANK_AUTO_TIMER(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_AUTO_TIMER(...)
+#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_DEBUG_AUTO_TIMER(...)
 
 #else
 
@@ -289,5 +307,7 @@ serialize(std::string fname, const exec_data& obj)
 }  // namespace tim
 
 //======================================================================================//
+
+#    include "timemory/plotting.hpp"
 
 #endif  // ! defined(DISABLE_TIMEMORY)

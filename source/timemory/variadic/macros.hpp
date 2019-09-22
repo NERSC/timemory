@@ -229,9 +229,23 @@ using str = tim::apply<std::string>;
 
 #    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
 
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BLANK_POINTER_HANDLE(type, ...)                                     \
+        new TIMEMORY_BLANK_HANDLE(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BASIC_POINTER_HANDLE(type, ...)                                     \
+        new TIMEMORY_BASIC_HANDLE(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_POINTER_HANDLE(type, ...) new TIMEMORY_HANDLE(type, __VA_ARGS__)
+
 //======================================================================================//
 //
-//                      PRODUCTION AND DEBUG MACROS
+//                      DEBUG MACROS
 //
 //======================================================================================//
 

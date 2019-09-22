@@ -309,9 +309,12 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _serialize(_Archive& ar)
     {
-        auto ret = storage<_Tp>::noninit_instance();
-        if(ret && !ret->empty())
-            ret->_serialize(ar);
+        if(component::properties<_Tp>::has_storage())
+        {
+            auto ret = storage<_Tp>::noninit_instance();
+            if(ret && !ret->empty())
+                ret->_serialize(ar);
+        }
     }
 
     template <typename _Archive, typename _Tp, typename... _Tail,

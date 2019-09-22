@@ -250,6 +250,10 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
+    auto _cpu2 = obj.get<user_clock>() + obj.get<system_clock>();
+
+    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
+
     obj.start();
     details::allocate();
     obj.stop();
@@ -270,7 +274,7 @@ main(int argc, char** argv)
     tim::settings::memory_units() = "KiB";
     tim::settings::precision()    = 6;
     tim::timemory_init(argc, argv);
-    tim::settings::file_output() = false;
+    // tim::settings::file_output() = false;
     tim::settings::verbose() += 1;
     tim::settings::debug() = true;
 

@@ -208,9 +208,9 @@ test_1_usage()
     print_info(__FUNCTION__);
     TIMEMORY_MARKER(auto_tuple_t, "");
 
-    full_measurement_t _use_beg("");
-    full_measurement_t _use_delta("");
-    full_measurement_t _use_end("");
+    full_measurement_t _use_beg("test_1_usage_begin");
+    full_measurement_t _use_delta("test_1_usage_delta");
+    full_measurement_t _use_end("test_1_usage_end");
 
     auto n = 5000000;
     _use_beg.record();
