@@ -27,6 +27,7 @@ set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 # installed and interface libraries
 set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
 set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_EXTERN_LIBRARIES @TIMEMORY_EXTERN_LIBRARIES@)
 set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
 if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
@@ -272,18 +273,24 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
         endif()
     endmacro()
 
-    if("extern-templates" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
-        if(NOT WIN32)
-            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-extern-templates extern-templates)
-            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cxx-${_LINK})
-        else()
-            message(WARNING "timemory-extern-templates not available on Windows")
-            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS timemory-extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS extern-templates)
+    foreach(_EXTERN_LIB ${@PROJECT_NAME@_EXTERN_LIBRARIES})
+        if("${_EXTERN_LIB}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR
+           "${_EXTERN_LIB}-${_LINK}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            if(NOT WIN32)
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_EXTERN_LIB}-${_LINK}
+                                                     ${_EXTERN_LIB}-${_LINK}
+                                                     ${_EXTERN_LIB})
+            else()
+                message(WARNING "timemory-extern-templates not available on Windows")
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS timemory-${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_EXTERN_LIB})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_EXTERN_LIB})
+            endif()
         endif()
-    endif()
+    endforeach()
 
     foreach(_LANGUAGE ${_LANGUAGES})
         # handle special case of cuda

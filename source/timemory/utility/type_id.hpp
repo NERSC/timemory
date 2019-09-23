@@ -24,23 +24,7 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-
-#include "timemory/mpl/apply.hpp"
-#include "timemory/utility/macros.hpp"
-
-//--------------------------------------------------------------------------------------//
-
-#include <array>
-#include <cstdint>
-#include <deque>
-#include <mutex>
 #include <string>
-#include <thread>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
-#include <vector>
 
 namespace tim
 {
@@ -50,7 +34,6 @@ namespace tim
 template <typename _Tp>
 struct type_id
 {
-    using string_t = std::string;
     static std::string name() { return typeid(_Tp).name(); }
 };
 
@@ -59,8 +42,7 @@ struct type_id
 template <typename _Tp>
 struct type_id<const _Tp>
 {
-    using string_t = std::string;
-    static std::string name() { return string_t("K") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("K") + typeid(_Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -68,8 +50,7 @@ struct type_id<const _Tp>
 template <typename _Tp>
 struct type_id<const _Tp&>
 {
-    using string_t = std::string;
-    static std::string name() { return string_t("RK") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("RK") + typeid(_Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -77,8 +58,7 @@ struct type_id<const _Tp&>
 template <typename _Tp>
 struct type_id<_Tp&>
 {
-    using string_t = std::string;
-    static std::string name() { return string_t("R") + typeid(_Tp).name(); }
+    static std::string name() { return std::string("R") + typeid(_Tp).name(); }
 };
 
 //--------------------------------------------------------------------------------------//

@@ -170,25 +170,61 @@ template <typename _Tp>
 struct start;
 
 template <typename _Tp>
+struct priority_start;
+
+template <typename _Tp>
+struct standard_start;
+
+template <typename _Tp>
 struct stop;
+
+template <typename _Tp>
+struct priority_stop;
+
+template <typename _Tp>
+struct standard_stop;
 
 template <typename _Tp>
 struct conditional_start;
 
 template <typename _Tp>
+struct conditional_priority_start;
+
+template <typename _Tp>
+struct conditional_standard_start;
+
+template <typename _Tp>
 struct conditional_stop;
 
 template <typename _Tp>
-struct minus;
+struct conditional_priority_stop;
+
+template <typename _Tp>
+struct conditional_standard_stop;
+
+template <typename _Tp>
+struct mark_begin;
+
+template <typename _Tp>
+struct mark_end;
+
+template <typename RetType, typename LhsType, typename RhsType>
+struct compose;
 
 template <typename _Tp>
 struct plus;
+
+template <typename _Tp>
+struct minus;
 
 template <typename _Tp>
 struct multiply;
 
 template <typename _Tp>
 struct divide;
+
+template <typename _Tp>
+struct get_data;
 
 template <typename _Tp>
 struct print;
@@ -200,6 +236,9 @@ template <typename _Tp, typename _Archive>
 struct serialization;
 
 template <typename _Tp>
+struct echo_measurement;
+
+template <typename _Tp>
 struct copy;
 
 template <typename _Tp, typename _Op>
@@ -208,7 +247,22 @@ struct pointer_operator;
 template <typename _Tp>
 struct pointer_deleter;
 
-}  // component
+template <typename _Tp>
+struct pointer_counter;
+
+template <typename _Tp>
+struct set_width;
+
+template <typename _Tp>
+struct set_precision;
+
+template <typename _Tp>
+struct set_format_flags;
+
+template <typename _Tp>
+struct set_units;
+
+}  // namespace operation
 
 //--------------------------------------------------------------------------------------//
 //
@@ -245,14 +299,14 @@ public:
         }
     }
 
-    operator int64_t() const { return static_cast<int64_t>(m_type); }
-    operator uint64_t() const { return static_cast<uint64_t>(m_type); }
+    explicit operator int64_t() const { return static_cast<int64_t>(m_type); }
+    explicit operator uint64_t() const { return static_cast<uint64_t>(m_type); }
 
     constexpr explicit language(const type& _type)
     : m_type(_type)
     {}
 
-    language(const char* m_lang)
+    explicit language(const char* m_lang)
     : m_type(type::UNKNOWN)
     , m_descript(m_lang)
     {}
@@ -283,6 +337,18 @@ class component_tuple;
 
 template <typename... Types>
 class component_list;
+
+template <typename _Tuple, typename _List>
+class component_hybrid;
+
+template <typename... Types>
+class auto_tuple;
+
+template <typename... Types>
+class auto_list;
+
+template <typename _Tuple, typename _List>
+class auto_hybrid;
 
 //--------------------------------------------------------------------------------------//
 //  category configurations

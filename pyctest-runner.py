@@ -226,6 +226,8 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
+            build_opts["TIMEMORY_USE_CALIPER"] = "OFF"
+            build_opts["TIMEMORY_BUILD_CALIPER"] = "OFF"
             pyctest.BUILD_NAME = "{} COV".format(pyctest.BUILD_NAME)
             if pyctest.BUILD_TYPE != "Debug":
                 warnings.warn(

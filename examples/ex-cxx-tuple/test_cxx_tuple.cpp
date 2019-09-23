@@ -297,7 +297,7 @@ test_2_timing()
     using lock_t  = std::unique_lock<mutex_t>;
 
     mutex_t              mtx;
-    std::deque<pair_t>   measurements;
+    std::vector<pair_t>  measurements;
     measurement_t        runtime("", false);
     printed_t            runtime_printed("", false);
     std::atomic<int64_t> ret;
@@ -343,7 +343,7 @@ test_2_timing()
               << get_measurment<process_cpu_clock>(runtime) << std::endl;
     std::cout << "measured data: " << get_measurments(runtime_printed) << std::endl;
 
-    measurements.push_front(pair_t("run", runtime));
+    measurements.insert(measurements.begin(), pair_t("run", runtime));
     serialize("timing.json", "runtime", measurements);
 }
 

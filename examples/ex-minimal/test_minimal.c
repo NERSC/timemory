@@ -27,7 +27,6 @@
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
-#define NSIZE 10000000
 int main(int argc, char** argv)
 {
     void* t0  = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);

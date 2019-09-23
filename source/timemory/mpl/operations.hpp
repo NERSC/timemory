@@ -1162,17 +1162,7 @@ struct echo_measurement
                 ss << " " << attribute_string(itr.first, itr.second);
             ss << ">" << itr << "</DartMeasurement>\n";
         }
-
         std::cout << ss.str() << std::flush;
-
-        /*
-        ar.setNextName("NamedMeasurement");
-        ar.startNode();
-        ar.appendAttribute("type", "numeric/double");
-        ar.appendAttribute("name", name.c_str());
-        ar(serializer::make_nvp("Value", _data));
-        ar.finishNode();
-        */
     }
 
     template <typename _Up = _Tp, typename _Vt = value_type,

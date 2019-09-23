@@ -4,7 +4,7 @@ project(timemory-Minimal-Example LANGUAGES CXX)
 
 include(CheckCCompilerFlag)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)
-set(COMPONENTS compile-options analysis-tools papi caliper)
+set(COMPONENTS compile-options analysis-tools extern-auto-timer)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 set(TIMEMORY_C_LIBRARY )
@@ -16,17 +16,22 @@ endif()
 
 if(TIMEMORY_C_LIBRARY)
     check_c_compiler_flag("-Wno-unused-parameter" "no_unused_parameter")
+    if(no_unused_parameter)
+        # use this method so flag is provided after timemory-compile-options
+        add_library(test-c-minimal-compile-options INTERFACE)
+        target_compile_options(test-c-minimal-compile-options INTERFACE
+            $<$<COMPILE_LANGUAGE:C>:-Wno-unused-parameter>)
+        list(APPEND TIMEMORY_C_LIBRARY test-c-minimal-compile-options)
+    endif()
     add_executable(test_c_minimal test_minimal.c)
     target_link_libraries(test_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
     install(TARGETS test_c_minimal DESTINATION bin)
-    if(no_unused_parameter)
-        target_compile_options(test_c_minimal PRIVATE $<$<COMPILE_LANGUAGE:C>:-Wno-unused-parameter>)
-    endif()
 endif()
 
 add_executable(test_cxx_minimal test_minimal.cpp)
 target_link_libraries(test_cxx_minimal timemory-minimal-example)
 install(TARGETS test_cxx_minimal DESTINATION bin)
+# target_compile_definitions(test_cxx_minimal PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")

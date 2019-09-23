@@ -25,6 +25,9 @@
 #include "gtest/gtest.h"
 
 #include <chrono>
+#include <cmath>
+#include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <random>
 #include <thread>
@@ -188,7 +191,7 @@ TEST_F(papi_tests, tuple_single_precision_ops)
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI float ops");
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+    if(std::abs(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -210,7 +213,7 @@ TEST_F(papi_tests, array_single_precision_ops)
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI float ops");
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+    if(std::abs(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -235,7 +238,7 @@ TEST_F(papi_tests, tuple_double_precision_ops)
 
     details::report<double>(total_measured, total_expected, ops_tolerance,
                             "PAPI double ops");
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+    if(std::abs(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -257,7 +260,7 @@ TEST_F(papi_tests, array_double_precision_ops)
 
     details::report<double>(total_measured, total_expected, ops_tolerance,
                             "PAPI double ops");
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+    if(std::abs(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -282,7 +285,7 @@ TEST_F(papi_tests, tuple_load_store_ins_sp)
 
     details::report<float>(total_measured, total_expected, ops_tolerance,
                            "PAPI load/store");
-    if(std::abs<int64_t>(total_measured - total_expected) < ops_tolerance)
+    if(std::abs(total_measured - total_expected) < ops_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -304,7 +307,7 @@ TEST_F(papi_tests, array_load_store_ins_dp)
 
     details::report<double>(total_measured, total_expected, lst_tolerance,
                             "PAPI load/store");
-    if(std::abs<int64_t>(total_measured - total_expected) < lst_tolerance)
+    if(std::abs(total_measured - total_expected) < lst_tolerance)
         SUCCEED();
     else
         FAIL();
@@ -326,7 +329,7 @@ TEST_F(papi_tests, array_load_store_ins_tp)
 
     details::report<long double>(total_measured, total_expected, lst_tolerance,
                                  "PAPI load/store");
-    if(std::abs<int64_t>(total_measured - total_expected) < lst_tolerance)
+    if(std::abs(total_measured - total_expected) < lst_tolerance)
         SUCCEED();
     else
         FAIL();

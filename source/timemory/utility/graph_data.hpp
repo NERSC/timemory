@@ -28,15 +28,7 @@
 
 #include "timemory/utility/graph.hpp"
 
-//--------------------------------------------------------------------------------------//
-
 #include <cstdint>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <tuple>
-#include <unordered_map>
 
 //--------------------------------------------------------------------------------------//
 

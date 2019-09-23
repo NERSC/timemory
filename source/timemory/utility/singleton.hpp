@@ -32,8 +32,6 @@
 
 #pragma once
 
-#include "timemory/utility/macros.hpp"
-
 #include <cstddef>
 #include <functional>
 #include <list>

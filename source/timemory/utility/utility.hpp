@@ -39,7 +39,6 @@
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
-#include <cstring>
 // I/O
 #include <iomanip>
 #include <iostream>
@@ -50,7 +49,6 @@
 #include <limits>
 #include <utility>
 // container
-#include <deque>
 #include <map>
 #include <vector>
 // threading
@@ -123,7 +121,7 @@ isfinite(const _Tp& arg)
 //--------------------------------------------------------------------------------------//
 
 using string_t    = std::string;
-using str_list_t  = std::deque<string_t>;
+using str_list_t  = std::vector<string_t>;
 using mutex_t     = std::mutex;
 using auto_lock_t = std::unique_lock<mutex_t>;
 

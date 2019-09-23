@@ -200,6 +200,10 @@ using str = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
+#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_AUTO_NAME(id)).get()
+
+//--------------------------------------------------------------------------------------//
+
 #    define TIMEMORY_CALIPER_APPLY(id, func, ...) _AUTO_NAME(id).func(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
@@ -209,7 +213,12 @@ using str = tim::apply<std::string>;
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_AUTO_NAME(id)).get()
+#    define TIMEMORY_CALIPER_APPLY0(id, func) _AUTO_NAME(id).func()
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CALIPER_TYPE_APPLY0(id, type, func)                                 \
+        _AUTO_NAME(id).type_apply<type>(func)
 
 //======================================================================================//
 //
@@ -232,16 +241,19 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BLANK_POINTER_HANDLE(type, ...)                                     \
-        new TIMEMORY_BLANK_HANDLE(type, __VA_ARGS__)
+        (::tim::settings::enabled()) ? new TIMEMORY_BLANK_HANDLE(type, __VA_ARGS__)      \
+                                     : nullptr
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_POINTER_HANDLE(type, ...)                                     \
-        new TIMEMORY_BASIC_HANDLE(type, __VA_ARGS__)
+        (::tim::settings::enabled()) ? new TIMEMORY_BASIC_HANDLE(type, __VA_ARGS__)      \
+                                     : nullptr
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_POINTER_HANDLE(type, ...) new TIMEMORY_HANDLE(type, __VA_ARGS__)
+#    define TIMEMORY_POINTER_HANDLE(type, ...)                                           \
+        (::tim::settings::enabled()) ? new TIMEMORY_HANDLE(type, __VA_ARGS__) : nullptr
 
 //======================================================================================//
 //

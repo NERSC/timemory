@@ -16,12 +16,8 @@ file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
-
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
-file(GLOB cuda_sources              ${CMAKE_CURRENT_LIST_DIR}/cuda_extern.cpp)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
 
 # all the headers
 set(timemory_headers
@@ -46,7 +42,11 @@ add_subdirectory(timemory)
 # directly compile sources
 set(C_LIBRARY_SOURCES    ${c_sources}   ${c_headers})
 set(CXX_LIBRARY_SOURCES  ${cxx_sources} ${timemory_headers} ${cereal_headers})
-set(CUDA_LIBRARY_SOURCES ${cuda_sources})
+
+set(_ARCH_LIBRARY )
+if(TIMEMORY_USE_ARCH)
+    set(_ARCH_LIBRARY timemory-arch)
+endif()
 
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
@@ -62,9 +62,20 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
-                        #timemory-cuda timemory-cudart timemory-cuda-nvtx timemory-cupti
-                        timemory-papi timemory-caliper)
+    LINK_LIBRARIES      timemory-headers
+                        timemory-vector
+                        # timemory-mpi
+                        # timemory-cuda
+                        # timemory-cudart
+                        # timemory-cudart-device
+                        # timemory-nvtx
+                        # timemory-cupti
+                        timemory-papi
+                        timemory-caliper
+                        PRIVATE
+                            timemory-compile-options
+                            timemory-analysis-tools
+                            ${_ARCH_LIBRARY})
 
 build_library(
     TYPE                STATIC
@@ -75,91 +86,30 @@ build_library(
     OUTPUT_DIR          ${PROJECT_BINARY_DIR}
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    LINK_LIBRARIES      timemory-headers timemory-compile-options timemory-vector # timemory-mpi
-                        #timemory-cuda timemory-cudart-static timemory-cudart-device timemory-cuda-nvtx timemory-cupti
-                        timemory-papi-static timemory-caliper)
+    LINK_LIBRARIES      timemory-headers
+                        timemory-compile-options
+                        timemory-vector
+                        # timemory-mpi
+                        # timemory-cuda
+                        # timemory-cudart-static
+                        # timemory-cudart-device
+                        # timemory-nvtx
+                        # timemory-cupti
+                        timemory-papi-static
+                        timemory-caliper
+                        PRIVATE
+                            timemory-compile-options
+                            timemory-analysis-tools
+                            ${_ARCH_LIBRARY})
 
 if(WIN32)
     # make sure on Windows, static is built first. There is something weird
     # happening here when built in parallel...
     add_dependencies(timemory-cxx-shared timemory-cxx-static)
-endif()
-
-# private compile options
-target_link_libraries(timemory-cxx-shared PRIVATE timemory-compile-options timemory-analysis-tools)
-target_link_libraries(timemory-cxx-static PRIVATE timemory-compile-options timemory-analysis-tools)
-
-if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    if(NOT WIN32)
-        target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
-        target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    else()
-        message(WARNING "Building extern templates is not currently supported on Windows")
-        set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
-    endif()
-endif()
-
-if(WIN32)
     target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL)
     target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
 endif()
 
-
-#----------------------------------------------------------------------------------------#
-# build the CUDA libraries
-#
-if(TIMEMORY_USE_CUDA)
-
-    build_library(
-        PIC
-        TYPE                SHARED
-        TARGET_NAME         timemory-cuda-shared
-        OUTPUT_NAME         cutimemory
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     CUDA
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${CUDA_LIBRARY_SOURCES}
-        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS
-        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart timemory-cupti)
-
-    build_library(
-        TYPE                STATIC
-        TARGET_NAME         timemory-cuda-static
-        OUTPUT_NAME         cutimemory
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     CUDA
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${CUDA_LIBRARY_SOURCES}
-        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers timemory-cuda timemory-cudart-static timemory-cupti)
-
-    if(WIN32)
-        # make sure on Windows, static is built first. There is something weird
-        # happening here when built in parallel...
-        add_dependencies(timemory-cuda-shared timemory-cuda-static)
-    endif()
-
-    # private compile options
-    target_link_libraries(timemory-cuda-shared PRIVATE timemory-compile-options timemory-analysis-tools)
-    target_link_libraries(timemory-cuda-static PRIVATE timemory-compile-options timemory-analysis-tools)
-
-    if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-        if(NOT WIN32)
-            target_compile_definitions(timemory-cuda-shared PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
-            target_compile_definitions(timemory-cuda-static PRIVATE TIMEMORY_BUILD_EXTERN_TEMPLATES)
-        else()
-            message(WARNING "Building extern templates is not currently supported on Windows")
-            set(TIMEMORY_BUILD_EXTERN_TEMPLATES OFF)
-        endif()
-    endif()
-
-    if(WIN32)
-        target_compile_definitions(timemory-cuda-shared PRIVATE _TIMEMORY_DLL)
-        target_compile_definitions(timemory-cuda-static PUBLIC  _TIMEMORY_ARCHIVE)
-    endif()
-
-endif()
 
 #----------------------------------------------------------------------------------------#
 # build the C libraries
@@ -179,7 +129,12 @@ if(TIMEMORY_BUILD_C)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers PRIVATE timemory-compile-options timemory-cxx-shared)
+        LINK_LIBRARIES      timemory-headers
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-cxx-shared
+                                timemory-analysis-tools
+                                ${_ARCH_LIBRARY})
 
     build_library(
         TYPE                STATIC
@@ -190,16 +145,118 @@ if(TIMEMORY_BUILD_C)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${C_LIBRARY_SOURCES}
         C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers PRIVATE timemory-compile-options timemory-cxx-static)
-
-    target_link_libraries(timemory-c-shared PRIVATE timemory-analysis-tools)
-    target_link_libraries(timemory-c-static PRIVATE timemory-analysis-tools)
+        LINK_LIBRARIES      timemory-headers
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-cxx-static
+                                timemory-analysis-tools
+                                ${_ARCH_LIBRARY})
 
     if(WIN32)
+        add_dependencies(timemory-c-shared timemory-c-static)
         target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
         target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
     endif()
 endif()
+
+#----------------------------------------------------------------------------------------#
+# Extern initialization
+#
+file(GLOB extern_init_sources       ${CMAKE_CURRENT_LIST_DIR}/init.cpp)
+file(GLOB extern_native_sources     ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
+file(GLOB extern_cuda_sources       ${CMAKE_CURRENT_LIST_DIR}/cuda_extern.cpp)
+file(GLOB extern_auto_timer_sources ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp)
+
+set(extern_init_link_libs_shared       timemory-external-shared)
+set(extern_cuda_link_libs_shared       timemory-cuda timemory-cudart)
+set(extern_native_link_libs_shared     )
+set(extern_auto_timer_link_libs_shared )
+
+set(extern_init_link_libs_static       timemory-external-static)
+set(extern_cuda_link_libs_static       timemory-cuda timemory-cudart-static)
+set(extern_native_link_libs_static     )
+set(extern_auto_timer_link_libs_static )
+
+set(extern_init_definitions       TIMEMORY_EXTERN_INIT)
+set(extern_cuda_definitions       TIMEMORY_EXTERN_CUDA_TEMPLATES)
+set(extern_native_definitions     TIMEMORY_EXTERN_NATIVE_TEMPLATES)
+set(extern_auto_timer_definitions TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
+
+set(TIMEMORY_EXTERN_LIBRARIES extern-native extern-cuda extern-auto-timer)
+foreach(_EXTERN_LIB native cuda auto-timer)
+    # don't build cuda
+    if(NOT TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
+        continue()
+    endif()
+    # determine linker language
+    set(_LINK_LANGUAGE CXX)
+    if(TIMEMORY_USE_CUDA)
+        set(_LINK_LANGUAGE CUDA)
+    endif()
+
+    string(REPLACE "-" "_" _NAME "${_EXTERN_LIB}")
+
+    #------------------------------------------------------------------------------------#
+    # build the extern libraries
+    #
+    build_library(
+        PIC
+        TYPE                SHARED
+        TARGET_NAME         timemory-extern-${_EXTERN_LIB}-shared
+        OUTPUT_NAME         timemory-extern-${_EXTERN_LIB}
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     ${_LINK_LANGUAGE}
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${extern_${_NAME}_sources}
+        COMPILE_DEFINITIONS PUBLIC
+                                ${extern_${_NAME}_definitions}
+        LINK_LIBRARIES      timemory-headers
+                            ${extern_${_NAME}_link_libs_shared}
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-arch)
+
+    build_library(
+        TYPE                STATIC
+        TARGET_NAME         timemory-extern-${_EXTERN_LIB}-static
+        OUTPUT_NAME         timemory-extern-${_EXTERN_LIB}
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     ${_LINK_LANGUAGE}
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${extern_${_NAME}_sources}
+        COMPILE_DEFINITIONS PUBLIC
+                                ${extern_${_NAME}_definitions}
+        LINK_LIBRARIES      timemory-headers
+                            ${extern_${_NAME}_link_libs_static}
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-arch)
+
+    if("${_EXTERN_LIB}" STREQUAL "init")
+        target_link_libraries(timemory-extern-init INTERFACE
+            timemory-extern-${_EXTERN_LIB}-shared)
+
+        target_link_libraries(timemory-extern-init-static INTERFACE
+            timemory-extern-${_EXTERN_LIB}-static)
+    else()
+        target_link_libraries(timemory-extern-templates INTERFACE
+            timemory-extern-${_EXTERN_LIB}-shared)
+
+        target_link_libraries(timemory-extern-templates-static INTERFACE
+            timemory-extern-${_EXTERN_LIB}-static)
+    endif()
+
+    if(WIN32)
+        # make sure on Windows, static is built first. There is something weird
+        # happening here when built in parallel...
+        add_dependencies(timemory-extern-${_EXTERN_LIB}-shared
+            timemory-extern-${_EXTERN_LIB}-static)
+        target_compile_definitions(timemory-extern-${_EXTERN_LIB}-shared PRIVATE
+            _TIMEMORY_DLL)
+        target_compile_definitions(timemory-extern-${_EXTERN_LIB}-static PUBLIC
+            _TIMEMORY_ARCHIVE)
+    endif()
+endforeach()
 
 
 #----------------------------------------------------------------------------------------#

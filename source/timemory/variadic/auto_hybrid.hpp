@@ -93,8 +93,8 @@ public:
 
 public:
     // public member functions
-    inline component_type&       component_tuple() { return m_temporary_object; }
-    inline const component_type& component_tuple() const { return m_temporary_object; }
+    inline component_type&       get_component_type() { return m_temporary_object; }
+    inline const component_type& get_component_type() const { return m_temporary_object; }
 
     // partial interface to underlying component_hybrid
     inline void record()
@@ -163,14 +163,14 @@ public:
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
-    inline const data_type& data() const { return m_temporary_object.data(); }
-    inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
-    inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
-    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    inline const bool&     store() const { return m_temporary_object.store(); }
+    inline data_type       data() const { return m_temporary_object.data(); }
+    inline int64_t         laps() const { return m_temporary_object.laps(); }
+    inline const int64_t&  hash() const { return m_temporary_object.hash(); }
+    inline const string_t& key() const { return m_temporary_object.key(); }
+    inline const language& lang() const { return m_temporary_object.lang(); }
+    inline const string_t& identifier() const { return m_temporary_object.identifier(); }
+    inline void            rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }

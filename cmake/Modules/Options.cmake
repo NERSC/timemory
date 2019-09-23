@@ -170,6 +170,8 @@ if(UNIX AND NOT APPLE)
     add_option(TIMEMORY_USE_GOTCHA
         "Enable GOTCHA" ON ${_FEATURE})
 endif()
+add_option(TIMEMORY_USE_COMPILE_TIMING
+    "Enable -ftime-report for compilation times" OFF ${_FEATURE})
 
 # disable these for Debug builds
 if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")

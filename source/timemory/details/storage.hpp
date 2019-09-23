@@ -29,7 +29,6 @@
  */
 
 #include "timemory/components.hpp"
-#include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
@@ -54,7 +53,9 @@ bool
 is_finite(const _Tp& val)
 {
 #if defined(_WINDOWS)
-    return (val == val && std::abs<_Tp>(val) != std::numeric_limits<_Tp>::infinity());
+    const _Tp _infv = std::numeric_limits<_Tp>::infinity();
+    const _Tp _inf  = (val < 0.0) ? -_infv : _infv;
+    return (val == val && val != _inf);
 #else
     return std::isfinite(val);
 #endif
@@ -640,9 +641,9 @@ tim::storage<ObjectType>::serialize_me(std::false_type, Archive& ar,
                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-    using array_type = std::deque<tuple_type>;
+    using array_type = std::vector<tuple_type>;
 
-    // convert graph to a deque
+    // convert graph to a vector
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : _data().graph())
@@ -684,9 +685,9 @@ tim::storage<ObjectType>::serialize_me(std::true_type, Archive& ar,
                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-    using array_type = std::deque<tuple_type>;
+    using array_type = std::vector<tuple_type>;
 
-    // convert graph to a deque
+    // convert graph to a vector
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : _data().graph())

@@ -24,24 +24,7 @@
 
 #pragma once
 
-#include <cfenv>
-#include <cmath>
-#include <csignal>
-#include <cstdlib>
-#include <cstring>
-#include <deque>
-#include <exception>
-#include <functional>
-#include <iomanip>
-#include <iostream>
-#include <set>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
-
 #if defined(_UNIX)
-#    include <cfenv>
 #    include <cxxabi.h>
 #    include <execinfo.h>  // for StackBacktrace()
 #endif

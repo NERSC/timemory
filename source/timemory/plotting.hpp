@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/components.hpp"
+#include "timemory/details/components.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/variadic/macros.hpp"
 
@@ -60,14 +61,24 @@ template <typename _Tp, typename... _Tail,
 void
 _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
 {
+    if(!component::properties<_Tp>::has_storage())
+        return;
+
     if(std::system(nullptr) && tim::settings::json_output() &&
        !tim::trait::external_output_handling<_Tp>::value)
     {
         auto label    = _Tp::label();
         auto descript = _Tp::description();
         auto jname    = tim::settings::compose_output_filename(label, ".json");
-        auto odir     = (_dir == "") ? settings::output_path() : _dir;
-        auto cmd = TIMEMORY_JOIN(" ", "python", "-m", "timemory.plotting", "-f", jname,
+        {
+            std::ifstream ifs(jname.c_str());
+            bool          exists = ifs.good();
+            ifs.close();
+            if(!exists)
+                return;
+        }
+        auto odir = (_dir == "") ? settings::output_path() : _dir;
+        auto cmd  = TIMEMORY_JOIN(" ", "python", "-m", "timemory.plotting", "-f", jname,
                                  "-t", "\"" + _prefix, descript + "\"", "-o", odir);
         if(echo_dart)
             cmd += " -e";

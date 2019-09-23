@@ -134,7 +134,7 @@ TEST_F(cuda_tests, saxpy)
     for(int64_t i = 0; i < N; i++)
     {
         maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += std::abs<float>(y[i] - 2.0);
+        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
     }
 
     tim::device::cpu::free(x);
@@ -251,7 +251,7 @@ TEST_F(cuda_tests, saxpy_streams)
     for(int64_t i = 0; i < N; i++)
     {
         maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += std::abs<float>(y[i] - 2.0);
+        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
     }
 
     tim::device::cpu::free(x);

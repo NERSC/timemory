@@ -43,6 +43,9 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
+#include <cfenv>
+#include <csignal>
+
 //======================================================================================//
 
 namespace tim
@@ -195,8 +198,8 @@ timemory_stack_backtrace(std::ostream& ss)
         return;
     }
 
-    std::deque<std::deque<std::string>> dmang_buf;
-    std::deque<size_type>               dmang_len;
+    std::vector<std::vector<std::string>> dmang_buf;
+    std::vector<size_type>                dmang_len;
 
     // lambda for demangling a string when delimiting
     auto _transform = [](std::string _str) {

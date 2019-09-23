@@ -249,16 +249,6 @@ get_profile()
 }  // namespace heap
 
 //======================================================================================//
-/*
-inline void
-profiler_start(const std::string& name)
-{
-    int ret = cpu::profiler_start(name) + heap::profiler_start(name);
-    if(ret != 0)
-        std::cerr << "Profiler failed to start for \"" << name << "\"..." << std::endl;
-}
-*/
-//--------------------------------------------------------------------------------------//
 
 inline void
 profiler_stop()

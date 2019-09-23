@@ -202,16 +202,11 @@ using recommended_hybrid_t = component_hybrid<recommended_list_t, recommended_tu
 
 //======================================================================================//
 
-#    if defined(TIMEMORY_EXTERN_TEMPLATES)
-#        include "timemory/templates/native_extern.hpp"
-#    endif
+#    include "timemory/templates/auto_timer_extern.hpp"
+#    include "timemory/templates/cuda_extern.hpp"
+#    include "timemory/templates/native_extern.hpp"
 
 //======================================================================================//
-
-#    if defined(TIMEMORY_EXTERN_TEMPLATES) && defined(TIMEMORY_USE_CUDA)
-// not yet implemented
-// #    include "timemory/templates/cuda_extern.hpp"
-#    endif
 
 //======================================================================================//
 

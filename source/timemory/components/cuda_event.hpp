@@ -40,7 +40,7 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
-#include <deque>
+#include <vector>
 
 //======================================================================================//
 
@@ -100,7 +100,7 @@ struct cuda_event : public base<cuda_event, float>
     using ratio_t       = std::milli;
     using value_type    = float;
     using base_type     = base<cuda_event, value_type>;
-    using marker_list_t = std::deque<marker>;
+    using marker_list_t = std::vector<marker>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;

@@ -72,15 +72,17 @@ class component_hybrid
     friend class manager;
 
 public:
-    using size_type        = int64_t;
-    using language_t       = tim::language;
-    using string_hash      = std::hash<string_t>;
-    using tuple_type       = _CompTuple;
-    using list_type        = _CompList;
-    using this_type        = component_hybrid<tuple_type, list_type>;
-    using tuple_data_type  = typename tuple_type::data_type;
-    using list_data_type   = typename list_type::data_type;
-    using data_type        = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
+    using size_type       = int64_t;
+    using language_t      = tim::language;
+    using string_hash     = std::hash<string_t>;
+    using tuple_type      = _CompTuple;
+    using list_type       = _CompList;
+    using this_type       = component_hybrid<tuple_type, list_type>;
+    using tuple_data_type = typename tuple_type::data_type;
+    using list_data_type  = typename list_type::data_type;
+    using data_type       = decltype(std::tuple_cat(std::declval<_CompTuple>().data(),
+                                              std::declval<_CompList>().data()));
+    // using data_type        = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
     using type_tuple       = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
     using data_value_tuple = decltype(std::tuple_cat(std::declval<_CompTuple>().get(),
@@ -450,6 +452,12 @@ public:
     }
 
 public:
+    inline data_type data() const
+    {
+        return std::tuple_cat(m_tuple.data(), m_list.data());
+    }
+
+public:
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
     auto get() -> decltype(std::declval<_CompTuple>().template get<_Tp>())
@@ -494,8 +502,8 @@ protected:
 
     void compute_identifier(const string_t& key, const language_t& lang)
     {
-        m_tuple.compute_identifer(key, lang);
-        m_list.compute_identifer(key, lang);
+        m_tuple.compute_identifier(key, lang);
+        m_list.compute_identifier(key, lang);
     }
 
     void update_identifier() const

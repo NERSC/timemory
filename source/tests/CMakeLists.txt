@@ -86,7 +86,7 @@ add_googletest(cuda_nvtx_tests
     DISCOVER_TESTS
     SOURCES         cuda_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
-                    timemory-cuda    timemory-cudart timemory-cuda-nvtx)
+                    timemory-cuda    timemory-cudart timemory-nvtx)
 
 if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
     add_library(cupti-compile-options INTERFACE)

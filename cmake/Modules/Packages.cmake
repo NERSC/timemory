@@ -15,7 +15,9 @@ enable_testing()
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
 add_interface_library(timemory-extern-templates)
+add_interface_library(timemory-extern-templates-static)
 add_interface_library(timemory-extern-init)
+add_interface_library(timemory-extern-init-static)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
@@ -31,7 +33,7 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
-add_interface_library(timemory-cuda-nvtx)
+add_interface_library(timemory-nvtx)
 add_interface_library(timemory-caliper)
 add_interface_library(timemory-gotcha)
 
@@ -41,16 +43,20 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
+set(_MPI_INTERFACE_LIBRARY)
+if(TIMEMORY_USE_MPI)
+    set(_MPI_INTERFACE_LIBRARY timemory-mpi)
+endif()
+
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
     timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
-    timemory-papi-static
     timemory-cuda
     timemory-cudart
-    timemory-cuda-nvtx
+    timemory-nvtx
     timemory-cupti
     timemory-cudart-device
     timemory-coverage
@@ -59,8 +65,36 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools-heap
     timemory-santizier)
 
+set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
+    timemory-threading
+    timemory-papi
+    timemory-cuda
+    timemory-cudart
+    timemory-nvtx
+    timemory-cupti
+    timemory-cudart-device
+    timemory-gperftools-cpu
+    ${_MPI_INTERFACE_LIBRARY})
+
+set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
+    timemory-threading
+    timemory-papi-static
+    timemory-cuda
+    timemory-cudart-static
+    timemory-nvtx
+    timemory-cupti
+    timemory-cudart-device
+    timemory-gperftools-cpu
+    ${_MPI_INTERFACE_LIBRARY})
+
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
+
+add_interface_library(timemory-external-shared)
+target_link_libraries(timemory-external-shared INTERFACE ${TIMEMORY_EXTERNAL_SHARED_INTERFACES})
+
+add_interface_library(timemory-external-static)
+target_link_libraries(timemory-external-static INTERFACE ${TIMEMORY_EXTERNAL_STATIC_INTERFACES})
 
 add_interface_library(timemory-analysis-tools)
 
@@ -648,12 +682,12 @@ if(TIMEMORY_USE_NVTX)
 endif()
 
 if(NVTX_FOUND)
-    target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
-    target_include_directories(timemory-cuda-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
-    target_compile_definitions(timemory-cuda-nvtx INTERFACE TIMEMORY_USE_NVTX)
+    target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
+    target_include_directories(timemory-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-cuda-nvtx "NVTX")
+    inform_empty_interface(timemory-nvtx "NVTX")
 endif()
 
 
@@ -781,9 +815,11 @@ if(UNIX AND NOT APPLE)
             WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
         add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS Gotcha)
-    else()
+    elseif(TIMEMORY_USE_GOTCHA)
         find_package(gotcha QUIET)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha)
+    else()
+        set(gotcha_FOUND OFF)
     endif()
 else()
     set(gotcha_FOUND OFF)

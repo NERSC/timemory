@@ -40,7 +40,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-papi
     timemory-cupti
     timemory-cudart
-    timemory-cuda-nvtx
+    timemory-nvtx
     timemory-cudart-device
     timemory-caliper
     timemory-gperftools-cpu
