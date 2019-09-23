@@ -1081,21 +1081,23 @@ struct echo_measurement
     /// generate a name attribute
     ///
     template <typename... _Args>
-    static string_t generate_name(const string_t& _prefix, string_t _unit, _Args&&... _args)
+    static string_t generate_name(const string_t& _prefix, string_t _unit,
+                                  _Args&&... _args)
     {
-        auto _extra    = join("_", std::forward<_Args>(_args)...);
-        auto _label    = join("", "", uppercase(Type::label()), "");
-        _unit          = replace(_unit, "", { " " });
-        string_t _name = (_extra.length() > 0) ? join("_", _extra, _prefix)
-                                               : join("_", _prefix);
+        auto _extra = join("_", std::forward<_Args>(_args)...);
+        auto _label = join("", "", uppercase(Type::label()), "");
+        _label      = replace(_label, "_", { "-" });
+        _unit       = replace(_unit, "", { " " });
+        string_t _name =
+            (_extra.length() > 0) ? join("_", _extra, _prefix) : join("_", _prefix);
         auto _ret = join(" ", _label, _name);
         _ret      = replace(_ret, "_", { "__" });
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
         if(_unit.length() > 0)
             _ret += " (" + _unit + ")";
-        _ret     = replace(_ret, "_", { " "});
-        _ret      = replace(_ret, "_", { "__" });
+        _ret = replace(_ret, "_", { " " });
+        _ret = replace(_ret, "_", { "__" });
         return _ret;
     }
 
@@ -1107,6 +1109,7 @@ struct echo_measurement
                                      const _Vt& value)
     {
         os << "<DartMeasurement";
+        os << " " << attribute_string("type", "numeric/double");
         for(const auto& itr : attributes)
             os << " " << attribute_string(itr.first, itr.second);
         os << ">" << value << "</DartMeasurement>\n";
@@ -1149,7 +1152,7 @@ struct echo_measurement
         auto name   = generate_name(prefix, _unit);
         auto _data  = obj.get();
 
-        attributes_t   attributes = { { "name", name }, { "type", "numeric/double" } };
+        attributes_t   attributes = { { "name", name } };
         stringstream_t ss;
         generate_measurement(ss, attributes, _data);
         std::cout << ss.str() << std::flush;
@@ -1166,7 +1169,7 @@ struct echo_measurement
         auto prefix = generate_prefix(hierarchy);
         auto _data  = obj.get();
 
-        attributes_t   attributes = { { "type", "numeric/double" } };
+        attributes_t   attributes = {};
         stringstream_t ss;
 
         uint64_t idx     = 0;
