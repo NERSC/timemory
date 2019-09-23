@@ -146,14 +146,16 @@ TIMEMORY_INSTANTIATE_EXTERN_HYBRID(voluntary_context_switch_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(written_bytes_t)
 */
 
+// clang-format off
 namespace
 {
-inline bool
-native_extern_symbol()
-{
-    return false;
-}
-
+// designed to provide notify and not warn about unused-{parameter,function}
+// declare func
+static bool
+native_extern_symbol();
+// variable that defaults to func
 static bool _native_extern_symbol = native_extern_symbol();
-
+// impl of func consumes variable
+static bool
+native_extern_symbol() { tim::consume_parameters(_native_extern_symbol); return false; }
 }  // namespace
