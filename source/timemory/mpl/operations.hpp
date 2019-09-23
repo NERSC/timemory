@@ -1094,7 +1094,7 @@ struct echo_measurement
         _ret      = replace(_ret, "_", { "__" });
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
-        if(_unit.length() > 0)
+        if(_unit.length() > 0 && _unit != "%")
             _ret += "_UNITS_" + _unit;
         _ret = replace(_ret, "_", { " " });
         _ret = replace(_ret, "_", { "__" });
@@ -1124,7 +1124,7 @@ struct echo_measurement
         string_t              ret_prefix = "";
         string_t              add_prefix = "";
         static const strset_t repl_chars = { "[", "]",  "(", ")", ".", "/", "\\",
-                                             " ", "\t", "<", ">", "@", "'" };
+                                             " ", "\t", "<", ">", "@", "'", ":" };
         for(const auto& itr : hierarchy)
         {
             auto prefix = itr;
