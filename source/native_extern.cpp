@@ -145,3 +145,12 @@ TIMEMORY_INSTANTIATE_EXTERN_HYBRID(user_clock_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(voluntary_context_switch_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(written_bytes_t)
 */
+
+namespace
+{
+inline bool
+native_extern_symbol()
+{
+    return false;
+}
+}  // namespace

@@ -33,6 +33,8 @@
 #    include <features.h>
 #endif
 
+#include <csignal>
+
 //======================================================================================//
 //
 //      WINDOWS SIGNALS (dummy)

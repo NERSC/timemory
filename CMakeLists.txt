@@ -14,6 +14,9 @@ endif()
 
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
+if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    cmake_policy(SET CMP0079 NEW)
+endif()
 # this gets annoying
 if(TIMEMORY_BUILD_GTEST)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL

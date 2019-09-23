@@ -214,22 +214,29 @@ extern "C"
 //      C function declaration
 //
 //======================================================================================//
+#    if !defined(TIMEMORY_EXTERN_C)
+#    if defined(__cplusplus)
+#        define TIMEMORY_EXTERN_C "C"
+#else 
+#        define TIMEMORY_EXTERN_C
+#    endif
+#endif
 
-tim_api extern void
+extern TIMEMORY_EXTERN_C tim_api void
 c_timemory_init(int argc, char** argv, timemory_settings);
-tim_api extern int
+extern TIMEMORY_EXTERN_C tim_api int
 c_timemory_enabled(void);
-tim_api extern void*
+extern TIMEMORY_EXTERN_C tim_api void*
 c_timemory_create_auto_timer(const char*, int);
-tim_api extern void
+extern TIMEMORY_EXTERN_C tim_api void
 c_timemory_delete_auto_timer(void*);
-tim_api extern void*
+extern TIMEMORY_EXTERN_C tim_api void*
 c_timemory_create_auto_tuple(const char*, int, ...);
-tim_api extern void
+extern TIMEMORY_EXTERN_C tim_api void
 c_timemory_delete_auto_tuple(void*);
-tim_api extern const char*
+extern TIMEMORY_EXTERN_C tim_api const char*
 c_timemory_string_combine(const char*, const char*);
-tim_api extern const char*
+extern TIMEMORY_EXTERN_C tim_api const char*
 c_timemory_auto_str(const char*, const char*, const char*, int);
 
 //======================================================================================//

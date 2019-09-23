@@ -216,6 +216,7 @@
 //
 //======================================================================================//
 
+#if !defined(_WINDOWS)
 #define _EXTERN_NAME_COMBINE(X, Y) X##Y
 #define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
 #define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
@@ -271,6 +272,35 @@
 #define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                    \
     template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
     tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+
+#else
+
+#define _EXTERN_NAME_COMBINE(X, Y) X##Y
+#define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
+#define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
+
+//--------------------------------------------------------------------------------------//
+//      extern declaration
+//
+#define TIMEMORY_DECLARE_EXTERN_TUPLE(...)                                       
+#define TIMEMORY_DECLARE_EXTERN_LIST(...)                                        
+#define TIMEMORY_DECLARE_EXTERN_HYBRID(...)                                           
+
+//--------------------------------------------------------------------------------------//
+//      extern instantiation
+//
+#define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)                                   
+#define TIMEMORY_INSTANTIATE_EXTERN_LIST(...)                                    
+#define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(...)                                       
+
+//--------------------------------------------------------------------------------------//
+//      extern storage
+//
+#define TIMEMORY_EXTERN_STORAGE_TYPE(...) 
+#define TIMEMORY_DECLARE_EXTERN_STORAGE(...)                                        
+#define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(...)                                    
+
+#endif
 
 //======================================================================================//
 //
