@@ -153,4 +153,7 @@ native_extern_symbol()
 {
     return false;
 }
+
+static bool _native_extern_symbol = native_extern_symbol();
+
 }  // namespace

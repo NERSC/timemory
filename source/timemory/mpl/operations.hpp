@@ -1000,6 +1000,7 @@ struct echo_measurement
     using attributes_t   = std::map<string_t, string_t>;
     using strset_t       = std::set<string_t>;
     using stringstream_t = std::stringstream;
+    using strvec_t       = std::vector<string_t>;
 
     //----------------------------------------------------------------------------------//
     // shorthand for available, non-void, using internal output handling
@@ -1080,19 +1081,54 @@ struct echo_measurement
     /// generate a name attribute
     ///
     template <typename... _Args>
-    static string_t generate_name(const string_t& _prefix, string_t _unit,
-                                  const uint64_t& _depth, _Args&&... _args)
+    static string_t generate_name(const string_t& _prefix, string_t _unit, _Args&&... _args)
     {
         auto _extra    = join("_", std::forward<_Args>(_args)...);
         auto _label    = join("", "[", uppercase(Type::label()), "]");
         _unit          = replace(_unit, "", { " " });
-        string_t _name = (_extra.length() > 0) ? join("_", _extra, _prefix, _depth, _unit)
-                                               : join("_", _prefix, _depth, _unit);
+        string_t _name = (_extra.length() > 0) ? join("_", _extra, _prefix)
+                                               : join("_", _prefix);
         auto _ret = join(" ", _label, _name);
         _ret      = replace(_ret, "_", { "__" });
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
+        _ret += " (" + _unit + ")";
         return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate a measurement tag
+    ///
+    template <typename _Vt>
+    static void generate_measurement(std::ostream& os, const attributes_t& attributes,
+                                     const _Vt& value)
+    {
+        os << "<DartMeasurement";
+        for(const auto& itr : attributes)
+            os << " " << attribute_string(itr.first, itr.second);
+        os << ">" << value << "</DartMeasurement>\n";
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate the prefix
+    ///
+    static string_t generate_prefix(const strvec_t& hierarchy)
+    {
+        string_t ret_prefix = "";
+        string_t add_prefix = "";
+        for(const auto& itr : hierarchy)
+        {
+            auto prefix = itr;
+            prefix      = replace(prefix, "[c]", { "[_c_]" });
+            prefix      = replace(prefix, "", { "> [" });
+            prefix      = replace(prefix, "", { "|_" });
+            prefix      = replace(prefix, "_",
+                             { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
+            prefix      = replace(prefix, "_", { "__" });
+            ret_prefix += add_prefix + prefix;
+            add_prefix = " [>>] ";
+        }
+        return ret_prefix;
     }
 
     //----------------------------------------------------------------------------------//
@@ -1101,25 +1137,16 @@ struct echo_measurement
     template <typename _Up = _Tp, typename _Vt = value_type,
               enable_if_t<(is_enabled<_Up>::value), char>                      = 0,
               enable_if_t<!(tim::trait::array_serialization<_Up>::value), int> = 0>
-    echo_measurement(_Up& obj, string_t prefix, const uint64_t& depth)
+    echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
-        prefix = replace(prefix, "[c]", { "[_c_]" });
-        prefix = replace(prefix, "", { "> [" });
-        prefix = replace(prefix, "", { "|_" });
-        prefix = replace(prefix, "_",
-                         { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
-        prefix = replace(prefix, "_", { "__" });
-
-        auto _unit = Type::display_unit();
-        auto name  = generate_name(prefix, _unit, depth);
-        auto _data = obj.get();
+        auto prefix = generate_prefix(hierarchy);
+        auto _unit  = Type::display_unit();
+        auto name   = generate_name(prefix, _unit);
+        auto _data  = obj.get();
 
         attributes_t   attributes = { { "name", name }, { "type", "numeric/double" } };
         stringstream_t ss;
-        ss << "<DartMeasurement";
-        for(const auto& itr : attributes)
-            ss << " " << attribute_string(itr.first, itr.second);
-        ss << ">" << _data << "</DartMeasurement>\n";
+        generate_measurement(ss, attributes, _data);
         std::cout << ss.str() << std::flush;
     }
 
@@ -1129,38 +1156,24 @@ struct echo_measurement
     template <typename _Up = _Tp, typename _Vt = value_type,
               enable_if_t<(is_enabled<_Up>::value), char>                     = 0,
               enable_if_t<(tim::trait::array_serialization<_Up>::value), int> = 0>
-    echo_measurement(_Up& obj, string_t prefix, const uint64_t& depth)
+    echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
-        prefix = replace(prefix, "[c]", { "[_c_]" });
-        prefix = replace(prefix, "", { "> [" });
-        prefix = replace(prefix, "", { "|_" });
-        prefix = replace(prefix, "_",
-                         { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
-        prefix = replace(prefix, "_", { "__" });
-
-        auto _data = obj.get();
+        auto prefix = generate_prefix(hierarchy);
+        auto _data  = obj.get();
 
         attributes_t   attributes = { { "type", "numeric/double" } };
         stringstream_t ss;
 
         uint64_t idx     = 0;
         auto     _labels = obj.label_array();
-        auto     _units  = obj.display_unit_array();
+        auto     _dunits = obj.display_unit_array();
         for(auto& itr : _data)
         {
-            string_t _extra = "";
-            string_t _unit  = "";
-            if(idx < _labels.size())
-            {
-                _extra = _labels.at(idx);
-                _unit  = _units.at(idx);
-            }
+            string_t _extra = (idx < _labels.size()) ? _labels.at(idx) : "";
+            string_t _dunit = (idx < _labels.size()) ? _dunits.at(idx) : "";
             ++idx;
-            attributes["name"] = generate_name(prefix, _unit, depth, _extra);
-            ss << "<DartMeasurement";
-            for(const auto& itr : attributes)
-                ss << " " << attribute_string(itr.first, itr.second);
-            ss << ">" << itr << "</DartMeasurement>\n";
+            attributes["name"] = generate_name(prefix, _dunit, _extra);
+            generate_measurement(ss, attributes, itr);
         }
         std::cout << ss.str() << std::flush;
     }

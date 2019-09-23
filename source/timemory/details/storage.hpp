@@ -583,15 +583,34 @@ void tim::storage<ObjectType>::external_print(std::false_type)
 
         if(settings::dart_output() && _oss.str().length() > 0)
         {
+            auto get_hierarchy = [&](iterator itr) {
+                std::vector<std::string> _hierarchy;
+                if(!itr || itr->depth() == 0)
+                    return _hierarchy;
+                iterator _parent = _data().graph().parent(itr);
+                do
+                {
+                    _hierarchy.push_back(_parent->prefix());
+                    if(_parent->depth() == 0)
+                        break;
+                    auto _new_parent = graph_t::parent(_parent);
+                    if(_parent == _new_parent)
+                        break;
+                    _parent = _new_parent;
+                    // _parent = _data().graph().parent(itr);
+                } while(_parent && !(_parent->depth() < 0));
+                std::reverse(_hierarchy.begin(), _hierarchy.end());
+                return _hierarchy;
+            };
             printf("\n");
-            for(auto& itr : _data().graph())
+            for(auto itr = _data().graph().begin(); itr != _data().graph().end(); ++itr)
             {
-                if(itr.depth() < 0)
+                if(itr->depth() < 0)
                     continue;
-                auto _obj    = itr.obj();
-                auto _prefix = itr.prefix();
-                auto _depth  = itr.depth();
-                operation::echo_measurement<ObjectType>(_obj, _prefix, _depth);
+                auto _obj       = itr->obj();
+                auto _hierarchy = get_hierarchy(itr);
+                _hierarchy.push_back(itr->prefix());
+                operation::echo_measurement<ObjectType>(_obj, _hierarchy);
             }
         }
 

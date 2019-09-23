@@ -60,96 +60,87 @@ cxx_timemory_auto_timer_str(const char*, const char*, const char*, int);
 extern "C"
 {
 #endif
-//======================================================================================//
+    //======================================================================================//
 
-tim_api void
-c_timemory_init(int argc, char** argv, timemory_settings _settings)
-{
-    cxx_timemory_init(argc, argv, _settings);
-}
-
-//======================================================================================//
-
-tim_api int
-c_timemory_enabled(void)
-{
-    return cxx_timemory_enabled();
-}
-
-//======================================================================================//
-
-tim_api void*
-c_timemory_create_auto_timer(const char* tag, int lineno)
-{
-    return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno) : NULL;
-}
-
-//======================================================================================//
-
-tim_api void*
-c_timemory_create_auto_tuple(const char* tag, int lineno, ...)
-{
-    if(!cxx_timemory_enabled())
-        return NULL;
-
-    const int max_size       = (int) TIMEMORY_COMPONENTS_END;
-    int       num_components = 0;
-    int*      components     = (int*) malloc(max_size * sizeof(int));
-    if(!components)
-        return NULL;
-    va_list   args;
-    va_start(args, lineno);
-    for(int i = 0; i < max_size; ++i)
+    tim_api void c_timemory_init(int argc, char** argv, timemory_settings _settings)
     {
-        int comp = va_arg(args, int);
-        if(comp >= TIMEMORY_COMPONENTS_END)
-            break;
-        ++num_components;
-        components[i] = comp;
+        cxx_timemory_init(argc, argv, _settings);
     }
-    va_end(args);
 
-    void* ptr = NULL;
-    if(num_components > 0)
-        ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
-    free(components);
+    //======================================================================================//
 
-    return ptr;
-}
+    tim_api int c_timemory_enabled(void) { return cxx_timemory_enabled(); }
 
-//======================================================================================//
+    //======================================================================================//
 
-tim_api void
-c_timemory_delete_auto_timer(void* ctimer)
-{
-    ctimer = cxx_timemory_delete_auto_timer(ctimer);
-    assert(ctimer == NULL);
-}
+    tim_api void* c_timemory_create_auto_timer(const char* tag, int lineno)
+    {
+        return (cxx_timemory_enabled()) ? cxx_timemory_create_auto_timer(tag, lineno)
+                                        : NULL;
+    }
 
-//======================================================================================//
+    //======================================================================================//
 
-tim_api void
-c_timemory_delete_auto_tuple(void* ctuple)
-{
-    ctuple = cxx_timemory_delete_auto_tuple(ctuple);
-    assert(ctuple == NULL);
-}
+    tim_api void* c_timemory_create_auto_tuple(const char* tag, int lineno, ...)
+    {
+        if(!cxx_timemory_enabled())
+            return NULL;
 
-//======================================================================================//
+        const int max_size       = (int) TIMEMORY_COMPONENTS_END;
+        int       num_components = 0;
+        int*      components     = (int*) malloc(max_size * sizeof(int));
+        if(!components)
+            return NULL;
+        va_list args;
+        va_start(args, lineno);
+        for(int i = 0; i < max_size; ++i)
+        {
+            int comp = va_arg(args, int);
+            if(comp >= TIMEMORY_COMPONENTS_END)
+                break;
+            ++num_components;
+            components[i] = comp;
+        }
+        va_end(args);
 
-tim_api const char*
-c_timemory_string_combine(const char* _a, const char* _b)
-{
-    return cxx_timemory_string_combine(_a, _b);
-}
+        void* ptr = NULL;
+        if(num_components > 0)
+            ptr = cxx_timemory_create_auto_tuple(tag, lineno, num_components, components);
+        free(components);
 
-//======================================================================================//
+        return ptr;
+    }
 
-tim_api const char*
-c_timemory_auto_str(const char* _a, const char* _b, const char* _c, int _d)
-{
-    return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
-}
+    //======================================================================================//
+
+    tim_api void c_timemory_delete_auto_timer(void* ctimer)
+    {
+        ctimer = cxx_timemory_delete_auto_timer(ctimer);
+        assert(ctimer == NULL);
+    }
+
+    //======================================================================================//
+
+    tim_api void c_timemory_delete_auto_tuple(void* ctuple)
+    {
+        ctuple = cxx_timemory_delete_auto_tuple(ctuple);
+        assert(ctuple == NULL);
+    }
+
+    //======================================================================================//
+
+    tim_api const char* c_timemory_string_combine(const char* _a, const char* _b)
+    {
+        return cxx_timemory_string_combine(_a, _b);
+    }
+
+    //======================================================================================//
+
+    tim_api const char* c_timemory_auto_str(const char* _a, const char* _b,
+                                            const char* _c, int _d)
+    {
+        return cxx_timemory_auto_timer_str(_a, _b, _c, _d);
+    }
 
 //======================================================================================//
 #if defined(__cplusplus)
