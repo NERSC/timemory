@@ -1084,7 +1084,7 @@ struct echo_measurement
     static string_t generate_name(const string_t& _prefix, string_t _unit, _Args&&... _args)
     {
         auto _extra    = join("_", std::forward<_Args>(_args)...);
-        auto _label    = join("", "[", uppercase(Type::label()), "]");
+        auto _label    = join("", "", uppercase(Type::label()), "");
         _unit          = replace(_unit, "", { " " });
         string_t _name = (_extra.length() > 0) ? join("_", _extra, _prefix)
                                                : join("_", _prefix);
@@ -1092,7 +1092,10 @@ struct echo_measurement
         _ret      = replace(_ret, "_", { "__" });
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
-        _ret += " (" + _unit + ")";
+        if(_unit.length() > 0)
+            _ret += " (" + _unit + ")";
+        _ret     = replace(_ret, "_", { " "});
+        _ret      = replace(_ret, "_", { "__" });
         return _ret;
     }
 
@@ -1125,8 +1128,10 @@ struct echo_measurement
             prefix      = replace(prefix, "_",
                              { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
             prefix      = replace(prefix, "_", { "__" });
+            if(prefix.length() > 0 && prefix.at(prefix.length() - 1) == '_')
+                prefix.erase(prefix.length() - 1);
             ret_prefix += add_prefix + prefix;
-            add_prefix = " [>>] ";
+            add_prefix = "(>>)";
         }
         return ret_prefix;
     }
