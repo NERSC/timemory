@@ -1095,9 +1095,10 @@ struct echo_measurement
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
         if(_unit.length() > 0)
-            _ret += " (" + _unit + ")";
+            _ret += "_UNITS_" + _unit;
         _ret = replace(_ret, "_", { " " });
         _ret = replace(_ret, "_", { "__" });
+        _ret = replace(_ret, " ", { "_" });
         return _ret;
     }
 
@@ -1120,21 +1121,22 @@ struct echo_measurement
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
     {
-        string_t ret_prefix = "";
-        string_t add_prefix = "";
+        string_t              ret_prefix = "";
+        string_t              add_prefix = "";
+        static const strset_t repl_chars = { "[", "]",  "(", ")", ".", "/", "\\",
+                                             " ", "\t", "<", ">", "@", "'" };
         for(const auto& itr : hierarchy)
         {
             auto prefix = itr;
             prefix      = replace(prefix, "[c]", { "[_c_]" });
             prefix      = replace(prefix, "", { "> [" });
             prefix      = replace(prefix, "", { "|_" });
-            prefix      = replace(prefix, "_",
-                             { "[", "]", "(", ")", ".", "/", "\\", " ", "\t", "<", ">" });
+            prefix      = replace(prefix, "_", repl_chars);
             prefix      = replace(prefix, "_", { "__" });
             if(prefix.length() > 0 && prefix.at(prefix.length() - 1) == '_')
                 prefix.erase(prefix.length() - 1);
             ret_prefix += add_prefix + prefix;
-            add_prefix = "(>>)";
+            add_prefix = "_CALLING_";
         }
         return ret_prefix;
     }
