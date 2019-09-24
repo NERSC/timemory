@@ -168,12 +168,16 @@ file(GLOB extern_cuda_sources       ${CMAKE_CURRENT_LIST_DIR}/cuda_extern.cpp)
 file(GLOB extern_auto_timer_sources ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp)
 
 set(extern_init_link_libs_shared       timemory-external-shared)
-set(extern_cuda_link_libs_shared       timemory-cuda timemory-cudart)
+set(extern_cuda_link_libs_shared       timemory-cuda # timemory-cupti
+                                       timemory-cudart # timemory-cudart-device
+                                       )
 set(extern_native_link_libs_shared     )
 set(extern_auto_timer_link_libs_shared )
 
 set(extern_init_link_libs_static       timemory-external-static)
-set(extern_cuda_link_libs_static       timemory-cuda timemory-cudart-static)
+set(extern_cuda_link_libs_static       timemory-cuda # timemory-cupti
+                                       timemory-cudart-static # timemory-cudart-device
+                                       )
 set(extern_native_link_libs_static     )
 set(extern_auto_timer_link_libs_static )
 
@@ -183,14 +187,13 @@ set(extern_native_definitions     TIMEMORY_EXTERN_NATIVE_TEMPLATES)
 set(extern_auto_timer_definitions TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
 
 set(TIMEMORY_EXTERN_LIBRARIES extern-native extern-cuda extern-auto-timer)
-foreach(_EXTERN_LIB native cuda auto-timer)
+foreach(_EXTERN_LIB init native cuda auto-timer)
+    # determine linker language
+    set(_LINK_LANGUAGE CXX)
     # don't build cuda
     if(NOT TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
         continue()
-    endif()
-    # determine linker language
-    set(_LINK_LANGUAGE CXX)
-    if(TIMEMORY_USE_CUDA)
+    else()
         set(_LINK_LANGUAGE CUDA)
     endif()
 
@@ -233,17 +236,14 @@ foreach(_EXTERN_LIB native cuda auto-timer)
                                 timemory-arch)
 
     if("${_EXTERN_LIB}" STREQUAL "init")
-        target_link_libraries(timemory-extern-init INTERFACE
-            timemory-extern-${_EXTERN_LIB}-shared)
-
-        target_link_libraries(timemory-extern-init-static INTERFACE
-            timemory-extern-${_EXTERN_LIB}-static)
-    else()
-        target_link_libraries(timemory-extern-templates INTERFACE
-            timemory-extern-${_EXTERN_LIB}-shared)
-
-        target_link_libraries(timemory-extern-templates-static INTERFACE
-            timemory-extern-${_EXTERN_LIB}-static)
+        target_link_libraries(timemory-extern-init  INTERFACE   timemory-extern-${_EXTERN_LIB}-shared)
+        target_link_libraries(timemory-cxx-shared   PUBLIC      timemory-extern-init)
+        target_link_libraries(timemory-cxx-static   PUBLIC      timemory-extern-init)
+    elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
+        target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
+        target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)
+        # target_link_libraries(timemory-cxx-shared              PUBLIC    timemory-extern-${_EXTERN_LIB}-shared)
+        # target_link_libraries(timemory-cxx-static              PUBLIC    timemory-extern-${_EXTERN_LIB}-static)
     endif()
 
     if(WIN32)
@@ -294,7 +294,7 @@ export(
         ${TIMEMORY_INTERFACE_LIBRARIES}
         ${TIMEMORY_ADDITIONAL_EXPORT_TARGETS}
     FILE
-        ${CMAKE_BINARY_DIR}/timemoryBuild.cmake)
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-build.cmake)
 
 
 #----------------------------------------------------------------------------------------#

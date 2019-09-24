@@ -191,6 +191,14 @@ struct supports_custom_record : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that signifies that get() returns an iterable type
+///
+template <typename _Tp>
+struct iterable_measurement : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Trait>
 inline std::string
@@ -827,6 +835,31 @@ struct requires_json<component::gpu_roofline_flops> : std::true_type
 };
 
 #endif  // TIMEMORY_USE_CUPTI
+
+template <typename... _Types>
+struct iterable_measurement<component::gpu_roofline<_Types...>> : std::true_type
+{
+};
+
+template <>
+struct iterable_measurement<component::gpu_roofline_hp_flops> : std::true_type
+{
+};
+
+template <>
+struct iterable_measurement<component::gpu_roofline_sp_flops> : std::true_type
+{
+};
+
+template <>
+struct iterable_measurement<component::gpu_roofline_dp_flops> : std::true_type
+{
+};
+
+template <>
+struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
+{
+};
 
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_NVTX

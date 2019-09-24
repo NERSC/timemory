@@ -127,7 +127,7 @@ else() # build tree
 
     MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
         set_property(TARGET ${_LIB} PROPERTY ${_IMPORT_TYPE}
-            "${CMAKE_BINARY_DIR}/timemoryBuild.cmake")
+            "${CMAKE_BINARY_DIR}/@PROJECT_NAME@-build.cmake")
     ENDMACRO()
 
     foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
@@ -335,7 +335,11 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
     endforeach()
 
     foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
-        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+        if(TARGET timemory-${_COMPONENT}-${_LINK})
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT}-${_LINK} ${_COMPONENT})
+        else()
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+        endif()
     endforeach()
 
     # remove duplicate interface libraries

@@ -1020,7 +1020,7 @@ struct echo_measurement
     static string_t attribute_string(const string_t& key, const string_t& item)
     {
         return apply<string_t>::join("", key, "=", "\"", item, "\"");
-    };
+    }
 
     //----------------------------------------------------------------------------------//
     /// replace matching values in item with str
@@ -1033,7 +1033,7 @@ struct echo_measurement
                 item = item.replace(item.find(itr), itr.length(), str);
         }
         return item;
-    };
+    }
 
     //----------------------------------------------------------------------------------//
     /// convert to lowercase
@@ -1043,7 +1043,7 @@ struct echo_measurement
         for(auto& itr : _str)
             itr = tolower(itr);
         return _str;
-    };
+    }
 
     //----------------------------------------------------------------------------------//
     /// convert to uppercase
@@ -1053,7 +1053,7 @@ struct echo_measurement
         for(auto& itr : _str)
             itr = toupper(itr);
         return _str;
-    };
+    }
 
     //----------------------------------------------------------------------------------//
     /// check if str contains any of the string items
@@ -1066,7 +1066,7 @@ struct echo_measurement
                 return true;
         }
         return false;
-    };
+    }
 
     //----------------------------------------------------------------------------------//
     /// shorthand for apply<string_t>::join(...)
@@ -1145,8 +1145,10 @@ struct echo_measurement
     /// assumes type is not a iterable
     ///
     template <typename _Up = _Tp, typename _Vt = value_type,
-              enable_if_t<(is_enabled<_Up>::value), char>                      = 0,
-              enable_if_t<!(tim::trait::array_serialization<_Up>::value), int> = 0>
+              enable_if_t<(is_enabled<_Up>::value), char> = 0,
+              enable_if_t<!(trait::array_serialization<_Up>::value ||
+                            trait::iterable_measurement<_Up>::value),
+                          int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
@@ -1164,8 +1166,10 @@ struct echo_measurement
     /// assumes type is iterable
     ///
     template <typename _Up = _Tp, typename _Vt = value_type,
-              enable_if_t<(is_enabled<_Up>::value), char>                     = 0,
-              enable_if_t<(tim::trait::array_serialization<_Up>::value), int> = 0>
+              enable_if_t<(is_enabled<_Up>::value), char> = 0,
+              enable_if_t<(trait::array_serialization<_Up>::value ||
+                           trait::iterable_measurement<_Up>::value),
+                          int>                            = 0>
     echo_measurement(_Up& obj, const strvec_t& hierarchy)
     {
         auto prefix = generate_prefix(hierarchy);
@@ -1188,9 +1192,9 @@ struct echo_measurement
         std::cout << ss.str() << std::flush;
     }
 
-    template <typename _Up = _Tp, typename _Vt = value_type,
+    template <typename... _Args, typename _Up = _Tp, typename _Vt = value_type,
               enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    echo_measurement(_Up&, string_t, const uint64_t&)
+    echo_measurement(_Up&, _Args&&...)
     {
     }
 };

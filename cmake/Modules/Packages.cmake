@@ -14,10 +14,9 @@ enable_testing()
 
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
+add_interface_library(timemory-extern-init)
 add_interface_library(timemory-extern-templates)
 add_interface_library(timemory-extern-templates-static)
-add_interface_library(timemory-extern-init)
-add_interface_library(timemory-extern-init-static)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
@@ -162,7 +161,7 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                               timemory extern-templates
+#                               timemory extern templates
 #
 #----------------------------------------------------------------------------------------#
 

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import timemory
+import json
 import time
 
 nfib = 33
@@ -39,7 +40,7 @@ def foo():
     Sleep for 2 seconds then run fibonacci calculation within context-manager
     """
     time.sleep(2)
-    with timemory.util.auto_timer(key="fibonacci"):
+    with timemory.util.auto_timer(key="[fibonacci]"):
         print("fibonacci({}) = {}".format(nfib, fibonacci(nfib)))
 
 
@@ -53,10 +54,20 @@ def bar():
     Run fibonacci calculation and then sleep for 2 seconds within context-manager
     """
     print("fibonacci({}) = {}".format(nfib, fibonacci(nfib)))
-    with timemory.util.auto_tuple(get_timemory_config(), key="sleep"):
+    with timemory.util.auto_tuple(get_timemory_config(), key="[sleep]"):
         time.sleep(2)
 
 
+#
+#   EXECUTE
+#
 if __name__ == "__main__":
+
+    # do some work
     foo()
     bar()
+
+    # get the dictionary
+    data = timemory.get()
+    # print the dictionary
+    print("TIMEMORY_DATA:\n{}".format(json.dumps(data, indent=4, sort_keys=True)))

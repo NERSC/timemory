@@ -443,8 +443,8 @@ class auto_tuple(base_decorator):
                 _key = '{}{}{}@{}:{}'.format(
                     _func, _args, self.key, _file, _line)
 
-            t = timemory.component_decorator(self.components, func.__name__, _file, _line,
-                                             _key, self.add_args or self.is_class, self.report_at_exit)
+            t = timemory.component_decorator(self.components, _key, int(_line),
+                                             self.report_at_exit)
             ret = func(*args, **kwargs)
             del t
             return ret
@@ -473,8 +473,8 @@ class auto_tuple(base_decorator):
             _key = '{}{}{}@{}:{}'.format(
                 _func, _args, self.key, _file, _line)
 
-        self._self_obj = timemory.component_decorator(self.components, _func, _file,
-                                                      _line, _key, self.add_args or self.is_class, self.report_at_exit)
+        self._self_obj = timemory.component_decorator(self.components, _key, int(_line),
+                                                      self.report_at_exit)
 
     #------------------------------------------------------------------------------------#
 

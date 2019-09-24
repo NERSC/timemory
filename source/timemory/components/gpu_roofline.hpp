@@ -85,6 +85,7 @@ struct gpu_roofline
     using activity_type = cupti_activity;
     using device_t      = device::gpu;
     using result_type   = std::vector<double>;
+    using label_type    = std::vector<std::string>;
     using clock_type    = real_clock;
     using types_tuple   = std::tuple<_Types...>;
 
@@ -547,7 +548,7 @@ public:
     //      representation as a string
     //
     //==================================================================================//
-
+    //
     string_t get_display() const
     {
         std::stringstream ss;
@@ -558,13 +559,29 @@ public:
         return ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
+    //
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         os << as_string(obj.get_display());
         return os;
     }
 
+    //----------------------------------------------------------------------------------//
+    //
+    static label_type label_array() { return this_type::get_labels(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static label_type display_unit_array()
+    {
+        const auto& _labels = get_labels();
+        return label_type(_labels.size(), this_type::display_unit());
+    }
+
 private:
+    //----------------------------------------------------------------------------------//
+    //
     static string_t as_string(const string_t& _value)
     {
         auto _label = this_type::get_label();
@@ -588,9 +605,9 @@ private:
     }
 
 private:
-    static std::vector<string_t>& get_labels()
+    static label_type& get_labels()
     {
-        static std::vector<string_t> _instance;
+        static label_type _instance;
         return _instance;
     }
 

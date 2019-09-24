@@ -33,6 +33,8 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
 target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
+    timemory-extern-init
+    # timemory-extern-templates
     ${TIMEMORY_LINK_LIB}
     timemory-compile-options
     timemory-analysis-tools
@@ -50,14 +52,6 @@ target_link_libraries(libpytimemory PUBLIC
 
 if(TIMEMORY_USE_CUDA)
     set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
-endif()
-
-if(TIMEMORY_USE_EXTERN_INIT)
-    target_link_libraries(libpytimemory PUBLIC timemory-extern-init)
-endif()
-
-if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_link_libraries(libpytimemory PUBLIC timemory-extern-templates)
 endif()
 
 set_target_properties(libpytimemory PROPERTIES
