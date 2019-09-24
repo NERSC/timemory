@@ -111,10 +111,10 @@ public:
     using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
-    explicit component_list(const string_t& key, const bool& store,
-                            const int64_t& ncount = 0, const int64_t& nhash = 0,
-                            const language_t& lang = language_t::cxx())
-    : m_store(store)
+    explicit component_list(const string_t& key, const bool& store = false,
+                            const language_t& lang = language_t::cxx(),
+                            int64_t ncount = 0, int64_t nhash = 0)
+    : m_store(store && settings::enabled())
     , m_laps(0)
     , m_count(ncount)
     , m_hash((nhash == 0) ? string_hash()(key) : nhash)
@@ -127,46 +127,6 @@ public:
         init_manager();
         init_storage();
         get_initializer()(*this);
-    }
-
-    explicit component_list(const string_t& key, const bool& store,
-                            const language_t& lang = language_t::cxx(),
-                            const int64_t& ncount = 0, const int64_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
-    {
-        apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-        get_initializer()(*this);
-    }
-
-    explicit component_list(const string_t&   key,
-                            const language_t& lang = language_t::cxx(),
-                            const int64_t& ncount = 0, const int64_t& nhash = 0,
-                            bool store = true, bool enabled = settings::enabled())
-    : m_store((enabled) ? store : false)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0 && enabled) ? string_hash()(key) : nhash)
-    , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
-    {
-        if(enabled)
-        {
-            apply<void>::set_value(m_data, nullptr);
-            compute_identifier(key, lang);
-            init_manager();
-            init_storage();
-            get_initializer()(*this);
-        }
     }
 
     ~component_list()
@@ -289,30 +249,6 @@ public:
         using apply_types =
             std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
         apply<void>::access<apply_types>(m_data);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_value_tuple get()
-    {
-        conditional_stop();
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::get_data<Types>>...>;
-        data_value_tuple _ret_data;
-        apply<void>::access2<apply_types>(m_data, _ret_data);
-        return _ret_data;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_label_tuple get_labeled()
-    {
-        conditional_stop();
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::get_data<Types>>...>;
-        data_label_tuple _ret_data;
-        apply<void>::access2<apply_types>(m_data, _ret_data);
-        return _ret_data;
     }
 
     //----------------------------------------------------------------------------------//
@@ -612,19 +548,7 @@ public:
     const bool& store() const { return m_store; }
 
 public:
-    // get member functions taking either an integer or a type
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return std::get<_N>(m_data);
-    }
-
+    // get member functions taking a type
     template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     _Tp& get()
     {
@@ -801,18 +725,8 @@ protected:
     {
         static string_t   _prefix = get_prefix();
         std::stringstream ss;
-
         // designated as [cxx], [pyc], etc.
         ss << _prefix << lang << " ";
-
-        // indent
-        for(int64_t i = 0; i < m_count; ++i)
-        {
-            if(i + 1 == m_count)
-                ss << "|_";
-            else
-                ss << "  ";
-        }
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
@@ -881,55 +795,6 @@ public:
 
 }  // namespace tim
 
-//======================================================================================//
-
-#include "timemory/manager.hpp"
-
-//======================================================================================//
-
-template <typename... Types>
-void
-tim::component_list<Types...>::init_manager()
-{
-    tim::manager::instance();
-}
-
-//======================================================================================//
-//
-//      std::get operator
-//
-namespace std
-{
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t N, typename... Types>
-typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::component_list<Types...>& obj)
-{
-    return get<N>(obj.data());
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <std::size_t N, typename... Types>
-const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::component_list<Types...>& obj)
-{
-    return get<N>(obj.data());
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <std::size_t N, typename... Types>
-auto
-get(tim::component_list<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::component_list<Types...>>(obj).data()))
-{
-    using obj_type = tim::component_list<Types...>;
-    return get<N>(std::forward<obj_type>(obj).data());
-}
-
-//======================================================================================//
-}  // namespace std
-
-//--------------------------------------------------------------------------------------//
+#include "timemory/details/component_list.hpp"

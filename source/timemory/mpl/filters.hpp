@@ -230,6 +230,28 @@ template <template <typename> class Predicate, template <typename...> class Oper
 using operation_filter_true =
     typename operation_filter_if_true<Predicate, Operator, Sequence>::type;
 
+//======================================================================================//
+//
+//      get data tuple
+//
+//======================================================================================//
+
+template <typename... _ImplTypes>
+struct get_data_tuple
+{
+    using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
+    using label_type = std::tuple<
+        std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+};
+
+template <typename... _ImplTypes>
+struct get_data_tuple<std::tuple<_ImplTypes...>>
+{
+    using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
+    using label_type = std::tuple<
+        std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
+};
+
 }  // namespace impl
 
 //======================================================================================//
@@ -304,5 +326,19 @@ using standard_stop_modifiers =
 /// filter out any types that are not available
 template <typename... Types>
 using filter_gotchas = impl::filter_false<trait::is_gotcha, std::tuple<Types...>>;
+
+//======================================================================================//
+//
+//      trait::num_gotchas
+//
+//======================================================================================//
+
+/// get the tuple of values
+template <typename _Tuple>
+using get_data_value_t = typename impl::template get_data_tuple<_Tuple>::value_type;
+
+/// get the tuple of pair of descriptor and value
+template <typename _Tuple>
+using get_data_label_t = typename impl::template get_data_tuple<_Tuple>::label_type;
 
 }  // namespace tim

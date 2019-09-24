@@ -730,7 +730,7 @@ struct get_data
     // only if components are available
     //
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    get_data(Type& _obj, DataType& _dst)
+    get_data(const Type& _obj, DataType& _dst)
     {
         _dst = _obj.get();
     }
@@ -740,7 +740,7 @@ struct get_data
     //
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    get_data(Type&, DataType&)
+    get_data(const Type&, DataType&)
     {
     }
 
@@ -748,7 +748,7 @@ struct get_data
     // only if components are available
     //
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    get_data(Type& _obj, LabeledDataType& _dst)
+    get_data(const Type& _obj, LabeledDataType& _dst)
     {
         _dst = LabeledDataType(Type::label(), _obj.get());
     }
@@ -758,7 +758,7 @@ struct get_data
     //
     template <typename _Up                                         = _Tp,
               enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
-    get_data(Type&, LabeledDataType&)
+    get_data(const Type&, LabeledDataType&)
     {
     }
 };

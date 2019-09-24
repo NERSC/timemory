@@ -30,17 +30,9 @@
  *
  */
 
-#include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+
+#include <iostream>
 
 using namespace tim::component;
 
@@ -89,7 +81,7 @@ cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
-    return (tim::counted_object<void>::is_enabled()) ? 1 : 0;
+    return (tim::settings::enabled() && tim::counted_object<void>::is_enabled()) ? 1 : 0;
 }
 
 //======================================================================================//
@@ -97,9 +89,11 @@ cxx_timemory_enabled(void)
 extern "C" tim_api void*
 cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
 {
+    if(!tim::settings::enabled())
+        return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    auto*       obj = new auto_timer_t(key_tag, tim::language::c(), lineno);
+    auto*       obj = new auto_timer_t(key_tag, true, tim::language::c(), lineno);
     obj->start();
     return (void*) obj;
 }
@@ -114,7 +108,7 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
         return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    auto        obj = new auto_list_t(key_tag, tim::language::c(), lineno);
+    auto        obj = new auto_list_t(key_tag, true, tim::language::c(), lineno);
 #    if defined(DEBUG)
     std::vector<int> _components;
     for(int i = 0; i < num_components; ++i)
@@ -137,11 +131,13 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
 extern "C" tim_api void*
 cxx_timemory_delete_auto_timer(void* ctimer)
 {
-    auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
-    obj->stop();
-    delete obj;
-    ctimer = nullptr;
-    return ctimer;
+    if(ctimer)
+    {
+        auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
+        obj->stop();
+        delete obj;
+    }
+    return nullptr;
 }
 
 //======================================================================================//
@@ -149,11 +145,13 @@ cxx_timemory_delete_auto_timer(void* ctimer)
 extern "C" tim_api void*
 cxx_timemory_delete_auto_tuple(void* ctuple)
 {
-    auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
-    obj->stop();
-    delete obj;
-    ctuple = nullptr;
-    return ctuple;
+    if(ctuple)
+    {
+        auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
+        obj->stop();
+        delete obj;
+    }
+    return nullptr;
 }
 
 //======================================================================================//
@@ -182,9 +180,6 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 #endif  // TIMEMORY_BUILD_C
 
 //======================================================================================//
-
-// #include <execinfo.h>
-#include <iostream>
 
 using component_enum_t = std::vector<TIMEMORY_COMPONENT>;
 
@@ -224,7 +219,7 @@ record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
     {
         *kernid               = uniqID++;
         components_keys[name] = *kernid;
-        auto obj              = new auto_list_t(name, tim::language::cxx(), *kernid);
+        auto obj = new auto_list_t(name, true, tim::language::cxx(), *kernid);
         tim::initialize(*obj, types);
         record_map[*kernid] = obj;
         record_map[*kernid]->start();  // start recording

@@ -80,39 +80,13 @@ class component_tuple
     template <typename _TupleC, typename _ListC>
     friend class component_hybrid;
 
-    struct _impl
-    {
-        template <typename... _ImplTypes>
-        struct _data_tuple
-        {
-            using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
-            using label_type = std::tuple<
-                std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
-        };
-
-        template <typename... _ImplTypes>
-        struct _data_tuple<std::tuple<_ImplTypes...>>
-        {
-            using value_type = std::tuple<decltype(std::declval<_ImplTypes>().get())...>;
-            using label_type = std::tuple<
-                std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
-        };
-    };
-
-    template <typename _Tuple>
-    using data_value_t = typename _impl::template _data_tuple<_Tuple>::value_type;
-    template <typename _Tuple>
-    using data_label_t = typename _impl::template _data_tuple<_Tuple>::label_type;
-
 public:
-    using size_type        = int64_t;
-    using language_t       = tim::language;
-    using string_hash      = std::hash<string_t>;
-    using this_type        = component_tuple<Types...>;
-    using data_type        = implemented<Types...>;
-    using type_tuple       = implemented<Types...>;
-    using data_value_tuple = data_value_t<data_type>;
-    using data_label_tuple = data_label_t<data_type>;
+    using size_type   = int64_t;
+    using language_t  = tim::language;
+    using string_hash = std::hash<string_t>;
+    using this_type   = component_tuple<Types...>;
+    using data_type   = implemented<Types...>;
+    using type_tuple  = implemented<Types...>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = false;
@@ -148,62 +122,25 @@ public:
     using stand_cond_stop_t  = modifiers<operation::conditional_standard_stop, Types...>;
     using mark_begin_t       = modifiers<operation::mark_begin, Types...>;
     using mark_end_t         = modifiers<operation::mark_end, Types...>;
-    using get_data_t         = modifiers<operation::get_data, Types...>;
 
 public:
     using auto_type = auto_tuple<Types...>;
 
 public:
-    explicit component_tuple(const string_t& key, const bool& store,
-                             const int64_t& ncount = 0, const int64_t& nhash = 0,
-                             const language_t& lang = language_t::cxx())
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_lang(lang)
-    , m_key(key)
-    , m_identifier("")
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-    }
-
-    explicit component_tuple(const string_t& key, const bool& store,
-                             const language_t& lang, const int64_t& ncount = 0,
-                             const int64_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_lang(lang)
-    , m_key(key)
-    , m_identifier("")
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-    }
-
-    explicit component_tuple(const string_t&   key,
+    explicit component_tuple(const string_t& key, const bool& store = false,
                              const language_t& lang = language_t::cxx(),
-                             const int64_t& ncount = 0, const int64_t& nhash = 0,
-                             bool store = true, bool enabled = settings::enabled())
-    : m_store((enabled) ? store : false)
+                             int64_t ncount = 0, int64_t nhash = 0)
+    : m_store(store && settings::enabled())
     , m_laps(0)
     , m_count(ncount)
-    , m_hash((nhash == 0 && enabled) ? string_hash()(key) : nhash)
+    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_lang(lang)
     , m_key(key)
     , m_identifier("")
     {
-        if(enabled)
-        {
-            compute_identifier(key, lang);
-            init_manager();
-            init_storage();
-        }
+        compute_identifier(key, lang);
+        init_manager();
+        init_storage();
     }
 
     ~component_tuple() { pop(); }
@@ -267,26 +204,6 @@ public:
     void measure() { apply<void>::access<measure_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_value_tuple get()
-    {
-        conditional_stop();
-        data_value_tuple _ret_data;
-        apply<void>::access2<get_data_t>(m_data, _ret_data);
-        return _ret_data;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_label_tuple get_labeled()
-    {
-        conditional_stop();
-        data_label_tuple _ret_data;
-        apply<void>::access2<get_data_t>(m_data, _ret_data);
-        return _ret_data;
-    }
-
-    //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
@@ -296,7 +213,6 @@ public:
         // start components
         apply<void>::access<prior_start_t>(m_data);
         apply<void>::access<stand_start_t>(m_data);
-        // apply<void>::access<start_t>(m_data);
     }
 
     void stop()
@@ -304,7 +220,6 @@ public:
         // stop components
         apply<void>::access<prior_stop_t>(m_data);
         apply<void>::access<stand_stop_t>(m_data);
-        // apply<void>::access<stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -315,7 +230,6 @@ public:
         // start, if not already started
         apply<void>::access<prior_cond_start_t>(m_data);
         apply<void>::access<stand_cond_start_t>(m_data);
-        // apply<void>::access<cond_start_t>(m_data);
     }
 
     void conditional_stop()
@@ -323,7 +237,6 @@ public:
         // stop, if not already stopped
         apply<void>::access<prior_cond_stop_t>(m_data);
         apply<void>::access<stand_cond_stop_t>(m_data);
-        // apply<void>::access<cond_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -533,19 +446,7 @@ public:
     const bool& store() const { return m_store; }
 
 public:
-    // get member functions taking either an integer or a type
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return std::get<_N>(m_data);
-    }
-
+    // get member functions taking either a type
     template <typename _Tp>
     _Tp& get()
     {
@@ -616,18 +517,8 @@ protected:
     {
         static string_t   _prefix = get_prefix();
         std::stringstream ss;
-
         // designated as [cxx], [pyc], etc.
         ss << _prefix << lang << " ";
-
-        // indent
-        for(int64_t i = 0; i < m_count; ++i)
-        {
-            if(i + 1 == m_count)
-                ss << "|_";
-            else
-                ss << "  ";
-        }
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
@@ -677,6 +568,8 @@ public:
         apply<void>::type_access<operation::init_storage, data_type>();
     }
 };
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

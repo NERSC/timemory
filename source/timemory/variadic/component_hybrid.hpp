@@ -82,14 +82,8 @@ public:
     using list_data_type  = typename list_type::data_type;
     using data_type       = decltype(std::tuple_cat(std::declval<_CompTuple>().data(),
                                               std::declval<_CompList>().data()));
-    // using data_type        = tim::impl::tuple_concat<tuple_data_type, list_data_type>;
-    using type_tuple       = tim::impl::tuple_concat<typename tuple_type::type_tuple,
+    using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
-    using data_value_tuple = decltype(std::tuple_cat(std::declval<_CompTuple>().get(),
-                                                     std::declval<_CompList>().get()));
-    using data_label_tuple =
-        decltype(std::tuple_cat(std::declval<_CompTuple>().get_labeled(),
-                                std::declval<_CompList>().get_labeled()));
 
     using tuple_type_list = typename tuple_type::data_type;
     using list_type_list  = typename list_type::reference_type;
@@ -102,34 +96,11 @@ public:
     using auto_type = auto_hybrid<tuple_type, list_type>;
 
 public:
-    explicit component_hybrid(const string_t& key, const bool& store,
-                              const int64_t& ncount = 0, const int64_t& nhash = 0,
-                              const language_t& lang = language_t::cxx())
-    : m_tuple(key, store, ncount, nhash, lang)
-    , m_list(key, store, ncount, nhash, lang)
-    {
-        m_tuple.m_print_laps  = false;
-        m_list.m_print_laps   = false;
-        m_list.m_print_prefix = false;
-    }
-
-    explicit component_hybrid(const string_t& key, const bool& store,
-                              const language_t& lang, const int64_t& ncount = 0,
-                              const int64_t& nhash = 0)
+    explicit component_hybrid(const string_t& key, const bool& store = false,
+                              const language_t& lang = language_t::cxx(),
+                              int64_t ncount = 0, int64_t nhash = 0)
     : m_tuple(key, store, lang, ncount, nhash)
     , m_list(key, store, lang, ncount, nhash)
-    {
-        m_tuple.m_print_laps  = false;
-        m_list.m_print_laps   = false;
-        m_list.m_print_prefix = false;
-    }
-
-    explicit component_hybrid(const string_t&   key,
-                              const language_t& lang = language_t::cxx(),
-                              const int64_t& ncount = 0, const int64_t& nhash = 0,
-                              bool store = true)
-    : m_tuple(key, lang, ncount, nhash, store)
-    , m_list(key, lang, ncount, nhash, store)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -218,17 +189,6 @@ public:
     {
         m_tuple.measure();
         m_list.measure();
-    }
-
-    //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_value_tuple get() { return std::tuple_cat(m_tuple.get(), m_list.get()); }
-
-    //----------------------------------------------------------------------------------//
-    // get tuple of data recorded
-    data_label_tuple get_labeled()
-    {
-        return std::tuple_cat(m_tuple.get_labeled(), m_list.get_labeled());
     }
 
     //----------------------------------------------------------------------------------//
@@ -426,15 +386,6 @@ public:
     {
         m_tuple.serialize(ar, version);
         m_list.serialize(ar, version);
-        /*
-        using apply_types = std::tuple<operation::serialization<Types, Archive>...>;
-        ar(serializer::make_nvp("identifier", m_identifier),
-           serializer::make_nvp("laps", m_laps));
-        ar.setNextName("data");
-        ar.startNode();
-        apply<void>::access<apply_types>(m_data, std::ref(ar), version);
-        ar.finishNode();
-        */
     }
 
     //----------------------------------------------------------------------------------//
@@ -458,6 +409,9 @@ public:
     }
 
 public:
+    //----------------------------------------------------------------------------------//
+    //  get access to a type
+    //
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
     auto get() -> decltype(std::declval<_CompTuple>().template get<_Tp>())
@@ -472,25 +426,23 @@ public:
         return m_list.template get<_Tp>();
     }
 
-    template <typename _Tp, enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value ||
-                                          is_one_of<_Tp, list_type_list>::value),
-                                        int> = 0>
-    void get()
-    {
-    }
-
 public:
     //----------------------------------------------------------------------------------//
-    template <typename _Tp, typename _Func, typename... _Args>
+    //  apply a member function to a type
+    //
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
     void type_apply(_Func&& _func, _Args&&... _args)
     {
         m_tuple.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
-        m_list.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
     }
 
-protected:
-    // protected member functions
-    data_type get_data() const { return std::tuple_cat(m_tuple.m_data, m_list.m_data); }
+    template <typename _Tp, typename _Func, typename... _Args,
+              enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
+    void type_apply(_Func&& _func, _Args&&... _args)
+    {
+        m_list.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
+    }
 
 protected:
     // objects
@@ -498,6 +450,7 @@ protected:
     list_type  m_list;
 
 protected:
+    /*
     string_t get_prefix() { return m_tuple.get_prefix(); }
 
     void compute_identifier(const string_t& key, const language_t& lang)
@@ -518,15 +471,19 @@ protected:
                                  list_type::output_width(width));
     }
 
-private:
     template <typename _Func, typename... _Args>
     void apply_to_members(_Func&& _func, _Args&&... _args)
     {
         ((m_tuple).*(_func))(std::forward<_Args>(_args)...);
         ((m_list).*(_func))(std::forward<_Args>(_args)...);
     }
+    */
 };
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
+
+#include "timemory/details/component_hybrid.hpp"

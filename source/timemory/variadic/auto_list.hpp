@@ -98,8 +98,8 @@ public:
 
 public:
     // public member functions
-    inline component_type&       get_component_type() { return m_temporary_object; }
-    inline const component_type& get_component_type() const { return m_temporary_object; }
+    inline component_type&       get_component() { return m_temporary_object; }
+    inline const component_type& get_component() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
     inline void record()
@@ -151,20 +151,7 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
 
-    data_value_tuple get()
-    {
-        if(m_enabled)
-            return m_temporary_object.get();
-        return data_value_tuple{};
-    }
-
-    data_label_tuple get_labeled()
-    {
-        if(m_enabled)
-            return m_temporary_object.get_labeled();
-        return data_label_tuple{};
-    }
-
+    inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
@@ -178,18 +165,6 @@ public:
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return m_temporary_object.template get<_N>();
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return m_temporary_object.template get<_N>();
-    }
-
     template <typename _Tp>
     auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
     {
@@ -264,8 +239,8 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
                   : 0)
 , m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
-                     m_enabled)
+, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
+                     hashed_type::m_hash)
 {
     if(m_enabled)
     {
@@ -320,6 +295,26 @@ auto_list<Types...>::~auto_list()
             *m_reference_object += m_temporary_object;
         }
     }
+}
+
+//======================================================================================//
+
+template <typename... _Types,
+          typename _Ret = typename auto_list<_Types...>::data_value_tuple>
+_Ret
+get(const auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename auto_list<_Types...>::data_label_tuple>
+_Ret
+get_labeled(const auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
 //======================================================================================//

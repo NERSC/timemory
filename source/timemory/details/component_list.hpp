@@ -29,7 +29,7 @@
 
 template <typename... Types>
 void
-tim::component_tuple<Types...>::init_manager()
+tim::component_list<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -40,14 +40,16 @@ tim::component_tuple<Types...>::init_manager()
 //
 namespace tim
 {
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data  = typename _Tp::data_type,
-          typename _Ret   = get_data_value_t<_Data>,
-          typename _Apply = modifiers<operation::get_data, _Types...>>
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret   = typename component_list<_Types...>::data_value_tuple,
+          typename _Apply = std::tuple<
+              operation::pointer_operator<_Types, operation::get_data<_Types>>...>>
 _Ret
-get(const component_tuple<_Types...>& _obj)
+get(const component_list<_Types...>& _obj)
 {
-    const_cast<component_tuple<_Types...>&>(_obj).conditional_stop();
+    const_cast<component_list<_Types...>&>(_obj).conditional_stop();
     _Ret _ret_data;
     apply<void>::access2<_Apply>(_obj.data(), _ret_data);
     return _ret_data;
@@ -55,14 +57,14 @@ get(const component_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data  = typename _Tp::data_type,
-          typename _Ret   = get_data_label_t<_Data>,
-          typename _Apply = modifiers<operation::get_data, _Types...>>
+template <typename... _Types,
+          typename _Ret   = typename component_list<_Types...>::data_label_tuple,
+          typename _Apply = std::tuple<
+              operation::pointer_operator<_Types, operation::get_data<_Types>>...>>
 _Ret
-get_labeled(const component_tuple<_Types...>& _obj)
+get_labeled(const component_list<_Types...>& _obj)
 {
-    const_cast<component_tuple<_Types...>&>(_obj).conditional_stop();
+    const_cast<component_list<_Types...>&>(_obj).conditional_stop();
     _Ret _ret_data;
     apply<void>::access2<_Apply>(_obj.data(), _ret_data);
     return _ret_data;
@@ -80,7 +82,7 @@ namespace std
 
 template <std::size_t N, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::component_tuple<Types...>& obj)
+get(tim::component_list<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -89,7 +91,7 @@ get(tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::component_tuple<Types...>& obj)
+get(const tim::component_list<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -98,10 +100,10 @@ get(const tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 auto
-get(tim::component_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::component_tuple<Types...>>(obj).data()))
+get(tim::component_list<Types...>&& obj)
+    -> decltype(get<N>(std::forward<tim::component_list<Types...>>(obj).data()))
 {
-    using obj_type = tim::component_tuple<Types...>;
+    using obj_type = tim::component_list<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 

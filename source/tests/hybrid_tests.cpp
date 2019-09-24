@@ -254,6 +254,11 @@ TEST_F(hybrid_tests, auto_timer)
 
     ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
 
+    auto _obj  = tim::get(obj);
+    auto _cpu3 = std::get<1>(_obj) + std::get<2>(_obj);
+
+    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu3);
+
     obj.start();
     details::allocate();
     obj.stop();

@@ -55,23 +55,21 @@ class auto_hybrid
                   "must be tim::component_list<...>");
 
 public:
-    using tuple_type       = _CompTuple;
-    using list_type        = _CompList;
-    using component_type   = component_hybrid<tuple_type, list_type>;
-    using this_type        = auto_hybrid<tuple_type, list_type>;
-    using data_type        = typename component_type::data_type;
-    using counter_type     = counted_object<this_type>;
-    using counter_void     = counted_object<void>;
-    using hashed_type      = hashed_object<this_type>;
-    using string_t         = std::string;
-    using string_hash      = std::hash<string_t>;
-    using base_type        = component_type;
-    using language_t       = language;
-    using type_tuple       = typename component_type::type_tuple;
-    using data_value_tuple = typename component_type::data_value_tuple;
-    using data_label_tuple = typename component_type::data_label_tuple;
-    using tuple_type_list  = typename component_type::tuple_type_list;
-    using list_type_list   = typename component_type::list_type_list;
+    using tuple_type      = _CompTuple;
+    using list_type       = _CompList;
+    using component_type  = component_hybrid<tuple_type, list_type>;
+    using this_type       = auto_hybrid<tuple_type, list_type>;
+    using data_type       = typename component_type::data_type;
+    using counter_type    = counted_object<this_type>;
+    using counter_void    = counted_object<void>;
+    using hashed_type     = hashed_object<this_type>;
+    using string_t        = std::string;
+    using string_hash     = std::hash<string_t>;
+    using base_type       = component_type;
+    using language_t      = language;
+    using type_tuple      = typename component_type::type_tuple;
+    using tuple_type_list = typename component_type::tuple_type_list;
+    using list_type_list  = typename component_type::list_type_list;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -93,8 +91,8 @@ public:
 
 public:
     // public member functions
-    inline component_type&       get_component_type() { return m_temporary_object; }
-    inline const component_type& get_component_type() const { return m_temporary_object; }
+    inline component_type&       get_component() { return m_temporary_object; }
+    inline const component_type& get_component() const { return m_temporary_object; }
 
     // partial interface to underlying component_hybrid
     inline void record()
@@ -146,20 +144,7 @@ public:
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
     }
 
-    data_value_tuple get()
-    {
-        if(m_enabled)
-            return m_temporary_object.get();
-        return data_value_tuple{};
-    }
-
-    data_label_tuple get_labeled()
-    {
-        if(m_enabled)
-            return m_temporary_object.get_labeled();
-        return data_label_tuple{};
-    }
-
+    inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
@@ -196,14 +181,6 @@ public:
         return m_temporary_object.template get<_Tp>();
     }
 
-    template <typename _Tp, enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value ||
-                                          is_one_of<_Tp, list_type_list>::value),
-                                        int> = 0>
-    _Tp* get()
-    {
-        return nullptr;
-    }
-
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -232,8 +209,8 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t&   object_tag,
                   : 0)
 , m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
-                     m_enabled)
+, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
+                     hashed_type::m_hash)
 {
     if(m_enabled)
     {
@@ -287,6 +264,34 @@ auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
             *m_reference_object += m_temporary_object;
         }
     }
+}
+
+//======================================================================================//
+
+template <typename _Tuple, typename _List,
+          typename _Ret = decltype(std::tuple_cat(get(std::declval<_Tuple>()),
+                                                  get(std::declval<_List>())))>
+_Ret
+get(const auto_hybrid<_Tuple, _List>& _obj)
+{
+    return (_obj.enabled()) ? std::tuple_cat(get(_obj.get_component().get_lhs()),
+                                             get(_obj.get_component().get_rhs()))
+                            : _Ret{};
+    // return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tuple, typename _List,
+          typename _Ret = decltype(std::tuple_cat(get_labeled(std::declval<_Tuple>()),
+                                                  get_labeled(std::declval<_List>())))>
+_Ret
+get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
+{
+    return (_obj.enabled()) ? std::tuple_cat(get_labeled(_obj.get_component().get_lhs()),
+                                             get_labeled(_obj.get_component().get_rhs()))
+                            : _Ret{};
+    // return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
 //======================================================================================//
