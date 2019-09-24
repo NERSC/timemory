@@ -680,7 +680,7 @@ if(TIMEMORY_USE_NVTX)
     find_package(NVTX QUIET)
 endif()
 
-if(NVTX_FOUND)
+if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
     target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
     target_include_directories(timemory-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
     target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)

@@ -285,13 +285,20 @@ print_percentage(std::ostream& os, const _Tp& obj)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details
-}  // namespace tim
 
+//--------------------------------------------------------------------------------------//
+
+namespace impl
+{
+//--------------------------------------------------------------------------------------//
+//
+//              Storage functions for implemented types
+//
 //--------------------------------------------------------------------------------------//
 
 template <typename ObjectType>
 void
-tim::storage<ObjectType>::merge(this_type* itr)
+storage<ObjectType, true>::merge(this_type* itr)
 {
     if(itr == this)
         return;
@@ -327,7 +334,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
                     (lhs->prefix() == rhs->prefix() && lhs->depth() == rhs->depth()));
         };
         auto _reduce = [](predicate_type lhs, predicate_type rhs) {
-            tim::details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
+            details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
         };
         _this_beg = graph().begin();
         _this_end = graph().end();
@@ -345,7 +352,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::external_print(std::false_type)
+void storage<ObjectType, true>::external_print(std::false_type)
 {
     auto num_instances = instance_count().load();
 
@@ -503,7 +510,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                         if(nexclusive == 0)
                             exclusive_values = eitr->obj().get();
                         else
-                            tim::details::combine(exclusive_values, eitr->obj().get());
+                            details::combine(exclusive_values, eitr->obj().get());
                         // increment. beyond 0 vs. 1, this value plays no role
                         ++nexclusive;
                     }
@@ -513,8 +520,8 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                 // if there were exclusive values encountered
                 if(nexclusive > 0 && trait::is_available<ObjectType>::value)
                 {
-                    tim::details::print_percentage(
-                        _pss, tim::details::compute_percentage(exclusive_values,
+                    details::print_percentage(
+                        _pss, details::compute_percentage(exclusive_values,
                                                                itr.obj().get()));
                 }
             }
@@ -539,7 +546,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             //
             if(settings::text_output() && settings::file_output())
             {
-                auto fname = tim::settings::compose_output_filename(label, ".txt");
+                auto fname = settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -566,7 +573,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             if(settings::json_output() || trait::requires_json<ObjectType>::value)
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
-                auto jname = tim::settings::compose_output_filename(label, ".json");
+                auto jname = settings::compose_output_filename(label, ".json");
                 printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
                        jname.c_str());
                 serialize_storage(jname, *this, num_instances);
@@ -628,7 +635,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::external_print(std::true_type)
+void storage<ObjectType, true>::external_print(std::true_type)
 {
     if(!singleton_t::is_master(this))
     {
@@ -656,7 +663,7 @@ void tim::storage<ObjectType>::external_print(std::true_type)
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize_me(std::false_type, Archive& ar,
+storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -700,7 +707,7 @@ tim::storage<ObjectType>::serialize_me(std::false_type, Archive& ar,
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize_me(std::true_type, Archive& ar,
+storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
@@ -741,6 +748,14 @@ tim::storage<ObjectType>::serialize_me(std::true_type, Archive& ar,
     }
     ar.finishNode();
 }
+
+//======================================================================================//
+
+} // namespace impl
+
+//======================================================================================//
+
+}  // namespace tim
 
 //======================================================================================//
 

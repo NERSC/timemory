@@ -193,7 +193,7 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
     # don't build cuda
     if(NOT TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
         continue()
-    else()
+    elseif(TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
         set(_LINK_LANGUAGE CUDA)
     endif()
 

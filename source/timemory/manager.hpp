@@ -108,7 +108,8 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
     {
-        auto ret = storage<_Tp>::instance();
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::instance();
         consume_parameters(ret);
     }
 
@@ -124,7 +125,8 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _print_storage()
     {
-        auto ret = storage<_Tp>::noninit_instance();
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::noninit_instance();
         if(ret && !ret->empty())
             ret->print();
     }
@@ -141,7 +143,8 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
-        auto ret = storage<_Tp>::noninit_instance();
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::noninit_instance();
         if(ret)
             ret->data().clear();
     }
@@ -160,7 +163,8 @@ private:
     {
         if(component::properties<_Tp>::has_storage())
         {
-            auto ret = storage<_Tp>::noninit_instance();
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::noninit_instance();
             if(ret && !ret->empty())
                 ret->_serialize(ar);
         }

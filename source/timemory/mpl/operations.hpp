@@ -128,12 +128,17 @@ struct insert_node
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    //----------------------------------------------------------------------------------//
+    //  has storage implementation
+    //
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
                 const int64_t& id)
     {
         obj.insert_node(exists[_N], id);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
                 const int64_t& id, const string_t& _prefix)
     {
@@ -142,14 +147,44 @@ struct insert_node
             obj.set_prefix(_prefix);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(base_type& obj, const string_t& _prefix, const int64_t& id)
     {
         obj.insert_node(_prefix, id);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(Type& obj, const string_t& _prefix, const int64_t& id)
     {
         obj.insert_node(_prefix, id);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  no storage implementation
+    //
+    template <typename _Up                                    = base_type,
+              enable_if_t<!(_Up::implements_storage_v), char> = 0>
+    insert_node(std::size_t, std::size_t, base_type&, bool*, const int64_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(std::size_t, std::size_t, base_type&, bool*, const int64_t&,
+                const string_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(base_type&, const string_t&, const int64_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(Type&, const string_t&, const int64_t&)
+    {
     }
 };
 
@@ -162,7 +197,23 @@ struct pop_node
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit pop_node(base_type& obj) { obj.pop_node(); }
+    //----------------------------------------------------------------------------------//
+    //  has storage implementation
+    //
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    explicit pop_node(base_type& obj)
+    {
+        obj.pop_node();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  no storage implementation
+    //
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    explicit pop_node(base_type&)
+    {
+    }
 };
 
 //--------------------------------------------------------------------------------------//

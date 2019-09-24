@@ -36,11 +36,22 @@ namespace tim
 {
 namespace component
 {
-template <typename _Tp, typename value_type, typename... _Policies>
+template <typename _Tp, typename _Value, typename... _Policies>
 struct base : public tim::counted_object<_Tp>
 {
-    //
-    friend class storage<_Tp>;
+public:
+    static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
+
+    using Type           = _Tp;
+    using value_type     = _Value;
+    using policy_type    = policy::wrapper<_Policies...>;
+    using this_type      = base<_Tp, _Value, _Policies...>;
+    using storage_type   = impl::storage<_Tp, implements_storage_v>;
+    using graph_iterator = typename storage_type::iterator;
+    using counted_type   = tim::counted_object<_Tp>;
+
+private:
+    friend class impl::storage<_Tp, implements_storage_v>;
 
     friend struct operation::init_storage<_Tp>;
     friend struct operation::live_count<_Tp>;
@@ -71,15 +82,6 @@ struct base : public tim::counted_object<_Tp>
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:
-    using Type           = _Tp;
-    using policy_type    = policy::wrapper<_Policies...>;
-    using this_type      = base<_Tp, value_type, _Policies...>;
-    using storage_type   = storage<Type>;
-    using graph_iterator = typename storage_type::iterator;
-    using counted_type   = tim::counted_object<_Tp>;
-
-public:
-    // base()                          = default;
     base()                          = default;
     ~base()                         = default;
     explicit base(const this_type&) = default;
@@ -498,8 +500,18 @@ public:
 template <typename _Tp, typename... _Policies>
 struct base<_Tp, void, _Policies...> : public tim::counted_object<_Tp>
 {
-    //
-    friend class storage<_Tp>;
+public:
+    static constexpr bool implements_storage_v = false;
+
+    using Type         = _Tp;
+    using value_type   = void;
+    using policy_type  = policy::wrapper<_Policies...>;
+    using this_type    = base<_Tp, value_type, _Policies...>;
+    using storage_type = impl::storage<_Tp, implements_storage_v>;
+    using counted_type = tim::counted_object<_Tp>;
+
+private:
+    friend class impl::storage<_Tp, implements_storage_v>;
 
     friend struct operation::init_storage<_Tp>;
     friend struct operation::live_count<_Tp>;
@@ -528,15 +540,6 @@ struct base<_Tp, void, _Policies...> : public tim::counted_object<_Tp>
     friend struct operation::compose;
 
 public:
-    using Type           = _Tp;
-    using value_type     = void;
-    using policy_type    = policy::wrapper<_Policies...>;
-    using this_type      = base<_Tp, value_type, _Policies...>;
-    using storage_type   = storage<Type>;
-    using graph_iterator = typename storage_type::iterator;
-    using counted_type   = tim::counted_object<_Tp>;
-
-    // base()                          = default;
     base()                          = default;
     ~base()                         = default;
     explicit base(const this_type&) = default;
@@ -591,49 +594,21 @@ public:
     //----------------------------------------------------------------------------------//
     // set the graph node prefix
     //
-    void set_prefix(const string_t& _prefix)
-    {
-        storage_type::instance()->set_prefix(_prefix);
-    }
+    void set_prefix(const string_t&) {}
 
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    void insert_node(bool& exists, const int64_t& _hashid)
+    template <typename... _Args>
+    void insert_node(_Args&&...)
     {
-        if(!is_on_stack)
-        {
-            Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->insert(_hashid, obj, exists);
-            is_on_stack = true;
-        }
-    }
-
-    void insert_node(const string_t& _prefix, const int64_t& _hashid)
-    {
-        if(!is_on_stack)
-        {
-            Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->insert(_hashid, obj, _prefix);
-            is_on_stack = true;
-        }
+        is_on_stack = true;
     }
 
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    void pop_node()
-    {
-        if(is_on_stack)
-        {
-            Type& obj        = graph_itr->obj();
-            obj.is_transient = is_transient;
-            obj.is_running   = false;
-            obj.laps += laps;
-            graph_itr   = storage_type::instance()->pop();
-            is_on_stack = false;
-        }
-    }
+    void pop_node() { is_on_stack = false; }
 
     //----------------------------------------------------------------------------------//
     // reset the values
@@ -643,7 +618,6 @@ public:
         is_running   = false;
         is_on_stack  = false;
         is_transient = false;
-        laps         = 0;
     }
 
     //----------------------------------------------------------------------------------//
@@ -660,7 +634,6 @@ public:
     //
     void start()
     {
-        ++laps;
         static_cast<Type&>(*this).start();
         set_started();
     }
@@ -730,14 +703,8 @@ public:
         return false;
     }
 
-    // CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
-    // CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
-    // CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
-    //                                format_flags)
-    // CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
-    // CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
 
     //----------------------------------------------------------------------------------//
     // comparison operators
@@ -752,21 +719,9 @@ public:
     //----------------------------------------------------------------------------------//
     // this_type operators
     //
-    Type& operator+=(const this_type& rhs)
-    {
-        laps += rhs.laps;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return static_cast<Type&>(*this);
-    }
+    Type& operator+=(const this_type&) { return static_cast<Type&>(*this); }
 
-    Type& operator-=(const this_type& rhs)
-    {
-        laps -= rhs.laps;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
-        return static_cast<Type&>(*this);
-    }
+    Type& operator-=(const this_type&) { return static_cast<Type&>(*this); }
 
     //----------------------------------------------------------------------------------//
     // friend operators
@@ -783,23 +738,14 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
-    //----------------------------------------------------------------------------------//
-    // serialization
-    //
-    // template <typename Archive>
-    // void serialize(Archive& ar, const unsigned int)
-    //{}
-
-    const int64_t& nlaps() const { return laps; }
+    const int64_t& nlaps() const { return 0; }
 
     void* get() { return nullptr; }
 
 protected:
-    bool           is_running   = false;
-    bool           is_on_stack  = false;
-    bool           is_transient = false;
-    int64_t        laps         = 0;
-    graph_iterator graph_itr;
+    bool is_running   = false;
+    bool is_on_stack  = false;
+    bool is_transient = false;
 };
 
 }  // component

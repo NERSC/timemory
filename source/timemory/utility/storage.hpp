@@ -64,6 +64,7 @@
 
 namespace tim
 {
+class manager;
 //--------------------------------------------------------------------------------------//
 //
 namespace cupti
@@ -110,14 +111,26 @@ get_noninit_storage_singleton()
 
 //======================================================================================//
 
-template <typename ObjectType>
+namespace impl
+{
+template <typename ObjectType, bool IsAvailable>
 class storage
+{
+};
+
+//======================================================================================//
+//
+//              Storage class for types that implement it
+//
+//======================================================================================//
+
+template <typename ObjectType>
+class storage<ObjectType, true>
 {
 public:
     //----------------------------------------------------------------------------------//
     //
-    using this_type     = storage<ObjectType>;
-    using void_type     = storage<void>;
+    using this_type     = storage<ObjectType, true>;
     using string_t      = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;
@@ -468,6 +481,8 @@ public:
 private:
     //----------------------------------------------------------------------------------//
     //
+    friend class tim::manager;
+
     template <typename _Archive>
     void _serialize(_Archive& ar)
     {
@@ -476,8 +491,6 @@ private:
             merge();
         ar(cereal::make_nvp(_label, *this));
     }
-
-    friend class manager;
 
 private:
     static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
@@ -531,11 +544,165 @@ private:
     std::unordered_map<int64_t, iterator> m_node_ids;
 };
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
+//
+//              Storage class for types that DO NOT use storage
+//
+//======================================================================================//
 
+template <typename ObjectType>
+class storage<ObjectType, false>
+{
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    using this_type     = storage<ObjectType, false>;
+    using string_t      = std::string;
+    using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
+    using singleton_t   = singleton<this_type, smart_pointer>;
+    using pointer       = typename singleton_t::pointer;
+    using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using count_type    = counted_object<ObjectType>;
+
+public:
+    using iterator       = void*;
+    using const_iterator = const void*;
+
+    static pointer instance() { return get_singleton().instance(); }
+    static pointer master_instance() { return get_singleton().master_instance(); }
+    static pointer noninit_instance() { return get_noninit_singleton().instance(); }
+    static pointer noninit_master_instance()
+    {
+        return get_noninit_singleton().master_instance();
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    storage()
+    {
+        component::properties<ObjectType>::has_storage() = false;
+        instance_count()++;
+        static std::atomic<short> _once;
+        short                     _once_num = _once++;
+        if(_once_num > 0 && !singleton_t::is_master(this))
+        {
+            ObjectType::thread_init_policy();
+        }
+        else
+        {
+            ObjectType::global_init_policy();
+            ObjectType::thread_init_policy();
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    ~storage() {}
+
+    //----------------------------------------------------------------------------------//
+    //
+    explicit storage(const this_type&) = delete;
+    explicit storage(this_type&&)      = delete;
+
+    //----------------------------------------------------------------------------------//
+    //
+    this_type& operator=(const this_type&) = delete;
+    this_type& operator=(this_type&& rhs) = delete;
+
+public:
+    //----------------------------------------------------------------------------------//
+    // there is always a head node that should not be counted
+    //
+    bool empty() const { return true; }
+
+    //----------------------------------------------------------------------------------//
+    // there is always a head node that should not be counted
+    //
+    inline size_t size() const { return 0; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    iterator pop() { return nullptr; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    iterator insert(int64_t, const ObjectType&, const string_t&) { return nullptr; }
+    void     set_prefix(const string_t&) {}
+    void     print()
+    {
+        ObjectType::thread_finalize_policy();
+        if(singleton_t::is_master(this))
+            ObjectType::global_finalize_policy();
+    }
+
+protected:
+    friend struct details::storage_deleter<this_type>;
+    void merge() {}
+    void merge(this_type*) {}
+
+public:
+    template <typename _Archive>
+    void serialize(_Archive&, const unsigned int)
+    {
+    }
+
+private:
+    friend class tim::manager;
+
+    template <typename _Archive>
+    void _serialize(_Archive&)
+    {
+    }
+
+private:
+    static singleton_t& get_singleton() { return get_storage_singleton<this_type>(); }
+    static singleton_t& get_noninit_singleton()
+    {
+        return get_noninit_storage_singleton<this_type>();
+    }
+
+    static std::atomic<int64_t>& instance_count()
+    {
+        static std::atomic<int64_t> _counter;
+        return _counter;
+    }
+};
+
+//======================================================================================//
+
+}  // namespace impl
+
+//======================================================================================//
+//
+//      determines if storage should be implemented
+//
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+struct implements_storage
+{
+    static constexpr bool value = (trait::is_available<_Tp>::value &&
+                                   !(trait::external_output_handling<_Tp>::value) &&
+                                   !(std::is_same<_Tp, void>::value));
+};
+
+//======================================================================================//
+
+template <typename _Tp, typename _Vp = typename _Tp::value_type>
+using storage = impl::storage<_Tp, implements_storage<_Tp, _Vp>::value>;
+
+//--------------------------------------------------------------------------------------//
+/// args:
+///     1) filename
+///     2) reference to storage object
+///     3) concurrency
+///
 template <typename _Tp>
 void
-serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency = 1);
+serialize_storage(const std::string&, const _Tp&, int64_t = 1);
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

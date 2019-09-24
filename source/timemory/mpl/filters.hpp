@@ -252,11 +252,13 @@ struct get_data_tuple<std::tuple<_ImplTypes...>>
         std::tuple<std::string, decltype(std::declval<_ImplTypes>().get())>...>;
 };
 
+//======================================================================================//
+
 }  // namespace impl
 
 //======================================================================================//
 //
-//      trait::is_available
+//      determines if storage should be implemented
 //
 //======================================================================================//
 
@@ -329,7 +331,7 @@ using filter_gotchas = impl::filter_false<trait::is_gotcha, std::tuple<Types...>
 
 //======================================================================================//
 //
-//      trait::num_gotchas
+//      {auto,component}_{hybrid,list,tuple} get() and get_labeled() types
 //
 //======================================================================================//
 

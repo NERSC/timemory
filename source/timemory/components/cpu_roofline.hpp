@@ -547,7 +547,8 @@ protected:
                        policy::thread_finalize, policy::global_finalize,
                        policy::serialization>;
 
-    friend class storage<this_type>;
+    using base_type::implements_storage_v;
+    friend class impl::storage<this_type, implements_storage_v>;
 
 public:
     //==================================================================================//
