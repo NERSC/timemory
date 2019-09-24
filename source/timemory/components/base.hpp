@@ -738,7 +738,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }
 
-    const int64_t& nlaps() const { return 0; }
+    int64_t nlaps() const { return 0; }
 
     void* get() { return nullptr; }
 
