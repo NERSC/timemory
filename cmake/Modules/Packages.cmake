@@ -248,23 +248,27 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-# MS-MPI standard install
-if(WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
-        "C:/Program\ Files/Microsoft\ SDKs/MPI")
-endif()
+if(TIMEMORY_USE_MPI)
+    # MS-MPI standard install
+    if(WIN32)
+        list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
+            "C:/Program\ Files/Microsoft\ SDKs/MPI")
+    endif()
 
-# MPI C compiler from environment
-if(NOT "$ENV{MPICC}" STREQUAL "")
-    set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
-endif()
+    # MPI C compiler from environment
+    if(NOT "$ENV{MPICC}" STREQUAL "")
+        set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
+    endif()
 
-# MPI C++ compiler from environment
-if(NOT "$ENV{MPICXX}" STREQUAL "")
-    set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
-endif()
+    # MPI C++ compiler from environment
+    if(NOT "$ENV{MPICXX}" STREQUAL "")
+        set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
+    endif()
 
-find_package(MPI)
+    find_package(MPI)
+else()
+    set(MPI_FOUND OFF)
+endif()
 
 if(MPI_FOUND)
 
