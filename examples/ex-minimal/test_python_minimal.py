@@ -2,7 +2,7 @@
 
 import sys
 import timemory
-import numpy as np
+from timemory.util import auto_timer
 
 
 def fib(n):
@@ -10,9 +10,16 @@ def fib(n):
 
 
 if __name__ == "__main__":
+
+    nfib = int(sys.argv[1]) if len(sys.argv) > 1 else 34
+
+    @auto_timer("%s_%i" % (sys.argv[0], nfib+1), mode="blank")
+    def run_fib(n):
+        return fib(n)
+
     ans = 0
-    with timemory.util.auto_timer(key=sys.argv[0].strip("./"), mode="blank"):
-        ans += fib(34)
-        with timemory.util.auto_timer(key=sys.argv[0].strip("./"), mode="blank"):
-            ans += fib(34)
-    print("fibonacci(34) = {}".format(fib(34)))
+    with auto_timer("%s_%i" % (sys.argv[0], nfib)):
+        ans += fib(nfib)
+        ans += run_fib(nfib + 1)
+
+    print("Answer = {}".format(ans))

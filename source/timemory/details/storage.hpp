@@ -468,7 +468,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         // find the max width
         for(const auto& itr : _data().graph())
         {
-            if(itr.depth() < 0)
+            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
                 continue;
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
@@ -487,7 +487,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
         {
             auto itr = *pitr;
-            if(itr.depth() < 0)
+            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
                 continue;
             std::stringstream _pss;
             // if we are not at the bottom of the call stack (i.e. completely inclusive)
@@ -521,8 +521,8 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 if(nexclusive > 0 && trait::is_available<ObjectType>::value)
                 {
                     details::print_percentage(
-                        _pss, details::compute_percentage(exclusive_values,
-                                                               itr.obj().get()));
+                        _pss,
+                        details::compute_percentage(exclusive_values, itr.obj().get()));
                 }
             }
 
@@ -546,7 +546,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
             //
             if(settings::text_output() && settings::file_output())
             {
-                auto fname = settings::compose_output_filename(label, ".txt");
+                auto          fname = settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -573,7 +573,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
             if(settings::json_output() || trait::requires_json<ObjectType>::value)
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
-                auto jname = settings::compose_output_filename(label, ".json");
+                auto        jname = settings::compose_output_filename(label, ".json");
                 printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
                        jname.c_str());
                 serialize_storage(jname, *this, num_instances);
@@ -612,7 +612,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
             printf("\n");
             for(auto itr = _data().graph().begin(); itr != _data().graph().end(); ++itr)
             {
-                if(itr->depth() < 0)
+                if(itr->depth() < 0 || itr->depth() > settings::max_depth())
                     continue;
                 auto _obj       = itr->obj();
                 auto _hierarchy = get_hierarchy(itr);
@@ -664,7 +664,7 @@ template <typename ObjectType>
 template <typename Archive>
 void
 storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
-                                       const unsigned int version)
+                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::vector<tuple_type>;
@@ -708,7 +708,7 @@ template <typename ObjectType>
 template <typename Archive>
 void
 storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
-                                       const unsigned int version)
+                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
     using array_type = std::vector<tuple_type>;
@@ -751,7 +751,7 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
 
 //======================================================================================//
 
-} // namespace impl
+}  // namespace impl
 
 //======================================================================================//
 

@@ -22,19 +22,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
-#include <timemory/timemory.hpp>
+// #include <timemory/timemory.hpp>
+
+extern "C" void timemory_init_library(int, char**);
+extern "C" void timemory_finalize_library();
+extern "C" void timemory_begin_record(const char*, uint64_t*);
+extern "C" void timemory_end_record(uint64_t);
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
 int main(int argc, char** argv)
 {
-    long nfib = (argc > 1) ? atol(argv[1]) : 43;
-    TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib);
+    long     nfib = (argc > 1) ? atol(argv[1]) : 43;
+    uint64_t id0, id1;
+
+    timemory_init_library(argc, argv);
+
+    timemory_begin_record(argv[0], &id0);
     long ans = fib(nfib);
-    TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib + 1);
+
+    timemory_begin_record(argv[0], &id1);
     ans += fib(nfib + 1);
+
+    timemory_end_record(id1);
+    timemory_end_record(id0);
 
     printf("Answer = %li\n", ans);
     return EXIT_SUCCESS;

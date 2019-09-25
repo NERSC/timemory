@@ -23,18 +23,27 @@
 // SOFTWARE.
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <timemory/ctimemory.h>
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
 int main(int argc, char** argv)
 {
-    void* t0  = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
-    long  ans = fib(43);
-    void* t1  = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
-    ans += fib(43);
+    long nfib = (argc > 1) ? atol(argv[1]) : 43;
+
+    TIMEMORY_SPRINTF(l0, 64, "%s_%li", argv[0], nfib);
+    TIMEMORY_SPRINTF(l1, 64, "%s_%li", argv[0], nfib + 1);
+
+    void* t0  = TIMEMORY_BLANK_AUTO_TIMER(l0);
+    long  ans = fib(nfib);
+
+    void* t1 = TIMEMORY_BLANK_AUTO_TIMER(l1);
+    ans += fib(nfib + 1);
+
     FREE_TIMEMORY_AUTO_TIMER(t1);
     FREE_TIMEMORY_AUTO_TIMER(t0);
 
-    return ans * 0;
+    printf("Answer = %li\n", ans);
+    return EXIT_SUCCESS;
 }

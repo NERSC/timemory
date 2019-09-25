@@ -282,7 +282,7 @@ parent_process(pid_t pid)
     }
     else
     {
-        std::cout << _oss.str();
+        std::cout << _oss.str() << std::endl;
     }
 }
 

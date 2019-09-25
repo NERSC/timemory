@@ -4,7 +4,7 @@ project(timemory-Minimal-Example LANGUAGES CXX)
 
 include(CheckCCompilerFlag)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)
-set(COMPONENTS compile-options analysis-tools extern-auto-timer)
+set(COMPONENTS compile-options analysis-tools)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 set(TIMEMORY_C_LIBRARY )
@@ -23,15 +23,24 @@ if(TIMEMORY_C_LIBRARY)
             $<$<COMPILE_LANGUAGE:C>:-Wno-unused-parameter>)
         list(APPEND TIMEMORY_C_LIBRARY test-c-minimal-compile-options)
     endif()
+
     add_executable(test_c_minimal test_minimal.c)
     target_link_libraries(test_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
     install(TARGETS test_c_minimal DESTINATION bin)
+
+    add_executable(test_c_minimal_library test_minimal_library.c)
+    target_link_libraries(test_c_minimal_library timemory-minimal-example
+        timemory-cxx-shared ${TIMEMORY_C_LIBRARY})
+    install(TARGETS test_c_minimal_library DESTINATION bin)
 endif()
 
 add_executable(test_cxx_minimal test_minimal.cpp)
 target_link_libraries(test_cxx_minimal timemory-minimal-example)
 install(TARGETS test_cxx_minimal DESTINATION bin)
-# target_compile_definitions(test_cxx_minimal PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
+
+add_executable(test_cxx_minimal_library test_minimal_library.cpp)
+target_link_libraries(test_cxx_minimal_library timemory-minimal-example timemory-cxx-shared)
+install(TARGETS test_cxx_minimal_library DESTINATION bin)
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")

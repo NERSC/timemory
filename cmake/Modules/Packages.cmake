@@ -73,6 +73,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-cupti
     timemory-cudart-device
     timemory-gperftools-cpu
+    timemory-caliper
     ${_MPI_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -84,6 +85,7 @@ set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
     timemory-cupti
     timemory-cudart-device
     timemory-gperftools-cpu
+    timemory-caliper
     ${_MPI_INTERFACE_LIBRARY})
 
 add_interface_library(timemory-extensions)

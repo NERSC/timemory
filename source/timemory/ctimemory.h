@@ -286,6 +286,14 @@ extern TIMEMORY_EXTERN_C tim_api const char*
 #        define TIMEMORY_INIT(argc, argv, settings) c_timemory_init(argc, argv, settings)
 
 //--------------------------------------------------------------------------------------//
+
+#        if !defined(TIMEMORY_SPRINTF)
+#            define TIMEMORY_SPRINTF(VAR, LEN, FMT, ...)                                 \
+                char VAR[LEN];                                                           \
+                sprintf(VAR, FMT, __VA_ARGS__);
+#        endif
+
+//--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BLANK_AUTO_TIMER(c_str)
  *
  * Usage:

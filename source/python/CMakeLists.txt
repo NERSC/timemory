@@ -32,20 +32,18 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
 
 target_link_libraries(libpytimemory PUBLIC
     timemory-headers
-    timemory-cxx-shared
-    timemory-extern-init
-    # timemory-extern-templates
-    ${TIMEMORY_LINK_LIB}
+    # timemory-cxx-shared
+    # timemory-extern-init
     timemory-compile-options
-    timemory-analysis-tools
-    timemory-cuda
-    timemory-papi
-    timemory-cupti
-    timemory-cudart
-    timemory-nvtx
-    timemory-cudart-device
-    timemory-caliper
-    timemory-gperftools-cpu
+    timemory-external-shared
+    # timemory-cuda
+    # timemory-papi
+    # timemory-cupti
+    # timemory-cudart
+    # timemory-nvtx
+    # timemory-cudart-device
+    # timemory-caliper
+    # timemory-gperftools-cpu
     # timemory-gperftools-heap
     timemory-python-compile-options
     PRIVATE pybind11::module)
