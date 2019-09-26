@@ -54,7 +54,8 @@ class tgraph_node
 {
     // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
 public:
-    tgraph_node();
+    tgraph_node() = default;
+    ~tgraph_node() = default;
     explicit tgraph_node(const T&);
     explicit tgraph_node(T&&);
 
@@ -66,8 +67,8 @@ public:
     tgraph_node& operator=(const tgraph_node&) = delete;
 #endif
 
-    tgraph_node(tgraph_node&&) noexcept = default;
-    tgraph_node& operator=(tgraph_node&&) noexcept = default;
+    tgraph_node(tgraph_node&&) = default;
+    tgraph_node& operator=(tgraph_node&&) = default;
 
     tgraph_node<T>* parent       = nullptr;
     tgraph_node<T>* first_child  = nullptr;
@@ -78,18 +79,6 @@ public:
 };
 
 //======================================================================================//
-
-template <typename T>
-tgraph_node<T>::tgraph_node()
-: parent(nullptr)
-, first_child(nullptr)
-, last_child(nullptr)
-, prev_sibling(nullptr)
-, next_sibling(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
 
 template <typename T>
 tgraph_node<T>::tgraph_node(const T& val)
