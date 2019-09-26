@@ -26,7 +26,7 @@
 /** \file manager.hpp
  * \headerfile manager.hpp "timemory/manager.hpp"
  * Static singleton handler that is not templated. In general, this is the
- * first object created and last object destroy. It should be utilized to
+ * first object created and last object destroyed. It should be utilized to
  * store type-independent data
  *
  */
@@ -37,7 +37,6 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/mpl/apply.hpp"
-#include "timemory/utility/graph.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -48,35 +47,15 @@
 
 #include <atomic>
 #include <cstdint>
-#include <deque>
-#include <mutex>
-#include <set>
 #include <string>
 #include <thread>
 #include <tuple>
 #include <unordered_map>
 
-#if defined(TIMEMORY_USE_CUPTI)
-#    include <cupti.h>
-#endif
-
 //--------------------------------------------------------------------------------------//
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-namespace cupti
-{
-inline void
-initialize()
-{
-#if defined(TIMEMORY_USE_CUPTI)
-    // unsigned int init_flags = 0;
-    // cuInit(init_flags);
-#endif
-}
-}  // namespace cupti
-
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
@@ -84,12 +63,12 @@ class component_tuple;
 
 namespace details
 {
-struct manager_deleter;
+struct tim_api manager_deleter;
 }
 
 //--------------------------------------------------------------------------------------//
 
-class manager
+class tim_api manager
 {
 public:
     using this_type     = manager;
@@ -98,138 +77,11 @@ public:
     using size_type     = std::size_t;
     using string_t      = std::string;
     using comm_group_t  = std::tuple<mpi::comm_t, int32_t>;
+    using mutex_t       = std::mutex;
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = singleton_t::pointer;
     using smart_pointer = singleton_t::smart_pointer;
-    using string_list_t = std::deque<string_t>;
     using void_counter  = counted_object<void>;
-
-    //----------------------------------------------------------------------------------//
-    //
-    //  the node type
-    //
-    //----------------------------------------------------------------------------------//
-    class graph_node : public std::tuple<int64_t, string_t, string_list_t>
-    {
-    public:
-        using this_type = graph_node;
-        using base_type = std::tuple<int64_t, string_t, string_list_t>;
-
-        int64_t&       id() { return std::get<0>(*this); }
-        string_t&      prefix() { return std::get<1>(*this); }
-        string_list_t& data() { return std::get<2>(*this); }
-
-        const int64_t&       id() const { return std::get<0>(*this); }
-        const string_t&      prefix() const { return std::get<1>(*this); }
-        const string_list_t& data() const { return std::get<2>(*this); }
-
-        graph_node()
-        : base_type(0, "", {})
-        {
-        }
-
-        explicit graph_node(base_type&& _base)
-        : base_type(std::forward<base_type>(_base))
-        {
-        }
-
-        graph_node(const int64_t& _id, const string_t& _prefix, const string_list_t& _l)
-        : base_type(_id, _prefix, _l)
-        {
-        }
-
-        graph_node(const int64_t& _id, const string_t& _prefix, const string_t& _l)
-        : base_type(_id, _prefix, string_list_t())
-        {
-            data().push_back(_l);
-        }
-
-        ~graph_node() {}
-        // explicit graph_node(const this_type&) = default;
-        // explicit graph_node(this_type&&)      = default;
-        // graph_node& operator=(const this_type&) = default;
-        // graph_node& operator=(this_type&&) = default;
-
-        bool operator==(const graph_node& rhs) const { return (id() == rhs.id()); }
-        bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
-
-        graph_node& operator+=(const graph_node& rhs)
-        {
-            for(const auto& itr : rhs.data())
-                data().push_back(itr);
-            return *this;
-        }
-    };
-
-    //----------------------------------------------------------------------------------//
-
-    using graph_t        = tim::graph<graph_node>;
-    using iterator       = typename graph_t::iterator;
-    using const_iterator = typename graph_t::const_iterator;
-
-    //----------------------------------------------------------------------------------//
-    //
-    //  graph instance + current node + head node
-    //
-    //----------------------------------------------------------------------------------//
-    struct graph_data
-    {
-        using this_type  = graph_data;
-        int64_t  m_depth = -1;
-        graph_t  m_graph;
-        iterator m_current;
-        iterator m_head;
-
-        graph_data()
-        : m_depth(-1)
-        {
-        }
-
-        ~graph_data() { m_graph.clear(); }
-
-        graph_data(const this_type&) = default;
-        graph_data& operator=(const this_type&) = delete;
-        graph_data& operator=(this_type&&) = default;
-
-        int64_t&  depth() { return m_depth; }
-        graph_t&  graph() { return m_graph; }
-        iterator& current() { return m_current; }
-        iterator& head() { return m_head; }
-
-        const graph_t& graph() const { return m_graph; }
-
-        iterator       begin() { return m_graph.begin(); }
-        iterator       end() { return m_graph.end(); }
-        const_iterator begin() const { return m_graph.begin(); }
-        const_iterator end() const { return m_graph.end(); }
-
-        inline void reset()
-        {
-            m_graph.erase_children(m_head);
-            m_depth   = 0;
-            m_current = m_head;
-        }
-
-        inline iterator pop_graph()
-        {
-            if(m_depth > 0 && !m_graph.is_head(m_current))
-            {
-                --m_depth;
-                m_current = graph_t::parent(m_current);
-            }
-            else if(m_depth == 0)
-            {
-                m_current = m_head;
-            }
-            return m_current;
-        }
-
-        inline iterator append_child(const graph_node& node)
-        {
-            ++m_depth;
-            return (m_current = m_graph.append_child(m_current, node));
-        }
-    };
 
 public:
     // Constructor and Destructors
@@ -249,28 +101,15 @@ public:
     static int32_t max_depth() { return void_counter::max_depth(); }
     static int32_t total_instance_count() { return f_manager_instance_count().load(); }
 
-    void merge(pointer);
-    void print(bool ign_cutoff, bool endline);
-    void insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data);
-
     static void exit_hook();
-    static void print(const tim::component_tuple<>&) {}
-
-    template <typename Head, typename... Tail>
-    static void print(const tim::component_tuple<Head, Tail...>&);
-
-    template <typename ComponentTuple_t>
-    static void print()
-    {
-        print(ComponentTuple_t());
-    }
 
 private:
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
     {
-        auto ret = storage<_Tp>::instance();
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::instance();
         consume_parameters(ret);
     }
 
@@ -284,68 +123,154 @@ private:
 
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _print_storage()
+    {
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::noninit_instance();
+        if(ret && !ret->empty())
+            ret->print();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _print_storage()
+    {
+        _print_storage<_Tp>();
+        _print_storage<_Tail...>();
+    }
+
+    template <typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
-        auto ret = storage<_Tp>::instance();
-        ret->data().clear();
+        using storage_type = typename _Tp::storage_type;
+        auto ret           = storage_type::noninit_instance();
+        if(ret)
+            ret->data().clear();
     }
 
     template <typename _Tp, typename... _Tail,
               enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
     void _clear()
     {
-        auto ret = storage<_Tp>::instance();
-        ret->data().clear();
+        _clear<_Tp>();
         _clear<_Tail...>();
     }
 
-public:
-    template <typename... _Types>
-    void initialize_storage()
+    template <typename _Archive, typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
+    void _serialize(_Archive& ar)
     {
-        _init_storage<_Types...>();
+        if(component::properties<_Tp>::has_storage())
+        {
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::noninit_instance();
+            if(ret && !ret->empty())
+                ret->_serialize(ar);
+        }
     }
 
-    template <template <typename...> class Obj, typename... _Types>
-    void clear(const Obj<_Types...>&)
+    template <typename _Archive, typename _Tp, typename... _Tail,
+              enable_if_t<(sizeof...(_Tail) > 0), int> = 0>
+    void _serialize(_Archive& ar)
     {
-        _clear<_Types...>();
+        _serialize<_Archive, _Tp>(ar);
+        _serialize<_Archive, _Tail...>(ar);
     }
 
 public:
     // used to expand a tuple in settings
     template <typename... _Types>
-    struct initialize
+    struct get_storage
     {
-        static void storage()
+        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
+        static constexpr auto spacing = indent::space;
+        static std::string    serialize()
+        {
+            manager*          _manager = manager::instance();
+            std::stringstream ss;
+            {
+                // args: precision, spacing, indent size
+                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+                cereal::JSONOutputArchive          oa(ss, opts);
+                oa.setNextName("rank");
+                oa.startNode();
+                auto rank = mpi::rank();
+                oa(cereal::make_nvp("rank_id", rank));
+                _manager->_serialize<decltype(oa), _Types...>(oa);
+                oa.finishNode();
+            }
+            return ss.str();
+        }
+
+        static void initialize()
         {
             manager* _manager = manager::instance();
-            _manager->initialize_storage<_Types...>();
+            _manager->_init_storage<_Types...>();
+        }
+
+        static void clear()
+        {
+            manager* _manager = manager::instance();
+            _manager->_clear<_Types...>();
+        }
+
+        static void print()
+        {
+            manager* _manager = manager::instance();
+            _manager->_print_storage<_Types...>();
         }
     };
 
     template <typename... _Types>
-    struct initialize<std::tuple<_Types...>>
+    struct get_storage<std::tuple<_Types...>>
     {
-        static void storage()
+        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
+        static constexpr auto spacing = indent::space;
+        static std::string    serialize()
+        {
+            manager*          _manager = manager::instance();
+            std::stringstream ss;
+            {
+                // args: precision, spacing, indent size
+                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+                cereal::JSONOutputArchive          oa(ss, opts);
+                oa.setNextName("rank");
+                oa.startNode();
+                auto rank = mpi::rank();
+                oa(cereal::make_nvp("rank_id", rank));
+                _manager->_serialize<decltype(oa), _Types...>(oa);
+                oa.finishNode();
+            }
+            return ss.str();
+        }
+
+        static void initialize()
         {
             manager* _manager = manager::instance();
-            _manager->initialize_storage<_Types...>();
+            _manager->_init_storage<_Types...>();
+        }
+
+        static void clear()
+        {
+            manager* _manager = manager::instance();
+            _manager->_clear<_Types...>();
+        }
+
+        static void print()
+        {
+            manager* _manager = manager::instance();
+            _manager->_print_storage<_Types...>();
         }
     };
+
+private:
+    template <typename... _Types>
+    friend struct get_storage;
 
 public:
     // Public member functions
     int32_t instance_count() const { return m_instance_count; }
-
-public:
-    //
-    const graph_data& data() const { return m_data; }
-    const graph_t&    graph() const { return m_data.graph(); }
-
-    graph_data& data() { return m_data; }
-    iterator&   current() { return m_data.current(); }
-    graph_t&    graph() { return m_data.graph(); }
 
 protected:
     // protected static functions
@@ -379,12 +304,6 @@ private:
     // private variables
     /// instance id
     int32_t m_instance_count;
-    /// mutex
-    mutex_t m_mutex;
-    /// data represented as string
-    graph_data m_data;
-    /// list of node ids
-    std::unordered_map<int64_t, iterator> m_node_ids;
 
 private:
     /// num-threads based on number of managers created

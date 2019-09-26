@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(TiMemory-CXX-Overhead-Example LANGUAGES C CXX)
+project(timemory-CXX-Overhead-Example LANGUAGES C CXX)
 
 set(EXE_NAME test_cxx_overhead)
 set(COMPONENTS compile-options analysis-tools)
@@ -20,8 +20,8 @@ foreach(_OPT PAPI CALIPER EXTERN_TEMPLATES)
     endif()
 endforeach()
 
-set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cxx-overhead-example)
-find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
+set(timemory_FIND_COMPONENTS_INTERFACE timemory-cxx-overhead-example)
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_executable(${EXE_NAME} ${EXE_NAME}.cpp)
 target_link_libraries(${EXE_NAME} timemory-cxx-overhead-example)

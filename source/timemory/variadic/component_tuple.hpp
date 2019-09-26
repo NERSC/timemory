@@ -44,6 +44,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -85,10 +86,15 @@ public:
     using string_hash = std::hash<string_t>;
     using this_type   = component_tuple<Types...>;
     using data_type   = implemented<Types...>;
+    using type_tuple  = implemented<Types...>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = false;
     static constexpr bool is_component_tuple = true;
+
+    // used by gotcha component to prevent recursion
+    static constexpr bool contains_gotcha =
+        (std::tuple_size<filter_gotchas<Types...>>::value != 0);
 
 public:
     // modifier types
@@ -121,43 +127,10 @@ public:
     using auto_type = auto_tuple<Types...>;
 
 public:
-    explicit component_tuple(const string_t& key, const bool& store,
-                             const int64_t& ncount = 0, const int64_t& nhash = 0,
-                             const language_t& lang = language_t::cxx())
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_lang(lang)
-    , m_key(key)
-    , m_identifier("")
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-    }
-
-    explicit component_tuple(const string_t& key, const bool& store,
-                             const language_t& lang, const int64_t& ncount = 0,
-                             const int64_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_lang(lang)
-    , m_key(key)
-    , m_identifier("")
-    {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-    }
-
-    explicit component_tuple(const string_t&   key,
+    explicit component_tuple(const string_t& key, const bool& store = false,
                              const language_t& lang = language_t::cxx(),
-                             const int64_t& ncount = 0, const int64_t& nhash = 0,
-                             bool store = true)
-    : m_store(store)
+                             int64_t ncount = 0, int64_t nhash = 0)
+    : m_store(store && settings::enabled())
     , m_laps(0)
     , m_count(ncount)
     , m_hash((nhash == 0) ? string_hash()(key) : nhash)
@@ -240,7 +213,6 @@ public:
         // start components
         apply<void>::access<prior_start_t>(m_data);
         apply<void>::access<stand_start_t>(m_data);
-        // apply<void>::access<start_t>(m_data);
     }
 
     void stop()
@@ -248,7 +220,6 @@ public:
         // stop components
         apply<void>::access<prior_stop_t>(m_data);
         apply<void>::access<stand_stop_t>(m_data);
-        // apply<void>::access<stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -259,7 +230,6 @@ public:
         // start, if not already started
         apply<void>::access<prior_cond_start_t>(m_data);
         apply<void>::access<stand_cond_start_t>(m_data);
-        // apply<void>::access<cond_start_t>(m_data);
     }
 
     void conditional_stop()
@@ -267,7 +237,6 @@ public:
         // stop, if not already stopped
         apply<void>::access<prior_cond_stop_t>(m_data);
         apply<void>::access<stand_cond_stop_t>(m_data);
-        // apply<void>::access<cond_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -276,13 +245,21 @@ public:
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_begin() { apply<void>::access<mark_begin_t>(m_data); }
+    template <typename... _Args>
+    void mark_begin(_Args&&... _args)
+    {
+        apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
+    }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_end() { apply<void>::access<mark_end_t>(m_data); }
+    template <typename... _Args>
+    void mark_end(_Args&&... _args)
+    {
+        apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
+    }
 
     //----------------------------------------------------------------------------------//
     // recording
@@ -463,25 +440,13 @@ public:
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
-    void              rekey(const string_t& _key) { compute_identifier(_key, m_lang); }
+    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
 
 public:
-    // get member functions taking either an integer or a type
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return std::get<_N>(m_data);
-    }
-
+    // get member functions taking either a type
     template <typename _Tp>
     _Tp& get()
     {
@@ -523,7 +488,7 @@ protected:
     int64_t           m_laps         = 0;
     int64_t           m_count        = 0;
     int64_t           m_hash         = 0;
-    const language_t  m_lang         = language_t::cxx();
+    language_t        m_lang         = language_t::cxx();
     string_t          m_key          = "";
     string_t          m_identifier   = "";
     mutable data_type m_data;
@@ -552,18 +517,8 @@ protected:
     {
         static string_t   _prefix = get_prefix();
         std::stringstream ss;
-
         // designated as [cxx], [pyc], etc.
         ss << _prefix << lang << " ";
-
-        // indent
-        for(int64_t i = 0; i < m_count; ++i)
-        {
-            if(i + 1 == m_count)
-                ss << "|_";
-            else
-                ss << "  ";
-        }
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
@@ -613,6 +568,8 @@ public:
         apply<void>::type_access<operation::init_storage, data_type>();
     }
 };
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

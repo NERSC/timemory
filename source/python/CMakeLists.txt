@@ -2,7 +2,7 @@
 ##########################################################################################
 
 #
-#        TiMemory (Python)
+#        timemory (Python)
 #
 ##########################################################################################
 
@@ -33,28 +33,23 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
 target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
-    ${TIMEMORY_LINK_LIB}
+    # timemory-extern-init
     timemory-compile-options
-    timemory-analysis-tools
-    timemory-cuda
-    timemory-papi
-    timemory-cupti
-    timemory-cudart
-    timemory-cudart-device
+    timemory-external-shared
+    # timemory-cuda
+    # timemory-papi
+    # timemory-cupti
+    # timemory-cudart
+    # timemory-nvtx
+    # timemory-cudart-device
+    # timemory-caliper
+    # timemory-gperftools-cpu
+    # timemory-gperftools-heap
     timemory-python-compile-options
-    timemory-caliper
     PRIVATE pybind11::module)
 
 if(TIMEMORY_USE_CUDA)
     set(EXTRA_PROPERTIES LINKER_LANGUAGE CUDA)
-endif()
-
-if(TIMEMORY_USE_EXTERN_INIT)
-    target_link_libraries(libpytimemory PUBLIC timemory-extern-init)
-endif()
-
-if(TIMEMORY_BUILD_EXTERN_TEMPLATES)
-    target_link_libraries(libpytimemory PUBLIC timemory-extern-templates)
 endif()
 
 set_target_properties(libpytimemory PROPERTIES

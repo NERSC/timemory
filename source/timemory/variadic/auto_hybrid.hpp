@@ -55,18 +55,23 @@ class auto_hybrid
                   "must be tim::component_list<...>");
 
 public:
-    using tuple_type     = _CompTuple;
-    using list_type      = _CompList;
-    using component_type = component_hybrid<tuple_type, list_type>;
-    using this_type      = auto_hybrid<tuple_type, list_type>;
-    using data_type      = typename component_type::data_type;
-    using counter_type   = counted_object<this_type>;
-    using counter_void   = counted_object<void>;
-    using hashed_type    = hashed_object<this_type>;
-    using string_t       = std::string;
-    using string_hash    = std::hash<string_t>;
-    using base_type      = component_type;
-    using language_t     = language;
+    using tuple_type      = _CompTuple;
+    using list_type       = _CompList;
+    using component_type  = component_hybrid<tuple_type, list_type>;
+    using this_type       = auto_hybrid<tuple_type, list_type>;
+    using data_type       = typename component_type::data_type;
+    using counter_type    = counted_object<this_type>;
+    using counter_void    = counted_object<void>;
+    using hashed_type     = hashed_object<this_type>;
+    using string_t        = std::string;
+    using string_hash     = std::hash<string_t>;
+    using base_type       = component_type;
+    using language_t      = language;
+    using type_tuple      = typename component_type::type_tuple;
+    using tuple_type_list = typename component_type::tuple_type_list;
+    using list_type_list  = typename component_type::list_type_list;
+
+    static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
     inline explicit auto_hybrid(const string_t&, const int64_t& lineno = 0,
@@ -86,29 +91,71 @@ public:
 
 public:
     // public member functions
-    inline component_type&       component_tuple() { return m_temporary_object; }
-    inline const component_type& component_tuple() const { return m_temporary_object; }
+    inline component_type&       get_component() { return m_temporary_object; }
+    inline const component_type& get_component() const { return m_temporary_object; }
 
-    // partial interface to underlying component_tuple
-    inline void record() { m_temporary_object.record(); }
-    inline void start() { m_temporary_object.start(); }
-    inline void stop() { m_temporary_object.stop(); }
-    inline void push() { m_temporary_object.push(); }
-    inline void pop() { m_temporary_object.pop(); }
-    inline void mark_begin() { m_temporary_object.mark_begin(); }
-    inline void mark_end() { m_temporary_object.mark_end(); }
+    // partial interface to underlying component_hybrid
+    inline void record()
+    {
+        if(m_enabled)
+            m_temporary_object.record();
+    }
+    inline void start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void stop()
+    {
+        if(m_enabled)
+            m_temporary_object.stop();
+    }
+    inline void push()
+    {
+        if(m_enabled)
+            m_temporary_object.push();
+    }
+    inline void pop()
+    {
+        if(m_enabled)
+            m_temporary_object.pop();
+    }
+    inline void conditional_start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void conditional_stop()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_stop();
+    }
 
+    template <typename... _Args>
+    inline void mark_begin(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void mark_end(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
-    inline const data_type& data() const { return m_temporary_object.data(); }
-    inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
-    inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
-    inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
+    inline const bool&     store() const { return m_temporary_object.store(); }
+    inline data_type       data() const { return m_temporary_object.data(); }
+    inline int64_t         laps() const { return m_temporary_object.laps(); }
+    inline const int64_t&  hash() const { return m_temporary_object.hash(); }
+    inline const string_t& key() const { return m_temporary_object.key(); }
+    inline const language& lang() const { return m_temporary_object.lang(); }
+    inline const string_t& identifier() const { return m_temporary_object.identifier(); }
+    inline void            rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
     tuple_type&       get_tuple() { return m_temporary_object.get_tuple(); }
@@ -125,6 +172,14 @@ public:
     const tuple_type& get_lhs() const { return m_temporary_object.get_tuple(); }
     list_type&        get_rhs() { return m_temporary_object.get_list(); }
     const list_type&  get_rhs() const { return m_temporary_object.get_list(); }
+
+    template <typename _Tp, enable_if_t<(is_one_of<_Tp, tuple_type_list>::value ||
+                                         is_one_of<_Tp, list_type_list>::value),
+                                        int> = 0>
+    auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
+    {
+        return m_temporary_object.template get<_Tp>();
+    }
 
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
@@ -154,8 +209,8 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t&   object_tag,
                   : 0)
 , m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
-                     m_enabled)
+, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
+                     hashed_type::m_hash)
 {
     if(m_enabled)
     {
@@ -209,6 +264,34 @@ auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
             *m_reference_object += m_temporary_object;
         }
     }
+}
+
+//======================================================================================//
+
+template <typename _Tuple, typename _List,
+          typename _Ret = decltype(std::tuple_cat(get(std::declval<_Tuple>()),
+                                                  get(std::declval<_List>())))>
+_Ret
+get(const auto_hybrid<_Tuple, _List>& _obj)
+{
+    return (_obj.enabled()) ? std::tuple_cat(get(_obj.get_component().get_lhs()),
+                                             get(_obj.get_component().get_rhs()))
+                            : _Ret{};
+    // return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tuple, typename _List,
+          typename _Ret = decltype(std::tuple_cat(get_labeled(std::declval<_Tuple>()),
+                                                  get_labeled(std::declval<_List>())))>
+_Ret
+get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
+{
+    return (_obj.enabled()) ? std::tuple_cat(get_labeled(_obj.get_component().get_lhs()),
+                                             get_labeled(_obj.get_component().get_rhs()))
+                            : _Ret{};
+    // return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
 //======================================================================================//

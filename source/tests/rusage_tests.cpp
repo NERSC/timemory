@@ -43,7 +43,7 @@ static const int64_t niter       = 20;
 static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
 static peak_rss      peak;
-static current_rss   curr;
+static page_rss      curr;
 static read_bytes    rb;
 static written_bytes wb;
 static auto          tot_size = nelements * sizeof(int64_t) / memory_unit.first;
@@ -77,6 +77,7 @@ random_entry(const std::vector<_Tp>& v)
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
     return v.at(dist(rng));
 }
+
 void
 allocate()
 {
@@ -207,9 +208,9 @@ TEST_F(rusage_tests, peak_rss)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(rusage_tests, current_rss)
+TEST_F(rusage_tests, page_rss)
 {
-    CHECK_AVAILABLE(current_rss);
+    CHECK_AVAILABLE(page_rss);
     details::print_info(curr, tot_size);
     ASSERT_NEAR(tot_size, curr.get(), curr_tolerance);
 }

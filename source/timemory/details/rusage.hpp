@@ -96,7 +96,7 @@ tim::get_peak_rss()
 // in bytes, or zero if the value cannot be determined on this OS.
 //
 inline int64_t
-tim::get_current_rss()
+tim::get_page_rss()
 {
 #if defined(_UNIX)
 #    if defined(_MACOS)

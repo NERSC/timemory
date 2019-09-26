@@ -34,9 +34,8 @@
 #include <vector>
 
 using namespace tim::component;
-using mutex_t   = std::mutex;
-using lock_t    = std::unique_lock<mutex_t>;
-using condvar_t = std::condition_variable;
+using mutex_t = std::mutex;
+using lock_t  = std::unique_lock<mutex_t>;
 
 static const int64_t niter     = 10;
 static const int64_t page_size = tim::units::get_page_size();
@@ -45,7 +44,7 @@ using tuple_t = tim::component_tuple<real_clock, gperf_cpu_profiler, gperf_heap_
 using list_t  = tim::component_list<real_clock, gperf_cpu_profiler, gperf_heap_profiler>;
 using auto_tuple_t  = typename tuple_t::auto_type;
 using auto_list_t   = typename list_t::auto_type;
-using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, current_rss>;
+using mem_list_t    = tim::component_list<cpu_clock, cpu_util, peak_rss, page_rss>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, mem_list_t>;
 
 //--------------------------------------------------------------------------------------//
@@ -72,7 +71,7 @@ fibonacci(long n)
 void
 do_sleep(long n)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
 }
 
@@ -80,7 +79,7 @@ do_sleep(long n)
 void
 consume(long n)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     // a mutex held by one lock
     mutex_t mutex;
     // acquire lock
@@ -88,11 +87,9 @@ consume(long n)
     // associate but defer
     lock_t try_lk(mutex, std::defer_lock);
     // get current time
-    auto now = std::chrono::system_clock::now();
-    // get elapsed
-    auto until = now + std::chrono::milliseconds(n);
+    auto now = std::chrono::steady_clock::now();
     // try until time point
-    while(std::chrono::system_clock::now() < until)
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
         try_lk.try_lock();
 }
 
@@ -101,7 +98,7 @@ template <typename _Tp>
 size_t
 random_entry(const std::vector<_Tp>& v)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::mt19937 rng;
     rng.seed(std::random_device()());
     std::uniform_int_distribution<std::mt19937::result_type> dist(0, v.size() - 1);
@@ -112,7 +109,7 @@ random_entry(const std::vector<_Tp>& v)
 void
 allocate(int64_t nfactor)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "");
     std::vector<int64_t> v(nfactor * page_size, 35);
     auto                 ret  = fibonacci(0);
     long                 nfib = details::random_entry(v);
@@ -138,7 +135,7 @@ protected:
         };
 
         mem_list_t::get_initializer() = [](mem_list_t& obj) {
-            obj.initialize<cpu_clock, cpu_util, peak_rss, current_rss>();
+            obj.initialize<cpu_clock, cpu_util, peak_rss, page_rss>();
         };
     }
 };
@@ -152,7 +149,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "100", 1);
-        TIMEMORY_BLANK_OBJECT(auto_tuple_t, details::get_test_name(), "_", 0);
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name(), "_", 0);
         details::consume(1000);
         details::allocate(50);
     }
@@ -160,7 +157,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "500", 1);
-        TIMEMORY_BLANK_OBJECT(auto_list_t, details::get_test_name(), "_", 1);
+        TIMEMORY_BLANK_MARKER(auto_list_t, details::get_test_name(), "_", 1);
         details::consume(1000);
         details::allocate(50);
     }
@@ -168,7 +165,7 @@ TEST_F(gperf_cpu_tests, cpu_profile)
     {
         setenv("CPUPROFILE_REALTIME", "1", 1);
         setenv("CPUPROFILE_FREQUENCY", "2000", 1);
-        TIMEMORY_BLANK_OBJECT(auto_hybrid_t, details::get_test_name(), "_", 2);
+        TIMEMORY_BLANK_MARKER(auto_hybrid_t, details::get_test_name(), "_", 2);
         details::consume(1000);
         details::allocate(50);
     }

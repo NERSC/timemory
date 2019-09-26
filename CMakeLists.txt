@@ -14,6 +14,9 @@ endif()
 
 cmake_policy(SET CMP0048 NEW)
 cmake_policy(SET CMP0042 NEW)
+if(NOT CMAKE_VERSION VERSION_LESS 3.13)
+    cmake_policy(SET CMP0079 NEW)
+endif()
 # this gets annoying
 if(TIMEMORY_BUILD_GTEST)
     set(CMAKE_SUPPRESS_DEVELOPER_WARNINGS ON CACHE BOOL
@@ -24,11 +27,11 @@ endif()
 #   versioning
 #----------------------------------------------------------------------------------------#
 
-file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" VERSION_STRING LIMIT_COUNT 1)
-string(REGEX REPLACE "(\n|\r)" "" VERSION_STRING "${VERSION_STRING}")
-string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${VERSION_STRING}")
+file(READ "${CMAKE_CURRENT_LIST_DIR}/VERSION" FULL_VERSION_STRING LIMIT_COUNT 1)
+string(REGEX REPLACE "(\n|\r)" "" FULL_VERSION_STRING "${FULL_VERSION_STRING}")
+string(REGEX REPLACE "[A-Za-z].*" "" VERSION_STRING "${FULL_VERSION_STRING}")
 set(TIMEMORY_VERSION "${VERSION_STRING}")
-message(STATUS "TiMemory version ${TIMEMORY_VERSION}")
+message(STATUS "timemory version ${TIMEMORY_VERSION} (${FULL_VERSION_STRING})")
 
 #----------------------------------------------------------------------------------------#
 #   setup.py
@@ -46,7 +49,7 @@ endif()
 #   project
 #----------------------------------------------------------------------------------------#
 
-project(TiMemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
+project(timemory LANGUAGES C CXX VERSION ${TIMEMORY_VERSION})
 
 # Check if project is being used directly or via add_subdirectory
 set(${PROJECT_NAME}_MASTER_PROJECT ON)
@@ -95,7 +98,7 @@ include(ClangFormat)
 include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
-#   TiMemory exports
+#   timemory exports
 #----------------------------------------------------------------------------------------#
 
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
@@ -116,7 +119,7 @@ if(TIMEMORY_BUILD_CALIPER)
 endif()
 
 #----------------------------------------------------------------------------------------#
-#   TiMemory source
+#   timemory source
 #----------------------------------------------------------------------------------------#
 
 add_subdirectory(source)
@@ -126,7 +129,7 @@ add_subdirectory(source)
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(TiMemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "TiMemory install directory" FORCE)
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory install directory" FORCE)
     add_subdirectory(examples)
 endif()
 

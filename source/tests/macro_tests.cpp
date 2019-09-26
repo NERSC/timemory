@@ -71,19 +71,14 @@ fibonacci(long n)
 void
 consume(long n)
 {
-    // a mutex held by one lock
-    mutex_t mutex;
-    // acquire lock
-    lock_t hold_lk(mutex);
-    // associate but defer
-    lock_t try_lk(mutex, std::defer_lock);
+    // wait time
+    auto wait = std::chrono::milliseconds(n);
     // get current time
-    auto now = std::chrono::system_clock::now();
-    // get elapsed
-    auto until = now + std::chrono::milliseconds(n);
+    auto now = std::chrono::steady_clock::now();
     // try until time point
-    while(std::chrono::system_clock::now() < until)
-        try_lk.try_lock();
+    while(std::chrono::steady_clock::now() < (now + wait))
+    {
+    }
 }
 
 }  // namespace details
@@ -96,13 +91,13 @@ class macro_tests : public ::testing::Test
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(macro_tests, blank_object)
+TEST_F(macro_tests, blank_marker)
 {
-    TIMEMORY_BLANK_OBJECT(auto_tuple_t, details::get_test_name());
+    TIMEMORY_BLANK_MARKER(auto_tuple_t, details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_101.stop();
-    auto              key = timemory_variable_101.key();
+    timemory_variable_96.stop();
+    auto              key = timemory_variable_96.key();
     std::stringstream expected;
     expected << details::get_test_name();
     if(key != expected.str())
@@ -121,15 +116,43 @@ TEST_F(macro_tests, blank_object)
 
 //--------------------------------------------------------------------------------------//
 
-TEST_F(macro_tests, basic_object)
+TEST_F(macro_tests, basic_marker)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "_", details::get_test_name());
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "_", details::get_test_name());
     details::do_sleep(25);
     details::consume(75);
-    timemory_variable_126.stop();
-    auto              key = timemory_variable_126.key();
+    timemory_variable_121.stop();
+    auto              key = timemory_variable_121.key();
     std::stringstream expected;
     expected << __FUNCTION__ << "_" << details::get_test_name();
+    if(key != expected.str())
+    {
+        std::cout << std::endl;
+        std::cout << std::setw(12) << "key"
+                  << ": " << key << std::endl;
+        std::cout << std::setw(12) << "expected"
+                  << ": " << expected.str() << std::endl;
+        std::cout << std::endl;
+        FAIL();
+    }
+    else
+        SUCCEED();
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(macro_tests, marker)
+{
+    TIMEMORY_MARKER(auto_tuple_t, "_", details::get_test_name());
+    details::do_sleep(25);
+    details::consume(75);
+    timemory_variable_146.stop();
+    auto              key = timemory_variable_146.key();
+    std::stringstream expected;
+    std::string       file = __FILE__;
+    file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
+    expected << __FUNCTION__ << "_" << details::get_test_name() << "@'" << file
+             << "':146";
     if(key != expected.str())
     {
         std::cout << std::endl;

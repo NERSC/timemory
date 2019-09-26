@@ -128,12 +128,17 @@ struct insert_node
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    //----------------------------------------------------------------------------------//
+    //  has storage implementation
+    //
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
                 const int64_t& id)
     {
         obj.insert_node(exists[_N], id);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(std::size_t _N, std::size_t, base_type& obj, bool* exists,
                 const int64_t& id, const string_t& _prefix)
     {
@@ -142,14 +147,44 @@ struct insert_node
             obj.set_prefix(_prefix);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(base_type& obj, const string_t& _prefix, const int64_t& id)
     {
         obj.insert_node(_prefix, id);
     }
 
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     insert_node(Type& obj, const string_t& _prefix, const int64_t& id)
     {
         obj.insert_node(_prefix, id);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  no storage implementation
+    //
+    template <typename _Up                                    = base_type,
+              enable_if_t<!(_Up::implements_storage_v), char> = 0>
+    insert_node(std::size_t, std::size_t, base_type&, bool*, const int64_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(std::size_t, std::size_t, base_type&, bool*, const int64_t&,
+                const string_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(base_type&, const string_t&, const int64_t&)
+    {
+    }
+
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    insert_node(Type&, const string_t&, const int64_t&)
+    {
     }
 };
 
@@ -162,7 +197,23 @@ struct pop_node
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    explicit pop_node(base_type& obj) { obj.pop_node(); }
+    //----------------------------------------------------------------------------------//
+    //  has storage implementation
+    //
+    template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
+    explicit pop_node(base_type& obj)
+    {
+        obj.pop_node();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  no storage implementation
+    //
+    template <typename _Up                                   = base_type,
+              enable_if_t<!(_Up::implements_storage_v), int> = 0>
+    explicit pop_node(base_type&)
+    {
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -523,7 +574,33 @@ struct mark_begin
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    mark_begin(Type& obj) { obj.mark_begin(); }
+    template <typename _Up                                                       = _Tp,
+              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_begin(Type& obj)
+    {
+        obj.mark_begin();
+    }
+
+    template <typename _Up                                                        = _Tp,
+              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_begin(Type&)
+    {
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
+              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_begin(Type& obj, _Args&&... _args)
+    {
+        obj.mark_begin(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
+              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_begin(Type&, _Args&&...)
+    {
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -535,7 +612,35 @@ struct mark_end
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    mark_end(Type& obj) { obj.mark_end(); }
+    template <typename _Up                                                       = _Tp,
+              enable_if_t<(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_end(Type& obj)
+    {
+        obj.mark_end();
+    }
+
+    template <typename _Up                                                        = _Tp,
+              enable_if_t<!(trait::supports_args<_Up, std::tuple<>>::value), int> = 0>
+    explicit mark_end(Type&)
+    {
+    }
+
+    // mark_end(Type& obj) { obj.mark_end(); }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int>                     = 0,
+              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_end(Type& obj, _Args&&... _args)
+    {
+        obj.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(sizeof...(_Args) > 0), int>                      = 0,
+              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    mark_end(Type&, _Args&&...)
+    {
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -651,6 +756,67 @@ struct divide
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
+struct get_data
+{
+    using Type            = _Tp;
+    using DataType        = decltype(std::declval<Type>().get());
+    using LabeledDataType = std::tuple<std::string, decltype(std::declval<Type>().get())>;
+
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    get_data(const Type& _obj, DataType& _dst)
+    {
+        _dst = _obj.get();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    get_data(const Type&, DataType&)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // only if components are available
+    //
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
+    get_data(const Type& _obj, LabeledDataType& _dst)
+    {
+        _dst = LabeledDataType(Type::label(), _obj.get());
+    }
+
+    //----------------------------------------------------------------------------------//
+    // print nothing if component is not available
+    //
+    template <typename _Up                                         = _Tp,
+              enable_if_t<(is_enabled<_Up>::value == false), char> = 0>
+    get_data(const Type&, LabeledDataType&)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
 struct print
 {
     using Type       = _Tp;
@@ -659,13 +825,15 @@ struct print
     using widths_t   = std::vector<int64_t>;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available and using internal output handling
+    // shorthand for available, non-void, using internal output handling
     //
     template <typename _Up>
     struct is_enabled
     {
+        using _Vp                   = typename _Up::value_type;
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value));
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
     };
 
     //----------------------------------------------------------------------------------//
@@ -797,13 +965,15 @@ struct print_storage
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available and using internal output handling
+    // shorthand for available, non-void, using internal output handling
     //
     template <typename _Up>
     struct is_enabled
     {
+        using _Vp                   = typename _Up::value_type;
         static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value));
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
     };
 
     //----------------------------------------------------------------------------------//
@@ -836,6 +1006,19 @@ struct serialization
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(base_type& obj, _Archive& ar, const unsigned int version)
     {
         auto _disp = static_cast<const Type&>(obj).get_display();
@@ -849,6 +1032,221 @@ struct serialization
            serializer::make_nvp("unit.value", Type::unit()),
            serializer::make_nvp("unit.repr", Type::display_unit()));
         consume_parameters(version);
+    }
+
+    template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    serialization(base_type&, _Archive&, const unsigned int)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct echo_measurement
+{
+    using Type           = _Tp;
+    using value_type     = typename Type::value_type;
+    using base_type      = typename Type::base_type;
+    using attributes_t   = std::map<string_t, string_t>;
+    using strset_t       = std::set<string_t>;
+    using stringstream_t = std::stringstream;
+    using strvec_t       = std::vector<string_t>;
+
+    //----------------------------------------------------------------------------------//
+    // shorthand for available, non-void, using internal output handling
+    //
+    template <typename _Up>
+    struct is_enabled
+    {
+        using _Vp                   = typename _Up::value_type;
+        static constexpr bool value = (trait::is_available<_Up>::value &&
+                                       !(trait::external_output_handling<_Up>::value) &&
+                                       !(std::is_same<_Vp, void>::value));
+    };
+
+    //----------------------------------------------------------------------------------//
+    /// generate an attribute
+    ///
+    static string_t attribute_string(const string_t& key, const string_t& item)
+    {
+        return apply<string_t>::join("", key, "=", "\"", item, "\"");
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// replace matching values in item with str
+    ///
+    static string_t replace(string_t& item, const string_t& str, const strset_t& values)
+    {
+        for(const auto& itr : values)
+        {
+            while(item.find(itr) != string_t::npos)
+                item = item.replace(item.find(itr), itr.length(), str);
+        }
+        return item;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// convert to lowercase
+    ///
+    static string_t lowercase(string_t _str)
+    {
+        for(auto& itr : _str)
+            itr = tolower(itr);
+        return _str;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// convert to uppercase
+    ///
+    static string_t uppercase(string_t _str)
+    {
+        for(auto& itr : _str)
+            itr = toupper(itr);
+        return _str;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// check if str contains any of the string items
+    ///
+    static bool contains(const string_t& str, const strset_t& items)
+    {
+        for(const auto& itr : items)
+        {
+            if(lowercase(str).find(itr) != string_t::npos)
+                return true;
+        }
+        return false;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// shorthand for apply<string_t>::join(...)
+    ///
+    template <typename... _Args>
+    static string_t join(const std::string& _delim, _Args&&... _args)
+    {
+        return apply<string_t>::join(_delim, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate a name attribute
+    ///
+    template <typename... _Args>
+    static string_t generate_name(const string_t& _prefix, string_t _unit,
+                                  _Args&&... _args)
+    {
+        auto _extra = join("_", std::forward<_Args>(_args)...);
+        auto _label = join("", "", uppercase(Type::label()), "");
+        _label      = replace(_label, "_", { "-" });
+        _unit       = replace(_unit, "", { " " });
+        string_t _name =
+            (_extra.length() > 0) ? join("_", _extra, _prefix) : join("_", _prefix);
+        auto _ret = join(" ", _label, _name);
+        _ret      = replace(_ret, "_", { "__" });
+        if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
+            _ret.erase(_ret.length() - 1);
+        if(_unit.length() > 0 && _unit != "%")
+            _ret += "_UNITS_" + _unit;
+        _ret = replace(_ret, "_", { " " });
+        _ret = replace(_ret, "_", { "__" });
+        _ret = replace(_ret, " ", { "_" });
+        return _ret;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate a measurement tag
+    ///
+    template <typename _Vt>
+    static void generate_measurement(std::ostream& os, const attributes_t& attributes,
+                                     const _Vt& value)
+    {
+        os << "<DartMeasurement";
+        os << " " << attribute_string("type", "numeric/double");
+        for(const auto& itr : attributes)
+            os << " " << attribute_string(itr.first, itr.second);
+        os << ">" << value << "</DartMeasurement>\n";
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate the prefix
+    ///
+    static string_t generate_prefix(const strvec_t& hierarchy)
+    {
+        string_t              ret_prefix = "";
+        string_t              add_prefix = "";
+        static const strset_t repl_chars = { "[", "]",  "(", ")", ".", "/", "\\",
+                                             " ", "\t", "<", ">", "@", "'", ":" };
+        for(const auto& itr : hierarchy)
+        {
+            auto prefix = itr;
+            prefix      = replace(prefix, "[c]", { "[_c_]" });
+            prefix      = replace(prefix, "", { "> [" });
+            prefix      = replace(prefix, "", { "|_" });
+            prefix      = replace(prefix, "_", repl_chars);
+            prefix      = replace(prefix, "_", { "__" });
+            if(prefix.length() > 0 && prefix.at(prefix.length() - 1) == '_')
+                prefix.erase(prefix.length() - 1);
+            ret_prefix += add_prefix + prefix;
+            add_prefix = "_CALLING_";
+        }
+        return ret_prefix;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// assumes type is not a iterable
+    ///
+    template <typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<_Up>::value), char> = 0,
+              enable_if_t<!(trait::array_serialization<_Up>::value ||
+                            trait::iterable_measurement<_Up>::value),
+                          int>                            = 0>
+    echo_measurement(_Up& obj, const strvec_t& hierarchy)
+    {
+        auto prefix = generate_prefix(hierarchy);
+        auto _unit  = Type::display_unit();
+        auto name   = generate_name(prefix, _unit);
+        auto _data  = obj.get();
+
+        attributes_t   attributes = { { "name", name } };
+        stringstream_t ss;
+        generate_measurement(ss, attributes, _data);
+        std::cout << ss.str() << std::flush;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// assumes type is iterable
+    ///
+    template <typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<(is_enabled<_Up>::value), char> = 0,
+              enable_if_t<(trait::array_serialization<_Up>::value ||
+                           trait::iterable_measurement<_Up>::value),
+                          int>                            = 0>
+    echo_measurement(_Up& obj, const strvec_t& hierarchy)
+    {
+        auto prefix = generate_prefix(hierarchy);
+        auto _data  = obj.get();
+
+        attributes_t   attributes = {};
+        stringstream_t ss;
+
+        uint64_t idx     = 0;
+        auto     _labels = obj.label_array();
+        auto     _dunits = obj.display_unit_array();
+        for(auto& itr : _data)
+        {
+            string_t _extra = (idx < _labels.size()) ? _labels.at(idx) : "";
+            string_t _dunit = (idx < _labels.size()) ? _dunits.at(idx) : "";
+            ++idx;
+            attributes["name"] = generate_name(prefix, _dunit, _extra);
+            generate_measurement(ss, attributes, itr);
+        }
+        std::cout << ss.str() << std::flush;
+    }
+
+    template <typename... _Args, typename _Up = _Tp, typename _Vt = value_type,
+              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    echo_measurement(_Up&, _Args&&...)
+    {
     }
 };
 
@@ -981,10 +1379,20 @@ struct pointer_counter
 template <typename _Tp>
 struct set_width
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_width(const _Up& val)
     {
         _Tp::get_width() = val;
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_width(const _Up&)
+    {
     }
 };
 
@@ -993,10 +1401,20 @@ struct set_width
 template <typename _Tp>
 struct set_precision
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_precision(const _Up& val)
     {
         _Tp::get_precision() = val;
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_precision(const _Up&)
+    {
     }
 };
 
@@ -1005,12 +1423,25 @@ struct set_precision
 template <typename _Tp>
 struct set_format_flags
 {
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Vp                                        = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_format_flags(const std::ios_base::fmtflags& add_flags,
                      const std::ios_base::fmtflags& remove_flags =
                          (std::ios_base::fixed & std::ios_base::scientific))
     {
         _Tp::get_format_flags() &= remove_flags;
         _Tp::get_format_flags() |= add_flags;
+    }
+
+    template <typename _Vp                                       = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_format_flags(const std::ios_base::fmtflags&,
+                     const std::ios_base::fmtflags& = (std::ios_base::fixed &
+                                                       std::ios_base::scientific))
+    {
     }
 };
 
@@ -1019,18 +1450,35 @@ struct set_format_flags
 template <typename _Tp>
 struct set_units
 {
-    template <typename _Up>
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_units(const _Up& val, const std::string& str)
     {
         _Tp::get_unit()         = val;
         _Tp::get_display_unit() = str;
     }
 
-    template <typename _Up>
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<!(std::is_same<_Vp, void>::value), int> = 0>
     set_units(const std::tuple<std::string, _Up>& val)
     {
         _Tp::get_display_unit() = std::get<0>(val);
         _Tp::get_unit()         = std::get<1>(val);
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_units(const _Up&, const std::string&)
+    {
+    }
+
+    template <typename _Up, typename _Vp = value_type,
+              enable_if_t<(std::is_same<_Vp, void>::value), int> = 0>
+    set_units(const std::tuple<std::string, _Up>&)
+    {
     }
 };
 

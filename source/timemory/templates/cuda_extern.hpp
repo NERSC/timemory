@@ -32,10 +32,16 @@
 
 #include "timemory/components.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/utility/utility.hpp"
 
 //--------------------------------------------------------------------------------------//
 // individual
 //
-TIMEMORY_DECLARE_EXTERN_TUPLE(tim::component::cuda_event)
+#if defined(TIMEMORY_EXTERN_CUDA_TEMPLATES) && !defined(EXTERN_TEMPLATE_BUILD)
+
+TIMEMORY_DECLARE_EXTERN_TUPLE(cuda_t, tim::component::cuda_event)
+TIMEMORY_DECLARE_EXTERN_LIST(cuda_t, tim::component::cuda_event)
+
+#endif
 
 //======================================================================================//

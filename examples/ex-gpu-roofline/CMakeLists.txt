@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 # this is for internal use
-if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory")
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory")
     get_property(LANGUAGES GLOBAL PROPERTY ENABLED_LANGUAGES)
     if(NOT "CUDA" IN_LIST LANGUAGES OR NOT CMAKE_CUDA_COMPILER OR
         NOT (TIMEMORY_USE_CUDA AND TIMEMORY_USE_CUPTI))
@@ -9,7 +9,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "TiMemory")
     endif()
 endif()
 
-project(TiMemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
+project(timemory-GPU-Roofline-Example LANGUAGES C CXX CUDA)
 
 add_library(gpu-roofline-compile-options INTERFACE)
 target_compile_options(gpu-roofline-compile-options INTERFACE
@@ -17,12 +17,12 @@ target_compile_options(gpu-roofline-compile-options INTERFACE
 
 set(EXE_NAME test_gpu_roofline)
 set(COMPONENTS cuda cupti compile-options analysis-tools arch papi)
-set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
+set(timemory_FIND_COMPONENTS_INTERFACE timemory-gpu-roofline-example)
 set_source_files_properties(${EXE_NAME}.cpp PROPERTIES
     LANGUAGE CUDA
     LINKER_LANGUAGE CUDA)
 
-find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_library(gpu-fp-half   INTERFACE)
 add_library(gpu-fp-single INTERFACE)

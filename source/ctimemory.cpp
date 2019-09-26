@@ -30,24 +30,17 @@
  *
  */
 
-#include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+
+#include <iostream>
+#include <unordered_map>
 
 using namespace tim::component;
 
 using auto_timer_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                          current_rss, peak_rss>;
+                                          page_rss, peak_rss>;
 
-using auto_list_t = tim::complete_list_t;
+using complete_list_t = tim::complete_list_t;
 
 //======================================================================================//
 //
@@ -89,7 +82,7 @@ cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
-    return (tim::counted_object<void>::is_enabled()) ? 1 : 0;
+    return (tim::settings::enabled() && tim::counted_object<void>::is_enabled()) ? 1 : 0;
 }
 
 //======================================================================================//
@@ -97,11 +90,11 @@ cxx_timemory_enabled(void)
 extern "C" tim_api void*
 cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
 {
+    if(!tim::settings::enabled())
+        return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    char*       _timer_tag = (char*) timer_tag;
-    free(_timer_tag);
-    auto* obj = new auto_timer_t(key_tag, tim::language::c(), lineno);
+    auto*       obj = new auto_timer_t(key_tag, true, tim::language::c(), lineno);
     obj->start();
     return (void*) obj;
 }
@@ -112,9 +105,12 @@ extern "C" tim_api void*
 cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
                                const int* components)
 {
+    if(!tim::settings::enabled())
+        return nullptr;
     using namespace tim::component;
-    std::string      key_tag(timer_tag);
-    auto             obj = new auto_list_t(key_tag, tim::language::c(), lineno);
+    std::string key_tag(timer_tag);
+    auto        obj = new complete_list_t(key_tag, true, tim::language::c(), lineno);
+#    if defined(DEBUG)
     std::vector<int> _components;
     for(int i = 0; i < num_components; ++i)
     {
@@ -122,6 +118,10 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
             printf("[%s]> Adding component %i...\n", __FUNCTION__, components[i]);
         _components.push_back(components[i]);
     }
+#    else
+    std::vector<int> _components(num_components, 0);
+    std::memcpy(_components.data(), components, num_components * sizeof(int));
+#    endif
     tim::initialize(*obj, _components);
     obj->start();
     return static_cast<void*>(obj);
@@ -132,11 +132,13 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_compon
 extern "C" tim_api void*
 cxx_timemory_delete_auto_timer(void* ctimer)
 {
-    auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
-    obj->stop();
-    delete obj;
-    ctimer = nullptr;
-    return ctimer;
+    if(ctimer)
+    {
+        auto_timer_t* obj = static_cast<auto_timer_t*>(ctimer);
+        obj->stop();
+        delete obj;
+    }
+    return nullptr;
 }
 
 //======================================================================================//
@@ -144,11 +146,13 @@ cxx_timemory_delete_auto_timer(void* ctimer)
 extern "C" tim_api void*
 cxx_timemory_delete_auto_tuple(void* ctuple)
 {
-    auto_list_t* obj = static_cast<auto_list_t*>(ctuple);
-    obj->stop();
-    delete obj;
-    ctuple = nullptr;
-    return ctuple;
+    if(ctuple)
+    {
+        complete_list_t* obj = static_cast<complete_list_t*>(ctuple);
+        obj->stop();
+        delete obj;
+    }
+    return nullptr;
 }
 
 //======================================================================================//
@@ -157,7 +161,8 @@ extern "C" tim_api const char*
 cxx_timemory_string_combine(const char* _a, const char* _b)
 {
     char* buff = (char*) malloc(sizeof(char) * 256);
-    sprintf(buff, "%s%s", _a, _b);
+    if(buff)
+        sprintf(buff, "%s%s", _a, _b);
     return (const char*) buff;
 }
 
@@ -178,16 +183,32 @@ cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int 
 
 //======================================================================================//
 
-// #include <execinfo.h>
-#include <iostream>
+using component_enum_t  = std::vector<TIMEMORY_COMPONENT>;
+using record_map_t      = std::unordered_map<uint64_t, complete_list_t*>;
+using components_keys_t = std::unordered_map<std::string, uint64_t>;
 
-using component_enum_t = std::vector<TIMEMORY_COMPONENT>;
+static uint64_t         uniqID = 0;
+static component_enum_t components;
+static std::string      spacer =
+    "#-------------------------------------------------------------------------#";
 
-static uint64_t                         uniqID = 0;
-static component_enum_t                 components;
-static std::map<std::string, uint64_t>  components_keys;
-static std::map<uint64_t, auto_list_t*> record_map;
-static std::string spacer = "---------------------------------------------------------";
+//--------------------------------------------------------------------------------------//
+
+static components_keys_t*&
+get_component_keys()
+{
+    static thread_local components_keys_t* _instance = new components_keys_t();
+    return _instance;
+}
+
+//--------------------------------------------------------------------------------------//
+
+static record_map_t*&
+get_record_map()
+{
+    static thread_local record_map_t* _instance = new record_map_t();
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 // default components to record -- maybe should be empty?
@@ -195,8 +216,7 @@ static std::string spacer = "---------------------------------------------------
 inline std::string
 get_default_components()
 {
-    return "real_clock, user_clock, system_clock, cpu_util, current_rss, peak_rss, "
-           "cuda_event";
+    return "real_clock, user_clock, system_clock, cpu_util, page_rss, peak_rss";
 }
 
 //--------------------------------------------------------------------------------------//
@@ -208,6 +228,7 @@ get_default_components()
 void
 record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
 {
+    /*
     auto itr = components_keys.find(std::string(name));
     if(itr != components_keys.end())
     {
@@ -216,14 +237,14 @@ record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
         record_map[*kernid]->start();  // start recording
     }
     else
-    {
-        *kernid               = uniqID++;
-        components_keys[name] = *kernid;
-        auto obj              = new auto_list_t(name, tim::language::cxx(), *kernid);
-        tim::initialize(*obj, types);
-        record_map[*kernid] = obj;
-        record_map[*kernid]->start();  // start recording
-    }
+    {*/
+    *kernid = uniqID++;
+    // (*get_component_keys())[name] = *kernid;
+    auto obj = new complete_list_t(name, true, tim::language::cxx(), *kernid);
+    tim::initialize(*obj, types);
+    (*get_record_map())[*kernid] = obj;
+    (*get_record_map())[*kernid]->start();
+    //}
 }
 
 //--------------------------------------------------------------------------------------//
@@ -231,7 +252,9 @@ record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
 void
 record_stop(uint64_t kernid)
 {
-    record_map[kernid]->stop();  // stop recording
+    (*get_record_map())[kernid]->stop();  // stop recording
+    delete(*get_record_map())[kernid];
+    get_record_map()->erase(kernid);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -240,12 +263,15 @@ record_stop(uint64_t kernid)
 //
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_init_library(int argc, char** argv)
 {
-    printf("%s\n", spacer.c_str());
-    printf("\tInitialization of timemory preload...\n");
-    printf("%s\n\n", spacer.c_str());
+    if(tim::settings::verbose() > 0)
+    {
+        printf("%s\n", spacer.c_str());
+        printf("\tInitialization of timemory preload...\n");
+        printf("%s\n\n", spacer.c_str());
+    }
 
     tim::settings::auto_output() = true;   // print when destructing
     tim::settings::cout_output() = true;   // print to stdout
@@ -259,57 +285,72 @@ timemory_init_library(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_finalize_library()
 {
-    printf("\n%s\n", spacer.c_str());
-    printf("\tFinalization of timemory preload...\n");
-    printf("%s\n\n", spacer.c_str());
+    if(!get_record_map())
+        return;
 
-    for(auto& itr : record_map)
+    if(tim::settings::verbose() > 0)
+    {
+        printf("\n%s\n", spacer.c_str());
+        printf("\tFinalization of timemory preload...\n");
+        printf("%s\n\n", spacer.c_str());
+    }
+
+    for(auto& itr : (*get_record_map()))
+    {
+        if(itr.second)
+            itr.second->stop();
         delete itr.second;
-    record_map.clear();
+    }
+    get_record_map()->clear();
+
+    // Compensate for Intel compiler not allowing auto output
+#if defined(__INTEL_COMPILER)
+    complete_list_t::print_storage();
+#endif
 
     // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)
     tim::settings::auto_output() = false;
 #endif
 
-    // Compensate for Intel compiler not allowing auto output
-#if defined(__INTEL_COMPILER)
-    auto_list_t::print_storage();
-#endif
+    delete get_record_map();
+    delete get_component_keys();
+    get_record_map()     = nullptr;
+    get_component_keys() = nullptr;
 }
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_begin_record(const char* name, uint64_t* kernid)
 {
     record_start(name, kernid, components);
-    if(tim::settings::verbose() > 1)
+    if(tim::settings::verbose() > 2)
         printf("beginning record for '%s' (id = %lli)...\n", name,
                (long long int) *kernid);
 }
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_begin_record_types(const char* name, uint64_t* kernid, const char* ctypes)
 {
     record_start(name, kernid, tim::enumerate_components(std::string(ctypes)));
-    if(tim::settings::verbose() > 1)
+    if(tim::settings::verbose() > 2)
         printf("beginning record for '%s' (id = %lli)...\n", name,
                (long long int) *kernid);
 }
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_end_record(uint64_t kernid)
 {
     record_stop(kernid);
-    if(tim::settings::verbose() > 1)
+    if(tim::settings::verbose() > 2)
         printf("ending record for %lli...\n", (long long int) kernid);
 }
 

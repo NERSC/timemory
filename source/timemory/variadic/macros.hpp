@@ -99,141 +99,68 @@ using str = tim::apply<std::string>;
 #    endif
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_JOIN(delim, ...)
- *
- * helper macro for joining a variadic list into a string
- *
- * Usage:
- *
- *      void run_fibonacci(long n)
- *      {
- *          auto label = TIMEMORY_JOIN("_", "fibonacci(", n, ")");
- *          ...
- *      }
- *
- * Produces:
- *
- *      std::string label = "fibonacci(_43_)";
- *
- * when n = 43
- *
- */
+
 #    define TIMEMORY_JOIN(delim, ...) priv::apply::join(delim, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_LABEL(...)
- *
- * helper macro for "__FUNCTION__" + ... tagging
- *
- * Usage:
- *
- *      void func()
- *      {
- *          auto_timer_t timer(TIMEMORY_BASIC_LABEL("example"), __LINE__)
- *          ...
- *      }
- */
+
 #    define TIMEMORY_BASIC_LABEL(...)                                                    \
         priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_LABEL(...)
- *
- * helper macro for "__FUNCTION__" + ... + @'__FILE__':__LINE__" tagging
- *
- * Usage:
- *
- *      void func()
- *      {
- *          auto_timer_t timer(TIMEMORY_LABEL("example"), __LINE__)
- *          ...
- *      }
- */
+
 #    define TIMEMORY_LABEL(...)                                                          \
         priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                        \
                           _AUTO_STR(__FILE__, _LINE_STRING))
 
 //======================================================================================//
 //
-//                      OBJECT MACROS
+//                      MARKER MACROS
 //
 //======================================================================================//
 
-//--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BLANK_OBJECT(type, arg)
- *
- * No tagging is provided. This create the fastest generation of an auto object
- * because it does not variadically combine arguments
- *
- * Signature:
- *      None
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_BLANK_OBJECT(type, __FUNCTION__);
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func :  0.363 wall, ... etc.
- */
-#    define TIMEMORY_BLANK_OBJECT(type, ...)                                             \
+#    define TIMEMORY_BLANK_MARKER(type, ...)                                             \
         type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_OBJECT(type, ...)
- *
- * simple tagging with <function name> + <string> where the string param
- * \a ... is optional
- *
- * Signature:
- *      __FUNCTION__ + ...
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_BASIC_OBJECT();
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func(15) :  0.363 wall, ... etc.
- */
-#    define TIMEMORY_BASIC_OBJECT(type, ...)                                             \
+
+#    define TIMEMORY_BASIC_MARKER(type, ...)                                             \
         type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), \
                                   __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_OBJECT(type, ...)
- *
- * standard tagging with <function name> + <string> + "@'<filename>':<line>"
- * where the string param \a ... is optional
- *
- * Signature:
- *
- *      __FUNCTION__ + ... + '@__FILE__':__LINE__
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_OBJECT();
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
- */
-#    define TIMEMORY_OBJECT(type, ...)                                                   \
-        type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__,  \
-                                                _AUTO_STR(__FILE__, _LINE_STRING)),      \
-                                  __LINE__)
+
+#    define TIMEMORY_MARKER(type, ...)                                                   \
+        type _AUTO_NAME(__LINE__)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+
+//======================================================================================//
+//
+//                      POINTER MACROS
+//
+//======================================================================================//
+
+#    define TIMEMORY_BLANK_POINTER(type, ...)                                            \
+        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
+            (::tim::settings::enabled())                                                 \
+                ? new type(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)                     \
+                : nullptr)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BASIC_POINTER(type, ...)                                            \
+        std::unique_ptr<type> _AUTO_NAME(__LINE__) = std::unique_ptr<type>(              \
+            (::tim::settings::enabled())                                                 \
+                ? new type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__),        \
+                           __LINE__)                                                     \
+                : nullptr)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_POINTER(type, ...)                                                  \
+        std::unique_ptr<type> _AUTO_NAME(__LINE__) =                                     \
+            std::unique_ptr<type>((::tim::settings::enabled())                           \
+                                      ? new type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)  \
+                                      : nullptr)
 
 //======================================================================================//
 //
@@ -241,293 +168,131 @@ using str = tim::apply<std::string>;
 //
 //======================================================================================//
 
-//--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BLANK_CALIPER(id, type, arg)
- *
- * No tagging is provided. This create the fastest generation of an auto object
- * because it does not variadically combine arguments
- *
- * Signature:
- *      None
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_BLANK_CALIPER(1, type, __FUNCTION__);
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func :  0.363 wall, ... etc.
- */
 #    define TIMEMORY_BLANK_CALIPER(id, type, ...)                                        \
         type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_CALIPER(id, type, ...)
- *
- * simple tagging with <function name> + <string> where the string param
- * \a ... is optional
- *
- * Signature:
- *      __FUNCTION__ + ...
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_BASIC_CALIPER();
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func(15) :  0.363 wall, ... etc.
- */
+
 #    define TIMEMORY_BASIC_CALIPER(id, type, ...)                                        \
         type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__),       \
                             __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_CALIPER(id, type, ...)
- *
- * standard tagging with <function name> + <string> + "@'<filename>':<line>"
- * where the string param \a ... is optional
- *
- * Signature:
- *
- *      __FUNCTION__ + ... + '@__FILE__':__LINE__
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_CALIPER();
- *          ...
- *      }
- *
- * Example where ... == "(15)":
- *
- *      > [pyc] some_func(15)@'nested_test.py':69 :  0.363 wall, ... etc.
- */
+
 #    define TIMEMORY_CALIPER(id, type, ...)                                              \
-        type _AUTO_NAME(id)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__,        \
-                                          _AUTO_STR(__FILE__, _LINE_STRING)),            \
-                            __LINE__)
+        type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_CALIPER_APPLY(id, func, ...)
- *
- * apply a function to a caliper, e.g. start or stop
- *
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_CALIPER(1, (tim::auto_tuple<tim::component::real_clock>), "");
- *          TIMEMORY_CALIPER_APPLY(1, start);
- *
- *          TIMEMORY_CALIPER_APPLY(1, stop);
- *          ...
- *      }
- *
- */
+
+#    define TIMEMORY_STATIC_BLANK_CALIPER(id, type, ...)                                 \
+        static type _AUTO_NAME(id)(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_STATIC_BASIC_CALIPER(id, type, ...)                                 \
+        static type _AUTO_NAME(id)(                                                      \
+            TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_STATIC_CALIPER(id, type, ...)                                       \
+        static type _AUTO_NAME(id)(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_AUTO_NAME(id)).get()
+
+//--------------------------------------------------------------------------------------//
+
 #    define TIMEMORY_CALIPER_APPLY(id, func, ...) _AUTO_NAME(id).func(__VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)
- *
- * apply a function to a caliper, e.g. start or stop
- *
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_CALIPER(1, (tim::auto_tuple<tim::component::real_clock>), "");
- *          TIMEMORY_CALIPER_APPLY(1, start);
- *
- *          TIMEMORY_CALIPER_APPLY(1, stop);
- *          ...
- *      }
- *
- */
+
 #    define TIMEMORY_CALIPER_TYPE_APPLY(id, type, func, ...)                             \
         _AUTO_NAME(id).type_apply<type>(func, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_CALIPER_REFERENCE(id, func, ...)
- *
- * apply a function to a caliper, e.g. start or stop
- *
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          TIMEMORY_CALIPER(1, (tim::auto_tuple<tim::component::real_clock>), "");
- *          auto& obj = TIMEMORY_CALIPER_REFERENCE(1);
- *
 
- *          obj.stop();
- *          ...
- *      }
- *
- */
-#    define TIMEMORY_CALIPER_REFERENCE(id) std::ref(_AUTO_NAME(id)).get()
-
-//======================================================================================//
-//
-//                      INSTANCE MACROS
-//
-//======================================================================================//
+#    define TIMEMORY_CALIPER_APPLY0(id, func) _AUTO_NAME(id).func()
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BLANK_INSTANCE(type, ...)
- *
- * Similar to \ref TIMEMORY_BLANK_OBJECT(...) but assignable.
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          auto_timer_t* timer = new TIMEMORY_BASIC_INSTANCE();
- *          ...
- *      }
- */
-#    define TIMEMORY_BLANK_INSTANCE(type, ...)                                           \
+
+#    define TIMEMORY_CALIPER_TYPE_APPLY0(id, type, func)                                 \
+        _AUTO_NAME(id).type_apply<type>(func)
+
+//======================================================================================//
+//
+//                      HANDLE MACROS
+//
+//======================================================================================//
+
+#    define TIMEMORY_BLANK_HANDLE(type, ...)                                             \
         type(TIMEMORY_JOIN("", __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_BASIC_INSTANCE(type, ...)
- *
- * Similar to \ref TIMEMORY_BASIC_OBJECT(...) but assignable.
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          auto_timer_t* timer = new TIMEMORY_BASIC_INSTANCE();
- *          ...
- *      }
- */
-#    define TIMEMORY_BASIC_INSTANCE(type, ...)                                           \
+
+#    define TIMEMORY_BASIC_HANDLE(type, ...)                                             \
         type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
 
 //--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_INSTANCE(type, ...)
- *
- * Similar to \ref TIMEMORY_OBJECT(...) but assignable.
- *
- * Usage:
- *
- *      void some_func()
- *      {
- *          auto_timer_t* timer = new TIMEMORY_INSTANCE();
- *          ...
- *      }
- *
- */
-#    define TIMEMORY_INSTANCE(type, ...)                                                 \
-        type(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                       \
-                           _AUTO_STR(__FILE__, _LINE_STRING)),                           \
-             __LINE__)
+
+#    define TIMEMORY_HANDLE(type, ...) type(TIMEMORY_LABEL(__VA_ARGS__), __LINE__)
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BLANK_POINTER_HANDLE(type, ...)                                     \
+        (::tim::settings::enabled()) ? new TIMEMORY_BLANK_HANDLE(type, __VA_ARGS__)      \
+                                     : nullptr
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_BASIC_POINTER_HANDLE(type, ...)                                     \
+        (::tim::settings::enabled()) ? new TIMEMORY_BASIC_HANDLE(type, __VA_ARGS__)      \
+                                     : nullptr
+
+//--------------------------------------------------------------------------------------//
+
+#    define TIMEMORY_POINTER_HANDLE(type, ...)                                           \
+        (::tim::settings::enabled()) ? new TIMEMORY_HANDLE(type, __VA_ARGS__) : nullptr
 
 //======================================================================================//
 //
-//                      PRODUCTION AND DEBUG MACROS
+//                      DEBUG MACROS
 //
 //======================================================================================//
 
 #    if defined(DEBUG)
-#        define TIMEMORY_DEBUG_BASIC_OBJECT(type, ...)                                   \
-            type _AUTO_NAME(__LINE__)(                                                   \
-                TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__, __VA_ARGS__), __LINE__)
-#        define TIMEMORY_DEBUG_OBJECT(type, ...)                                         \
-            type _AUTO_NAME(__LINE__)(TIMEMORY_JOIN("", __TIMEMORY_FUNCTION__,           \
-                                                    __VA_ARGS__,                         \
-                                                    _AUTO_STR(__FILE__, _LINE_STRING)),  \
-                                      __LINE__)
+
+//--------------------------------------------------------------------------------------//
+
+#        define TIMEMORY_DEBUG_BLANK_MARKER(type, ...)                                   \
+            TIMEMORY_BASIC_MARKER(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#        define TIMEMORY_DEBUG_BASIC_MARKER(type, ...)                                   \
+            TIMEMORY_BASIC_MARKER(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#        define TIMEMORY_DEBUG_MARKER(type, ...) TIMEMORY_MARKER(type, __VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
 #    else
-#        define TIMEMORY_DEBUG_BASIC_OBJECT(type, ...)                                   \
-            {                                                                            \
-                ;                                                                        \
-            }
-#        define TIMEMORY_DEBUG_OBJECT(type, ...)                                         \
-            {                                                                            \
-                ;                                                                        \
-            }
+#        define TIMEMORY_DEBUG_BLANK_MARKER(type, ...)
+#        define TIMEMORY_DEBUG_BASIC_MARKER(type, ...)
+#        define TIMEMORY_DEBUG_MARKER(type, ...)
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_NVTX)
-#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
-                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
-                                            cuda_event::mark_begin,                      \
-                                        stream);                                         \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
-                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
-                                            nvtx_marker::mark_begin,                     \
-                                        stream)
-
-#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
-                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
-                                            cuda_event::mark_end,                        \
-                                        stream);                                         \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
-                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
-                                            nvtx_marker::mark_end,                       \
-                                        stream)
-
-#    elif defined(TIMEMORY_USE_CUDA)
-
-#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
-                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
-                                            cuda_event::mark_begin,                      \
-                                        stream);
-
-#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, cuda_event,                                  \
-                                        (void (cuda_event::*)(tim::cuda::stream_t)) &    \
-                                            cuda_event::mark_end,                        \
-                                        stream)
-
-#    elif defined(TIMEMORY_USE_NVTX)
-#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)                           \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
-                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
-                                            nvtx_marker::mark_begin,                     \
-                                        stream)
-
-#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)                             \
-            TIMEMORY_CALIPER_TYPE_APPLY(id, nvtx_marker,                                 \
-                                        (void (nvtx_marker::*)(tim::cuda::stream_t)) &   \
-                                            nvtx_marker::mark_end,                       \
-                                        stream)
-
-#    else
-#        define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(id, stream)
-#        define TIMEMORY_CALIPER_MARK_STREAM_END(id, stream)
-#    endif
-
-//--------------------------------------------------------------------------------------//
-/*! \def TIMEMORY_CONFIGURE(type, ...)
- *
- * Invoke a (static) configuration function for type to override the default behaviors
- *
- * Usage:
- *
- *      TIMEMORY_CONFIGURE(papi_array_t, PAPI_LST_INS)
- *
- */
 #    define TIMEMORY_CONFIGURE(type, ...) type::configure(__VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+// deprecated macros
+#    include "timemory/details/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 

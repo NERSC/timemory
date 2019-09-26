@@ -44,9 +44,9 @@ using papi_tuple_t = papi_tuple<PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS>;
 
 using auto_tuple_t = tim::auto_tuple<real_clock, system_clock, thread_cpu_clock,
                                      thread_cpu_util, process_cpu_clock, process_cpu_util,
-                                     peak_rss, current_rss, caliper, papi_tuple_t>;
+                                     peak_rss, page_rss, caliper, papi_tuple_t>;
 using full_measurement_t =
-    tim::component_tuple<peak_rss, current_rss, stack_rss, data_rss, num_swap, num_io_in,
+    tim::component_tuple<peak_rss, page_rss, stack_rss, data_rss, num_swap, num_io_in,
                          num_io_out, num_minor_page_faults, num_major_page_faults,
                          num_msg_sent, num_msg_recv, num_signals,
                          voluntary_context_switch, priority_context_switch, papi_tuple_t>;
@@ -63,7 +63,7 @@ using printed_t = tim::component_tuple<real_clock, system_clock, user_clock, cpu
 // measure multiple clock time + resident set sizes
 using full_set_t =
     tim::auto_tuple<real_clock, thread_cpu_clock, thread_cpu_util, process_cpu_clock,
-                    process_cpu_util, peak_rss, current_rss, caliper, papi_tuple_t>;
+                    process_cpu_util, peak_rss, page_rss, caliper, papi_tuple_t>;
 
 // measure wall-clock, thread cpu-clock + process cpu-utilization
 using small_set_t = tim::auto_tuple<real_clock, thread_cpu_clock, process_cpu_util,
@@ -82,7 +82,7 @@ fibonacci(int32_t n)
 int64_t
 time_fibonacci(int32_t n)
 {
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
     return fibonacci(n);
 }
 //--------------------------------------------------------------------------------------//
@@ -206,11 +206,11 @@ void
 test_1_usage()
 {
     print_info(__FUNCTION__);
-    TIMEMORY_OBJECT(auto_tuple_t, "");
+    TIMEMORY_MARKER(auto_tuple_t, "");
 
-    full_measurement_t _use_beg("");
-    full_measurement_t _use_delta("");
-    full_measurement_t _use_end("");
+    full_measurement_t _use_beg("test_1_usage_begin");
+    full_measurement_t _use_delta("test_1_usage_delta");
+    full_measurement_t _use_end("test_1_usage_end");
 
     auto n = 5000000;
     _use_beg.record();
@@ -297,17 +297,17 @@ test_2_timing()
     using lock_t  = std::unique_lock<mutex_t>;
 
     mutex_t              mtx;
-    std::deque<pair_t>   measurements;
+    std::vector<pair_t>  measurements;
     measurement_t        runtime("", false);
     printed_t            runtime_printed("", false);
     std::atomic<int64_t> ret;
     std::stringstream    lambda_ss;
 
     {
-        TIMEMORY_OBJECT(auto_tuple_t, "");
+        TIMEMORY_MARKER(auto_tuple_t, "");
 
         auto run_fib = [&](long n) {
-            TIMEMORY_OBJECT(auto_tuple_t, "");
+            TIMEMORY_MARKER(auto_tuple_t, "");
             measurement_t _tm("", false);
             _tm.start();
             ret += time_fibonacci(n);
@@ -343,7 +343,7 @@ test_2_timing()
               << get_measurment<process_cpu_clock>(runtime) << std::endl;
     std::cout << "measured data: " << get_measurments(runtime_printed) << std::endl;
 
-    measurements.push_front(pair_t("run", runtime));
+    measurements.insert(measurements.begin(), pair_t("run", runtime));
     serialize("timing.json", "runtime", measurements);
 }
 
@@ -362,7 +362,7 @@ test_3_auto_tuple()
 
     // run a fibonacci calculation and accumulate metric
     auto run_fibonacci = [&](long n) {
-        // TIMEMORY_OBJECT(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
+        // TIMEMORY_MARKER(small_set_t, "[fibonacci_" + std::to_string(n) + "]");
         ret += time_fibonacci(n);
     };
 
@@ -391,16 +391,16 @@ test_4_measure()
 {
     print_info(__FUNCTION__);
 
-    tim::component_tuple<current_rss, peak_rss> prss(TIMEMORY_LABEL(""));
+    tim::component_tuple<page_rss, peak_rss> prss(TIMEMORY_LABEL(""));
     {
-        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", current_rss, peak_rss);
+        TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE("[init]", page_rss, peak_rss);
         // just record the peak rss
         prss.measure();
         std::cout << "  Current rss: " << prss << std::endl;
     }
 
     {
-        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", current_rss, peak_rss);
+        TIMEMORY_VARIADIC_AUTO_TUPLE("[delta]", page_rss, peak_rss);
         // do something, where you want delta peak rss
         auto                 n = 10000000;
         std::vector<int64_t> v(n, 10);
@@ -431,12 +431,12 @@ int main()
 
     {
         // uses C++ scoping for start/stop
-        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_A");
+        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_A");
         func_A();
     }
 
     {
-        TIMEMORY_OBJECT(auto_roofline_t, "roofline_for_B");
+        TIMEMORY_MARKER(auto_roofline_t, "roofline_for_B");
         func_B();
     }
 

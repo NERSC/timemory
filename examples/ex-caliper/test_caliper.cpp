@@ -116,7 +116,7 @@ fibonacci(intmax_t n)
 intmax_t
 time_fibonacci(intmax_t n, const std::string& scope_tag, const std::string& type_tag)
 {
-    TIMEMORY_BASIC_OBJECT(auto_tuple_t, "[", scope_tag, "-", type_tag, "]");
+    TIMEMORY_BASIC_MARKER(auto_tuple_t, "[", scope_tag, "-", type_tag, "]");
     return fibonacci(n);
 }
 

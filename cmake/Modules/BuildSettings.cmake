@@ -86,6 +86,15 @@ if(TIMEMORY_BUILD_LTO)
 endif()
 
 #----------------------------------------------------------------------------------------#
+# print compilation timing reports (Clang compiler)
+#
+add_interface_library(timemory-compile-timing)
+add_target_flag_if_avail(timemory-compile-timing "-ftime-report")
+if(TIMEMORY_USE_COMPILE_TIMING)
+    target_link_libraries(timemory-compile-options INTERFACE timemory-compile-timing)
+endif()
+
+#----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
 add_interface_library(timemory-vector)
@@ -122,7 +131,7 @@ if(CpuArch_FOUND)
         message(STATUS "Compiling with vector width: 128")
         target_compile_definitions(timemory-vector INTERFACE TIMEMORY_VEC=128)
     endif()
-    
+
     foreach(_ARCH ${CpuArch_FEATURES})
         # intel compiler
         if(CMAKE_C_COMPILER_IS_INTEL OR CMAKE_CXX_COMPILER_IS_INTEL)

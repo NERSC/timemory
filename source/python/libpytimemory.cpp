@@ -79,7 +79,7 @@ PYBIND11_MODULE(libpytimemory, tim)
         .value("cuda_event", CUDA_EVENT)
         .value("cupti_activity", CUPTI_ACTIVITY)
         .value("cupti_counters", CUPTI_COUNTERS)
-        .value("current_rss", CURRENT_RSS)
+        .value("page_rss", PAGE_RSS)
         .value("data_rss", DATA_RSS)
         .value("gperf_cpu_profiler", GPERF_CPU_PROFILER)
         .value("gperf_heap_profiler", GPERF_HEAP_PROFILER)
@@ -193,12 +193,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     py::module opts = tim.def_submodule("options", "I/O options submodule");
     //----------------------------------------------------------------------------------//
-    opts.attr("report_file")        = false;
-    opts.attr("serial_file")        = true;
-    opts.attr("use_timers")         = true;
-    opts.attr("max_timer_depth")    = std::numeric_limits<uint16_t>::max();
-    opts.attr("output_path")        = tim::settings::output_path();
-    opts.attr("output_prefix")      = tim::settings::output_prefix();
     opts.attr("echo_dart")          = false;
     opts.attr("ctest_notes")        = false;
     opts.attr("matplotlib_backend") = std::string("default");
@@ -208,57 +202,41 @@ PYBIND11_MODULE(libpytimemory, tim)
     //      Class declarations
     //
     //==================================================================================//
-    py::class_<manager_wrapper>               man(tim, "manager");
-    py::class_<tim_timer_t>                   timer(tim, "timer");
-    py::class_<auto_timer_t>                  auto_timer(tim, "auto_timer");
-    py::class_<component_list_t>              comp_list(tim, "component_tuple");
-    py::class_<auto_timer_decorator>          timer_decorator(tim, "timer_decorator");
-    py::class_<component_list_decorator>      comp_decorator(tim, "component_decorator");
-    py::class_<rss_usage_t>                   rss_usage(tim, "rss_usage");
-    py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim, "decorate_timer");
+    py::class_<manager_wrapper>          man(tim, "manager");
+    py::class_<tim_timer_t>              timer(tim, "timer");
+    py::class_<auto_timer_t>             auto_timer(tim, "auto_timer");
+    py::class_<component_list_t>         comp_list(tim, "component_tuple");
+    py::class_<auto_timer_decorator>     timer_decorator(tim, "timer_decorator");
+    py::class_<component_list_decorator> comp_decorator(tim, "component_decorator");
+    py::class_<rss_usage_t>              rss_usage(tim, "rss_usage");
+    // py::class_<pytim::decorators::auto_timer> decorate_auto_timer(tim,
+    // "decorate_timer");
+    py::class_<pytim::settings> settings(tim, "settings");
 
     //==================================================================================//
     //
     //      Helper lambdas
     //
     //==================================================================================//
-    auto set_output = [=](string_t fname) {
-        tim::settings::output_path() = opts.attr("output_path").cast<std::string>();
-        if(fname.find('/') < fname.length() - 1)
-        {
-            auto last_slash              = fname.find_last_of('/');
-            auto dname                   = fname.substr(0, last_slash + 1);
-            fname                        = fname.substr(last_slash + 1);
-            tim::settings::output_path() = dname;
-        }
-        else if(fname.find_last_of('/') == fname.length() - 1)
-        {
-            auto last_slash              = fname.find_last_of('/');
-            auto dname                   = fname.substr(0, last_slash + 1);
-            fname                        = "";
-            tim::settings::output_path() = dname;
-        }
-        tim::settings::output_prefix() = fname;
-        opts.attr("output_path")       = tim::settings::output_path();
-        opts.attr("output_prefix")     = tim::settings::output_prefix();
-    };
-    //----------------------------------------------------------------------------------//
     auto report = [&](std::string fname) {
         auto _path   = tim::settings::output_path();
         auto _prefix = tim::settings::output_prefix();
-        if(fname.length() > 0)
-        {
-            set_output(fname);
-        }
 
-        tim::manager::print<tim::rusage_components_t>();
-        tim::manager::print<tim::timing_components_t>();
+        using type_tuple = typename auto_list_t::type_tuple;
+        tim::manager::get_storage<type_tuple>::print();
 
         if(fname.length() > 0)
         {
             tim::settings::output_path()   = _path;
             tim::settings::output_prefix() = _prefix;
         }
+    };
+    //----------------------------------------------------------------------------------//
+    auto _as_json = [&]() {
+        using type_tuple = typename auto_list_t::type_tuple;
+        auto json_str    = manager_t::get_storage<type_tuple>::serialize();
+        auto json_module = py::module::import("json");
+        return json_module.attr("loads")(json_str);
     };
     //----------------------------------------------------------------------------------//
     auto set_rusage_child = [&]() {
@@ -340,43 +318,123 @@ PYBIND11_MODULE(libpytimemory, tim)
             [&](py::list argv, std::string _prefix, std::string _suffix) {
                 if(argv.size() < 1)
                     return;
-                char* _argv =
-                    const_cast<char*>(argv.begin()->cast<std::string>().c_str());
+                auto  _str  = argv.begin()->cast<std::string>();
+                char* _argv = new char[_str.size()];
+                std::strcpy(_argv, _str.c_str());
                 tim::timemory_init(1, &_argv, _prefix, _suffix);
+                delete[] _argv;
             },
             "Parse the environment and use argv[0] to set output path",
             py::arg("argv") = py::list(), py::arg("prefix") = "timemory-",
             py::arg("suffix") = "-output");
+    //----------------------------------------------------------------------------------//
+    tim.def("get", _as_json, "Get the storage data");
+
+    //==================================================================================//
+    //
+    //                          SETTINGS
+    //
+    //==================================================================================//
+
+#define SETTING_PROPERTY(TYPE, FUNC)                                                     \
+    settings.def_property_static(                                                        \
+        TIMEMORY_STRINGIZE(FUNC), [](py::object) { return ::tim::settings::FUNC(); },    \
+        [](py::object, TYPE v) { ::tim::settings::FUNC() = v; })
+
+    settings.def(py::init<>(), "Dummy");
+
+    SETTING_PROPERTY(bool, suppress_parsing);
+    SETTING_PROPERTY(bool, enabled);
+    SETTING_PROPERTY(bool, auto_output);
+    SETTING_PROPERTY(bool, file_output);
+    SETTING_PROPERTY(bool, text_output);
+    SETTING_PROPERTY(bool, json_output);
+    SETTING_PROPERTY(bool, cout_output);
+    SETTING_PROPERTY(int, verbose);
+    SETTING_PROPERTY(bool, debug);
+    SETTING_PROPERTY(bool, banner);
+    SETTING_PROPERTY(uint16_t, max_depth);
+    SETTING_PROPERTY(int16_t, precision);
+    SETTING_PROPERTY(int16_t, width);
+    SETTING_PROPERTY(bool, scientific);
+    SETTING_PROPERTY(int16_t, timing_precision);
+    SETTING_PROPERTY(int16_t, timing_width);
+    SETTING_PROPERTY(string_t, timing_units);
+    SETTING_PROPERTY(bool, timing_scientific);
+    SETTING_PROPERTY(int16_t, memory_precision);
+    SETTING_PROPERTY(int16_t, memory_width);
+    SETTING_PROPERTY(string_t, memory_units);
+    SETTING_PROPERTY(bool, memory_scientific);
+    SETTING_PROPERTY(string_t, output_path);
+    SETTING_PROPERTY(string_t, output_prefix);
+    SETTING_PROPERTY(bool, papi_multiplexing);
+    SETTING_PROPERTY(bool, papi_fail_on_error);
+    SETTING_PROPERTY(string_t, papi_events);
+    SETTING_PROPERTY(uint64_t, cuda_event_batch_size);
+    SETTING_PROPERTY(bool, nvtx_marker_device_sync);
+    SETTING_PROPERTY(int32_t, cupti_activity_level);
+    SETTING_PROPERTY(string_t, cupti_activity_kinds);
+    SETTING_PROPERTY(string_t, cupti_events);
+    SETTING_PROPERTY(string_t, cupti_metrics);
+    SETTING_PROPERTY(int, cupti_device);
+    SETTING_PROPERTY(string_t, roofline_mode);
+    SETTING_PROPERTY(string_t, cpu_roofline_mode);
+    SETTING_PROPERTY(string_t, gpu_roofline_mode);
+    SETTING_PROPERTY(string_t, cpu_roofline_events);
+    SETTING_PROPERTY(string_t, gpu_roofline_events);
+    SETTING_PROPERTY(bool, roofline_type_labels);
+    SETTING_PROPERTY(bool, roofline_type_labels_cpu);
+    SETTING_PROPERTY(bool, roofline_type_labels_gpu);
+    SETTING_PROPERTY(uint64_t, ert_num_threads);
+    SETTING_PROPERTY(uint64_t, ert_num_threads_cpu);
+    SETTING_PROPERTY(uint64_t, ert_num_threads_gpu);
+    SETTING_PROPERTY(uint64_t, ert_num_streams);
+    SETTING_PROPERTY(uint64_t, ert_grid_size);
+    SETTING_PROPERTY(uint64_t, ert_block_size);
+    SETTING_PROPERTY(uint64_t, ert_alignment);
+    SETTING_PROPERTY(uint64_t, ert_min_working_size);
+    SETTING_PROPERTY(uint64_t, ert_min_working_size_cpu);
+    SETTING_PROPERTY(uint64_t, ert_min_working_size_gpu);
+    SETTING_PROPERTY(uint64_t, ert_max_data_size);
+    SETTING_PROPERTY(uint64_t, ert_max_data_size_cpu);
+    SETTING_PROPERTY(uint64_t, ert_max_data_size_gpu);
+    SETTING_PROPERTY(bool, allow_signal_handler);
+    SETTING_PROPERTY(bool, enable_signal_handler);
+    SETTING_PROPERTY(bool, enable_all_signals);
+    SETTING_PROPERTY(bool, disable_all_signals);
+    SETTING_PROPERTY(int32_t, node_count);
+    SETTING_PROPERTY(bool, destructor_report);
 
     //==================================================================================//
     //
     //                          TIMER
     //
     //==================================================================================//
-    timer.def(py::init(&pytim::init::timer), "Initialization",
-              py::return_value_policy::take_ownership, py::arg("prefix") = "");
+    timer.def(py::init(&pytim::init::timer), "Initialization", py::arg("key") = "",
+              py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+              py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     timer.def("real_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<0>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get<real_clock>();
+                  return obj.get();
               },
               "Elapsed wall clock");
     //----------------------------------------------------------------------------------//
     timer.def("sys_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<1>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get<system_clock>();
+                  return obj.get();
               },
               "Elapsed system clock");
     //----------------------------------------------------------------------------------//
     timer.def("user_elapsed",
               [&](py::object pytimer) {
                   tim_timer_t& _timer = *(pytimer.cast<tim_timer_t*>());
-                  auto&        obj    = std::get<2>(_timer);
-                  return obj.get_display();
+                  auto&        obj    = _timer.get<user_clock>();
+                  return obj.get();
               },
               "Elapsed user time");
     //----------------------------------------------------------------------------------//
@@ -403,6 +461,18 @@ PYBIND11_MODULE(libpytimemory, tim)
     timer.def("reset", [&](py::object self) { self.cast<tim_timer_t*>()->reset(); },
               "Reset the timer");
     //----------------------------------------------------------------------------------//
+    timer.def("get_raw",
+              [&](py::object self) { return tim::get(*self.cast<tim_timer_t*>()); },
+              "Get the timer data");
+    //----------------------------------------------------------------------------------//
+    timer.def("get",
+              [&](py::object self) {
+                  auto&& _tup           = tim::get_labeled(*self.cast<tim_timer_t*>());
+                  using data_label_type = tim::decay_t<decltype(_tup)>;
+                  return pytim::dict<data_label_type>::construct(_tup);
+              },
+              "Get the timer data");
+    //----------------------------------------------------------------------------------//
 
     //==================================================================================//
     //
@@ -415,12 +485,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //----------------------------------------------------------------------------------//
     man.def(py::init<>(&pytim::init::manager), "Initialization",
             py::return_value_policy::take_ownership);
-    //----------------------------------------------------------------------------------//
-    man.def("set_max_depth", [&](py::object, int depth) { manager_t::max_depth(depth); },
-            "Set the max depth of the timers");
-    //----------------------------------------------------------------------------------//
-    man.def("get_max_depth", [&](py::object) { return manager_t::max_depth(); },
-            "Get the max depth of the timers");
     //----------------------------------------------------------------------------------//
     man.def("write_ctest_notes", &pytim::manager::write_ctest_notes,
             "Write a CTestNotes.cmake file", py::arg("directory") = ".",
@@ -440,18 +504,30 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     auto_timer.def(py::init(&pytim::init::auto_timer), "Initialization",
-                   py::arg("key") = "", py::arg("report_at_exit") = false,
-                   py::arg("nback") = 1, py::arg("added_args") = false,
+                   py::arg("key") = "", py::arg("line") = pytim::get_line(1),
+                   py::arg("report_at_exit") = false,
                    py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     auto_timer.def("__str__",
-                   [&](py::object _pyauto_timer) {
+                   [&](py::object self) {
                        std::stringstream _ss;
-                       auto_timer_t* _auto_timer = _pyauto_timer.cast<auto_timer_t*>();
-                       _ss << _auto_timer->get_component_type();
+                       auto_timer_t*     _self = self.cast<auto_timer_t*>();
+                       _ss << *_self;
                        return _ss.str();
                    },
                    "Print the auto timer");
+    //----------------------------------------------------------------------------------//
+    auto_timer.def("get_raw",
+                   [&](py::object self) { return tim::get(*self.cast<auto_timer_t*>()); },
+                   "Get the component list data");
+    //----------------------------------------------------------------------------------//
+    auto_timer.def("get",
+                   [&](py::object self) {
+                       auto&& _tup = tim::get_labeled(*self.cast<auto_timer_t*>());
+                       using data_label_type = tim::decay_t<decltype(_tup)>;
+                       return pytim::dict<data_label_type>::construct(_tup);
+                   },
+                   "Get the component list data");
     //----------------------------------------------------------------------------------//
     timer_decorator.def(py::init(&pytim::init::timer_decorator), "Initialization",
                         py::return_value_policy::automatic);
@@ -459,32 +535,32 @@ PYBIND11_MODULE(libpytimemory, tim)
 
     //==================================================================================//
     //
-    //                      TIMEMORY_COMPONENT TUPLE
+    //                      TIMEMORY COMPONENT_TUPLE
     //
     //==================================================================================//
     comp_list.def(py::init(&pytim::init::component_list), "Initialization",
                   py::arg("components") = py::list(), py::arg("key") = "",
-                  py::arg("report_at_exit") = false, py::arg("nback") = 1,
-                  py::arg("added_args") = false, py::return_value_policy::take_ownership);
+                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+                  py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_list.def("start",
-                  [&](py::object pytimer) { pytimer.cast<component_list_t*>()->start(); },
+                  [&](py::object self) { self.cast<component_list_t*>()->start(); },
                   "Start component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("stop",
-                  [&](py::object pytimer) { pytimer.cast<component_list_t*>()->stop(); },
+                  [&](py::object self) { self.cast<component_list_t*>()->stop(); },
                   "Stop component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("report",
-                  [&](py::object pytimer) {
-                      std::cout << *(pytimer.cast<component_list_t*>()) << std::endl;
+                  [&](py::object self) {
+                      std::cout << *(self.cast<component_list_t*>()) << std::endl;
                   },
                   "Report component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("__str__",
-                  [&](py::object pytimer) {
+                  [&](py::object self) {
                       std::stringstream ss;
-                      ss << *(pytimer.cast<component_list_t*>());
+                      ss << *(self.cast<component_list_t*>());
                       return ss.str();
                   },
                   "Stringify component tuple");
@@ -494,14 +570,26 @@ PYBIND11_MODULE(libpytimemory, tim)
                   "Reset the component tuple");
     //----------------------------------------------------------------------------------//
     comp_list.def("__str__",
-                  [&](py::object _pyauto_tuple) {
+                  [&](py::object self) {
                       std::stringstream _ss;
-                      component_list_t* _auto_tuple =
-                          _pyauto_tuple.cast<component_list_t*>();
-                      _ss << *_auto_tuple;
+                      component_list_t* _self = self.cast<component_list_t*>();
+                      _ss << *_self;
                       return _ss.str();
                   },
                   "Print the component tuple");
+    //----------------------------------------------------------------------------------//
+    comp_list.def(
+        "get_raw",
+        [&](py::object self) { return tim::get(*self.cast<component_list_t*>()); },
+        "Get the component list data");
+    //----------------------------------------------------------------------------------//
+    comp_list.def("get",
+                  [&](py::object self) {
+                      auto&& _tup = tim::get_labeled(*self.cast<component_list_t*>());
+                      using data_label_type = tim::decay_t<decltype(_tup)>;
+                      return pytim::dict<data_label_type>::construct(_tup);
+                  },
+                  "Get the component list data");
     //----------------------------------------------------------------------------------//
     comp_decorator.def(py::init(&pytim::init::component_decorator), "Initialization",
                        py::return_value_policy::automatic);
@@ -512,12 +600,14 @@ PYBIND11_MODULE(libpytimemory, tim)
     //                      AUTO TIMER DECORATOR
     //
     //==================================================================================//
+    /*
     decorate_auto_timer.def(
         py::init(&pytim::decorators::init::auto_timer), "Initialization",
-        py::arg("key") = "", py::arg("add_args") = false, py::arg("is_class") = false,
+        py::arg("key") = "", py::arg("line") = pytim::get_line(1),
         py::arg("report_at_exit") = false, py::return_value_policy::take_ownership);
     decorate_auto_timer.def("__call__", &pytim::decorators::auto_timer::call,
                             "Call operator");
+                            */
 
     //----------------------------------------------------------------------------------//
 
@@ -527,9 +617,9 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     rss_usage.def(py::init(&pytim::init::rss_usage),
-                  "Initialization of RSS measurement class",
-                  py::return_value_policy::take_ownership, py::arg("prefix") = "",
-                  py::arg("record") = false);
+                  "Initialization of RSS measurement class", py::arg("key") = "",
+                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
+                  py::arg("record") = false, py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     rss_usage.def("record", [&](py::object self) { self.cast<rss_usage_t*>()->record(); },
                   "Record the RSS usage");
@@ -585,12 +675,18 @@ PYBIND11_MODULE(libpytimemory, tim)
                   },
                   "Return the current rss usage",
                   py::arg("units") = units.attr("megabyte"));
-
-    //==================================================================================//
-    //
-    //                      MAIN libpytimemory MODULE (part 2)
-    //
-    //==================================================================================//
+    //----------------------------------------------------------------------------------//
+    rss_usage.def("get_raw",
+                  [&](py::object self) { return tim::get(*self.cast<rss_usage_t*>()); },
+                  "Return the rss usage data");
+    //----------------------------------------------------------------------------------//
+    rss_usage.def("get",
+                  [&](py::object self) {
+                      auto&& _tup = tim::get_labeled(*self.cast<rss_usage_t*>());
+                      using data_label_type = tim::decay_t<decltype(_tup)>;
+                      return pytim::dict<data_label_type>::construct(_tup);
+                  },
+                  "Return the rss usage data");
 
     //==================================================================================//
     //
@@ -599,17 +695,11 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
 
     // ---------------------------------------------------------------------- //
-    opts.def("default_max_depth", [&]() { return std::numeric_limits<uint16_t>::max(); },
-             "Return the default max depth");
-    // ---------------------------------------------------------------------- //
     opts.def("safe_mkdir", &pytim::opt::safe_mkdir,
              "if [ ! -d <directory> ]; then mkdir -p <directory> ; fi");
     // ---------------------------------------------------------------------- //
     opts.def("ensure_directory_exists", &pytim::opt::ensure_directory_exists,
              "mkdir -p $(basename file_path)");
-    // ---------------------------------------------------------------------- //
-    opts.def("set_output", set_output,
-             "Set the output prefix that extensions are addded to");
     // ---------------------------------------------------------------------- //
     opts.def("add_arguments", &pytim::opt::add_arguments,
              "Function to add default output arguments", py::arg("parser") = py::none(),

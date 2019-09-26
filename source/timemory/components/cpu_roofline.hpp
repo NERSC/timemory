@@ -78,6 +78,7 @@ struct cpu_roofline
     using base_type =
         base<this_type, value_type, policy::thread_init, policy::thread_finalize,
              policy::global_finalize, policy::serialization>;
+    using record_type = std::function<value_type()>;
 
     using device_t    = device::cpu;
     using clock_type  = real_clock;
@@ -132,10 +133,18 @@ struct cpu_roofline
     using events_callback_t = std::function<intvec_t(const MODE&)>;
 
     //----------------------------------------------------------------------------------//
-
+    /// replace this callback to add in custom HW counters
     static events_callback_t& get_events_callback()
     {
         static events_callback_t _instance = [](const MODE&) { return intvec_t{}; };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// set to false to suppress adding predefined enumerations
+    static bool& use_predefined_enums()
+    {
+        static bool _instance = true;
         return _instance;
     }
 
@@ -212,17 +221,21 @@ struct cpu_roofline
             //
             //  add some presets based on data types
             //
-            if(is_one_of<float, types_tuple>::value)
-                _events.push_back(PAPI_SP_OPS);
-            if(is_one_of<double, types_tuple>::value)
-                _events.push_back(PAPI_DP_OPS);
+            if(use_predefined_enums())
+            {
+                if(is_one_of<float, types_tuple>::value)
+                    _events.push_back(PAPI_SP_OPS);
+                if(is_one_of<double, types_tuple>::value)
+                    _events.push_back(PAPI_DP_OPS);
+            }
 
         } else if(event_mode() == MODE::AI)
         {
             //
             //  add the load/store hardware counter
             //
-            _events.push_back(PAPI_LST_INS);
+            if(use_predefined_enums())
+                _events.push_back(PAPI_LST_INS);
 
             //
             // add in user callback events AFTER load/store so that load/store
@@ -403,20 +416,37 @@ public:
     void start()
     {
         set_started();
-        value = record();
+        value = m_record();
     }
 
     //----------------------------------------------------------------------------------//
 
     void stop()
     {
-        auto tmp = record();
+        auto tmp = m_record();
         resize(std::max<size_type>(tmp.first.size(), value.first.size()));
         for(size_type i = 0; i < accum.first.size(); ++i)
             accum.first[i] += (tmp.first[i] - value.first[i]);
         accum.second += (tmp.second - value.second);
         value = std::move(tmp);
         set_stopped();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Func>
+    void configure_record(_Func&& _func)
+    {
+        m_record = std::forward<_Func>(_func);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Func>
+    void configure_record(const MODE& _mode, _Func&& _func)
+    {
+        if(event_mode() == _mode)
+            m_record = std::forward<_Func>(_func);
     }
 
     //----------------------------------------------------------------------------------//
@@ -517,7 +547,8 @@ protected:
                        policy::thread_finalize, policy::global_finalize,
                        policy::serialization>;
 
-    friend class storage<this_type>;
+    using base_type::implements_storage_v;
+    friend class impl::storage<this_type, implements_storage_v>;
 
 public:
     //==================================================================================//
@@ -629,8 +660,9 @@ private:
     //----------------------------------------------------------------------------------//
     // these are needed after the global label array is destroyed
     //
-    size_type m_event_size  = events().size();
-    strvec_t  m_label_array = label_array();
+    size_type   m_event_size  = events().size();
+    strvec_t    m_label_array = label_array();
+    record_type m_record      = []() { return this_type::record(); };
 
     //----------------------------------------------------------------------------------//
 
@@ -669,43 +701,6 @@ private:
 };
 
 //--------------------------------------------------------------------------------------//
-// Shorthand aliases for common roofline types
-//
-using cpu_roofline_sp_flops = cpu_roofline<float>;
-using cpu_roofline_dp_flops = cpu_roofline<double>;
-using cpu_roofline_flops    = cpu_roofline<float, double>;
-
-//--------------------------------------------------------------------------------------//
 }  // namespace component
-
-namespace trait
-{
-template <>
-struct requires_json<component::cpu_roofline_sp_flops> : std::true_type
-{};
-
-template <>
-struct requires_json<component::cpu_roofline_dp_flops> : std::true_type
-{};
-
-template <>
-struct requires_json<component::cpu_roofline_flops> : std::true_type
-{};
-
-#if !defined(TIMEMORY_USE_PAPI)
-template <>
-struct is_available<component::cpu_roofline_sp_flops> : std::false_type
-{};
-
-template <>
-struct is_available<component::cpu_roofline_dp_flops> : std::false_type
-{};
-
-template <>
-struct is_available<component::cpu_roofline_flops> : std::false_type
-{};
-#endif
-
-}  // namespace trait
 
 }  // namespace tim

@@ -29,7 +29,6 @@
  */
 
 #include "timemory/components.hpp"
-#include "timemory/manager.hpp"
 #include "timemory/mpl/operations.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/settings.hpp"
@@ -54,7 +53,9 @@ bool
 is_finite(const _Tp& val)
 {
 #if defined(_WINDOWS)
-    return (val == val && std::abs<_Tp>(val) != std::numeric_limits<_Tp>::infinity());
+    const _Tp _infv = std::numeric_limits<_Tp>::infinity();
+    const _Tp _inf  = (val < 0.0) ? -_infv : _infv;
+    return (val == val && val != _inf);
 #else
     return std::isfinite(val);
 #endif
@@ -284,13 +285,20 @@ print_percentage(std::ostream& os, const _Tp& obj)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace details
-}  // namespace tim
 
+//--------------------------------------------------------------------------------------//
+
+namespace impl
+{
+//--------------------------------------------------------------------------------------//
+//
+//              Storage functions for implemented types
+//
 //--------------------------------------------------------------------------------------//
 
 template <typename ObjectType>
 void
-tim::storage<ObjectType>::merge(this_type* itr)
+storage<ObjectType, true>::merge(this_type* itr)
 {
     if(itr == this)
         return;
@@ -326,7 +334,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
                     (lhs->prefix() == rhs->prefix() && lhs->depth() == rhs->depth()));
         };
         auto _reduce = [](predicate_type lhs, predicate_type rhs) {
-            tim::details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
+            details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
         };
         _this_beg = graph().begin();
         _this_end = graph().end();
@@ -344,7 +352,7 @@ tim::storage<ObjectType>::merge(this_type* itr)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::external_print(std::false_type)
+void storage<ObjectType, true>::external_print(std::false_type)
 {
     auto num_instances = instance_count().load();
 
@@ -460,7 +468,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
         // find the max width
         for(const auto& itr : _data().graph())
         {
-            if(itr.depth() < 0)
+            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
                 continue;
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
@@ -479,7 +487,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
         for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
         {
             auto itr = *pitr;
-            if(itr.depth() < 0)
+            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
                 continue;
             std::stringstream _pss;
             // if we are not at the bottom of the call stack (i.e. completely inclusive)
@@ -502,7 +510,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                         if(nexclusive == 0)
                             exclusive_values = eitr->obj().get();
                         else
-                            tim::details::combine(exclusive_values, eitr->obj().get());
+                            details::combine(exclusive_values, eitr->obj().get());
                         // increment. beyond 0 vs. 1, this value plays no role
                         ++nexclusive;
                     }
@@ -512,9 +520,9 @@ void tim::storage<ObjectType>::external_print(std::false_type)
                 // if there were exclusive values encountered
                 if(nexclusive > 0 && trait::is_available<ObjectType>::value)
                 {
-                    tim::details::print_percentage(
-                        _pss, tim::details::compute_percentage(exclusive_values,
-                                                               itr.obj().get()));
+                    details::print_percentage(
+                        _pss,
+                        details::compute_percentage(exclusive_values, itr.obj().get()));
                 }
             }
 
@@ -538,7 +546,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             //
             if(settings::text_output() && settings::file_output())
             {
-                auto fname = tim::settings::compose_output_filename(label, ".txt");
+                auto          fname = settings::compose_output_filename(label, ".txt");
                 std::ofstream ofs(fname.c_str());
                 if(ofs)
                 {
@@ -565,7 +573,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             if(settings::json_output() || trait::requires_json<ObjectType>::value)
             {
                 auto_lock_t l(type_mutex<std::ofstream>());
-                auto jname = tim::settings::compose_output_filename(label, ".json");
+                auto        jname = settings::compose_output_filename(label, ".json");
                 printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
                        jname.c_str());
                 serialize_storage(jname, *this, num_instances);
@@ -578,6 +586,39 @@ void tim::storage<ObjectType>::external_print(std::false_type)
             printf("\n");
             auto_lock_t l(type_mutex<decltype(std::cout)>());
             std::cout << _oss.str() << std::flush;
+        }
+
+        if(settings::dart_output() && _oss.str().length() > 0)
+        {
+            auto get_hierarchy = [&](iterator itr) {
+                std::vector<std::string> _hierarchy;
+                if(!itr || itr->depth() == 0)
+                    return _hierarchy;
+                iterator _parent = _data().graph().parent(itr);
+                do
+                {
+                    _hierarchy.push_back(_parent->prefix());
+                    if(_parent->depth() == 0)
+                        break;
+                    auto _new_parent = graph_t::parent(_parent);
+                    if(_parent == _new_parent)
+                        break;
+                    _parent = _new_parent;
+                    // _parent = _data().graph().parent(itr);
+                } while(_parent && !(_parent->depth() < 0));
+                std::reverse(_hierarchy.begin(), _hierarchy.end());
+                return _hierarchy;
+            };
+            printf("\n");
+            for(auto itr = _data().graph().begin(); itr != _data().graph().end(); ++itr)
+            {
+                if(itr->depth() < 0 || itr->depth() > settings::max_depth())
+                    continue;
+                auto _obj       = itr->obj();
+                auto _hierarchy = get_hierarchy(itr);
+                _hierarchy.push_back(itr->prefix());
+                operation::echo_measurement<ObjectType>(_obj, _hierarchy);
+            }
         }
 
         instance_count().store(0);
@@ -594,7 +635,7 @@ void tim::storage<ObjectType>::external_print(std::false_type)
 //======================================================================================//
 
 template <typename ObjectType>
-void tim::storage<ObjectType>::external_print(std::true_type)
+void storage<ObjectType, true>::external_print(std::true_type)
 {
     if(!singleton_t::is_master(this))
     {
@@ -622,13 +663,13 @@ void tim::storage<ObjectType>::external_print(std::true_type)
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
-                                    const unsigned int version)
+storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
+                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-    using array_type = std::deque<tuple_type>;
+    using array_type = std::vector<tuple_type>;
 
-    // convert graph to a deque
+    // convert graph to a vector
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : _data().graph())
@@ -666,13 +707,13 @@ tim::storage<ObjectType>::serialize(std::false_type, Archive& ar,
 template <typename ObjectType>
 template <typename Archive>
 void
-tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
-                                    const unsigned int version)
+storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
+                                        const unsigned int version)
 {
     using tuple_type = std::tuple<int64_t, ObjectType, string_t, int64_t>;
-    using array_type = std::deque<tuple_type>;
+    using array_type = std::vector<tuple_type>;
 
-    // convert graph to a deque
+    // convert graph to a vector
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : _data().graph())
@@ -706,6 +747,41 @@ tim::storage<ObjectType>::serialize(std::true_type, Archive& ar,
         ar.finishNode();
     }
     ar.finishNode();
+}
+
+//======================================================================================//
+
+}  // namespace impl
+
+//======================================================================================//
+
+}  // namespace tim
+
+//======================================================================================//
+
+template <typename _Tp>
+void
+tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa.setNextName("rank");
+        oa.startNode();
+        auto rank = tim::mpi::rank();
+        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("concurrency", concurrency));
+        oa(cereal::make_nvp("data", obj));
+        oa(cereal::make_nvp("environment", *env_settings::instance()));
+        oa.finishNode();
+    }
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+        ofs << ss.str() << std::endl;
 }
 
 //======================================================================================//

@@ -14,8 +14,9 @@ enable_testing()
 
 add_interface_library(timemory-headers)
 add_interface_library(timemory-cereal)
-add_interface_library(timemory-extern-templates)
 add_interface_library(timemory-extern-init)
+add_interface_library(timemory-extern-templates)
+add_interface_library(timemory-extern-templates-static)
 
 set(TIMEMORY_REQUIRED_INTERFACES
     timemory-headers
@@ -31,8 +32,9 @@ add_interface_library(timemory-cupti)
 add_interface_library(timemory-cudart)
 add_interface_library(timemory-cudart-device)
 add_interface_library(timemory-cudart-static)
-add_interface_library(timemory-cuda-nvtx)
+add_interface_library(timemory-nvtx)
 add_interface_library(timemory-caliper)
+add_interface_library(timemory-gotcha)
 
 add_interface_library(timemory-coverage)
 add_interface_library(timemory-exceptions)
@@ -40,16 +42,20 @@ add_interface_library(timemory-gperftools)
 add_interface_library(timemory-gperftools-cpu)
 add_interface_library(timemory-gperftools-heap)
 
+set(_MPI_INTERFACE_LIBRARY)
+if(TIMEMORY_USE_MPI)
+    set(_MPI_INTERFACE_LIBRARY timemory-mpi)
+endif()
+
 set(TIMEMORY_EXTENSION_INTERFACES
     timemory-extern-templates
     timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
-    timemory-papi-static
     timemory-cuda
     timemory-cudart
-    timemory-cuda-nvtx
+    timemory-nvtx
     timemory-cupti
     timemory-cudart-device
     timemory-coverage
@@ -58,8 +64,38 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools-heap
     timemory-santizier)
 
+set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
+    timemory-threading
+    timemory-papi
+    timemory-cuda
+    timemory-cudart
+    timemory-nvtx
+    timemory-cupti
+    timemory-cudart-device
+    timemory-gperftools-cpu
+    timemory-caliper
+    ${_MPI_INTERFACE_LIBRARY})
+
+set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
+    timemory-threading
+    timemory-papi-static
+    timemory-cuda
+    timemory-cudart-static
+    timemory-nvtx
+    timemory-cupti
+    timemory-cudart-device
+    timemory-gperftools-cpu
+    timemory-caliper
+    ${_MPI_INTERFACE_LIBRARY})
+
 add_interface_library(timemory-extensions)
 target_link_libraries(timemory-extensions INTERFACE ${TIMEMORY_EXTENSION_INTERFACES})
+
+add_interface_library(timemory-external-shared)
+target_link_libraries(timemory-external-shared INTERFACE ${TIMEMORY_EXTERNAL_SHARED_INTERFACES})
+
+add_interface_library(timemory-external-static)
+target_link_libraries(timemory-external-static INTERFACE ${TIMEMORY_EXTERNAL_STATIC_INTERFACES})
 
 add_interface_library(timemory-analysis-tools)
 
@@ -90,7 +126,7 @@ endfunction()
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory headers
+#                               timemory headers
 #
 #----------------------------------------------------------------------------------------#
 
@@ -106,7 +142,7 @@ target_link_libraries(timemory-headers INTERFACE timemory-threading)
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory exceptions
+#                               timemory exceptions
 #
 #----------------------------------------------------------------------------------------#
 
@@ -115,7 +151,7 @@ target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 
 #----------------------------------------------------------------------------------------#
 #
-#                        TiMemory extern initializaiton
+#                        timemory extern initializaiton
 #
 #----------------------------------------------------------------------------------------#
 
@@ -127,7 +163,7 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 #
-#                               TiMemory extern-templates
+#                               timemory extern templates
 #
 #----------------------------------------------------------------------------------------#
 
@@ -214,23 +250,27 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 
-# MS-MPI standard install
-if(WIN32)
-    list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
-        "C:/Program\ Files/Microsoft\ SDKs/MPI")
-endif()
+if(TIMEMORY_USE_MPI)
+    # MS-MPI standard install
+    if(WIN32)
+        list(APPEND CMAKE_PREFIX_PATH "C:/Program\ Files\ (x86)/Microsoft\ SDKs/MPI"
+            "C:/Program\ Files/Microsoft\ SDKs/MPI")
+    endif()
 
-# MPI C compiler from environment
-if(NOT "$ENV{MPICC}" STREQUAL "")
-    set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
-endif()
+    # MPI C compiler from environment
+    if(NOT "$ENV{MPICC}" STREQUAL "")
+        set(MPI_C_COMPILER $ENV{MPICC} CACHE FILEPATH "MPI C compiler")
+    endif()
 
-# MPI C++ compiler from environment
-if(NOT "$ENV{MPICXX}" STREQUAL "")
-    set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
-endif()
+    # MPI C++ compiler from environment
+    if(NOT "$ENV{MPICXX}" STREQUAL "")
+        set(MPI_CXX_COMPILER $ENV{MPICXX} CACHE FILEPATH "MPI C++ compiler")
+    endif()
 
-find_package(MPI)
+    find_package(MPI)
+else()
+    set(MPI_FOUND OFF)
+endif()
 
 if(MPI_FOUND)
 
@@ -646,13 +686,13 @@ if(TIMEMORY_USE_NVTX)
     find_package(NVTX QUIET)
 endif()
 
-if(NVTX_FOUND)
-    target_link_libraries(timemory-cuda-nvtx INTERFACE ${NVTX_LIBRARIES})
-    target_include_directories(timemory-cuda-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
-    target_compile_definitions(timemory-cuda-nvtx INTERFACE TIMEMORY_USE_NVTX)
+if(NVTX_FOUND AND TIMEMORY_USE_CUDA)
+    target_link_libraries(timemory-nvtx INTERFACE ${NVTX_LIBRARIES})
+    target_include_directories(timemory-nvtx INTERFACE ${NVTX_INCLUDE_DIRS})
+    target_compile_definitions(timemory-nvtx INTERFACE TIMEMORY_USE_NVTX)
 else()
     set(TIMEMORY_USE_NVTX OFF)
-    inform_empty_interface(timemory-cuda-nvtx "NVTX")
+    inform_empty_interface(timemory-nvtx "NVTX")
 endif()
 
 
@@ -764,4 +804,40 @@ if(caliper_FOUND)
 else()
     set(TIMEMORY_USE_CALIPER OFF)
     inform_empty_interface(timemory-caliper "caliper")
+endif()
+
+
+#----------------------------------------------------------------------------------------#
+#
+#                               GOTCHA
+#
+#----------------------------------------------------------------------------------------#
+if(UNIX AND NOT APPLE)
+    if(TIMEMORY_BUILD_GOTCHA)
+        set(gotcha_FOUND ON)
+        checkout_git_submodule(RECURSIVE
+            RELATIVE_PATH external/gotcha
+            WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
+        add_subdirectory(${PROJECT_SOURCE_DIR}/external/gotcha)
+        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS Gotcha)
+    elseif(TIMEMORY_USE_GOTCHA)
+        find_package(gotcha QUIET)
+        list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha)
+    else()
+        set(gotcha_FOUND OFF)
+    endif()
+else()
+    set(gotcha_FOUND OFF)
+endif()
+
+if(gotcha_FOUND)
+    target_compile_definitions(timemory-gotcha INTERFACE TIMEMORY_USE_GOTCHA)
+    if(TIMEMORY_BUILD_GOTCHA)
+        target_link_libraries(timemory-gotcha INTERFACE Gotcha)
+    else()
+        target_link_libraries(timemory-gotcha INTERFACE gotcha)
+    endif()
+else()
+    set(TIMEMORY_USE_GOTCHA OFF)
+    inform_empty_interface(timemory-gotcha "GOTCHA")
 endif()

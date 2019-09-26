@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(TiMemory-CPU-Roofline-Example LANGUAGES C CXX)
+project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME test_cpu_roofline)
 set(COMPONENTS papi threading compile-options analysis-tools arch)
@@ -10,7 +10,7 @@ if(USE_EXTERN_TEMPLATES)
     list(APPEND COMPONENTS cxx shared extern-templates)
 endif()
 
-find_package(TiMemory REQUIRED COMPONENTS ${COMPONENTS})
+find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 add_library(cpu-fp-single INTERFACE)
 add_library(cpu-fp-double INTERFACE)

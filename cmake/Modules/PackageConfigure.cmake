@@ -3,7 +3,7 @@ include_guard(DIRECTORY)
 
 ##########################################################################################
 #
-#        TiMemory Package installation
+#        timemory Package installation
 #
 ##########################################################################################
 
@@ -30,8 +30,8 @@ if(TIMEMORY_BUILD_PYTHON)
 endif()
 
 configure_package_config_file(
-    ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}Config.cmake.in
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
+    ${PROJECT_SOURCE_DIR}/cmake/Templates/${PROJECT_NAME}-config.cmake.in
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
     INSTALL_DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR}
     INSTALL_PREFIX ${_INSTALL_PREFIX}
     PATH_VARS
@@ -39,15 +39,27 @@ configure_package_config_file(
         LIB_INSTALL_DIR
         PYTHON_INSTALL_DIR)
 
+# for backwards-compatibility
+file(WRITE ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
+"
+#
+# This file exists for backwards-compatibility
+#
+
+include(\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake)
+
+")
+
 write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
 install(
     FILES
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}Config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}ConfigVersion.cmake
+        ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
     DESTINATION
         ${TIMEMORY_INSTALL_CMAKEDIR})
 

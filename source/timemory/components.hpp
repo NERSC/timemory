@@ -36,6 +36,7 @@
 #include "timemory/components/cuda_event.hpp"
 #include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/general.hpp"
+#include "timemory/components/gotcha.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
@@ -126,7 +127,7 @@ initialize(_CompList<_CompTypes...>&               obj,
             case CUDA_EVENT: obj.template init<cuda_event>(); break;
             case CUPTI_ACTIVITY: obj.template init<cupti_activity>(); break;
             case CUPTI_COUNTERS: obj.template init<cupti_counters>(); break;
-            case CURRENT_RSS: obj.template init<current_rss>(); break;
+            case PAGE_RSS: obj.template init<page_rss>(); break;
             case DATA_RSS: obj.template init<data_rss>(); break;
             case GPERF_CPU_PROFILER: obj.template init<gperf_cpu_profiler>(); break;
             case GPERF_HEAP_PROFILER: obj.template init<gperf_heap_profiler>(); break;
@@ -232,9 +233,9 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(CUPTI_COUNTERS);
         }
-        else if(itr == "current_rss")
+        else if(itr == "page_rss")
         {
-            vec.push_back(CURRENT_RSS);
+            vec.push_back(PAGE_RSS);
         }
         else if(itr == "data_rss")
         {
@@ -379,7 +380,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
                 "'cpu_clock', 'cpu_roofline', 'cpu_roofline_double', 'cpu_roofline_dp', "
                 "'cpu_roofline_dp_flops', 'cpu_roofline_flops', 'cpu_roofline_single', "
                 "'cpu_roofline_sp', 'cpu_roofline_sp_flops', 'cpu_util', 'cuda_event', "
-                "'cupti_activity', 'cupti_counters', 'current_rss', 'data_rss', "
+                "'cupti_activity', 'cupti_counters', 'page_rss', 'data_rss', "
                 "'gperf_cpu_profiler', 'gperf_heap_profiler', 'gpu_roofline', "
                 "'gpu_roofline_double', 'gpu_roofline_dp', 'gpu_roofline_dp_flops', "
                 "'gpu_roofline_flops', 'gpu_roofline_half', 'gpu_roofline_hp', "
@@ -480,3 +481,8 @@ initialize(_CompList<_CompTypes...>& obj, const std::string& env_var,
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+// tim::component::get_enum<T>::value
+//
+#include "timemory/details/components.hpp"

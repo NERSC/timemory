@@ -64,9 +64,9 @@ class timemory_test(unittest.TestCase):
     # ------------------------------------------------------------------------ #
     def setUp(self):
         self.output_dir = "test_output"
-        timemory.options.output_dir = self.output_dir
-        timemory.options.use_timers = True
-        timemory.options.serial_report = True
+        timemory.settings.output_path = self.output_dir
+        timemory.settings.enabled = True
+        timemory.settings.json_output = True
         self.manager = timemory.manager()
 
 
@@ -273,8 +273,6 @@ class timemory_test(unittest.TestCase):
     def test_6_toggle(self):
         print ('\n\n--> Testing function: "{}"...\n\n'.format(timemory.FUNC()))
 
-        timemory.toggle(True)
-        timemory.set_max_depth(timemory.options.default_max_depth())
         self.manager.clear()
 
         timemory.toggle(True)

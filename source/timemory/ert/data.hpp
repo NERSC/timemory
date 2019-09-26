@@ -133,8 +133,8 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    exec_data()                 = default;
-    ~exec_data()                = default;
+    exec_data() = default;
+    ~exec_data() { delete pmutex; }
     exec_data(const exec_data&) = delete;
     exec_data(exec_data&&)      = default;
     exec_data& operator=(const exec_data&) = delete;
@@ -157,7 +157,7 @@ public:
     exec_data& operator+=(const value_type& entry)
     {
         {
-            std::unique_lock<std::mutex> lk(pmutex, std::defer_lock);
+            std::unique_lock<std::mutex> lk(*pmutex, std::defer_lock);
             if(!lk.owns_lock())
                 lk.lock();
             // std::cout << "Adding " << std::get<0>(entry) << "..." << std::endl;
@@ -171,7 +171,7 @@ public:
     exec_data& operator+=(const exec_data& rhs)
     {
         {
-            std::unique_lock<std::mutex> lk(pmutex);
+            std::unique_lock<std::mutex> lk(*pmutex);
             if(!lk.owns_lock())
                 lk.lock();
             for(const auto& itr : rhs.m_values)
@@ -185,7 +185,7 @@ protected:
                                "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
                                "device", "dtype", "exec-params" } };
     value_array m_values;
-    std::mutex  pmutex;
+    std::mutex* pmutex = new std::mutex;
 
 public:
     //----------------------------------------------------------------------------------//

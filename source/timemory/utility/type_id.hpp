@@ -24,122 +24,43 @@
 
 #pragma once
 
-//--------------------------------------------------------------------------------------//
-
-#include "timemory/mpl/apply.hpp"
-#include "timemory/utility/macros.hpp"
-
-//--------------------------------------------------------------------------------------//
-
-#include <array>
-#include <cstdint>
-#include <deque>
-#include <mutex>
 #include <string>
-#include <thread>
-#include <type_traits>
-#include <unordered_map>
-#include <utility>
-#include <vector>
-
-//--------------------------------------------------------------------------------------//
 
 namespace tim
 {
-namespace cupti
-{
-struct result;
-}  // namespace cupti
-
-//======================================================================================//
-// static functions that return a string identifying the data type (used in Python plot)
-//
-// * DEPRECATED *
+//--------------------------------------------------------------------------------------//
+//  base overload
 //
 template <typename _Tp>
 struct type_id
 {
-    template <typename Type = _Tp, enable_if_t<(std::is_integral<Type>::value), int> = 0>
-    static std::string value(const Type&)
-    {
-        return "int";
-    }
-
-    template <typename Type                                           = _Tp,
-              enable_if_t<(std::is_floating_point<Type>::value), int> = 0>
-    static std::string value(const Type&)
-    {
-        return "float";
-    }
-
-    template <typename SubType, enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::pair<SubType, SubType>&)
-    {
-        return "int_pair";
-    }
-
-    template <typename SubType,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::pair<SubType, SubType>&)
-    {
-        return "float_pair";
-    }
-
-    template <typename... _Types>
-    static std::string value(const std::tuple<_Types...>&)
-    {
-        using type = std::tuple<_Types...>;
-        std::stringstream ss;
-        ss << "tuple_" << std::tuple_size<type>::value;
-        return ss.str();
-    }
-
-    template <typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::array<SubType, SubTypeSize>&)
-    {
-        return std::string("int_array_") + std::to_string(SubTypeSize);
-    }
-
-    template <typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::array<SubType, SubTypeSize>&)
-    {
-        return std::string("float_array_") + std::to_string(SubTypeSize);
-    }
-
-    template <typename _Up, typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
-    {
-        return std::string("pair_int_array_") + std::to_string(SubTypeSize);
-    }
-
-    template <typename _Up, typename SubType, std::size_t SubTypeSize,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::array<SubType, SubTypeSize>, _Up>&)
-    {
-        return std::string("pair_float_array_") + std::to_string(SubTypeSize);
-    }
-
-    template <typename _Up, typename SubType, typename... _Extra,
-              enable_if_t<(std::is_integral<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::vector<SubType, _Extra...>, _Up>&)
-    {
-        return std::string("pair_int_vector");
-    }
-
-    template <typename _Up, typename SubType, typename... _Extra,
-              enable_if_t<(std::is_floating_point<SubType>::value), int> = 0>
-    static std::string value(const std::pair<std::vector<SubType, _Extra...>, _Up>&)
-    {
-        return std::string("pair_float_vector");
-    }
-
-    static std::string value(const std::vector<cupti::result>&)
-    {
-        return "result_vector";
-    }
+    static std::string name() { return typeid(_Tp).name(); }
 };
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct type_id<const _Tp>
+{
+    static std::string name() { return std::string("K") + typeid(_Tp).name(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct type_id<const _Tp&>
+{
+    static std::string name() { return std::string("RK") + typeid(_Tp).name(); }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+struct type_id<_Tp&>
+{
+    static std::string name() { return std::string("R") + typeid(_Tp).name(); }
+};
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim

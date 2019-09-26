@@ -256,7 +256,7 @@ def get_hotspots(op_data, ai_data):
         intensity = flop / bandwidth
         flop = flop / GIGABYTE / runtime
         proportion = runtime / avg_runtime
-        label = label.replace("> [cxx] ", "").replace(
+        label = re.sub(r'^[|0-9]+', ' ', label).replace("> [cxx] ", "").replace(
             "> [_c_] ", "").replace("> [pyc] ", "")
 
         if VERBOSE > 1:

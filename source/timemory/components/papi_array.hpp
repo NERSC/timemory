@@ -281,7 +281,9 @@ protected:
     friend struct policy::wrapper<policy::thread_init, policy::thread_finalize>;
     friend struct base<this_type, value_type, policy::thread_init,
                        policy::thread_finalize>;
-    friend class storage<this_type>;
+
+    using base_type::implements_storage_v;
+    friend class impl::storage<this_type, implements_storage_v>;
 
 public:
     //==================================================================================//

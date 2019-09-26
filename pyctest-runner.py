@@ -100,6 +100,9 @@ def configure():
     if platform.system() != "Linux":
         args.no_papi = True
 
+    # always echo dart measurements
+    os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
+
     return args
 
 
@@ -223,12 +226,14 @@ def run_pyctest():
         if gcov_exe is not None:
             pyctest.COVERAGE_COMMAND = "{}".format(gcov_exe)
             build_opts["TIMEMORY_USE_COVERAGE"] = "ON"
+            build_opts["TIMEMORY_USE_CALIPER"] = "OFF"
+            build_opts["TIMEMORY_BUILD_CALIPER"] = "OFF"
             pyctest.BUILD_NAME = "{} COV".format(pyctest.BUILD_NAME)
             if pyctest.BUILD_TYPE != "Debug":
                 warnings.warn(
                     "Forcing build type to 'Debug' when coverage is enabled")
                 pyctest.BUILD_TYPE = "Debug"
-        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;")
+        pyctest.set("CTEST_CUSTOM_COVERAGE_EXCLUDE", ".*external/.*;/usr/.*")
 
     # split and join with dashes
     pyctest.BUILD_NAME = '-'.join(pyctest.BUILD_NAME.replace('/', '-').split())
@@ -351,17 +356,46 @@ def run_pyctest():
                   "LABELS": pyctest.PROJECT_NAME,
                   "ENVIRONMENT": "CPUPROFILE_FREQUENCY=2000"})
 
-    if not args.coverage and not pyctest.BUILD_TYPE == "Debug":
-        pyctest.test(construct_name("test-cxx-overhead"),
-                     construct_command(["./test_cxx_overhead"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                      "LABELS": pyctest.PROJECT_NAME})
+    pyctest.test(construct_name("test-cxx-overhead"),
+                 construct_command(["./test_cxx_overhead"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME})
 
-        pyctest.test(construct_name("test-cpu-roofline"),
-                     construct_command(["./test_cpu_roofline"], args),
-                     {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
-                      "LABELS": pyctest.PROJECT_NAME,
-                      "TIMEOUT": "300"})
+    pyctest.test(construct_name("test-cpu-roofline"),
+                 construct_command(["./test_cpu_roofline"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-caliper"),
+                 construct_command(["./test_caliper"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-gotcha"),
+                 construct_command(["./test_gotcha"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-c-minimal"),
+                 construct_command(["./test_c_minimal"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-cxx-minimal"),
+                 construct_command(["./test_cxx_minimal"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
+
+    pyctest.test(construct_name("test-python-minimal"),
+                 construct_command([sys.executable, "./test_python_minimal"], args),
+                 {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
+                  "LABELS": pyctest.PROJECT_NAME,
+                  "TIMEOUT": "300"})
 
     pyctest.generate_config(pyctest.BINARY_DIRECTORY)
     pyctest.generate_test_file(os.path.join(pyctest.BINARY_DIRECTORY, "tests"))

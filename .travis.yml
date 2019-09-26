@@ -100,7 +100,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -275,10 +275,10 @@ install:
   - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-  - if [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then
-    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV;
-    else
+  - if [ -n "${COVERAGE}" ]; then
     python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV;
+    else
+    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV;
     fi
   # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
 
@@ -290,8 +290,9 @@ script:
   - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 
 after_success:
-  - SUBMIT_COVERAGE=1
-  - if [ "${TRAVIS_PYTHON_VERSION}" = "3.6" ]; then SUBMIT_COVERAGE=0; fi
+  - eval "${MATRIX_EVAL}"
+  - SUBMIT_COVERAGE=0
+  - if [ -n "${COVERAGE}" ]; then SUBMIT_COVERAGE=1; fi
   # Create lcov report
   # capture coverage info
   - if [ "${SUBMIT_COVERAGE}" -gt 0 ]; then lcov --directory . --capture --output-file coverage.info ; fi

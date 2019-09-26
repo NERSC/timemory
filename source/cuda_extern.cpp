@@ -30,22 +30,9 @@
  *
  */
 
-#include "timemory/manager.hpp"
-#include "timemory/timemory.hpp"
-#include "timemory/utility/macros.hpp"
-#include "timemory/utility/serializer.hpp"
-#include "timemory/utility/signals.hpp"
-#include "timemory/utility/singleton.hpp"
-#include "timemory/utility/utility.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+#define EXTERN_TEMPLATE_BUILD
 
-extern "C"
-{
-#include "timemory/ctimemory.h"
-}
+#include "timemory/timemory.hpp"
 
 //======================================================================================//
 //
@@ -54,10 +41,12 @@ extern "C"
 //======================================================================================//
 
 #if defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)
+namespace component = ::tim::component;
 
 //--------------------------------------------------------------------------------------//
 // individual
 //
-TIMEMORY_INSTANTIATE_EXTERN_TUPLE(tim::component::cuda_event)
+TIMEMORY_INSTANTIATE_EXTERN_TUPLE(cuda_t, component::cuda_event)
+TIMEMORY_INSTANTIATE_EXTERN_LIST(cuda_t, component::cuda_event)
 
 #endif  // defined(TIMEMORY_BUILD_EXTERN_TEMPLATES)

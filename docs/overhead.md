@@ -1,6 +1,6 @@
 # Overhead
 
-Analysis on a fibonacci calculation determined that one TiMemory "component" adds an average overhead of 1 microsecond (`0.000001 s`) when the component
+Analysis on a fibonacci calculation determined that one timemory "component" adds an average overhead of 1 microsecond (`0.000001 s`) when the component
 is being inserted into call-graph for the first time.
 Once a component exists in the call-graph, the overhead is approximately 0.85 microseconds (`0.00000085 s`).
 However, this is for a **_VERY_** large number of measurements, when the number of measurements are kept within a reasonable range (approximately <= 10,000 - 15,000)
@@ -324,9 +324,9 @@ Report from 2056912 total measurements:
 
 ## Conclusion
 
-Since TiMemory only records information of the functions explicitly specified, you can safely assume that unless
-TiMemory is inserted into a function called `> 100,000` times, it won't be adding more than a second of runtime
+Since timemory only records information of the functions explicitly specified, you can safely assume that unless
+timemory is inserted into a function called `> 100,000` times, it won't be adding more than a second of runtime
 to the function and **judicious use will probably have zero overhead**.
 
 Therefore, there is a simple rule of thumb:
-**do not insert a TiMemory components into simple functions that get invoked extremely frequently**.
+**do not insert a timemory components into simple functions that get invoked extremely frequently**.

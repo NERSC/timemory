@@ -57,18 +57,23 @@ class auto_list
 , public hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type = component_list<Types...>;
-    using this_type      = auto_list<Types...>;
-    using data_type      = typename component_type::data_type;
-    using counter_type   = counted_object<this_type>;
-    using counter_void   = counted_object<void>;
-    using hashed_type    = hashed_object<this_type>;
-    using string_t       = std::string;
-    using string_hash    = std::hash<string_t>;
-    using base_type      = component_type;
-    using language_t     = language;
-    using tuple_type     = implemented<Types...>;
-    using init_func_t    = std::function<void(this_type&)>;
+    using component_type   = component_list<Types...>;
+    using this_type        = auto_list<Types...>;
+    using data_type        = typename component_type::data_type;
+    using counter_type     = counted_object<this_type>;
+    using counter_void     = counted_object<void>;
+    using hashed_type      = hashed_object<this_type>;
+    using string_t         = std::string;
+    using string_hash      = std::hash<string_t>;
+    using base_type        = component_type;
+    using language_t       = language;
+    using tuple_type       = implemented<Types...>;
+    using init_func_t      = std::function<void(this_type&)>;
+    using type_tuple       = typename component_type::type_tuple;
+    using data_value_tuple = typename component_type::data_value_tuple;
+    using data_label_tuple = typename component_type::data_label_tuple;
+
+    static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
     inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
@@ -93,19 +98,60 @@ public:
 
 public:
     // public member functions
-    inline component_type&       get_component_type() { return m_temporary_object; }
-    inline const component_type& get_component_type() const { return m_temporary_object; }
+    inline component_type&       get_component() { return m_temporary_object; }
+    inline const component_type& get_component() const { return m_temporary_object; }
 
     // partial interface to underlying component_list
-    inline void record() { m_temporary_object.record(); }
-    inline void start() { m_temporary_object.start(); }
-    inline void stop() { m_temporary_object.stop(); }
-    inline void push() { m_temporary_object.push(); }
-    inline void pop() { m_temporary_object.pop(); }
-    inline void reset() { m_temporary_object.reset(); }
-    inline void mark_begin() { m_temporary_object.mark_begin(); }
-    inline void mark_end() { m_temporary_object.mark_end(); }
+    inline void record()
+    {
+        if(m_enabled)
+            m_temporary_object.record();
+    }
+    inline void start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void stop()
+    {
+        if(m_enabled)
+            m_temporary_object.stop();
+    }
+    inline void push()
+    {
+        if(m_enabled)
+            m_temporary_object.push();
+    }
+    inline void pop()
+    {
+        if(m_enabled)
+            m_temporary_object.pop();
+    }
+    inline void conditional_start()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_start();
+    }
+    inline void conditional_stop()
+    {
+        if(m_enabled)
+            m_temporary_object.conditional_stop();
+    }
 
+    template <typename... _Args>
+    inline void mark_begin(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_begin(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void mark_end(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+
+    inline bool enabled() const { return m_enabled; }
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
@@ -119,18 +165,6 @@ public:
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return m_temporary_object.template get<_N>();
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return m_temporary_object.template get<_N>();
-    }
-
     template <typename _Tp>
     auto get() -> decltype(std::declval<component_type>().template get<_Tp>())
     {
@@ -205,8 +239,8 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
                   : 0)
 , m_enabled(counter_type::enable() && settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, lang, counter_type::m_count, hashed_type::m_hash,
-                     m_enabled)
+, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
+                     hashed_type::m_hash)
 {
     if(m_enabled)
     {
@@ -265,51 +299,29 @@ auto_list<Types...>::~auto_list()
 
 //======================================================================================//
 
-}  // namespace tim
+template <typename... _Types,
+          typename _Ret = typename auto_list<_Types...>::data_value_tuple>
+_Ret
+get(const auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename auto_list<_Types...>::data_label_tuple>
+_Ret
+get_labeled(const auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+}
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_BLANK_OBJECT(auto_list_type, __VA_ARGS__)
+}  // namespace tim
 
-#define TIMEMORY_BASIC_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST(auto_list_type, ...)                                          \
-    TIMEMORY_OBJECT(auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// caliper versions
-
-#define TIMEMORY_BLANK_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
-    TIMEMORY_BLANK_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_LIST_CALIPER(id, auto_list_type, ...)                        \
-    TIMEMORY_BASIC_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST_CALIPER(id, auto_list_type, ...)                              \
-    TIMEMORY_CALIPER(id, auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// instance versions
-
-#define TIMEMORY_BLANK_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
-    TIMEMORY_BLANK_INSTANCE(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_BASIC_AUTO_LIST_INSTANCE(auto_list_type, ...)                           \
-    TIMEMORY_BASIC_INSTANCE(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_AUTO_LIST_INSTANCE(auto_list_type, ...)                                 \
-    TIMEMORY_INSTANCE(auto_list_type, __VA_ARGS__)
-
-//--------------------------------------------------------------------------------------//
-// debug versions
-
-#define TIMEMORY_DEBUG_BASIC_AUTO_LIST(auto_list_type, ...)                              \
-    TIMEMORY_DEBUG_BASIC_OBJECT(auto_list_type, __VA_ARGS__)
-
-#define TIMEMORY_DEBUG_AUTO_LIST(auto_list_type, ...)                                    \
-    TIMEMORY_DEBUG_OBJECT(auto_list_type, __VA_ARGS__)
+//======================================================================================//
 
 //--------------------------------------------------------------------------------------//
 // variadic versions

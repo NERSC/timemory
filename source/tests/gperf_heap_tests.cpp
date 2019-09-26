@@ -118,12 +118,12 @@ TEST_F(gperf_heap_tests, heap_profile)
 {
     details::allocate(100);
     {
-        TIMEMORY_BLANK_OBJECT(auto_tuple_t, "");
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, "");
         details::allocate(10);
     }
     details::allocate(200);
     {
-        TIMEMORY_BLANK_OBJECT(auto_tuple_t, "");
+        TIMEMORY_BLANK_MARKER(auto_tuple_t, "");
         details::allocate(50);
     }
     details::allocate(500);

@@ -41,12 +41,11 @@
 using namespace tim::component;
 using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
-using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 
 using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
-using list_t = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, current_rss,
+using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                    papi_array_t, cuda_event, cupti_counters, caliper>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 using hybrid_t      = auto_hybrid_t::component_type;
@@ -58,10 +57,10 @@ static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.fir
 
 // acceptable absolute error
 static const float util_tolerance  = 2.5;
-static const float timer_tolerance = 0.015;
+static const float timer_tolerance = 0.02125;
 static const float peak_tolerance  = 5 * tim::units::MiB;
 // acceptable relative error
-static const float util_epsilon  = 0.1;
+static const float util_epsilon  = 0.5;
 static const float timer_epsilon = 0.02;
 
 #define CHECK_AVAILABLE(type)                                                            \
@@ -106,11 +105,9 @@ consume(long n)
     // associate but defer
     lock_t try_lk(mutex, std::defer_lock);
     // get current time
-    auto now = std::chrono::system_clock::now();
-    // get elapsed
-    auto until = now + std::chrono::milliseconds(n);
+    auto now = std::chrono::steady_clock::now();
     // try until time point
-    while(std::chrono::system_clock::now() < until)
+    while(std::chrono::steady_clock::now() < (now + std::chrono::milliseconds(n)))
         try_lk.try_lock();
 }
 
@@ -253,6 +250,15 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(1.25, _cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
+    auto _cpu2 = obj.get<user_clock>() + obj.get<system_clock>();
+
+    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
+
+    auto _obj  = tim::get(obj);
+    auto _cpu3 = std::get<1>(_obj) + std::get<2>(_obj);
+
+    ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu3);
+
     obj.start();
     details::allocate();
     obj.stop();
@@ -273,7 +279,7 @@ main(int argc, char** argv)
     tim::settings::memory_units() = "KiB";
     tim::settings::precision()    = 6;
     tim::timemory_init(argc, argv);
-    tim::settings::file_output() = false;
+    // tim::settings::file_output() = false;
     tim::settings::verbose() += 1;
     tim::settings::debug() = true;
 
@@ -282,7 +288,7 @@ main(int argc, char** argv)
     };
 
     list_t::get_initializer() = [](list_t& l) {
-        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, current_rss, papi_array_t,
+        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss, papi_array_t,
                      caliper>();
     };
 

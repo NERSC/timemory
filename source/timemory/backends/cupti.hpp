@@ -1435,7 +1435,7 @@ tim::cupti::available_metrics(CUdevice device)
         }
     }
     free(metricIdArray);
-    return std::move(metric_names);
+    return metric_names;
 }
 
 //--------------------------------------------------------------------------------------//
@@ -1492,7 +1492,7 @@ tim::cupti::available_events(CUdevice device)
     }
     free(domainIdArray);
     free(eventIdArray);
-    return std::move(event_names);
+    return event_names;
 }
 
 #undef __CUPTI_PROFILER_NAME_SHORT

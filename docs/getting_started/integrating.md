@@ -1,16 +1,16 @@
-# Integrating TiMemory into a Project
+# Integrating timemory into a Project
 
-## TiMemory as a Submodule
+## timemory as a Submodule
 
-TiMemory has a permissive MIT license and can be directly included within
+Timemory has a permissive MIT license and can be directly included within
 another project. C++ projects can take advantage of the header-only feature
-of TiMemory and simply include the folders `source/timemory` and `source/cereal`.
+of timemory and simply include the folders `source/timemory` and `source/cereal`.
 
 ## Using CMake
 
-> **It is highly recommended to use TiMemory with CMake**
+> **It is highly recommended to use timemory with CMake**
 
-TiMemory uses modern CMake INTERFACE targets to include the components you want without
+Timemory uses modern CMake INTERFACE targets to include the components you want without
 forcing you to include everything -- this means that compiler flags, preprocessor
 definitions, include paths, link options, and link libraries are bundled into separate
 "library" targets that only need to be "linked" to in CMake.
@@ -19,7 +19,7 @@ definitions, include paths, link options, and link libraries are bundled into se
 
 These are the full target names available within CMake. These targets are always provided but
 may provide an empty target if the underlying specifications (such as a library and include path)
-were not available when TiMemory was installed.
+were not available when timemory was installed.
 
 | Target name              | Description                                 | Type           |
 | ------------------------ | ------------------------------------------- | -------------- |
@@ -40,7 +40,7 @@ were not available when TiMemory was installed.
 | timemory-gperf           | gperftools includes and libraries           | interface      |
 | timemory-coverage        | Code coverage flags                         | interface      |
 | timemory-sanitizer       | Sanitizer flags                             | interface      |
-| timemory-compile-options | Compiler flags recommended/used by TiMemory | interface      |
+| timemory-compile-options | Compiler flags recommended/used by timemory | interface      |
 | timemory-arch            | Architecture-specific flags                 | interface      |
 | timemory-vector          | Vectorization flags                         | interface      |
 | timemory-extern-temples  | Import extern templates                     | interface      |
@@ -67,11 +67,11 @@ When targets are listed after the `COMPONENTS` arguments to `find_package`,
 the `timemory-` prefix can be omitted. Additionally, the link type (`shared` or `static`) and
 languages suffixes (`c`, `cxx`, `cuda`) can be listed once and dropped from subsequent items in the list.
 
-TiMemory will bundle the targets specified after `COMPONENTS` into one interface library.
+timemory will bundle the targets specified after `COMPONENTS` into one interface library.
 
 ```cmake
 # create interface target w/ the components
-find_package(TiMemory REQUIRED COMPONENTS cxx shared compile-options extensions)
+find_package(timemory REQUIRED COMPONENTS cxx shared compile-options extensions)
 
 # create some library
 add_library(foo SHARED foo.cpp)
@@ -80,10 +80,10 @@ add_library(foo SHARED foo.cpp)
 target_link_library(foo timemory)
 
 # override the name of INTERFACE library w/ the components
-set(TiMemory_FIND_COMPONENTS_INTERFACE timemory-cuda-extern)
+set(timemory_FIND_COMPONENTS_INTERFACE timemory-cuda-extern)
 
 # creates interface library target: timemory-cuda-extern
-find_package(TiMemory REQUIRED COMPONENTS cxx static compile-options extensions
+find_package(timemory REQUIRED COMPONENTS cxx static compile-options extensions
     cuda cupti extern-templates)
 
 # create anoter library
@@ -117,9 +117,9 @@ The following table provides the relevant translation for projects that use Make
 | timemory-coverage       | `--coverage`                                                       |
 | timemory-sanitizer      | `-fsanitizer=<type>`                                               |
 
-## Optional TiMemory Usage
+## Optional timemory Usage
 
-If you want to make TiMemory optional (i.e. a soft dependency), this can be easily done with a _very_
+If you want to make timemory optional (i.e. a soft dependency), this can be easily done with a _very_
 minimal amount of code intrusion and without numerous `#ifdef` blocks. If you include timemory in
 your source tree, this can be accomplished by defining `DISABLE_TIMEMORY` during compilation or
 before `#include <timemory/timemory.hpp>` (C++ language) or `#include <timemory/ctimemory.h>` (C language).
@@ -127,7 +127,7 @@ before `#include <timemory/timemory.hpp>` (C++ language) or `#include <timemory/
 In general, there are two steps and an optional third if you want to use the preload interface.
 
 1. Create a pre-processor definition, such as `USE_TIMEMORY`, that will allow you to provide some empty
-   definitions when TiMemory is disabled
+   definitions when timemory is disabled
 2. Provide the empty definitions in a header file with a relevant name, such as `performance.hpp`
    with (at least) the contents described [here](#header-file)
 3. (Optional) Declare the extern "C" interface functions in the header file
@@ -152,11 +152,11 @@ In general, there are two steps and an optional third if you want to use the pre
 
 namespace tim
 {
-void                              print_env() {}
 template <typename... _Args> void timemory_init(_Args...) {}
-void                              timemory_finalize() {}
+inline void                       timemory_finalize() {}
+inline void                       print_env() {}
 
-/// this provides "functionality" for *_INSTANCE macros
+/// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
@@ -176,38 +176,67 @@ struct dummy
     template <typename... _Args> void mark_end(_Args&&...) {}
     friend std::ostream& operator<<(std::ostream& os, const dummy&) { return os; }
 };
+
 }  // namespace tim
 
-// creates a label
+// startup/shutdown/configure
+#    define TIMEMORY_INIT(...)
+#    define TIMEMORY_FINALIZE()
+#    define TIMEMORY_CONFIGURE(...)
+
+// label creation
 #    define TIMEMORY_BASIC_LABEL(...) std::string("")
 #    define TIMEMORY_LABEL(...) std::string("")
+#    define TIMEMORY_JOIN(...) std::string("")
 
 // define an object
-#    define TIMEMORY_BLANK_OBJECT(...)
-#    define TIMEMORY_BASIC_OBJECT(...)
-#    define TIMEMORY_OBJECT(...)
+#    define TIMEMORY_BLANK_MARKER(...)
+#    define TIMEMORY_BASIC_MARKER(...)
+#    define TIMEMORY_MARKER(...)
+
+// define an unique pointer object
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
 
 // define an object with a caliper reference
 #    define TIMEMORY_BLANK_CALIPER(...)
 #    define TIMEMORY_BASIC_CALIPER(...)
 #    define TIMEMORY_CALIPER(...)
+
+// define a static object with a caliper reference
+#    define TIMEMORY_STATIC_BLANK_CALIPER(...)
+#    define TIMEMORY_STATIC_BASIC_CALIPER(...)
+#    define TIMEMORY_STATIC_CALIPER(...)
+
+// invoke member function on caliper reference or type within reference
 #    define TIMEMORY_CALIPER_APPLY(...)
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
 
-// define an object
-#    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_INSTANCE(...) tim::dummy()
+// get an object
+#    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
+#    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
+#    define TIMEMORY_HANDLE(...) tim::dummy()
+
+// get a pointer to an object
+#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_POINTER_HANDLE(...) nullptr
 
 // debug only
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
+#    define TIMEMORY_DEBUG_BLANK_MARKER(...)
+#    define TIMEMORY_DEBUG_BASIC_MARKER(...)
+#    define TIMEMORY_DEBUG_MARKER(...)
 
-// for CUDA
-#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
-#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
+// auto-timers
+#    define TIMEMORY_BLANK_AUTO_TIMER(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_AUTO_TIMER(...)
+#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_DEBUG_AUTO_TIMER(...)
 
 #endif
 ```
@@ -233,16 +262,16 @@ struct dummy
 #    define FREE_TIMEMORY_AUTO_TIMER(...)
 
 // modern
-#    define TIMEMORY_BASIC_OBJECT(...) NULL
-#    define TIMEMORY_BLANK_OBJECT(...) NULL
-#    define TIMEMORY_OBJECT(...) NULL
-#    define FREE_TIMEMORY_OBJECT(...)
+#    define TIMEMORY_BASIC_MARKER(...) NULL
+#    define TIMEMORY_BLANK_MARKER(...) NULL
+#    define TIMEMORY_MARKER(...) NULL
+#    define FREE_TIMEMORY_MARKER(...)
 
 #endif
 
 ```
 
-## TiMemory Preload Interface
+## timemory Preload Interface
 
 ### Preload Declaration
 
@@ -254,6 +283,7 @@ extern "C"
     void timemory_init_library(int argc, char** argv);
     void timemory_finalize_library();
     void timemory_begin_record(const char* name, uint64_t* kernid);
+    void timemory_begin_record_types(const char*, uint64_t*, const char*);
     void timemory_end_record(uint64_t kernid);
 }
 ```
@@ -268,10 +298,11 @@ Create a separate file, such as `performance.cpp`, to your project with the foll
 
 extern "C"
 {
-void timemory_init_library(int, char**) { }
-void timemory_finalize_library() { }
-void timemory_begin_record(const char*, uint64_t*) { }
-void timemory_end_record(uint64_t) { }
+    void timemory_init_library(int, char**) { }
+    void timemory_finalize_library() { }
+    void timemory_begin_record(const char*, uint64_t*) { }
+    void timemory_begin_record_types(const char*, uint64_t*, const char*)
+    void timemory_end_record(uint64_t) { }
 }
 ```
 
@@ -308,6 +339,10 @@ clean:
     - Pass a string label and the address of that `uint64_t` variable to `timemory_begin_record`
     - `timemory_begin_record` will assign a unique number of the `uint64_t` variable and start
       recording
+    - `timemory_begin_record_types` is similar to `timemory_begin_record` but instead of exclusively using the
+      `TIMEMORY_COMPONENTS` environment variable, it uses an additional string of semi-colon delimited
+      list of components to initialize a specified set of components
+          - e.g. `timemory_begin_record_types("label", &id, "peak_rss;cpu_clock");`
 - When recording should be stopped, pass the `uint64_t` variable to `timemory_end_record`
 - Control over which components will be recorded is handled by a comma-separated list of component
   names in the `TIMEMORY_COMPONENTS` environment variable
@@ -321,17 +356,20 @@ int main(int argc, char** argv)
 {
     timemory_init_library(argc, argv);
 
-    uint64_t id;
-    timemory_begin_record("label", &id);
+    uint64_t id[2];
+    timemory_begin_record("label", &id[0]);
+    timemory_begin_record_types("counters", &id[1], "cupti_activity")
 
+    // ...
 
-    timemory_end_record(id);
+    timemory_end_record(id[0]);
+    timemory_end_record(id[1]);
 
     timemory_finalize_library();
 }
 ```
 
-#### Execution without TiMemory
+#### Execution without timemory
 
 Invoke the application normally:
 
@@ -339,13 +377,13 @@ Invoke the application normally:
 ./myexe
 ```
 
-#### Execution with TiMemory
+#### Execution with timemory
 
 Linux:
 
 ```shell
 export TIMEMORY_COMPONENTS="real_clock, cpu_clock, cpu_util, cpu_roofline_dp_flops"
-export LD_PRELOAD=/usr/local/lib/libtimemory-preload.so
+export LD_PRELOAD=/usr/local/lib/libtimemory.so
 ./myexe
 ```
 
@@ -354,6 +392,6 @@ macOS:
 ```shell
 export TIMEMORY_COMPONENTS="real_clock, cpu_clock, cpu_util, cpu_roofline_dp_flops"
 export DYLD_FORCE_FLAT_NAMESPACE=1
-export DYLD_INSERT_LIBRARIES=/usr/local/lib/libtimemory-preload.dylib
+export DYLD_INSERT_LIBRARIES=/usr/local/lib/libtimemory.dylib
 ./myexe
 ```

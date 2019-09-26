@@ -44,6 +44,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/components.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -81,20 +82,28 @@ class component_list
     friend class component_hybrid;
 
 public:
-    using size_type      = int64_t;
-    using this_type      = component_list<Types...>;
-    using data_type      = std::tuple<Types*...>;
-    using reference_type = std::tuple<Types...>;
-    using string_hash    = std::hash<string_t>;
-    using counter_type   = tim::counted_object<this_type>;
-    using counter_void   = tim::counted_object<void>;
-    using hashed_type    = tim::hashed_object<this_type>;
-    using language_t     = tim::language;
-    using init_func_t    = std::function<void(this_type&)>;
+    using size_type        = int64_t;
+    using this_type        = component_list<Types...>;
+    using data_type        = std::tuple<Types*...>;
+    using reference_type   = std::tuple<Types...>;
+    using type_tuple       = implemented<Types...>;
+    using string_hash      = std::hash<string_t>;
+    using counter_type     = tim::counted_object<this_type>;
+    using counter_void     = tim::counted_object<void>;
+    using hashed_type      = tim::hashed_object<this_type>;
+    using language_t       = tim::language;
+    using init_func_t      = std::function<void(this_type&)>;
+    using data_value_tuple = std::tuple<decltype(std::declval<Types>().get())...>;
+    using data_label_tuple =
+        std::tuple<std::tuple<std::string, decltype(std::declval<Types>().get())>...>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = true;
     static constexpr bool is_component_tuple = false;
+
+    // used by gotcha component to prevent recursion
+    static constexpr bool contains_gotcha =
+        (std::tuple_size<filter_gotchas<Types...>>::value != 0);
 
 public:
     using auto_type = auto_list<Types...>;
@@ -102,47 +111,10 @@ public:
     using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
 
 public:
-    explicit component_list(const string_t& key, const bool& store,
-                            const int64_t& ncount = 0, const int64_t& nhash = 0,
-                            const language_t& lang = language_t::cxx())
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
-    {
-        apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-        get_initializer()(*this);
-    }
-
-    explicit component_list(const string_t& key, const bool& store,
+    explicit component_list(const string_t& key, const bool& store = false,
                             const language_t& lang = language_t::cxx(),
-                            const int64_t& ncount = 0, const int64_t& nhash = 0)
-    : m_store(store)
-    , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
-    , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
-    {
-        apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-        get_initializer()(*this);
-    }
-
-    explicit component_list(const string_t&   key,
-                            const language_t& lang = language_t::cxx(),
-                            const int64_t& ncount = 0, const int64_t& nhash = 0,
-                            bool store = true)
-    : m_store(store)
+                            int64_t ncount = 0, int64_t nhash = 0)
+    : m_store(store && settings::enabled())
     , m_laps(0)
     , m_count(ncount)
     , m_hash((nhash == 0) ? string_hash()(key) : nhash)
@@ -337,22 +309,24 @@ public:
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_begin()
+    template <typename... _Args>
+    void mark_begin(_Args&&... _args)
     {
         using apply_types = std::tuple<
             operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
     //
-    void mark_end()
+    template <typename... _Args>
+    void mark_end(_Args&&... _args)
     {
         using apply_types =
             std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -361,11 +335,9 @@ public:
     this_type& record()
     {
         ++m_laps;
-        {
-            using apply_types = std::tuple<
-                operation::pointer_operator<Types, operation::record<Types>>...>;
-            apply<void>::access<apply_types>(m_data);
-        }
+        using apply_types =
+            std::tuple<operation::pointer_operator<Types, operation::record<Types>>...>;
+        apply<void>::access<apply_types>(m_data);
         return *this;
     }
 
@@ -570,25 +542,13 @@ public:
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
-    void              rekey(const string_t& _key) { compute_identifier(_key, m_lang); }
+    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
 
 public:
-    // get member functions taking either an integer or a type
-    template <std::size_t _N>
-    typename std::tuple_element<_N, data_type>::type& get()
-    {
-        return std::get<_N>(m_data);
-    }
-
-    template <std::size_t _N>
-    const typename std::tuple_element<_N, data_type>::type& get() const
-    {
-        return std::get<_N>(m_data);
-    }
-
+    // get member functions taking a type
     template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
     _Tp& get()
     {
@@ -765,18 +725,8 @@ protected:
     {
         static string_t   _prefix = get_prefix();
         std::stringstream ss;
-
         // designated as [cxx], [pyc], etc.
         ss << _prefix << lang << " ";
-
-        // indent
-        for(int64_t i = 0; i < m_count; ++i)
-        {
-            if(i + 1 == m_count)
-                ss << "|_";
-            else
-                ss << "  ";
-        }
         ss << std::left << key;
         m_identifier = ss.str();
         output_width(m_identifier.length());
@@ -845,55 +795,6 @@ public:
 
 }  // namespace tim
 
-//======================================================================================//
-
-#include "timemory/manager.hpp"
-
-//======================================================================================//
-
-template <typename... Types>
-void
-tim::component_list<Types...>::init_manager()
-{
-    tim::manager::instance();
-}
-
-//======================================================================================//
-//
-//      std::get operator
-//
-namespace std
-{
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t N, typename... Types>
-typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::component_list<Types...>& obj)
-{
-    return get<N>(obj.data());
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <std::size_t N, typename... Types>
-const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::component_list<Types...>& obj)
-{
-    return get<N>(obj.data());
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <std::size_t N, typename... Types>
-auto
-get(tim::component_list<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::component_list<Types...>>(obj).data()))
-{
-    using obj_type = tim::component_list<Types...>;
-    return get<N>(std::forward<obj_type>(obj).data());
-}
-
-//======================================================================================//
-}  // namespace std
-
-//--------------------------------------------------------------------------------------//
+#include "timemory/details/component_list.hpp"

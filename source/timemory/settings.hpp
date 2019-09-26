@@ -45,18 +45,6 @@
 
 namespace tim
 {
-// initialization (creates manager and configures output path)
-void
-timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
-              const std::string& _suffix = "-output");
-// initialization (creates manager and configures output path)
-void
-timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
-              const std::string& _suffix = "-output");
-// finalization (optional)
-void
-timemory_finalize();
-
 namespace settings
 {
 inline void
@@ -81,7 +69,7 @@ using complete_tuple_t = std::tuple<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
     component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
     component::cuda_event, component::cupti_activity, component::cupti_counters,
-    component::current_rss, component::data_rss, component::gpu_roofline_dp_flops,
+    component::page_rss, component::data_rss, component::gpu_roofline_dp_flops,
     component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
     component::gpu_roofline_sp_flops, component::monotonic_clock,
     component::monotonic_raw_clock, component::num_io_in, component::num_io_out,
@@ -96,14 +84,29 @@ using complete_tuple_t = std::tuple<
 
 namespace settings
 {
+/// process the environment and apply settings to specified types
 template <typename _Tuple = tim::complete_tuple_t>
 void
 process();
-
+/// initialize the storage of the specified types
 template <typename _Tuple = tim::complete_tuple_t>
 void
 initialize_storage();
 }  // namespace settings
+
+/// initialization (creates manager and configures output path)
+void
+timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+/// initialization (creates manager and configures output path)
+void
+timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+/// finalization of the specified types
+template <typename _Tuple = complete_tuple_t>
+void
+timemory_finalize();
+
 }  // namespace tim
 
 //--------------------------------------------------------------------------------------//
@@ -352,19 +355,28 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
 
 //--------------------------------------------------------------------------------------//
 
+template <typename _Tuple>
 inline void
 tim::timemory_finalize()
 {
-#if defined(__INTEL_COMPILER) || defined(__PGI__)
+    // #if defined(__INTEL_COMPILER)
+    apply<void>::type_access<operation::print_storage, _Tuple>();
+    // #endif
+    // #if defined(__INTEL_COMPILER) || defined(__PGI__)
     tim::settings::auto_output() = false;
-#endif
-#if defined(__INTEL_COMPILER)
-    apply<void>::type_access<operation::print_storage, complete_tuple_t>();
-#endif
+    // #endif
     tim::disable_signal_detection();
 }
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/details/storage.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_INIT(...) ::tim::timemory_init(__VA_ARGS__)
+
+//--------------------------------------------------------------------------------------//
+
+#define TIMEMORY_FINALIZE() ::
 
 //--------------------------------------------------------------------------------------//

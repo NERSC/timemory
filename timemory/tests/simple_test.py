@@ -108,7 +108,7 @@ def run_test():
                         help="Number of fibonacci calculations",
                         default=default_nfib, type=int)
     args = options.add_arguments_and_parse(parser)
-    timemory.options.output_dir = "test_output"
+    timemory.settings.output_path = "test_output"
 
     main(args.nfib)
 

@@ -44,7 +44,8 @@
 #    define PAPI_EBUG -6    /* Internal error, please send mail to the developers */
 #    define PAPI_ENOEVNT -7 /* Event does not exist */
 #    define PAPI_ECNFLCT                                                                 \
-        -8 /* Event exists, but cannot be counted due to counter resource limitations    \
+        -8 /* Event exists, but cannot be counted due to counter resource limitations \  \
+            * \                                                                          \
             */
 #    define PAPI_ENOTRUN -9     /* EventSet is currently not running */
 #    define PAPI_EISRUN -10     /* EventSet is currently counting */
@@ -59,8 +60,8 @@
 #    define PAPI_ENOIMPL -19    /* Not implemented */
 #    define PAPI_EBUF -20       /* Buffer size exceeded */
 #    define PAPI_EINVAL_DOM                                                              \
-        -21                        /* EventSet domain is not supported for the operation \
-                                    */
+        -21 /* EventSet domain is not supported for the operation \      \               \
+             */
 #    define PAPI_EATTR -22         /* Invalid or missing event attributes */
 #    define PAPI_ECOUNT -23        /* Too many events or attributes */
 #    define PAPI_ECOMBO -24        /* Bad combination of features */
@@ -325,9 +326,8 @@ enum
         (PAPI_SR_INS_idx | PAPI_PRESET_MASK) /*Store instructions executed */
 #    define PAPI_BR_INS                                                                  \
         (PAPI_BR_INS_idx | PAPI_PRESET_MASK) /*Total branch instructions executed */
-#    define PAPI_VEC_INS                                                                 \
-        (PAPI_VEC_INS_idx | PAPI_PRESET_MASK) /*Vector/SIMD instructions executed (could \
-                                                 include integer) */
+#    define PAPI_VEC_INS (PAPI_VEC_INS_idx | PAPI_PRESET_MASK)
+/*Vector/SIMD instructions executed (could include integer) */
 #    define PAPI_RES_STL                                                                 \
         (PAPI_RES_STL_idx | PAPI_PRESET_MASK) /*Cycles processor is stalled on resource  \
                                                */
@@ -401,12 +401,12 @@ enum
         (PAPI_FP_OPS_idx | PAPI_PRESET_MASK) /*Floating point operations executed */
 #    define PAPI_SP_OPS                                                                  \
         (PAPI_SP_OPS_idx |                                                               \
-         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count     \
-                              scaled single precision vector operations */
+         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count */
+                           /* scaled single precision vector operations */
 #    define PAPI_DP_OPS                                                                  \
         (PAPI_DP_OPS_idx |                                                               \
-         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count     \
-                              scaled double precision vector operations */
+         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count */
+                           /* scaled double precision vector operations */
 #    define PAPI_VEC_SP                                                                  \
         (PAPI_VEC_SP_idx |                                                               \
          PAPI_PRESET_MASK) /* Single precision vector/SIMD instructions */
@@ -433,8 +433,7 @@ enum
 // supported [not implemented] */
 #    define PAPI_MAX_MPX_CTRS 11 /* Maximum number of counters we can multiplex */
 #    define PAPI_PROFIL                                                                  \
-        12 /* Option to turn on the overflow/profil reporting software [not implemented] \
-            */
+        12 /* Option to turn on the overflow/profil reporting software [not impled]*/
 #    define PAPI_PRELOAD                                                                 \
         13 /* Option to find out the environment variable that can preload libraries */
 #    define PAPI_CLOCKRATE 14  /* Clock rate in MHz */
@@ -453,8 +452,8 @@ enum
 #    define PAPI_INSTR_ADDRESS                                                           \
         24 /* Option to set instruction address range restriction */
 #    define PAPI_DEF_ITIMER                                                              \
-        25 /* Option to set the type of itimer used in both software multiplexing,       \
-              overflowing and profiling */
+        25 /* Option to set the type of itimer used in both software multiplexing, */
+           /* overflowing and profiling */
 #    define PAPI_DEF_ITIMER_NS                                                           \
         26 /* Multiplexing/overflowing interval in ns, same as PAPI_DEF_MPX_NS */
 /* Currently the following options are only available on systems using the perf_events
@@ -467,8 +466,7 @@ enum
         29 /* Option to set file from where to parse user defined events */
 
 #    define PAPI_INIT_SLOTS                                                              \
-        64 /*Number of initialized slots in                                              \
-     DynamicArray of EventSets */
+        64 /*Number of initialized slots in \ DynamicArray of EventSets */
 
 #    define PAPI_MIN_STR_LEN 64   /* For small strings, like names & stuff */
 #    define PAPI_MAX_STR_LEN 128  /* For average run-of-the-mill strings */
@@ -484,39 +482,39 @@ enum
 
 typedef struct __PAPI_event_info
 {
-    unsigned int event_code; /* preset (0x8xxxxxxx) or
-                                native (0x4xxxxxxx) event code */
-    std::string symbol;      /* name of the event */
-    std::string short_descr; /* a short description suitable for
-                                           use as a label */
-    std::string long_descr;  /* a longer description:
-                                            typically a sentence for presets,
-                                            possibly a paragraph from vendor
-                                            docs for native events */
+    unsigned int event_code = 0;  /* preset (0x8xxxxxxx) or
+                                 native (0x4xxxxxxx) event code */
+    std::string symbol      = ""; /* name of the event */
+    std::string short_descr = ""; /* a short description suitable for
+                                          use as a label */
+    std::string long_descr = "";  /* a longer description:
+                                      typically a sentence for presets,
+                                      possibly a paragraph from vendor
+                                      docs for native events */
 
-    int         component_index; /* component this event belongs to */
-    std::string units;           /* units event is measured in */
-    int         location;        /* location event applies to */
-    int         data_type;       /* data type returned by PAPI */
-    int         value_type;      /* sum or absolute */
-    int         timescope;       /* from start, etc. */
-    int         update_type;     /* how event is updated */
-    int         update_freq;     /* how frequently event is updated */
+    int         component_index = 0;  /* component this event belongs to */
+    std::string units           = ""; /* units event is measured in */
+    int         location        = 0;  /* location event applies to */
+    int         data_type       = 0;  /* data type returned by PAPI */
+    int         value_type      = 0;  /* sum or absolute */
+    int         timescope       = 0;  /* from start, etc. */
+    int         update_type     = 0;  /* how event is updated */
+    int         update_freq     = 0;  /* how frequently event is updated */
 
     /* PRESET SPECIFIC FIELDS FOLLOW */
 
-    unsigned int count; /* number of terms (usually 1)
+    unsigned int count = 0; /* number of terms (usually 1)
                            in the code and name fields
                            - presets: these are native events
                            - native: these are unused */
 
-    unsigned int event_type; /* event type or category
+    unsigned int event_type = 0; /* event type or category
                                 for preset events only */
 
-    std::string derived; /* name of the derived type
+    std::string derived = ""; /* name of the derived type
                                        - presets: usually NOT_DERIVED
                                        - native: empty string */
-    std::string postfix; /* string containing postfix
+    std::string postfix = ""; /* string containing postfix
                                         operations; only defined for
                                         preset events of derived type
                                         DERIVED_POSTFIX */
@@ -531,7 +529,7 @@ typedef struct __PAPI_event_info
                                 - native: descriptive strings
                                 for each register value(?) */
 
-    std::string note; /* an optional developer note
+    std::string note = ""; /* an optional developer note
                                    supplied with a preset event
                                    to delineate platform specific
                                    anomalies or restrictions */

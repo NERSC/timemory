@@ -12,6 +12,10 @@ set(WITH_CALLPATH   OFF                   CACHE BOOL "Enable libunwind in Calipe
 # set(WITH_TAU        OFF)
 # set(WITH_NVPROF     ${TIMEMORY_USE_CUDA})
 
+#if(TIMEMORY_BUILD_GOTCHA)
+#    set(USE_EXTERNAL_GOTCHA ON)
+#endif()
+
 if(PAPI_pfm_LIBRARY)
     set(WITH_LIBPFM     ON CACHE BOOL "Enable libpfm in Caliper")
     set(LIBPFM_LIBRARY  ${PAPI_pfm_LIBRARY})

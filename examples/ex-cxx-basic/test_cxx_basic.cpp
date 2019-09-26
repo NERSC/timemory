@@ -34,6 +34,7 @@ using auto_tuple_t =
     tim::auto_tuple<real_clock, cpu_clock, cpu_util, peak_rss, papi_array_t, caliper>;
 using comp_tuple_t = typename auto_tuple_t::component_type;
 using auto_list_t  = tim::auto_list<real_clock, cpu_clock, cpu_util, peak_rss, caliper>;
+using auto_timer_t = tim::auto_timer;
 
 void
 some_func();
@@ -68,10 +69,18 @@ main(int argc, char** argv)
     tim::settings::memory_scientific() = false;
     tim::timemory_init(argc, argv);
 
+    //
+    //  Provide some work
+    //
+    std::vector<long> fibvalues;
+    for(int i = 1; i < argc; ++i)
+        fibvalues.push_back(atol(argv[i]));
+    if(fibvalues.empty())
+        fibvalues = { 15, 20, 25 };
+
     // create a component tuple (does not auto-start)
-    comp_tuple_t main("overall timer", true);
-    main.start();
-    for(auto n : { 15, 20, 25 })
+    auto_timer_t main(argv[0]);
+    for(auto n : fibvalues)
     {
         // create a caliper handle to an auto_tuple_t and have it report when destroyed
         TIMEMORY_BLANK_CALIPER(fib, auto_tuple_t, "fibonacci(", n, ")");
@@ -80,7 +89,7 @@ main(int argc, char** argv)
         auto ret = fibonacci(n);
         // manually stop the auto_tuple_t
         TIMEMORY_CALIPER_APPLY(fib, stop);
-        printf("\nfibonacci(%i) = %li\n", n, (long int) ret);
+        printf("\nfibonacci(%li) = %li\n", n, (long int) ret);
     }
     // stop and print
     main.stop();
@@ -95,7 +104,7 @@ main(int argc, char** argv)
 intmax_t
 fibonacci(intmax_t n)
 {
-    TIMEMORY_BASIC_OBJECT(real_tuple_t, "");
+    TIMEMORY_BASIC_MARKER(real_tuple_t, "");
     return (n < 2) ? n : fibonacci(n - 1) + fibonacci(n - 2);
 }
 

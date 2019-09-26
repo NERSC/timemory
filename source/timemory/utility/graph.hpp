@@ -54,14 +54,20 @@ class tgraph_node
 {
     // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
 public:
-    tgraph_node();
+    tgraph_node()  = default;
+    ~tgraph_node() = default;
     explicit tgraph_node(const T&);
     explicit tgraph_node(T&&);
 
+#if defined(_WIN32) || defined(_WIN64)
+    tgraph_node(const tgraph_node&) = default;
+    tgraph_node& operator=(const tgraph_node&) = default;
+#else
     tgraph_node(const tgraph_node&) = delete;
-    tgraph_node(tgraph_node&&)      = default;
-
     tgraph_node& operator=(const tgraph_node&) = delete;
+#endif
+
+    tgraph_node(tgraph_node&&) = default;
     tgraph_node& operator=(tgraph_node&&) = default;
 
     tgraph_node<T>* parent       = nullptr;
@@ -69,22 +75,10 @@ public:
     tgraph_node<T>* last_child   = nullptr;
     tgraph_node<T>* prev_sibling = nullptr;
     tgraph_node<T>* next_sibling = nullptr;
-    T               data         = T();
+    T               data         = T{};
 };
 
 //======================================================================================//
-
-template <typename T>
-tgraph_node<T>::tgraph_node()
-: parent(nullptr)
-, first_child(nullptr)
-, last_child(nullptr)
-, prev_sibling(nullptr)
-, next_sibling(nullptr)
-{
-}
-
-//--------------------------------------------------------------------------------------//
 
 template <typename T>
 tgraph_node<T>::tgraph_node(const T& val)
@@ -194,8 +188,13 @@ public:
     public:
         sibling_iterator();
         sibling_iterator(graph_node*);
-        sibling_iterator(const sibling_iterator&);
         sibling_iterator(const iterator_base&);
+
+        sibling_iterator(const sibling_iterator&) = default;
+        sibling_iterator(sibling_iterator&&)      = default;
+
+        sibling_iterator& operator=(const sibling_iterator&) = default;
+        sibling_iterator& operator=(sibling_iterator&&) = default;
 
         bool              operator==(const sibling_iterator&) const;
         bool              operator!=(const sibling_iterator&) const;
@@ -1379,12 +1378,12 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
                 assert(current_from != 0);
             }
             current_from = current_from->next_sibling;
-            if(current_from != last)
+            if(current_from != last && current_from)
             {
                 toit = append_child(parent(toit), current_from->data);
             }
         }
-    } while(current_from != last);
+    } while(current_from != last && current_from);
 
     return current_to;
 }
@@ -2651,15 +2650,6 @@ graph<T, AllocatorT>::sibling_iterator::sibling_iterator(const iterator_base& ot
 : iterator_base(other.node)
 {
     m_set_parent();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename T, typename AllocatorT>
-graph<T, AllocatorT>::sibling_iterator::sibling_iterator(const sibling_iterator& other)
-: iterator_base(other)
-, m_parent(other.m_parent)
-{
 }
 
 //--------------------------------------------------------------------------------------//

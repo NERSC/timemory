@@ -40,7 +40,7 @@
 #    include "timemory/backends/cupti.hpp"
 #endif
 
-#include <deque>
+#include <vector>
 
 //======================================================================================//
 
@@ -58,8 +58,8 @@ struct cuda_event : public base<cuda_event, float>
         bool          valid   = true;
         bool          synced  = false;
         bool          running = false;
-        cuda::event_t first;
-        cuda::event_t second;
+        cuda::event_t first   = cuda::event_t{};
+        cuda::event_t second  = cuda::event_t{};
 
         marker() { valid = (cuda::event_create(first) && cuda::event_create(second)); }
 
@@ -100,7 +100,7 @@ struct cuda_event : public base<cuda_event, float>
     using ratio_t       = std::milli;
     using value_type    = float;
     using base_type     = base<cuda_event, value_type>;
-    using marker_list_t = std::deque<marker>;
+    using marker_list_t = std::vector<marker>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -265,6 +265,19 @@ private:
 };
 
 }  // namespace component
+
+//--------------------------------------------------------------------------------------//
+
+namespace trait
+{
+template <>
+struct supports_args<component::cuda_event, std::tuple<>> : std::true_type
+{};
+
+template <>
+struct supports_args<component::cuda_event, std::tuple<cuda::stream_t>> : std::true_type
+{};
+}  // namespace trait
 
 //--------------------------------------------------------------------------------------//
 

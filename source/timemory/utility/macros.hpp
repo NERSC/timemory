@@ -178,8 +178,13 @@
 #        define tim_api __declspec(dllexport)
 #        define tim_api_static static __declspec(dllexport)
 #    else
-#        define tim_api __declspec(dllimport)
-#        define tim_api_static static __declspec(dllimport)
+#        if defined(_TIMEMORY_LINK_LIBRARY)
+#            define tim_api __declspec(dllimport)
+#            define tim_api_static static __declspec(dllimport)
+#        else
+#            define tim_api
+#            define tim_api_static static
+#        endif
 #    endif
 #else
 #    define tim_api
@@ -193,17 +198,19 @@
 //======================================================================================//
 
 #if defined(_WINDOWS)
-#    pragma warning(disable : 4786)  // ID truncated to '255' char in debug info
-#    pragma warning(disable : 4068)  // unknown pragma
-#    pragma warning(disable : 4003)  // not enough actual params
-#    pragma warning(disable : 4244)  // possible loss of data
-#    pragma warning(disable : 4146)  // unsigned
-#    pragma warning(disable : 4129)  // unrecognized char escape
-#    pragma warning(disable : 4996)  // function may be unsafe
-#    pragma warning(disable : 4267)  // possible loss of data
-#    pragma warning(disable : 4700)  // uninitialized local variable used
-#    pragma warning(disable : 4217)  // locally defined symbol
-#    pragma warning(disable : 4251)  // needs to have dll-interface to be used
+#    pragma warning(disable : 4786)   // ID truncated to '255' char in debug info
+#    pragma warning(disable : 4068)   // unknown pragma
+#    pragma warning(disable : 4003)   // not enough actual params
+#    pragma warning(disable : 4244)   // possible loss of data
+#    pragma warning(disable : 4146)   // unsigned
+#    pragma warning(disable : 4129)   // unrecognized char escape
+#    pragma warning(disable : 4996)   // function may be unsafe
+#    pragma warning(disable : 4267)   // possible loss of data
+#    pragma warning(disable : 4700)   // uninitialized local variable used
+#    pragma warning(disable : 4217)   // locally defined symbol
+#    pragma warning(disable : 4251)   // needs to have dll-interface to be used
+#    pragma warning(disable : 4522)   // multiple assignment operators specified
+#    pragma warning(disable : 26495)  // Always initialize member variable (cereal issue)
 
 #    if !defined(NOMINMAX)
 #        define NOMINMAX
@@ -216,28 +223,108 @@
 //
 //======================================================================================//
 
-#define TIMEMORY_DECLARE_EXTERN_TUPLE(...)                                               \
-    extern template class tim::auto_tuple<__VA_ARGS__>;                                  \
-    extern template class tim::component_tuple<__VA_ARGS__>;                             \
-    extern template class tim::auto_list<__VA_ARGS__>;                                   \
-    extern template class tim::component_list<__VA_ARGS__>;
+#if !defined(_WINDOWS)
+#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
+#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
+#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
 
-#define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)                                           \
-    template class tim::auto_tuple<__VA_ARGS__>;                                         \
-    template class tim::component_tuple<__VA_ARGS__>;                                    \
-    template class tim::auto_list<__VA_ARGS__>;                                          \
-    template class tim::component_list<__VA_ARGS__>;
+//--------------------------------------------------------------------------------------//
+//      extern declaration
+//
+#    define TIMEMORY_DECLARE_EXTERN_TUPLE(_ALIAS, ...)                                   \
+        extern template class tim::auto_tuple<__VA_ARGS__>;                              \
+        extern template class tim::component_tuple<__VA_ARGS__>;                         \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
 
-#define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
+#    define TIMEMORY_DECLARE_EXTERN_LIST(_ALIAS, ...)                                    \
+        extern template class tim::auto_list<__VA_ARGS__>;                               \
+        extern template class tim::component_list<__VA_ARGS__>;                          \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
 
-#define TIMEMORY_DECLARE_EXTERN_STORAGE(OBJ_TYPE)                                        \
-    extern template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(      \
-        OBJ_TYPE)>&                                                                      \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+#    define TIMEMORY_DECLARE_EXTERN_HYBRID(_ALIAS)                                       \
+        extern template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),              \
+                                               _EXTERN_LIST_ALIAS(_ALIAS)>;              \
+        extern template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),         \
+                                                    _EXTERN_LIST_ALIAS(_ALIAS)>;
 
-#define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                    \
-    template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>&  \
-    tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+//--------------------------------------------------------------------------------------//
+//      extern instantiation
+//
+#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(_ALIAS, ...)                               \
+        template class tim::auto_tuple<__VA_ARGS__>;                                     \
+        template class tim::component_tuple<__VA_ARGS__>;                                \
+        using _EXTERN_TUPLE_ALIAS(_ALIAS) = tim::component_tuple<__VA_ARGS__>;
+
+#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(_ALIAS, ...)                                \
+        template class tim::auto_list<__VA_ARGS__>;                                      \
+        template class tim::component_list<__VA_ARGS__>;                                 \
+        using _EXTERN_LIST_ALIAS(_ALIAS) = tim::component_list<__VA_ARGS__>;
+
+#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(_ALIAS)                                   \
+        template class tim::auto_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                     \
+                                        _EXTERN_LIST_ALIAS(_ALIAS)>;                     \
+        template class tim::component_hybrid<_EXTERN_TUPLE_ALIAS(_ALIAS),                \
+                                             _EXTERN_LIST_ALIAS(_ALIAS)>;
+
+//--------------------------------------------------------------------------------------//
+//      extern storage singleton
+//
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_storage_singleton<storage<component::TYPE>>();                               \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_noninit_storage_singleton<storage<component::TYPE>>();
+
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_storage_singleton<storage<component::TYPE>>()                                \
+        {                                                                                \
+            using _storage_t           = storage<component::TYPE>;                       \
+            using _single_t            = details::storage_singleton_t<_storage_t>;       \
+            static _single_t _instance = _single_t::instance();                          \
+            return _instance;                                                            \
+        }                                                                                \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_noninit_storage_singleton<storage<component::TYPE>>()                        \
+        {                                                                                \
+            using _storage_t           = storage<component::TYPE>;                       \
+            using _single_t            = details::storage_singleton_t<_storage_t>;       \
+            static _single_t _instance = _single_t::instance_ptr();                      \
+            return _instance;                                                            \
+        }
+
+#else
+
+#    define _EXTERN_NAME_COMBINE(X, Y) X##Y
+#    define _EXTERN_TUPLE_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_tuple_, Y)
+#    define _EXTERN_LIST_ALIAS(Y) _EXTERN_NAME_COMBINE(extern_list_, Y)
+
+//--------------------------------------------------------------------------------------//
+//      extern declaration
+//
+#    define TIMEMORY_DECLARE_EXTERN_TUPLE(...)
+#    define TIMEMORY_DECLARE_EXTERN_LIST(...)
+#    define TIMEMORY_DECLARE_EXTERN_HYBRID(...)
+
+//--------------------------------------------------------------------------------------//
+//      extern instantiation
+//
+#    define TIMEMORY_INSTANTIATE_EXTERN_TUPLE(...)
+#    define TIMEMORY_INSTANTIATE_EXTERN_LIST(...)
+#    define TIMEMORY_INSTANTIATE_EXTERN_HYBRID(...)
+
+//--------------------------------------------------------------------------------------//
+//      extern storage
+//
+#    define TIMEMORY_EXTERN_STORAGE_TYPE(...)
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(...)
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(...)
+
+#endif
 
 //======================================================================================//
 //

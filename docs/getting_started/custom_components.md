@@ -1,6 +1,6 @@
 # Custom Components
 
-TiMemory supports user-specifed components. A custom component must inherit from the static polymorphic base class:
+Timemory supports user-specifed components. A custom component must inherit from the static polymorphic base class:
 `tim::component::base`. This class provides the integration into the API and requires a minimum of two types:
 
 1. component type (i.e. itself) [`required`]
@@ -50,12 +50,11 @@ provide data via the POSIX rusage struct on Windows.
 
 > Namespace: `tim::trait`
 
-
 | Type Trait                     | Description                                                                            | Default Setting   |
 | ------------------------------ | -------------------------------------------------------------------------------------- | ----------------- |
+| **`is_available`**             | Specify the availablity of the component's implementation                              | `std::true_type`  |
 | **`record_max`**               | Specify that arithmetic operations should use comparisions                             | `std::false_type` |
 | **`array_serialization`**      | Specify the component stores data as an array                                          | `std::false_type` |
-| **`is_available`**             | Specify the availablity of the component's implementation                              | `std::true_type`  |
 | **`external_output_handling`** | Specify the component handles it's own output (if any)                                 | `std::false_type` |
 | **`requires_prefix`**          | Specify the component requires a `prefix` member variable to be set before `start()`   | `std::false_type` |
 | **`custom_label_printing`**    | Specify the component provides its own labeling for output (typically multiple labels) | `std::false_type` |
@@ -68,8 +67,12 @@ provide data via the POSIX rusage struct on Windows.
 | **`uses_timing_units`**        | Designates the width and precision should apply environment-specified timing units     | `std::false_type` |
 | **`uses_memory_units`**        | Designates the width and precision should apply environment-specified memory units     | `std::false_type` |
 | **`requires_json`**            | Specify the component should always output the JSON file format                        | `std::false_type` |
+| **`supports_args`**            | Specifies whether a components `mark_begin` and `mark_end` support a set of arguments  | `std::false_type` |
+| **`supports_custom_record`**   | Specifies a type supports changing the record() static function per-instance           | `std::false_type` |
+| **`iterable_measurement`**     | Specifies that `get()` member function returns an iterable type (e.g. vector)          | `std::false_type` |
 
-> `tim::trait::array_serialization` trait causes invocation of `_array` variants of `label`, `descript`, `display_unit`, and `unit` function calls, e.g. `label_array()`
+> `tim::trait::array_serialization` trait causes invocation of `_array` variants of `label`, `descript`, `display_unit`, and `unit` function calls,
+> e.g. `label_array()`, and implies `trait::iterable_measurement`
 
 ### Type Traits Example
 

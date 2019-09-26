@@ -32,6 +32,7 @@ import ctypes
 import platform
 import warnings
 import importlib
+import traceback
 from ctypes.util import find_library
 
 __author__ = "Jonathan Madsen"
@@ -40,75 +41,93 @@ __credits__ = ["Jonathan Madsen"]
 __license__ = "MIT"
 __version__ = "@PROJECT_VERSION@"
 __maintainer__ = "Jonathan Madsen"
-__email__ = "jonrobm.programming@gmail.com"
+__email__ = "jrmadsen@lbl.gov"
 __status__ = "Development"
 
 # get the path to this directory
 this_path = os.path.abspath(os.path.dirname(__file__))
 
-from . import libpytimemory
-from . import plotting
-from . import roofline
-from . import tests
-from . import mpi_support
-from . import util
-from . import options
-from . import units
-from . import signals
-from .libpytimemory import *
+try:
+    from . import libpytimemory
+    from . import plotting
+    from . import roofline
+    from . import tests
+    from . import mpi_support
+    from . import util
+    from . import options
+    from . import units
+    from . import signals
+    from .libpytimemory import *
 
-__all__ = ['version_info',
-           'build_info',
-           'version',
-           # --------------- modules ---------------#
-           'libpytimemory',
-           'mpi_support',
-           'plotting',
-           'tests',
-           'util',
-           'ert',
-           # --------------- classes ---------------#
-           'manager',
-           'timer',
-           'auto_timer',
-           'timer_decorator',
-           'rss_usage',
-           # ------------ lib submodules -----------#
-           'units',
-           'options',
-           'signals',
-           'signals.sys_signal',
-           # --------------- functions -------------#
-           'report',
-           'LINE',
-           'FUNC',
-           'FILE',
-           'set_max_depth',
-           'get_max_depth',
-           'toggle',
-           'enable',
-           'disable',
-           'is_enabled',
-           'enabled',
-           'enable_signal_detection',
-           'disable_signal_detection',
-           'has_mpi_support',
-           'set_rusage_children',
-           'set_rusage_self',
-           'set_exit_action',
-           'timemory_init',
-           ]
+    __all__ = ['version_info',
+               'build_info',
+               'version',
+               # --------------- modules ---------------#
+               'libpytimemory',
+               'mpi_support',
+               'plotting',
+               'roofline',
+               'tests',
+               'util',
+               'ert',
+               # --------------- classes ---------------#
+               'manager',
+               'timer',
+               'auto_timer',
+               'timer_decorator',
+               'rss_usage',
+               # ------------ lib submodules -----------#
+               'units',
+               'options',
+               'signals',
+               'signals.sys_signal',
+               # --------------- functions -------------#
+               'report',
+               'LINE',
+               'FUNC',
+               'FILE',
+               'set_max_depth',
+               'get_max_depth',
+               'toggle',
+               'enable',
+               'disable',
+               'is_enabled',
+               'enabled',
+               'enable_signal_detection',
+               'disable_signal_detection',
+               'has_mpi_support',
+               'set_rusage_children',
+               'set_rusage_self',
+               'set_exit_action',
+               'timemory_init',
+               ]
+
+    timemory_init(sys.argv[:])
+except Exception as e:
+    exc_type, exc_value, exc_traceback = sys.exc_info()
+    traceback.print_exception(exc_type, exc_value, exc_traceback)
+
+    from . import mpi_support
+    from . import roofline
+
+    __all__ = ['version_info',
+               'build_info',
+               'version',
+               # --------------- modules ---------------#
+               'mpi_support',
+               'roofline',
+               ]
 
 sys.modules[__name__].__setattr__("version_info", (@TIMEMORY_VERSION_MAJOR@, @TIMEMORY_VERSION_MINOR@, @TIMEMORY_VERSION_PATCH@))
 sys.modules[__name__].__setattr__("version", "@TIMEMORY_VERSION@")
-sys.modules[__name__].__setattr__("build_info", {"date" : "@TIMEMORY_INSTALL_DATE@",
-                                                 "library_architecture" : "@CMAKE_SYSTEM_PROCESSOR@",
-                                                 "system_name" : "@CMAKE_SYSTEM_NAME@",
-                                                 "system_version" : "@CMAKE_SYSTEM_VERSION@",
-                                                 "build_type" : "@CMAKE_BUILD_TYPE@",
-                                                 "compiler" : "@CMAKE_CXX_COMPILER@",
-                                                 "compiler_id" : "@CMAKE_CXX_COMPILER_ID@",
-                                                 "compiler_version" : "@CMAKE_CXX_COMPILER_VERSION@"
+sys.modules[__name__].__setattr__("build_info", {"date": "@TIMEMORY_INSTALL_DATE@",
+                                                 "library_architecture": "@CMAKE_SYSTEM_PROCESSOR@",
+                                                 "system_name": "@CMAKE_SYSTEM_NAME@",
+                                                 "system_version": "@CMAKE_SYSTEM_VERSION@",
+                                                 "build_type": "@CMAKE_BUILD_TYPE@",
+                                                 "compiler": "@CMAKE_CXX_COMPILER@",
+                                                 "compiler_id": "@CMAKE_CXX_COMPILER_ID@",
+                                                 "compiler_version": "@CMAKE_CXX_COMPILER_VERSION@"
                                                  })
 
 version_info = sys.modules[__name__].__getattribute__("version_info")

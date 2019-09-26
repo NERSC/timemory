@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 #    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
 #endif()
 
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@ConfigVersion.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-version.cmake)
 
 @PACKAGE_INIT@
 
@@ -27,6 +27,7 @@ set(@PROJECT_NAME@_BUILD_TYPE @CMAKE_BUILD_TYPE@)
 # installed and interface libraries
 set(@PROJECT_NAME@_COMPILED_LIBRARIES @TIMEMORY_COMPILED_LIBRARIES@)
 set(@PROJECT_NAME@_INTERFACE_LIBRARIES @TIMEMORY_INTERFACE_LIBRARIES@)
+set(@PROJECT_NAME@_EXTERN_LIBRARIES @TIMEMORY_EXTERN_LIBRARIES@)
 set(@PROJECT_NAME@_EMPTY_INTERFACE_LIBRARIES @TIMEMORY_EMPTY_INTERFACE_LIBRARIES@)
 
 if(@PROJECT_NAME@_LANGUAGE_STANDARDS)
@@ -106,6 +107,11 @@ if(TIMEMORY_INSTALL_TREE)
         find_package(caliper QUIET)
     endif()
 
+    set(gotcha_DIR "@gotcha_DIR@")
+    if(NOT "${gotcha_DIR}" STREQUAL "")
+        find_package(gotcha QUIET)
+    endif()
+
     include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
     check_required_components(@PROJECT_NAME@)
 
@@ -121,7 +127,7 @@ else() # build tree
 
     MACRO(IMPORT_LIB _LIB _IMPORT_TYPE)
         set_property(TARGET ${_LIB} PROPERTY ${_IMPORT_TYPE}
-            "${CMAKE_BINARY_DIR}/TiMemoryBuild.cmake")
+            "${CMAKE_BINARY_DIR}/@PROJECT_NAME@-build.cmake")
     ENDMACRO()
 
     foreach(_LIB ${@PROJECT_NAME@_INTERFACE_LIBRARIES})
@@ -143,7 +149,7 @@ endif()
 
 
 #----------------------------------------------------------------------------------------#
-#   TiMemory link target
+#   timemory link target
 #----------------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-headers)
 set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
@@ -267,18 +273,24 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
         endif()
     endmacro()
 
-    if("extern-templates" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
-        if(NOT WIN32)
-            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-extern-templates extern-templates)
-            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-cxx-${_LINK})
-        else()
-            message(WARNING "timemory-extern-templates not available on Windows")
-            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS timemory-extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-extern-templates)
-            list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS extern-templates)
+    foreach(_EXTERN_LIB ${@PROJECT_NAME@_EXTERN_LIBRARIES})
+        if("${_EXTERN_LIB}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS OR
+           "${_EXTERN_LIB}-${_LINK}" IN_LIST @PROJECT_NAME@_FIND_COMPONENTS)
+            if(NOT WIN32)
+                @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_EXTERN_LIB}-${_LINK}
+                                                     ${_EXTERN_LIB}-${_LINK}
+                                                     ${_EXTERN_LIB})
+            else()
+                message(WARNING "timemory-extern-templates not available on Windows")
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS timemory-${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FIND_COMPONENTS ${_EXTERN_LIB})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS timemory-${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_EXTERN_LIB}-${_LINK})
+                list(REMOVE_ITEM @PROJECT_NAME@_FOUND_COMPONENTS ${_EXTERN_LIB})
+            endif()
         endif()
-    endif()
+    endforeach()
 
     foreach(_LANGUAGE ${_LANGUAGES})
         # handle special case of cuda
@@ -323,7 +335,11 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
     endforeach()
 
     foreach(_COMPONENT ${@PROJECT_NAME@_FIND_COMPONENTS})
-        @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+        if(TARGET timemory-${_COMPONENT}-${_LINK})
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT}-${_LINK} ${_COMPONENT})
+        else()
+            @PROJECT_NAME@_LINK_TARGET_IF_EXISTS(timemory-${_COMPONENT} ${_COMPONENT})
+        endif()
     endforeach()
 
     # remove duplicate interface libraries
@@ -354,7 +370,7 @@ endif()
 #   find_package variables
 #----------------------------------------------------------------------------------------#
 include(FindPackageHandleStandardArgs)
-# handle the QUIETLY and REQUIRED arguments and set TiMemory_FOUND to TRUE
+# handle the QUIETLY and REQUIRED arguments and set timemory_FOUND to TRUE
 # if all listed variables are TRUE
 find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_ROOT_DIR

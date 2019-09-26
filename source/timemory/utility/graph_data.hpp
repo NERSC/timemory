@@ -28,15 +28,7 @@
 
 #include "timemory/utility/graph.hpp"
 
-//--------------------------------------------------------------------------------------//
-
 #include <cstdint>
-#include <deque>
-#include <mutex>
-#include <string>
-#include <thread>
-#include <tuple>
-#include <unordered_map>
 
 //--------------------------------------------------------------------------------------//
 
@@ -72,7 +64,7 @@ public:
     ~graph_data() { m_graph.clear(); }
 
     // allow move and copy construct
-    explicit graph_data(const this_type&) = default;
+    graph_data(const this_type&) = default;
     graph_data& operator=(this_type&&) = default;
 
     // delete copy-assignment

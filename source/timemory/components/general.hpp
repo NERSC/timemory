@@ -89,26 +89,16 @@ struct trip_count : public base<trip_count>
 // start/stop gperftools cpu profiler
 //
 struct gperf_cpu_profiler
-: public base<gperf_cpu_profiler, int8_t, policy::thread_init, policy::global_finalize>
+: public base<gperf_cpu_profiler, void, policy::thread_init, policy::global_finalize>
 {
-    using value_type = int8_t;
+    using value_type = void;
     using this_type  = gperf_cpu_profiler;
     using base_type =
         base<this_type, value_type, policy::thread_init, policy::global_finalize>;
 
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "gperf_cpu_profiler"; }
     static std::string description() { return "gperftools cpu profiler"; }
-    static std::string display_unit() { return ""; }
-    static value_type  record() { return 0; }
-
-    value_type get_display() const { return 0; }
-    value_type get() const { return 0; }
+    static value_type  record() {}
 
     static void invoke_thread_init() { gperf::cpu::register_thread(); }
 
@@ -167,25 +157,15 @@ private:
 // start/stop gperftools cpu profiler
 //
 struct gperf_heap_profiler
-: public base<gperf_heap_profiler, int8_t, policy::global_finalize>
+: public base<gperf_heap_profiler, void, policy::global_finalize>
 {
-    using value_type = int8_t;
+    using value_type = void;
     using this_type  = gperf_heap_profiler;
     using base_type  = base<this_type, value_type, policy::global_finalize>;
 
-    static const short                   precision = 0;
-    static const short                   width     = 5;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "gperf_heap_profiler"; }
     static std::string description() { return "gperftools heap profiler"; }
-    static std::string display_unit() { return ""; }
-    static value_type  record() { return 1; }
-
-    value_type get_display() const { return accum; }
-    value_type get() const { return accum; }
+    static value_type  record() {}
 
     static void invoke_global_finalize()
     {
@@ -241,24 +221,15 @@ private:
 //--------------------------------------------------------------------------------------//
 // adds NVTX markers
 //
-struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
+struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
 {
-    using value_type = int8_t;
+    using value_type = void;
     using this_type  = nvtx_marker;
     using base_type  = base<this_type, value_type, policy::thread_init>;
 
-    static const short                   precision    = 0;
-    static const short                   width        = 5;
-    static const std::ios_base::fmtflags format_flags = {};
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "nvtx_marker"; }
     static std::string description() { return "NVTX markers"; }
-    static std::string display_unit() { return ""; }
-    static int8_t      record() { return 0; }
-
-    value_type get_display() const { return accum; }
-    value_type get() const { return accum; }
+    static value_type  record() {}
 
     static bool& use_device_sync()
     {
@@ -327,9 +298,9 @@ struct nvtx_marker : public base<nvtx_marker, int8_t, policy::thread_init>
 
     nvtx::color::color_t     color = 0;
     nvtx::event_attributes_t attribute;
-    nvtx::range_id_t         range_id;
-    std::string              prefix = "";
-    cuda::stream_t           stream = 0;
+    nvtx::range_id_t         range_id = 0;
+    std::string              prefix   = "";
+    cuda::stream_t           stream   = 0;
 
 private:
     nvtx::event_attributes_t& get_attribute()
@@ -355,4 +326,19 @@ private:
 //--------------------------------------------------------------------------------------//
 
 }  // namespace component
+
+//--------------------------------------------------------------------------------------//
+
+namespace trait
+{
+template <>
+struct supports_args<component::nvtx_marker, std::tuple<>> : std::true_type
+{};
+
+template <>
+struct supports_args<component::nvtx_marker, std::tuple<cuda::stream_t>> : std::true_type
+{};
+}  // namespace trait
+
+//--------------------------------------------------------------------------------------//
 }  // namespace tim

@@ -139,9 +139,8 @@ def run_test():
     args = options.add_arguments_and_parse(parser)
     array_size = args.size
 
-    options.output_dir = "test_output"
-    options.set_report("nested_report.out")
-    options.set_serial("nested_report.json")
+    timemory.settings.output_path = "test_output"
+    timemory.settings.output_prefix = "nested_report"
 
     rss = timemory.rss_usage()
     rss.record()

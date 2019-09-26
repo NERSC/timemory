@@ -34,21 +34,21 @@
 
 namespace tim
 {
-void
-print_env()
-{
-}
 template <typename... _Args>
 void
 timemory_init(_Args...)
 {
 }
-void
+inline void
 timemory_finalize()
 {
 }
+inline void
+print_env()
+{
+}
 
-/// this provides "functionality" for *_INSTANCE macros
+/// this provides "functionality" for *_HANDLE macros
 /// and can be omitted if these macros are not utilized
 struct dummy
 {
@@ -79,36 +79,64 @@ struct dummy
 };
 }  // namespace tim
 
-// creates a label
+// startup/shutdown/configure
+#    define TIMEMORY_INIT(...)
+#    define TIMEMORY_FINALIZE()
+#    define TIMEMORY_CONFIGURE(...)
+
+// label creation
 #    define TIMEMORY_BASIC_LABEL(...) std::string("")
 #    define TIMEMORY_LABEL(...) std::string("")
+#    define TIMEMORY_JOIN(...) std::string("")
 
 // define an object
-#    define TIMEMORY_BLANK_OBJECT(...)
-#    define TIMEMORY_BASIC_OBJECT(...)
-#    define TIMEMORY_OBJECT(...)
+#    define TIMEMORY_BLANK_MARKER(...)
+#    define TIMEMORY_BASIC_MARKER(...)
+#    define TIMEMORY_MARKER(...)
+
+// define an unique pointer object
+#    define TIMEMORY_BLANK_POINTER(...)
+#    define TIMEMORY_BASIC_POINTER(...)
+#    define TIMEMORY_POINTER(...)
 
 // define an object with a caliper reference
 #    define TIMEMORY_BLANK_CALIPER(...)
 #    define TIMEMORY_BASIC_CALIPER(...)
 #    define TIMEMORY_CALIPER(...)
+
+// define a static object with a caliper reference
+#    define TIMEMORY_STATIC_BLANK_CALIPER(...)
+#    define TIMEMORY_STATIC_BASIC_CALIPER(...)
+#    define TIMEMORY_STATIC_CALIPER(...)
+
+// invoke member function on caliper reference or type within reference
 #    define TIMEMORY_CALIPER_APPLY(...)
 #    define TIMEMORY_CALIPER_TYPE_APPLY(...)
 
-// define an object
-#    define TIMEMORY_BLANK_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_BASIC_INSTANCE(...) tim::dummy()
-#    define TIMEMORY_INSTANCE(...) tim::dummy()
+// get an object
+#    define TIMEMORY_BLANK_HANDLE(...) tim::dummy()
+#    define TIMEMORY_BASIC_HANDLE(...) tim::dummy()
+#    define TIMEMORY_HANDLE(...) tim::dummy()
+
+// get a pointer to an object
+#    define TIMEMORY_BLANK_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_BASIC_POINTER_HANDLE(...) nullptr
+#    define TIMEMORY_POINTER_HANDLE(...) nullptr
 
 // debug only
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
-#    define TIMEMORY_DEBUG_BASIC_OBJECT(...)
-#    define TIMEMORY_DEBUG_OBJECT(...)
+#    define TIMEMORY_DEBUG_BLANK_MARKER(...)
+#    define TIMEMORY_DEBUG_BASIC_MARKER(...)
+#    define TIMEMORY_DEBUG_MARKER(...)
 
-// for CUDA
-#    define TIMEMORY_CALIPER_MARK_STREAM_BEGIN(...)
-#    define TIMEMORY_CALIPER_MARK_STREAM_END(...)
+// auto-timers
+#    define TIMEMORY_BLANK_AUTO_TIMER(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_AUTO_TIMER(...)
+#    define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_AUTO_TIMER_HANDLE(...)
+#    define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)
+#    define TIMEMORY_DEBUG_AUTO_TIMER(...)
 
 #else
 
@@ -133,7 +161,7 @@ using complete_auto_list_t = auto_list<
     component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
     component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
     component::cuda_event, component::cupti_activity, component::cupti_counters,
-    component::current_rss, component::data_rss, component::gperf_cpu_profiler,
+    component::page_rss, component::data_rss, component::gperf_cpu_profiler,
     component::gperf_heap_profiler, component::gpu_roofline_dp_flops,
     component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
     component::gpu_roofline_sp_flops, component::monotonic_clock,
@@ -160,7 +188,7 @@ using recommended_list_t = recommended_auto_list_t::component_type;
 
 using recommended_auto_tuple_t =
     auto_tuple<component::real_clock, component::system_clock, component::user_clock,
-               component::cpu_util, component::current_rss, component::peak_rss,
+               component::cpu_util, component::page_rss, component::peak_rss,
                component::read_bytes, component::written_bytes,
                component::num_minor_page_faults, component::num_major_page_faults,
                component::voluntary_context_switch, component::priority_context_switch>;
@@ -174,22 +202,17 @@ using recommended_hybrid_t = component_hybrid<recommended_list_t, recommended_tu
 
 //======================================================================================//
 
-#    if defined(TIMEMORY_EXTERN_TEMPLATES)
-#        include "timemory/templates/native_extern.hpp"
-#    endif
-
-//======================================================================================//
-
-#    if defined(TIMEMORY_EXTERN_TEMPLATES) && defined(TIMEMORY_USE_CUDA)
-// not yet implemented
-// #    include "timemory/templates/cuda_extern.hpp"
-#    endif
+#    include "timemory/templates/auto_timer_extern.hpp"
+#    include "timemory/templates/cuda_extern.hpp"
+#    include "timemory/templates/native_extern.hpp"
 
 //======================================================================================//
 
 #    if defined(TIMEMORY_EXTERN_INIT)
 #        include "timemory/utility/storage.hpp"
 
+namespace tim
+{
 TIMEMORY_DECLARE_EXTERN_STORAGE(caliper)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_roofline_dp_flops)
@@ -199,7 +222,7 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_util)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cuda_event)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_activity)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_counters)
-TIMEMORY_DECLARE_EXTERN_STORAGE(current_rss)
+TIMEMORY_DECLARE_EXTERN_STORAGE(page_rss)
 TIMEMORY_DECLARE_EXTERN_STORAGE(data_rss)
 TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_dp_flops)
 TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_flops)
@@ -231,6 +254,7 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(trip_count)
 TIMEMORY_DECLARE_EXTERN_STORAGE(user_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_STORAGE(written_bytes)
+}  // namespace tim
 
 #    endif  // defined(TIMEMORY_EXTERN_INIT)
 
@@ -279,5 +303,7 @@ serialize(std::string fname, const exec_data& obj)
 }  // namespace tim
 
 //======================================================================================//
+
+#    include "timemory/plotting.hpp"
 
 #endif  // ! defined(DISABLE_TIMEMORY)

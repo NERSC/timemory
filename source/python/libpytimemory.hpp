@@ -25,6 +25,11 @@
 #pragma once
 
 //======================================================================================//
+// disables a bunch of warnings
+//
+#include "timemory/utility/macros.hpp"
+
+//======================================================================================//
 
 #include <atomic>
 #include <chrono>
@@ -52,9 +57,10 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/ctimemory.h"
+#include "timemory/details/settings.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/macros.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_timer.hpp"
@@ -64,25 +70,15 @@
 
 //======================================================================================//
 
-extern "C"
-{
-#include "timemory/ctimemory.h"
-}
-
-#if !defined(TIMEMORY_CPU_COUNTERS)
-#    define TIMEMORY_CPU_COUNTERS 32
-#endif
-
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...
 using namespace py::literals;
 using namespace tim::component;
 
-using auto_timer_t =
-    tim::auto_tuple<wall_clock, system_clock, user_clock, cpu_clock, cpu_util>;
+using auto_timer_t = tim::auto_timer;
 
 using auto_usage_t =
-    tim::auto_tuple<current_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
+    tim::auto_tuple<page_rss, peak_rss, num_minor_page_faults, num_major_page_faults,
                     voluntary_context_switch, priority_context_switch>;
 using auto_list_t = tim::complete_auto_list_t;
 
@@ -364,60 +360,25 @@ manager()
 //--------------------------------------------------------------------------------------//
 
 tim_timer_t*
-timer(std::string prefix = "")
+timer(std::string key, int line, bool report_at_exit)
 {
-    if(prefix.empty())
-    {
-        std::stringstream keyss;
-        keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
-        prefix = keyss.str();
-    }
-
-    auto op_line = get_line(1);
-    return new tim_timer_t(prefix, op_line, tim::language::pyc());
+    return new tim_timer_t(key, line, tim::language::pyc(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(const std::string& key, bool report_at_exit, int nback, bool added_args,
-           py::args args, py::kwargs kwargs)
+auto_timer(std::string key, int line, bool report_at_exit)
 {
-    tim::consume_parameters(args, kwargs);
-    std::stringstream keyss;
-    keyss << get_func(nback);
-
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << get_file(nback + 1);
-        keyss << ":";
-        keyss << get_line(nback);
-    }
-    auto op_line = get_line(1);
-    return new auto_timer_t(keyss.str(), op_line, tim::language::pyc(), report_at_exit);
+    return new auto_timer_t(key, line, tim::language::pyc(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 rss_usage_t*
-rss_usage(std::string prefix = "", bool record = false)
+rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
 {
-    if(prefix.empty())
-    {
-        std::stringstream keyss;
-        keyss << get_func(1) << "@" << get_file(2) << ":" << get_line(1);
-        prefix = keyss.str();
-    }
-    auto         op_line = get_line(1);
-    rss_usage_t* _rss    = new rss_usage_t(prefix, op_line, tim::language::pyc());
+    rss_usage_t* _rss = new rss_usage_t(key, line, tim::language::pyc(), report_at_exit);
     if(record)
         _rss->measure();
     return _rss;
@@ -426,97 +387,36 @@ rss_usage(std::string prefix = "", bool record = false)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-component_list(py::list components, const std::string& key, bool report_at_exit,
-               int nback, bool added_args, py::args args, py::kwargs kwargs)
+component_list(py::list components, std::string key, int line, bool report_at_exit)
 {
-    tim::consume_parameters(args, kwargs);
-    std::stringstream keyss;
-    keyss << get_func(nback);
-
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << get_file(nback + 1);
-        keyss << ":";
-        keyss << get_line(nback);
-    }
-    auto op_line = get_line(1);
-    return create_component_list(keyss.str(), op_line, tim::language::pyc(),
-                                 report_at_exit, components_enum_to_vec(components));
+    return create_component_list(key, line, tim::language::pyc(), report_at_exit,
+                                 components_enum_to_vec(components));
 }
 
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
-timer_decorator(const std::string& func, const std::string& file, int line,
-                const std::string& key, bool added_args, bool report_at_exit)
+timer_decorator(const std::string& key, int line, bool report_at_exit)
 {
     auto_timer_decorator* _ptr = new auto_timer_decorator();
     if(!auto_timer_t::is_enabled())
         return _ptr;
-
-    std::stringstream keyss;
-    if(func != "<module>")
-        keyss << func;
-
-    // add arguments to end of function
-    if(added_args)
-        keyss << key;
-    else if(func != "<module>" && key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << file;
-        keyss << ":";
-        keyss << line;
-    }
-    return &(*_ptr = new auto_timer_t(keyss.str(), line, tim::language::pyc(),
-                                      report_at_exit));
+    return &(*_ptr = new auto_timer_t(key, line, tim::language::pyc(), report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
 
 component_list_decorator*
-component_decorator(py::list components, const std::string& func, const std::string& file,
-                    int line, const std::string& key, bool added_args,
+component_decorator(py::list components, const std::string& key, int line,
                     bool report_at_exit)
 {
     component_list_decorator* _ptr = new component_list_decorator();
     if(!manager_t::is_enabled())
         return _ptr;
 
-    std::stringstream keyss;
-    keyss << func;
-
-    // add arguments to end of function
-    if(added_args)
-        keyss << key;
-    else if(key != "" && key[0] != '@' && !added_args)
-        keyss << "@";
-
-    if(key != "" && !added_args)
-        keyss << key;
-    else
-    {
-        keyss << "@";
-        keyss << file;
-        keyss << ":";
-        keyss << line;
-    }
-    return &(*_ptr = create_component_list(keyss.str(), line, tim::language::pyc(),
-                                           report_at_exit,
-                                           components_enum_to_vec(components)));
+    return &(*_ptr =
+                 create_component_list(key, line, tim::language::pyc(), report_at_exit,
+                                       components_enum_to_vec(components)));
 }
 
 //--------------------------------------------------------------------------------------//
@@ -656,29 +556,29 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  default="", type=str,
                                  help="Filename prefix without path")
 
-             parser.add_argument('--disable-timers', required=False,
+             parser.add_argument('--disable', required=False,
                                  action='store_false',
-                                 dest='use_timers',
-                                 help="Disable timers for script")
+                                 dest='enabled',
+                                 help="Disable timemory for script")
 
-             parser.add_argument('--enable-timers', required=False,
+             parser.add_argument('--enable', required=False,
                                  action='store_true',
-                                 dest='use_timers', help="Enable timers for script")
+                                 dest='enabled', help="Enable timemory for script")
 
-             parser.add_argument('--disable-timer-serialization',
+             parser.add_argument('--disable-serialization',
                                  required=False, action='store_false',
-                                 dest='serial_file',
+                                 dest='serialize',
                                  help="Disable serialization for timers")
 
-             parser.add_argument('--enable-timer-serialization',
+             parser.add_argument('--enable-serialization',
                                  required=False, action='store_true',
-                                 dest='serial_file',
+                                 dest='serialize',
                                  help="Enable serialization for timers")
 
-             parser.add_argument('--max-timer-depth',
-                                 help="Maximum timer depth",
+             parser.add_argument('--max-depth',
+                                 help="Maximum depth",
                                  type=int,
-                                 default=timemory.options.default_max_depth())
+                                 default=timemory.settings.max_depth)
 
              parser.add_argument('--enable-dart',
                                  help="Print DartMeasurementFile tag for plots",
@@ -688,8 +588,8 @@ add_arguments(py::object parser = py::none(), std::string fpath = ".")
                                  help="Write a CTestNotes.cmake file for TiMemory ASCII output",
                                  required=False, action='store_true')
 
-             parser.set_defaults(use_timers=True)
-             parser.set_defaults(serial_file=True)
+             parser.set_defaults(enabled=True)
+             parser.set_defaults(serialize=True)
              parser.set_defaults(enable_dart=False)
              parser.set_defaults(write_ctest_notes=False)
              )",
@@ -709,19 +609,16 @@ parse_args(py::object args)
              import timemory
 
              # Function to add default output arguments
-             timemory.options.use_timers = args.use_timers
-             timemory.options.max_timer_depth = args.max_timer_depth
+             timemory.settings.enabled = args.enabled
+             timemory.settings.output_path = args.output_path
+             timemory.settings.output_prefix = args.output_prefix
+             timemory.settings.max_depth = args.max_depth
+             timemory.settings.json_output = args.serialize
              timemory.options.echo_dart = args.enable_dart
              timemory.options.ctest_notes = args.write_ctest_notes
-             timemory.options.output_path = args.output_path
-             timemory.options.output_prefix = args.output_prefix
-             timemory.toggle(args.use_timers)
-             timemory.set_max_depth(args.max_timer_depth)
-
-             _enable_serial = args.serial_file
+             _enable_serial = args.serialize
              )",
              py::globals(), locals);
-    tim::settings::json_output() = locals["_enable_serial"].cast<bool>();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -767,7 +664,7 @@ add_args_and_parse_known(py::object parser = py::none(), std::string fpath = "")
 }  // namespace opt
 
 //======================================================================================//
-
+/*
 namespace decorators
 {
 class base_decorator
@@ -787,8 +684,8 @@ public:
         auto locals = py::dict("func"_a = func, "args"_a = args, "kwargs"_a = kwargs);
         py::exec(R"(
                  is_class = False
-                 if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
-                     is_class = True
+                 if len(args) > 0 and args[0] is not None and
+inspect.isclass(type(args[0])): is_class = True
                  )",
                  py::globals(), locals);
         m_is_class = locals["is_class"].cast<bool>();
@@ -873,14 +770,11 @@ public:
 
                  @wraps(_func)
                  def _function_wrapper(func = _func, _key = _key, _is_class = _is_class,
-                                       _add_args = _add_args, _file = _file, _line = _line,
-                                       _report_at_exit = _report_at_exit,
-                                       *args, **kwargs):
+                                       _add_args = _add_args, _file = _file, _line =
+_line, _report_at_exit = _report_at_exit, *args, **kwargs):
 
-                     if len(args) > 0 and args[0] is not None and inspect.isclass(type(args[0])):
-                         _is_class = True
-                     else:
-                         _is_class = False
+                     if len(args) > 0 and args[0] is not None and
+inspect.isclass(type(args[0])): _is_class = True else: _is_class = False
 
                      _str = ''
                      if _is_class and len(args) > 0 and args[0] is not None:
@@ -932,6 +826,59 @@ auto_timer(std::string key, bool add_args, bool is_class, bool report_at_exit)
 }
 }  // namespace init
 }  // namespace decorators
+*/
+//======================================================================================//
+
+template <typename _Tuple>
+struct construct_dict
+{
+    using Type = _Tuple;
+
+    construct_dict(_Tuple& _tup, py::dict& _dict)
+    {
+        auto _label = std::get<0>(_tup);
+        if(_label.size() > 0)
+            _dict[_label.c_str()] = std::get<1>(_tup);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct dict
+{
+    static py::dict construct(std::tuple<_Types...>& _tup)
+    {
+        using apply_types = std::tuple<construct_dict<_Types>...>;
+        py::dict _dict;
+        ::tim::apply<void>::access<apply_types>(_tup, std::ref(_dict));
+        return _dict;
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct dict<std::tuple<_Types...>>
+{
+    static py::dict construct(std::tuple<_Types...>& _tup)
+    {
+        return dict<_Types...>::construct(_tup);
+    }
+};
+
+//======================================================================================//
+
+struct settings
+{
+    bool& suppress_parsing() { return ::tim::settings::suppress_parsing(); }
+    bool& enabled() { return ::tim::settings::enabled(); }
+    bool& auto_output() { return ::tim::settings::auto_output(); }
+    bool& file_output() { return ::tim::settings::file_output(); }
+    bool& text_output() { return ::tim::settings::text_output(); }
+    bool& json_output() { return ::tim::settings::json_output(); }
+    bool& cout_output() { return ::tim::settings::cout_output(); }
+};
 
 //======================================================================================//
 

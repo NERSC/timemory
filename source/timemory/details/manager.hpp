@@ -41,10 +41,6 @@
 #include <sstream>
 #include <thread>
 
-#if !defined(TIMEMORY_DEFAULT_ENABLED)
-#    define TIMEMORY_DEFAULT_ENABLED true
-#endif
-
 //======================================================================================//
 
 namespace tim
@@ -102,16 +98,15 @@ inline manager::manager()
 
     if(_once++ == 0)
     {
-        tim::cali::init();
-        tim::papi::init();
-        tim::cupti::initialize();
-        tim::settings::parse();
+        cali::init();
+        papi::init();
+        settings::parse();
         std::atexit(&exit_hook);
     }
     else
     {
         if(m_instance_count == 0)
-            tim::papi::register_thread();
+            papi::register_thread();
     }
 
     if(m_instance_count == 0)
@@ -137,7 +132,7 @@ inline manager::~manager()
 {
     if(m_instance_count > 0)
     {
-        tim::papi::unregister_thread();
+        papi::unregister_thread();
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 
@@ -153,7 +148,6 @@ manager::exit_hook()
     int32_t count = 0;
     if(ptr)
     {
-        ptr->print(false, false);
         count = ptr->instance_count();
         if(settings::banner())
             printf(
@@ -162,157 +156,8 @@ manager::exit_hook()
                 count);
         delete ptr;
     }
-    tim::papi::shutdown();
-    // tim::cupti::shutdown();
-    tim::mpi::finalize();
-}
-
-//======================================================================================//
-
-inline void
-manager::insert(const int64_t& _hash_id, const string_t& _prefix, const string_t& _data)
-{
-    using sibling_itr = typename graph_t::sibling_iterator;
-    graph_node node(_hash_id, _prefix, _data);
-
-    auto _update = [&](iterator itr) {
-        m_data.current() = itr;
-        *m_data.current() += node;
-    };
-
-    // lambda for inserting child
-    auto _insert_child = [&]() {
-        auto itr = m_data.append_child(node);
-        m_node_ids.insert(std::make_pair(_hash_id, itr));
-    };
-
-    if(m_node_ids.find(_hash_id) != m_node_ids.end())
-    {
-        _update(m_node_ids.find(_hash_id)->second);
-    }
-
-    // if first instance
-    if(m_data.depth() < 0)
-    {
-        if(this == master_instance())
-        {
-            m_data.depth()   = 0;
-            m_data.head()    = m_data.graph().set_head(node);
-            m_data.current() = m_data.head();
-        }
-        else
-        {
-            return;
-        }
-    }
-    else
-    {
-        auto current = m_data.current();
-
-        if(_hash_id == current->id())
-        {
-            return;
-        }
-        else if(m_data.graph().is_valid(current))
-        {
-            // check parent if not head
-            if(!m_data.graph().is_head(current))
-            {
-                auto parent = graph_t::parent(current);
-                for(sibling_itr itr = parent.begin(); itr != parent.end(); ++itr)
-                {
-                    // check hash id's
-                    if(_hash_id == itr->id())
-                    {
-                        _update(itr);
-                    }
-                }
-            }
-
-            // check siblings
-            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-            {
-                // skip if current
-                if(itr == current)
-                    continue;
-                // check hash id's
-                if(_hash_id == itr->id())
-                {
-                    _update(itr);
-                }
-            }
-
-            // check children
-            auto nchildren = graph_t::number_of_children(current);
-            if(nchildren == 0)
-            {
-                _insert_child();
-            }
-            else
-            {
-                bool exists = false;
-                auto fchild = graph_t::child(current, 0);
-                for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                {
-                    if(_hash_id == itr->id())
-                    {
-                        exists = true;
-                        _update(itr);
-                        break;
-                    }
-                }
-                if(!exists)
-                    _insert_child();
-            }
-        }
-    }
-    return _insert_child();
-}
-
-//======================================================================================//
-
-inline void
-manager::merge(pointer itr)
-{
-    if(itr == this)
-        return;
-
-    // create lock but don't immediately lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
-
-    // lock if not already owned
-    if(!l.owns_lock())
-        l.lock();
-
-    auto _this_beg = graph().begin();
-    auto _this_end = graph().end();
-
-    bool _merged = false;
-    for(auto _this_itr = _this_beg; _this_itr != _this_end; ++_this_itr)
-    {
-        if(_this_itr == itr->data().head())
-        {
-            auto _iter_beg = itr->graph().begin();
-            auto _iter_end = itr->graph().end();
-            graph().merge(_this_itr, _this_end, _iter_beg, _iter_end, false, true);
-            _merged = true;
-            break;
-        }
-    }
-
-    if(_merged)
-    {
-        _this_beg = graph().begin();
-        _this_end = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end);
-    }
-    else
-    {
-        auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
-        std::cerr << "Failure to merge graphs!" << std::endl;
-        auto g = graph();
-        graph().insert_subgraph_after(m_data.current(), itr->data().head());
-    }
+    papi::shutdown();
+    mpi::finalize();
 }
 
 //======================================================================================//
@@ -327,8 +172,7 @@ manager::get_communicator_group()
     int32_t mpi_node_default = mpi::size() / max_processes;
     if(mpi_node_default < 1)
         mpi_node_default = 1;
-    int32_t mpi_node_count =
-        tim::get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
+    int32_t mpi_node_count = get_env<int32_t>("TIMEMORY_NODE_COUNT", mpi_node_default);
     int32_t mpi_split_size = mpi::rank() / (mpi::size() / mpi_node_count);
 
     // Split the communicator based on the number of nodes and use the
@@ -337,7 +181,7 @@ manager::get_communicator_group()
     mpi::comm_split(mpi::comm_world_v, mpi_split_size, mpi::rank(), &local_mpi_comm);
 
 #if defined(DEBUG)
-    if(tim::settings::verbose() > 1 || settings::debug())
+    if(settings::verbose() > 1 || settings::debug())
     {
         int32_t local_mpi_rank = mpi::rank(local_mpi_comm);
         int32_t local_mpi_size = mpi::size(local_mpi_comm);
@@ -373,31 +217,11 @@ manager::get_communicator_group()
 
 //======================================================================================//
 
-template <typename Head, typename... Tail>
-inline void
-tim::manager::print(const tim::component_tuple<Head, Tail...>&)
-{
-    auto storage = tim::storage<Head>::instance();
-    if(storage && !storage->empty())
-        storage->print();
-    using tail_obj_t = PopFront<tim::component_tuple<Head, Tail...>>;
-    print(tail_obj_t());
-}
-
-//--------------------------------------------------------------------------------------//
-
-inline void
-tim::manager::print(bool /*ign_cutoff*/, bool /*endline*/)
-{
-}
-
-//======================================================================================//
-
 template <typename _Tuple>
 void
 tim::settings::initialize_storage()
 {
-    tim::manager::initialize<_Tuple>::storage();
+    manager::get_storage<_Tuple>::initialize();
 }
 
 namespace tim

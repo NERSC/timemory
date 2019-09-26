@@ -36,22 +36,10 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <unordered_map>
 
 #if defined(TIMEMORY_USE_MPI)
 #    include <mpi.h>
-#else
-// dummy MPI types
-#    define MPI_Comm int32_t
-#    define MPI_COMM_WORLD 0
-#    define MPI_INFO_NULL 0
-#    define MPI_COMM_TYPE_SHARED 0
-#    define MPI_INT int32_t
-#    define MPI_CHAR char
-#    define MPI_Gather(...)
-#    define MPI_Gatherv(...)
-#    define MPI_Comm_free(...)
-#    define MPI_Comm_split(...)
-#    define MPI_Comm_split_type(...)
 #endif
 
 namespace tim
@@ -60,17 +48,22 @@ namespace mpi
 {
 //--------------------------------------------------------------------------------------//
 #if defined(TIMEMORY_USE_MPI)
-using comm_t = MPI_Comm;
-using info_t = MPI_Info;
-#else
-// dummy MPI types
-using comm_t = int32_t;
-using info_t = int32_t;
-#endif
-
+using comm_t                            = MPI_Comm;
+using info_t                            = MPI_Info;
 static const comm_t  comm_world_v       = MPI_COMM_WORLD;
 static const info_t  info_null_v        = MPI_INFO_NULL;
 static const int32_t comm_type_shared_v = MPI_COMM_TYPE_SHARED;
+#else
+// dummy MPI types
+using comm_t                            = int32_t;
+using info_t                            = int32_t;
+static const comm_t  comm_world_v       = 0;
+static const info_t  info_null_v        = 0;
+static const int32_t comm_type_shared_v = 0;
+#endif
+
+template <typename _Tp>
+using communicator_map_t = std::unordered_map<comm_t, _Tp>;
 
 //--------------------------------------------------------------------------------------//
 
@@ -150,7 +143,20 @@ rank(comm_t comm = comm_world_v)
     int32_t _rank = 0;
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_rank(comm, &_rank);
+    {
+        // this is used to guard against the queries that might happen after an
+        // application calls MPI_Finalize() directly
+        static communicator_map_t<int32_t>* _instance = new communicator_map_t<int32_t>();
+        if(_instance->find(comm) == _instance->end())
+        {
+            MPI_Comm_rank(comm, &_rank);
+            (*_instance)[comm] = _rank;
+        }
+        else
+        {
+            _rank = (*_instance)[comm];
+        }
+    }
 #else
     consume_parameters(comm);
 #endif
@@ -165,7 +171,20 @@ size(comm_t comm = comm_world_v)
     int32_t _size = 1;
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
-        MPI_Comm_size(comm, &_size);
+    {
+        // this is used to guard against the queries that might happen after an
+        // application calls MPI_Finalize() directly
+        static communicator_map_t<int32_t>* _instance = new communicator_map_t<int32_t>();
+        if(_instance->find(comm) == _instance->end())
+        {
+            MPI_Comm_size(comm, &_size);
+            (*_instance)[comm] = _size;
+        }
+        else
+        {
+            _size = (*_instance)[comm];
+        }
+    }
 #else
     consume_parameters(comm);
 #endif

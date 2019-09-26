@@ -134,7 +134,7 @@ TEST_F(cuda_tests, saxpy)
     for(int64_t i = 0; i < N; i++)
     {
         maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += std::abs<float>(y[i] - 2.0);
+        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
     }
 
     tim::device::cpu::free(x);
@@ -212,13 +212,13 @@ TEST_F(cuda_tests, saxpy_streams)
     float* d_x = tim::device::gpu::alloc<float>(N);
     float* d_y = tim::device::gpu::alloc<float>(N);
 
-    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[0]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_begin, streams[0]);
     tim::cuda::memcpy(d_x, x, N, tim::cuda::host_to_device_v, streams[0]);
-    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[0]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_end, streams[0]);
 
-    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[1]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_begin, streams[1]);
     tim::cuda::memcpy(d_y, y, N, tim::cuda::host_to_device_v, streams[1]);
-    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[1]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_end, streams[1]);
 
     sync_streams();
     tuple_t bw("iterations");
@@ -227,15 +227,15 @@ TEST_F(cuda_tests, saxpy_streams)
     {
         bw.start();
         params.stream = streams[i % streams.size()];
-        TIMEMORY_CALIPER_MARK_STREAM_BEGIN(dev, params.stream);
+        TIMEMORY_CALIPER_APPLY(dev, mark_begin, params.stream);
         tim::device::launch(params, details::saxpy, N, 1.0, d_x, d_y);
-        TIMEMORY_CALIPER_MARK_STREAM_END(dev, params.stream);
+        TIMEMORY_CALIPER_APPLY(dev, mark_end, params.stream);
         bw.stop();
     }
 
-    TIMEMORY_CALIPER_MARK_STREAM_BEGIN(mem, streams[0]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_begin, streams[0]);
     tim::cuda::memcpy(y, d_y, N, tim::cuda::device_to_host_v, streams[0]);
-    TIMEMORY_CALIPER_MARK_STREAM_END(mem, streams[0]);
+    TIMEMORY_CALIPER_APPLY(mem, mark_end, streams[0]);
 
     sync_streams();
     tim::cuda::device_sync();
@@ -251,7 +251,7 @@ TEST_F(cuda_tests, saxpy_streams)
     for(int64_t i = 0; i < N; i++)
     {
         maxError = std::max<float>(maxError, std::abs(y[i] - 2.0));
-        sumError += std::abs<float>(y[i] - 2.0);
+        sumError += (y[i] > 2.0) ? (y[i] - 2.0) : (2.0 - y[i]);
     }
 
     tim::device::cpu::free(x);

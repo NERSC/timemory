@@ -225,8 +225,8 @@ ert_main(int, char**)
                 {
                     static int64_t nhash = __LINE__;
                     nhash += 1;
-                    rl =
-                        new comp_roof_t(tim::str::join("_", __FUNCTION__, n, t), true, 1);
+                    rl = new comp_roof_t(tim::str::join("_", __FUNCTION__, n, t), true,
+                                         tim::language::cxx(), 1);
                     startTime = getTime();
                     rl->start();
                 }

@@ -2,11 +2,11 @@
 
 ## [Integrating into a Project](integrating.md)
 
-- Using TiMemory as an included sub-module
+- Using timemory as an included sub-module
 - Using CMake and `find_package`
 - Using Makefiles
-- TiMemory as an optional dependency in ~15 lines
-- TiMemory as preload library
+- Timemory as an optional dependency in ~15 lines
+- Timemory as preload library
     - `LD_PRELOAD` / `DYLD_INSERT_LIBRARIES` trink on Linux / macOS
 
 ## [Basics](basics.md)
