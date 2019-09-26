@@ -58,8 +58,8 @@ struct cuda_event : public base<cuda_event, float>
         bool          valid   = true;
         bool          synced  = false;
         bool          running = false;
-        cuda::event_t first;
-        cuda::event_t second;
+        cuda::event_t first   = cuda::event_t{};
+        cuda::event_t second  = cuda::event_t{};
 
         marker() { valid = (cuda::event_create(first) && cuda::event_create(second)); }
 

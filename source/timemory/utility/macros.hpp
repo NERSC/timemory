@@ -178,8 +178,13 @@
 #        define tim_api __declspec(dllexport)
 #        define tim_api_static static __declspec(dllexport)
 #    else
-#        define tim_api __declspec(dllimport)
-#        define tim_api_static static __declspec(dllimport)
+#        if defined(_TIMEMORY_LINK_LIBRARY)
+#            define tim_api __declspec(dllimport)
+#            define tim_api_static static __declspec(dllimport)
+#        else
+#            define tim_api
+#            define tim_api_static static
+#        endif
 #    endif
 #else
 #    define tim_api
@@ -193,17 +198,19 @@
 //======================================================================================//
 
 #if defined(_WINDOWS)
-#    pragma warning(disable : 4786)  // ID truncated to '255' char in debug info
-#    pragma warning(disable : 4068)  // unknown pragma
-#    pragma warning(disable : 4003)  // not enough actual params
-#    pragma warning(disable : 4244)  // possible loss of data
-#    pragma warning(disable : 4146)  // unsigned
-#    pragma warning(disable : 4129)  // unrecognized char escape
-#    pragma warning(disable : 4996)  // function may be unsafe
-#    pragma warning(disable : 4267)  // possible loss of data
-#    pragma warning(disable : 4700)  // uninitialized local variable used
-#    pragma warning(disable : 4217)  // locally defined symbol
-#    pragma warning(disable : 4251)  // needs to have dll-interface to be used
+#    pragma warning(disable : 4786)   // ID truncated to '255' char in debug info
+#    pragma warning(disable : 4068)   // unknown pragma
+#    pragma warning(disable : 4003)   // not enough actual params
+#    pragma warning(disable : 4244)   // possible loss of data
+#    pragma warning(disable : 4146)   // unsigned
+#    pragma warning(disable : 4129)   // unrecognized char escape
+#    pragma warning(disable : 4996)   // function may be unsafe
+#    pragma warning(disable : 4267)   // possible loss of data
+#    pragma warning(disable : 4700)   // uninitialized local variable used
+#    pragma warning(disable : 4217)   // locally defined symbol
+#    pragma warning(disable : 4251)   // needs to have dll-interface to be used
+#    pragma warning(disable : 4522)   // multiple assignment operators specified
+#    pragma warning(disable : 26495)  // Always initialize member variable (cereal issue)
 
 #    if !defined(NOMINMAX)
 #        define NOMINMAX

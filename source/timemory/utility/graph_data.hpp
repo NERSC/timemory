@@ -64,7 +64,7 @@ public:
     ~graph_data() { m_graph.clear(); }
 
     // allow move and copy construct
-    explicit graph_data(const this_type&) = default;
+    graph_data(const this_type&) = default;
     graph_data& operator=(this_type&&) = default;
 
     // delete copy-assignment

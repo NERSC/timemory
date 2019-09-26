@@ -161,7 +161,8 @@ extern "C" tim_api const char*
 cxx_timemory_string_combine(const char* _a, const char* _b)
 {
     char* buff = (char*) malloc(sizeof(char) * 256);
-    sprintf(buff, "%s%s", _a, _b);
+    if(buff)
+        sprintf(buff, "%s%s", _a, _b);
     return (const char*) buff;
 }
 
@@ -262,7 +263,7 @@ record_stop(uint64_t kernid)
 //
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_init_library(int argc, char** argv)
 {
     if(tim::settings::verbose() > 0)
@@ -284,7 +285,7 @@ timemory_init_library(int argc, char** argv)
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_finalize_library()
 {
     if(!get_record_map())
@@ -323,7 +324,7 @@ timemory_finalize_library()
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_begin_record(const char* name, uint64_t* kernid)
 {
     record_start(name, kernid, components);
@@ -334,7 +335,7 @@ timemory_begin_record(const char* name, uint64_t* kernid)
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_begin_record_types(const char* name, uint64_t* kernid, const char* ctypes)
 {
     record_start(name, kernid, tim::enumerate_components(std::string(ctypes)));
@@ -345,7 +346,7 @@ timemory_begin_record_types(const char* name, uint64_t* kernid, const char* ctyp
 
 //--------------------------------------------------------------------------------------//
 
-extern "C" void
+extern "C" tim_api void
 timemory_end_record(uint64_t kernid)
 {
     record_stop(kernid);

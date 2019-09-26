@@ -51,5 +51,6 @@ int main(int argc, char** argv)
     timemory_end_record(id0);
 
     printf("Answer = %li\n", ans);
+    timemory_finalize_library();
     return EXIT_SUCCESS;
 }

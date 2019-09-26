@@ -98,6 +98,8 @@ cache_size(const int& level)
 
     GetLogicalProcessorInformation(0, &buffer_size);
     buffer = (SYSTEM_LOGICAL_PROCESSOR_INFORMATION*) malloc(buffer_size);
+    if(!buffer)
+        return static_cast<size_t>(4096);
     GetLogicalProcessorInformation(&buffer[0], &buffer_size);
 
     for(i = 0; i != buffer_size / sizeof(SYSTEM_LOGICAL_PROCESSOR_INFORMATION); ++i)

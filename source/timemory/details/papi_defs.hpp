@@ -44,7 +44,8 @@
 #    define PAPI_EBUG -6    /* Internal error, please send mail to the developers */
 #    define PAPI_ENOEVNT -7 /* Event does not exist */
 #    define PAPI_ECNFLCT                                                                 \
-        -8 /* Event exists, but cannot be counted due to counter resource limitations    \
+        -8 /* Event exists, but cannot be counted due to counter resource limitations \  \
+            * \                                                                          \
             */
 #    define PAPI_ENOTRUN -9     /* EventSet is currently not running */
 #    define PAPI_EISRUN -10     /* EventSet is currently counting */
@@ -59,8 +60,8 @@
 #    define PAPI_ENOIMPL -19    /* Not implemented */
 #    define PAPI_EBUF -20       /* Buffer size exceeded */
 #    define PAPI_EINVAL_DOM                                                              \
-        -21                        /* EventSet domain is not supported for the operation \
-                                    */
+        -21 /* EventSet domain is not supported for the operation \      \               \
+             */
 #    define PAPI_EATTR -22         /* Invalid or missing event attributes */
 #    define PAPI_ECOUNT -23        /* Too many events or attributes */
 #    define PAPI_ECOMBO -24        /* Bad combination of features */
@@ -246,8 +247,8 @@ enum
 #    define PAPI_LSU_IDL                                                                 \
         (PAPI_LSU_IDL_idx | PAPI_PRESET_MASK) /*Cycles load/store units are idle */
 #    define PAPI_TLB_DM                                                                  \
-        (PAPI_TLB_DM_idx | PAPI_PRESET_MASK) /*Data translation lookaside buffer misses  \
-                                              */
+        (PAPI_TLB_DM_idx |                                                               \
+         PAPI_PRESET_MASK) /*Data translation lookaside buffer misses */
 #    define PAPI_TLB_IM                                                                  \
         (PAPI_TLB_IM_idx |                                                               \
          PAPI_PRESET_MASK) /*Instr translation lookaside buffer misses */
@@ -260,8 +261,8 @@ enum
 #    define PAPI_L2_STM (PAPI_L2_STM_idx | PAPI_PRESET_MASK) /*Level 2 store misses */
 #    define PAPI_BTAC_M (PAPI_BTAC_M_idx | PAPI_PRESET_MASK) /*BTAC miss */
 #    define PAPI_PRF_DM                                                                  \
-        (PAPI_PRF_DM_idx | PAPI_PRESET_MASK) /*Prefetch data instruction caused a miss   \
-                                              */
+        (PAPI_PRF_DM_idx |                                                               \
+         PAPI_PRESET_MASK) /*Prefetch data instruction caused a miss */
 #    define PAPI_L3_DCH (PAPI_L3_DCH_idx | PAPI_PRESET_MASK) /*Level 3 Data Cache Hit */
 #    define PAPI_TLB_SD                                                                  \
         (PAPI_TLB_SD_idx |                                                               \
@@ -277,11 +278,11 @@ enum
         (PAPI_MEM_SCY_idx |                                                              \
          PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Access */
 #    define PAPI_MEM_RCY                                                                 \
-        (PAPI_MEM_RCY_idx | PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Read   \
-                                               */
+        (PAPI_MEM_RCY_idx |                                                              \
+         PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Read */
 #    define PAPI_MEM_WCY                                                                 \
-        (PAPI_MEM_WCY_idx | PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Write  \
-                                               */
+        (PAPI_MEM_WCY_idx |                                                              \
+         PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Write */
 #    define PAPI_STL_ICY                                                                 \
         (PAPI_STL_ICY_idx | PAPI_PRESET_MASK) /*Cycles with No Instruction Issue */
 #    define PAPI_FUL_ICY                                                                 \
@@ -296,16 +297,16 @@ enum
         (PAPI_BR_UCN_idx |                                                               \
          PAPI_PRESET_MASK) /*Unconditional branch instructions executed */
 #    define PAPI_BR_CN                                                                   \
-        (PAPI_BR_CN_idx | PAPI_PRESET_MASK) /*Conditional branch instructions executed   \
-                                             */
+        (PAPI_BR_CN_idx |                                                                \
+         PAPI_PRESET_MASK) /*Conditional branch instructions executed */
 #    define PAPI_BR_TKN                                                                  \
         (PAPI_BR_TKN_idx | PAPI_PRESET_MASK) /*Conditional branch instructions taken */
 #    define PAPI_BR_NTK                                                                  \
         (PAPI_BR_NTK_idx |                                                               \
          PAPI_PRESET_MASK) /*Conditional branch instructions not taken */
 #    define PAPI_BR_MSP                                                                  \
-        (PAPI_BR_MSP_idx | PAPI_PRESET_MASK) /*Conditional branch instructions mispred   \
-                                              */
+        (PAPI_BR_MSP_idx |                                                               \
+         PAPI_PRESET_MASK) /*Conditional branch instructions mispred */
 #    define PAPI_BR_PRC                                                                  \
         (PAPI_BR_PRC_idx |                                                               \
          PAPI_PRESET_MASK) /*Conditional branch instructions corr. pred */
@@ -326,16 +327,15 @@ enum
 #    define PAPI_BR_INS                                                                  \
         (PAPI_BR_INS_idx | PAPI_PRESET_MASK) /*Total branch instructions executed */
 #    define PAPI_VEC_INS                                                                 \
-        (PAPI_VEC_INS_idx | PAPI_PRESET_MASK) /*Vector/SIMD instructions executed (could \
-                                                 include integer) */
+        (PAPI_VEC_INS_idx | PAPI_PRESET_MASK) 
+/*Vector/SIMD instructions executed (could include integer) */
 #    define PAPI_RES_STL                                                                 \
-        (PAPI_RES_STL_idx | PAPI_PRESET_MASK) /*Cycles processor is stalled on resource  \
-                                               */
+        (PAPI_RES_STL_idx |                                                              \
+         PAPI_PRESET_MASK) /*Cycles processor is stalled on resource */
 #    define PAPI_FP_STAL                                                                 \
         (PAPI_FP_STAL_idx | PAPI_PRESET_MASK) /*Cycles any FP units are stalled */
 #    define PAPI_TOT_CYC                                                                 \
-        (PAPI_TOT_CYC_idx | PAPI_PRESET_MASK) /*Total cycles executed                    \
-                                               */
+        (PAPI_TOT_CYC_idx | PAPI_PRESET_MASK) /*Total cycles executed */
 #    define PAPI_LST_INS                                                                 \
         (PAPI_LST_INS_idx | PAPI_PRESET_MASK) /*Total load/store inst. executed */
 #    define PAPI_SYC_INS (PAPI_SYC_INS_idx | PAPI_PRESET_MASK) /*Sync. inst. executed */
@@ -374,17 +374,14 @@ enum
         (PAPI_L2_ICW_idx | PAPI_PRESET_MASK) /*L2 instruction cache writes */
 #    define PAPI_L3_ICW                                                                  \
         (PAPI_L3_ICW_idx | PAPI_PRESET_MASK) /*L3 instruction cache writes */
-#    define PAPI_L1_TCH (PAPI_L1_TCH_idx | PAPI_PRESET_MASK) /*L1 total cache hits */
-#    define PAPI_L2_TCH (PAPI_L2_TCH_idx | PAPI_PRESET_MASK) /*L2 total cache hits */
-#    define PAPI_L3_TCH (PAPI_L3_TCH_idx | PAPI_PRESET_MASK) /*L3 total cache hits */
-#    define PAPI_L1_TCA                                                                  \
-        (PAPI_L1_TCA_idx | PAPI_PRESET_MASK) /*L1 total cache accesses                   \
-                                              */
-#    define PAPI_L2_TCA                                                                  \
-        (PAPI_L2_TCA_idx | PAPI_PRESET_MASK) /*L2 total cache accesses                   \
-                                              */
-#    define PAPI_L3_TCA                                                                  \
-        (PAPI_L3_TCA_idx | PAPI_PRESET_MASK)                   /*L3 total cache accesses \
+#    define PAPI_L1_TCH (PAPI_L1_TCH_idx | PAPI_PRESET_MASK)   /*L1 total cache hits */
+#    define PAPI_L2_TCH (PAPI_L2_TCH_idx | PAPI_PRESET_MASK)   /*L2 total cache hits */
+#    define PAPI_L3_TCH (PAPI_L3_TCH_idx | PAPI_PRESET_MASK)   /*L3 total cache hits */
+#    define PAPI_L1_TCA (PAPI_L1_TCA_idx | PAPI_PRESET_MASK)   /*L1 total cache accesses \
+                                                                */
+#    define PAPI_L2_TCA (PAPI_L2_TCA_idx | PAPI_PRESET_MASK)   /*L2 total cache accesses \
+                                                                */
+#    define PAPI_L3_TCA (PAPI_L3_TCA_idx | PAPI_PRESET_MASK)   /*L3 total cache accesses \
                                                                 */
 #    define PAPI_L1_TCR (PAPI_L1_TCR_idx | PAPI_PRESET_MASK)   /*L1 total cache reads */
 #    define PAPI_L2_TCR (PAPI_L2_TCR_idx | PAPI_PRESET_MASK)   /*L2 total cache reads */
@@ -401,12 +398,12 @@ enum
         (PAPI_FP_OPS_idx | PAPI_PRESET_MASK) /*Floating point operations executed */
 #    define PAPI_SP_OPS                                                                  \
         (PAPI_SP_OPS_idx |                                                               \
-         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count     \
-                              scaled single precision vector operations */
+         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count */
+                           /* scaled single precision vector operations */
 #    define PAPI_DP_OPS                                                                  \
         (PAPI_DP_OPS_idx |                                                               \
-         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count     \
-                              scaled double precision vector operations */
+         PAPI_PRESET_MASK) /* Floating point operations executed; optimized to count */
+                           /* scaled double precision vector operations */
 #    define PAPI_VEC_SP                                                                  \
         (PAPI_VEC_SP_idx |                                                               \
          PAPI_PRESET_MASK) /* Single precision vector/SIMD instructions */
@@ -433,8 +430,7 @@ enum
 // supported [not implemented] */
 #    define PAPI_MAX_MPX_CTRS 11 /* Maximum number of counters we can multiplex */
 #    define PAPI_PROFIL                                                                  \
-        12 /* Option to turn on the overflow/profil reporting software [not implemented] \
-            */
+        12 /* Option to turn on the overflow/profil reporting software [not impled]*/
 #    define PAPI_PRELOAD                                                                 \
         13 /* Option to find out the environment variable that can preload libraries */
 #    define PAPI_CLOCKRATE 14  /* Clock rate in MHz */
@@ -453,22 +449,20 @@ enum
 #    define PAPI_INSTR_ADDRESS                                                           \
         24 /* Option to set instruction address range restriction */
 #    define PAPI_DEF_ITIMER                                                              \
-        25 /* Option to set the type of itimer used in both software multiplexing,       \
-              overflowing and profiling */
+        25 /* Option to set the type of itimer used in both software multiplexing, */
+           /* overflowing and profiling */
 #    define PAPI_DEF_ITIMER_NS                                                           \
         26 /* Multiplexing/overflowing interval in ns, same as PAPI_DEF_MPX_NS */
 /* Currently the following options are only available on systems using the perf_events
  * component within papi */
 #    define PAPI_CPU_ATTACH                                                              \
-        27                  /* Specify a cpu number the event set should be tied to      \
-                             */
+        27 /* Specify a cpu number the event set should be tied to */
 #    define PAPI_INHERIT 28 /* Option to set counter inheritance flag */
 #    define PAPI_USER_EVENTS_FILE                                                        \
         29 /* Option to set file from where to parse user defined events */
 
 #    define PAPI_INIT_SLOTS                                                              \
-        64 /*Number of initialized slots in                                              \
-     DynamicArray of EventSets */
+        64 /*Number of initialized slots in \ DynamicArray of EventSets */
 
 #    define PAPI_MIN_STR_LEN 64   /* For small strings, like names & stuff */
 #    define PAPI_MAX_STR_LEN 128  /* For average run-of-the-mill strings */
@@ -484,39 +478,39 @@ enum
 
 typedef struct __PAPI_event_info
 {
-    unsigned int event_code; /* preset (0x8xxxxxxx) or
-                                native (0x4xxxxxxx) event code */
-    std::string symbol;      /* name of the event */
-    std::string short_descr; /* a short description suitable for
-                                           use as a label */
-    std::string long_descr;  /* a longer description:
-                                            typically a sentence for presets,
-                                            possibly a paragraph from vendor
-                                            docs for native events */
+    unsigned int event_code = 0;  /* preset (0x8xxxxxxx) or
+                                 native (0x4xxxxxxx) event code */
+    std::string symbol      = ""; /* name of the event */
+    std::string short_descr = ""; /* a short description suitable for
+                                          use as a label */
+    std::string long_descr = "";  /* a longer description:
+                                      typically a sentence for presets,
+                                      possibly a paragraph from vendor
+                                      docs for native events */
 
-    int         component_index; /* component this event belongs to */
-    std::string units;           /* units event is measured in */
-    int         location;        /* location event applies to */
-    int         data_type;       /* data type returned by PAPI */
-    int         value_type;      /* sum or absolute */
-    int         timescope;       /* from start, etc. */
-    int         update_type;     /* how event is updated */
-    int         update_freq;     /* how frequently event is updated */
+    int         component_index = 0;  /* component this event belongs to */
+    std::string units           = ""; /* units event is measured in */
+    int         location        = 0;  /* location event applies to */
+    int         data_type       = 0;  /* data type returned by PAPI */
+    int         value_type      = 0;  /* sum or absolute */
+    int         timescope       = 0;  /* from start, etc. */
+    int         update_type     = 0;  /* how event is updated */
+    int         update_freq     = 0;  /* how frequently event is updated */
 
     /* PRESET SPECIFIC FIELDS FOLLOW */
 
-    unsigned int count; /* number of terms (usually 1)
+    unsigned int count = 0; /* number of terms (usually 1)
                            in the code and name fields
                            - presets: these are native events
                            - native: these are unused */
 
-    unsigned int event_type; /* event type or category
+    unsigned int event_type = 0; /* event type or category
                                 for preset events only */
 
-    std::string derived; /* name of the derived type
+    std::string derived = ""; /* name of the derived type
                                        - presets: usually NOT_DERIVED
                                        - native: empty string */
-    std::string postfix; /* string containing postfix
+    std::string postfix = ""; /* string containing postfix
                                         operations; only defined for
                                         preset events of derived type
                                         DERIVED_POSTFIX */
@@ -531,7 +525,7 @@ typedef struct __PAPI_event_info
                                 - native: descriptive strings
                                 for each register value(?) */
 
-    std::string note; /* an optional developer note
+    std::string note = ""; /* an optional developer note
                                    supplied with a preset event
                                    to delineate platform specific
                                    anomalies or restrictions */

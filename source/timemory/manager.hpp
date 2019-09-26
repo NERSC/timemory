@@ -63,12 +63,12 @@ class component_tuple;
 
 namespace details
 {
-struct manager_deleter;
+struct tim_api manager_deleter;
 }
 
 //--------------------------------------------------------------------------------------//
 
-class manager
+class tim_api manager
 {
 public:
     using this_type     = manager;

@@ -298,9 +298,9 @@ struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
 
     nvtx::color::color_t     color = 0;
     nvtx::event_attributes_t attribute;
-    nvtx::range_id_t         range_id;
-    std::string              prefix = "";
-    cuda::stream_t           stream = 0;
+    nvtx::range_id_t         range_id = 0;
+    std::string              prefix   = "";
+    cuda::stream_t           stream   = 0;
 
 private:
     nvtx::event_attributes_t& get_attribute()

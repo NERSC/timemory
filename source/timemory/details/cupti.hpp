@@ -860,14 +860,14 @@ public:
     receiver(const receiver&) = delete;
     receiver& operator=(const receiver&) = delete;
 
-    receiver(receiver&& rhs)
+    receiver(receiver&& rhs) noexcept
     : m_external_hold(rhs.m_external_hold)
     , m_elapsed(rhs.m_elapsed)
     {
         std::swap(m_data, rhs.m_data);
     }
 
-    receiver& operator=(receiver&& rhs)
+    receiver& operator=(receiver&& rhs) noexcept
     {
         if(this == &rhs)
             return *this;

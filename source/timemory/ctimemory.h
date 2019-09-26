@@ -113,17 +113,19 @@
 //======================================================================================//
 
 // Define macros for WIN32 for importing/exporting external symbols to DLLs
-#    if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
-#        if defined(_TIMEMORY_DLL)
-#            define tim_api __declspec(dllexport)
-#            define tim_api_static static __declspec(dllexport)
+#    if !defined(tim_api) && !defined(tim_api_static)
+#        if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
+#            if defined(_TIMEMORY_DLL)
+#                define tim_api __declspec(dllexport)
+#                define tim_api_static static __declspec(dllexport)
+#            else
+#                define tim_api __declspec(dllimport)
+#                define tim_api_static static __declspec(dllimport)
+#            endif
 #        else
-#            define tim_api __declspec(dllimport)
-#            define tim_api_static static __declspec(dllimport)
+#            define tim_api
+#            define tim_api_static static
 #        endif
-#    else
-#        define tim_api
-#        define tim_api_static static
 #    endif
 
 //======================================================================================//

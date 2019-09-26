@@ -395,7 +395,12 @@ get_clock_system_now()
 {
     tms _tms;
     ::times(&_tms);
+#if defined(_WINDOWS)
+    return (static_cast<_Tp>(_tms.tms_stime) + static_cast<_Tp>(_tms.tms_cstime)) *
+           static_cast<_Tp>(clock_tick<Precision>());
+#else
     return (_tms.tms_stime + _tms.tms_cstime) * static_cast<_Tp>(clock_tick<Precision>());
+#endif
 }
 
 //--------------------------------------------------------------------------------------//

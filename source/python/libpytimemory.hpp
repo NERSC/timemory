@@ -25,6 +25,11 @@
 #pragma once
 
 //======================================================================================//
+// disables a bunch of warnings
+//
+#include "timemory/utility/macros.hpp"
+
+//======================================================================================//
 
 #include <atomic>
 #include <chrono>
@@ -52,10 +57,10 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/ctimemory.h"
 #include "timemory/details/settings.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
-#include "timemory/utility/macros.hpp"
 #include "timemory/utility/signals.hpp"
 #include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_timer.hpp"
@@ -64,15 +69,6 @@
 #include "timemory/variadic/component_tuple.hpp"
 
 //======================================================================================//
-
-extern "C"
-{
-#include "timemory/ctimemory.h"
-}
-
-#if !defined(TIMEMORY_CPU_COUNTERS)
-#    define TIMEMORY_CPU_COUNTERS 32
-#endif
 
 namespace py = pybind11;
 using namespace std::placeholders;  // for _1, _2, _3...

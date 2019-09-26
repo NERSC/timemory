@@ -58,18 +58,23 @@ public:
     explicit tgraph_node(const T&);
     explicit tgraph_node(T&&);
 
+#if defined(_WIN32) || defined(_WIN64)
+    tgraph_node(const tgraph_node&) = default;
+    tgraph_node& operator=(const tgraph_node&) = default;
+#else
     tgraph_node(const tgraph_node&) = delete;
-    tgraph_node(tgraph_node&&)      = default;
-
     tgraph_node& operator=(const tgraph_node&) = delete;
-    tgraph_node& operator=(tgraph_node&&) = default;
+#endif
+
+    tgraph_node(tgraph_node&&) noexcept = default;
+    tgraph_node& operator=(tgraph_node&&) noexcept = default;
 
     tgraph_node<T>* parent       = nullptr;
     tgraph_node<T>* first_child  = nullptr;
     tgraph_node<T>* last_child   = nullptr;
     tgraph_node<T>* prev_sibling = nullptr;
     tgraph_node<T>* next_sibling = nullptr;
-    T               data         = T();
+    T               data         = T{};
 };
 
 //======================================================================================//
@@ -1384,12 +1389,12 @@ graph<T, AllocatorT>::replace(iter position, const iterator_base& from)
                 assert(current_from != 0);
             }
             current_from = current_from->next_sibling;
-            if(current_from != last)
+            if(current_from != last && current_from)
             {
                 toit = append_child(parent(toit), current_from->data);
             }
         }
-    } while(current_from != last);
+    } while(current_from != last && current_from);
 
     return current_to;
 }

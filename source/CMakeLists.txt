@@ -106,7 +106,7 @@ if(WIN32)
     # make sure on Windows, static is built first. There is something weird
     # happening here when built in parallel...
     add_dependencies(timemory-cxx-shared timemory-cxx-static)
-    target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL)
+    target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
     target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
 endif()
 
@@ -188,6 +188,14 @@ set(extern_auto_timer_definitions TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
 
 set(TIMEMORY_EXTERN_LIBRARIES extern-native extern-cuda extern-auto-timer)
 foreach(_EXTERN_LIB init native cuda auto-timer)
+
+	if(WIN32)
+	    # Windows makes all this crap too complicated
+		add_interface_library(timemory-extern-${_EXTERN_LIB}-shared)
+		add_interface_library(timemory-extern-${_EXTERN_LIB}-static)
+		continue()
+	endif()
+
     # determine linker language
     set(_LINK_LANGUAGE CXX)
     # don't build cuda
@@ -249,10 +257,9 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
     if(WIN32)
         # make sure on Windows, static is built first. There is something weird
         # happening here when built in parallel...
-        add_dependencies(timemory-extern-${_EXTERN_LIB}-shared
-            timemory-extern-${_EXTERN_LIB}-static)
+        add_dependencies(timemory-extern-${_EXTERN_LIB}-shared timemory-extern-${_EXTERN_LIB}-static)
         target_compile_definitions(timemory-extern-${_EXTERN_LIB}-shared PRIVATE
-            _TIMEMORY_DLL)
+            _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
         target_compile_definitions(timemory-extern-${_EXTERN_LIB}-static PUBLIC
             _TIMEMORY_ARCHIVE)
     endif()

@@ -472,7 +472,7 @@ protected:
     value_type     value        = value_type();
     value_type     accum        = value_type();
     int64_t        laps         = 0;
-    graph_iterator graph_itr;
+    graph_iterator graph_itr    = graph_iterator{ nullptr };
 
 public:
     CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
