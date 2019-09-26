@@ -22,7 +22,7 @@ If a project uses MPI, Timemory will combined the reports from all the MPI ranks
 PAPI counters are available as a component in the same way timing and rusage components are available. If timemory
 is not compiled with PAPI, it is safe to keep their declaration in the code and their output will be suppressed.
 
-There are two components for PAPI counters detailed [here](/components#hardware-counter-components).
+There are two components for PAPI counters detailed [here](docs:components/papi.md).
 
 Example:
 

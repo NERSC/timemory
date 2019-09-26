@@ -56,7 +56,7 @@
 ## Overview
 
 Timemory is generic C++11 template library providing a variety of
-[performance components](https://timemory.readthedocs.io/en/latest/components/)
+[performance components](https://timemory.readthedocs.io/en/latest/components/overview/)
 for reporting timing, resource usage, hardware counters for the CPU and GPU,
 roofline generation, and simplified generation of GOTCHA wrappers to instrument
 external library function calls.
