@@ -65,7 +65,7 @@ python -m timemory.roofline -- ./test_cxx_roofline
 
 ## Customizing the calculation of the "roof" for the Roofline
 
-TiMemory will run a customizable set of calculations at the conclusion of the application of calculate these
+Timemory will run a customizable set of calculations at the conclusion of the application of calculate these
 peak ("roof") values. This functionality is provided through the `tim::policy::global_finalize`
 [policy](custom_components.md#policies).
 The default behavior of the roofline is targeted towards the multithreaded FMA

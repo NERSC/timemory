@@ -1,4 +1,4 @@
-# Welcome to the TiMemory Documentation!
+# Welcome to the timemory Documentation!
 
 ## Timing + Memory + Hardware Counter Utilities for C / C++ / CUDA / Python
 
@@ -28,24 +28,24 @@
 - [![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/platforms.svg)](https://anaconda.org/jrmadsen/timemory)
 - [![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/downloads.svg)](https://anaconda.org/jrmadsen/timemory)
 
-## Why Use TiMemory?
+## Why Use timemory?
 
-- Header-only interface for majority of C++ components
+- __*Direct access*__ to performance analysis data in Python and C++
+- __*Header-only interface for majority of C++*__ components
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
-- Flexible and easily extensible interface: none of the components are restricted to a certain data type
-- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
-- Direct access to performance data in native data structures for language
-- High-performance: template meta-programming and lambdas result in extensive inlining
-- Ability to arbitrarily switch and combine different measurement types anywhere in application
+- __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
+- Flexible and easily extensible interface: __*no data type restrictions in custom components*__
+- __*High-performance*__: template meta-programming and lambdas result in extensive inlining
+- Ability to __*arbitrarily switch and combine different measurement types*__ anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 - Arbitrarily add support for:
-    - CPU hardware counters via PAPI without an explicit PAPI dependency and zero `#ifdef`
-    - GPU hardware counters via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
-    - Generating a roofline for performance-critical sections
+    - __*CPU hardware counters*__ via PAPI without an explicit PAPI dependency and zero `#ifdef`
+    - __*GPU hardware counters*__ via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
+    - Generating a __*Roofline*__ for performance-critical sections
     - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper) including [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
     - Colored CUDA NVTX markers
     - Memory usage
@@ -58,11 +58,11 @@
 
 ## Table of contents
 
-1. [About](about) -- About the TiMemory project
-2. [Features](features) -- Features supported and provided by TiMemory
-3. [Installation](installation) -- How to install TiMemory
-4. [Components](components/overview) -- Available components in TiMemory and their wrappers
-5. [Getting Started](getting_started/overview) -- How to get started using TiMemory
+1. [About](about) -- About the timemory project
+2. [Features](features) -- Features supported and provided by timemory
+3. [Installation](installation) -- How to install timemory
+4. [Components](components/overview) -- Available components in timemory and their wrappers
+5. [Getting Started](getting_started/overview) -- How to get started using timemory
     - Project integration, basic syntax, custom components, generating a roofline
-6. [Runtime Overhead](overhead) -- Analysis of runtime overhead of TiMemory
+6. [Runtime Overhead](overhead) -- Analysis of runtime overhead of timemory
 7. [Doxygen Documentation](doxygen-xml) -- Doxygen source code documentation

@@ -1,4 +1,4 @@
-# TiMemory
+# timemory
 
 ## Timing + Memory + Hardware Counter Utilities for C / C++ / CUDA / Python
 
@@ -11,13 +11,13 @@
 [![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/platforms.svg)](https://anaconda.org/jrmadsen/timemory)
 [![Anaconda-Server Badge](https://anaconda.org/jrmadsen/timemory/badges/downloads.svg)](https://anaconda.org/jrmadsen/timemory)
 
-[TiMemory on GitHub (Source code)](https://github.com/NERSC/timemory)
+[timemory on GitHub (Source code)](https://github.com/NERSC/timemory)
 
-[TiMemory General Documentation](https://timemory.readthedocs.io/en/latest/)
+[timemory General Documentation](https://timemory.readthedocs.io)
 
-[TiMemory Source Code Documentation (Doxygen)](https://timemory.readthedocs.io/en/latest/doxygen-docs/)
+[timemory Source Code Documentation (Doxygen)](https://timemory.readthedocs.io/en/latest/doxygen-docs/)
 
-[TiMemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
+[timemory Testing Dashboard (CDash)](https://cdash.nersc.gov/index.php?project=TiMemory)
 
 |                |                                                   |
 | -------------- | ------------------------------------------------- |
@@ -25,24 +25,24 @@
 | PyPi           | `pip install timemory`                            |
 | Anaconda Cloud | `conda install -c jrmadsen timemory`              |
 
-## Why Use TiMemory?
+## Why Use timemory?
 
-- Header-only interface for majority of C++ components
+- __*Direct access*__ to performance analysis data in Python and C++
+- __*Header-only interface for majority of C++*__ components
 - Variadic interface to all the utilities from C code
 - Variadic interface to all the utilities from C++ code
 - Variadic interface to all the utilities from Python code
     - Includes context-managers and decorators
-- Flexible and easily extensible interface: none of the components are restricted to a certain data type
-- Create your own components: any one-time measurement or start/stop paradigm can be wrapped with timemory
-- Direct access to performance data in native data structures for language
-- High-performance: template meta-programming and lambdas result in extensive inlining
-- Ability to arbitrarily switch and combine different measurement types anywhere in application
+- __*Create your own components*__: any one-time measurement or start/stop paradigm can be wrapped with timemory
+- Flexible and easily extensible interface: __*no data type restrictions in custom components*__
+- __*High-performance*__: template meta-programming and lambdas result in extensive inlining
+- Ability to __*arbitrarily switch and combine different measurement types*__ anywhere in application
 - Provides static reporting (fixed at compile-time), dynamic reporting (selected at run-time), or hybrid
     - Enable static wall-clock and cpu-clock reporting with ability to dynamically enable hardware-counters at runtime
 - Arbitrarily add support for:
-    - CPU hardware counters via PAPI without an explicit PAPI dependency and zero `#ifdef`
-    - GPU hardware counters via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
-    - Generating a roofline for performance-critical sections
+    - __*CPU hardware counters*__ via PAPI without an explicit PAPI dependency and zero `#ifdef`
+    - __*GPU hardware counters*__ via CUPTI without an explicit CUPTI dependency and zero `#ifdef`
+    - Generating a __*Roofline*__ for performance-critical sections
     - Extensive tools provided by [Caliper](https://github.com/LLNL/Caliper) including [TAU](https://www.cs.uoregon.edu/research/tau/home.php)
     - Colored CUDA NVTX markers
     - Memory usage
@@ -55,13 +55,13 @@
 
 ## Overview
 
-TiMemory is generic C++11 template library providing a variety of
+Timemory is generic C++11 template library providing a variety of
 [performance components](https://timemory.readthedocs.io/en/latest/components/)
 for reporting timing, resource usage, hardware counters for the CPU and GPU,
 roofline generation, and simplified generation of GOTCHA wrappers to instrument
 external library function calls.
 
-TiMemory provides also provides Python and C interfaces.
+Timemory provides also provides Python and C interfaces.
 
 ## Purpose
 
@@ -89,7 +89,7 @@ The library provides an easy-to-use method for __*always-on general HPC analysis
 records and stored in a custom solution (there is zero polymorphism) and, for C++ code, extensively
 inlined.
 __*Functionally, the overhead is non-existant*__: sampling profilers (e.g. gperftools, VTune)
-at standard sampling rates barely notice the presence of TiMemory unless it is been
+at standard sampling rates barely notice the presence of timemory unless it is been
 used _very_ unwisely.
 
 Additional tools are provided, such as hardware counters, to __*increase optimization productivity.*__
@@ -114,11 +114,11 @@ then finding ROI, then comparing to previous results, and then repeating from
 In general, profilers are not run frequently enough and performance degradation
 or memory bloat can go undetected for several commits until a production run crashes or
 underperforms. This generally leads to a scramble to detect which revision caused the issue.
-Here, TiMemory can __*decrease performance regression identification time.*__
-When TiMemory is combined with a continuous integration reporting system,
+Here, timemory can __*decrease performance regression identification time.*__
+When timemory is combined with a continuous integration reporting system,
 this scramble can be mitigated fairly quickly because the high-level reporting
 provided allows one to associate a region and commit with exact performance numbers.
-Once TiMemory has been used to help identify the offending commit and identify the general
+Once timemory has been used to help identify the offending commit and identify the general
 region in the offending code, a full profiler should be launched for the fine-grained diagnosis.
 
 ## Create Your Own Tools/Components
@@ -173,14 +173,15 @@ struct trip_count : public base<trip_count, int64_t>
 C++ codes running on the Linux operating system can take advantage of the built-in
 [GOTCHA](https://github.com/LLNL/GOTCHA) functionality to insert timemory markers __*around external function calls*__.
 [GOTCHA](https://github.com/LLNL/GOTCHA) is similar to `LD_PRELOAD` but operates via a programmable API.
+__*This include limited support for C++ function mangling*__ (in general, mangling template functions are not supported -- yet).
 
-Writing a GOTCHA hook in timemory is greatly simplified and, unlike other instrumentation APIs that may provide
-a static set of GOTCHA hooks, applications using timemory can specify their own GOTCHA hooks in a few lines
-of code.
+Writing a GOTCHA hook in timemory is greatly simplified and applications using timemory can specify their own GOTCHA hooks
+in a few lines of code instead of being restricted to a pre-defined set of GOTCHA hooks.
 
-### Example GOTCHA for `MPI_Allreduce`
+### Example GOTCHA
 
-If an application wanted to insert `tim::auto_timer` around `MPI_Allreduce` in the following executable:
+If an application wanted to insert `tim::auto_timer` around (unmangled) `MPI_Allreduce` and
+(mangled) `ext::do_work` in the following executable:
 
 ```cpp
 #include <mpi.h>
@@ -200,21 +201,28 @@ int main(int argc, char** argv)
     MPI_Allreduce(sendbuf.data(), recvbuf.data(), sizebuf, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
     // ... etc.
 
+    int64_t nitr = 10;
+    std::pair<float, double> settings{ 1.25f, 2.5 };
+    std::tuple<float, double> result = ext::do_work(nitr, settings);
+    // ... etc.
+
     return 0;
 }
 ```
 
-This would be the required specification using the `TIMEMORY_GOTCHA` macro:
+This would be the required specification using the `TIMEMORY_C_GOTCHA` macro for unmangled functions
+and `TIMEMORY_CXX_GOTCHA` macro for mangled functions:
 
 ```cpp
 #include <timemory/timemory.hpp>
 
-#define NUM_FUNCS 1
-using mpi_gotcha_t = tim::component::gotcha<NUM_FUNCS, tim::auto_timer_t>;
+static constexpr size_t NUM_FUNCS = 2;
+using gotcha_t = tim::component::gotcha<NUM_FUNCS, tim::auto_timer_t>;
 
 void init()
 {
-    TIMEMORY_GOTCHA(mpi_gotcha_t, 0, MPI_Allreduce);
+    TIMEMORY_C_GOTCHA(gotcha_t, 0, MPI_Allreduce);
+    TIMEMORY_CXX_GOTCHA(gotcha_t, 1, ext::do_work);
 }
 ```
 

@@ -38,6 +38,14 @@ namespace tim
 namespace trait
 {
 //--------------------------------------------------------------------------------------//
+/// trait that signifies that an implementation (e.g. PAPI) is available
+///
+template <typename _Tp>
+struct is_available : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 /// trait that signifies that updating w.r.t. another instance should
 /// be a max of the two instances
 //
@@ -51,14 +59,6 @@ struct record_max : std::false_type
 ///
 template <typename _Tp>
 struct array_serialization : std::false_type
-{
-};
-
-//--------------------------------------------------------------------------------------//
-/// trait that signifies that an implementation (e.g. PAPI) is available
-///
-template <typename _Tp>
-struct is_available : std::true_type
 {
 };
 

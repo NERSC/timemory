@@ -2,24 +2,24 @@
 
 ## Cross-Language Support: C, C++, CUDA, and Python
 
-It is very common for Python projects to implement expensive routines in C or C++. Implementing a TiMemory auto-tuple in any combination of these languages will produce one combined report for all the languages (provided each language links to the same library).
-However, this is a feature of TiMemory. TiMemory can be used in standalone C, C++, or Python projects.
+It is very common for Python projects to implement expensive routines in C or C++. Implementing a timemory auto-tuple in any combination of these languages will produce one combined report for all the languages (provided each language links to the same library).
+However, this is a feature of timemory. Timemory can be used in standalone C, C++, or Python projects.
 
 ## Multithreading
 
 The multithreading overhead is essentially zero.
-All TiMemory components use static thread-local singletons of call-graps that are automatically created when a
+All timemory components use static thread-local singletons of call-graps that are automatically created when a
 new thread starts recording a component. The state of the singleton on the master thread is bookmarked and when the
 thread is destroyed, the thread-local call-graph is merged back into the master call-graph. Only during the
 one-time merge into the master call-graph is a synchronization lock (mutex) utilized.
 
 ## MPI
 
-If a project uses MPI, TiMemory will combined the reports from all the MPI ranks when a report is requested.
+If a project uses MPI, Timemory will combined the reports from all the MPI ranks when a report is requested.
 
 ## PAPI
 
-PAPI counters are available as a component in the same way timing and rusage components are available. If TiMemory
+PAPI counters are available as a component in the same way timing and rusage components are available. If timemory
 is not compiled with PAPI, it is safe to keep their declaration in the code and their output will be suppressed.
 
 There are two components for PAPI counters detailed [here](/components#hardware-counter-components).
@@ -40,7 +40,7 @@ void some_function()
 
 ## CUDA
 
-At this stage, TiMemory implements a `cudaEvent_t` that will record the elapsed time between
+At this stage, timemory implements a `cudaEvent_t` that will record the elapsed time between
 two points in the stream pipeline execution. The CUDA documentation for this component
 (`tim::component::cuda_event`) can be found
 [here](https://devblogs.nvidia.com/how-implement-performance-metrics-cuda-cc/)
@@ -55,7 +55,7 @@ Support for CUPTI (CUDA hardware counters) is in development.
 
 ## Plot Generation in Python
 
-The results from TiMemory can be serialized to JSON and the JSON output can be used to produce performance plots
+The results from timemory can be serialized to JSON and the JSON output can be used to produce performance plots
 via the standalone `timemory-plotter` or `timemory.plotting` Python module. For roofline analysis,
 the `timemory.roofline` module can be used.
 
@@ -85,7 +85,7 @@ $ ./timem sleep 2
 
 ## Signal Detection
 
-TiMemory provides a facility for catching signals and printing out a backtrace when the signals are raised:
+Timemory provides a facility for catching signals and printing out a backtrace when the signals are raised:
 
 ```cpp
 tim::enable_signal_detection({ SIGHUP, SIGINT, SIGQUIT, SIGABRT });
@@ -95,7 +95,7 @@ tim::disable_signal_detection();
 
 ## Cache Information
 
-TiMemory provides method on Linux, Windows, and macOS to query the size of L1, L2, and L3 cache.
+Timemory provides method on Linux, Windows, and macOS to query the size of L1, L2, and L3 cache.
 A `get_max()` function is provided for convenience as some systems (e.g. KNL) do not have an L3 cache.
 
 > Namespace: `tim::ert::cache_size`

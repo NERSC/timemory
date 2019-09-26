@@ -1,4 +1,4 @@
-site_name: TiMemory
+site_name: timemory
 nav:
   - Home: index.md
   - About: about.md

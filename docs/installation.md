@@ -1,4 +1,4 @@
-# Installing TiMemory
+# Installing timemory
 
 - Required
     - C++ compiler (GNU, MSVC, Clang, Intel, PGI)
@@ -22,8 +22,8 @@
 ## Relevant CMake Options
 
 In most cases, the defaults are acceptable for most configurations.
-If TiMemory is being utilized for it's roofline capabilities, it is recommended to enable the `TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS` and `TIMEMORY_USE_ARCH` options.
-For the various external packages, TiMemory will search the `CMAKE_PREFIX_PATH` in the environment and enable CUDA, CUPTI, PAPI, and MPI if it can find those packages.
+If timemory is being utilized for it's roofline capabilities, it is recommended to enable the `TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS` and `TIMEMORY_USE_ARCH` options.
+For the various external packages, Timemory will search the `CMAKE_PREFIX_PATH` in the environment and enable CUDA, CUPTI, PAPI, and MPI if it can find those packages.
 
 | Option                             | Values                                                  | Description                                                                       |
 | ---------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------- |
@@ -33,7 +33,7 @@ For the various external packages, TiMemory will search the `CMAKE_PREFIX_PATH` 
 | TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS | ON, OFF                                                 | Add extra optimization flags for vectorization                                    |
 | TIMEMORY_BUILD_GTEST               | ON, OFF                                                 | Enable unit tests with GoogleTest                                                 |
 | TIMEMORY_BUILD_LTO                 | ON, OFF                                                 | Enable link-time optimizations in build                                           |
-| TIMEMORY_BUILD_PYTHON              | ON, OFF                                                 | Build Python bindings for TiMemory                                                |
+| TIMEMORY_BUILD_PYTHON              | ON, OFF                                                 | Build Python bindings for timemory                                                |
 | TIMEMORY_BUILD_TOOLS               | ON, OFF                                                 | Enable building command-line tools                                                |
 | TIMEMORY_BUILD_CALIPER             | ON, OFF                                                 | Enable building Caliper submodule                                                 |
 | TIMEMORY_BUILD_GOTCHA              | ON, OFF                                                 | Enable building GOTCHA submodule                                                  |

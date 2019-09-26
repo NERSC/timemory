@@ -14,7 +14,7 @@ More information on roofline can be found [here](https://docs.nersc.gov/programm
 | **`cpu_roofline`** | CPU      | `cpu_roofline<Types...>` | PAPI         | Records the rate at which the hardware counters are accumulated |
 | **`gpu_roofline`** | CPU      | `gpu_roofline<Types...>` | CUDA, CUPTI  | Records the rate at which the hardware counters are accumulated |
 
-The roofline components provided by TiMemory execute a workflow during application termination that calculates the theoretical peak for the roofline.
+The roofline components provided by timemory execute a workflow during application termination that calculates the theoretical peak for the roofline.
 A pre-defined set of algorithms for the theoretical peak are provided but these can be customized.
 An example can be found in `timemory/examples/ex-cpu-roofline/test_cpu_roofline.cpp` and `timemory/examples/ex-gpu-roofline/test_gpu_roofline.cpp`.
 
