@@ -54,7 +54,7 @@ class tgraph_node
 {
     // size: 5*4=20 bytes (on 32 bit arch), can be reduced by 8.
 public:
-    tgraph_node() = default;
+    tgraph_node()  = default;
     ~tgraph_node() = default;
     explicit tgraph_node(const T&);
     explicit tgraph_node(T&&);

@@ -64,14 +64,7 @@ build_library(
     COMPILE_DEFINITIONS
     LINK_LIBRARIES      timemory-headers
                         timemory-vector
-                        # timemory-mpi
-                        # timemory-cuda
-                        # timemory-cudart
-                        # timemory-cudart-device
-                        # timemory-nvtx
-                        # timemory-cupti
-                        timemory-papi
-                        timemory-caliper
+                        timemory-external-shared
                         PRIVATE
                             timemory-compile-options
                             timemory-analysis-tools
@@ -87,16 +80,8 @@ build_library(
     SOURCES             ${CXX_LIBRARY_SOURCES}
     CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
     LINK_LIBRARIES      timemory-headers
-                        timemory-compile-options
                         timemory-vector
-                        # timemory-mpi
-                        # timemory-cuda
-                        # timemory-cudart-static
-                        # timemory-cudart-device
-                        # timemory-nvtx
-                        # timemory-cupti
-                        timemory-papi-static
-                        timemory-caliper
+                        timemory-external-static
                         PRIVATE
                             timemory-compile-options
                             timemory-analysis-tools
@@ -133,6 +118,7 @@ if(TIMEMORY_BUILD_C)
                             PRIVATE
                                 timemory-compile-options
                                 timemory-cxx-shared
+                                timemory-external-shared
                                 timemory-analysis-tools
                                 ${_ARCH_LIBRARY})
 
@@ -149,6 +135,7 @@ if(TIMEMORY_BUILD_C)
                             PRIVATE
                                 timemory-compile-options
                                 timemory-cxx-static
+                                timemory-external-static
                                 timemory-analysis-tools
                                 ${_ARCH_LIBRARY})
 
@@ -245,8 +232,8 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
 
     if("${_EXTERN_LIB}" STREQUAL "init")
         target_link_libraries(timemory-extern-init  INTERFACE   timemory-extern-${_EXTERN_LIB}-shared)
-        target_link_libraries(timemory-cxx-shared   PUBLIC      timemory-extern-init)
-        target_link_libraries(timemory-cxx-static   PUBLIC      timemory-extern-init)
+        target_link_libraries(timemory-cxx-shared   PRIVATE     timemory-extern-init)
+        target_link_libraries(timemory-cxx-static   PRIVATE     timemory-extern-init)
     elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
         target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
         target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)

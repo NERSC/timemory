@@ -247,8 +247,8 @@ enum
 #    define PAPI_LSU_IDL                                                                 \
         (PAPI_LSU_IDL_idx | PAPI_PRESET_MASK) /*Cycles load/store units are idle */
 #    define PAPI_TLB_DM                                                                  \
-        (PAPI_TLB_DM_idx |                                                               \
-         PAPI_PRESET_MASK) /*Data translation lookaside buffer misses */
+        (PAPI_TLB_DM_idx | PAPI_PRESET_MASK) /*Data translation lookaside buffer misses  \
+                                              */
 #    define PAPI_TLB_IM                                                                  \
         (PAPI_TLB_IM_idx |                                                               \
          PAPI_PRESET_MASK) /*Instr translation lookaside buffer misses */
@@ -261,8 +261,8 @@ enum
 #    define PAPI_L2_STM (PAPI_L2_STM_idx | PAPI_PRESET_MASK) /*Level 2 store misses */
 #    define PAPI_BTAC_M (PAPI_BTAC_M_idx | PAPI_PRESET_MASK) /*BTAC miss */
 #    define PAPI_PRF_DM                                                                  \
-        (PAPI_PRF_DM_idx |                                                               \
-         PAPI_PRESET_MASK) /*Prefetch data instruction caused a miss */
+        (PAPI_PRF_DM_idx | PAPI_PRESET_MASK) /*Prefetch data instruction caused a miss   \
+                                              */
 #    define PAPI_L3_DCH (PAPI_L3_DCH_idx | PAPI_PRESET_MASK) /*Level 3 Data Cache Hit */
 #    define PAPI_TLB_SD                                                                  \
         (PAPI_TLB_SD_idx |                                                               \
@@ -278,11 +278,11 @@ enum
         (PAPI_MEM_SCY_idx |                                                              \
          PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Access */
 #    define PAPI_MEM_RCY                                                                 \
-        (PAPI_MEM_RCY_idx |                                                              \
-         PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Read */
+        (PAPI_MEM_RCY_idx | PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Read   \
+                                               */
 #    define PAPI_MEM_WCY                                                                 \
-        (PAPI_MEM_WCY_idx |                                                              \
-         PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Write */
+        (PAPI_MEM_WCY_idx | PAPI_PRESET_MASK) /*Cycles Stalled Waiting for Memory Write  \
+                                               */
 #    define PAPI_STL_ICY                                                                 \
         (PAPI_STL_ICY_idx | PAPI_PRESET_MASK) /*Cycles with No Instruction Issue */
 #    define PAPI_FUL_ICY                                                                 \
@@ -297,16 +297,16 @@ enum
         (PAPI_BR_UCN_idx |                                                               \
          PAPI_PRESET_MASK) /*Unconditional branch instructions executed */
 #    define PAPI_BR_CN                                                                   \
-        (PAPI_BR_CN_idx |                                                                \
-         PAPI_PRESET_MASK) /*Conditional branch instructions executed */
+        (PAPI_BR_CN_idx | PAPI_PRESET_MASK) /*Conditional branch instructions executed   \
+                                             */
 #    define PAPI_BR_TKN                                                                  \
         (PAPI_BR_TKN_idx | PAPI_PRESET_MASK) /*Conditional branch instructions taken */
 #    define PAPI_BR_NTK                                                                  \
         (PAPI_BR_NTK_idx |                                                               \
          PAPI_PRESET_MASK) /*Conditional branch instructions not taken */
 #    define PAPI_BR_MSP                                                                  \
-        (PAPI_BR_MSP_idx |                                                               \
-         PAPI_PRESET_MASK) /*Conditional branch instructions mispred */
+        (PAPI_BR_MSP_idx | PAPI_PRESET_MASK) /*Conditional branch instructions mispred   \
+                                              */
 #    define PAPI_BR_PRC                                                                  \
         (PAPI_BR_PRC_idx |                                                               \
          PAPI_PRESET_MASK) /*Conditional branch instructions corr. pred */
@@ -326,16 +326,16 @@ enum
         (PAPI_SR_INS_idx | PAPI_PRESET_MASK) /*Store instructions executed */
 #    define PAPI_BR_INS                                                                  \
         (PAPI_BR_INS_idx | PAPI_PRESET_MASK) /*Total branch instructions executed */
-#    define PAPI_VEC_INS                                                                 \
-        (PAPI_VEC_INS_idx | PAPI_PRESET_MASK) 
+#    define PAPI_VEC_INS (PAPI_VEC_INS_idx | PAPI_PRESET_MASK)
 /*Vector/SIMD instructions executed (could include integer) */
 #    define PAPI_RES_STL                                                                 \
-        (PAPI_RES_STL_idx |                                                              \
-         PAPI_PRESET_MASK) /*Cycles processor is stalled on resource */
+        (PAPI_RES_STL_idx | PAPI_PRESET_MASK) /*Cycles processor is stalled on resource  \
+                                               */
 #    define PAPI_FP_STAL                                                                 \
         (PAPI_FP_STAL_idx | PAPI_PRESET_MASK) /*Cycles any FP units are stalled */
 #    define PAPI_TOT_CYC                                                                 \
-        (PAPI_TOT_CYC_idx | PAPI_PRESET_MASK) /*Total cycles executed */
+        (PAPI_TOT_CYC_idx | PAPI_PRESET_MASK) /*Total cycles executed                    \
+                                               */
 #    define PAPI_LST_INS                                                                 \
         (PAPI_LST_INS_idx | PAPI_PRESET_MASK) /*Total load/store inst. executed */
 #    define PAPI_SYC_INS (PAPI_SYC_INS_idx | PAPI_PRESET_MASK) /*Sync. inst. executed */
@@ -374,14 +374,17 @@ enum
         (PAPI_L2_ICW_idx | PAPI_PRESET_MASK) /*L2 instruction cache writes */
 #    define PAPI_L3_ICW                                                                  \
         (PAPI_L3_ICW_idx | PAPI_PRESET_MASK) /*L3 instruction cache writes */
-#    define PAPI_L1_TCH (PAPI_L1_TCH_idx | PAPI_PRESET_MASK)   /*L1 total cache hits */
-#    define PAPI_L2_TCH (PAPI_L2_TCH_idx | PAPI_PRESET_MASK)   /*L2 total cache hits */
-#    define PAPI_L3_TCH (PAPI_L3_TCH_idx | PAPI_PRESET_MASK)   /*L3 total cache hits */
-#    define PAPI_L1_TCA (PAPI_L1_TCA_idx | PAPI_PRESET_MASK)   /*L1 total cache accesses \
-                                                                */
-#    define PAPI_L2_TCA (PAPI_L2_TCA_idx | PAPI_PRESET_MASK)   /*L2 total cache accesses \
-                                                                */
-#    define PAPI_L3_TCA (PAPI_L3_TCA_idx | PAPI_PRESET_MASK)   /*L3 total cache accesses \
+#    define PAPI_L1_TCH (PAPI_L1_TCH_idx | PAPI_PRESET_MASK) /*L1 total cache hits */
+#    define PAPI_L2_TCH (PAPI_L2_TCH_idx | PAPI_PRESET_MASK) /*L2 total cache hits */
+#    define PAPI_L3_TCH (PAPI_L3_TCH_idx | PAPI_PRESET_MASK) /*L3 total cache hits */
+#    define PAPI_L1_TCA                                                                  \
+        (PAPI_L1_TCA_idx | PAPI_PRESET_MASK) /*L1 total cache accesses                   \
+                                              */
+#    define PAPI_L2_TCA                                                                  \
+        (PAPI_L2_TCA_idx | PAPI_PRESET_MASK) /*L2 total cache accesses                   \
+                                              */
+#    define PAPI_L3_TCA                                                                  \
+        (PAPI_L3_TCA_idx | PAPI_PRESET_MASK)                   /*L3 total cache accesses \
                                                                 */
 #    define PAPI_L1_TCR (PAPI_L1_TCR_idx | PAPI_PRESET_MASK)   /*L1 total cache reads */
 #    define PAPI_L2_TCR (PAPI_L2_TCR_idx | PAPI_PRESET_MASK)   /*L2 total cache reads */
@@ -456,7 +459,8 @@ enum
 /* Currently the following options are only available on systems using the perf_events
  * component within papi */
 #    define PAPI_CPU_ATTACH                                                              \
-        27 /* Specify a cpu number the event set should be tied to */
+        27                  /* Specify a cpu number the event set should be tied to      \
+                             */
 #    define PAPI_INHERIT 28 /* Option to set counter inheritance flag */
 #    define PAPI_USER_EVENTS_FILE                                                        \
         29 /* Option to set file from where to parse user defined events */

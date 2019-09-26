@@ -32,7 +32,7 @@ target_include_directories(libpytimemory SYSTEM PUBLIC
 
 target_link_libraries(libpytimemory PUBLIC
     timemory-headers
-    # timemory-cxx-shared
+    timemory-cxx-shared
     # timemory-extern-init
     timemory-compile-options
     timemory-external-shared

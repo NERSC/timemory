@@ -208,11 +208,11 @@ using recommended_hybrid_t = component_hybrid<recommended_list_t, recommended_tu
 
 //======================================================================================//
 
-//======================================================================================//
-
 #    if defined(TIMEMORY_EXTERN_INIT)
 #        include "timemory/utility/storage.hpp"
 
+namespace tim
+{
 TIMEMORY_DECLARE_EXTERN_STORAGE(caliper)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_roofline_dp_flops)
@@ -254,6 +254,7 @@ TIMEMORY_DECLARE_EXTERN_STORAGE(trip_count)
 TIMEMORY_DECLARE_EXTERN_STORAGE(user_clock)
 TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
 TIMEMORY_DECLARE_EXTERN_STORAGE(written_bytes)
+}  // namespace tim
 
 #    endif  // defined(TIMEMORY_EXTERN_INIT)
 

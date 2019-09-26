@@ -38,6 +38,7 @@ using namespace tim::component;
 
 //======================================================================================//
 #if defined(TIMEMORY_EXTERN_INIT)
+
 namespace tim
 {
 std::atomic<int32_t>&
@@ -81,8 +82,11 @@ manager::noninit_master_instance()
     return details::manager_singleton().master_instance_ptr();
 }
 
-}  // namespace tim
-
+//======================================================================================//
+// implements:
+//      template <> get_storage_singleton<TYPE>();
+//      template <> get_noninit_storage_singleton<TYPE>();
+//
 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(caliper)
 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_clock)
 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(cpu_roofline_dp_flops)
@@ -125,4 +129,6 @@ TIMEMORY_INSTANTIATE_EXTERN_STORAGE(user_clock)
 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(voluntary_context_switch)
 TIMEMORY_INSTANTIATE_EXTERN_STORAGE(written_bytes)
 
-#endif  // defined(TIMEMORY_EXTERN_INIT
+}  // namespace tim
+
+#endif  // defined(TIMEMORY_EXTERN_INIT)

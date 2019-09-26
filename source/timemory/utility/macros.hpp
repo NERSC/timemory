@@ -267,19 +267,35 @@
                                              _EXTERN_LIST_ALIAS(_ALIAS)>;
 
 //--------------------------------------------------------------------------------------//
-//      extern storage
+//      extern storage singleton
 //
-#    define TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE) tim::storage<tim::component::OBJ_TYPE>
+#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_storage_singleton<storage<component::TYPE>>();                               \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_noninit_storage_singleton<storage<component::TYPE>>();
 
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(OBJ_TYPE)                                    \
-        extern template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(  \
-            OBJ_TYPE)>&                                                                  \
-        tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
-
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(OBJ_TYPE)                                \
-        template tim::details::storage_singleton_t<TIMEMORY_EXTERN_STORAGE_TYPE(         \
-            OBJ_TYPE)>&                                                                  \
-        tim::get_storage_singleton<TIMEMORY_EXTERN_STORAGE_TYPE(OBJ_TYPE)>();
+#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_storage_singleton<storage<component::TYPE>>()                                \
+        {                                                                                \
+            using _storage_t           = storage<component::TYPE>;                       \
+            using _single_t            = details::storage_singleton_t<_storage_t>;       \
+            static _single_t _instance = _single_t::instance();                          \
+            return _instance;                                                            \
+        }                                                                                \
+        template <>                                                                      \
+        details::storage_singleton_t<storage<component::TYPE>>&                          \
+        get_noninit_storage_singleton<storage<component::TYPE>>()                        \
+        {                                                                                \
+            using _storage_t           = storage<component::TYPE>;                       \
+            using _single_t            = details::storage_singleton_t<_storage_t>;       \
+            static _single_t _instance = _single_t::instance_ptr();                      \
+            return _instance;                                                            \
+        }
 
 #else
 
