@@ -282,6 +282,12 @@ install:
     fi
   # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
 
+script:
+  - eval "${MATRIX_EVAL}"
+  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DTIMEMORY_BUILD_STATIC=OFF
+  - python -c "import timemory; print(timemory.__file__)"
+  - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
+
 after_success:
   - eval "${MATRIX_EVAL}"
   - SUBMIT_COVERAGE=0
