@@ -57,8 +57,8 @@ using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
 template <typename _Tp>
 using vector_t = std::vector<_Tp>;
 
-static constexpr int64_t nitr = 100000;
-static const double tolerance = 1.0e-2;
+static constexpr int64_t nitr      = 100000;
+static const double      tolerance = 1.0e-2;
 
 namespace details
 {
@@ -386,7 +386,7 @@ TEST_F(gotcha_tests, member_functions)
         printf("\n");
 
     ASSERT_NEAR(fsum, -2416347.50, tolerance);
-    ASSERT_NEAR(dsum,   881550.95, tolerance);
+    ASSERT_NEAR(dsum, 881550.95, tolerance);
 }
 
 //======================================================================================//
