@@ -32,7 +32,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
     # GCC 6
     - os: linux
       dist: xenial
@@ -55,7 +55,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
     # GCC 7
     - os: linux
       dist: xenial
@@ -78,7 +78,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -100,7 +100,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1 && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -124,7 +124,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -152,7 +152,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5)"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
     # GCC 6
     - os: linux
       dist: xenial
@@ -175,7 +175,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
     # GCC 7
     - os: linux
       dist: xenial
@@ -198,7 +198,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7)"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -220,7 +220,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0)"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -244,7 +244,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0)"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
     # ------------------------------------------------------------------------ #
 
 before_install:
@@ -276,18 +276,11 @@ install:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
   - if [ -n "${COVERAGE}" ]; then
-    python ./pyctest-runner.py ${ARGS} --coverage --no-py -- -VV;
+    python ./pyctest-runner.py ${ARGS} --coverage -- -VV -- ${BUILD_ARGS};
     else
-    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations --no-py -- -VV;
+    python ./pyctest-runner.py ${ARGS} --profile=cpu --extra-optimizations -- -VV -- ${BUILD_ARGS};
     fi
   # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
-
-script:
-  - eval "${MATRIX_EVAL}"
-  - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=Release ; fi
-  - python setup.py install --build-type=${BUILD_TYPE} -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF
-  - python -c "import timemory; print(timemory.__file__)"
-  - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 
 after_success:
   - eval "${MATRIX_EVAL}"

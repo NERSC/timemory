@@ -41,10 +41,6 @@ if(SKBUILD)
     set(CMAKE_INSTALL_LIBDIR lib)
 endif()
 
-if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
-    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "Thread-local static model" FORCE)
-endif()
-
 #----------------------------------------------------------------------------------------#
 #   project
 #----------------------------------------------------------------------------------------#
@@ -89,6 +85,64 @@ endforeach()
 
 include(MacroUtilities)
 include(Options)
+
+#----------------------------------------------------------------------------------------#
+#   handle some additional configuration before other includes
+#----------------------------------------------------------------------------------------#
+
+set(_BUILD_SHARED_CXX ${BUILD_SHARED_LIBS})
+set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
+
+option(TIMEMORY_BUILD_QUIET "Suppress author warnings without -Wno-dev" OFF)
+mark_as_advanced(TIMEMORY_BUILD_QUIET)
+
+if(TIMEMORY_BUILD_TOOLS AND NOT BUILD_STATIC_LIBS)
+    if(NOT TIMEMORY_BUILD_QUIET)
+        message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
+        set(TIMEMORY_BUILD_TOOLS OFF)
+    endif()
+endif()
+
+if(SKBUILD)
+    set(_BUILD_SHARED_CXX ON)
+else()
+    if(TIMEMORY_BUILD_PYTHON AND NOT BUILD_SHARED_LIBS)
+        if(NOT TIMEMORY_BUILD_QUIET)
+            message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
+            set(TIMEMORY_BUILD_PYTHON OFF)
+        endif()
+    endif()
+endif()
+
+#----------------------------------------------------------------------------------------#
+#   thread-local static settings.
+#   NOTE: if building Python, the thread-local storage MUST be global-dynamic
+#----------------------------------------------------------------------------------------#
+
+set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
+set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
+
+if(SKBUILD OR TIMEMORY_BUILD_PYTHON)
+    set(TIMEMORY_TLS_MODEL "global-dynamic" CACHE STRING "${_TLS_DESCRIPT}")
+    # ensure local override
+    set(TIMEMORY_TLS_MODEL "global-dynamic")
+else()
+    set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+endif()
+
+set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
+if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
+    message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
+endif()
+
+add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
+unset(_TLS_DESCRIPT)
+unset(_TLS_OPTIONS)
+
+#----------------------------------------------------------------------------------------#
+#   rest of configuration
+#----------------------------------------------------------------------------------------#
+
 include(Compilers)
 include(GNUInstallDirs)
 include(ProjectSettings)

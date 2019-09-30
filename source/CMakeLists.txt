@@ -32,12 +32,10 @@ set(timemory_headers
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
 
-
 #----------------------------------------------------------------------------------------#
 # this includes compile definitions for headers
 #
 add_subdirectory(timemory)
-
 
 #----------------------------------------------------------------------------------------#
 # build library setup
@@ -54,43 +52,57 @@ endif()
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
-build_library(
-    PIC
-    TYPE                SHARED
-    TARGET_NAME         timemory-cxx-shared
-    OUTPUT_NAME         timemory
-    LANGUAGE            CXX
-    LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-    SOURCES             ${CXX_LIBRARY_SOURCES}
-    CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    COMPILE_DEFINITIONS
-    LINK_LIBRARIES      timemory-headers
-                        timemory-vector
-                        timemory-external-shared
-                        PRIVATE
-                            timemory-compile-options
-                            timemory-analysis-tools
-                            ${_ARCH_LIBRARY})
 
-build_library(
-    TYPE                STATIC
-    TARGET_NAME         timemory-cxx-static
-    OUTPUT_NAME         timemory
-    LANGUAGE            CXX
-    LINKER_LANGUAGE     CXX
-    OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-    SOURCES             ${CXX_LIBRARY_SOURCES}
-    CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-    LINK_LIBRARIES      timemory-headers
-                        timemory-vector
-                        timemory-external-static
-                        PRIVATE
-                            timemory-compile-options
-                            timemory-analysis-tools
-                            ${_ARCH_LIBRARY})
+if(_BUILD_SHARED_CXX)
+    build_library(
+        PIC
+        TYPE                SHARED
+        TARGET_NAME         timemory-cxx-shared
+        OUTPUT_NAME         timemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${CXX_LIBRARY_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS
+        LINK_LIBRARIES      timemory-headers
+                            timemory-vector
+                            timemory-external-shared
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-analysis-tools
+                                ${_ARCH_LIBRARY})
 
-if(WIN32)
+    if(TIMEMORY_BUILD_C)
+        target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
+    endif()
+endif()
+
+if(_BUILD_STATIC_CXX)
+
+    build_library(
+        TYPE                STATIC
+        TARGET_NAME         timemory-cxx-static
+        OUTPUT_NAME         timemory
+        LANGUAGE            CXX
+        LINKER_LANGUAGE     CXX
+        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+        SOURCES             ${CXX_LIBRARY_SOURCES}
+        CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        LINK_LIBRARIES      timemory-headers
+                            timemory-vector
+                            timemory-external-static
+                            PRIVATE
+                                timemory-compile-options
+                                timemory-analysis-tools
+                                ${_ARCH_LIBRARY})
+
+    if(TIMEMORY_BUILD_C)
+        target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
+    endif()
+endif()
+
+if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
     # make sure on Windows, static is built first. There is something weird
     # happening here when built in parallel...
     add_dependencies(timemory-cxx-shared timemory-cxx-static)
@@ -104,45 +116,47 @@ endif()
 #
 if(TIMEMORY_BUILD_C)
 
-    target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
-    target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
+    if(_BUILD_SHARED_CXX)
+        build_library(
+            PIC
+            TYPE                SHARED
+            TARGET_NAME         timemory-c-shared
+            OUTPUT_NAME         ctimemory
+            LANGUAGE            C
+            LINKER_LANGUAGE     CXX
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+            SOURCES             ${C_LIBRARY_SOURCES}
+            C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
+            LINK_LIBRARIES      timemory-headers
+                                PRIVATE
+                                    timemory-compile-options
+                                    timemory-cxx-shared
+                                    timemory-external-shared
+                                    timemory-analysis-tools
+                                    ${_ARCH_LIBRARY})
+    endif()
 
-    build_library(
-        PIC
-        TYPE                SHARED
-        TARGET_NAME         timemory-c-shared
-        OUTPUT_NAME         ctimemory
-        LANGUAGE            C
-        LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${C_LIBRARY_SOURCES}
-        C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-cxx-shared
-                                timemory-external-shared
-                                timemory-analysis-tools
-                                ${_ARCH_LIBRARY})
+    if(_BUILD_STATIC_CXX)
 
-    build_library(
-        TYPE                STATIC
-        TARGET_NAME         timemory-c-static
-        OUTPUT_NAME         ctimemory
-        LANGUAGE            C
-        LINKER_LANGUAGE     CXX
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${C_LIBRARY_SOURCES}
-        C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
-        LINK_LIBRARIES      timemory-headers
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-cxx-static
-                                timemory-external-static
-                                timemory-analysis-tools
-                                ${_ARCH_LIBRARY})
+        build_library(
+            TYPE                STATIC
+            TARGET_NAME         timemory-c-static
+            OUTPUT_NAME         ctimemory
+            LANGUAGE            C
+            LINKER_LANGUAGE     CXX
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+            SOURCES             ${C_LIBRARY_SOURCES}
+            C_COMPILE_OPTIONS   ${${PROJECT_NAME}_C_COMPILE_OPTIONS}
+            LINK_LIBRARIES      timemory-headers
+                                PRIVATE
+                                    timemory-compile-options
+                                    timemory-cxx-static
+                                    timemory-external-static
+                                    timemory-analysis-tools
+                                    ${_ARCH_LIBRARY})
+    endif()
 
-    if(WIN32)
+    if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
         add_dependencies(timemory-c-shared timemory-c-static)
         target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
         target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
@@ -176,86 +190,73 @@ set(extern_cuda_definitions       TIMEMORY_EXTERN_CUDA_TEMPLATES)
 set(extern_native_definitions     TIMEMORY_EXTERN_NATIVE_TEMPLATES)
 set(extern_auto_timer_definitions TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
 
+message(STATUS "BUILD CXX SHARED: ${_BUILD_SHARED_CXX}")
+message(STATUS "BUILD CXX STATIC: ${_BUILD_STATIC_CXX}")
+
 set(TIMEMORY_EXTERN_LIBRARIES extern-native extern-cuda extern-auto-timer)
 foreach(_EXTERN_LIB init native cuda auto-timer)
+    foreach(_TYPE shared static)
+        # Windows makes all this crap too complicated
+        if(WIN32 OR
+                ("${_TYPE}" STREQUAL "shared" AND NOT _BUILD_SHARED_CXX) OR
+                ("${_TYPE}" STREQUAL "static" AND NOT _BUILD_STATIC_CXX))
+            add_interface_library(timemory-extern-${_EXTERN_LIB}-${_TYPE})
+            continue()
+        endif()
 
-	if(WIN32)
-	    # Windows makes all this crap too complicated
-		add_interface_library(timemory-extern-${_EXTERN_LIB}-shared)
-		add_interface_library(timemory-extern-${_EXTERN_LIB}-static)
-		continue()
-	endif()
+        # determine linker language
+        set(_LINK_LANGUAGE CXX)
+        # don't build cuda
+        if(NOT TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
+            continue()
+        elseif(TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
+            set(_LINK_LANGUAGE CUDA)
+        endif()
 
-    # determine linker language
-    set(_LINK_LANGUAGE CXX)
-    # don't build cuda
-    if(NOT TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
-        continue()
-    elseif(TIMEMORY_USE_CUDA AND "${_EXTERN_LIB}" STREQUAL "cuda")
-        set(_LINK_LANGUAGE CUDA)
-    endif()
+        string(REPLACE "-" "_" _NAME "${_EXTERN_LIB}")
 
-    string(REPLACE "-" "_" _NAME "${_EXTERN_LIB}")
+        string(TOUPPER "${_TYPE}" _LIB_TYPE)
+        #------------------------------------------------------------------------------------#
+        # build the extern libraries
+        #
+        build_library(
+            PIC
+            TYPE                ${_LIB_TYPE}
+            TARGET_NAME         timemory-extern-${_EXTERN_LIB}-${_TYPE}
+            OUTPUT_NAME         timemory-extern-${_EXTERN_LIB}
+            LANGUAGE            CXX
+            LINKER_LANGUAGE     ${_LINK_LANGUAGE}
+            OUTPUT_DIR          ${PROJECT_BINARY_DIR}
+            SOURCES             ${extern_${_NAME}_sources}
+            COMPILE_DEFINITIONS PUBLIC
+                                    ${extern_${_NAME}_definitions}
+            LINK_LIBRARIES      timemory-headers
+                                ${extern_${_NAME}_link_libs_${_TYPE}}
+                                PRIVATE
+                                    timemory-compile-options
+                                    timemory-arch)
+        #
+        # suffix when shared is empty and static is "-static
+        #
+        set(_SUFFIX )
+        if("${_TYPE}" STREQUAL "static")
+            set(_SUFFIX "-static")
+        endif()
 
-    #------------------------------------------------------------------------------------#
-    # build the extern libraries
-    #
-    build_library(
-        PIC
-        TYPE                SHARED
-        TARGET_NAME         timemory-extern-${_EXTERN_LIB}-shared
-        OUTPUT_NAME         timemory-extern-${_EXTERN_LIB}
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     ${_LINK_LANGUAGE}
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${extern_${_NAME}_sources}
-        COMPILE_DEFINITIONS PUBLIC
-                                ${extern_${_NAME}_definitions}
-        LINK_LIBRARIES      timemory-headers
-                            ${extern_${_NAME}_link_libs_shared}
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-arch)
+        if("${_EXTERN_LIB}" STREQUAL "init")
+            if("${_TYPE}" STREQUAL "shared")
+                target_link_libraries(timemory-extern-init INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
+            endif()
+            target_link_libraries(timemory-cxx-${_TYPE} PRIVATE timemory-extern-init-${_TYPE})
+        elseif("${_EXTERN_LIB}" STREQUAL "auto-timer")
+            target_link_libraries(timemory-extern-templates${_SUFFIX} INTERFACE timemory-extern-${_EXTERN_LIB}-${_TYPE})
+            target_link_libraries(timemory-cxx-${_TYPE}               PRIVATE   timemory-extern-${_EXTERN_LIB}-${_TYPE})
+        elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
+            target_link_libraries(timemory-extern-templates${_SUFFIX} INTERFACE timemory-extern-${_EXTERN_LIB}-${_TYPE})
+        endif()
 
-    build_library(
-        TYPE                STATIC
-        TARGET_NAME         timemory-extern-${_EXTERN_LIB}-static
-        OUTPUT_NAME         timemory-extern-${_EXTERN_LIB}
-        LANGUAGE            CXX
-        LINKER_LANGUAGE     ${_LINK_LANGUAGE}
-        OUTPUT_DIR          ${PROJECT_BINARY_DIR}
-        SOURCES             ${extern_${_NAME}_sources}
-        COMPILE_DEFINITIONS PUBLIC
-                                ${extern_${_NAME}_definitions}
-        LINK_LIBRARIES      timemory-headers
-                            ${extern_${_NAME}_link_libs_static}
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-arch)
+    endforeach()
 
-    if("${_EXTERN_LIB}" STREQUAL "init")
-        target_link_libraries(timemory-extern-init  INTERFACE   timemory-extern-${_EXTERN_LIB}-shared)
-        target_link_libraries(timemory-cxx-shared   PRIVATE     timemory-extern-init)
-        target_link_libraries(timemory-cxx-static   PRIVATE     timemory-extern-init)
-    elseif("${_EXTERN_LIB}" STREQUAL "auto-timer")
-        target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
-        target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)
-        target_link_libraries(timemory-cxx-shared              PRIVATE   timemory-extern-${_EXTERN_LIB}-shared)
-        target_link_libraries(timemory-cxx-static              PRIVATE   timemory-extern-${_EXTERN_LIB}-static)
-    elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
-        target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
-        target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)
-    endif()
-
-    if(WIN32)
-        # make sure on Windows, static is built first. There is something weird
-        # happening here when built in parallel...
-        add_dependencies(timemory-extern-${_EXTERN_LIB}-shared timemory-extern-${_EXTERN_LIB}-static)
-        target_compile_definitions(timemory-extern-${_EXTERN_LIB}-shared PRIVATE
-            _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
-        target_compile_definitions(timemory-extern-${_EXTERN_LIB}-static PUBLIC
-            _TIMEMORY_ARCHIVE)
-    endif()
 endforeach()
 
 

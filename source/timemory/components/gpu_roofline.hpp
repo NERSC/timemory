@@ -348,8 +348,14 @@ public:
     static std::string label()
     {
         if(settings::roofline_type_labels_gpu())
-            return std::string("gpu_roofline_") + get_type_string() + "_" +
-                   get_mode_string();
+        {
+            auto ret = std::string("gpu_roofline_") + get_type_string() + "_" +
+                       get_mode_string();
+            // erase consecutive underscores
+            while(ret.find("__") != std::string::npos)
+                ret.erase(ret.find("__"), 1);
+            return ret;
+        }
         else
             return std::string("gpu_roofline_") + get_mode_string();
     }

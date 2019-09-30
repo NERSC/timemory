@@ -378,3 +378,29 @@ find_package_handle_standard_args(@PROJECT_NAME@ DEFAULT_MSG
     @PROJECT_NAME@_LIBRARIES)
 
 unset(TIMEMORY_INSTALL_TREE)
+
+if(TARGET timemory-cxx-shared OR TARGET timemory-cxx-static)
+    set(@PROJECT_NAME@_LIBRARY_FOUND ON)
+endif()
+
+if(TARGET timemory-cxx-shared)
+    set(@PROJECT_NAME@_SHARED_LIBRARY_FOUND ON)
+endif()
+
+if(TARGET timemory-cxx-static)
+    set(@PROJECT_NAME@_STATIC_LIBRARY_FOUND ON)
+endif()
+
+set(@PROJECT_NAME@_ENABLED_LINK_LANGUAGES )
+set(@PROJECT_NAME@_ENABLED_LINK_LIBRARIES )
+foreach(_LANG c cxx)
+    foreach(_LINK shared static)
+        if(TARGET timemory-${_LANG}-${_LINK})
+            string(TOUPPER "${_LANG}" _ENABLED_LANG)
+            string(TOUPPER "${_LINK}" _ENABLED_LINK)
+            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LANGUAGES ${_ENABLED_LANG})
+            list(APPEND @PROJECT_NAME@_ENABLED_LINK_LIBRARIES ${_ENABLED_LINK})
+            unset(_ENABLED_LANG)
+        endif()
+    endforeach()
+endforeach()

@@ -851,11 +851,11 @@ struct apply<void>
               enable_if_t<(_N > 0), int> = 0>
     static void access(_Tuple&& __t, _Args&&... __args)
     {
-        //_apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
-        //    std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
-        _apply_impl<void>::template variadic_1d<_Access, _Tuple, _Args...>(
-            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...,
-            make_index_sequence<_N>{});
+        _apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
+            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        // _apply_impl<void>::template variadic_1d<_Access, _Tuple, _Args...>(
+        //    std::forward<_Tuple>(__t), std::forward<_Args>(__args)...,
+        //    make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//
@@ -879,13 +879,13 @@ struct apply<void>
     static void access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
     {
         static_assert(_N == _Nb, "tuple_size 1 must match tuple_size 2");
-        //_apply_impl<void>::template apply_access2<0, _N - 1, _Access, _TupleA, _TupleB,
-        //                                          _Args...>(
-        //    std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
-        //    std::forward<_Args>(__args)...);
-        _apply_impl<void>::template variadic_2d<_Access, _TupleA, _TupleB, _Args...>(
+        _apply_impl<void>::template apply_access2<0, _N - 1, _Access, _TupleA, _TupleB,
+                                                  _Args...>(
             std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
-            std::forward<_Args>(__args)..., make_index_sequence<_N>{});
+            std::forward<_Args>(__args)...);
+        // _apply_impl<void>::template variadic_2d<_Access, _TupleA, _TupleB, _Args...>(
+        //    std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
+        //    std::forward<_Args>(__args)..., make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//

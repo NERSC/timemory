@@ -51,19 +51,38 @@ else()
     set(_USE_CUDA OFF)
 endif()
 
-set(_TLS_DESCRIPT "Thread-local static model: 'global-dynamic', 'local-dynamic', 'initial-exec', 'local-exec'")
-set(_TLS_OPTIONS "global-dynamic" "local-dynamic" "initial-exec" "local-exec")
+set(_DEFAULT_BUILD_SHARED ON)
+set(_DEFAULT_BUILD_STATIC ON)
 
-set(TIMEMORY_TLS_MODEL "initial-exec" CACHE STRING "${_TLS_DESCRIPT}")
+# if already defined, set default for shared to OFF
+if(DEFINED BUILD_STATIC_LIBS AND BUILD_STATIC_LIBS)
+    set(_DEFAULT_BUILD_STATIC ON)
+    set(_DEFAULT_BUILD_SHARED OFF)
+endif()
+
+# if already defined, set default for shared to OFF
+if(DEFINED BUILD_SHARED_LIBS AND BUILD_SHARED_LIBS)
+    set(_DEFAULT_BUILD_STATIC OFF)
+    set(_DEFAULT_BUILD_SHARED ON)
+endif()
+
+# something got messed up, so reset
+if(NOT _DEFAULT_BUILD_SHARED AND NOT _DEFAULT_BUILD_STATIC)
+    set(_DEFAULT_BUILD_SHARED ON)
+    set(_DEFAULT_BUILD_STATIC ON)
+endif()
+
+# except is setup.py, always default static to off
+if(SKBUILD)
+    set(_DEFAULT_BUILD_SHARED ON)
+    set(_DEFAULT_BUILD_STATIC OFF)
+endif()
+
 set(TIMEMORY_GPERF_COMPONENTS
     "profiler;tcmalloc;tcmalloc_and_profiler;tcmalloc_debug;tcmalloc_minimal;tcmalloc_minimal_debug"
     CACHE STRING "gperftools components")
 
 set_property(CACHE TIMEMORY_GPERF_COMPONENTS PROPERTY STRINGS "profiler;tcmalloc")
-set_property(CACHE TIMEMORY_TLS_MODEL PROPERTY STRINGS "${_TLS_OPTIONS}")
-if(NOT "${TIMEMORY_TLS_MODEL}" IN_LIST _TLS_OPTIONS)
-    message(FATAL_ERROR "TIMEMORY_TLS_MODEL must be one of: \"${_TLS_OPTIONS}\"")
-endif()
 
 # CMake options
 add_feature(CMAKE_BUILD_TYPE "Build type (Debug, Release, RelWithDebInfo, MinSizeRel)")
@@ -72,8 +91,13 @@ add_feature(CMAKE_C_STANDARD "C language standard")
 add_feature(CMAKE_CXX_STANDARD "C++ language standard")
 add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
 
-set(BUILD_SHARED_LIBS ON CACHE BOOL "Build shared libraries")
-set(BUILD_STATIC_LIBS ON CACHE BOOL "Build static libraries")
+set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
+set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
+
+if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+    # local override
+    set(TIMEMORY_BUILD_C OFF)
+endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")
 add_feature(BUILD_STATIC_LIBS "Build static libraries")
@@ -178,9 +202,6 @@ if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
     set(TIMEMORY_BUILD_LTO OFF)
     set(TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS OFF)
 endif()
-
-add_feature(TIMEMORY_TLS_MODEL "${_TLS_DESCRIPT}")
-unset(_TLS_DESCRIPT)
 
 if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
