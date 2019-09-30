@@ -181,9 +181,9 @@ public:
     }
 
 protected:
-    labels_type m_labels = { { "label", "working-set", "trials", "seconds", "total-bytes",
-                               "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
-                               "device", "dtype", "exec-params" } };
+    labels_type m_labels{ "label", "working-set", "trials", "seconds", "total-bytes",
+                          "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
+                          "device", "dtype", "exec-params" };
     value_array m_values;
     std::mutex* pmutex = new std::mutex;
 
@@ -216,7 +216,6 @@ public:
     void serialize(Archive& ar, const unsigned int)
     {
         constexpr auto sz = std::tuple_size<value_type>::value;
-        // for(size_type i = 0; i < m_values.size(); ++i)
         ar.setNextName("ert");
         ar.startNode();
         ar.makeArray();
