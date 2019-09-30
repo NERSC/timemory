@@ -844,6 +844,19 @@ struct construct_dict
 
 //--------------------------------------------------------------------------------------//
 
+template <>
+struct construct_dict<std::tuple<std::string, void*>>
+{
+    using Type = std::tuple<std::string, void*>;
+
+    template <typename... _Args>
+    construct_dict(_Args&&...)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
 template <typename... _Types>
 struct dict
 {
@@ -871,13 +884,6 @@ struct dict<std::tuple<_Types...>>
 
 struct settings
 {
-    bool& suppress_parsing() { return ::tim::settings::suppress_parsing(); }
-    bool& enabled() { return ::tim::settings::enabled(); }
-    bool& auto_output() { return ::tim::settings::auto_output(); }
-    bool& file_output() { return ::tim::settings::file_output(); }
-    bool& text_output() { return ::tim::settings::text_output(); }
-    bool& json_output() { return ::tim::settings::json_output(); }
-    bool& cout_output() { return ::tim::settings::cout_output(); }
 };
 
 //======================================================================================//

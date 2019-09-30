@@ -65,9 +65,17 @@ class auto_list;
 template <typename _CompTuple, typename _CompList>
 class component_hybrid;
 
+template <typename... _Types>
+class component_list;
+
 //======================================================================================//
 // variadic list of components
 //
+namespace filt
+{
+template <typename... _Types>
+class _comp_list;
+
 template <typename... Types>
 class component_list
 {
@@ -75,27 +83,34 @@ class component_list
 
     // empty init for friends
     explicit component_list() {}
+
     // manager is friend so can use above
-    friend class manager;
+    friend class ::tim::manager;
 
     template <typename _TupleC, typename _ListC>
-    friend class component_hybrid;
+    friend class ::tim::component_hybrid;
+
+    template <typename... _Types>
+    friend class ::tim::component_list;
+
+    template <typename... _Types>
+    friend class _comp_list;
 
 public:
-    using size_type        = int64_t;
-    using this_type        = component_list<Types...>;
-    using data_type        = std::tuple<Types*...>;
-    using reference_type   = std::tuple<Types...>;
-    using type_tuple       = implemented<Types...>;
-    using string_hash      = std::hash<string_t>;
-    using counter_type     = tim::counted_object<this_type>;
-    using counter_void     = tim::counted_object<void>;
-    using hashed_type      = tim::hashed_object<this_type>;
-    using language_t       = tim::language;
-    using init_func_t      = std::function<void(this_type&)>;
-    using data_value_tuple = std::tuple<decltype(std::declval<Types>().get())...>;
-    using data_label_tuple =
-        std::tuple<std::tuple<std::string, decltype(std::declval<Types>().get())>...>;
+    using string_t        = std::string;
+    using size_type       = int64_t;
+    using this_type       = component_list<Types...>;
+    using data_type       = std::tuple<Types*...>;
+    using reference_type  = std::tuple<Types...>;
+    using type_tuple      = std::tuple<Types...>;
+    using string_hash     = std::hash<string_t>;
+    using counter_type    = tim::counted_object<this_type>;
+    using counter_void    = tim::counted_object<void>;
+    using hashed_type     = tim::hashed_object<this_type>;
+    using language_t      = tim::language;
+    using init_func_t     = std::function<void(this_type&)>;
+    using data_value_type = get_data_value_t<reference_type>;
+    using data_label_type = get_data_label_t<reference_type>;
 
     // used by component hybrid
     static constexpr bool is_component_list  = true;
@@ -106,14 +121,50 @@ public:
         (std::tuple_size<filter_gotchas<Types...>>::value != 0);
 
 public:
-    using auto_type = auto_list<Types...>;
-    // using op_count_t = tim::modifiers<operation::pointer_counter, Types...>;
-    using op_count_t = std::tuple<operation::pointer_counter<Types>...>;
+    // modifier types
+    // clang-format off
+    template <typename _Archive>
+    using serialize_t        = std::tuple<operation::pointer_operator<Types, operation::serialization<Types, _Archive>>...>;
+    using insert_node_t      = std::tuple<operation::pointer_operator<Types, operation::insert_node<Types>>...>;
+    using pop_node_t         = std::tuple<operation::pointer_operator<Types, operation::pop_node<Types>>...>;
+    using measure_t          = std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
+    using record_t           = std::tuple<operation::pointer_operator<Types, operation::record<Types>>...>;
+    using reset_t            = std::tuple<operation::pointer_operator<Types, operation::reset<Types>>...>;
+    using plus_t             = std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
+    using minus_t            = std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
+    using multiply_t         = std::tuple<operation::pointer_operator<Types, operation::multiply<Types>>...>;
+    using divide_t           = std::tuple<operation::pointer_operator<Types, operation::divide<Types>>...>;
+    using start_t            = std::tuple<operation::pointer_operator<Types, operation::start<Types>>...>;
+    using stop_t             = std::tuple<operation::pointer_operator<Types, operation::stop<Types>>...>;
+    using cond_start_t       = std::tuple<operation::pointer_operator<Types, operation::conditional_start<Types>>...>;
+    using cond_stop_t        = std::tuple<operation::pointer_operator<Types, operation::conditional_stop<Types>>...>;
+    using prior_start_t      = std::tuple<operation::pointer_operator<Types, operation::priority_start<Types>>...>;
+    using prior_stop_t       = std::tuple<operation::pointer_operator<Types, operation::priority_stop<Types>>...>;
+    using prior_cond_start_t = std::tuple<operation::pointer_operator<Types, operation::conditional_priority_start<Types>>...>;
+    using prior_cond_stop_t  = std::tuple<operation::pointer_operator<Types, operation::conditional_priority_stop<Types>>...>;
+    using stand_start_t      = std::tuple<operation::pointer_operator<Types, operation::standard_start<Types>>...>;
+    using stand_stop_t       = std::tuple<operation::pointer_operator<Types, operation::standard_stop<Types>>...>;
+    using stand_cond_start_t = std::tuple<operation::pointer_operator<Types, operation::conditional_standard_start<Types>>...>;
+    using stand_cond_stop_t  = std::tuple<operation::pointer_operator<Types, operation::conditional_standard_stop<Types>>...>;
+    using mark_begin_t       = std::tuple<operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
+    using mark_end_t         = std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
+    using customize_t        = std::tuple<operation::pointer_operator<Types, operation::customize<Types>>...>;
+    using set_prefix_extra_t = std::tuple<operation::pointer_operator<Types, operation::set_prefix<Types>>...>;
+    using get_data_t         = std::tuple<operation::pointer_operator<Types, operation::get_data<Types>>...>;
+    using print_t            = std::tuple<operation::print<Types>...>;
+    using pointer_count_t    = std::tuple<operation::pointer_counter<Types>...>;
+    using deleter_t          = std::tuple<operation::pointer_deleter<Types>...>;
+    using copy_t             = std::tuple<operation::copy<Types>...>;
+    // clang-format on
 
 public:
-    explicit component_list(const string_t& key, const bool& store = false,
-                            const language_t& lang = language_t::cxx(),
-                            int64_t ncount = 0, int64_t nhash = 0)
+    using auto_type = auto_list<Types...>;
+
+public:
+    template <typename _Func>
+    explicit component_list(const string_t& key, const bool& store,
+                            const language_t& lang, int64_t ncount, int64_t nhash,
+                            _Func&& _func)
     : m_store(store && settings::enabled())
     , m_laps(0)
     , m_count(ncount)
@@ -126,14 +177,13 @@ public:
         compute_identifier(key, lang);
         init_manager();
         init_storage();
-        get_initializer()(*this);
+        _func(*this);
     }
 
     ~component_list()
     {
         pop();
-        using deleter_types = std::tuple<operation::pointer_deleter<Types>...>;
-        apply<void>::access<deleter_types>(m_data);
+        apply<void>::access<deleter_t>(m_data);
     }
 
     //------------------------------------------------------------------------//
@@ -153,14 +203,11 @@ public:
     , m_identifier(rhs.m_identifier)
     {
         apply<void>::set_value(m_data, nullptr);
-        using apply_types = std::tuple<operation::copy<Types>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<copy_t>(m_data, rhs.m_data);
     }
 
     component_list& operator=(const component_list& rhs)
     {
-        using deleter_types = std::tuple<operation::pointer_deleter<Types>...>;
-        using copy_types    = std::tuple<operation::copy<Types>...>;
         if(this != &rhs)
         {
             m_store      = rhs.m_store;
@@ -171,8 +218,8 @@ public:
             m_key        = rhs.m_key;
             m_lang       = std::move(language_t(rhs.m_lang));
             m_identifier = rhs.m_identifier;
-            apply<void>::access<deleter_types>(m_data);
-            apply<void>::access2<copy_types>(m_data, rhs.m_data);
+            apply<void>::access<deleter_t>(m_data);
+            apply<void>::access2<copy_t>(m_data, rhs.m_data);
         }
         return *this;
     }
@@ -192,18 +239,7 @@ public:
     static constexpr std::size_t size() { return num_elements; }
     static constexpr std::size_t available_size()
     {
-        using implemented_tuple_t = implemented<Types...>;
-        return std::tuple_size<implemented_tuple_t>::value;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // function for default initialization
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            tim::env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
-        };
-        return _instance;
+        return std::tuple_size<type_tuple>::value;
     }
 
     //----------------------------------------------------------------------------------//
@@ -211,19 +247,14 @@ public:
     inline void push()
     {
         uint64_t count = 0;
-        apply<void>::access<op_count_t>(m_data, std::ref(count));
+        apply<void>::access<pointer_count_t>(m_data, std::ref(count));
         if(m_store && !m_is_pushed && count > 0)
         {
-            using apply_types = std::tuple<
-                operation::pointer_operator<Types, operation::reset<Types>>...>;
-            apply<void>::access<apply_types>(m_data);
-
-            using insert_types = std::tuple<
-                operation::pointer_operator<Types, operation::insert_node<Types>>...>;
+            apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<insert_types>(m_data, m_identifier, m_hash);
+            apply<void>::access<insert_node_t>(m_data, m_identifier, m_hash);
         }
     }
 
@@ -233,10 +264,8 @@ public:
     {
         if(m_store && m_is_pushed)
         {
-            using apply_types = std::tuple<
-                operation::pointer_operator<Types, operation::pop_node<Types>>...>;
             // set the current node to the parent node
-            apply<void>::access<apply_types>(m_data);
+            apply<void>::access<pop_node_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = false;
         }
@@ -244,38 +273,24 @@ public:
 
     //----------------------------------------------------------------------------------//
     // measure functions
-    void measure()
-    {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
-    }
+    void measure() { apply<void>::access<measure_t>(m_data); }
 
     //----------------------------------------------------------------------------------//
     // start/stop functions
     void start()
     {
-        using prior_apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::priority_start<Types>>...>;
-        using stand_apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::standard_start<Types>>...>;
-
         push();
         ++m_laps;
         // start components
-        apply<void>::access<prior_apply_types>(m_data);
-        apply<void>::access<stand_apply_types>(m_data);
+        apply<void>::access<prior_start_t>(m_data);
+        apply<void>::access<stand_start_t>(m_data);
     }
 
     void stop()
     {
-        using prior_apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::priority_stop<Types>>...>;
-        using stand_apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::standard_stop<Types>>...>;
         // stop components
-        apply<void>::access<prior_apply_types>(m_data);
-        apply<void>::access<stand_apply_types>(m_data);
+        apply<void>::access<prior_stop_t>(m_data);
+        apply<void>::access<stand_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -284,23 +299,15 @@ public:
     {
         push();
         // start, if not already started
-        using prior_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_priority_start<Types>>...>;
-        using stand_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_standard_start<Types>>...>;
-        apply<void>::access<prior_apply_types>(m_data);
-        apply<void>::access<stand_apply_types>(m_data);
+        apply<void>::access<prior_start_t>(m_data);
+        apply<void>::access<stand_stop_t>(m_data);
     }
 
     void conditional_stop()
     {
         // stop, if not already stopped
-        using prior_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_priority_stop<Types>>...>;
-        using stand_apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::conditional_standard_stop<Types>>...>;
-        apply<void>::access<prior_apply_types>(m_data);
-        apply<void>::access<stand_apply_types>(m_data);
+        apply<void>::access<prior_cond_stop_t>(m_data);
+        apply<void>::access<stand_cond_stop_t>(m_data);
         // pop them off the running stack
         pop();
     }
@@ -312,9 +319,7 @@ public:
     template <typename... _Args>
     void mark_begin(_Args&&... _args)
     {
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::mark_begin<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<mark_begin_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -324,9 +329,16 @@ public:
     template <typename... _Args>
     void mark_end(_Args&&... _args)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::mark_end<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Args>(_args)...);
+        apply<void>::access<mark_end_t>(m_data, std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // perform a customized operation (typically for GOTCHA)
+    //
+    template <typename... _Args>
+    void customize(_Args&&... _args)
+    {
+        apply<void>::access<customize_t>(m_data, std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -335,19 +347,39 @@ public:
     this_type& record()
     {
         ++m_laps;
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::record<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<record_t>(m_data);
         return *this;
     }
 
     //----------------------------------------------------------------------------------//
+    // reset to zero
+    //
     void reset()
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::reset<Types>>...>;
-        apply<void>::access<apply_types>(m_data);
+        apply<void>::access<reset_t>(m_data);
         m_laps = 0;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get data
+    //
+    data_value_type get() const
+    {
+        const_cast<this_type&>(*this).conditional_stop();
+        data_value_type _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset data
+    //
+    data_label_type get_labeled() const
+    {
+        const_cast<this_type&>(*this).conditional_stop();
+        data_label_type _ret_data;
+        apply<void>::access2<get_data_t>(m_data, _ret_data);
+        return _ret_data;
     }
 
     //----------------------------------------------------------------------------------//
@@ -355,36 +387,28 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<minus_t>(m_data, rhs.m_data);
         m_laps -= rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
-        apply<void>::access2<apply_types>(m_data, rhs.m_data);
+        apply<void>::access2<plus_t>(m_data, rhs.m_data);
         m_laps += rhs.m_laps;
         return *this;
     }
@@ -395,36 +419,28 @@ public:
     template <typename _Op>
     this_type& operator-=(_Op&& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::minus<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<minus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator+=(_Op&& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::plus<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<plus_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator*=(_Op&& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::multiply<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<multiply_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
     template <typename _Op>
     this_type& operator/=(_Op&& rhs)
     {
-        using apply_types =
-            std::tuple<operation::pointer_operator<Types, operation::divide<Types>>...>;
-        apply<void>::access<apply_types>(m_data, std::forward<_Op>(rhs));
+        apply<void>::access<divide_t>(m_data, std::forward<_Op>(rhs));
         return *this;
     }
 
@@ -461,22 +477,15 @@ public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
         uint64_t count = 0;
-        apply<void>::access<op_count_t>(obj.m_data, std::ref(count));
+        apply<void>::access<pointer_count_t>(obj.m_data, std::ref(count));
         if(count < 1)
             return os;
-        {
-            // stop, if not already stopped
-            using apply_types = std::tuple<operation::pointer_operator<
-                Types, operation::conditional_stop<Types>>...>;
-            apply<void>::access<apply_types>(obj.m_data);
-        }
+        // stop, if not already stopped
+        apply<void>::access<prior_cond_stop_t>(obj.m_data);
+        apply<void>::access<stand_cond_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
-        {
-            using apply_types = std::tuple<operation::print<Types>...>;
-            apply<void>::access_with_indices<apply_types>(obj.m_data, std::ref(ss_data),
-                                                          false);
-        }
+        apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
         if(ss_data.str().length() > 0)
         {
             if(obj.m_print_prefix)
@@ -497,13 +506,11 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<operation::pointer_operator<
-            Types, operation::serialization<Types, Archive>>...>;
         ar(serializer::make_nvp("identifier", m_identifier),
            serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
-        apply<void>::access<apply_types>(m_data, std::ref(ar), version);
+        apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
         ar.finishNode();
     }
 
@@ -765,9 +772,7 @@ protected:
 
     void compute_identifier_extra(const string_t& key, const language_t&)
     {
-        using apply_types = std::tuple<
-            operation::pointer_operator<Types, operation::set_prefix<Types>>...>;
-        apply<void>::access<apply_types>(m_data, key);
+        apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
 
     template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
@@ -787,7 +792,337 @@ public:
     static void init_manager();
     static void init_storage()
     {
-        // apply<void>::type_access<operation::init_storage, implemented<Types...>>();
+        apply<void>::type_access<operation::init_storage, reference_type>();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+//  unused base class
+//
+template <typename... _Types>
+class _comp_list : public component_list<_Types...>
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//  tuple overloaded base class
+//
+template <typename... _Types>
+class _comp_list<std::tuple<_Types...>> : public component_list<_Types...>
+{
+    // empty init for friends
+    explicit _comp_list() = default;
+
+    // manager is friend so can use above
+    friend class ::tim::manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class ::tim::component_hybrid;
+
+public:
+    using string_t       = std::string;
+    using base_type      = component_list<_Types...>;
+    using size_type      = typename base_type::size_type;
+    using data_type      = typename base_type::data_type;
+    using reference_type = typename base_type::reference_type;
+    using type_tuple     = typename base_type::type_tuple;
+    using init_func_t    = typename base_type::init_func_t;
+    using auto_type      = typename base_type::auto_type;
+    using language_t     = typename base_type::language_t;
+
+    static constexpr bool is_component_list  = base_type::is_component_list;
+    static constexpr bool is_component_tuple = base_type::is_component_tuple;
+    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
+
+    template <typename _Func>
+    explicit _comp_list(const string_t& key, const bool& store, const language_t& lang,
+                        int64_t ncount, int64_t nhash, _Func&& _func)
+    : base_type(key, store, lang, ncount, nhash, std::forward<_Func>(_func))
+    {
+    }
+
+    ~_comp_list() {}
+
+    _comp_list(const _comp_list&) = default;
+    _comp_list(_comp_list&&)      = default;
+
+    _comp_list& operator=(const _comp_list&) = default;
+    _comp_list& operator=(_comp_list&&) = default;
+
+    _comp_list(const base_type& rhs)
+    : base_type(rhs)
+    {
+    }
+};
+
+}  // namespace filt
+
+//======================================================================================//
+//
+template <typename... _Types>
+class component_list : public filt::_comp_list<implemented<_Types...>>
+{
+    // empty init for friends
+    explicit component_list() = default;
+
+    // manager is friend so can use above
+    friend class manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
+
+public:
+    using string_t       = std::string;
+    using base_type      = filt::_comp_list<implemented<_Types...>>;
+    using this_type      = component_list<_Types...>;
+    using init_func_t    = std::function<void(this_type&)>;
+    using core_type      = typename base_type::base_type;
+    using size_type      = typename base_type::size_type;
+    using data_type      = typename base_type::data_type;
+    using reference_type = typename base_type::reference_type;
+    using type_tuple     = typename base_type::type_tuple;
+    using auto_type      = typename base_type::auto_type;
+    using language_t     = typename base_type::language_t;
+
+    static constexpr bool is_component_list  = base_type::is_component_list;
+    static constexpr bool is_component_tuple = base_type::is_component_tuple;
+    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
+
+    explicit component_list(const string_t& key, const bool& store = false,
+                            const language_t& lang = language_t::cxx(),
+                            int64_t ncount = 0, int64_t nhash = 0)
+    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    ~component_list() {}
+
+    component_list(const component_list&) = default;
+    component_list(component_list&&)      = default;
+
+    component_list& operator=(const component_list&) = default;
+    component_list& operator=(component_list&&) = default;
+
+    component_list(const core_type& rhs)
+    : base_type(rhs)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // this_type operators
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        core_type::operator-=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator-=(this_type& rhs)
+    {
+        core_type::operator-=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        core_type::operator+=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(this_type& rhs)
+    {
+        core_type::operator+=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
+//
+template <typename... _Types>
+class component_list<std::tuple<_Types...>>
+: public filt::_comp_list<implemented<_Types...>>
+{
+    // empty init for friends
+    explicit component_list() = default;
+
+    // manager is friend so can use above
+    friend class manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
+
+public:
+    using string_t       = std::string;
+    using base_type      = filt::_comp_list<implemented<_Types...>>;
+    using this_type      = component_list<std::tuple<_Types...>>;
+    using init_func_t    = std::function<void(this_type&)>;
+    using core_type      = typename base_type::base_type;
+    using size_type      = typename base_type::size_type;
+    using data_type      = typename base_type::data_type;
+    using reference_type = typename base_type::reference_type;
+    using type_tuple     = typename base_type::type_tuple;
+    using auto_type      = typename base_type::auto_type;
+    using language_t     = typename base_type::language_t;
+
+    static constexpr bool is_component_list  = base_type::is_component_list;
+    static constexpr bool is_component_tuple = base_type::is_component_tuple;
+    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
+
+    explicit component_list(const string_t& key, const bool& store = false,
+                            const language_t& lang = language_t::cxx(),
+                            int64_t ncount = 0, int64_t nhash = 0)
+    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    ~component_list() {}
+
+    component_list(const component_list&) = default;
+    component_list(component_list&&)      = default;
+
+    component_list& operator=(const component_list&) = default;
+    component_list& operator=(component_list&&) = default;
+
+    component_list(const core_type& rhs)
+    : base_type(rhs)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // this_type operators
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        core_type::operator-=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator-=(this_type& rhs)
+    {
+        core_type::operator-=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        core_type::operator+=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(this_type& rhs)
+    {
+        core_type::operator+=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
+//
+template <typename... _CompTypes, typename... _Types>
+class component_list<component_list<_CompTypes...>, _Types...>
+: public filt::_comp_list<_CompTypes..., _Types...>
+{
+    // empty init for friends
+    explicit component_list() = default;
+
+    // manager is friend so can use above
+    friend class manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class component_hybrid;
+
+public:
+    using string_t       = std::string;
+    using base_type      = filt::_comp_list<_CompTypes..., _Types...>;
+    using this_type      = component_list<component_list<_CompTypes...>, _Types...>;
+    using init_func_t    = std::function<void(this_type&)>;
+    using core_type      = typename base_type::base_type;
+    using size_type      = typename base_type::size_type;
+    using data_type      = typename base_type::data_type;
+    using reference_type = typename base_type::reference_type;
+    using type_tuple     = typename base_type::type_tuple;
+    using auto_type      = typename base_type::auto_type;
+    using language_t     = typename base_type::language_t;
+
+    static constexpr bool is_component_list  = base_type::is_component_list;
+    static constexpr bool is_component_tuple = base_type::is_component_tuple;
+    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
+
+    explicit component_list(const string_t& key, const bool& store = false,
+                            const language_t& lang = language_t::cxx(),
+                            int64_t ncount = 0, int64_t nhash = 0)
+    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    ~component_list() {}
+
+    component_list(const component_list&) = default;
+    component_list(component_list&&)      = default;
+
+    component_list& operator=(const component_list&) = default;
+    component_list& operator=(component_list&&) = default;
+
+    component_list(const core_type& rhs)
+    : base_type(rhs)
+    {
+    }
+
+    //----------------------------------------------------------------------------------//
+    // this_type operators
+    //
+    this_type& operator-=(const this_type& rhs)
+    {
+        core_type::operator-=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator-=(this_type& rhs)
+    {
+        core_type::operator-=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(const this_type& rhs)
+    {
+        core_type::operator+=(static_cast<const core_type&>(rhs));
+        return *this;
+    }
+
+    this_type& operator+=(this_type& rhs)
+    {
+        core_type::operator+=(static_cast<core_type&>(rhs));
+        return *this;
+    }
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_COMPONENT_LIST_INIT", "");
+        };
+        return _instance;
     }
 };
 

@@ -38,7 +38,8 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/details/components.hpp"
+#include "timemory/bits/components.hpp"
+#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/graph.hpp"
@@ -228,25 +229,19 @@ public:
     //
     storage()
     {
+        if(settings::debug())
+            printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+
         component::properties<ObjectType>::has_storage() = true;
-        instance_count()++;
-        static std::atomic<short> _once;
-        short                     _once_num = _once++;
-        if(_once_num > 0 && !singleton_t::is_master(this))
-        {
-            ObjectType::thread_init_policy();
-        }
-        else
-        {
-            ObjectType::global_init_policy();
-            ObjectType::thread_init_policy();
-        }
     }
 
     //----------------------------------------------------------------------------------//
     //
     ~storage()
     {
+        if(settings::debug())
+            printf("[%s]> destructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
         delete __graph_data_instance;
@@ -262,6 +257,58 @@ public:
     //
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    void initialize()
+    {
+        if(m_initialized)
+            return;
+
+        if(settings::debug())
+            printf("[%s]> initializing...\n", ObjectType::label().c_str());
+
+        m_initialized = true;
+
+        if(!singleton_t::is_master(this))
+        {
+            ObjectType::thread_init_policy(this);
+        }
+        else
+        {
+            ObjectType::global_init_policy(this);
+            ObjectType::thread_init_policy(this);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void finalize()
+    {
+        if(m_finalized)
+            return;
+
+        if(!m_initialized)
+            return;
+
+        if(settings::debug())
+            printf("[%s]> finalizing...\n", ObjectType::label().c_str());
+
+        m_finalized = true;
+        if(!singleton_t::is_master(this))
+        {
+            ObjectType::thread_finalize_policy(this);
+        }
+        else
+        {
+            ObjectType::thread_finalize_policy(this);
+            ObjectType::global_finalize_policy(this);
+        }
+    }
+
+    bool    is_initialized() const { return m_initialized; }
+    int64_t instance_id() const { return m_instance_id; }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -410,7 +457,7 @@ protected:
 
     void merge()
     {
-        if(!singleton_t::is_master(this))
+        if(!singleton_t::is_master(this) || !m_initialized)
             return;
 
         auto m_children = singleton_t::children();
@@ -530,7 +577,8 @@ private:
         }
         else if(__graph_data_instance == nullptr)
         {
-            graph_node_t node(0, ObjectType(), "> [tot] total", 0);
+            using base_type = typename ObjectType::base_type;
+            graph_node_t node(0, base_type::dummy(), "> [tot] total", 0);
             __graph_data_instance          = new graph_data_t(node);
             __graph_data_instance->depth() = 0;
             m_node_ids.insert(std::make_pair(0, __graph_data_instance->current()));
@@ -540,6 +588,9 @@ private:
 
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
+    bool                                  m_initialized         = false;
+    bool                                  m_finalized           = false;
+    int64_t                               m_instance_id         = instance_count()++;
     mutable graph_data_t*                 __graph_data_instance = nullptr;
     std::unordered_map<int64_t, iterator> m_node_ids;
 };
@@ -581,24 +632,19 @@ public:
     //
     storage()
     {
+        if(settings::debug())
+            printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+
         component::properties<ObjectType>::has_storage() = false;
-        instance_count()++;
-        static std::atomic<short> _once;
-        short                     _once_num = _once++;
-        if(_once_num > 0 && !singleton_t::is_master(this))
-        {
-            ObjectType::thread_init_policy();
-        }
-        else
-        {
-            ObjectType::global_init_policy();
-            ObjectType::thread_init_policy();
-        }
     }
 
     //----------------------------------------------------------------------------------//
     //
-    ~storage() {}
+    ~storage()
+    {
+        if(settings::debug())
+            printf("[%s]> destructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -609,6 +655,62 @@ public:
     //
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
+
+public:
+    //----------------------------------------------------------------------------------//
+    //
+    void initialize()
+    {
+        if(m_initialized)
+            return;
+
+        if(settings::debug())
+            printf("[%s]> initializing...\n", ObjectType::label().c_str());
+
+        m_initialized = true;
+
+        if(!singleton_t::is_master(this))
+        {
+            ObjectType::thread_init_policy(this);
+        }
+        else
+        {
+            ObjectType::global_init_policy(this);
+            ObjectType::thread_init_policy(this);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    void finalize()
+    {
+        if(m_finalized)
+            return;
+
+        if(!m_initialized)
+            return;
+
+        if(settings::debug())
+            printf("[%s]> finalizing...\n", ObjectType::label().c_str());
+
+        m_finalized = true;
+        if(!singleton_t::is_master(this))
+        {
+            ObjectType::thread_finalize_policy(this);
+        }
+        else
+        {
+            ObjectType::thread_finalize_policy(this);
+            ObjectType::global_finalize_policy(this);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  query status properties
+    //
+    bool    is_initialized() const { return m_initialized; }
+    bool    is_finalized() const { return m_finalized; }
+    int64_t instance_id() const { return m_instance_id; }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -631,9 +733,13 @@ public:
     void     set_prefix(const string_t&) {}
     void     print()
     {
-        ObjectType::thread_finalize_policy();
-        if(singleton_t::is_master(this))
-            ObjectType::global_finalize_policy();
+        if(m_initialized)
+        {
+            ObjectType::thread_finalize_policy(this);
+            if(singleton_t::is_master(this))
+                ObjectType::global_finalize_policy(this);
+            finalize();
+        }
     }
 
 protected:
@@ -667,6 +773,10 @@ private:
         static std::atomic<int64_t> _counter;
         return _counter;
     }
+
+    bool    m_initialized = false;
+    bool    m_finalized   = false;
+    int64_t m_instance_id = instance_count()++;
 };
 
 //======================================================================================//

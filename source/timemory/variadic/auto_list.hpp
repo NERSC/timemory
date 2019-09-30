@@ -51,36 +51,39 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
+namespace filt
+{
 template <typename... Types>
 class auto_list
 : public counted_object<auto_list<Types...>>
 , public hashed_object<auto_list<Types...>>
 {
 public:
-    using component_type   = component_list<Types...>;
-    using this_type        = auto_list<Types...>;
-    using data_type        = typename component_type::data_type;
-    using counter_type     = counted_object<this_type>;
-    using counter_void     = counted_object<void>;
-    using hashed_type      = hashed_object<this_type>;
-    using string_t         = std::string;
-    using string_hash      = std::hash<string_t>;
-    using base_type        = component_type;
-    using language_t       = language;
-    using tuple_type       = implemented<Types...>;
-    using init_func_t      = std::function<void(this_type&)>;
-    using type_tuple       = typename component_type::type_tuple;
-    using data_value_tuple = typename component_type::data_value_tuple;
-    using data_label_tuple = typename component_type::data_label_tuple;
+    using component_type  = ::tim::component_list<Types...>;
+    using this_type       = auto_list<Types...>;
+    using data_type       = typename component_type::data_type;
+    using counter_type    = counted_object<this_type>;
+    using counter_void    = counted_object<void>;
+    using hashed_type     = hashed_object<this_type>;
+    using string_t        = std::string;
+    using string_hash     = std::hash<string_t>;
+    using base_type       = component_type;
+    using language_t      = language;
+    using tuple_type      = implemented<Types...>;
+    using init_func_t     = std::function<void(this_type&)>;
+    using type_tuple      = typename component_type::type_tuple;
+    using data_value_type = typename component_type::data_value_type;
+    using data_label_type = typename component_type::data_label_type;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t&, const int64_t& lineno = 0,
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report());
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
-                              bool report_at_exit = settings::destructor_report());
+    template <typename _Func>
+    inline explicit auto_list(const string_t&, const int64_t& lineno,
+                              const language_t& lang, bool report_at_exit, _Func&& _func);
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+                              bool report_at_exit, _Func&& _func);
     inline ~auto_list();
 
     // copy and move
@@ -137,7 +140,6 @@ public:
         if(m_enabled)
             m_temporary_object.conditional_stop();
     }
-
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
     {
@@ -149,6 +151,19 @@ public:
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void customize(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.customize(std::forward<_Args>(_args)...);
+    }
+
+    data_value_type inline get() const { return m_temporary_object.get(); }
+
+    data_label_type inline get_labeled() const
+    {
+        return m_temporary_object.get_labeled();
     }
 
     inline bool enabled() const { return m_enabled; }
@@ -205,14 +220,6 @@ public:
         this->initialize<_Tail...>();
     }
 
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-
 public:
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
@@ -230,8 +237,9 @@ private:
 //======================================================================================//
 
 template <typename... Types>
+template <typename _Func>
 auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno,
-                               const language_t& lang, bool report_at_exit)
+                               const language_t& lang, bool report_at_exit, _Func&& _func)
 : counter_type()
 , hashed_type((counter_type::enable())
                   ? (string_hash()(object_tag) + static_cast<int64_t>(lang) +
@@ -244,16 +252,17 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
 {
     if(m_enabled)
     {
-        get_initializer()(*this);
+        _func(*this);
         m_temporary_object.start();
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
+template <typename _Func>
 auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
-                               bool report_at_exit)
+                               bool report_at_exit, _Func&& _func)
 : counter_type()
 , hashed_type((counter_type::enable())
                   ? (string_hash()(tmp.key()) + static_cast<int64_t>(tmp.lang()) +
@@ -266,12 +275,12 @@ auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
 {
     if(m_enabled)
     {
-        get_initializer()(*this);
+        _func(*this);
         m_temporary_object.start();
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_list<Types...>::~auto_list()
@@ -298,9 +307,344 @@ auto_list<Types...>::~auto_list()
 }
 
 //======================================================================================//
+//
+//
+template <typename... _Types>
+class _auto_list : public auto_list<_Types...>
+{
+};
+
+//======================================================================================//
+//
+//
+template <typename... _Types>
+class _auto_list<std::tuple<_Types...>> : public auto_list<_Types...>
+{
+public:
+    using base_type      = auto_list<_Types...>;
+    using component_type = typename base_type::component_type;
+    using this_type      = _auto_list<std::tuple<_Types...>>;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    template <typename _Func>
+    inline explicit _auto_list(const string_t& label, const int64_t& lineno,
+                               const language_t& lang, bool report_at_exit, _Func&& _func)
+    : base_type(label, lineno, lang, report_at_exit, std::forward<_Func>(_func))
+    {
+    }
+
+    template <typename _Func>
+    inline explicit _auto_list(component_type& tmp, const int64_t& lineno,
+                               bool report_at_exit, _Func&& _func)
+    : base_type(tmp, lineno, report_at_exit, std::forward<_Func>(_func))
+    {
+    }
+
+    inline ~_auto_list() {}
+
+    // copy and move
+    inline _auto_list(const this_type&) = default;
+    inline _auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace filt
+
+//======================================================================================//
+//
+//                                      AUTO LIST
+//
+//======================================================================================//
+
+template <typename... _Types>
+class auto_list : public filt::_auto_list<implemented<_Types...>>
+{
+public:
+    using base_type      = filt::_auto_list<implemented<_Types...>>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using this_type      = auto_list<_Types...>;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+    using init_func_t    = std::function<void(this_type&)>;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+                              const language_t& lang = language_t::cxx(),
+                              bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(const string_t& label, const int64_t& lineno,
+                              const language_t& lang, bool report_at_exit, _Func&& _func)
+    : base_type(label, lineno, lang, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(tmp, lineno, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    inline ~auto_list() {}
+
+    // copy and move
+    inline auto_list(const this_type&) = default;
+    inline auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
+
+template <typename... _Types>
+class auto_list<std::tuple<_Types...>> : public filt::_auto_list<implemented<_Types...>>
+{
+public:
+    using base_type      = filt::_auto_list<implemented<_Types...>>;
+    using this_type      = auto_list<std::tuple<_Types...>>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+    using init_func_t    = std::function<void(this_type&)>;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+                              const language_t& lang = language_t::cxx(),
+                              bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(const string_t& label, const int64_t& lineno,
+                              const language_t& lang, bool report_at_exit, _Func&& _func)
+    : base_type(label, lineno, lang, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(tmp, lineno, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    inline ~auto_list() {}
+
+    // copy and move
+    inline auto_list(const this_type&) = default;
+    inline auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
+
+template <typename... _CompTypes, typename... _Types>
+class auto_list<component_list<_CompTypes...>, _Types...>
+: public filt::_auto_list<implemented<_CompTypes..., _Types...>>
+{
+public:
+    using base_type      = filt::_auto_list<implemented<_CompTypes..., _Types...>>;
+    using this_type      = auto_list<component_list<_CompTypes...>, _Types...>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+    using init_func_t    = std::function<void(this_type&)>;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+                              const language_t& lang = language_t::cxx(),
+                              bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(const string_t& label, const int64_t& lineno,
+                              const language_t& lang, bool report_at_exit, _Func&& _func)
+    : base_type(label, lineno, lang, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(tmp, lineno, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    inline ~auto_list() {}
+
+    // copy and move
+    inline auto_list(const this_type&) = default;
+    inline auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
+
+template <typename... _CompTypes, typename... _Types>
+class auto_list<auto_list<_CompTypes...>, _Types...>
+: public filt::_auto_list<implemented<_CompTypes..., _Types...>>
+{
+public:
+    using base_type      = filt::_auto_list<implemented<_CompTypes..., _Types...>>;
+    using this_type      = auto_list<auto_list<_CompTypes...>, _Types...>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+    using init_func_t    = std::function<void(this_type&)>;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+                              const language_t& lang = language_t::cxx(),
+                              bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+        this_type::get_initializer()(static_cast<this_type&>(_core));
+    })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(const string_t& label, const int64_t& lineno,
+                              const language_t& lang, bool report_at_exit, _Func&& _func)
+    : base_type(label, lineno, lang, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(tmp, lineno, report_at_exit,
+                [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
+    {
+    }
+
+    inline ~auto_list() {}
+
+    // copy and move
+    inline auto_list(const this_type&) = default;
+    inline auto_list(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+};
+
+//======================================================================================//
 
 template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_value_tuple>
+          typename _Ret = typename auto_list<_Types...>::data_value_type>
 _Ret
 get(const auto_list<_Types...>& _obj)
 {
@@ -310,9 +654,29 @@ get(const auto_list<_Types...>& _obj)
 //--------------------------------------------------------------------------------------//
 
 template <typename... _Types,
-          typename _Ret = typename auto_list<_Types...>::data_label_tuple>
+          typename _Ret = typename auto_list<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename filt::auto_list<_Types...>::data_value_type>
+_Ret
+get(const filt::auto_list<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename filt::auto_list<_Types...>::data_label_type>
+_Ret
+get_labeled(const filt::auto_list<_Types...>& _obj)
 {
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
@@ -327,11 +691,11 @@ get_labeled(const auto_list<_Types...>& _obj)
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_LIST(tag, ...)                                      \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                       \
     TIMEMORY_BASIC_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_LIST(tag, ...)                                            \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_list<__VA_ARGS__>;                         \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_list<__VA_ARGS__>;                       \
     TIMEMORY_AUTO_LIST(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

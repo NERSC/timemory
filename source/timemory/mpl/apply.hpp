@@ -70,27 +70,104 @@ struct function_traits;
 template <typename R, typename... Args>
 struct function_traits<std::function<R(Args...)>>
 {
-    static const size_t nargs = sizeof...(Args);
-    using result_type         = R;
-    using arg_tuple           = std::tuple<Args...>;
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
 };
 
 template <typename R, typename... Args>
 struct function_traits<R (*)(Args...)>
 {
-    static const size_t nargs = sizeof...(Args);
-    using result_type         = R;
-    using arg_tuple           = std::tuple<Args...>;
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
 };
 
 template <typename R, typename... Args>
 struct function_traits<R(Args...)>
 {
-    static const size_t nargs = sizeof...(Args);
-    using result_type         = R;
-    using arg_tuple           = std::tuple<Args...>;
+    static constexpr bool   is_memfun = false;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = args_type;
 };
 
+// member function pointer
+template <typename C, typename R, typename... Args>
+struct function_traits<R (C::*)(Args...)>
+// : public function_traits<R(C&,Args...)>
+{
+    static constexpr bool   is_memfun = true;
+    static constexpr bool   is_const  = false;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = std::tuple<C&, Args...>;
+};
+
+// const member function pointer
+template <typename C, typename R, typename... Args>
+struct function_traits<R (C::*)(Args...) const>
+// : public function_traits<R(C&,Args...)>
+{
+    static constexpr bool   is_memfun = true;
+    static constexpr bool   is_const  = true;
+    static constexpr size_t nargs     = sizeof...(Args);
+    using result_type                 = R;
+    using args_type                   = std::tuple<Args...>;
+    using call_type                   = std::tuple<C&, Args...>;
+};
+
+// member object pointer
+template <typename C, typename R>
+struct function_traits<R(C::*)>
+// : public function_traits<R(C&)>
+{
+    static constexpr bool is_memfun = true;
+    static constexpr bool is_const  = false;
+    static const size_t   nargs     = 0;
+    using result_type               = R;
+    using args_type                 = std::tuple<>;
+    using call_type                 = std::tuple<C&>;
+};
+
+/*
+// functor
+template<class F>
+struct function_traits
+{
+    private:
+        using call_type = function_traits<decltype(&F::type::operator())>;
+    public:
+        using return_type = typename call_type::return_type;
+
+        static constexpr std::size_t arity = call_type::arity - 1;
+
+        template <std::size_t N>
+        struct argument
+        {
+            static_assert(N < arity, "error: invalid parameter index.");
+            using type = typename call_type::template argument<N+1>::type;
+        };
+};
+
+template<class F>
+struct traits<F&> : public traits<F>
+{};
+
+template<class F>
+struct traits<F&&> : public traits<F>
+{};
+
+*/
 //--------------------------------------------------------------------------------------//
 //
 //  Pre-C++17 result_of and invoke_result
@@ -283,7 +360,7 @@ template <typename... _Types>
 using index_sequence_for = make_index_sequence<sizeof...(_Types)>;
 
 /// Alias template for enable_if
-template <bool B, typename T>
+template <bool B, typename T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 /// Alias template for decay
@@ -469,43 +546,21 @@ template <>
 struct _apply_impl<void>
 {
     //----------------------------------------------------------------------------------//
-    // unroll
-    template <size_t _N, typename _Device, typename _Func, typename... _Args,
-              typename std::enable_if<
-                  (_N == 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
-    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
+    // temporary construction
+    //
+    template <typename _Type, typename... _Args>
+    static void construct(_Args&&... _args)
     {
-        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
-    }
-
-    template <size_t _N, typename _Device, typename _Func, typename... _Args,
-              typename std::enable_if<
-                  (_N > 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
-    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
-    {
-        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
-        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
-                                                 std::forward<_Args>(__args)...);
+        _Type(std::forward<_Args>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
-    // unroll
-    template <size_t _N, typename _Device, typename _Func, typename... _Args,
-              typename std::enable_if<
-                  (_N == 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
-    static void unroll(_Func&& __func, _Args&&... __args)
+    // temporary construction
+    //
+    template <typename _Type, typename... _Args, size_t... _Idx>
+    static void construct_tuple(std::tuple<_Args...>&& _args, index_sequence<_Idx>...)
     {
-        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
-    }
-
-    template <size_t _N, typename _Device, typename _Func, typename... _Args,
-              typename std::enable_if<
-                  (_N > 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
-    static void unroll(_Func&& __func, _Args&&... __args)
-    {
-        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
-        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
-                                                 std::forward<_Args>(__args)...);
+        construct<_Type>(std::get<_Idx>(_args)...);
     }
 
     //----------------------------------------------------------------------------------//
@@ -553,6 +608,30 @@ struct _apply_impl<void>
                      std::forward<_Args>(__args)...);
         unroll_access<_Access, _N - 1, _Tuple, _Args...>(std::forward<_Tuple>(__t),
                                                          std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _Tuple, typename... _Args, size_t... _Idx>
+    static void variadic_1d(_Tuple&& __t, _Args&&... _args, index_sequence<_Idx...>)
+    {
+        (void) std::initializer_list<int>{ (
+            construct<typename std::tuple_element<_Idx, _Access>::type>(
+                std::get<_Idx>(__t), std::forward<_Args>(_args)...),
+            0)... };
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Access, typename _TupleA, typename _TupleB, typename... _Args,
+              size_t... _Idx>
+    static void variadic_2d(_TupleA&& __a, _TupleB&& __b, _Args&&... _args,
+                            index_sequence<_Idx...>)
+    {
+        (void) std::initializer_list<int>{ (
+            construct<typename std::tuple_element<_Idx, _Access>::type>(
+                std::get<_Idx>(__a), std::get<_Idx>(__b), std::forward<_Args>(_args)...),
+            0)... };
     }
 
     //----------------------------------------------------------------------------------//
@@ -663,6 +742,46 @@ struct _apply_impl<void>
     }
 
     //----------------------------------------------------------------------------------//
+    // unroll
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N == 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
+    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+    }
+
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N > 1 && std::is_same<_Device, device::gpu>::value), char>::type = 0>
+    TIMEMORY_LAMBDA static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
+                                                 std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    // unroll
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N == 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+    }
+
+    template <size_t _N, typename _Device, typename _Func, typename... _Args,
+              typename std::enable_if<
+                  (_N > 1 && std::is_same<_Device, device::cpu>::value), int>::type = 0>
+    static void unroll(_Func&& __func, _Args&&... __args)
+    {
+        std::forward<_Func>(__func)(std::forward<_Args>(__args)...);
+        unroll<_N - 1, _Device, _Func, _Args...>(std::forward<_Func>(__func),
+                                                 std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
 };
 
 //======================================================================================//
@@ -732,8 +851,11 @@ struct apply<void>
               enable_if_t<(_N > 0), int> = 0>
     static void access(_Tuple&& __t, _Args&&... __args)
     {
-        _apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
-            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        //_apply_impl<void>::template apply_access<0, _N - 1, _Access, _Tuple, _Args...>(
+        //    std::forward<_Tuple>(__t), std::forward<_Args>(__args)...);
+        _apply_impl<void>::template variadic_1d<_Access, _Tuple, _Args...>(
+            std::forward<_Tuple>(__t), std::forward<_Args>(__args)...,
+            make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//
@@ -757,10 +879,13 @@ struct apply<void>
     static void access2(_TupleA&& __ta, _TupleB&& __tb, _Args&&... __args)
     {
         static_assert(_N == _Nb, "tuple_size 1 must match tuple_size 2");
-        _apply_impl<void>::template apply_access2<0, _N - 1, _Access, _TupleA, _TupleB,
-                                                  _Args...>(
+        //_apply_impl<void>::template apply_access2<0, _N - 1, _Access, _TupleA, _TupleB,
+        //                                          _Args...>(
+        //    std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
+        //    std::forward<_Args>(__args)...);
+        _apply_impl<void>::template variadic_2d<_Access, _TupleA, _TupleB, _Args...>(
             std::forward<_TupleA>(__ta), std::forward<_TupleB>(__tb),
-            std::forward<_Args>(__args)...);
+            std::forward<_Args>(__args)..., make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//

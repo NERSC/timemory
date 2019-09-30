@@ -58,6 +58,7 @@ struct papi_array
     using this_type  = papi_array<MaxNumEvents>;
     using base_type =
         base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
+    using storage_type      = typename base_type::storage_type;
     using get_initializer_t = std::function<event_list()>;
 
     static const short                   precision = 3;
@@ -77,6 +78,7 @@ struct papi_array
         if(!_initalized)
         {
             papi::init();
+            papi::register_thread();
             _initalized = true;
             _working    = papi::working();
             if(!_working)
@@ -144,7 +146,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init()
+    static void invoke_thread_init(storage_type*)
     {
         if(!initialize_papi())
             return;
@@ -159,7 +161,7 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_finalize()
+    static void invoke_thread_finalize(storage_type*)
     {
         if(!initialize_papi())
             return;
@@ -172,6 +174,7 @@ struct papi_array
             papi::destroy_event_set(event_set());
             _event_set() = PAPI_NULL;
         }
+        papi::unregister_thread();
     }
 
     //----------------------------------------------------------------------------------//

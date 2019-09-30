@@ -101,9 +101,15 @@ TIMEMORY_ENV_STATIC_ACCESSOR(bool, memory_scientific, "TIMEMORY_MEMORY_SCIENTIFI
 
 // output control
 TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_path, "TIMEMORY_OUTPUT_PATH",
-                             "timemory_output/")  // folder
+                             "timemory-output/")  // folder
 TIMEMORY_ENV_STATIC_ACCESSOR(string_t, output_prefix, "TIMEMORY_OUTPUT_PREFIX",
                              "")  // file prefix
+
+// dart control
+/// only echo this measurement type
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, dart_type, "TIMEMORY_DART_TYPE", "")
+/// only echo this many measurement
+TIMEMORY_ENV_STATIC_ACCESSOR(uint64_t, dart_count, "TIMEMORY_DART_COUNT", 0)
 
 //======================================================================================//
 //

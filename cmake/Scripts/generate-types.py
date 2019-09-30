@@ -50,7 +50,8 @@ if __name__ == "__main__":
                         action='store_true')
     parser.add_argument("-S", "--specialized", help="Initialization is specialized (not a template)",
                         action='store_true')
-    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
+    parser.add_argument("-V", "--verbose",
+                        help="Enable verbosity", default=0, type=int)
 
     args = parser.parse_args()
 
@@ -83,7 +84,16 @@ if __name__ == "__main__":
     components.sort()
     if args.verbose > 0:
         print("timemory components: [{}]\n".format(", ".join(components)))
-    outdata = "using complete_auto_list_t = auto_list<\n"
+
+    #
+    outdata = "using complete_tuple_t = std::tuple<\n"
+    for component in components:
+        outdata += "\tcomponent::{},\n".format(component)
+    outdata = outdata.strip("\n")
+    outdata = outdata.strip(",")
+    outdata += ">;\n\n"
+
+    outdata += "using complete_auto_list_t = auto_list<\n"
     for component in components:
         outdata += "\tcomponent::{},\n".format(component)
     outdata = outdata.strip("\n")
@@ -100,7 +110,8 @@ if __name__ == "__main__":
         outdata = outdata.strip("\n")
         outdata = outdata.strip(",")
         outdata += ">;\n\n"
-        outdata += "using recommended_{0}_t = recommended_auto_{0}_t::component_type;\n\n".format(key)
+        outdata += "using recommended_{0}_t = recommended_auto_{0}_t::component_type;\n\n".format(
+            key)
         a_hybdata += "\trecommended_{0}_t,\n".format(key)
         c_hybdata += "\trecommended_{0}_t,\n".format(key)
     a_hybdata = a_hybdata.strip("\n")

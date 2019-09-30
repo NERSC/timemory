@@ -775,5 +775,45 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
 };
 
 //--------------------------------------------------------------------------------------//
+/// \class virtual_memory
+/// \brief
+/// this struct extracts the virtual memory usage
+//
+struct virtual_memory : public base<virtual_memory>
+{
+    using value_type = int64_t;
+    using base_type  = base<virtual_memory, value_type>;
+
+    static const short                   precision = 1;
+    static const short                   width     = 5;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t     unit() { return units::megabyte; }
+    static std::string label() { return "virtual_memory"; }
+    static std::string description() { return "virtual memory usage"; }
+    static std::string display_unit() { return "MB"; }
+    static value_type  record() { return get_virt_mem(); }
+    double             get_display() const
+    {
+        auto val = (is_transient) ? accum : value;
+        return val / static_cast<double>(base_type::get_unit());
+    }
+    double get() const { return get_display(); }
+    void   start()
+    {
+        set_started();
+        value = record();
+    }
+    void stop()
+    {
+        auto tmp   = record();
+        auto delta = tmp - value;
+        accum      = std::max(accum, delta);
+        value      = std::move(tmp);
+        set_stopped();
+    }
+};
+//--------------------------------------------------------------------------------------//
 }  // namespace component
 }  // namespace tim

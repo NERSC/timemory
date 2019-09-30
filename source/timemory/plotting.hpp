@@ -24,8 +24,8 @@
 
 #pragma once
 
+#include "timemory/bits/components.hpp"
 #include "timemory/components.hpp"
-#include "timemory/details/components.hpp"
 #include "timemory/settings.hpp"
 #include "timemory/variadic/macros.hpp"
 

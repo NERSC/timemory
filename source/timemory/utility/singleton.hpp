@@ -82,10 +82,10 @@ public:
 
     // for checking but not allocating
     static pointer instance_ptr() { return _local_instance().get(); }
-    static pointer master_instance_ptr() { return f_master_instance; }
+    static pointer master_instance_ptr() { return f_master_instance(); }
 
     // the thread the master instance was created on
-    static thread_id_t master_thread_id() { return f_master_thread; }
+    static thread_id_t master_thread_id() { return f_master_thread(); }
 
     // since we are overloading delete we overload new
     void* operator new(size_t)
@@ -100,33 +100,33 @@ public:
     {
         this_type* _instance = (this_type*) (ptr);
         ::delete _instance;
-        if(std::this_thread::get_id() == f_master_thread)
-            f_master_instance = nullptr;
+        if(std::this_thread::get_id() == f_master_thread())
+            f_master_instance() = nullptr;
     }
 
-    static list_t children() { return f_children; }
+    static list_t children() { return f_children(); }
     static bool   is_master(pointer ptr) { return ptr == master_instance_ptr(); }
 
     static void insert(pointer itr)
     {
-        auto_lock_t l(f_mutex);
-        f_children.insert(itr);
+        auto_lock_t l(f_mutex());
+        f_children().insert(itr);
     }
 
     static void remove(pointer itr)
     {
-        auto_lock_t l(f_mutex);
-        for(auto litr = f_children.begin(); litr != f_children.end(); ++litr)
+        auto_lock_t l(f_mutex());
+        for(auto litr = f_children().begin(); litr != f_children().end(); ++litr)
         {
             if(*litr == itr)
             {
-                f_children.erase(litr);
+                f_children().erase(litr);
                 break;
             }
         }
     }
 
-    static mutex_t& get_mutex() { return f_mutex; }
+    static mutex_t& get_mutex() { return f_mutex(); }
 
 private:
     // Private functions
@@ -147,33 +147,51 @@ private:
 
 private:
     // Private variables
-    static thread_id_t f_master_thread;
-    static mutex_t     f_mutex;
-    static pointer     f_master_instance;
-    static list_t      f_children;
+    static thread_id_t& f_master_thread();
+    static mutex_t&     f_mutex();
+    static pointer&     f_master_instance();
+    static list_t&      f_children();
 };
 
 //======================================================================================//
 
 template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::thread_id_t singleton<Type, Pointer>::f_master_thread =
-    std::this_thread::get_id();
+typename singleton<Type, Pointer>::thread_id_t&
+singleton<Type, Pointer>::f_master_thread()
+{
+    static thread_id_t _instance = std::this_thread::get_id();
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::pointer singleton<Type, Pointer>::f_master_instance =
-    singleton<Type, Pointer>::_master_instance().get();
+typename singleton<Type, Pointer>::pointer&
+singleton<Type, Pointer>::f_master_instance()
+{
+    static pointer _instance = singleton<Type, Pointer>::_master_instance().get();
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::mutex_t singleton<Type, Pointer>::f_mutex;
+typename singleton<Type, Pointer>::mutex_t&
+singleton<Type, Pointer>::f_mutex()
+{
+    static mutex_t _instance;
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
 template <typename Type, typename Pointer>
-typename singleton<Type, Pointer>::list_t singleton<Type, Pointer>::f_children;
+typename singleton<Type, Pointer>::list_t&
+singleton<Type, Pointer>::f_children()
+{
+    static list_t _instance;
+    return _instance;
+}
 
 //--------------------------------------------------------------------------------------//
 
@@ -208,10 +226,10 @@ template <typename Type, typename Pointer>
 void
 singleton<Type, Pointer>::initialize()
 {
-    if(!f_master_instance)
+    if(!f_master_instance())
     {
-        f_master_thread   = std::this_thread::get_id();
-        f_master_instance = new Type();
+        f_master_thread()   = std::this_thread::get_id();
+        f_master_instance() = new Type();
     }
 }
 
@@ -221,10 +239,10 @@ template <typename Type, typename Pointer>
 void
 singleton<Type, Pointer>::initialize(pointer ptr)
 {
-    if(!f_master_instance)
+    if(!f_master_instance())
     {
-        f_master_thread   = std::this_thread::get_id();
-        f_master_instance = ptr;
+        f_master_thread()   = std::this_thread::get_id();
+        f_master_instance() = ptr;
     }
 }
 
@@ -235,10 +253,10 @@ void
 singleton<Type, Pointer>::destroy()
 {
     //_local_instance().reset();
-    if(std::this_thread::get_id() == f_master_thread)
+    if(std::this_thread::get_id() == f_master_thread())
     {
-        delete f_master_instance;
-        f_master_instance = nullptr;
+        delete f_master_instance();
+        f_master_instance() = nullptr;
     }
     else
     {
@@ -252,7 +270,7 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::pointer
 singleton<Type, Pointer>::instance()
 {
-    if(std::this_thread::get_id() == f_master_thread)
+    if(std::this_thread::get_id() == f_master_thread())
         return master_instance();
     else if(!_local_instance())
     {
@@ -268,12 +286,12 @@ template <typename Type, typename Pointer>
 typename singleton<Type, Pointer>::pointer
 singleton<Type, Pointer>::master_instance()
 {
-    if(!f_master_instance)
+    if(!f_master_instance())
     {
-        f_master_thread   = std::this_thread::get_id();
-        f_master_instance = new Type();
+        f_master_thread()   = std::this_thread::get_id();
+        f_master_instance() = new Type();
     }
-    return f_master_instance;
+    return f_master_instance();
 }
 
 //======================================================================================//

@@ -22,27 +22,23 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <stdint.h>
 #include <stdio.h>
-#include <timemory/ctimemory.h>
-
-extern void timemory_init_library(int, char**);
-extern void timemory_finalize_library();
-extern void timemory_begin_record(const char*, uint64_t*);
-extern void timemory_end_record(uint64_t);
+#include <stdlib.h>
+#include <timemory/library.h>
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
 int main(int argc, char** argv)
 {
-    long     nfib = (argc > 1) ? atol(argv[1]) : 43;
-    uint64_t id0, id1;
+    long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
     timemory_init_library(argc, argv);
 
-    timemory_begin_record(argv[0], &id0);
-    long ans = fib(nfib);
+    uint64_t id0 = timemory_get_begin_record(argv[0]);
+    long     ans = fib(nfib);
 
-    timemory_begin_record(argv[0], &id1);
+    uint64_t id1 = timemory_get_begin_record(argv[0]);
     ans += fib(nfib + 1);
 
     timemory_end_record(id1);

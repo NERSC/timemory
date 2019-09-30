@@ -48,6 +48,7 @@ components = [
     "gpu_roofline_flops",
     "gperf_cpu_profiler",
     "gperf_heap_profiler",
+    "virtual_memory",
 ]
 
 #
@@ -125,6 +126,7 @@ traits = {
                                "priority_context_switch",
                                "read_bytes",
                                "written_bytes",
+                               "virtual_memory",
                            ]),
     "uses_timing_units": ("std::true_type",
                           [
@@ -147,6 +149,7 @@ traits = {
                               "data_rss",
                               "read_bytes",
                               "written_bytes",
+                              "virtual_memory",
                           ]),
 }
 
@@ -179,4 +182,5 @@ native_components = [
     "trip_count",
     "read_bytes",
     "written_bytes",
+    "virtual_memory",
 ]

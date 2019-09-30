@@ -51,23 +51,27 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
+namespace filt
+{
 template <typename... Types>
 class auto_tuple
 : public counted_object<auto_tuple<Types...>>
 , public hashed_object<auto_tuple<Types...>>
 {
 public:
-    using component_type = component_tuple<Types...>;
-    using this_type      = auto_tuple<Types...>;
-    using data_type      = typename component_type::data_type;
-    using counter_type   = counted_object<this_type>;
-    using counter_void   = counted_object<void>;
-    using hashed_type    = hashed_object<this_type>;
-    using string_t       = std::string;
-    using string_hash    = std::hash<string_t>;
-    using base_type      = component_type;
-    using language_t     = language;
-    using type_tuple     = typename component_type::type_tuple;
+    using component_type  = ::tim::component_tuple<Types...>;
+    using this_type       = auto_tuple<Types...>;
+    using data_type       = typename component_type::data_type;
+    using counter_type    = counted_object<this_type>;
+    using counter_void    = counted_object<void>;
+    using hashed_type     = hashed_object<this_type>;
+    using string_t        = std::string;
+    using string_hash     = std::hash<string_t>;
+    using base_type       = component_type;
+    using language_t      = language;
+    using type_tuple      = typename component_type::type_tuple;
+    using data_value_type = typename component_type::data_value_type;
+    using data_label_type = typename component_type::data_label_type;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -133,7 +137,6 @@ public:
         if(m_enabled)
             m_temporary_object.conditional_stop();
     }
-
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
     {
@@ -145,6 +148,19 @@ public:
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void customize(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.customize(std::forward<_Args>(_args)...);
+    }
+
+    data_value_type inline get() const { return m_temporary_object.get(); }
+
+    data_label_type inline get_labeled() const
+    {
+        return m_temporary_object.get_labeled();
     }
 
     inline bool enabled() const { return m_enabled; }
@@ -180,14 +196,14 @@ public:
         return os;
     }
 
-private:
+protected:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;
     component_type  m_temporary_object;
     component_type* m_reference_object = nullptr;
 };
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& lineno,
@@ -208,7 +224,7 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, const int64_t& line
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
@@ -229,7 +245,7 @@ auto_tuple<Types...>::auto_tuple(component_type& tmp, const int64_t& lineno,
     }
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 auto_tuple<Types...>::~auto_tuple()
@@ -256,10 +272,223 @@ auto_tuple<Types...>::~auto_tuple()
 }
 
 //======================================================================================//
+//
+//
+template <typename... _Types>
+class _auto_tuple : public auto_tuple<_Types...>
+{
+};
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data = typename _Tp::data_type,
-          typename _Ret  = typename _Tp::template data_value_t<_Data>>
+//======================================================================================//
+//
+//
+template <typename... _Types>
+class _auto_tuple<std::tuple<_Types...>> : public auto_tuple<_Types...>
+{
+public:
+    using base_type      = auto_tuple<_Types...>;
+    using component_type = typename base_type::component_type;
+    using this_type      = _auto_tuple<std::tuple<_Types...>>;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit _auto_tuple(const string_t& label, const int64_t& lineno = 0,
+                                const language_t& lang = language_t::cxx(),
+                                bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit)
+    {
+    }
+
+    inline explicit _auto_tuple(component_type& tmp, const int64_t& lineno = 0,
+                                bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit)
+    {
+    }
+
+    inline ~_auto_tuple() {}
+
+    // copy and move
+    inline _auto_tuple(const this_type&) = default;
+    inline _auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace filt
+
+//======================================================================================//
+
+template <typename... _Types>
+class auto_tuple : public filt::_auto_tuple<implemented<_Types...>>
+{
+public:
+    using base_type      = filt::_auto_tuple<implemented<_Types...>>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using this_type      = auto_tuple<_Types...>;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_tuple(const string_t& label, const int64_t& lineno = 0,
+                               const language_t& lang = language_t::cxx(),
+                               bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit)
+    {
+    }
+
+    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
+                               bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit)
+    {
+    }
+
+    inline ~auto_tuple() {}
+
+    // copy and move
+    inline auto_tuple(const this_type&) = default;
+    inline auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//======================================================================================//
+
+template <typename... _Types>
+class auto_tuple<std::tuple<_Types...>> : public filt::_auto_tuple<implemented<_Types...>>
+{
+public:
+    using base_type      = filt::_auto_tuple<implemented<_Types...>>;
+    using this_type      = auto_tuple<std::tuple<_Types...>>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_tuple(const string_t& label, const int64_t& lineno = 0,
+                               const language_t& lang = language_t::cxx(),
+                               bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit)
+    {
+    }
+
+    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
+                               bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit)
+    {
+    }
+
+    inline ~auto_tuple() {}
+
+    // copy and move
+    inline auto_tuple(const this_type&) = default;
+    inline auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//======================================================================================//
+
+template <typename... _CompTypes, typename... _Types>
+class auto_tuple<component_tuple<_CompTypes...>, _Types...>
+: public filt::_auto_tuple<implemented<_CompTypes..., _Types...>>
+{
+public:
+    using base_type      = filt::_auto_tuple<implemented<_CompTypes..., _Types...>>;
+    using this_type      = auto_tuple<component_tuple<_CompTypes...>, _Types...>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_tuple(const string_t& label, const int64_t& lineno = 0,
+                               const language_t& lang = language_t::cxx(),
+                               bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit)
+    {
+    }
+
+    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
+                               bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit)
+    {
+    }
+
+    inline ~auto_tuple() {}
+
+    // copy and move
+    inline auto_tuple(const this_type&) = default;
+    inline auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//======================================================================================//
+
+template <typename... _CompTypes, typename... _Types>
+class auto_tuple<auto_tuple<_CompTypes...>, _Types...>
+: public filt::_auto_tuple<implemented<_CompTypes..., _Types...>>
+{
+public:
+    using base_type      = filt::_auto_tuple<implemented<_CompTypes..., _Types...>>;
+    using this_type      = auto_tuple<auto_tuple<_CompTypes...>, _Types...>;
+    using core_type      = typename base_type::base_type;
+    using component_type = typename base_type::component_type;
+    using data_type      = typename base_type::data_type;
+    using string_t       = std::string;
+    using language_t     = language;
+    using type_tuple     = typename base_type::type_tuple;
+
+    static constexpr bool contains_gotcha = base_type::contains_gotcha;
+
+public:
+    inline explicit auto_tuple(const string_t& label, const int64_t& lineno = 0,
+                               const language_t& lang = language_t::cxx(),
+                               bool report_at_exit    = settings::destructor_report())
+    : base_type(label, lineno, lang, report_at_exit)
+    {
+    }
+
+    inline explicit auto_tuple(component_type& tmp, const int64_t& lineno = 0,
+                               bool report_at_exit = settings::destructor_report())
+    : base_type(tmp, lineno, report_at_exit)
+    {
+    }
+
+    inline ~auto_tuple() {}
+
+    // copy and move
+    inline auto_tuple(const this_type&) = default;
+    inline auto_tuple(this_type&&)      = default;
+    inline this_type& operator=(const this_type&) = default;
+    inline this_type& operator=(this_type&&) = default;
+};
+
+//======================================================================================//
+
+template <typename... _Types,
+          typename _Ret = typename auto_tuple<_Types...>::data_value_type>
 _Ret
 get(const auto_tuple<_Types...>& _obj)
 {
@@ -268,11 +497,30 @@ get(const auto_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data = typename _Tp::data_type,
-          typename _Ret  = typename _Tp::template data_label_t<_Data>>
+template <typename... _Types,
+          typename _Ret = typename auto_tuple<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_tuple<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename filt::auto_tuple<_Types...>::data_value_type>
+_Ret
+get(const filt::auto_tuple<_Types...>& _obj)
+{
+    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types,
+          typename _Ret = typename filt::auto_tuple<_Types...>::data_label_type>
+_Ret
+get_labeled(const filt::auto_tuple<_Types...>& _obj)
 {
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
@@ -287,11 +535,11 @@ get_labeled(const auto_tuple<_Types...>& _obj)
 // variadic versions
 
 #define TIMEMORY_VARIADIC_BASIC_AUTO_TUPLE(tag, ...)                                     \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
     TIMEMORY_BASIC_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 #define TIMEMORY_VARIADIC_AUTO_TUPLE(tag, ...)                                           \
-    using _AUTO_TYPEDEF(__LINE__) = tim::auto_tuple<__VA_ARGS__>;                        \
+    using _AUTO_TYPEDEF(__LINE__) = ::tim::auto_tuple<__VA_ARGS__>;                      \
     TIMEMORY_AUTO_TUPLE(_AUTO_TYPEDEF(__LINE__), tag);
 
 //======================================================================================//

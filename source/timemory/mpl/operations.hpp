@@ -644,7 +644,47 @@ struct mark_end
 };
 
 //--------------------------------------------------------------------------------------//
+///
+/// \class operation::customize
+///
+/// \brief The purpose of this operation class is for a component to provide some extra
+/// customization within a GOTCHA function.
+///
+/// It will require overloading `tim::trait::supports_args`:
+///   `template <> trait::supports_args<MyType, std::tuple<string, _Args...>> : true_type`
+/// where `_Args...` are the GOTCHA function arguments. The string will be the function
+/// name (possibly mangled). One such purpose may be to create a custom component
+/// that intercepts a malloc and uses the arguments to get the exact allocation
+/// size.
+///
+template <typename _Tp>
+struct customize
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
 
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    customize(Type& obj, _Args&&... _args)
+    {
+        obj.customize(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args, typename _Tuple = std::tuple<decay_t<_Args>...>,
+              enable_if_t<!(trait::supports_args<_Tp, _Tuple>::value), int> = 0>
+    customize(Type&, _Args&&...)
+    {
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+///
+/// \class operation::compose
+///
+/// \brief The purpose of this operation class is operating on two components to compose
+/// a result, e.g. use system-clock and user-clock to get a cpu-clock
+///
 template <typename RetType, typename LhsType, typename RhsType>
 struct compose
 {
@@ -690,7 +730,11 @@ struct compose
 };
 
 //--------------------------------------------------------------------------------------//
-
+///
+/// \class operation::plus
+///
+/// \brief Define addition operations
+///
 template <typename _Tp>
 struct plus
 {
@@ -715,7 +759,11 @@ struct plus
 };
 
 //--------------------------------------------------------------------------------------//
-
+///
+/// \class operation::minus
+///
+/// \brief Define subtraction operations
+///
 template <typename _Tp>
 struct minus
 {
@@ -754,7 +802,13 @@ struct divide
 };
 
 //--------------------------------------------------------------------------------------//
-
+///
+/// \class operation::get_data
+///
+/// \brief The purpose of this operation class is to combine the output types from the
+/// "get()" member function for multiple components -- this is specifically used in the
+/// Python interface to provide direct access to the results
+///
 template <typename _Tp>
 struct get_data
 {
@@ -1041,7 +1095,11 @@ struct serialization
 };
 
 //--------------------------------------------------------------------------------------//
-
+///
+/// \class operation::echo_measurement
+///
+/// \brief This operation class echoes DartMeasurements for a CDash dashboard
+///
 template <typename _Tp>
 struct echo_measurement
 {
@@ -1135,21 +1193,28 @@ struct echo_measurement
     static string_t generate_name(const string_t& _prefix, string_t _unit,
                                   _Args&&... _args)
     {
-        auto _extra = join("_", std::forward<_Args>(_args)...);
-        auto _label = join("", "", uppercase(Type::label()), "");
-        _label      = replace(_label, "_", { "-" });
-        _unit       = replace(_unit, "", { " " });
+        auto _extra = join(" ", std::forward<_Args>(_args)...);
+        auto _label = join("", "((", uppercase(Type::label()), "))");
+        // _label      = replace(_label, "_", { "-" });
+        _unit = replace(_unit, "", { " " });
         string_t _name =
-            (_extra.length() > 0) ? join("_", _extra, _prefix) : join("_", _prefix);
+            (_extra.length() > 0) ? join(" ", _extra, _prefix) : join(" ", _prefix);
+
         auto _ret = join(" ", _label, _name);
         _ret      = replace(_ret, "_", { "__" });
+        _ret      = replace(_ret, " ", { "  " });
+
         if(_ret.length() > 0 && _ret.at(_ret.length() - 1) == '_')
             _ret.erase(_ret.length() - 1);
-        if(_unit.length() > 0 && _unit != "%")
-            _ret += "_UNITS_" + _unit;
-        _ret = replace(_ret, "_", { " " });
+
+        // _ret = replace(_ret, "_", { " " });
         _ret = replace(_ret, "_", { "__" });
-        _ret = replace(_ret, " ", { "_" });
+        _ret = replace(_ret, " ", { "  " });
+        // _ret = replace(_ret, " ", { "_" });
+
+        if(_unit.length() > 0 && _unit != "%")
+            _ret += " ((" + _unit + "))";
+
         return _ret;
     }
 
@@ -1164,7 +1229,8 @@ struct echo_measurement
         os << " " << attribute_string("type", "numeric/double");
         for(const auto& itr : attributes)
             os << " " << attribute_string(itr.first, itr.second);
-        os << ">" << value << "</DartMeasurement>\n";
+        os << ">" << std::setprecision(Type::get_precision()) << value
+           << "</DartMeasurement>\n";
     }
 
     //----------------------------------------------------------------------------------//
@@ -1172,22 +1238,23 @@ struct echo_measurement
     ///
     static string_t generate_prefix(const strvec_t& hierarchy)
     {
-        string_t              ret_prefix = "";
-        string_t              add_prefix = "";
-        static const strset_t repl_chars = { "[", "]",  "(", ")", ".", "/", "\\",
-                                             " ", "\t", "<", ">", "@", "'", ":" };
+        string_t ret_prefix = "";
+        string_t add_prefix = "";
+        // static const strset_t repl_chars = { "[", "]", "(", ")", ".", "/", "\\",
+        //                                      "\t", "<", ">", "@", "'", ":" };
+        static const strset_t repl_chars = { "\t", "\n", "<", ">" };
         for(const auto& itr : hierarchy)
         {
             auto prefix = itr;
             prefix      = replace(prefix, "[c]", { "[_c_]" });
-            prefix      = replace(prefix, "", { "> [" });
+            prefix      = replace(prefix, "[", { "> [" });
             prefix      = replace(prefix, "", { "|_" });
             prefix      = replace(prefix, "_", repl_chars);
             prefix      = replace(prefix, "_", { "__" });
             if(prefix.length() > 0 && prefix.at(prefix.length() - 1) == '_')
                 prefix.erase(prefix.length() - 1);
             ret_prefix += add_prefix + prefix;
-            add_prefix = "_CALLING_";
+            add_prefix = " ((>>)) ";
         }
         return ret_prefix;
     }
@@ -1273,13 +1340,9 @@ struct copy
         if(rhs)
         {
             if(!obj)
-            {
                 obj = new Type(*rhs);
-            }
             else
-            {
                 *obj = Type(*rhs);
-            }
         }
     }
 
@@ -1297,7 +1360,13 @@ struct copy
 };
 
 //--------------------------------------------------------------------------------------//
-
+///
+/// \class operation::pointer_operator
+///
+/// \brief This operation class enables pointer-safety for the components created
+/// on the heap (e.g. within a component_list) by ensuring other operation
+/// classes are not invoked on a null pointer
+///
 template <typename _Tp, typename _Op>
 struct pointer_operator
 {

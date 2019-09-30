@@ -30,6 +30,7 @@
 #include <type_traits>
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/bits/types.hpp"
 
 //======================================================================================//
 //
@@ -41,7 +42,7 @@ namespace tim
 namespace component
 {
 // define this short-hand from C++14 for C++11
-template <bool B, typename T>
+template <bool B, typename T = void>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 }  // component
@@ -89,6 +90,7 @@ struct num_msg_recv;
 struct num_signals;
 struct voluntary_context_switch;
 struct priority_context_switch;
+struct virtual_memory;
 
 // filesystem
 struct read_bytes;
@@ -349,36 +351,6 @@ class auto_list;
 
 template <typename _Tuple, typename _List>
 class auto_hybrid;
-
-//--------------------------------------------------------------------------------------//
-//  category configurations
-//
-using rusage_components_t = component_tuple<
-    component::page_rss, component::peak_rss, component::stack_rss, component::data_rss,
-    component::num_swap, component::num_io_in, component::num_io_out,
-    component::num_minor_page_faults, component::num_major_page_faults,
-    component::num_msg_sent, component::num_msg_recv, component::num_signals,
-    component::voluntary_context_switch, component::priority_context_switch>;
-
-using timing_components_t =
-    component_tuple<component::real_clock, component::system_clock, component::user_clock,
-                    component::cpu_clock, component::monotonic_clock,
-                    component::monotonic_raw_clock, component::thread_cpu_clock,
-                    component::process_cpu_clock, component::cpu_util,
-                    component::thread_cpu_util, component::process_cpu_util>;
-
-//--------------------------------------------------------------------------------------//
-//  standard configurations
-//
-using standard_rusage_t =
-    component_tuple<component::page_rss, component::peak_rss, component::num_io_in,
-                    component::num_io_out, component::num_minor_page_faults,
-                    component::num_major_page_faults, component::priority_context_switch,
-                    component::voluntary_context_switch>;
-
-using standard_timing_t =
-    component_tuple<component::real_clock, component::user_clock, component::system_clock,
-                    component::cpu_clock, component::cpu_util>;
 
 }  // tim
 

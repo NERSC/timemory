@@ -104,7 +104,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
     std::vector<_Tp, tim::ert::aligned_allocator<_Tp, 64>> array(nsize);
     std::memset(array.data(), 0, nsize * sizeof(_Tp));
 
-    _Component::invoke_thread_init();
+    _Component::invoke_thread_init(nullptr);
 
     using pointer = ptr_t<_Component>;
     pointer obj   = pointer(new _Component(std::forward<_Args>(_args)...));
@@ -114,7 +114,7 @@ run_cpu_ops_kernel(int64_t ntrials, int64_t nsize, _Args&&... _args)
                                             store_func);
     obj->stop();
 
-    _Component::invoke_thread_finalize();
+    _Component::invoke_thread_finalize(nullptr);
 
     // return zeros if not working
     if(!tim::papi::working())

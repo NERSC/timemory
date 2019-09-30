@@ -70,6 +70,8 @@ public:
     using type_tuple      = typename component_type::type_tuple;
     using tuple_type_list = typename component_type::tuple_type_list;
     using list_type_list  = typename component_type::list_type_list;
+    using data_value_type = typename component_type::data_value_type;
+    using data_label_type = typename component_type::data_label_type;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
@@ -130,7 +132,6 @@ public:
         if(m_enabled)
             m_temporary_object.conditional_stop();
     }
-
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
     {
@@ -142,6 +143,19 @@ public:
     {
         if(m_enabled)
             m_temporary_object.mark_end(std::forward<_Args>(_args)...);
+    }
+    template <typename... _Args>
+    inline void customize(_Args&&... _args)
+    {
+        if(m_enabled)
+            m_temporary_object.customize(std::forward<_Args>(_args)...);
+    }
+
+    data_value_type inline get() const { return m_temporary_object.get(); }
+
+    data_label_type inline get_labeled() const
+    {
+        return m_temporary_object.get_labeled();
     }
 
     inline bool enabled() const { return m_enabled; }
@@ -269,29 +283,21 @@ auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
 //======================================================================================//
 
 template <typename _Tuple, typename _List,
-          typename _Ret = decltype(std::tuple_cat(get(std::declval<_Tuple>()),
-                                                  get(std::declval<_List>())))>
+          typename _Ret = typename auto_hybrid<_Tuple, _List>::data_value_type>
 _Ret
 get(const auto_hybrid<_Tuple, _List>& _obj)
 {
-    return (_obj.enabled()) ? std::tuple_cat(get(_obj.get_component().get_lhs()),
-                                             get(_obj.get_component().get_rhs()))
-                            : _Ret{};
-    // return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
+    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
 }
 
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tuple, typename _List,
-          typename _Ret = decltype(std::tuple_cat(get_labeled(std::declval<_Tuple>()),
-                                                  get_labeled(std::declval<_List>())))>
+          typename _Ret = typename auto_hybrid<_Tuple, _List>::data_label_type>
 _Ret
 get_labeled(const auto_hybrid<_Tuple, _List>& _obj)
 {
-    return (_obj.enabled()) ? std::tuple_cat(get_labeled(_obj.get_component().get_lhs()),
-                                             get_labeled(_obj.get_component().get_rhs()))
-                            : _Ret{};
-    // return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
+    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }
 
 //======================================================================================//

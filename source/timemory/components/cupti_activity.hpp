@@ -161,7 +161,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init()
+    static void invoke_global_init(storage_type*)
     {
         static std::atomic<short> _once;
         if(_once++ > 0)
@@ -172,7 +172,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type*)
     {
         cupti::activity::finalize_trace(get_kind_types());
     }

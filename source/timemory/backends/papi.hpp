@@ -177,7 +177,10 @@ check(int retval, const std::string& mesg, bool quiet = false)
         if(settings::papi_fail_on_error())
             throw std::runtime_error(buf);
         else
-            fprintf(stderr, "%s", buf);
+        {
+            if(working())
+                fprintf(stderr, "%s", buf);
+        }
 #else
         fprintf(stderr, "%s (error code = %i)\n", mesg.c_str(), retval);
 #endif
@@ -423,11 +426,15 @@ shutdown()
 {
     // finish using PAPI and free all related resources
 #if defined(TIMEMORY_USE_PAPI)
-    unregister_thread();
-    if(get_tid() != get_master_tid())
-        return;
-    PAPI_shutdown();
-    working() = false;
+    if(PAPI_is_initialized())
+    {
+        unregister_thread();
+        if(get_tid() == get_master_tid())
+        {
+            PAPI_shutdown();
+            working() = false;
+        }
+    }
 #endif
 }
 

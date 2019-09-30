@@ -100,9 +100,9 @@ struct gperf_cpu_profiler
     static std::string description() { return "gperftools cpu profiler"; }
     static value_type  record() {}
 
-    static void invoke_thread_init() { gperf::cpu::register_thread(); }
+    static void invoke_thread_init(storage_type*) { gperf::cpu::register_thread(); }
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type*)
     {
         if(gperf::cpu::is_running())
         {
@@ -167,7 +167,7 @@ struct gperf_heap_profiler
     static std::string description() { return "gperftools heap profiler"; }
     static value_type  record() {}
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type*)
     {
         if(gperf::heap::is_running())
         {
@@ -256,7 +256,7 @@ struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
         return _instance->find(_stream)->second;
     }
 
-    static void invoke_thread_init() { nvtx::name_thread(get_thread_id()); }
+    static void invoke_thread_init(storage_type*) { nvtx::name_thread(get_thread_id()); }
 
     nvtx_marker(const nvtx::color::color_t& _color = 0, const std::string& _prefix = "",
                 cuda::stream_t _stream = 0)

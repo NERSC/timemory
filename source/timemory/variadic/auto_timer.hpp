@@ -46,21 +46,50 @@
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
+namespace details
+{
+//
+//  In general, the complex scheme below is not needed at all -- this is only done
+//  here in order to reduce the compilation time since auto-timer is so frequently used
+//
 
-using auto_timer_tuple_t =
-    component_tuple<component::real_clock, component::system_clock, component::user_clock,
+//--------------------------------------------------------------------------------------//
+
+using tuple_t =
+    implemented<component::real_clock, component::system_clock, component::user_clock,
+                component::cpu_util, component::page_rss, component::peak_rss>;
+
+//--------------------------------------------------------------------------------------//
+
+using list_t =
+    implemented<component::caliper, component::papi_array_t,
+                component::cpu_roofline_sp_flops, component::cpu_roofline_dp_flops,
+                component::gperf_cpu_profiler, component::gperf_heap_profiler,
+                component::cuda_event, component::nvtx_marker, component::cupti_activity,
+                component::cupti_counters, component::gpu_roofline_flops,
+                component::gpu_roofline_hp_flops, component::gpu_roofline_sp_flops,
+                component::gpu_roofline_dp_flops>;
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace details
+
+//--------------------------------------------------------------------------------------//
+
+using auto_timer_tuple_t = component_tuple<details::tuple_t>;
+using auto_timer_list_t  = component_list<details::list_t>;
+
+#if !defined(TIMEMORY_USE_CALIPER) && !defined(TIMEMORY_USE_CUPTI) &&                    \
+    !defined(TIMEMORY_USE_NVTX) && !defined(TIMEMORY_USE_CUDA) &&                        \
+    !defined(TIMEMORY_USE_PAPI) && !defined(TIMEMORY_USE_GPERF) &&                       \
+    !defined(TIMEMORY_USE_GPERF_HEAP_PROFILER) &&                                        \
+    !defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
+using auto_timer =
+    tim::auto_tuple<component::real_clock, component::system_clock, component::user_clock,
                     component::cpu_util, component::page_rss, component::peak_rss>;
-
-using auto_timer_list_t =
-    component_list<component::caliper, component::papi_array_t, component::cuda_event,
-                   component::nvtx_marker, component::cupti_activity,
-                   component::cupti_counters, component::cpu_roofline_flops,
-                   component::cpu_roofline_sp_flops, component::cpu_roofline_dp_flops,
-                   component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
-                   component::gpu_roofline_sp_flops, component::gpu_roofline_dp_flops,
-                   component::gperf_cpu_profiler, component::gperf_heap_profiler>;
-
+#else
 using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
+#endif
 
 //--------------------------------------------------------------------------------------//
 

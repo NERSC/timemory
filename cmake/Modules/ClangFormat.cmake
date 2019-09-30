@@ -23,7 +23,9 @@ if(CLANG_FORMATTER)
         ${PROJECT_SOURCE_DIR}/source/tests/*.hpp
         ${PROJECT_SOURCE_DIR}/source/tests/*.cpp
         ${PROJECT_SOURCE_DIR}/source/preload/tests/*.hpp
-        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.cpp)
+        ${PROJECT_SOURCE_DIR}/source/preload/tests/*.cpp
+        ${PROJECT_SOURCE_DIR}/source/tests/external/*.hpp
+        ${PROJECT_SOURCE_DIR}/source/tests/external/*.cpp)
     file(GLOB sources
         ${PROJECT_SOURCE_DIR}/source/*.c
         ${PROJECT_SOURCE_DIR}/source/*.cpp
@@ -50,11 +52,20 @@ if(CLANG_FORMATTER)
         set(FORMAT_NAME format-timemory)
     endif()
 
-    add_custom_target(${FORMAT_NAME}
+    # always have files
+    set(_COMMAND
         COMMAND ${CLANG_FORMATTER} -i ${tests}
         COMMAND ${CLANG_FORMATTER} -i ${headers}
-        COMMAND ${CLANG_FORMATTER} -i ${sources}
-        COMMAND ${CLANG_FORMATTER} -i ${examples}
+        COMMAND ${CLANG_FORMATTER} -i ${sources})
+
+    # might be empty
+    if(TIMEMORY_BUILD_EXAMPLES)
+        set(_COMMAND ${_COMMAND}
+            COMMAND ${CLANG_FORMATTER} -i ${examples})
+    endif()
+
+    add_custom_target(${FORMAT_NAME}
+        ${_COMMAND}
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
         COMMENT "Running '${CLANG_FORMATTER}'..."
         SOURCES ${headers} ${sources} ${examples} ${tests})

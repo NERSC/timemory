@@ -269,7 +269,7 @@
 //--------------------------------------------------------------------------------------//
 //      extern storage singleton
 //
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(TYPE)                                        \
+#    define TIMEMORY_DECLARE_EXTERN_INIT(TYPE)                                           \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_storage_singleton<storage<component::TYPE>>();                               \
@@ -277,7 +277,7 @@
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_noninit_storage_singleton<storage<component::TYPE>>();
 
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(TYPE)                                    \
+#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
         get_storage_singleton<storage<component::TYPE>>()                                \
@@ -320,9 +320,9 @@
 //--------------------------------------------------------------------------------------//
 //      extern storage
 //
-#    define TIMEMORY_EXTERN_STORAGE_TYPE(...)
-#    define TIMEMORY_DECLARE_EXTERN_STORAGE(...)
-#    define TIMEMORY_INSTANTIATE_EXTERN_STORAGE(...)
+#    define TIMEMORY_EXTERN_INIT_TYPE(...)
+#    define TIMEMORY_DECLARE_EXTERN_INIT(...)
+#    define TIMEMORY_INSTANTIATE_EXTERN_INIT(...)
 
 #endif
 
@@ -350,24 +350,6 @@
             static TYPE _instance = Type::VARIABLE();                                    \
             return _instance;                                                            \
         }
-#endif
-
-//======================================================================================//
-//
-//      FLOATING POINT EXCEPTIONS
-//
-//======================================================================================//
-
-#if !defined(_WINDOWS)
-#    define init_priority(N) __attribute__((init_priority(N)))
-#    define init_construct(N) __attribute__((constructor(N)))
-#    define __c_ctor__ __attribute__((constructor))
-#    define __c_dtor__ __attribute__((destructor))
-#else
-#    define init_priority(N)
-#    define init_construct(N)
-#    define __c_ctor__
-#    define __c_dtor__
 #endif
 
 //======================================================================================//

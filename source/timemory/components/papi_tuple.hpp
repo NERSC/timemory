@@ -54,6 +54,7 @@ struct papi_tuple
     using this_type  = papi_tuple<EventTypes...>;
     using base_type =
         base<this_type, value_type, policy::thread_init, policy::thread_finalize>;
+    using storage_type = typename base_type::storage_type;
 
     static const size_type num_events = sizeof...(EventTypes);
     template <typename _Tp>
@@ -77,9 +78,10 @@ public:
         return _instance;
     }
 
-    static void invoke_thread_init()
+    static void invoke_thread_init(storage_type*)
     {
         papi::init();
+        papi::register_thread();
         // set overhead to zero
         apply<void>::set_value(get_overhead_values(), 0);
         int events[] = { EventTypes... };
@@ -100,7 +102,7 @@ public:
             get_overhead_values()[i] = std::max(get_overhead_values()[i], obj.accum[i]);
     }
 
-    static void invoke_thread_finalize()
+    static void invoke_thread_finalize(storage_type*)
     {
         value_type values;
         int        events[] = { EventTypes... };
@@ -108,6 +110,7 @@ public:
         tim::papi::remove_events(event_set(), events, num_events);
         tim::papi::destroy_event_set(event_set());
         event_set() = PAPI_NULL;
+        papi::unregister_thread();
     }
 
     static value_type record()

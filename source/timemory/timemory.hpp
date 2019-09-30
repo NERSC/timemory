@@ -32,6 +32,8 @@
 
 #if defined(DISABLE_TIMEMORY)
 
+#    include <ostream>
+
 namespace tim
 {
 template <typename... _Args>
@@ -153,110 +155,15 @@ struct dummy
 
 #    include "timemory/ctimemory.h"
 
-//======================================================================================//
-
-namespace tim
-{
-using complete_auto_list_t = auto_list<
-    component::caliper, component::cpu_clock, component::cpu_roofline_dp_flops,
-    component::cpu_roofline_flops, component::cpu_roofline_sp_flops, component::cpu_util,
-    component::cuda_event, component::cupti_activity, component::cupti_counters,
-    component::page_rss, component::data_rss, component::gperf_cpu_profiler,
-    component::gperf_heap_profiler, component::gpu_roofline_dp_flops,
-    component::gpu_roofline_flops, component::gpu_roofline_hp_flops,
-    component::gpu_roofline_sp_flops, component::monotonic_clock,
-    component::monotonic_raw_clock, component::num_io_in, component::num_io_out,
-    component::num_major_page_faults, component::num_minor_page_faults,
-    component::num_msg_recv, component::num_msg_sent, component::num_signals,
-    component::num_swap, component::nvtx_marker, component::papi_array_t,
-    component::peak_rss, component::priority_context_switch, component::process_cpu_clock,
-    component::process_cpu_util, component::read_bytes, component::real_clock,
-    component::stack_rss, component::system_clock, component::thread_cpu_clock,
-    component::thread_cpu_util, component::trip_count, component::user_clock,
-    component::voluntary_context_switch, component::written_bytes>;
-
-using complete_list_t = complete_auto_list_t::component_type;
-
-using recommended_auto_list_t =
-    auto_list<component::caliper, component::papi_array_t, component::cuda_event,
-              component::nvtx_marker, component::cupti_counters,
-              component::cupti_activity, component::cpu_roofline_flops,
-              component::gpu_roofline_flops, component::gperf_cpu_profiler,
-              component::gperf_heap_profiler>;
-
-using recommended_list_t = recommended_auto_list_t::component_type;
-
-using recommended_auto_tuple_t =
-    auto_tuple<component::real_clock, component::system_clock, component::user_clock,
-               component::cpu_util, component::page_rss, component::peak_rss,
-               component::read_bytes, component::written_bytes,
-               component::num_minor_page_faults, component::num_major_page_faults,
-               component::voluntary_context_switch, component::priority_context_switch>;
-
-using recommended_tuple_t = recommended_auto_tuple_t::component_type;
-
-using recommended_auto_hybrid_t = auto_hybrid<recommended_list_t, recommended_tuple_t>;
-
-using recommended_hybrid_t = component_hybrid<recommended_list_t, recommended_tuple_t>;
-}  // namespace tim
+// definitions of types
+#    include "timemory/bits/timemory.hpp"
 
 //======================================================================================//
 
+#    include "timemory/bits/init.hpp"
 #    include "timemory/templates/auto_timer_extern.hpp"
 #    include "timemory/templates/cuda_extern.hpp"
 #    include "timemory/templates/native_extern.hpp"
-
-//======================================================================================//
-
-#    if defined(TIMEMORY_EXTERN_INIT)
-#        include "timemory/utility/storage.hpp"
-
-namespace tim
-{
-TIMEMORY_DECLARE_EXTERN_STORAGE(caliper)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_roofline_dp_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_roofline_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_roofline_sp_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cuda_event)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_activity)
-TIMEMORY_DECLARE_EXTERN_STORAGE(cupti_counters)
-TIMEMORY_DECLARE_EXTERN_STORAGE(page_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(data_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_dp_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_hp_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(gpu_roofline_sp_flops)
-TIMEMORY_DECLARE_EXTERN_STORAGE(monotonic_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(monotonic_raw_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_io_in)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_io_out)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_major_page_faults)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_minor_page_faults)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_msg_recv)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_msg_sent)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_signals)
-TIMEMORY_DECLARE_EXTERN_STORAGE(num_swap)
-TIMEMORY_DECLARE_EXTERN_STORAGE(nvtx_marker)
-TIMEMORY_DECLARE_EXTERN_STORAGE(papi_array_t)
-TIMEMORY_DECLARE_EXTERN_STORAGE(peak_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(priority_context_switch)
-TIMEMORY_DECLARE_EXTERN_STORAGE(process_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(process_cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(read_bytes)
-TIMEMORY_DECLARE_EXTERN_STORAGE(real_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(stack_rss)
-TIMEMORY_DECLARE_EXTERN_STORAGE(system_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(thread_cpu_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(thread_cpu_util)
-TIMEMORY_DECLARE_EXTERN_STORAGE(trip_count)
-TIMEMORY_DECLARE_EXTERN_STORAGE(user_clock)
-TIMEMORY_DECLARE_EXTERN_STORAGE(voluntary_context_switch)
-TIMEMORY_DECLARE_EXTERN_STORAGE(written_bytes)
-}  // namespace tim
-
-#    endif  // defined(TIMEMORY_EXTERN_INIT)
 
 //======================================================================================//
 

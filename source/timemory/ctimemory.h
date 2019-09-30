@@ -134,53 +134,7 @@
 //
 //======================================================================================//
 
-enum TIMEMORY_COMPONENT
-{
-    CALIPER                  = 0,
-    CPU_CLOCK                = 1,
-    CPU_ROOFLINE_DP_FLOPS    = 2,
-    CPU_ROOFLINE_FLOPS       = 3,
-    CPU_ROOFLINE_SP_FLOPS    = 4,
-    CPU_UTIL                 = 5,
-    CUDA_EVENT               = 6,
-    CUPTI_ACTIVITY           = 7,
-    CUPTI_COUNTERS           = 8,
-    PAGE_RSS                 = 9,
-    DATA_RSS                 = 10,
-    GPERF_CPU_PROFILER       = 11,
-    GPERF_HEAP_PROFILER      = 12,
-    GPU_ROOFLINE_DP_FLOPS    = 13,
-    GPU_ROOFLINE_FLOPS       = 14,
-    GPU_ROOFLINE_HP_FLOPS    = 15,
-    GPU_ROOFLINE_SP_FLOPS    = 16,
-    MONOTONIC_CLOCK          = 17,
-    MONOTONIC_RAW_CLOCK      = 18,
-    NUM_IO_IN                = 19,
-    NUM_IO_OUT               = 20,
-    NUM_MAJOR_PAGE_FAULTS    = 21,
-    NUM_MINOR_PAGE_FAULTS    = 22,
-    NUM_MSG_RECV             = 23,
-    NUM_MSG_SENT             = 24,
-    NUM_SIGNALS              = 25,
-    NUM_SWAP                 = 26,
-    NVTX_MARKER              = 27,
-    PAPI_ARRAY               = 28,
-    PEAK_RSS                 = 29,
-    PRIORITY_CONTEXT_SWITCH  = 30,
-    PROCESS_CPU_CLOCK        = 31,
-    PROCESS_CPU_UTIL         = 32,
-    READ_BYTES               = 33,
-    WALL_CLOCK               = 34,
-    STACK_RSS                = 35,
-    SYS_CLOCK                = 36,
-    THREAD_CPU_CLOCK         = 37,
-    THREAD_CPU_UTIL          = 38,
-    TRIP_COUNT               = 39,
-    USER_CLOCK               = 40,
-    VOLUNTARY_CONTEXT_SWITCH = 41,
-    WRITTEN_BYTES            = 42,
-    TIMEMORY_COMPONENTS_END  = 43
-};
+#    include "timemory/bits/ctimemory.h"
 
 //======================================================================================//
 //

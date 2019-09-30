@@ -280,19 +280,6 @@ protected:
     // protected functions
     string_t get_prefix() const;
 
-protected:
-    template <typename List>
-    struct PopFront_t;
-
-    template <typename Head, typename... Tail>
-    struct PopFront_t<tim::component_tuple<Head, Tail...>>
-    {
-        using type = tim::component_tuple<Tail...>;
-    };
-
-    template <typename List>
-    using PopFront = typename PopFront_t<List>::type;
-
 private:
     // private static variables
     /// for temporary enabling/disabling
@@ -392,3 +379,53 @@ struct manager::initialize<std::tuple<_Types...>>
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/details/manager.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(__library_ctor__)
+#    if !defined(_WIN32) && !defined(_WIN64)
+#        define __library_ctor__ __attribute__((constructor))
+#    else
+#        define __library_ctor__
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(__library_dtor__)
+#    if !defined(_WIN32) && !defined(_WIN64)
+#        define __library_dtor__ __attribute__((destructor))
+#    else
+#        define __library_dtor__
+#    endif
+#endif
+
+//--------------------------------------------------------------------------------------//
+
+#include "timemory/bits/timemory.hpp"
+
+//--------------------------------------------------------------------------------------//
+
+namespace
+{
+//--------------------------------------------------------------------------------------//
+//
+static void
+timemory_manager_ctor_init() __library_ctor__;
+
+//--------------------------------------------------------------------------------------//
+//
+void
+timemory_manager_ctor_init()
+{
+    if(tim::settings::debug() || tim::settings::verbose() > 3)
+        printf("[%s]> initializing storage...\n", __FUNCTION__);
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    tim::manager::get_storage<tuple_type>::initialize();
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace
+
+//--------------------------------------------------------------------------------------//

@@ -813,6 +813,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
+    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
     if(TIMEMORY_BUILD_GOTCHA)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE

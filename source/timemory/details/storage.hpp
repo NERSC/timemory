@@ -300,15 +300,29 @@ template <typename ObjectType>
 void
 storage<ObjectType, true>::merge(this_type* itr)
 {
+    // don't merge self
     if(itr == this)
         return;
 
+    // if merge was not initialized return
+    if(itr && !itr->is_initialized())
+        return;
     // create lock but don't immediately lock
     auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
 
     // lock if not already owned
     if(!l.owns_lock())
         l.lock();
+
+    // if self is not initialized but itr is, copy data
+    if(itr && itr->is_initialized() && !this->is_initialized())
+    {
+        graph().insert_subgraph_after(_data().head(), itr->data().head());
+        m_initialized = itr->m_initialized;
+        m_finalized   = itr->m_finalized;
+        m_node_ids    = itr->m_node_ids;
+        return;
+    }
 
     auto _this_beg = graph().begin();
     auto _this_end = graph().end();
@@ -354,12 +368,17 @@ storage<ObjectType, true>::merge(this_type* itr)
 template <typename ObjectType>
 void storage<ObjectType, true>::external_print(std::false_type)
 {
+    if(!m_initialized && !m_finalized)
+        return;
+
     auto num_instances = instance_count().load();
+    auto requires_json = trait::requires_json<ObjectType>::value;
+    auto label         = ObjectType::label();
 
     if(!singleton_t::is_master(this))
     {
         singleton_t::master_instance()->merge(this);
-        ObjectType::thread_finalize_policy();
+        finalize();
     }
     else if(settings::auto_output())
     {
@@ -369,8 +388,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         auto _iter_end = _data().graph().end();
         _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
 
-        ObjectType::thread_finalize_policy();
-        ObjectType::global_finalize_policy();
+        finalize();
 
         // disable gperf if profiling
         try
@@ -482,7 +500,65 @@ void storage<ObjectType, true>::external_print(std::false_type)
         // return type of get() function
         using get_return_type = decltype(std::declval<const ObjectType>().get());
 
-        std::stringstream _oss;
+        auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
+        auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
+
+        if(!flk.owns_lock())
+            flk.lock();
+
+        if(!slk.owns_lock())
+            slk.lock();
+
+        std::ofstream*       fout = nullptr;
+        decltype(std::cout)* cout = nullptr;
+
+        //--------------------------------------------------------------------------//
+        // output to json file
+        //
+        if((settings::file_output() && settings::json_output()) || requires_json)
+        {
+            printf("\n");
+            auto jname = settings::compose_output_filename(label, ".json");
+            printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                   jname.c_str());
+            serialize_storage(jname, *this, num_instances);
+        }
+        else if(settings::file_output() && settings::text_output())
+        {
+            printf("\n");
+        }
+
+        //--------------------------------------------------------------------------//
+        // output to text file
+        //
+        if(settings::file_output() && settings::text_output())
+        {
+            auto fname = settings::compose_output_filename(label, ".txt");
+            fout       = new std::ofstream(fname.c_str());
+            if(fout && *fout)
+            {
+                printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                       fname.c_str());
+            }
+            else
+            {
+                delete fout;
+                fout = nullptr;
+                fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                        ObjectType::label().c_str(), __FUNCTION__, __LINE__,
+                        fname.c_str());
+            }
+        }
+
+        //--------------------------------------------------------------------------//
+        // output to cout
+        //
+        if(settings::cout_output())
+        {
+            cout = &std::cout;
+            printf("\n");
+        }
+
         // std::stringstream _mss;
         for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
         {
@@ -531,64 +607,38 @@ void storage<ObjectType, true>::external_print(std::false_type)
             auto _laps   = _obj.laps;
             auto _depth  = itr.depth();
 
+            std::stringstream _oss;
             operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _widths,
                                          true, _pss.str());
             // operation::print<ObjectType>(_obj, _mss, false);
+            if(cout != nullptr)
+                *cout << _oss.str() << std::flush;
+            if(fout != nullptr)
+                *fout << _oss.str() << std::flush;
         }
 
-        if((settings::file_output() || trait::requires_json<ObjectType>::value) &&
-           _oss.str().length() > 0)
+        if(fout)
         {
-            printf("\n");
-            auto label = ObjectType::label();
-            //--------------------------------------------------------------------------//
-            // output to text
-            //
-            if(settings::text_output() && settings::file_output())
-            {
-                auto          fname = settings::compose_output_filename(label, ".txt");
-                std::ofstream ofs(fname.c_str());
-                if(ofs)
-                {
-                    auto_lock_t l(type_mutex<std::ofstream>());
-                    std::cout << "[" << ObjectType::label() << "]> Outputting '" << fname
-                              << "'... " << std::flush;
-                    ofs << _oss.str();
-                    std::cout << "Done" << std::endl;
-                    ofs.close();
-                }
-                else
-                {
-                    auto_lock_t l(type_mutex<decltype(std::cout)>());
-                    fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
-                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
-                            fname.c_str());
-                    std::cout << _oss.str();
-                }
-            }
-
-            //--------------------------------------------------------------------------//
-            // output to json
-            //
-            if(settings::json_output() || trait::requires_json<ObjectType>::value)
-            {
-                auto_lock_t l(type_mutex<std::ofstream>());
-                auto        jname = settings::compose_output_filename(label, ".json");
-                printf("[%s]> Outputting '%s'... ", ObjectType::label().c_str(),
-                       jname.c_str());
-                serialize_storage(jname, *this, num_instances);
-                printf("Done\n");
-            }
+            fout->close();
+            delete fout;
+            fout = nullptr;
         }
 
-        if(settings::cout_output() && _oss.str().length() > 0)
+        // if(cout != nullptr)
+        //    *cout << std::endl;
+
+        bool _dart_output = settings::dart_output();
+
+        // if only a specific type should be echoed
+        if(settings::dart_type().length() > 0)
         {
-            printf("\n");
-            auto_lock_t l(type_mutex<decltype(std::cout)>());
-            std::cout << _oss.str() << std::flush;
+            auto dtype = settings::dart_type();
+            if(operation::echo_measurement<ObjectType>::lowercase(dtype) !=
+               operation::echo_measurement<ObjectType>::lowercase(label))
+                _dart_output = false;
         }
 
-        if(settings::dart_output() && _oss.str().length() > 0)
+        if(_dart_output)
         {
             auto get_hierarchy = [&](iterator itr) {
                 std::vector<std::string> _hierarchy;
@@ -604,20 +654,24 @@ void storage<ObjectType, true>::external_print(std::false_type)
                     if(_parent == _new_parent)
                         break;
                     _parent = _new_parent;
-                    // _parent = _data().graph().parent(itr);
                 } while(_parent && !(_parent->depth() < 0));
                 std::reverse(_hierarchy.begin(), _hierarchy.end());
                 return _hierarchy;
             };
             printf("\n");
+            uint64_t _nitr = 0;
             for(auto itr = _data().graph().begin(); itr != _data().graph().end(); ++itr)
             {
                 if(itr->depth() < 0 || itr->depth() > settings::max_depth())
+                    continue;
+                // if only a specific number of measurements should be echoed
+                if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
                     continue;
                 auto _obj       = itr->obj();
                 auto _hierarchy = get_hierarchy(itr);
                 _hierarchy.push_back(itr->prefix());
                 operation::echo_measurement<ObjectType>(_obj, _hierarchy);
+                ++_nitr;
             }
         }
 
@@ -640,13 +694,12 @@ void storage<ObjectType, true>::external_print(std::true_type)
     if(!singleton_t::is_master(this))
     {
         singleton_t::master_instance()->merge(this);
-        ObjectType::thread_finalize_policy();
+        finalize();
     }
     else if(settings::auto_output())
     {
         merge();
-        ObjectType::thread_finalize_policy();
-        ObjectType::global_finalize_policy();
+        finalize();
         instance_count().store(0);
     }
     else
@@ -764,12 +817,14 @@ void
 tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::stringstream     ss;
+    // std::stringstream     ss;
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
     {
         // ensure json write final block during destruction before the file is closed
         //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-        cereal::JSONOutputArchive          oa(ss, opts);
+        cereal::JSONOutputArchive::Options opts(12, spacing, 2);
+        cereal::JSONOutputArchive          oa(ofs, opts);
         oa.setNextName("rank");
         oa.startNode();
         auto rank = tim::mpi::rank();
@@ -779,9 +834,9 @@ tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurr
         oa(cereal::make_nvp("environment", *env_settings::instance()));
         oa.finishNode();
     }
-    std::ofstream ofs(fname.c_str());
     if(ofs)
-        ofs << ss.str() << std::endl;
+        ofs << std::endl;
+    ofs.close();
 }
 
 //======================================================================================//

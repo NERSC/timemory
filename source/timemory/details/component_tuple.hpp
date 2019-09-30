@@ -29,7 +29,7 @@
 
 template <typename... Types>
 void
-tim::component_tuple<Types...>::init_manager()
+tim::filt::component_tuple<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -40,33 +40,47 @@ tim::component_tuple<Types...>::init_manager()
 //
 namespace tim
 {
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data  = typename _Tp::data_type,
-          typename _Ret   = get_data_value_t<_Data>,
-          typename _Apply = modifiers<operation::get_data, _Types...>>
-_Ret
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+auto
 get(const component_tuple<_Types...>& _obj)
+    -> decltype(std::declval<component_tuple<_Types...>>().get())
 {
-    const_cast<component_tuple<_Types...>&>(_obj).conditional_stop();
-    _Ret _ret_data;
-    apply<void>::access2<_Apply>(_obj.data(), _ret_data);
-    return _ret_data;
+    return _obj.get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types, typename _Tp = component_tuple<_Types...>,
-          typename _Data  = typename _Tp::data_type,
-          typename _Ret   = get_data_label_t<_Data>,
-          typename _Apply = modifiers<operation::get_data, _Types...>>
-_Ret
+template <typename... _Types>
+auto
 get_labeled(const component_tuple<_Types...>& _obj)
+    -> decltype(std::declval<component_tuple<_Types...>>().get_labeled())
 {
-    const_cast<component_tuple<_Types...>&>(_obj).conditional_stop();
-    _Ret _ret_data;
-    apply<void>::access2<_Apply>(_obj.data(), _ret_data);
-    return _ret_data;
+    return _obj.get_labeled();
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+auto
+get(const filt::component_tuple<_Types...>& _obj)
+    -> decltype(std::declval<filt::component_tuple<_Types...>>().get())
+{
+    return _obj.get();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+auto
+get_labeled(const filt::component_tuple<_Types...>& _obj)
+    -> decltype(std::declval<filt::component_tuple<_Types...>>().get_labeled())
+{
+    return _obj.get_labeled();
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

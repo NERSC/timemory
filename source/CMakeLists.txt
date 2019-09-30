@@ -13,18 +13,21 @@ file(GLOB cxx_headers_components    ${CMAKE_CURRENT_LIST_DIR}/timemory/component
 file(GLOB cxx_headers_mpl           ${CMAKE_CURRENT_LIST_DIR}/timemory/mpl/*.hpp)
 file(GLOB cxx_headers_templates     ${CMAKE_CURRENT_LIST_DIR}/timemory/templates/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
+file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
-file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp)
+file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/library.cpp)
 
 # all the headers
 set(timemory_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_templates}
-    ${cxx_headers_utility})
+    ${cxx_headers_utility} ${cxx_headers_bits})
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -234,11 +237,14 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
         target_link_libraries(timemory-extern-init  INTERFACE   timemory-extern-${_EXTERN_LIB}-shared)
         target_link_libraries(timemory-cxx-shared   PRIVATE     timemory-extern-init)
         target_link_libraries(timemory-cxx-static   PRIVATE     timemory-extern-init)
+    elseif("${_EXTERN_LIB}" STREQUAL "auto-timer")
+        target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
+        target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)
+        target_link_libraries(timemory-cxx-shared              PRIVATE   timemory-extern-${_EXTERN_LIB}-shared)
+        target_link_libraries(timemory-cxx-static              PRIVATE   timemory-extern-${_EXTERN_LIB}-static)
     elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
         target_link_libraries(timemory-extern-templates        INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
         target_link_libraries(timemory-extern-templates-static INTERFACE timemory-extern-${_EXTERN_LIB}-static)
-        # target_link_libraries(timemory-cxx-shared              PUBLIC    timemory-extern-${_EXTERN_LIB}-shared)
-        # target_link_libraries(timemory-cxx-static              PUBLIC    timemory-extern-${_EXTERN_LIB}-static)
     endif()
 
     if(WIN32)

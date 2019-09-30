@@ -43,7 +43,7 @@ if(TIMEMORY_USE_PAPI)
     set(ERT_WORKING_SET_MIN 0 CACHE STRING "Working set")
     set(ERT_MEMORY_MAX 0 CACHE STRING "Memory size")
 
-    foreach(_FIELD ERT_ALIGN ERT_FLOP ERT_TRIALS_MIN ERT_WORKING_SET_MIN ERT_MEMORYT_MAX)
+    foreach(_FIELD ERT_ALIGN ERT_FLOP ERT_TRIALS_MIN ERT_WORKING_SET_MIN ERT_MEMORY_MAX)
         target_compile_definitions(ert-definitions INTERFACE ${_FIELD}=${${_FIELD}})
     endforeach()
 

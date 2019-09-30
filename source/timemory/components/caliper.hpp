@@ -34,15 +34,17 @@ namespace tim
 {
 namespace component
 {
-struct caliper : public base<caliper, void>
+struct caliper : public base<caliper, void, policy::global_init>
 {
     // timemory component api
     using value_type = void;
-    using base_type  = base<caliper, value_type>;
+    using base_type  = base<caliper, value_type, policy::global_init>;
 
     static std::string label() { return "caliper"; }
     static std::string description() { return "caliper"; }
     static value_type  record() {}
+
+    static void invoke_global_init(storage_type*) { cali::init(); }
 
     caliper(const std::string& _channel = get_channel(),
             const int& _attributes = get_attributes(), const std::string& _prefix = "")

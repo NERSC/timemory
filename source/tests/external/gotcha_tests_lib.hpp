@@ -25,6 +25,7 @@
 #pragma once
 
 #include <cstdint>
+#include <ostream>
 #include <tuple>
 #include <utility>
 
@@ -34,3 +35,23 @@ std::tuple<float, double>
 do_work(int64_t, const std::pair<float, double>&);
 
 }  // namespace ext
+
+class DoWork
+{
+public:
+    DoWork(const std::pair<float, double>&);
+
+    void                      execute_fp4(int64_t);
+    void                      execute_fp8(int64_t);
+    std::tuple<float, double> get() const;
+
+    friend std::ostream& operator<<(std::ostream& os, const DoWork& obj)
+    {
+        os << &obj;
+        return os;
+    }
+
+private:
+    std::pair<float, double>  m_pair;
+    std::tuple<float, double> m_tuple;
+};

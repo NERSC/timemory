@@ -29,7 +29,7 @@
 
 template <typename... Types>
 void
-tim::component_list<Types...>::init_manager()
+tim::filt::component_list<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -42,33 +42,45 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types,
-          typename _Ret   = typename component_list<_Types...>::data_value_tuple,
-          typename _Apply = std::tuple<
-              operation::pointer_operator<_Types, operation::get_data<_Types>>...>>
-_Ret
+template <typename... _Types>
+auto
 get(const component_list<_Types...>& _obj)
+    -> decltype(std::declval<component_list<_Types...>>().get())
 {
-    const_cast<component_list<_Types...>&>(_obj).conditional_stop();
-    _Ret _ret_data;
-    apply<void>::access2<_Apply>(_obj.data(), _ret_data);
-    return _ret_data;
+    return _obj.get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types,
-          typename _Ret   = typename component_list<_Types...>::data_label_tuple,
-          typename _Apply = std::tuple<
-              operation::pointer_operator<_Types, operation::get_data<_Types>>...>>
-_Ret
+template <typename... _Types>
+auto
 get_labeled(const component_list<_Types...>& _obj)
+    -> decltype(std::declval<component_list<_Types...>>().get_labeled())
 {
-    const_cast<component_list<_Types...>&>(_obj).conditional_stop();
-    _Ret _ret_data;
-    apply<void>::access2<_Apply>(_obj.data(), _ret_data);
-    return _ret_data;
+    return _obj.get_labeled();
 }
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+auto
+get(const filt::component_list<_Types...>& _obj)
+    -> decltype(std::declval<filt::component_list<_Types...>>().get())
+{
+    return _obj.get();
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+auto
+get_labeled(const filt::component_list<_Types...>& _obj)
+    -> decltype(std::declval<filt::component_list<_Types...>>().get_labeled())
+{
+    return _obj.get_labeled();
+}
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

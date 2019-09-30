@@ -33,25 +33,25 @@ namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tuple, typename _List,
-          typename _Ret = decltype(std::tuple_cat(get(std::declval<_Tuple>()),
-                                                  get(std::declval<_List>())))>
-_Ret
+template <typename _Tuple, typename _List>
+auto
 get(const component_hybrid<_Tuple, _List>& _obj)
+    -> decltype(std::declval<component_hybrid<_Tuple, _List>>().get())
 {
-    return std::tuple_cat(get(_obj.get_lhs()), get(_obj.get_rhs()));
+    return _obj.get();
 }
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tuple, typename _List,
-          typename _Ret = decltype(std::tuple_cat(get_labeled(std::declval<_Tuple>()),
-                                                  get_labeled(std::declval<_List>())))>
-_Ret
+template <typename _Tuple, typename _List>
+auto
 get_labeled(const component_hybrid<_Tuple, _List>& _obj)
+    -> decltype(std::declval<component_hybrid<_Tuple, _List>>().get_labeled())
 {
-    return std::tuple_cat(get_labeled(_obj.get_lhs()), get_labeled(_obj.get_rhs()));
+    return _obj.get_labeled();
 }
+
+//--------------------------------------------------------------------------------------//
 
 }  // namespace tim
 

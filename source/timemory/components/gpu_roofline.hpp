@@ -79,6 +79,7 @@ struct gpu_roofline
         base<this_type, value_type, policy::global_init, policy::global_finalize,
              policy::thread_init, policy::thread_finalize, policy::global_finalize,
              policy::serialization>;
+    using storage_type = typename base_type::storage_type;
 
     using size_type     = std::size_t;
     using counters_type = cupti_counters;
@@ -283,12 +284,12 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init()
+    static void invoke_global_init(storage_type*)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_init();
+            activity_type::invoke_global_init(nullptr);
         else
-            counters_type::invoke_global_init();
+            counters_type::invoke_global_init(nullptr);
     }
 
     //----------------------------------------------------------------------------------//
@@ -301,25 +302,28 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize()
+    static void invoke_global_finalize(storage_type* _store)
     {
         if(event_mode() == MODE::ACTIVITY)
-            activity_type::invoke_global_finalize();
+            activity_type::invoke_global_finalize(nullptr);
         else
-            counters_type::invoke_global_finalize();
+            counters_type::invoke_global_finalize(nullptr);
 
-        // run roofline peak generation
-        auto ert_config = get_finalizer();
-        auto ert_data   = get_ert_data();
-        apply<void>::access<ert_executor_t>(ert_config, ert_data);
-        if(ert_data && (settings::verbose() > 0 || settings::debug()))
-            std::cout << *(ert_data) << std::endl;
+        if(_store && _store->size() > 0)
+        {
+            // run roofline peak generation
+            auto ert_config = get_finalizer();
+            auto ert_data   = get_ert_data();
+            apply<void>::access<ert_executor_t>(ert_config, ert_data);
+            if(ert_data && (settings::verbose() > 0 || settings::debug()))
+                std::cout << *(ert_data) << std::endl;
+        }
     }
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init() {}
-    static void invoke_thread_finalize() {}
+    static void invoke_thread_init(storage_type*) {}
+    static void invoke_thread_finalize(storage_type*) {}
 
     //----------------------------------------------------------------------------------//
 

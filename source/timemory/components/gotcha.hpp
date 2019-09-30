@@ -76,9 +76,10 @@ struct gotcha
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    using value_type = int8_t;
-    using this_type  = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type  = base<this_type, value_type, policy::global_init>;
+    using value_type   = int8_t;
+    using this_type    = gotcha<_Nt, _Components, _Differentiator>;
+    using base_type    = base<this_type, value_type, policy::global_init>;
+    using storage_type = typename base_type::storage_type;
 
     template <typename _Tp>
     using array_t = std::array<_Tp, _Nt>;
@@ -247,7 +248,7 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init() { configure(); }
+    static void invoke_global_init(storage_type*) { configure(); }
 
     double get_display() const { return 0; }
 
@@ -453,7 +454,8 @@ private:
         if(_orig)
         {
             _Components _obj(get_tool_ids()[_N], true);
-            _obj.start();  // destructor will stop
+            _obj.customize(get_tool_ids()[_N], _args...);
+            _obj.start();
 
             // return (*_orig)(std::forward<_Args>(_args)...);
             // return (_orig)(std::move(_args)...);
@@ -499,8 +501,9 @@ private:
         if(_orig)
         {
             _Components _obj(get_tool_ids()[_N], true);
+            _obj.customize(get_tool_ids()[_N], _args...);
             _obj.start();
-            _orig(_args...);
+            (*_orig)(_args...);
             _obj.stop();
         } else if(settings::debug())
         {
@@ -526,7 +529,7 @@ private:
 ///
 #define TIMEMORY_C_GOTCHA(type, idx, func)                                               \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(TIMEMORY_STRINGIZE(func))
 
 ///
@@ -535,15 +538,24 @@ private:
 ///
 #define TIMEMORY_CXX_GOTCHA(type, idx, func)                                             \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)))
+
+///
+/// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name
+/// in general, mangling template function is not supported
+///
+#define TIMEMORY_CXX_MEMFUN_GOTCHA(type, idx, func)                                      \
+    type::instrument<idx, ::tim::function_traits<decltype(&func)>::result_type,          \
+                     ::tim::function_traits<decltype(&func)>::call_type>::               \
+        generate(::tim::mangle<decltype(&func)>(TIMEMORY_STRINGIZE(func)))
 
 ///
 /// TIMEMORY_C_GOTCHA + ability to pass priority and tool name
 ///
 #define TIMEMORY_C_GOTCHA_TOOL(type, idx, func, ...)                                     \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(TIMEMORY_STRINGIZE(func), __VA_ARGS__)
 
 ///
@@ -551,5 +563,5 @@ private:
 ///
 #define TIMEMORY_CXX_GOTCHA_TOOL(type, idx, func, ...)                                   \
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
-                     ::tim::function_traits<decltype(func)>::arg_tuple>::                \
+                     ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(::tim::mangle<decltype(func)>(TIMEMORY_STRINGIZE(func)), __VA_ARGS__)

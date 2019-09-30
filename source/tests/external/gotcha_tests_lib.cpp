@@ -69,3 +69,41 @@ do_work(int64_t nitr, const std::pair<float, double>& p)
 //--------------------------------------------------------------------------------------//
 
 }  // namespace ext
+
+//--------------------------------------------------------------------------------------//
+
+DoWork::DoWork(const std::pair<float, double>& pair)
+: m_pair(pair)
+, m_tuple{ 0.0f, 0.0 }
+{
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+DoWork::execute_fp4(int64_t nitr)
+{
+    std::get<0>(m_tuple) = ext::work<float>(
+        nitr, [](float val) -> float { return cosf(val); },
+        [&](float val, int64_t i) -> float { return val + m_pair.first * i; });
+}
+
+//--------------------------------------------------------------------------------------//
+
+void
+DoWork::execute_fp8(int64_t nitr)
+{
+    std::get<1>(m_tuple) = ext::work<double>(
+        nitr, [](double val) -> double { return cos(val); },
+        [&](double val, int64_t i) -> double { return val + m_pair.second * i; });
+}
+
+//--------------------------------------------------------------------------------------//
+
+std::tuple<float, double>
+DoWork::get() const
+{
+    return m_tuple;
+}
+
+//--------------------------------------------------------------------------------------//

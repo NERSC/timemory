@@ -69,11 +69,12 @@ constexpr size_t _Cn = 8;
 
 using put_gotcha_t = tim::component::gotcha<_Pn, auto_timer_t>;
 using std_gotcha_t = tim::component::gotcha<_Sn, auto_timer_t, int>;
-using cos_gotcha_t = tim::component::gotcha<_Cn, auto_timer_t>;
+using cos_gotcha_t = tim::component::gotcha<_Cn, auto_tuple_t>;
 using mpi_gotcha_t = tim::component::gotcha<_Mn, auto_tuple_t>;
 
 using gotcha_tuple_t =
-    tim::auto_tuple<put_gotcha_t, std_gotcha_t, cos_gotcha_t, mpi_gotcha_t>;
+    typename tim::component_tuple<auto_timer_t, put_gotcha_t, std_gotcha_t, cos_gotcha_t,
+                                  mpi_gotcha_t>::auto_type;
 
 using tim::mangle;
 

@@ -66,8 +66,10 @@ class component_hybrid
                   "must be tim::component_list<...>");
 
     static const std::size_t num_elements = _CompTuple::size() + _CompList::size();
+
     // empty init for friends
-    explicit component_hybrid() {}
+    explicit component_hybrid() = default;
+
     // manager is friend so can use above
     friend class manager;
 
@@ -87,6 +89,11 @@ public:
 
     using tuple_type_list = typename tuple_type::data_type;
     using list_type_list  = typename list_type::reference_type;
+    using data_value_type = decltype(std::tuple_cat(std::declval<_CompTuple>().get(),
+                                                    std::declval<_CompList>().get()));
+    using data_label_type =
+        decltype(std::tuple_cat(std::declval<_CompTuple>().get_labeled(),
+                                std::declval<_CompList>().get_labeled()));
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
@@ -240,6 +247,16 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // perform a customized operation (typically for GOTCHA)
+    //
+    template <typename... _Args>
+    void customize(_Args&&... _args)
+    {
+        m_tuple.customize(std::forward<_Args>(_args)...);
+        m_list.customize(std::forward<_Args>(_args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
     // recording
     //
     this_type& record()
@@ -250,10 +267,28 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // reset data
+    //
     void reset()
     {
         m_tuple.reset();
         m_list.reset();
+    }
+
+    //----------------------------------------------------------------------------------//
+    // get data
+    //
+    data_value_type get() const
+    {
+        return std::tuple_cat(get_lhs().get(), get_rhs().get());
+    }
+
+    //----------------------------------------------------------------------------------//
+    // reset data
+    //
+    data_label_type get_labeled() const
+    {
+        return std::tuple_cat(get_lhs().get_labeled(), get_rhs().get_labeled());
     }
 
     //----------------------------------------------------------------------------------//

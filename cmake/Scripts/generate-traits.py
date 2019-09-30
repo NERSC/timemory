@@ -16,8 +16,10 @@ def generate_trait(trait, component, inherit):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("-V", "--verbose", help="Enable verbosity", default=0, type=int)
-    parser.add_argument("-w", "--page-width", help="Page width", default=90, type=int)
+    parser.add_argument("-V", "--verbose",
+                        help="Enable verbosity", default=0, type=int)
+    parser.add_argument("-w", "--page-width",
+                        help="Page width", default=90, type=int)
     args = parser.parse_args()
 
     dashes = "-" * (args.page_width - 4)
@@ -25,7 +27,8 @@ if __name__ == "__main__":
     for trait, spec in traits.items():
         inherit = spec[0]
         components = spec[1]
-        outdata += "//{0}//\n//\t\t{1}\n//{0}//\n\n".format(dashes, trait)
+        outdata += "//{0}//\n//\n//\t\t\t{1}\n//\n//{0}//\n\n".format(
+            dashes, trait.replace("_", " ").upper())
         if args.verbose > 0:
             print("timemory components: [{}]\n".format(", ".join(components)))
         for component in components:

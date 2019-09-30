@@ -72,13 +72,16 @@ if(TIMEMORY_DOXYGEN_DOCS)
 
 
     if(DOXYGEN_DOT_FOUND)
+        set(CLASS_GRAPH_DEFAULT     OFF)
+        set(CALL_GRAPH_DEFAULT      ON)
+        set(CALLER_GRAPH_DEFAULT    OFF)
         set(DOXYGEN_DOT_GRAPH_TYPES CLASS CALL CALLER)
         # options to turn generation of class, call, and caller graphs
         foreach(_graph_type ${DOXYGEN_DOT_GRAPH_TYPES})
             # create CMake doc string
             string(TOLOWER _graph_type_desc ${_graph_type})
             # add option
-            option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ON)
+            option(ENABLE_DOXYGEN_${_graph_type}_GRAPH "${_message}" ${${_graph_type}_GRAPH_DEFAULT})
             mark_as_advanced(ENABLE_DOXYGEN_${_graph_type}_GRAPH)
             # set GENERATE_DOXYGEN_${_graph_type}_GRAPH to YES/NO
             # GENERATE_DOXYGEN_${_graph_type}_GRAPH is used in configure_file

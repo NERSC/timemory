@@ -98,15 +98,8 @@ inline manager::manager()
 
     if(_once++ == 0)
     {
-        cali::init();
-        papi::init();
         settings::parse();
         std::atexit(&exit_hook);
-    }
-    else
-    {
-        if(m_instance_count == 0)
-            papi::register_thread();
     }
 
     if(m_instance_count == 0)
@@ -132,7 +125,6 @@ inline manager::~manager()
 {
     if(m_instance_count > 0)
     {
-        papi::unregister_thread();
         f_thread_counter().store(0, std::memory_order_relaxed);
     }
 

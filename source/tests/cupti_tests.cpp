@@ -244,7 +244,7 @@ TEST_F(cupti_tests, activity)
 
     tim::device::gpu::free(data);
     tim::cuda::device_sync();
-    cupti_activity::invoke_global_finalize();
+    cupti_activity::invoke_global_finalize(0);
     num_iter /= 2;
 
     ASSERT_NEAR(real_diff, expected_diff, expected_tol);

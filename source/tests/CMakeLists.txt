@@ -76,17 +76,21 @@ set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
     LANGUAGE        ${DEVICE_LANGUAGE}
     LINKER_LANGUAGE ${DEVICE_LANGUAGE})
 
-add_googletest(cuda_tests
-    DISCOVER_TESTS
-    SOURCES         cuda_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
-                    timemory-cuda    timemory-cudart)
+if(TIMEMORY_USE_CUDA)
+    add_googletest(cuda_tests
+        DISCOVER_TESTS
+        SOURCES         cuda_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
+                        timemory-cuda    timemory-cudart)
+endif()
 
-add_googletest(cuda_nvtx_tests
-    DISCOVER_TESTS
-    SOURCES         cuda_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
-                    timemory-cuda    timemory-cudart timemory-nvtx)
+if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
+    add_googletest(cuda_nvtx_tests
+        DISCOVER_TESTS
+        SOURCES         cuda_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
+                        timemory-cuda    timemory-cudart timemory-nvtx)
+endif()
 
 if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
     add_library(cupti-compile-options INTERFACE)

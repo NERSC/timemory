@@ -82,27 +82,69 @@ private:
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:
-    base()                          = default;
-    ~base()                         = default;
+    base() { _init_storage(); }
+
+    ~base() = default;
+
     explicit base(const this_type&) = default;
     explicit base(this_type&&)      = default;
+
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
 private:
-    // policy section
-    static void global_init_policy() { policy_type::template invoke_global_init<_Tp>(); }
-
-    static void thread_init_policy() { policy_type::template invoke_thread_init<_Tp>(); }
-
-    static void global_finalize_policy()
+    template <typename _Up = _Tp, typename _Vp = _Value,
+              enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
+    void _init_storage()
     {
-        policy_type::template invoke_global_finalize<_Tp>();
+        if(!properties<this_type>::has_storage())
+        {
+            using storage_type                 = storage<Type>;
+            static thread_local auto _instance = storage_type::instance();
+            _instance->initialize();
+        }
     }
 
-    static void thread_finalize_policy()
+    template <typename _Up = _Tp, typename _Vp = _Value,
+              enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
+    void _init_storage()
+    {}
+
+    struct _Fake
+    {};
+
+    template <typename _Ctor,
+              typename std::enable_if<(std::is_same<_Ctor, _Fake>::value), int>::type = 0>
+    base(_Ctor)
+    {}
+
+    static Type dummy()
     {
-        policy_type::template invoke_thread_finalize<_Tp>();
+        properties<this_type>::has_storage() = true;
+        Type _fake{};
+        return _fake;
+    }
+
+private:
+    // policy section
+    static void global_init_policy(storage_type* _store)
+    {
+        policy_type::template invoke_global_init<_Tp>(_store);
+    }
+
+    static void thread_init_policy(storage_type* _store)
+    {
+        policy_type::template invoke_thread_init<_Tp>(_store);
+    }
+
+    static void global_finalize_policy(storage_type* _store)
+    {
+        policy_type::template invoke_global_finalize<_Tp>(_store);
+    }
+
+    static void thread_finalize_policy(storage_type* _store)
+    {
+        policy_type::template invoke_thread_finalize<_Tp>(_store);
     }
 
     template <typename _Archive>
@@ -549,18 +591,24 @@ public:
 
 private:
     // policy section
-    static void global_init_policy() { policy_type::template invoke_global_init<_Tp>(); }
-
-    static void thread_init_policy() { policy_type::template invoke_thread_init<_Tp>(); }
-
-    static void global_finalize_policy()
+    static void global_init_policy(storage_type* _store)
     {
-        policy_type::template invoke_global_finalize<_Tp>();
+        policy_type::template invoke_global_init<_Tp>(_store);
     }
 
-    static void thread_finalize_policy()
+    static void thread_init_policy(storage_type* _store)
     {
-        policy_type::template invoke_thread_finalize<_Tp>();
+        policy_type::template invoke_thread_init<_Tp>(_store);
+    }
+
+    static void global_finalize_policy(storage_type* _store)
+    {
+        policy_type::template invoke_global_finalize<_Tp>(_store);
+    }
+
+    static void thread_finalize_policy(storage_type* _store)
+    {
+        policy_type::template invoke_thread_finalize<_Tp>(_store);
     }
 
     template <typename _Archive>

@@ -131,6 +131,7 @@ struct cupti_counters
         if(_get_profiler().get() == nullptr)
             init();
     }
+
     static void configure(int device, const strvec_t& events, const strvec_t& metrics)
     {
         get_initializer() = [=]() -> tuple_type {
@@ -139,8 +140,9 @@ struct cupti_counters
         if(_get_profiler().get() == nullptr)
             init();
     }
-    static void invoke_global_init() { configure(); }
-    static void invoke_global_finalize() { clear(); }
+
+    static void invoke_global_init(storage_type*) { configure(); }
+    static void invoke_global_finalize(storage_type*) { clear(); }
 
     static const profptr_t& get_profiler() { return _get_profiler(); }
     static const strvec_t&  get_events() { return _get_events(); }

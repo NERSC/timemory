@@ -395,3 +395,48 @@ tim::get_bytes_written()
 }
 
 //======================================================================================//
+
+inline int64_t
+tim::get_virt_mem()
+{
+#if defined(_UNIX)
+#    if defined(_MACOS)
+    // OSX
+    struct mach_task_basic_info info;
+    mach_msg_type_number_t      infoCount = MACH_TASK_BASIC_INFO_COUNT;
+    if(task_info(mach_task_self(), MACH_TASK_BASIC_INFO, (task_info_t) &info,
+                 &infoCount) != KERN_SUCCESS)
+    {
+        fprintf(stderr, "Warning! %s@'%s':%i :: task_info(...) != KERN_SUCCESS\n",
+                __FUNCTION__, __FILE__, __LINE__);
+        return static_cast<int64_t>(0);
+    }
+    // Darwin reports in bytes
+    return static_cast<int64_t>(info.virtual_size);
+
+#    else  // Linux
+
+    static auto get_statm_file = [&]() {
+        std::stringstream fio;
+        fio << "/proc/" << get_rusage_pid() << "/statm";
+        return fio.str();
+    };
+
+    static std::string                fstatm  = get_statm_file();
+    int64_t                           vm_size = 0;
+    static thread_local std::ifstream ifs;
+    ifs.open(fstatm.c_str());
+    if(ifs)
+        ifs >> vm_size;
+    ifs.close();
+    return static_cast<int64_t>(vm_size * units::get_page_size());
+
+#    endif
+#elif defined(_WINDOWS)
+    return static_cast<int64_t>(0);
+#else
+    return static_cast<int64_t>(0);
+#endif
+}
+
+//======================================================================================//

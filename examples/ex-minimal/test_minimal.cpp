@@ -24,6 +24,7 @@
 
 #include <cstdio>
 #include <cstdlib>
+
 #include <timemory/timemory.hpp>
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
@@ -31,8 +32,10 @@ long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
+
     TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib);
     long ans = fib(nfib);
+
     TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib + 1);
     ans += fib(nfib + 1);
 
