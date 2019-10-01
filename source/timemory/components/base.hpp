@@ -52,6 +52,7 @@ public:
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
+    friend class storage<_Tp>;
 
     friend struct operation::init_storage<_Tp>;
     friend struct operation::live_count<_Tp>;

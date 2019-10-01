@@ -227,9 +227,11 @@ public:
     {
         using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
         static constexpr auto spacing = indent::space;
-        static std::string    serialize()
+
+        static std::string    serialize(manager* _manager = nullptr)
         {
-            manager*          _manager = manager::instance();
+            if(_manager == nullptr)
+                _manager = manager::instance();
             std::stringstream ss;
             {
                 // args: precision, spacing, indent size
@@ -245,21 +247,24 @@ public:
             return ss.str();
         }
 
-        static void initialize()
+        static void initialize(manager* _manager = nullptr)
         {
-            manager* _manager = manager::instance();
+            if(_manager == nullptr)
+                _manager = manager::instance();
             _manager->_init_storage<_Types...>();
         }
 
-        static void clear()
+        static void clear(manager* _manager = nullptr)
         {
-            manager* _manager = manager::instance();
+            if(_manager == nullptr)
+                _manager = manager::instance();
             _manager->_clear<_Types...>();
         }
 
-        static void print()
+        static void print(manager* _manager = nullptr)
         {
-            manager* _manager = manager::instance();
+            if(_manager == nullptr)
+                _manager = manager::instance();
             _manager->_print_storage<_Types...>();
         }
     };
@@ -402,12 +407,12 @@ struct manager::initialize<std::tuple<_Types...>>
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/bits/timemory.hpp"
+#if defined(TIMEMORY_LIBRARY_CONSTRUCTOR) && !defined(TIMEMORY_EXTERN_INIT)
 
 //--------------------------------------------------------------------------------------//
 
-namespace
-{
+#include "timemory/bits/timemory.hpp"
+
 //--------------------------------------------------------------------------------------//
 //
 static void
@@ -418,14 +423,34 @@ timemory_manager_ctor_init() __library_ctor__;
 void
 timemory_manager_ctor_init()
 {
-    if(tim::settings::debug() || tim::settings::verbose() > 3)
+#if defined(DEBUG)
+    auto _debug = tim::settings::debug();
+    auto _verbose = tim::settings::verbose();
+#endif
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing manager...\n", __FUNCTION__);
+#endif
+
+    // fully initialize manager
+    auto _instance = tim::manager::instance();
+    auto _master = tim::manager::master_instance();
+
+    if(_instance != _master)
+        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+               (void*) _instance, (void*) _master);
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
         printf("[%s]> initializing storage...\n", __FUNCTION__);
+#endif
+
+    // initialize storage
     using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    tim::manager::get_storage<tuple_type>::initialize();
+    tim::manager::get_storage<tuple_type>::initialize(_master);
 }
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace
-
-//--------------------------------------------------------------------------------------//
+#endif

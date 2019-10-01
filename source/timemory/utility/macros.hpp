@@ -275,7 +275,10 @@
         get_storage_singleton<storage<component::TYPE>>();                               \
         template <>                                                                      \
         details::storage_singleton_t<storage<component::TYPE>>&                          \
-        get_noninit_storage_singleton<storage<component::TYPE>>();
+        get_noninit_storage_singleton<storage<component::TYPE>>(); \
+    extern template class storage<component::TYPE>;
+
+
 
 #    define TIMEMORY_INSTANTIATE_EXTERN_INIT(TYPE)                                       \
         template <>                                                                      \
@@ -295,7 +298,8 @@
             using _single_t            = details::storage_singleton_t<_storage_t>;       \
             static _single_t _instance = _single_t::instance_ptr();                      \
             return _instance;                                                            \
-        }
+        }\
+    template class storage<component::TYPE>;
 
 #else
 

@@ -43,7 +43,7 @@
 
 namespace component = ::tim::component;
 
-/*
+
 //--------------------------------------------------------------------------------------//
 // individual
 //
@@ -144,7 +144,6 @@ TIMEMORY_INSTANTIATE_EXTERN_HYBRID(trip_count_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(user_clock_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(voluntary_context_switch_t)
 TIMEMORY_INSTANTIATE_EXTERN_HYBRID(written_bytes_t)
-*/
 
 // clang-format off
 namespace

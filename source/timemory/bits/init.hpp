@@ -30,8 +30,9 @@
 
 #pragma once
 
-#if defined(TIMEMORY_EXTERN_INIT)
+#if defined(TIMEMORY_EXTERN_INIT) && !defined(TIMEMORY_BUILD_EXTERN_INIT)
 #    include "timemory/utility/storage.hpp"
+#    include "timemory/components/types.hpp"
 
 namespace tim
 {

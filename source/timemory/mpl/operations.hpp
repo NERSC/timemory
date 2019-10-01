@@ -50,6 +50,18 @@ namespace tim
 
 namespace operation
 {
+//----------------------------------------------------------------------------------//
+// shorthand for available, non-void, using internal output handling
+//
+template <typename _Up>
+struct is_enabled
+{
+    using _Vp                   = typename _Up::value_type;
+    static constexpr bool value = (trait::is_available<_Up>::value &&
+                                   !(trait::external_output_handling<_Up>::value) &&
+                                   !(std::is_same<_Vp, void>::value));
+};
+
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
@@ -225,20 +237,30 @@ struct record
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     explicit record(base_type& obj) { obj.value = Type::record(); }
 
-    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0>
+    template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
+              enable_if_t<(is_enabled<_Up>::value), char> = 0>
     record(base_type& obj, const base_type& rhs)
     {
         obj = std::max(obj, rhs);
     }
 
     template <typename _Up                                               = _Tp,
-              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0>
+              enable_if_t<(trait::record_max<_Up>::value == false), int> = 0,
+              enable_if_t<(is_enabled<_Up>::value), char> = 0>
     record(base_type& obj, const base_type& rhs)
     {
         obj += rhs;
     }
+
+    template <typename... _Args, typename _Up         = _Tp,
+              enable_if_t<!(is_enabled<_Up>::value), char> = 0>
+    record(_Args&&...)
+    {
+    }
+
 };
 
 //--------------------------------------------------------------------------------------//
@@ -820,18 +842,6 @@ struct get_data
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available, non-void, using internal output handling
-    //
-    template <typename _Up>
-    struct is_enabled
-    {
-        using _Vp                   = typename _Up::value_type;
-        static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value) &&
-                                       !(std::is_same<_Vp, void>::value));
-    };
-
-    //----------------------------------------------------------------------------------//
     // only if components are available
     //
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
@@ -877,18 +887,6 @@ struct print
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
     using widths_t   = std::vector<int64_t>;
-
-    //----------------------------------------------------------------------------------//
-    // shorthand for available, non-void, using internal output handling
-    //
-    template <typename _Up>
-    struct is_enabled
-    {
-        using _Vp                   = typename _Up::value_type;
-        static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value) &&
-                                       !(std::is_same<_Vp, void>::value));
-    };
 
     //----------------------------------------------------------------------------------//
     // only if components are available
@@ -1019,18 +1017,6 @@ struct print_storage
     using base_type  = typename Type::base_type;
 
     //----------------------------------------------------------------------------------//
-    // shorthand for available, non-void, using internal output handling
-    //
-    template <typename _Up>
-    struct is_enabled
-    {
-        using _Vp                   = typename _Up::value_type;
-        static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value) &&
-                                       !(std::is_same<_Vp, void>::value));
-    };
-
-    //----------------------------------------------------------------------------------//
     // only if components are available
     //
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
@@ -1059,18 +1045,6 @@ struct serialization
     using Type       = _Tp;
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
-
-    //----------------------------------------------------------------------------------//
-    // shorthand for available, non-void, using internal output handling
-    //
-    template <typename _Up>
-    struct is_enabled
-    {
-        using _Vp                   = typename _Up::value_type;
-        static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value) &&
-                                       !(std::is_same<_Vp, void>::value));
-    };
 
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
     serialization(base_type& obj, _Archive& ar, const unsigned int version)
@@ -1110,18 +1084,6 @@ struct echo_measurement
     using strset_t       = std::set<string_t>;
     using stringstream_t = std::stringstream;
     using strvec_t       = std::vector<string_t>;
-
-    //----------------------------------------------------------------------------------//
-    // shorthand for available, non-void, using internal output handling
-    //
-    template <typename _Up>
-    struct is_enabled
-    {
-        using _Vp                   = typename _Up::value_type;
-        static constexpr bool value = (trait::is_available<_Up>::value &&
-                                       !(trait::external_output_handling<_Up>::value) &&
-                                       !(std::is_same<_Vp, void>::value));
-    };
 
     //----------------------------------------------------------------------------------//
     /// generate an attribute

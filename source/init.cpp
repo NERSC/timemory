@@ -27,6 +27,8 @@
  *
  */
 
+#define TIMEMORY_BUILD_EXTERN_INIT
+
 #include "timemory/components.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/utility/macros.hpp"
@@ -36,11 +38,57 @@
 
 using namespace tim::component;
 
-//======================================================================================//
 #if defined(TIMEMORY_EXTERN_INIT)
+
+//======================================================================================//
+
+__library_ctor__
+void
+timemory_manager_ctor_init()
+{
+#if defined(DEBUG)
+    auto _debug = tim::settings::debug();
+    auto _verbose = tim::settings::verbose();
+#endif
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing manager...\n", __FUNCTION__);
+#endif
+
+    // fully initialize manager
+    auto _instance = tim::manager::instance();
+    auto _master = tim::manager::master_instance();
+
+    if(_instance != _master)
+        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+               (void*) _instance, (void*) _master);
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing storage...\n", __FUNCTION__);
+#endif
+
+    // initialize storage
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    tim::manager::get_storage<tuple_type>::initialize(_master);
+}
+
+//======================================================================================//
 
 namespace tim
 {
+
+//======================================================================================//
+
+env_settings* env_settings::instance()
+{
+    static env_settings* _instance = new env_settings();
+    return _instance;
+}
+
+//======================================================================================//
+
 std::atomic<int32_t>&
 manager::f_manager_instance_count()
 {

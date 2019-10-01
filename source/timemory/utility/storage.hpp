@@ -376,15 +376,15 @@ public:
         else
         {
             auto current   = _data().current();
-            auto nchildren = graph_t::number_of_children(current);
+            //auto nchildren = graph_t::number_of_children(current);
 
             if(hash_id == current->id())
             {
                 exists = true;
                 return current;
             }
-            else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-                return _insert_child();
+            //else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            //    return _insert_child();
             else if(_data().graph().is_valid(current))
             {
                 // check siblings
@@ -398,6 +398,7 @@ public:
                         return _update(itr);
                 }
 
+                /*
                 // check children
                 if(nchildren == 0)
                     return _insert_child();
@@ -410,6 +411,7 @@ public:
                             return _update(itr);
                     }
                 }
+                */
             }
         }
         return _insert_child();
@@ -799,8 +801,20 @@ struct implements_storage
 
 //======================================================================================//
 
-template <typename _Tp, typename _Vp = typename _Tp::value_type>
-using storage = impl::storage<_Tp, implements_storage<_Tp, _Vp>::value>;
+template <typename _Tp>
+class storage : public impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>
+{
+    using this_type     = storage<_Tp>;
+    using base_type = impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>;
+    using string_t      = std::string;
+    using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
+    using singleton_t   = singleton<this_type, smart_pointer>;
+    using pointer       = typename singleton_t::pointer;
+    using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using count_type    = counted_object<_Tp>;
+    friend struct details::storage_deleter<this_type>;
+    friend class manager;
+};
 
 //--------------------------------------------------------------------------------------//
 /// args:

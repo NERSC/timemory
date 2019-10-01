@@ -20,7 +20,10 @@ file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
 file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/library.cpp)
+                                    ${CMAKE_CURRENT_LIST_DIR}/library.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/init.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp
+                                    ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
 
 # all the headers
 set(timemory_headers
@@ -64,7 +67,9 @@ if(_BUILD_SHARED_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS
+        COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
+                            PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
+                            TIMEMORY_EXTERN_NATIVE_TEMPLATES
         LINK_LIBRARIES      timemory-headers
                             timemory-vector
                             timemory-external-shared
@@ -75,6 +80,10 @@ if(_BUILD_SHARED_CXX)
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
+    endif()
+
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        target_compile_definitions(timemory-cxx-shared PRIVATE DEBUG)
     endif()
 endif()
 
@@ -89,6 +98,9 @@ if(_BUILD_STATIC_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
+        COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
+                            PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
+                            TIMEMORY_EXTERN_NATIVE_TEMPLATES
         LINK_LIBRARIES      timemory-headers
                             timemory-vector
                             timemory-external-static
@@ -99,6 +111,10 @@ if(_BUILD_STATIC_CXX)
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
+    endif()
+
+    if("${CMAKE_BUILD_TYPE}" STREQUAL "Debug")
+        target_compile_definitions(timemory-cxx-static PRIVATE DEBUG)
     endif()
 endif()
 
@@ -190,8 +206,8 @@ set(extern_cuda_definitions       TIMEMORY_EXTERN_CUDA_TEMPLATES)
 set(extern_native_definitions     TIMEMORY_EXTERN_NATIVE_TEMPLATES)
 set(extern_auto_timer_definitions TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES)
 
-message(STATUS "BUILD CXX SHARED: ${_BUILD_SHARED_CXX}")
-message(STATUS "BUILD CXX STATIC: ${_BUILD_STATIC_CXX}")
+# message(STATUS "BUILD CXX SHARED: ${_BUILD_SHARED_CXX}")
+# message(STATUS "BUILD CXX STATIC: ${_BUILD_STATIC_CXX}")
 
 set(TIMEMORY_EXTERN_LIBRARIES extern-native extern-cuda extern-auto-timer)
 foreach(_EXTERN_LIB init native cuda auto-timer)
@@ -247,10 +263,10 @@ foreach(_EXTERN_LIB init native cuda auto-timer)
             if("${_TYPE}" STREQUAL "shared")
                 target_link_libraries(timemory-extern-init INTERFACE timemory-extern-${_EXTERN_LIB}-shared)
             endif()
-            target_link_libraries(timemory-cxx-${_TYPE} PRIVATE timemory-extern-init-${_TYPE})
+            #target_link_libraries(timemory-cxx-${_TYPE} PRIVATE timemory-extern-init-${_TYPE})
         elseif("${_EXTERN_LIB}" STREQUAL "auto-timer")
             target_link_libraries(timemory-extern-templates${_SUFFIX} INTERFACE timemory-extern-${_EXTERN_LIB}-${_TYPE})
-            target_link_libraries(timemory-cxx-${_TYPE}               PRIVATE   timemory-extern-${_EXTERN_LIB}-${_TYPE})
+            #target_link_libraries(timemory-cxx-${_TYPE}               PRIVATE   timemory-extern-${_EXTERN_LIB}-${_TYPE})
         elseif(NOT "${_EXTERN_LIB}" STREQUAL "cuda")
             target_link_libraries(timemory-extern-templates${_SUFFIX} INTERFACE timemory-extern-${_EXTERN_LIB}-${_TYPE})
         endif()

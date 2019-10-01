@@ -41,10 +41,57 @@ using namespace tim::component;
 using auto_timer_t    = typename tim::auto_timer::component_type;
 using complete_list_t = tim::complete_list_t;
 
+#define DEBUG
+
 //======================================================================================//
 //
 //                      C++ interface
 //
+//======================================================================================//
+
+#if defined(TIMEMORY_EXTERN_INIT)
+/*
+//--------------------------------------------------------------------------------------//
+//  construct the library at start up
+//
+__library_ctor__
+void
+timemory_manager_ctor_init()
+{
+    static std::atomic<int> _once;
+    if(_once++ > 0)
+        return;
+
+#if defined(DEBUG)
+    auto _debug = tim::settings::debug();
+    auto _verbose = tim::settings::verbose();
+#endif
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing manager...\n", __FUNCTION__);
+#endif
+
+    // fully initialize manager
+    auto _instance = tim::manager::instance();
+    auto _master = tim::manager::master_instance();
+
+    if(_instance != _master)
+        printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
+               (void*) _instance, (void*) _master);
+
+#if defined(DEBUG)
+    if(_debug || _verbose > 3)
+        printf("[%s]> initializing storage...\n", __FUNCTION__);
+#endif
+
+    // initialize storage
+    using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
+    tim::manager::get_storage<tuple_type>::initialize(_master);
+}
+*/
+#endif
+
 //======================================================================================//
 
 #if defined(TIMEMORY_BUILD_C)

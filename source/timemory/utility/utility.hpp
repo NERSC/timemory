@@ -203,6 +203,9 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     while(_dir.find("\\") != std::string::npos)
         _dir.replace(_dir.find("\\"), 1, "/");
 
+    if(_dir.length() == 0)
+        return 0;
+
     if(mkdir(_dir.c_str(), umask) != 0)
     {
         std::stringstream _sdir;
@@ -213,6 +216,9 @@ makedir(std::string _dir, int umask = DEFAULT_UMASK)
     consume_parameters(umask);
     while(_dir.find("/") != std::string::npos)
         _dir.replace(_dir.find("/"), 1, "\\");
+
+    if(_dir.length() == 0)
+        return 0;
 
     if(_mkdir(_dir.c_str()) != 0)
     {
@@ -302,40 +308,46 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
 class env_settings
 {
 public:
-    using mutex_t    = std::mutex;
-    using string_t   = std::string;
-    using env_map_t  = std::multimap<string_t, string_t>;
-    using env_pair_t = std::pair<string_t, string_t>;
+    using mutex_t     = std::mutex;
+    using string_t    = std::string;
+    using env_map_t   = std::map<string_t, string_t>;
+    using env_uomap_t = std::map<string_t, string_t>;
+    using env_pair_t  = std::pair<string_t, string_t>;
 
 public:
-    static env_settings* instance()
-    {
-        static env_settings* _instance = new env_settings();
-        return _instance;
-    }
+    static env_settings* instance();
 
 public:
     template <typename _Tp>
     void insert(const std::string& env_id, _Tp val)
     {
+#if !defined(TIMEMORY_DISABLE_STORE_ENVIRONMENT)
         std::stringstream ss;
         ss << std::boolalpha << val;
-        m_mutex.lock();
-        if(m_env.find(env_id) != m_env.end())
-        {
-            for(const auto& itr : m_env)
-                if(itr.first == env_id && itr.second == ss.str())
-                {
-                    m_mutex.unlock();
-                    return;
-                }
-        }
-        m_env.insert(env_pair_t(env_id, ss.str()));
-        m_mutex.unlock();
+
+        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        if(m_env.find(env_id) == m_env.end() ||
+           m_env.find(env_id)->second != ss.str())
+            m_env[env_id] = ss.str();
+#endif
     }
 
-    const env_map_t& get() const { return m_env; }
-    mutex_t&         mutex() const { return m_mutex; }
+    env_map_t       get() const
+    {
+        auto _tmp = m_env;
+        env_map_t _ret;
+        for(const auto& itr : _tmp)
+            _ret[itr.first] = itr.second;
+        return _ret;
+    }
+
+    static mutex_t& mutex()
+    {
+        static mutex_t m_mutex;
+        return m_mutex;
+    }
 
     friend std::ostream& operator<<(std::ostream& os, const env_settings& env)
     {
@@ -344,13 +356,18 @@ public:
         filler << std::setw(90) << "";
         std::stringstream ss;
         ss << filler.str() << "\n# Environment settings:\n";
-        env.mutex().lock();
-        for(const auto& itr : env.get())
+
+        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        auto _data = env.get();
+        lk.unlock();
+
+        for(const auto& itr : _data)
         {
             ss << "# " << std::setw(35) << std::right << itr.first << "\t = \t"
                << std::left << itr.second << "\n";
         }
-        env.mutex().unlock();
         ss << filler.str();
         os << ss.str() << std::endl;
         return os;
@@ -362,13 +379,25 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
+        auto_lock_t lk(env_settings::mutex(), std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
         ar(serializer::make_nvp("environment", m_env));
     }
 
 private:
-    env_map_t       m_env;
-    mutable mutex_t m_mutex;
+    env_uomap_t m_env;
 };
+
+//--------------------------------------------------------------------------------------//
+
+#if !defined(TIMEMORY_EXTERN_INIT)
+inline env_settings* env_settings::instance()
+{
+    static env_settings* _instance = new env_settings();
+    return _instance;
+}
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -715,6 +744,12 @@ public:
                fenabled && fmax_depth > count().load();
     }
 
+    void activate_noop()
+    {
+        count()--;
+        is_noop = true;
+    }
+
 protected:
     // default constructor
     counted_object()
@@ -733,12 +768,6 @@ protected:
     explicit counted_object(this_type&&) = default;
     this_type& operator=(const this_type&) = default;
     this_type& operator=(this_type&& rhs) = default;
-
-    void activate_noop()
-    {
-        count()--;
-        is_noop = true;
-    }
 
 protected:
     int64_t m_count;

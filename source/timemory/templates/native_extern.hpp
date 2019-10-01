@@ -35,7 +35,7 @@
 // individual
 //
 #if defined(TIMEMORY_EXTERN_NATIVE_TEMPLATES) && !defined(EXTERN_TEMPLATE_BUILD)
-/*
+
 TIMEMORY_DECLARE_EXTERN_TUPLE(cpu_clock_t, ::tim::component::cpu_clock)
 TIMEMORY_DECLARE_EXTERN_TUPLE(cpu_util_t, ::tim::component::cpu_util)
 TIMEMORY_DECLARE_EXTERN_TUPLE(data_rss_t, ::tim::component::data_rss)
@@ -131,7 +131,7 @@ TIMEMORY_DECLARE_EXTERN_HYBRID(trip_count_t)
 TIMEMORY_DECLARE_EXTERN_HYBRID(user_clock_t)
 TIMEMORY_DECLARE_EXTERN_HYBRID(voluntary_context_switch_t)
 TIMEMORY_DECLARE_EXTERN_HYBRID(written_bytes_t)
-*/
+
 #endif
 
 //======================================================================================//
