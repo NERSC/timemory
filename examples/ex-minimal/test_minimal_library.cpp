@@ -38,7 +38,7 @@ int main(int argc, char** argv)
 
     timemory_init_library(argc, argv);
 
-    uint64_t id0 = timemory_get_begin_record(LABEL("[", argv[0], "_", nfib, "]").c_str());
+    uint64_t id0 = timemory_get_begin_record(argv[0]);
     long     ans = fib(nfib);
 
     uint64_t id1 = timemory_get_begin_record(argv[0]);

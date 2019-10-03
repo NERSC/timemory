@@ -70,6 +70,9 @@ if(TIMEMORY_C_LIBRARY)
     list(APPEND TIMEMORY_LANGUAGES C)
 endif()
 
+set(TIMEMORY_C_COMPILER_ID @CMAKE_C_COMPILER_ID@)
+set(TIMEMORY_CXX_COMPILER_ID @CMAKE_CXX_COMPILER_ID@)
+
 #----------------------------------------------------------------------------------------#
 #   Determine install tree or build tree
 #----------------------------------------------------------------------------------------#
@@ -112,7 +115,7 @@ if(TIMEMORY_INSTALL_TREE)
         find_package(gotcha QUIET)
     endif()
 
-    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@LibraryDepends.cmake)
+    include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-library-depends.cmake)
     check_required_components(@PROJECT_NAME@)
 
 else() # build tree
@@ -359,6 +362,25 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
     string(REPLACE "timemory-" "" _COMPONENT_LIST "${_COMPONENT_LIST}")
     message(STATUS
       "[${PROJECT_NAME}] @PROJECT_NAME@ : \"${_INTERFACE_LIB}\" components: ${_COMPONENT_LIST}")
+
+    function(TIMEMORY_CHECK_MISMATCHED_COMPILER _LANG _CURR)
+        if(NOT "${CMAKE_${_LANG}_COMPILER_ID}" STREQUAL "${_CURR}" AND NOT @PROJECT_NAME@_FIND_QUIETLY)
+            set(_MSG " Mismatched ${_LANG} compiler IDs!")
+            set(_MSG "${_MSG}\n \t@PROJECT_NAME@ : ${_CURR}")
+            set(_MSG "${_MSG}\n \t    vs.")
+            set(_MSG "${_MSG}\n \t${PROJECT_NAME} : ${CMAKE_${_LANG}_COMPILER_ID}")
+            set(_MSG "${_MSG}\n")
+            message(AUTHOR_WARNING "${_MSG}")
+        endif()
+    endfunction()
+
+    if("timemory-cxx-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+        timemory_check_mismatched_compiler(CXX "@CMAKE_CXX_COMPILER_ID@")
+    endif()
+
+    if("timemory-c-${_LINK}" IN_LIST @PROJECT_NAME@_FOUND_COMPONENTS)
+        timemory_check_mismatched_compiler(C "@CMAKE_C_COMPILER_ID@")
+    endif()
 
     unset(_COMPONENT_LIST)
     unset(_LINK)

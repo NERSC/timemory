@@ -22,25 +22,51 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <timemory/ctimemory.h>
+#include <timemory/library.h>
+
+#define MAX_TIMERS 10
+void* timers[MAX_TIMERS];
+
+uint64_t idx = 0;
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
+
+void create_record(const char* name, uint64_t* id, int n, int* comps)
+{
+    *id         = idx++;
+    timers[*id] = TIMEMORY_BLANK_MARKER(name, WALL_CLOCK);
+    (void) n;
+    (void) comps;
+}
+
+void delete_record(uint64_t nid)
+{
+    FREE_TIMEMORY_MARKER(timers[nid]);
+    timers[nid] = NULL;
+}
 
 int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    void* t0  = TIMEMORY_AUTO_TIMER(argv[0]);
-    long  ans = fib(nfib);
+    timemory_create_function = &create_record;
+    timemory_delete_function = &delete_record;
+    timemory_init_library(argc, argv);
 
-    void* t1 = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
+    uint64_t id0 = timemory_get_begin_record(argv[0]);
+    long     ans = fib(nfib);
+
+    uint64_t id1 = timemory_get_begin_record(argv[0]);
     ans += fib(nfib + 1);
 
-    FREE_TIMEMORY_AUTO_TIMER(t1);
-    FREE_TIMEMORY_AUTO_TIMER(t0);
+    timemory_end_record(id1);
+    timemory_end_record(id0);
 
     printf("Answer = %li\n", ans);
+    timemory_finalize_library();
     return EXIT_SUCCESS;
 }

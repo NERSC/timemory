@@ -48,8 +48,8 @@ if(TIMEMORY_USE_MPI)
 endif()
 
 set(TIMEMORY_EXTENSION_INTERFACES
-    timemory-extern-templates
-    timemory-extern-init
+    # timemory-extern-templates
+    # timemory-extern-init
     timemory-mpi
     timemory-threading
     timemory-papi
@@ -157,7 +157,7 @@ target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 
 target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
 if(TIMEMORY_USE_EXTERN_INIT)
-    target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+    # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
 endif()
 
 
@@ -813,7 +813,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
-    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
+    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples" FORCE)
     if(TIMEMORY_BUILD_GOTCHA)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE

@@ -56,12 +56,14 @@ static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB,
 static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
 
 // acceptable absolute error
-static const float util_tolerance  = 2.5;
-static const float timer_tolerance = 0.02125;
-static const float peak_tolerance  = 5 * tim::units::MiB;
+static const double util_tolerance  = 2.5;
+static const double timer_tolerance = 0.02125;
+static const double peak_tolerance  = 5 * tim::units::MiB;
 // acceptable relative error
-static const float util_epsilon  = 0.5;
-static const float timer_epsilon = 0.02;
+static const double util_epsilon  = 0.5;
+static const double timer_epsilon = 0.02;
+// acceptable compose error
+static const double compose_tolerance = 1.0e-9;
 
 #define CHECK_AVAILABLE(type)                                                            \
     if(!tim::trait::is_available<type>::value)                                           \
@@ -136,18 +138,6 @@ allocate()
     printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 }
 
-template <typename _Tp, typename _Func>
-string_t
-get_info(const _Tp& obj, _Func&& _func)
-{
-    stringstream_t ss;
-    auto           _unit = static_cast<double>(_Tp::get_unit());
-    ss << "value = " << _func(obj.get_value()) / _unit << " " << _Tp::get_display_unit()
-       << ", accum = " << _func(obj.get_accum()) / _unit << " " << _Tp::get_display_unit()
-       << std::endl;
-    return ss.str();
-}
-
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
           typename _Func = std::function<_Vp(_Vp)>>
 void
@@ -158,7 +148,9 @@ print_info(const _Tp& obj, const _Up& expected, string_t unit,
     std::cout << "[" << get_test_name() << "]>  measured : " << obj << std::endl;
     std::cout << "[" << get_test_name() << "]>  expected : " << expected << " " << unit
               << std::endl;
-    std::cout << "[" << get_test_name() << "]> data info : " << get_info(obj, _func)
+    std::cout << "[" << get_test_name() << "]>     value : " << _func(obj.get_value())
+              << std::endl;
+    std::cout << "[" << get_test_name() << "]>     accum : " << _func(obj.get_accum())
               << std::endl;
 }
 
@@ -251,8 +243,12 @@ TEST_F(hybrid_tests, auto_timer)
     ASSERT_NEAR(125.0, _util.get(), util_tolerance);
 
     auto _cpu2 = obj.get<user_clock>() + obj.get<system_clock>();
-
     ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu2.get());
+
+    cpu_clock _cpu_obj = obj.get<user_clock>() + obj.get<system_clock>();
+    double    _cpu_val = obj.get<user_clock>().get() + obj.get<system_clock>().get();
+    ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
+    details::print_info(_cpu_obj, _cpu_val, "sec");
 
     auto _obj  = tim::get(obj);
     auto _cpu3 = std::get<1>(_obj) + std::get<2>(_obj);
@@ -266,6 +262,34 @@ TEST_F(hybrid_tests, auto_timer)
 
     details::print_info(obj.get_lhs().get<peak_rss>(), tot_size, "KiB");
     // ASSERT_NEAR(tot_size, obj.get<peak_rss>().get(), peak_tolerance);
+}
+
+//--------------------------------------------------------------------------------------//
+
+TEST_F(hybrid_tests, compose)
+{
+    using bundle_t = tim::component_tuple<user_clock, system_clock>;
+    using result_t = std::tuple<double, double>;
+
+    bundle_t obj(details::get_test_name());
+    obj.start();
+    details::do_sleep(250);  // in millseconds
+    details::consume(750);   // in millseconds
+    obj.stop();
+    std::cout << "\n" << obj << std::endl;
+
+    result_t  _cpu_ret = obj.get();
+    cpu_clock _cpu_obj = obj.get<user_clock>() + obj.get<system_clock>();
+    double    _cpu_val = obj.get<user_clock>().get() + obj.get<system_clock>().get();
+
+    details::print_info(_cpu_obj, 0.75, "sec");
+
+    ASSERT_NEAR(0.75, _cpu_val, timer_tolerance);
+    ASSERT_NEAR(_cpu_obj.get(), _cpu_val, compose_tolerance);
+    ASSERT_NEAR(_cpu_val, std::get<0>(_cpu_ret) + std::get<1>(_cpu_ret),
+                compose_tolerance);
+
+    printf("\n");
 }
 
 //--------------------------------------------------------------------------------------//

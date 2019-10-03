@@ -144,7 +144,7 @@ foreach(PYLIB_SUBMODULE options units signals)
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 endforeach()
 
-# Python library target (linked to static target)
+# Python library target
 install(TARGETS libpytimemory
     DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR})
 
@@ -162,12 +162,12 @@ set(TEST_FILES
 
 foreach(_FILE ${TEST_FILES})
     # only copy *_test.py files to binary directory
-    if("${_FILE}" MATCHES "_test.py")
-        if(${PROJECT_NAME}_MASTER_PROJECT)
-            configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
-                ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
-        endif()
-    endif()
+    #if("${_FILE}" MATCHES "_test.py")
+    #    if(${PROJECT_NAME}_MASTER_PROJECT)
+    #        configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
+    #            ${CMAKE_BINARY_DIR}/${_FILE} @ONLY)
+    #    endif()
+    #endif()
 
     # copy to binary: timemory/tests/${_FILE}
     configure_file(${PROJECT_SOURCE_DIR}/timemory/tests/${_FILE}
@@ -177,7 +177,7 @@ foreach(_FILE ${TEST_FILES})
     install(FILES ${CMAKE_BINARY_DIR}/timemory/tests/${_FILE}
         DESTINATION ${TIMEMORY_INSTALL_PYTHONDIR}/tests)
 
-endforeach(_FILE ${TEST_FILES})
+endforeach()
 
 #----------------------------------------------------------------------------
 # Python tools

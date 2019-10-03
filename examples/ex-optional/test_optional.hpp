@@ -65,8 +65,6 @@ struct dummy
 
     void                              start() {}
     void                              stop() {}
-    void                              conditional_start() {}
-    void                              conditional_stop() {}
     void                              report_at_exit(bool) {}
     template <typename... _Args> void mark_begin(_Args&&...) {}
     template <typename... _Args> void mark_end(_Args&&...) {}

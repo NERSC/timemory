@@ -72,7 +72,8 @@ using namespace tim::component;
 //
 namespace tim
 {
-//----------------------------------------------------------------------------------//
+//--------------------------------------------------------------------------------------//
+//
 template <typename _Tp>
 struct custom_print
 {
@@ -91,11 +92,11 @@ struct custom_print
 };
 
 //--------------------------------------------------------------------------------------//
-
+//
 template <typename... Types>
 class custom_component_tuple : public component_tuple<Types...>
 {
-    using apply_stop_t  = modifiers<operation::conditional_stop, Types...>;
+    using apply_stop_t  = modifiers<operation::stop, Types...>;
     using apply_print_t = modifiers<custom_print, Types...>;
 
 public:

@@ -27,19 +27,17 @@ endif()
 
 # if C library is available
 if(TIMEMORY_C_LIBRARY)
-    check_c_compiler_flag("-Wno-unused-parameter" "no_unused_parameter")
-    if(no_unused_parameter)
-        # use this method so flag is provided after timemory-compile-options
-        add_library(test-c-minimal-compile-options INTERFACE)
-        target_compile_options(test-c-minimal-compile-options INTERFACE
-            $<$<COMPILE_LANGUAGE:C>:-Wno-unused-parameter>)
-        list(APPEND TIMEMORY_C_LIBRARY test-c-minimal-compile-options)
-    endif()
-
     add_executable(test_c_minimal test_minimal.c)
     target_link_libraries(test_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
     install(TARGETS test_c_minimal DESTINATION bin)
 
+    # if C stubs via CXX library are available
+    if(TIMEMORY_CXX_LIBRARY)
+        add_executable(test_c_minimal_library_overload test_minimal_library_overload.c)
+        target_link_libraries(test_c_minimal_library_overload timemory-minimal-example
+            ${TIMEMORY_C_LIBRARY} ${TIMEMORY_CXX_LIBRARY})
+        install(TARGETS test_c_minimal_library_overload DESTINATION bin)
+    endif()
 endif()
 
 # if C stubs via CXX library are available
@@ -59,6 +57,10 @@ if(TIMEMORY_CXX_LIBRARY)
     add_executable(test_cxx_minimal_library test_minimal_library.cpp)
     target_link_libraries(test_cxx_minimal_library timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
     install(TARGETS test_cxx_minimal_library DESTINATION bin)
+
+    add_executable(test_cxx_minimal_library_overload test_minimal_library_overload.cpp)
+    target_link_libraries(test_cxx_minimal_library_overload timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS test_cxx_minimal_library_overload DESTINATION bin)
 endif()
 
 if(NOT PYTHON_EXECUTABLE)

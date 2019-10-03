@@ -107,7 +107,7 @@ main(int argc, char** argv)
 {
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
-    tim::enable_signal_detection();
+    // tim::enable_signal_detection();
 
     auto* timing = new tim::standard_timing_t("Tests runtime", true);
     tim::auto_tuple<papi_tuple_t>::component_type m("PAPI measurements");
@@ -142,6 +142,8 @@ main(int argc, char** argv)
     TEST_SUMMARY(argv[0], num_test, num_fail);
     delete timing;
 
+    tim::manager::get_storage<tim::complete_tuple_t>::print();
+    tim::settings::auto_output() = false;
     exit(num_fail);
 }
 
@@ -255,7 +257,7 @@ get_measurments(tim::component_tuple<Types...>& comp)
 }
 
 //--------------------------------------------------------------------------------------//
-
+/*
 template <typename _Tp>
 struct base_printer
 {
@@ -284,7 +286,7 @@ operator<<(std::ostream& os, const std::tuple<Types...>& data)
     tim::apply<void>::access_with_indices<apply_types>(data, std::ref(os), false);
     return os;
 }
-
+*/
 //======================================================================================//
 
 void
@@ -344,7 +346,10 @@ test_2_timing()
     std::cout << "measured data: " << get_measurments(runtime_printed) << std::endl;
 
     measurements.insert(measurements.begin(), pair_t("run", runtime));
-    serialize("timing.json", "runtime", measurements);
+    // serialize("timing.json", "runtime", measurements);
+
+    auto _test = std::tuple<int, double, std::string>{ 0, 0.2, "test" };
+    std::cout << "\nVARIADIC TUPLE PRINT: " << _test << "\n" << std::endl;
 }
 
 //======================================================================================//

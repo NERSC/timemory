@@ -22,9 +22,40 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <timemory/ctimemory.h>
+#if defined(TIMEMORY_USE_CUDA)
+#    undef TIMEMORY_USE_CUDA
+#endif
+
+#if defined(TIMEMORY_USE_NVTX)
+#    undef TIMEMORY_USE_NVTX
+#endif
+
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <timemory/library.h>
+#include <timemory/variadic/auto_tuple.hpp>
+
+#define LABEL(...) TIMEMORY_LABEL(__VA_ARGS__)
+
+using namespace tim::component;
+using toolset_t     = tim::auto_tuple<real_clock>;
+using toolset_ptr_t = std::shared_ptr<toolset_t>;
+using record_map_t  = std::unordered_map<uint64_t, toolset_ptr_t>;
+
+void create_record(const char* name, uint64_t* id, int, int*)
+{
+    *id                                     = timemory_get_unique_id();
+    auto obj                                = toolset_ptr_t(new toolset_t(name));
+    timemory_tl_static<record_map_t>()[*id] = std::move(obj);
+}
+
+void delete_record(uint64_t nid)
+{
+    auto& record_ids = timemory_tl_static<record_map_t>();
+    // erase key from map which stops recording when object is destroyed
+    record_ids.erase(nid);
+}
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }
 
@@ -32,15 +63,21 @@ int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    void* t0  = TIMEMORY_AUTO_TIMER(argv[0]);
-    long  ans = fib(nfib);
+    timemory_create_function = (timemory_create_func_t) &create_record;
+    timemory_delete_function = (timemory_delete_func_t) &delete_record;
+    timemory_init_library(argc, argv);
 
-    void* t1 = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
+    uint64_t id0 = timemory_get_begin_record(argv[0]);
+    long     ans = fib(nfib);
+
+    uint64_t id1 = timemory_get_begin_record(argv[0]);
     ans += fib(nfib + 1);
 
-    FREE_TIMEMORY_AUTO_TIMER(t1);
-    FREE_TIMEMORY_AUTO_TIMER(t0);
+    timemory_end_record(id1);
+    timemory_end_record(id0);
 
+    timemory_end_record(20);
     printf("Answer = %li\n", ans);
+    timemory_finalize_library();
     return EXIT_SUCCESS;
 }

@@ -157,7 +157,7 @@ include(CMakeParseArguments)
 
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
     DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
-    EXPORT ${PROJECT_NAME}LibraryDepends)
+    EXPORT ${PROJECT_NAME}-library-depends)
 
 if(TIMEMORY_BUILD_CALIPER)
     set(_CALIPER_TARGETS)
@@ -169,7 +169,7 @@ if(TIMEMORY_BUILD_CALIPER)
     list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
         DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
-        EXPORT ${PROJECT_NAME}LibraryDepends)
+        EXPORT ${PROJECT_NAME}-library-depends)
 endif()
 
 #----------------------------------------------------------------------------------------#
@@ -177,6 +177,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 
 add_subdirectory(source)
+
+# Install the export set for use with the install-tree
+install(EXPORT ${PROJECT_NAME}-library-depends
+    DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing

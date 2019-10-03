@@ -33,10 +33,10 @@ int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib);
+    TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
     long ans = fib(nfib);
 
-    TIMEMORY_BLANK_AUTO_TIMER(argv[0], "_", nfib + 1);
+    TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
     ans += fib(nfib + 1);
 
     printf("Answer = %li\n", ans);

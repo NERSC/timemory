@@ -23,12 +23,20 @@ unset(${PROJECT_NAME_UC}_INTERFACE_LIBRARIES CACHE)
 # macro set_ifnot(<var> <value>)
 #       If variable var is not set, set its value to that provided
 #
-FUNCTION(CACHE_LIST _OP _LIST)
+MACRO(CACHE_LIST _OP _LIST)
+    set(_TMP_CACHE_LIST ${${_LIST}})
     # apply operation on list
-    list(${_OP} ${_LIST} ${ARGN})
+    list(${_OP} _TMP_CACHE_LIST ${ARGN})
     # replace list
-    set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
-ENDFUNCTION()
+    set(${_LIST} ${_TMP_CACHE_LIST})
+    if(NOT "${CMAKE_CURRENT_SOURCE_DIR}" STREQUAL "${PROJECT_SOURCE_DIR}")
+        set(${_LIST} ${_TMP_CACHE_LIST} PARENT_SCOPE)
+    endif()
+    # apply operation on list
+    #list(${_OP} ${_LIST} ${ARGN})
+    # replace list
+    #set(${_LIST} ${${_LIST}} CACHE INTERNAL "Cached list ${_LIST}")
+ENDMACRO()
 
 
 #-----------------------------------------------------------------------
