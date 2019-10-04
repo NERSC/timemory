@@ -73,9 +73,12 @@ struct gotcha
     using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
 
+    using blacklist_t   = std::set<std::string>;
+
     // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
     using get_initializer_t = std::function<config_t()>;
+    using get_blacklist_t   = std::function<blacklist_t()>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -101,12 +104,39 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
+    static get_blacklist_t& get_blacklist()
+    {
+        static get_blacklist_t _instance = []() { return blacklist_t{}; };
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N, typename _Ret, typename... _Args>
     static void construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _fill_ids = get_filled();
+
+        if(_func.find("MPI_") != std::string::npos)
+        {
+            static auto mpi_blacklist = { "MPI_Init", "MPI_Initialized",
+                                        "MPI_Pcontrol", "MPI_Init_thread",
+                                        "MPI_Finalize", "MPI_Comm_rank", "MPI_Comm_size"};
+
+            // if function matches a blacklisted entry, do not construct wrapper
+            for(const auto& itr : mpi_blacklist)
+                if(_func == itr)
+                    return;
+        }
+
+        // if function matches a blacklisted entry, do not construct wrapper
+        for(const auto& itr : get_blacklist()())
+        {
+            if(_func == itr)
+                return;
+        }
 
         if(!_fill_ids[_N])
         {
