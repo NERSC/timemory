@@ -328,15 +328,14 @@ public:
         auto_lock_t lk(env_settings::mutex(), std::defer_lock);
         if(!lk.owns_lock())
             lk.lock();
-        if(m_env.find(env_id) == m_env.end() ||
-           m_env.find(env_id)->second != ss.str())
+        if(m_env.find(env_id) == m_env.end() || m_env.find(env_id)->second != ss.str())
             m_env[env_id] = ss.str();
 #endif
     }
 
-    env_map_t       get() const
+    env_map_t get() const
     {
-        auto _tmp = m_env;
+        auto      _tmp = m_env;
         env_map_t _ret;
         for(const auto& itr : _tmp)
             _ret[itr.first] = itr.second;
@@ -392,7 +391,8 @@ private:
 //--------------------------------------------------------------------------------------//
 
 #if !defined(TIMEMORY_EXTERN_INIT)
-inline env_settings* env_settings::instance()
+inline env_settings*
+env_settings::instance()
 {
     static env_settings* _instance = new env_settings();
     return _instance;

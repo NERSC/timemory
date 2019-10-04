@@ -67,11 +67,11 @@ namespace tim
 namespace settings
 {
 /// process the environment and apply settings to specified types
-template <typename _Tuple = tim::complete_tuple_t>
+template <typename _Tuple = available_tuple<tim::complete_tuple_t>>
 void
 process();
 /// initialize the storage of the specified types
-template <typename _Tuple = tim::complete_tuple_t>
+template <typename _Tuple = available_tuple<tim::complete_tuple_t>>
 void
 initialize_storage();
 }  // namespace settings
@@ -85,7 +85,7 @@ void
 timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
 /// finalization of the specified types
-template <typename _Tuple = complete_tuple_t>
+template <typename _Tuple = available_tuple<complete_tuple_t>>
 void
 timemory_finalize();
 
@@ -148,10 +148,12 @@ tim::settings::parse()
 // function to process the settings -- always called even when environment processesing
 // is suppressed
 //
-template <typename _Tuple>
+template <typename _CompTuple>
 inline void
 tim::settings::process()
 {
+    using _Tuple = available_tuple<_CompTuple>;
+
     using namespace tim::component;
     using category_timing  = impl::filter_false<trait::is_timing_category, _Tuple>;
     using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
@@ -337,10 +339,12 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
 
 //--------------------------------------------------------------------------------------//
 
-template <typename _Tuple>
+template <typename _CompTuple>
 inline void
 tim::timemory_finalize()
 {
+    using _Tuple = available_tuple<_CompTuple>;
+
     // #if defined(__INTEL_COMPILER)
     apply<void>::type_access<operation::print_storage, _Tuple>();
     // #endif

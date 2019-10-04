@@ -46,6 +46,43 @@
 
 namespace tim
 {
+//======================================================================================//
+
+/// the namespace is provided to hide stl overload from global namespace but provide
+/// a method of using the namespace without a "using namespace tim;"
+namespace stl_overload
+{
+template <typename _Tp>
+struct stl_tuple_printer
+{
+    using size_type = std::size_t;
+    stl_tuple_printer(size_type _N, size_type _Ntot, const _Tp& obj, std::ostream& os)
+    {
+        os << ((_N == 0) ? "(" : "") << obj << ((_N + 1 == _Ntot) ? ")" : ",");
+    }
+};
+
+template <typename... T>
+::std::ostream&
+operator<<(::std::ostream& os, const ::std::tuple<T...>& p)
+{
+    using apply_t = ::std::tuple<stl_tuple_printer<T>...>;
+    ::tim::apply<void>::access_with_indices<apply_t>(p, std::ref(os));
+    return os;
+}
+
+template <typename T, typename U>
+::std::ostream&
+operator<<(::std::ostream& os, const ::std::pair<T, U>& p)
+{
+    os << "(" << p.first << "," << p.second << ")";
+    return os;
+}
+
+}  // namespace stl_overload
+
+using namespace stl_overload;
+
 //--------------------------------------------------------------------------------------//
 
 namespace operation
@@ -238,7 +275,10 @@ struct record
     using base_type  = typename Type::base_type;
 
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    explicit record(base_type& obj) { obj.value = Type::record(); }
+    explicit record(base_type& obj)
+    {
+        obj.value = Type::record();
+    }
 
     template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0,
               enable_if_t<(is_enabled<_Up>::value), char> = 0>
@@ -249,18 +289,17 @@ struct record
 
     template <typename _Up                                               = _Tp,
               enable_if_t<(trait::record_max<_Up>::value == false), int> = 0,
-              enable_if_t<(is_enabled<_Up>::value), char> = 0>
+              enable_if_t<(is_enabled<_Up>::value), char>                = 0>
     record(base_type& obj, const base_type& rhs)
     {
         obj += rhs;
     }
 
-    template <typename... _Args, typename _Up         = _Tp,
+    template <typename... _Args, typename _Up = _Tp,
               enable_if_t<!(is_enabled<_Up>::value), char> = 0>
     record(_Args&&...)
     {
     }
-
 };
 
 //--------------------------------------------------------------------------------------//
@@ -404,186 +443,6 @@ struct standard_stop
     explicit standard_stop(base_type& obj)
     {
         obj.stop();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_start
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    explicit conditional_start(base_type& obj) { obj.conditional_start(); }
-
-    template <typename _Func>
-    conditional_start(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_start());
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_priority_start
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    template <typename _Up                                          = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
-    explicit conditional_priority_start(base_type& obj)
-    {
-        obj.conditional_start();
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
-    conditional_priority_start(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_start());
-    }
-
-    template <typename _Up                                                   = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
-    explicit conditional_priority_start(base_type&)
-    {
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
-    conditional_priority_start(base_type&, _Func&&)
-    {
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_standard_start
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    template <typename _Up                                          = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
-    explicit conditional_standard_start(base_type&)
-    {
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value), int> = 0>
-    conditional_standard_start(base_type&, _Func&&)
-    {
-    }
-
-    template <typename _Up                                                   = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
-    explicit conditional_standard_start(base_type& obj)
-    {
-        obj.conditional_start();
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::start_priority<_Up>::value == false), int> = 0>
-    conditional_standard_start(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_start());
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_stop
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    explicit conditional_stop(base_type& obj) { obj.conditional_stop(); }
-
-    template <typename _Func>
-    conditional_stop(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_stop());
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_priority_stop
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
-    explicit conditional_priority_stop(base_type& obj)
-    {
-        obj.conditional_stop();
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
-    conditional_priority_stop(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_stop());
-    }
-
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
-    explicit conditional_priority_stop(base_type&)
-    {
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
-    conditional_priority_stop(base_type&, _Func&&)
-    {
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-
-template <typename _Tp>
-struct conditional_standard_stop
-{
-    using Type       = _Tp;
-    using value_type = typename Type::value_type;
-    using base_type  = typename Type::base_type;
-
-    template <typename _Up                                         = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
-    explicit conditional_standard_stop(base_type&)
-    {
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value), int> = 0>
-    conditional_standard_stop(base_type&, _Func&&)
-    {
-    }
-
-    template <typename _Up                                                  = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
-    explicit conditional_standard_stop(base_type& obj)
-    {
-        obj.conditional_stop();
-    }
-
-    template <typename _Func, typename _Up = _Tp,
-              enable_if_t<(trait::stop_priority<_Up>::value == false), int> = 0>
-    conditional_standard_stop(base_type& obj, _Func&& func)
-    {
-        std::forward<_Func>(func)(obj.conditional_stop());
     }
 };
 
@@ -879,6 +738,43 @@ struct get_data
 };
 
 //--------------------------------------------------------------------------------------//
+/// \class base_printer
+/// \brief invoked from the base class to provide default printing behavior
+//
+template <typename _Tp>
+struct base_printer
+{
+    using Type       = _Tp;
+    using value_type = typename Type::value_type;
+    using base_type  = typename Type::base_type;
+    using widths_t   = std::vector<int64_t>;
+
+    //----------------------------------------------------------------------------------//
+    // invoked from the base class
+    //
+    explicit base_printer(std::ostream& _os, const base_type& _obj)
+    {
+        auto _value = static_cast<const Type&>(_obj).get_display();
+        auto _label = base_type::get_label();
+        auto _disp  = base_type::get_display_unit();
+        auto _prec  = base_type::get_precision();
+        auto _width = base_type::get_width();
+        auto _flags = base_type::get_format_flags();
+
+        std::stringstream ss_value;
+        std::stringstream ss_extra;
+        ss_value.setf(_flags);
+        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
+        if(!_disp.empty() && !trait::custom_unit_printing<Type>::value)
+            ss_extra << " " << _disp;
+        if(!_label.empty() && !trait::custom_label_printing<Type>::value)
+            ss_extra << " " << _label;
+
+        _os << ss_value.str() << ss_extra.str();
+    }
+};
+
+//--------------------------------------------------------------------------------------//
 
 template <typename _Tp>
 struct print
@@ -1047,23 +943,18 @@ struct serialization
     using base_type  = typename Type::base_type;
 
     template <typename _Up = _Tp, enable_if_t<(is_enabled<_Up>::value), char> = 0>
-    serialization(base_type& obj, _Archive& ar, const unsigned int version)
+    serialization(const base_type& obj, _Archive& ar, const unsigned int)
     {
-        auto _disp = static_cast<const Type&>(obj).get_display();
         auto _data = static_cast<const Type&>(obj).get();
         ar(serializer::make_nvp("is_transient", obj.is_transient),
            serializer::make_nvp("laps", obj.laps),
            serializer::make_nvp("repr_data", _data),
            serializer::make_nvp("value", obj.value),
-           serializer::make_nvp("accum", obj.accum),
-           serializer::make_nvp("display", _disp),
-           serializer::make_nvp("unit.value", Type::unit()),
-           serializer::make_nvp("unit.repr", Type::display_unit()));
-        consume_parameters(version);
+           serializer::make_nvp("accum", obj.accum));
     }
 
     template <typename _Up = _Tp, enable_if_t<!(is_enabled<_Up>::value), char> = 0>
-    serialization(base_type&, _Archive&, const unsigned int)
+    serialization(const base_type&, _Archive&, const unsigned int)
     {
     }
 };

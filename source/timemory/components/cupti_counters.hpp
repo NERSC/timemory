@@ -83,7 +83,7 @@ struct cupti_counters
     using metric_func_t = std::function<strvec_t()>;
     using device_func_t = std::function<int()>;
     /// function for setting all of device, metrics, and events
-    using initializer_type = std::function<tuple_type()>;
+    using get_initializer_t = std::function<tuple_type()>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -116,13 +116,13 @@ struct cupti_counters
         return _instance;
     }
 
-    static initializer_type& get_initializer()
+    static get_initializer_t& get_initializer()
     {
         static auto _lambda_instance = []() -> tuple_type {
             return tuple_type(get_device_initializer()(), get_event_initializer()(),
                               get_metric_initializer()());
         };
-        static initializer_type _instance = _lambda_instance;
+        static get_initializer_t _instance = _lambda_instance;
         return _instance;
     }
 

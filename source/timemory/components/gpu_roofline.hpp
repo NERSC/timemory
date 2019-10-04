@@ -355,8 +355,7 @@ public:
             while(ret.find("__") != std::string::npos)
                 ret.erase(ret.find("__"), 1);
             return ret;
-        }
-        else
+        } else
             return std::string("gpu_roofline_") + get_mode_string();
     }
 

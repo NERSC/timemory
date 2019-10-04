@@ -54,6 +54,7 @@ if(NOT CMAKE_CXX_COMPILER_IS_GNU)
     # add_cxx_flag_if_avail("-Wno-unused-private-field")
 else()
     add_cxx_flag_if_avail("-Wno-class-memaccess")
+    add_cxx_flag_if_avail("-Wno-cast-function-type")
 endif()
 
 #----------------------------------------------------------------------------------------#

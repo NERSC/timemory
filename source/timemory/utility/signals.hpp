@@ -291,8 +291,9 @@ timemory_termination_signal_handler(int sig, siginfo_t* sinfo, void* /* context 
     if(tim::signal_settings::get_enabled().find(_sig) ==
        tim::signal_settings::get_enabled().end())
     {
-        printf("signal %i not caught\n", sig);
-        return;
+        std::stringstream ss;
+        ss << "signal " << sig << " not caught";
+        throw std::runtime_error(ss.str());
     }
     std::stringstream message;
     tim::termination_signal_message(sig, sinfo, message);

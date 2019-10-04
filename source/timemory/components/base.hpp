@@ -64,12 +64,11 @@ private:
     friend struct operation::measure<_Tp>;
     friend struct operation::start<_Tp>;
     friend struct operation::stop<_Tp>;
-    friend struct operation::conditional_start<_Tp>;
-    friend struct operation::conditional_stop<_Tp>;
     friend struct operation::minus<_Tp>;
     friend struct operation::plus<_Tp>;
     friend struct operation::multiply<_Tp>;
     friend struct operation::divide<_Tp>;
+    friend struct operation::base_printer<_Tp>;
     friend struct operation::print<_Tp>;
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
@@ -119,6 +118,7 @@ private:
     base(_Ctor)
     {}
 
+protected:
     static Type dummy()
     {
         properties<this_type>::has_storage() = true;
@@ -126,7 +126,7 @@ private:
         return _fake;
     }
 
-private:
+protected:
     // policy section
     static void global_init_policy(storage_type* _store)
     {
@@ -269,20 +269,30 @@ public:
     //----------------------------------------------------------------------------------//
     // start
     //
-    void start()
+    bool start()
     {
-        ++laps;
-        static_cast<Type&>(*this).start();
-        set_started();
+        if(!is_running)
+        {
+            ++laps;
+            static_cast<Type&>(*this).start();
+            set_started();
+            return true;
+        }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    void stop()
+    bool stop()
     {
-        static_cast<Type&>(*this).stop();
-        set_stopped();
+        if(is_running)
+        {
+            static_cast<Type&>(*this).stop();
+            set_stopped();
+            return true;
+        }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -311,34 +321,6 @@ public:
     {
         is_running   = false;
         is_transient = true;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // conditional start if not running
-    //
-    bool conditional_start()
-    {
-        if(!is_running)
-        {
-            set_started();
-            static_cast<Type&>(*this).start();
-            return true;
-        }
-        return false;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // conditional stop if running
-    //
-    bool conditional_stop()
-    {
-        if(is_running)
-        {
-            static_cast<Type&>(*this).stop();
-            set_stopped();
-            return true;
-        }
-        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -470,23 +452,7 @@ public:
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
     {
-        auto _value = static_cast<const Type&>(obj).get_display();
-        auto _label = this_type::get_label();
-        auto _disp  = this_type::get_display_unit();
-        auto _prec  = this_type::get_precision();
-        auto _width = this_type::get_width();
-        auto _flags = this_type::get_format_flags();
-
-        std::stringstream ss_value;
-        std::stringstream ss_extra;
-        ss_value.setf(_flags);
-        ss_value << std::setw(_width) << std::setprecision(_prec) << _value;
-        if(!_disp.empty() && !trait::custom_unit_printing<Type>::value)
-            ss_extra << " " << _disp;
-        if(!_label.empty() && !trait::custom_label_printing<Type>::value)
-            ss_extra << " " << _label;
-        os << ss_value.str() << ss_extra.str();
-
+        operation::base_printer<Type>(os, obj);
         return os;
     }
 
@@ -496,17 +462,17 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int)
     {
-        auto _disp = static_cast<const Type&>(*this).get_display();
+        // operation::serialization<Type, Archive>(*this, ar, version);
         auto _data = static_cast<const Type&>(*this).get();
         ar(serializer::make_nvp("is_transient", is_transient),
-           serializer::make_nvp("laps", laps), serializer::make_nvp("display", _disp),
-           serializer::make_nvp("repr_data", _data), serializer::make_nvp("value", value),
-           serializer::make_nvp("accum", accum));
+           serializer::make_nvp("laps", laps), serializer::make_nvp("repr_data", _data),
+           serializer::make_nvp("value", value), serializer::make_nvp("accum", accum));
     }
 
     const int64_t&    nlaps() const { return laps; }
     const value_type& get_value() const { return value; }
     const value_type& get_accum() const { return accum; }
+    const bool&       get_is_transient() const { return is_transient; }
 
 protected:
     bool           is_running   = false;
@@ -566,8 +532,6 @@ private:
     friend struct operation::measure<_Tp>;
     friend struct operation::start<_Tp>;
     friend struct operation::stop<_Tp>;
-    friend struct operation::conditional_start<_Tp>;
-    friend struct operation::conditional_stop<_Tp>;
     friend struct operation::minus<_Tp>;
     friend struct operation::plus<_Tp>;
     friend struct operation::multiply<_Tp>;
@@ -590,7 +554,7 @@ public:
     base& operator=(const this_type&) = default;
     base& operator=(this_type&&) = default;
 
-private:
+public:
     // policy section
     static void global_init_policy(storage_type* _store)
     {
@@ -681,19 +645,29 @@ public:
     //----------------------------------------------------------------------------------//
     // start
     //
-    void start()
+    bool start()
     {
-        static_cast<Type&>(*this).start();
-        set_started();
+        if(!is_running)
+        {
+            set_started();
+            static_cast<Type&>(*this).start();
+            return true;
+        }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
     // stop
     //
-    void stop()
+    bool stop()
     {
-        static_cast<Type&>(*this).stop();
-        set_stopped();
+        if(is_running)
+        {
+            static_cast<Type&>(*this).stop();
+            set_stopped();
+            return true;
+        }
+        return false;
     }
 
     //----------------------------------------------------------------------------------//
@@ -722,34 +696,6 @@ public:
     {
         is_running   = false;
         is_transient = true;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // conditional start if not running
-    //
-    bool conditional_start()
-    {
-        if(!is_running)
-        {
-            set_started();
-            static_cast<Type&>(*this).start();
-            return true;
-        }
-        return false;
-    }
-
-    //----------------------------------------------------------------------------------//
-    // conditional stop if running
-    //
-    bool conditional_stop()
-    {
-        if(is_running)
-        {
-            static_cast<Type&>(*this).stop();
-            set_stopped();
-            return true;
-        }
-        return false;
     }
 
     CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)

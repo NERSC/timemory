@@ -54,10 +54,12 @@ add_googletest(rusage_tests
     SOURCES         rusage_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options)
 
-add_googletest(papi_tests
-    DISCOVER_TESTS
-    SOURCES         papi_tests.cpp
-    LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options)
+if(TIMEMORY_USE_PAPI)
+    add_googletest(papi_tests
+        DISCOVER_TESTS
+        SOURCES         papi_tests.cpp
+        LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options)
+endif()
 
 add_googletest(apply_tests
     DISCOVER_TESTS
@@ -124,10 +126,17 @@ if(_HAS_TCMALLOC)
                         timemory-gperftools-heap)
 endif()
 
-add_googletest(gotcha_tests
+if(TIMEMORY_USE_GOTCHA)
+    add_googletest(gotcha_tests
+        DISCOVER_TESTS
+        SOURCES         gotcha_tests.cpp
+        LINK_LIBRARIES  timemory-headers    timemory-compile-options
+                        timemory-gotcha     timemory-mpi
+                        timemory-papi       timemory-vector
+                        timemory-arch       gotcha-tests-lib)
+endif()
+
+add_googletest(priority_tests
     DISCOVER_TESTS
-    SOURCES         gotcha_tests.cpp
-    LINK_LIBRARIES  timemory-headers    timemory-compile-options
-                    timemory-gotcha     timemory-mpi
-                    timemory-papi       timemory-vector
-                    timemory-arch       gotcha-tests-lib)
+    SOURCES         priority_tests.cpp
+    LINK_LIBRARIES  timemory-headers)

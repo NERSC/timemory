@@ -635,18 +635,8 @@ MACRO(DETERMINE_LIBDIR_DEFAULT VAR)
         endif()
     endif()
 
-    # if assign to another variable
-    if(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
-        set(${VAR} "${_LIBDIR_DEFAULT}")
-    endif(NOT "${VAR}" STREQUAL "LIBDIR_DEFAULT")
-
-    # cache the value
-    if(NOT DEFINED LIBDIR_DEFAULT)
-        set(LIBDIR_DEFAULT "${_LIBDIR_DEFAULT}" CACHE PATH "Object code libraries (${_LIBDIR_DEFAULT})" FORCE)
-    elseif(DEFINED __LAST_LIBDIR_DEFAULT
-            AND "${__LAST_LIBDIR_DEFAULT}" STREQUAL "${LIBDIR_DEFAULT}")
-        set_property(CACHE LIBDIR_DEFAULT PROPERTY VALUE "${_LIBDIR_DEFAULT}")
-    endif()
+    # assign the variable
+    set(${VAR} "${_LIBDIR_DEFAULT}")
 ENDMACRO()
 
 #----------------------------------------------------------------------------------------#

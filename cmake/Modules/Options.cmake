@@ -160,7 +160,6 @@ endif()
 if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(${PROJECT_NAME}_C_FLAGS "C compiler flags")
     add_feature(${PROJECT_NAME}_CXX_FLAGS "C++ compiler flags")
-    add_feature(TIMEMORY_INSTALL_PREFIX "${PROJECT_NAME} installation")
 endif()
 
 # timemory options

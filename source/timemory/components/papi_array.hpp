@@ -46,7 +46,7 @@ namespace component
 //
 //--------------------------------------------------------------------------------------//
 
-template <std::size_t MaxNumEvents>
+template <size_t MaxNumEvents>
 struct papi_array
 : public base<papi_array<MaxNumEvents>, std::array<long long, MaxNumEvents>,
               policy::thread_init, policy::thread_finalize>

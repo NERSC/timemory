@@ -228,7 +228,7 @@ public:
         using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
         static constexpr auto spacing = indent::space;
 
-        static std::string    serialize(manager* _manager = nullptr)
+        static std::string serialize(manager* _manager = nullptr)
         {
             if(_manager == nullptr)
                 _manager = manager::instance();
@@ -407,8 +407,8 @@ struct manager::initialize<std::tuple<_Types...>>
 
 //--------------------------------------------------------------------------------------//
 
-#if defined(TIMEMORY_LIBRARY_CONSTRUCTOR) && !defined(TIMEMORY_EXTERN_INIT)
-
+#if !defined(TIMEMORY_EXTERN_INIT)
+/*
 //--------------------------------------------------------------------------------------//
 
 #include "timemory/bits/timemory.hpp"
@@ -416,15 +416,15 @@ struct manager::initialize<std::tuple<_Types...>>
 //--------------------------------------------------------------------------------------//
 //
 static void
-timemory_manager_ctor_init() __library_ctor__;
+timemory_library_constructor() __library_ctor__;
 
 //--------------------------------------------------------------------------------------//
 //
 void
-timemory_manager_ctor_init()
+timemory_library_constructor()
 {
 #if defined(DEBUG)
-    auto _debug = tim::settings::debug();
+    auto _debug   = tim::settings::debug();
     auto _verbose = tim::settings::verbose();
 #endif
 
@@ -434,8 +434,8 @@ timemory_manager_ctor_init()
 #endif
 
     // fully initialize manager
+    auto _master   = tim::manager::master_instance();
     auto _instance = tim::manager::instance();
-    auto _master = tim::manager::master_instance();
 
     if(_instance != _master)
         printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
@@ -448,9 +448,9 @@ timemory_manager_ctor_init()
 
     // initialize storage
     using tuple_type = tim::available_tuple<tim::complete_tuple_t>;
-    tim::manager::get_storage<tuple_type>::initialize(_master);
+    tim::manager::get_storage<tuple_type>::initialize(_instance);
 }
 
 //--------------------------------------------------------------------------------------//
-
+*/
 #endif

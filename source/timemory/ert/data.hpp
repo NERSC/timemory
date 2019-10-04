@@ -32,6 +32,7 @@
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/barrier.hpp"
 #include "timemory/ert/cache_size.hpp"
+#include "timemory/ert/types.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <array>
@@ -181,9 +182,9 @@ public:
     }
 
 protected:
-    labels_type m_labels{ "label", "working-set", "trials", "seconds", "total-bytes",
-                          "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
-                          "device", "dtype", "exec-params" };
+    labels_type m_labels = { { "label", "working-set", "trials", "seconds", "total-bytes",
+                               "total-ops", "bytes-per-sec", "ops-per-sec", "ops-per-set",
+                               "device", "dtype", "exec-params" } };
     value_array m_values;
     std::mutex* pmutex = new std::mutex;
 
@@ -283,8 +284,7 @@ initialize_buffer(_Tp* A, _Tp value, _Intp nsize)
 //--------------------------------------------------------------------------------------//
 //  measure floating-point or integer operations
 //
-template <typename _Device, typename _Tp, typename _ExecData = exec_data,
-          typename _Counter = component::real_clock>
+template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
 class counter
 {
 public:
@@ -514,6 +514,35 @@ private:
         nsize = std::max<uint64_t>(nsize, 1);
     }
 };
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+serialize(std::string fname, const exec_data& obj)
+{
+    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
+    std::stringstream     ss;
+    {
+        // ensure json write final block during destruction before the file is closed
+        //                                  args: precision, spacing, indent size
+        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
+        cereal::JSONOutputArchive          oa(ss, opts);
+        oa.setNextName("rank");
+        oa.startNode();
+        auto rank = tim::mpi::rank();
+        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("data", obj));
+        oa.finishNode();
+    }
+    fname = settings::compose_output_filename(fname, ".json");
+    std::ofstream ofs(fname.c_str());
+    if(ofs)
+        ofs << ss.str() << std::endl;
+    else
+    {
+        throw std::runtime_error(std::string("Error opening output file: " + fname));
+    }
+}
 
 //--------------------------------------------------------------------------------------//
 

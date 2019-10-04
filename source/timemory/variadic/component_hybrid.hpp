@@ -212,18 +212,6 @@ public:
         m_list.stop();
     }
 
-    void conditional_start()
-    {
-        m_tuple.conditional_start();
-        m_list.conditional_start();
-    }
-
-    void conditional_stop()
-    {
-        m_tuple.conditional_stop();
-        m_list.conditional_stop();
-    }
-
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
@@ -475,7 +463,7 @@ public:
 
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<(is_one_of<_Tp, list_type_list>::value), int> = 0>
+              enable_if_t<(is_one_of<_Tp, list_type_list>::value), int>   = 0>
     void type_apply(_Func&& _func, _Args&&... _args)
     {
         m_list.template type_apply<_Tp>(_func, std::forward<_Args>(_args)...);
@@ -483,7 +471,7 @@ public:
 
     template <typename _Tp, typename _Func, typename... _Args,
               enable_if_t<!(is_one_of<_Tp, tuple_type_list>::value), int> = 0,
-              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int> = 0>
+              enable_if_t<!(is_one_of<_Tp, list_type_list>::value), int>  = 0>
     void type_apply(_Func&&, _Args&&...)
     {
     }

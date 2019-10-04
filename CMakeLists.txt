@@ -156,7 +156,7 @@ include(CMakeParseArguments)
 #----------------------------------------------------------------------------------------#
 
 install(TARGETS ${TIMEMORY_INTERFACE_LIBRARIES}
-    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
 
 if(TIMEMORY_BUILD_CALIPER)
@@ -168,7 +168,7 @@ if(TIMEMORY_BUILD_CALIPER)
     endforeach()
     list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS ${_CALIPER_TARGETS})
     install(TARGETS ${_CALIPER_TARGETS}
-        DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}
         EXPORT ${PROJECT_NAME}-library-depends)
 endif()
 
@@ -180,14 +180,14 @@ add_subdirectory(source)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
 
 #----------------------------------------------------------------------------------------#
 #   Examples and Testing
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory install directory" FORCE)
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory install directory")
     add_subdirectory(examples)
 endif()
 

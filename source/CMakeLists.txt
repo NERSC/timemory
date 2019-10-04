@@ -193,7 +193,7 @@ endif()
 # C/C++ compiled libraries
 install(
     TARGETS ${TIMEMORY_COMPILED_LIBRARIES}
-    DESTINATION ${TIMEMORY_INSTALL_LIBDIR}
+    DESTINATION ${CMAKE_INSTALL_LIBDIR}
     EXPORT ${PROJECT_NAME}-library-depends)
 
 # C/C++ development headers
@@ -201,19 +201,19 @@ macro(INSTALL_HEADER_FILES)
     foreach(_header ${ARGN})
         file(RELATIVE_PATH _relative ${CMAKE_CURRENT_LIST_DIR} ${_header})
         get_filename_component(_destpath ${_relative} DIRECTORY)
-        install(FILES ${_header} DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/${_destpath})
+        install(FILES ${_header} DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${_destpath})
     endforeach()
 endmacro()
 
 install_header_files(${timemory_headers})
 
 install(FILES ${cxx_headers_backend}
-    DESTINATION ${TIMEMORY_INSTALL_INCLUDEDIR}/timemory/backends
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/timemory/backends
     COMPONENT development)
 
 # Install the export set for use with the install-tree
 install(EXPORT ${PROJECT_NAME}-library-depends
-    DESTINATION ${TIMEMORY_INSTALL_CMAKEDIR})
+    DESTINATION ${CMAKE_INSTALL_CONFIGDIR})
 
 export(
     TARGETS
@@ -252,7 +252,7 @@ if(TIMEMORY_BUILD_PYTHON AND NOT SKBUILD)
         ${PROJECT_BINARY_DIR}/timemory-plotter @ONLY)
 
     install(FILES ${PROJECT_BINARY_DIR}/timemory-plotter
-        DESTINATION ${TIMEMORY_INSTALL_BINDIR}
+        DESTINATION ${CMAKE_INSTALL_BINDIR}
         PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE
         GROUP_EXECUTE GROUP_READ

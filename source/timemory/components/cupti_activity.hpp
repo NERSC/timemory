@@ -68,12 +68,12 @@ struct cupti_activity
         base<cupti_activity, value_type, policy::global_init, policy::global_finalize>;
 
     // component-specific aliases
-    using ratio_t          = std::nano;
-    using size_type        = std::size_t;
-    using string_t         = std::string;
-    using receiver_type    = cupti::activity::receiver;
-    using kind_vector_type = std::vector<cupti::activity_kind_t>;
-    using initializer_type = std::function<kind_vector_type()>;
+    using ratio_t           = std::nano;
+    using size_type         = std::size_t;
+    using string_t          = std::string;
+    using receiver_type     = cupti::activity::receiver;
+    using kind_vector_type  = std::vector<cupti::activity_kind_t>;
+    using get_initializer_t = std::function<kind_vector_type()>;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -87,7 +87,7 @@ struct cupti_activity
 
     //----------------------------------------------------------------------------------//
 
-    static initializer_type& get_initializer()
+    static get_initializer_t& get_initializer()
     {
         static auto _lambda_instance = []() -> kind_vector_type {
             std::vector<cupti::activity_kind_t> _kinds;
@@ -147,7 +147,7 @@ struct cupti_activity
             }
             return _kinds;
         };
-        static initializer_type _instance = _lambda_instance;
+        static get_initializer_t _instance = _lambda_instance;
         return _instance;
     }
 

@@ -38,7 +38,6 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/bits/components.hpp"
 #include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -375,15 +374,15 @@ public:
         }
         else
         {
-            auto current   = _data().current();
-            //auto nchildren = graph_t::number_of_children(current);
+            auto current = _data().current();
+            // auto nchildren = graph_t::number_of_children(current);
 
             if(hash_id == current->id())
             {
                 exists = true;
                 return current;
             }
-            //else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            // else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
             //    return _insert_child();
             else if(_data().graph().is_valid(current))
             {
@@ -802,10 +801,12 @@ struct implements_storage
 //======================================================================================//
 
 template <typename _Tp>
-class storage : public impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>
+class storage
+: public impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>
 {
-    using this_type     = storage<_Tp>;
-    using base_type = impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>;
+    using this_type = storage<_Tp>;
+    using base_type =
+        impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>;
     using string_t      = std::string;
     using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
     using singleton_t   = singleton<this_type, smart_pointer>;

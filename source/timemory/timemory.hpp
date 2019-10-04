@@ -66,8 +66,6 @@ struct dummy
 
     void start() {}
     void stop() {}
-    void conditional_start() {}
-    void conditional_stop() {}
     void report_at_exit(bool) {}
     template <typename... _Args>
     void mark_begin(_Args&&...)
@@ -147,6 +145,7 @@ struct dummy
 #    include "timemory/settings.hpp"
 #    include "timemory/units.hpp"
 #    include "timemory/utility/macros.hpp"
+#    include "timemory/utility/mangler.hpp"
 #    include "timemory/utility/utility.hpp"
 #    include "timemory/variadic/auto_hybrid.hpp"
 #    include "timemory/variadic/auto_list.hpp"
@@ -158,56 +157,15 @@ struct dummy
 // definitions of types
 #    include "timemory/bits/timemory.hpp"
 
+// allocator
+#    include "timemory/ert/aligned_allocator.hpp"
+
 //======================================================================================//
 
 #    include "timemory/bits/init.hpp"
 #    include "timemory/templates/auto_timer_extern.hpp"
 #    include "timemory/templates/cuda_extern.hpp"
 #    include "timemory/templates/native_extern.hpp"
-
-//======================================================================================//
-
-#    include <fstream>
-#    include <sstream>
-#    include <string>
-
-#    include "timemory/backends/mpi.hpp"
-#    include "timemory/utility/serializer.hpp"
-
-//======================================================================================//
-
-namespace tim
-{
-namespace ert
-{
-inline void
-serialize(std::string fname, const exec_data& obj)
-{
-    static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
-    std::stringstream     ss;
-    {
-        // ensure json write final block during destruction before the file is closed
-        //                                  args: precision, spacing, indent size
-        cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-        cereal::JSONOutputArchive          oa(ss, opts);
-        oa.setNextName("rank");
-        oa.startNode();
-        auto rank = tim::mpi::rank();
-        oa(cereal::make_nvp("rank_id", rank));
-        oa(cereal::make_nvp("data", obj));
-        oa.finishNode();
-    }
-    fname = settings::compose_output_filename(fname, ".json");
-    std::ofstream ofs(fname.c_str());
-    if(ofs)
-        ofs << ss.str() << std::endl;
-    else
-    {
-        throw std::runtime_error(std::string("Error opening output file: " + fname));
-    }
-}
-}  // namespace ert
-}  // namespace tim
 
 //======================================================================================//
 

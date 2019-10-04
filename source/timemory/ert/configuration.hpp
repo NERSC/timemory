@@ -31,6 +31,7 @@
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
+#include "timemory/ert/types.hpp"
 
 #include <cstdint>
 #include <functional>

@@ -37,19 +37,29 @@
 #    define TIMEMORY_DEFAULT_ENABLED true
 #endif
 
-#define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                       \
-    inline TYPE& FUNC()                                                                  \
-    {                                                                                    \
-        static TYPE instance = INIT;                                                     \
-        return instance;                                                                 \
-    }
+#if defined(TIMEMORY_EXTERN_INIT)
 
-#define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                          \
-    inline TYPE& FUNC()                                                                  \
-    {                                                                                    \
-        static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                             \
-        return instance;                                                                 \
-    }
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT) extern TYPE& FUNC();
+
+#    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT) extern TYPE& FUNC();
+
+#else
+
+#    define TIMEMORY_STATIC_ACCESSOR(TYPE, FUNC, INIT)                                   \
+        inline TYPE& FUNC()                                                              \
+        {                                                                                \
+            static TYPE instance = INIT;                                                 \
+            return instance;                                                             \
+        }
+
+#    define TIMEMORY_ENV_STATIC_ACCESSOR(TYPE, FUNC, ENV_VAR, INIT)                      \
+        inline TYPE& FUNC()                                                              \
+        {                                                                                \
+            static TYPE instance = get_env<TYPE>(ENV_VAR, INIT);                         \
+            return instance;                                                             \
+        }
+
+#endif
 
 namespace tim
 {

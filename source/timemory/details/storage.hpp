@@ -491,7 +491,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
             int64_t _len = _compute_modified_prefix(itr).length();
             _width       = std::max(_len, _width);
             _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
-            _max_laps    = std::max<int64_t>(_max_laps, itr.obj().laps);
+            _max_laps    = std::max<int64_t>(_max_laps, itr.obj().nlaps());
         }
         int64_t              _width_laps  = std::log10(_max_laps) + 1;
         int64_t              _width_depth = std::log10(_max_depth) + 1;
@@ -519,9 +519,12 @@ void storage<ObjectType, true>::external_print(std::false_type)
         {
             printf("\n");
             auto jname = settings::compose_output_filename(label, ".json");
-            printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
-                   jname.c_str());
-            serialize_storage(jname, *this, num_instances);
+            if(jname.length() > 0)
+            {
+                printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                       jname.c_str());
+                serialize_storage(jname, *this, num_instances);
+            }
         }
         else if(settings::file_output() && settings::text_output())
         {
@@ -534,19 +537,22 @@ void storage<ObjectType, true>::external_print(std::false_type)
         if(settings::file_output() && settings::text_output())
         {
             auto fname = settings::compose_output_filename(label, ".txt");
-            fout       = new std::ofstream(fname.c_str());
-            if(fout && *fout)
+            if(fname.length() > 0)
             {
-                printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
-                       fname.c_str());
-            }
-            else
-            {
-                delete fout;
-                fout = nullptr;
-                fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
-                        ObjectType::label().c_str(), __FUNCTION__, __LINE__,
-                        fname.c_str());
+                fout       = new std::ofstream(fname.c_str());
+                if(fout && *fout)
+                {
+                    printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                           fname.c_str());
+                }
+                else
+                {
+                    delete fout;
+                    fout = nullptr;
+                    fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
+                            fname.c_str());
+                }
             }
         }
 
@@ -604,7 +610,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
 
             auto _obj    = itr.obj();
             auto _prefix = _compute_modified_prefix(itr);
-            auto _laps   = _obj.laps;
+            auto _laps   = _obj.nlaps();
             auto _depth  = itr.depth();
 
             std::stringstream _oss;

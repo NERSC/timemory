@@ -27,20 +27,36 @@
 #include <deque>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 using namespace tim::component;
 
-using auto_timer_t = tim::component_tuple<real_clock, system_clock, cpu_clock, cpu_util,
-                                          page_rss, peak_rss>;
+#if !defined(TIMEMORY_LIBRARY_TYPE)
+#    define TIMEMORY_LIBRARY_TYPE tim::complete_list_t;
+#endif
 
-using complete_list_t = tim::complete_list_t;
+#if defined(__GNUC__)
+#    define API tim_api __attribute__((weak))
+#else
+#    define API tim_api
+#endif
+
+extern "C"
+{
+    typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
+    typedef void (*timemory_delete_func_t)(uint64_t);
+
+    timemory_create_func_t timemory_create_function = nullptr;
+    timemory_delete_func_t timemory_delete_function = nullptr;
+}
 
 //======================================================================================//
 
+using toolset_t          = TIMEMORY_LIBRARY_TYPE;
+using toolset_ptr_t      = std::unique_ptr<toolset_t>;
+using record_map_t       = std::unordered_map<uint64_t, toolset_ptr_t>;
 using component_enum_t   = std::vector<TIMEMORY_COMPONENT>;
-using record_map_t       = std::unordered_map<uint64_t, complete_list_t*>;
-using components_keys_t  = std::unordered_map<std::string, uint64_t>;
 using components_stack_t = std::deque<component_enum_t>;
 
 static uint64_t    uniqID = 0;
@@ -49,28 +65,19 @@ static std::string spacer =
 
 //--------------------------------------------------------------------------------------//
 
-static components_keys_t*&
-get_component_keys()
-{
-    static thread_local components_keys_t* _instance = new components_keys_t();
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-static record_map_t*&
+static record_map_t&
 get_record_map()
 {
-    static thread_local record_map_t* _instance = new record_map_t();
+    static thread_local record_map_t _instance;
     return _instance;
 }
 
 //--------------------------------------------------------------------------------------//
 
-static components_stack_t*&
+static components_stack_t&
 get_components_stack()
 {
-    static thread_local components_stack_t* _instance = new components_stack_t();
+    static thread_local components_stack_t _instance;
     return _instance;
 }
 
@@ -80,8 +87,7 @@ get_components_stack()
 inline std::string&
 get_default_components()
 {
-    static thread_local std::string _instance =
-        "real_clock, user_clock, system_clock, cpu_util, page_rss, peak_rss";
+    static thread_local std::string _instance = "real_clock,cpu_clock,cpu_util,peak_rss";
     return _instance;
 }
 
@@ -91,52 +97,13 @@ get_default_components()
 inline const component_enum_t&
 get_current_components()
 {
-    auto* _stack = get_components_stack();
-    if(_stack->size() == 0)
+    auto& _stack = get_components_stack();
+    if(_stack.size() == 0)
     {
-        _stack->push_back(
+        _stack.push_back(
             tim::enumerate_components(get_default_components(), "TIMEMORY_COMPONENTS"));
     }
-    return _stack->back();
-}
-
-//--------------------------------------------------------------------------------------//
-//
-//      TiMemory start/stop
-//
-//--------------------------------------------------------------------------------------//
-
-void
-record_start(const char* name, uint64_t* kernid, const component_enum_t& types)
-{
-    *kernid  = uniqID++;
-    auto obj = new complete_list_t(name, true, tim::language::cxx(), *kernid);
-    tim::initialize(*obj, types);
-    (*get_record_map())[*kernid] = obj;
-    (*get_record_map())[*kernid]->start();
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-record_stop(uint64_t kernid)
-{
-    (*get_record_map())[kernid]->stop();  // stop recording
-    delete(*get_record_map())[kernid];
-    get_record_map()->erase(kernid);
-}
-
-//--------------------------------------------------------------------------------------//
-
-void
-cleanup()
-{
-    delete get_record_map();
-    delete get_component_keys();
-    delete get_components_stack();
-    get_record_map()       = nullptr;
-    get_component_keys()   = nullptr;
-    get_components_stack() = nullptr;
+    return _stack.back();
 }
 
 //--------------------------------------------------------------------------------------//
@@ -147,12 +114,57 @@ cleanup()
 
 extern "C"
 {
-    tim_api void timemory_init_library(int argc, char** argv)
+    //----------------------------------------------------------------------------------//
+    //  get a unique id
+    //
+    API uint64_t timemory_get_unique_id() { return uniqID++; }
+
+    //----------------------------------------------------------------------------------//
+    //  create a toolset of measurements
+    //
+    API void timemory_create_record(const char* name, uint64_t* nid, int n, int* ctypes)
+    {
+        if(timemory_create_function)
+        {
+            (*timemory_create_function)(name, nid, n, ctypes);
+            return;
+        }
+
+        auto                            _ctypes = (TIMEMORY_COMPONENT*) (ctypes);
+        std::vector<TIMEMORY_COMPONENT> types(_ctypes, _ctypes + n);
+
+        *nid     = timemory_get_unique_id();
+        auto obj = toolset_ptr_t(new toolset_t(name, true, tim::language::cxx(), *nid));
+        tim::initialize(*obj.get(), types);
+        get_record_map()[*nid] = std::move(obj);
+        get_record_map()[*nid]->start();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  destroy a toolset of measurements
+    //
+    API void timemory_delete_record(uint64_t nid)
+    {
+        if(timemory_delete_function)
+            (*timemory_delete_function)(nid);
+        else if(get_record_map().find(nid) != get_record_map().end())
+        {
+            // stop recording, destroy objects, and erase key from map
+            get_record_map()[nid]->stop();
+            get_record_map()[nid].reset();
+            get_record_map().erase(nid);
+        }
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  initialize the library
+    //
+    API void timemory_init_library(int argc, char** argv)
     {
         if(tim::settings::verbose() > 0)
         {
             printf("%s\n", spacer.c_str());
-            printf("\tInitialization of timemory preload...\n");
+            printf("\tInitialization of timemory library...\n");
             printf("%s\n\n", spacer.c_str());
         }
 
@@ -163,151 +175,171 @@ extern "C"
         tim::timemory_init(argc, argv);
     }
 
-    //--------------------------------------------------------------------------------------//
-
-    tim_api void timemory_finalize_library()
+    //----------------------------------------------------------------------------------//
+    //  finalize the library
+    API void timemory_finalize_library()
     {
-        if(tim::settings::enabled() == false)
-        {
-            cleanup();
+        if(tim::settings::enabled() == false && get_record_map().size() == 0)
             return;
-        }
 
         if(tim::settings::verbose() > 0)
         {
             printf("\n%s\n", spacer.c_str());
-            printf("\tFinalization of timemory preload...\n");
+            printf("\tFinalization of timemory library...\n");
             printf("%s\n\n", spacer.c_str());
         }
 
-        if(get_record_map())
-        {
-            for(auto& itr : (*get_record_map()))
-            {
-                if(itr.second)
-                    itr.second->stop();
-                delete itr.second;
-            }
-            get_record_map()->clear();
-        }
+        // put keys into a set so that a potential LD_PRELOAD for timemory_delete_record
+        // is called and there is not a concern for the map iterator
+        std::unordered_set<uint64_t> keys;
+        for(auto& itr : get_record_map())
+            keys.insert(itr.first);
+
+        // delete all the records
+        for(auto& itr : keys)
+            timemory_delete_record(itr);
+
+        // clear the map
+        get_record_map().clear();
 
         // Compensate for Intel compiler not allowing auto output
 #if defined(__INTEL_COMPILER)
-        complete_list_t::print_storage();
+        toolset_t::print_storage();
 #endif
 
         // PGI and Intel compilers don't respect destruction order
 #if defined(__PGI) || defined(__INTEL_COMPILER)
         tim::settings::auto_output() = false;
 #endif
-
-        cleanup();
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_set_default(const char* _component_string)
+    API void timemory_set_default(const char* _component_string)
     {
         if(tim::settings::enabled() == false)
             return;
         get_default_components() = std::string(_component_string);
-        auto* _stack             = get_components_stack();
-        if(_stack->size() == 0)
-        {
-            _stack->push_back(tim::enumerate_components(get_default_components(),
-                                                        "TIMEMORY_COMPONENTS"));
-        }
+        auto& _stack             = get_components_stack();
+        if(_stack.size() == 0)
+            _stack.push_back(tim::enumerate_components(get_default_components(),
+                                                       "TIMEMORY_COMPONENTS"));
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_push_components(const char* _component_string)
+    API void timemory_push_components(const char* _component_string)
     {
         if(tim::settings::enabled() == false)
             return;
-        auto* _stack = get_components_stack();
-        _stack->push_back(tim::enumerate_components(_component_string));
+        auto& _stack = get_components_stack();
+        _stack.push_back(tim::enumerate_components(_component_string));
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_pop_components()
+    API void timemory_pop_components()
     {
         if(tim::settings::enabled() == false)
             return;
-        auto* _stack = get_components_stack();
-        if(_stack->size() > 1)
-            _stack->pop_back();
+        auto& _stack = get_components_stack();
+        if(_stack.size() > 1)
+            _stack.pop_back();
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_begin_record(const char* name, uint64_t* kernid)
+    API void timemory_begin_record(const char* name, uint64_t* nid)
     {
         if(tim::settings::enabled() == false)
         {
-            *kernid = std::numeric_limits<uint64_t>::max();
+            *nid = std::numeric_limits<uint64_t>::max();
             return;
         }
-        record_start(name, kernid, get_current_components());
+        auto& comp = get_current_components();
+        timemory_create_record(name, nid, comp.size(), (int*) (comp.data()));
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("beginning record for '%s' (id = %lli)...\n", name,
-                   (long long int) *kernid);
+                   (long long int) *nid);
+#endif
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_begin_record_types(const char* name, uint64_t* kernid,
-                                             const char* ctypes)
+    API void timemory_begin_record_types(const char* name, uint64_t* nid,
+                                         const char* ctypes)
     {
         if(tim::settings::enabled() == false)
         {
-            *kernid = std::numeric_limits<uint64_t>::max();
+            *nid = std::numeric_limits<uint64_t>::max();
             return;
         }
-        record_start(name, kernid, tim::enumerate_components(std::string(ctypes)));
+
+        auto comp = tim::enumerate_components(std::string(ctypes));
+        timemory_create_record(name, nid, comp.size(), (int*) (comp.data()));
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("beginning record for '%s' (id = %lli)...\n", name,
-                   (long long int) *kernid);
+                   (long long int) *nid);
+#endif
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api uint64_t timemory_get_begin_record(const char* name)
+    API uint64_t timemory_get_begin_record(const char* name)
     {
         if(tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
-        uint64_t kernid = 0;
-        record_start(name, &kernid, get_current_components());
+
+        uint64_t nid  = 0;
+        auto&    comp = get_current_components();
+        timemory_create_record(name, &nid, comp.size(), (int*) (comp.data()));
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("beginning record for '%s' (id = %lli)...\n", name,
-                   (long long int) kernid);
-        return kernid;
+                   (long long int) nid);
+#endif
+
+        return nid;
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
+    API uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes)
     {
         if(tim::settings::enabled() == false)
             return std::numeric_limits<uint64_t>::max();
-        uint64_t kernid = 0;
-        record_start(name, &kernid, tim::enumerate_components(std::string(ctypes)));
+
+        uint64_t nid  = 0;
+        auto     comp = tim::enumerate_components(std::string(ctypes));
+        timemory_create_record(name, &nid, comp.size(), (int*) (comp.data()));
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
             printf("beginning record for '%s' (id = %lli)...\n", name,
-                   (long long int) kernid);
-        return kernid;
+                   (long long int) nid);
+#endif
+
+        return nid;
     }
 
-    //--------------------------------------------------------------------------------------//
+    //----------------------------------------------------------------------------------//
 
-    tim_api void timemory_end_record(uint64_t kernid)
+    API void timemory_end_record(uint64_t nid)
     {
-        if(kernid == std::numeric_limits<uint64_t>::max())
+        if(nid == std::numeric_limits<uint64_t>::max())
             return;
-        record_stop(kernid);
+
+        timemory_delete_record(nid);
+
+#if defined(DEBUG)
         if(tim::settings::verbose() > 2)
-            printf("ending record for %lli...\n", (long long int) kernid);
+            printf("ending record for %lli...\n", (long long int) nid);
+#endif
     }
 
     //======================================================================================//

@@ -452,7 +452,7 @@ template <typename _Ret>
 struct _apply_impl
 {
     //----------------------------------------------------------------------------------//
-
+    //
     template <typename _Fn, typename _Tuple, size_t... _Idx>
     static _Ret all(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
     {
@@ -460,8 +460,8 @@ struct _apply_impl
     }
 
     //----------------------------------------------------------------------------------//
-
     // prefix with _sep
+    //
     template <typename _Sep, typename _Arg,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg)
@@ -470,7 +470,9 @@ struct _apply_impl
         return _ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
     // prefix with _sep
+    //
     template <typename _Sep, typename _Arg, typename... _Args,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join_tail(std::stringstream& _ss, const _Sep& _sep, _Arg&& _arg,
@@ -480,7 +482,9 @@ struct _apply_impl
         return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
     }
 
+    //----------------------------------------------------------------------------------//
     // don't prefix
+    //
     template <typename _Sep, typename _Arg,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
     static _Ret join(std::stringstream& _ss, const _Sep&, _Arg&& _arg)
@@ -489,7 +493,9 @@ struct _apply_impl
         return _ss.str();
     }
 
+    //----------------------------------------------------------------------------------//
     // don't prefix
+    //
     template <typename _Sep, typename _Arg, typename... _Args,
               enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
               enable_if_t<(sizeof...(_Args) > 0), int>                  = 0>
@@ -498,43 +504,6 @@ struct _apply_impl
     {
         _ss << std::forward<_Arg>(_arg);
         return join_tail<_Sep, _Args...>(_ss, _sep, std::forward<_Args>(__args)...);
-    }
-
-    template <typename _Tp, bool _Val = true>
-    using enable_if_string_t =
-        enable_if_t<(std::is_same<_Tp, std::string>::value ||
-                     std::is_same<_Tp, char*>::value ||
-                     std::is_same<_Tp, const char*>::value) == _Val,
-                    int>;
-
-    // don't prefix
-    template <typename _Sep, typename _Arg, typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
-              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0,
-              enable_if_string_t<_Arg, false>                           = 0>
-    static _Ret join(std::stringstream&, const _Sep&, _Arg&& _arg, _Args&&...)
-    {
-        return std::to_string(_arg);
-    }
-
-    // don't prefix
-    // if _Ret is string and _Arg is
-    template <typename _Sep, typename _Arg, typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
-              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0,
-              enable_if_string_t<_Arg, true>                            = 0>
-    static _Arg join(std::stringstream&, const _Sep&, _Arg&& _arg, _Args&&...)
-    {
-        return _arg;
-    }
-
-    // don't prefix
-    template <typename _Sep, typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0,
-              enable_if_t<(sizeof...(_Args) == 0), int>                 = 0>
-    static _Ret join(std::stringstream&, const _Sep&, _Args&&...)
-    {
-        return _Ret();
     }
 
     //----------------------------------------------------------------------------------//
@@ -789,16 +758,56 @@ struct _apply_impl<void>
 template <typename _Ret>
 struct apply
 {
+    using string_t = std::string;
     //----------------------------------------------------------------------------------//
 
-    template <typename... _Args,
-              enable_if_t<std::is_same<_Ret, std::string>::value, char> = 0>
-    static _Ret join(const std::string& separator, _Args&&... __args)
+    template <typename _Tp, bool _Val = true, typename _Up = int,
+              typename _Dt = typename std::remove_const<decay_t<_Tp>>::type>
+    using enable_if_string_t =
+        enable_if_t<(std::is_same<_Dt, char*>::value) == _Val, _Up>;
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename... _Args, typename _Return = _Ret, size_t _N = sizeof...(_Args),
+              enable_if_t<(std::is_same<_Return, string_t>::value && _N > 0), char> = 0>
+    static _Return join(const string_t& separator, _Args&&... __args)
     {
         std::stringstream ss;
         ss << std::boolalpha;
-        return _apply_impl<_Ret>::template join<std::string, _Args...>(
+        return _apply_impl<_Ret>::template join<string_t, _Args...>(
             std::ref(ss), separator, std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Arg, enable_if_string_t<_Arg, true> = 0>
+    static _Ret join(const string_t&, _Arg&& _arg)
+    {
+        return std::move(_arg);
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <typename _Arg, enable_if_string_t<_Arg, false> = 0>
+    static _Ret join(const string_t&, _Arg&& _arg)
+    {
+        std::stringstream ss;
+        ss << _arg;
+        return ss.str();
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static _Ret join(const string_t&) { return _Ret{ "" }; }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t... _Idx, typename _Tuple, typename _Return = _Ret,
+              enable_if_t<!(std::is_same<_Return, string_t>::value), char> = 0>
+    static string_t join(const string_t& separator, _Tuple&& __tup,
+                         index_sequence<_Idx...>)
+    {
+        return apply<string_t>::join(separator, std::get<_Idx>(__tup)...);
     }
 
     //----------------------------------------------------------------------------------//

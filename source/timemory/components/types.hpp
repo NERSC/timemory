@@ -22,6 +22,15 @@
 //  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 //  SOFTWARE.
 
+/** \file components/types.hpp
+ * \headerfile components/types.hpp "timemory/components/types.hpp"
+ *
+ * This is a pre-declaration of all the component structs, operation structs, and
+ * variadic wrappers. Care should be taken to make sure that this includes a minimal
+ * number of additional headers.
+ *
+ */
+
 #pragma once
 
 #include <cstdint>
@@ -31,6 +40,11 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/bits/types.hpp"
+#include "timemory/components/skeletons.hpp"
+
+#if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
+#    define TIMEMORY_PAPI_ARRAY_SIZE 32
+#endif
 
 //======================================================================================//
 //
@@ -56,9 +70,12 @@ namespace component
 template <typename _Tp, typename value_type = int64_t, typename... _Policies>
 struct base;
 
+// holder that provides nothing
+template <typename... _Types>
+struct placeholder;
+
 // general
 struct trip_count;
-struct nvtx_marker;
 struct gperf_heap_profiler;
 struct gperf_cpu_profiler;
 
@@ -96,34 +113,96 @@ struct virtual_memory;
 struct read_bytes;
 struct written_bytes;
 
+// caliper
+struct caliper;
+
+#if defined(TIMEMORY_USE_CUDA)
+
 // cuda
 struct cuda_event;
+
+#else
+
+using cuda_event = placeholder<skeleton::cuda<>>;
+
+#endif
+
+#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_NVTX)
+
+// nvtx
+struct nvtx_marker;
+
+#else
+
+using nvtx_marker = placeholder<skeleton::nvtx<>>;
+
+#endif
+
+#if defined(TIMEMORY_USE_GOTCHA)
+
+template <size_t _N, typename _Components, typename _Differentiator = void>
+struct gotcha;
+
+#else
+
+template <size_t _N, typename _Components, typename _Differentiator = void>
+using gotcha = placeholder<skeleton::gotcha<_N, _Components, _Differentiator>>;
+
+#endif
+
+// aliases
+#if defined(TIMEMORY_USE_PAPI)
 
 // papi
 template <int... EventTypes>
 struct papi_tuple;
 
-template <std::size_t MaxNumEvents>
+template <size_t MaxNumEvents>
 struct papi_array;
 
 template <typename... _Types>
 struct cpu_roofline;
 
+#else
+
+template <size_t N>
+using papi_array = placeholder<skeleton::papi_array<N>>;
+
+template <int... _Events>
+using papi_tuple = placeholder<skeleton::papi_tuple<_Events...>>;
+
+template <typename... _Types>
+using cpu_roofline = placeholder<skeleton::cpu_roofline<_Types...>>;
+
+#endif
+
+// always defined
+using papi_array_t = papi_array<TIMEMORY_PAPI_ARRAY_SIZE>;
+
+#if defined(TIMEMORY_USE_CUPTI)
+
+// cupti
+struct cupti_counters;
+
+struct cupti_activity;
+
 template <typename... _Types>
 struct gpu_roofline;
 
-struct cupti_counters;
-struct cupti_activity;
+#else
 
-// caliper
-struct caliper;
+using cupti_activity = placeholder<skeleton::cupti_activity<int>>;
 
-template <size_t _N, typename _Components, typename _Differentiator = void>
-struct gotcha;
+using cupti_counters = placeholder<skeleton::cupti_counters<int>>;
 
-// aliases
-using papi_array_t = papi_array<32>;
+template <typename... _Types>
+using gpu_roofline = placeholder<skeleton::gpu_roofline<_Types...>>;
 
+#endif
+
+//
+// roofline aliases
+//
 using cpu_roofline_sp_flops = cpu_roofline<float>;
 using cpu_roofline_dp_flops = cpu_roofline<double>;
 using cpu_roofline_flops    = cpu_roofline<float, double>;
@@ -187,24 +266,6 @@ template <typename _Tp>
 struct standard_stop;
 
 template <typename _Tp>
-struct conditional_start;
-
-template <typename _Tp>
-struct conditional_priority_start;
-
-template <typename _Tp>
-struct conditional_standard_start;
-
-template <typename _Tp>
-struct conditional_stop;
-
-template <typename _Tp>
-struct conditional_priority_stop;
-
-template <typename _Tp>
-struct conditional_standard_stop;
-
-template <typename _Tp>
 struct mark_begin;
 
 template <typename _Tp>
@@ -227,6 +288,9 @@ struct divide;
 
 template <typename _Tp>
 struct get_data;
+
+template <typename _Tp>
+struct base_printer;
 
 template <typename _Tp>
 struct print;

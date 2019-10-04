@@ -34,24 +34,6 @@
 
 #include <cassert>
 
-namespace std
-{
-template <typename T, typename U>
-ostream&
-operator<<(ostream& os, const tuple<T, U>& p)
-{
-    os << "(" << std::get<0>(p) << "," << std::get<1>(p) << ")";
-    return os;
-}
-template <typename T, typename U>
-ostream&
-operator<<(ostream& os, const pair<T, U>& p)
-{
-    os << "(" << p.first << "," << p.second << ")";
-    return os;
-}
-}  // namespace std
-
 //======================================================================================//
 
 namespace tim

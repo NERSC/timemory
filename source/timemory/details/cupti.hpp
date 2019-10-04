@@ -575,11 +575,65 @@ operator-=(data_metric_t& lhs, const data_metric_t& rhs)
 
 //--------------------------------------------------------------------------------------//
 
+namespace data
+{
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct _operation
+{
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+struct _operation<std::tuple<_Types...>>
+{
+    template <typename... _Args>
+    static void print(_Args&&... _args)
+    {
+        impl::_print<_Types...>(std::forward<_Args>(_args)...);
+    }
+
+    template <typename _Tp, typename... _Args>
+    static void get(_Args&&... _args)
+    {
+        impl::_get<_Tp, _Types...>(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args>
+    static void set(_Args&&... _args)
+    {
+        impl::_set<_Types...>(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args>
+    static void plus(_Args&&... _args)
+    {
+        impl::_plus<_Types...>(std::forward<_Args>(_args)...);
+    }
+
+    template <typename... _Args>
+    static void minus(_Args&&... _args)
+    {
+        impl::_minus<_Types...>(std::forward<_Args>(_args)...);
+    }
+};
+
+//--------------------------------------------------------------------------------------//
+
+using operation = _operation<data_types>;
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace data
+
+//--------------------------------------------------------------------------------------//
+
 inline void
 print(std::ostream& os, const impl::data_metric_t& lhs)
 {
-    impl::_print<data::unsigned_integer, data::integer, data::percent, data::floating,
-                 data::throughput, data::utilization>(os, lhs);
+    data::operation::print(os, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -589,8 +643,7 @@ inline _Tp
 get(const impl::data_metric_t& lhs)
 {
     _Tp value = _Tp(0.0);
-    impl::_get<_Tp, data::unsigned_integer, data::integer, data::percent, data::floating,
-               data::throughput, data::utilization>(value, lhs);
+    data::operation::get<_Tp>(value, lhs);
     return value;
 }
 
@@ -599,8 +652,7 @@ get(const impl::data_metric_t& lhs)
 inline void
 set(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 {
-    impl::_set<data::unsigned_integer, data::integer, data::percent, data::floating,
-               data::throughput, data::utilization>(lhs, rhs);
+    data::operation::set(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -608,8 +660,7 @@ set(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 inline void
 plus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 {
-    impl::_plus<data::unsigned_integer, data::integer, data::percent, data::floating,
-                data::throughput, data::utilization>(lhs, rhs);
+    data::operation::plus(lhs, rhs);
     lhs.count += rhs.count;
 }
 
@@ -618,12 +669,11 @@ plus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 inline void
 minus(impl::data_metric_t& lhs, const impl::data_metric_t& rhs)
 {
-    impl::_minus<data::unsigned_integer, data::integer, data::percent, data::floating,
-                 data::throughput, data::utilization>(lhs, rhs);
+    data::operation::minus(lhs, rhs);
     lhs.count -= rhs.count;
 }
 
-//--------------------------------------------------------------------------------------//
+//======================================================================================//
 
 struct result
 {
@@ -715,6 +765,8 @@ struct result
     }
 };
 
+//======================================================================================//
+
 #if !defined(TIMEMORY_USE_CUPTI)
 namespace impl
 {
@@ -742,7 +794,12 @@ struct kernel_data_t
         return kernel_data_t(lhs) -= rhs;
     }
 };
+
+//======================================================================================//
+
 }  // namespace impl
+
+//======================================================================================//
 
 struct profiler
 {
@@ -781,7 +838,11 @@ private:
     strvec_t m_metric_names;
 };
 
+//======================================================================================//
+
 #endif
+
+//======================================================================================//
 
 namespace activity
 {

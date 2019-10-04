@@ -352,8 +352,10 @@ if(TIMEMORY_BUILD_PYTHON)
         WORKING_DIRECTORY ${PROJECT_SOURCE_DIR})
 
     # C++ standard
-    set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
-        CACHE STRING "PyBind11 CXX standard" FORCE)
+    if(NOT "${PYBIND11_CPP_STANDARD}" STREQUAL "${CMAKE_CXX_STANDARD}")
+        set(PYBIND11_CPP_STANDARD -std=c++${CMAKE_CXX_STANDARD}
+            CACHE STRING "PyBind11 CXX standard" FORCE)
+    endif()
 
     set(PYBIND11_INSTALL OFF)
     # add PyBind11 to project
@@ -380,22 +382,11 @@ if(TIMEMORY_BUILD_PYTHON)
     string(REPLACE "  " " " TIMEMORY_INSTALL_DATE "${TIMEMORY_INSTALL_DATE}")
 
     if(SKBUILD)
-        set(TIMEMORY_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory)
-        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
-            ${CMAKE_INSTALL_PREFIX}/lib/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
+        set(CMAKE_INSTALL_PYTHONDIR ${CMAKE_INSTALL_PREFIX}/timemory)
     else()
-        set(TIMEMORY_INSTALL_PYTHONDIR
+        set(CMAKE_INSTALL_PYTHONDIR
             ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
-        set(TIMEMORY_INSTALL_FULL_PYTHONDIR
-            ${CMAKE_INSTALL_PREFIX}/${TIMEMORY_INSTALL_PYTHONDIR})
     endif()
-
-    set(TIMEMORY_CONFIG_PYTHONDIR
-        ${CMAKE_INSTALL_LIBDIR}/python${PYBIND11_PYTHON_VERSION}/site-packages/timemory)
-
-else()
-
-    set(TIMEMORY_CONFIG_PYTHONDIR ${CMAKE_INSTALL_PREFIX})
 
 endif()
 
@@ -773,9 +764,8 @@ if(TIMEMORY_BUILD_CALIPER)
     set(_ORIG_TESTING ${BUILD_TESTING})
     set(CMAKE_C_EXTENSIONS ON)
     set(BUILD_TESTING OFF)
-    set(BUILD_TESTING OFF CACHE BOOL "" FORCE)
+    set(BUILD_TESTING OFF CACHE BOOL "")
     add_subdirectory(${PROJECT_SOURCE_DIR}/external/caliper)
-    set(BUILD_TESTING ${_ORIG_TESTING} CACHE BOOL "" FORCE)
     set(BUILD_TESTING ${_ORIG_TESTING})
     set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX})
@@ -813,7 +803,7 @@ endif()
 #
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
-    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples" FORCE)
+    set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
     if(TIMEMORY_BUILD_GOTCHA)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE

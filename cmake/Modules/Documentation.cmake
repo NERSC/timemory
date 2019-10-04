@@ -9,6 +9,10 @@
 include(MacroUtilities)
 include(CMakeDependentOption)
 
+if(NOT "${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
+    return()
+endif()
+
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_DOXYGEN_DOCS)
@@ -129,34 +133,6 @@ if(TIMEMORY_DOXYGEN_DOCS)
     # Doxyfiles was spaces not semi-colon separated lists
     STRING(REPLACE ";" " " BUILDTREE_DIRS "${BUILDTREE_DIRS}")
 
-    #-----------------------------------------------------------------------
-
-    if(NOT "${SUBPROJECT}" STREQUAL "")
-        string(TOUPPER ${SUBPROJECT} SUBPROJECT_U)
-        option(INCLUDE_${SUBPROJECT_U}_IN_DOCS "Include ${SUBPROJECT} source files in documentation" OFF)
-        mark_as_advanced(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
-
-        if(INCLUDE_${SUBPROJECT_U}_IN_DOCS)
-            set(_${SUBPROJECT}_DIRS ${${SUBPROJECT}_ROOT_SOURCE_DIR})
-            set(_SUB_DIRS ${_${SUBPROJECT}_DIRS})
-            while(NOT "${_SUB_DIRS}" STREQUAL "")
-                set(_loop_sub_dirs )
-                foreach(_dir ${_SUB_DIRS})
-                    list_subdirectories(_sub ${_dir} FALSE)
-                    if(NOT "${_sub}" STREQUAL "")
-                        list(APPEND _${SUBPROJECT}_DIRS ${_sub})
-                        list(APPEND _loop_sub_dirs ${_sub})
-                    endif()
-                endforeach()
-                set(_SUB_DIRS ${_loop_sub_dirs})
-            endwhile()
-
-            list(REMOVE_DUPLICATES _${SUBPROJECT}_DIRS)
-            STRING(REPLACE ";" " " ${SUBPROJECT_U}_SOURCE_DIRS "${_${SUBPROJECT}_DIRS}")
-            set(BUILDTREE_DIRS "${BUILDTREE_DIRS} ${${SUBPROJECT}_SOURCE_DIRS}")
-
-        endif()
-    endif()
     #-----------------------------------------------------------------------
 
     if(XCODE)

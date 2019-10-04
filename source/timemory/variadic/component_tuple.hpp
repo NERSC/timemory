@@ -128,18 +128,10 @@ public:
     using multiply_t         = std::tuple<operation::multiply<Types>...>;
     using divide_t           = std::tuple<operation::divide<Types>...>;
     using print_t            = std::tuple<operation::print<Types>...>;
-    using start_t            = std::tuple<operation::start<Types>...>;
-    using stop_t             = std::tuple<operation::stop<Types>...>;
-    using cond_start_t       = std::tuple<operation::conditional_start<Types>...>;
-    using cond_stop_t        = std::tuple<operation::conditional_stop<Types>...>;
     using prior_start_t      = std::tuple<operation::priority_start<Types>...>;
     using prior_stop_t       = std::tuple<operation::priority_stop<Types>...>;
-    using prior_cond_start_t = std::tuple<operation::conditional_priority_start<Types>...>;
-    using prior_cond_stop_t  = std::tuple<operation::conditional_priority_stop<Types>...>;
     using stand_start_t      = std::tuple<operation::standard_start<Types>...>;
     using stand_stop_t       = std::tuple<operation::standard_stop<Types>...>;
-    using stand_cond_start_t = std::tuple<operation::conditional_standard_start<Types>...>;
-    using stand_cond_stop_t  = std::tuple<operation::conditional_standard_stop<Types>...>;
     using mark_begin_t       = std::tuple<operation::mark_begin<Types>...>;
     using mark_end_t         = std::tuple<operation::mark_end<Types>...>;
     using customize_t        = std::tuple<operation::customize<Types>...>;
@@ -248,23 +240,6 @@ public:
         pop();
     }
 
-    void conditional_start()
-    {
-        push();
-        // start, if not already started
-        apply<void>::access<prior_cond_start_t>(m_data);
-        apply<void>::access<stand_cond_start_t>(m_data);
-    }
-
-    void conditional_stop()
-    {
-        // stop, if not already stopped
-        apply<void>::access<prior_cond_stop_t>(m_data);
-        apply<void>::access<stand_cond_stop_t>(m_data);
-        // pop them off the running stack
-        pop();
-    }
-
     //----------------------------------------------------------------------------------//
     // mark a beginning position in the execution (typically used by asynchronous
     // structures)
@@ -318,7 +293,7 @@ public:
     //
     data_value_type get() const
     {
-        const_cast<this_type&>(*this).conditional_stop();
+        const_cast<this_type&>(*this).stop();
         data_value_type _ret_data;
         apply<void>::access2<get_data_t>(m_data, _ret_data);
         return _ret_data;
@@ -329,7 +304,7 @@ public:
     //
     data_label_type get_labeled() const
     {
-        const_cast<this_type&>(*this).conditional_stop();
+        const_cast<this_type&>(*this).stop();
         data_label_type _ret_data;
         apply<void>::access2<get_data_t>(m_data, _ret_data);
         return _ret_data;
@@ -432,9 +407,8 @@ public:
         if(available_size() == 0)
             return os;
         // stop, if not already stopped
-        apply<void>::access<prior_cond_stop_t>(obj.m_data);
-        apply<void>::access<stand_cond_stop_t>(obj.m_data);
-        // apply<void>::access<cond_stop_t>(obj.m_data);
+        apply<void>::access<prior_stop_t>(obj.m_data);
+        apply<void>::access<stand_stop_t>(obj.m_data);
         std::stringstream ss_prefix;
         std::stringstream ss_data;
         apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);

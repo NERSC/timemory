@@ -105,7 +105,7 @@ public:
     inline void start()
     {
         if(m_enabled)
-            m_temporary_object.conditional_start();
+            m_temporary_object.start();
     }
     inline void stop()
     {
@@ -121,16 +121,6 @@ public:
     {
         if(m_enabled)
             m_temporary_object.pop();
-    }
-    inline void conditional_start()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_start();
-    }
-    inline void conditional_stop()
-    {
-        if(m_enabled)
-            m_temporary_object.conditional_stop();
     }
     template <typename... _Args>
     inline void mark_begin(_Args&&... _args)
@@ -262,7 +252,7 @@ auto_hybrid<_CompTuple, _CompList>::~auto_hybrid()
     if(m_enabled)
     {
         // stop the timer
-        m_temporary_object.conditional_stop();
+        m_temporary_object.stop();
 
         // report timer at exit
         if(m_report_at_exit)

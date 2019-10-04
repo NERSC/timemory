@@ -58,42 +58,33 @@ namespace auto_timer
 {
 using namespace component;
 
-using tuple_t =
-    implemented<real_clock, system_clock, user_clock, cpu_util, peak_rss>;
+using tuple_t = implemented<real_clock, system_clock, user_clock, cpu_util, peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_MINIMAL_AUTO_TIMER_LIST)
 
 using list_t =
-    implemented<page_rss, virtual_memory, cpu_clock,
-                caliper, papi_array_t,
-                cpu_roofline_sp_flops, cpu_roofline_dp_flops,
-                gperf_cpu_profiler, gperf_heap_profiler,
-                cuda_event, nvtx_marker, cupti_activity,
-                cupti_counters, gpu_roofline_flops,
-                gpu_roofline_hp_flops, gpu_roofline_sp_flops,
-                gpu_roofline_dp_flops>;
+    implemented<page_rss, virtual_memory, cpu_clock, caliper, papi_array_t,
+                cpu_roofline_sp_flops, cpu_roofline_dp_flops, gperf_cpu_profiler,
+                gperf_heap_profiler, cuda_event, nvtx_marker, cupti_activity,
+                cupti_counters, gpu_roofline_flops, gpu_roofline_hp_flops,
+                gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
 
 #else
 
 using list_t =
-    implemented<page_rss, virtual_memory, cpu_clock,
-                thread_cpu_clock, thread_cpu_util,
-                process_cpu_clock, process_cpu_util,
-                priority_context_switch, voluntary_context_switch,
-                num_major_page_faults, num_minor_page_faults,
-                read_bytes, written_bytes,
-                caliper, papi_array_t,
-                cpu_roofline_sp_flops, cpu_roofline_dp_flops,
-                gperf_cpu_profiler, gperf_heap_profiler,
-                cuda_event, nvtx_marker, cupti_activity,
-                cupti_counters, gpu_roofline_flops,
-                gpu_roofline_hp_flops, gpu_roofline_sp_flops,
+    implemented<page_rss, virtual_memory, cpu_clock, thread_cpu_clock, thread_cpu_util,
+                process_cpu_clock, process_cpu_util, priority_context_switch,
+                voluntary_context_switch, num_major_page_faults, num_minor_page_faults,
+                read_bytes, written_bytes, caliper, papi_array_t, cpu_roofline_sp_flops,
+                cpu_roofline_dp_flops, gperf_cpu_profiler, gperf_heap_profiler,
+                cuda_event, nvtx_marker, cupti_activity, cupti_counters,
+                gpu_roofline_flops, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
                 gpu_roofline_dp_flops>;
 
 #endif
-}
+}  // namespace auto_timer
 
 //--------------------------------------------------------------------------------------//
 

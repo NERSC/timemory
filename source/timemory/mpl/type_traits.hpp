@@ -253,7 +253,7 @@ struct record_max<component::data_rss> : std::true_type
 //                              ARRAY SERIALIZATION
 //
 //--------------------------------------------------------------------------------------//
-
+#if defined(TIMEMORY_USE_PAPI)
 template <int... EventTypes>
 struct array_serialization<component::papi_tuple<EventTypes...>> : std::true_type
 {
@@ -268,37 +268,39 @@ template <>
 struct array_serialization<component::cupti_counters> : std::true_type
 {
 };
-
+#endif
 //--------------------------------------------------------------------------------------//
 //
 //                              START PRIORITY
 //
 //--------------------------------------------------------------------------------------//
-
+#if defined(TIMEMORY_USE_CUPTI)
 /// component::cuda_event should be stopped before other types
 template <>
 struct start_priority<component::cupti_activity> : std::true_type
 {
 };
-
+#endif
 //--------------------------------------------------------------------------------------//
 //
 //                              STOP PRIORITY
 //
 //--------------------------------------------------------------------------------------//
-
+#if defined(TIMEMORY_USE_CUDA)
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cuda_event> : std::true_type
 {
 };
+#endif
 
+#if defined(TIMEMORY_USE_CUPTI)
 /// component::cuda_event should be stopped before other types
 template <>
 struct stop_priority<component::cupti_activity> : std::true_type
 {
 };
-
+#endif
 //--------------------------------------------------------------------------------------//
 //
 //                              CUSTOM UNIT PRINTING
@@ -315,6 +317,7 @@ struct custom_unit_printing<component::written_bytes> : std::true_type
 {
 };
 
+#if defined(TIMEMORY_USE_CUPTI)
 template <>
 struct custom_unit_printing<component::cupti_counters> : std::true_type
 {
@@ -324,6 +327,8 @@ template <typename... _Types>
 struct custom_unit_printing<component::gpu_roofline<_Types...>> : std::true_type
 {
 };
+#endif
+
 /*
 template <typename... _Types>
 struct custom_unit_printing<component::cpu_roofline<_Types...>> : std::true_type
@@ -347,6 +352,7 @@ struct custom_label_printing<component::written_bytes> : std::true_type
 {
 };
 
+#if defined(TIMEMORY_USE_CUPTI)
 template <>
 struct custom_laps_printing<component::cupti_counters> : std::true_type
 {
@@ -356,6 +362,7 @@ template <typename... _Types>
 struct custom_label_printing<component::gpu_roofline<_Types...>> : std::true_type
 {
 };
+#endif
 /*
 template <typename... _Types>
 struct custom_label_printing<component::cpu_roofline<_Types...>> : std::true_type
@@ -458,7 +465,7 @@ struct is_available<component::virtual_memory> : std::false_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
 //
 #if !defined(TIMEMORY_USE_PAPI)
-
+/*
 template <int... EventTypes>
 struct is_available<component::papi_tuple<EventTypes...>> : std::false_type
 {
@@ -488,7 +495,7 @@ template <>
 struct is_available<component::cpu_roofline_flops> : std::false_type
 {
 };
-
+*/
 #else
 
 template <typename... _Types>
@@ -526,12 +533,12 @@ struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_ty
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUDA
 //
 #if !defined(TIMEMORY_USE_CUDA)
-
+/*
 template <>
 struct is_available<component::cuda_event> : std::false_type
 {
 };
-
+*/
 #endif  // TIMEMORY_USE_CUDA
 
 //--------------------------------------------------------------------------------------//
@@ -542,7 +549,7 @@ struct is_available<component::cuda_event> : std::false_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
 //
 #if !defined(TIMEMORY_USE_CUPTI)
-
+/*
 template <>
 struct is_available<component::cupti_counters> : std::false_type
 {
@@ -577,7 +584,7 @@ template <>
 struct is_available<component::gpu_roofline_flops> : std::false_type
 {
 };
-
+*/
 #else
 
 template <typename... _Types>
@@ -605,8 +612,6 @@ struct requires_json<component::gpu_roofline_flops> : std::true_type
 {
 };
 
-#endif  // TIMEMORY_USE_CUPTI
-
 template <typename... _Types>
 struct iterable_measurement<component::gpu_roofline<_Types...>> : std::true_type
 {
@@ -632,16 +637,18 @@ struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
 {
 };
 
+#endif  // TIMEMORY_USE_CUPTI
+
 //--------------------------------------------------------------------------------------//
 //  disable if not enabled via preprocessor TIMEMORY_USE_NVTX
 //
 #if !defined(TIMEMORY_USE_NVTX)
-
+/*
 template <>
 struct is_available<component::nvtx_marker> : std::false_type
 {
 };
-
+*/
 #else
 
 template <>
@@ -649,12 +656,12 @@ struct requires_prefix<component::nvtx_marker> : std::true_type
 {
 };
 
-#endif  // TIMEMORY_USE_NVTX
-
 template <>
 struct external_output_handling<component::nvtx_marker> : std::true_type
 {
 };
+
+#endif  // TIMEMORY_USE_NVTX
 
 //--------------------------------------------------------------------------------------//
 //
@@ -692,13 +699,13 @@ struct external_output_handling<component::caliper> : std::true_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_GOTCHA
 //
 #if !defined(TIMEMORY_USE_GOTCHA)
-
+/*
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
 {
 };
-
-#endif  // TIMEMORY_USE_GOTCHA
+*/
+#else  // TIMEMORY_USE_GOTCHA
 
 template <size_t _N, typename _Comp, typename _Diff>
 struct external_output_handling<component::gotcha<_N, _Comp, _Diff>> : std::true_type
@@ -709,6 +716,8 @@ template <size_t _N, typename _Comp, typename _Diff>
 struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
 {
 };
+
+#endif  // TIMEMORY_USE_GOTCHA
 
 //--------------------------------------------------------------------------------------//
 //

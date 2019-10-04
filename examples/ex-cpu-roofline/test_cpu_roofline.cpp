@@ -27,6 +27,7 @@
 #include <iostream>
 #include <random>
 #include <thread>
+#include <timemory/ert/configuration.hpp>
 #include <timemory/timemory.hpp>
 #include <timemory/utility/signals.hpp>
 #include <timemory/utility/testing.hpp>

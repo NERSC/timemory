@@ -41,8 +41,6 @@ using namespace tim::component;
 using auto_timer_t    = typename tim::auto_timer::component_type;
 using complete_list_t = tim::complete_list_t;
 
-#define DEBUG
-
 //======================================================================================//
 //
 //                      C++ interface
@@ -56,7 +54,7 @@ using complete_list_t = tim::complete_list_t;
 //
 __library_ctor__
 void
-timemory_manager_ctor_init()
+timemory_library_constructor()
 {
     static std::atomic<int> _once;
     if(_once++ > 0)
