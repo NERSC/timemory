@@ -294,7 +294,7 @@ main(int argc, char** argv)
     ::testing::InitGoogleTest(&argc, argv);
     tim::timemory_init(argc, argv);
     tim::settings::precision() = 6;
-    tim::settings::width() = 15;
+    tim::settings::width()     = 15;
     tim::settings::process<typename tuple_t::type_tuple>();
     return RUN_ALL_TESTS();
 }

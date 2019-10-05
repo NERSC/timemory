@@ -73,7 +73,7 @@ struct gotcha
     using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
 
-    using blacklist_t   = std::set<std::string>;
+    using blacklist_t = std::set<std::string>;
 
     // using config_t = std::tuple<binding_t, wrappee_t, wrappid_t>;
     using config_t          = void;
@@ -119,23 +119,44 @@ struct gotcha
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _fill_ids = get_filled();
 
-        if(_func.find("MPI_") != std::string::npos)
+        if(_func.find("MPI_") != std::string::npos ||
+           _func.find("mpi_") != std::string::npos)
         {
-            static auto mpi_blacklist = { "MPI_Init", "MPI_Initialized",
-                                        "MPI_Pcontrol", "MPI_Init_thread",
-                                        "MPI_Finalize", "MPI_Comm_rank", "MPI_Comm_size"};
+            static auto mpi_blacklist = { "MPI_Init",       "MPI_Initialized",
+                                          "MPI_Pcontrol",   "MPI_Init_thread",
+                                          "MPI_Finalize",   "MPI_Comm_rank",
+                                          "MPI_Comm_size",  "MPI_T_init_thread",
+                                          "MPI_Comm_split", "MPI_Abort" };
+
+            auto tofortran = [](std::string _fort) {
+                for(auto& itr : _fort)
+                    itr = tolower(itr);
+                if(_fort[_fort.length() - 1] != '_')
+                    _fort += "_";
+                return _fort;
+            };
 
             // if function matches a blacklisted entry, do not construct wrapper
             for(const auto& itr : mpi_blacklist)
-                if(_func == itr)
+                if(_func == itr || _func == tofortran(itr))
+                {
+                    if(settings::debug())
+                        printf("[gotcha]> Skipping gotcha binding for %s...\n",
+                               _func.c_str());
                     return;
+                }
         }
 
         // if function matches a blacklisted entry, do not construct wrapper
         for(const auto& itr : get_blacklist()())
         {
             if(_func == itr)
+            {
+                if(settings::debug())
+                    printf("[gotcha]> Skipping gotcha binding for %s...\n",
+                           _func.c_str());
                 return;
+            }
         }
 
         if(!_fill_ids[_N])
@@ -543,6 +564,14 @@ private:
     type::instrument<idx, ::tim::function_traits<decltype(func)>::result_type,           \
                      ::tim::function_traits<decltype(func)>::call_type>::                \
         generate(TIMEMORY_STRINGIZE(func))
+
+///
+/// generate a GOTCHA wrapper for function with identical args but different name
+///
+#define TIMEMORY_DERIVED_GOTCHA(type, idx, func, fort_func)                              \
+    type::instrument<                                                                    \
+        idx, ::tim::function_traits<decltype(func)>::result_type,                        \
+        ::tim::function_traits<decltype(func)>::call_type>::generate(fort_func)
 
 ///
 /// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name

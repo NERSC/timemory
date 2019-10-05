@@ -35,7 +35,6 @@
 using namespace tim::component;
 using mutex_t        = std::mutex;
 using lock_t         = std::unique_lock<mutex_t>;
-using condvar_t      = std::condition_variable;
 using string_t       = std::string;
 using stringstream_t = std::stringstream;
 using floating_t     = double;

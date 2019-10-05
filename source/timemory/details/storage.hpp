@@ -539,7 +539,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
             auto fname = settings::compose_output_filename(label, ".txt");
             if(fname.length() > 0)
             {
-                fout       = new std::ofstream(fname.c_str());
+                fout = new std::ofstream(fname.c_str());
                 if(fout && *fout)
                 {
                     printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
