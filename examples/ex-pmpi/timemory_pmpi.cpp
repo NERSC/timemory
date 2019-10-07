@@ -377,6 +377,16 @@ init_timemory_mpip_tools()
 
     timemory_create_function = (timemory_create_func_t) &create_record;
     timemory_delete_function = (timemory_delete_func_t) &delete_record;
+
+    mpip_gotcha_t::get_blacklist() = []() {
+        auto blacklist     = tim::get_env<std::string>("TIMEMORY_MPIP_BLACKLIST", "");
+        auto blacklist_vec = tim::delimit(blacklist);
+        std::set<std::string> blacklist_set;
+        for(const auto& itr : blacklist_vec)
+            blacklist_set.insert(itr);
+        return blacklist_set;
+    };
+
     if(tim::get_env<bool>("ENABLE_TIMEMORY_PMPI", true))
         mpip_gotcha_t::get_initializer()();
 }

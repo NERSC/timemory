@@ -73,6 +73,8 @@ def configure():
                         default=False, action='store_true')
     parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
                         default=False, action='store_true')
+    # parser.add_argument("--build-libs", help="Build library type(s)", default=["shared,static"],
+    #                     nargs='*', type=str, choices=["static", "shared"])
 
     args = parser.parse_args()
 
@@ -155,6 +157,16 @@ def run_pyctest():
         "TIMEMORY_USE_COVERAGE": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "OFF",
     }
+
+    # if "shared" in args.build_libs:
+    #     build_opts["BUILD_SHARED_LIBS"] = "ON"
+    # else:
+    #     build_opts["BUILD_SHARED_LIBS"] = "OFF"
+
+    # if "static" in args.build_libs:
+    #     build_opts["BUILD_STATIC_LIBS"] = "ON"
+    # else:
+    #     build_opts["BUILD_STATIC_LIBS"] = "OFF"
 
     if args.no_extern_templates:
         build_opts["TIMEMORY_BUILD_EXTERN_TEMPLATES"] = "OFF"
@@ -392,7 +404,8 @@ def run_pyctest():
                   "TIMEOUT": "300"})
 
     pyctest.test(construct_name("test-python-minimal"),
-                 construct_command([sys.executable, "./test_python_minimal"], args),
+                 construct_command(
+                     [sys.executable, "./test_python_minimal"], args),
                  {"WORKING_DIRECTORY": pyctest.BINARY_DIRECTORY,
                   "LABELS": pyctest.PROJECT_NAME,
                   "TIMEOUT": "300"})

@@ -65,10 +65,6 @@ static const double timer_epsilon = 0.02;
 // acceptable compose error
 static const double compose_tolerance = 1.0e-9;
 
-#define CHECK_AVAILABLE(type)                                                            \
-    if(!tim::trait::is_available<type>::value)                                           \
-        return;
-
 //--------------------------------------------------------------------------------------//
 
 namespace details
@@ -83,21 +79,21 @@ get_test_name()
 }
 
 // this function consumes approximately "n" milliseconds of real time
-void
+inline void
 do_sleep(long n)
 {
     std::this_thread::sleep_for(std::chrono::milliseconds(n));
 }
 
 // this function consumes an unknown number of cpu resources
-long
+inline long
 fibonacci(long n)
 {
     return (n < 2) ? n : (fibonacci(n - 1) + fibonacci(n - 2));
 }
 
 // this function consumes approximately "t" milliseconds of cpu time
-void
+inline void
 consume(long n)
 {
     // a mutex held by one lock
@@ -115,7 +111,7 @@ consume(long n)
 
 // this function ensures an allocation cannot be optimized
 template <typename _Tp>
-size_t
+inline size_t
 random_entry(const std::vector<_Tp>& v)
 {
     std::mt19937 rng;
@@ -124,7 +120,7 @@ random_entry(const std::vector<_Tp>& v)
     return v.at(dist(rng));
 }
 
-void
+inline void
 allocate()
 {
     std::vector<int64_t> v(nelements, 15);
@@ -140,8 +136,8 @@ allocate()
 
 template <typename _Tp, typename _Up, typename _Vp = typename _Tp::value_type,
           typename _Func = std::function<_Vp(_Vp)>>
-void
-print_info(const _Tp& obj, const _Up& expected, string_t unit,
+inline void
+print_info(const _Tp& obj, const _Up& expected, const string_t& unit,
            _Func _func = [](const _Vp& obj) { return obj; })
 {
     std::cout << std::endl;
@@ -160,6 +156,17 @@ print_info(const _Tp& obj, const _Up& expected, string_t unit,
 
 class hybrid_tests : public ::testing::Test
 {
+protected:
+    void SetUp() override
+    {
+        papi_array_t::get_initializer() = []() {
+            return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
+        };
+        list_t::get_initializer() = [](list_t& l) {
+            l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss, papi_array_t,
+                         caliper>();
+        };
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -203,14 +210,6 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_NEAR(t_rc.get(), l_rc.get(), timer_epsilon);
     ASSERT_NEAR(t_cpu.get(), l_cpu.get(), timer_epsilon);
     ASSERT_NEAR(t_util.get(), l_util.get(), util_epsilon);
-
-    obj.start();
-    details::allocate();
-    obj.stop();
-    std::cout << obj << std::endl;
-
-    details::print_info(obj.get_tuple().get<peak_rss>(), tot_size, "KiB");
-    ASSERT_NEAR(tot_size, obj.get_tuple().get<peak_rss>().get(), peak_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -254,14 +253,6 @@ TEST_F(hybrid_tests, auto_timer)
     auto _cpu3 = std::get<1>(_obj) + std::get<2>(_obj);
 
     ASSERT_NEAR(1.0e-9, _cpu.get(), _cpu3);
-
-    obj.start();
-    details::allocate();
-    obj.stop();
-    std::cout << obj << std::endl;
-
-    details::print_info(obj.get_lhs().get<peak_rss>(), tot_size, "KiB");
-    // ASSERT_NEAR(tot_size, obj.get<peak_rss>().get(), peak_tolerance);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -306,15 +297,6 @@ main(int argc, char** argv)
     // tim::settings::file_output() = false;
     tim::settings::verbose() += 1;
     tim::settings::debug() = true;
-
-    papi_array_t::get_initializer() = []() {
-        return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
-    };
-
-    list_t::get_initializer() = [](list_t& l) {
-        l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss, papi_array_t,
-                     caliper>();
-    };
 
     return RUN_ALL_TESTS();
 }
