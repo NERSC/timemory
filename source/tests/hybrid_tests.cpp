@@ -53,12 +53,12 @@ using hybrid_t      = auto_hybrid_t::component_type;
 static const int64_t niter       = 20;
 static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
 static const auto    memory_unit = std::pair<int64_t, string_t>(tim::units::KiB, "KiB");
-static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
+// static auto          tot_size    = nelements * sizeof(int64_t) / memory_unit.first;
 
 // acceptable absolute error
 static const double util_tolerance  = 2.5;
 static const double timer_tolerance = 0.02125;
-static const double peak_tolerance  = 5 * tim::units::MiB;
+// static const double peak_tolerance  = 5 * tim::units::MiB;
 // acceptable relative error
 static const double util_epsilon  = 0.5;
 static const double timer_epsilon = 0.02;
@@ -163,8 +163,8 @@ protected:
             return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
         };
         list_t::get_initializer() = [](list_t& l) {
-            l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss, papi_array_t,
-                         caliper>();
+            l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
+                         papi_array_t, caliper>();
         };
     }
 };

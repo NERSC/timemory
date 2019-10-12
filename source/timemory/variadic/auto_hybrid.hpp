@@ -47,8 +47,6 @@ namespace tim
 
 template <typename _CompTuple, typename _CompList>
 class auto_hybrid
-: public counted_object<auto_hybrid<_CompTuple, _CompList>>
-, public hashed_object<auto_hybrid<_CompTuple, _CompList>>
 {
     static_assert(_CompTuple::is_component_tuple && _CompList::is_component_list,
                   "Error! _CompTuple must be tim::component_tuple<...> and _CompList "
@@ -60,9 +58,6 @@ public:
     using component_type  = component_hybrid<tuple_type, list_type>;
     using this_type       = auto_hybrid<tuple_type, list_type>;
     using data_type       = typename component_type::data_type;
-    using counter_type    = counted_object<this_type>;
-    using counter_void    = counted_object<void>;
-    using hashed_type     = hashed_object<this_type>;
     using string_t        = std::string;
     using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
@@ -76,10 +71,10 @@ public:
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_hybrid(const string_t&, const int64_t& lineno = 0,
+    inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
                                 const language_t& lang = language_t::cxx(),
                                 bool report_at_exit    = settings::destructor_report());
-    inline explicit auto_hybrid(component_type& tmp, const int64_t& lineno = 0,
+    inline explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
                                 bool report_at_exit = settings::destructor_report());
     inline ~auto_hybrid();
 
@@ -155,7 +150,6 @@ public:
     inline const bool&     store() const { return m_temporary_object.store(); }
     inline data_type       data() const { return m_temporary_object.data(); }
     inline int64_t         laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&  hash() const { return m_temporary_object.hash(); }
     inline const string_t& key() const { return m_temporary_object.key(); }
     inline const language& lang() const { return m_temporary_object.lang(); }
     inline const string_t& identifier() const { return m_temporary_object.identifier(); }
@@ -202,19 +196,12 @@ private:
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t&   object_tag,
-                                                const int64_t&    lineno,
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool flat,
                                                 const language_t& lang,
                                                 bool              report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(object_tag) * static_cast<int64_t>(lang) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(counter_type::enable() && settings::enabled())
+: m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
-                     hashed_type::m_hash)
+, m_temporary_object(object_tag, m_enabled, flat, lang)
 {
     if(m_enabled)
     {
@@ -225,17 +212,11 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t&   object_tag,
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
-auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp,
-                                                const int64_t&  lineno,
-                                                bool            report_at_exit)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(tmp.key()) * static_cast<int64_t>(tmp.lang()) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(true)
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
+                                                bool report_at_exit)
+: m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(hashed_type::m_hash, true))
+, m_temporary_object(tmp.clone(true, flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)

@@ -130,11 +130,14 @@ extern "C"
             return;
         }
 
+        // provide default behavior or none at all
+
         auto                            _ctypes = (TIMEMORY_COMPONENT*) (ctypes);
         std::vector<TIMEMORY_COMPONENT> types(_ctypes, _ctypes + n);
 
         *nid     = timemory_get_unique_id();
-        auto obj = toolset_ptr_t(new toolset_t(name, true, tim::language::cxx(), *nid));
+        auto obj = toolset_ptr_t(new toolset_t(name, true, tim::settings::flat_profile(),
+                                               tim::language::cxx()));
         tim::initialize(*obj.get(), types);
         get_record_map()[*nid] = std::move(obj);
         get_record_map()[*nid]->start();

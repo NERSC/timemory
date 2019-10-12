@@ -175,7 +175,7 @@ main(int argc, char** argv)
 
     std::cout << "Total time: " << total << std::endl;
 
-    auto_list_t l(__FUNCTION__, __LINE__);
+    auto_list_t l(__FUNCTION__);
     check(l);
     check_const(l);
     std::cout << std::endl;

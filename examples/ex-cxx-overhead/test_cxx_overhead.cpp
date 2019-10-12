@@ -35,13 +35,13 @@ using namespace tim::component;
 using namespace tim::component;
 
 using auto_tuple_t  = tim::auto_tuple<real_clock, cpu_clock, peak_rss, trip_count>;
-using timer_tuple_t = typename tim::auto_tuple<real_clock>::component_type;
+using timer_tuple_t = typename auto_tuple_t::component_type;
 
 using papi_tuple_t = papi_array<8>;
 using global_tuple_t =
     tim::auto_tuple<real_clock, user_clock, system_clock, cpu_clock, cpu_util, peak_rss,
                     page_rss, priority_context_switch, voluntary_context_switch, caliper,
-                    papi_tuple_t>;
+                    papi_tuple_t, trip_count>;
 
 static int64_t nmeasure = 0;
 using result_type       = std::tuple<timer_tuple_t, int64_t, int64_t>;
@@ -189,20 +189,21 @@ template <typename _Tp>
 result_type
 run(int64_t n, int64_t cutoff)
 {
-    bool is_none  = std::is_same<_Tp, mode::none>::value;
+    // bool is_none  = std::is_same<_Tp, mode::none>::value;
     bool is_blank = std::is_same<_Tp, mode::blank>::value ||
                     std::is_same<_Tp, mode::blank_pointer>::value;
     bool is_basic = std::is_same<_Tp, mode::basic>::value ||
                     std::is_same<_Tp, mode::basic_pointer>::value;
 
-    bool        with_timing = !(is_none);
-    std::string space       = (with_timing) ? " " : "";
-    auto        signature   = TIMEMORY_LABEL(" [with timing = ", space, with_timing, "]");
+    // bool        with_timing = !(is_none);
+    // std::string space       = (with_timing) ? " " : "";
+    auto signature =
+        TIMEMORY_LABEL(" [with timing = ", tim::demangle(typeid(_Tp).name()), "]");
 
     nmeasure = 0;
     fibonacci<mode::measure>(n, cutoff);
 
-    timer_tuple_t timer(signature, false);
+    timer_tuple_t timer(signature, true);
     timer.start();
     int64_t result = fibonacci<_Tp>(n, cutoff);
     timer.stop();
@@ -210,9 +211,10 @@ run(int64_t n, int64_t cutoff)
     int64_t nuniq =
         (is_blank) ? ((n - cutoff) * auto_tuple_t::size()) : (is_basic) ? nmeasure : 0;
 
+    auto _alt = timer;
     if(do_print_result())
         print_result(signature, result, nmeasure, nuniq);
-    return result_type(timer, nmeasure, nuniq);
+    return result_type(_alt, nmeasure, nuniq);
 }
 
 //======================================================================================//
@@ -258,11 +260,13 @@ int
 main(int argc, char** argv)
 {
     tim::settings::timing_scientific() = true;
-    tim::settings::auto_output()       = false;
-    // heap-profiler will take a long timer if enabled
-#if !defined(TIMEMORY_USE_GPERF)
-    tim::settings::json_output() = true;
-#endif
+    tim::settings::auto_output()       = true;
+    tim::settings::json_output()       = false;
+    tim::settings::text_output()       = false;
+    tim::settings::memory_units()      = "kB";
+    tim::settings::memory_precision()  = 3;
+    tim::settings::memory_width()      = 8;
+    tim::settings::timing_width()      = 10;
     tim::timemory_init(argc, argv);
     tim::settings::cout_output() = false;
     tim::print_env();
@@ -358,10 +362,19 @@ main(int argc, char** argv)
         printf("timemory was disabled.\n");
         return EXIT_SUCCESS;
     }
+    else if(tim::settings::flat_profile())
+    {
+        ex_unique = ((nfib - cutoff) + 1) * auto_tuple_t::size();
+        int64_t rc_unique =
+            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size();
+        printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
+               (long) rc_unique);
+        return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
+    }
     else
     {
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 1) * auto_tuple_t::size();
+            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size() - 4;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;

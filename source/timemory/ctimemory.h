@@ -183,11 +183,11 @@ extern TIMEMORY_EXTERN_C tim_api void
 extern TIMEMORY_EXTERN_C tim_api int
                          c_timemory_enabled(void);
 extern TIMEMORY_EXTERN_C tim_api void*
-                         c_timemory_create_auto_timer(const char*, int);
+                         c_timemory_create_auto_timer(const char*);
 extern TIMEMORY_EXTERN_C tim_api void
                          c_timemory_delete_auto_timer(void*);
 extern TIMEMORY_EXTERN_C tim_api void*
-                         c_timemory_create_auto_tuple(const char*, int, ...);
+                         c_timemory_create_auto_tuple(const char*, ...);
 extern TIMEMORY_EXTERN_C tim_api void
                          c_timemory_delete_auto_tuple(void*);
 extern TIMEMORY_EXTERN_C tim_api const char*
@@ -261,8 +261,7 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  *          FREE_TIMEMORY_AUTO_TIMER(timer);
  *      }
  */
-#        define TIMEMORY_BLANK_AUTO_TIMER(c_str)                                         \
-            c_timemory_create_auto_timer(c_str, __LINE__)
+#        define TIMEMORY_BLANK_AUTO_TIMER(c_str) c_timemory_create_auto_timer(c_str)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_AUTO_TIMER(c_str)
@@ -278,7 +277,7 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  */
 #        define TIMEMORY_BASIC_AUTO_TIMER(c_str)                                         \
             c_timemory_create_auto_timer(                                                \
-                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__)
+                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str))
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_AUTO_TIMER(str)
@@ -295,8 +294,7 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  */
 #        define TIMEMORY_AUTO_TIMER(c_str)                                               \
             c_timemory_create_auto_timer(                                                \
-                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
-                __LINE__)
+                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__))
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BASIC_MARKER(c_str, ...)
@@ -313,8 +311,8 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  */
 #        define TIMEMORY_BASIC_MARKER(c_str, ...)                                        \
             c_timemory_create_auto_tuple(                                                \
-                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
-                __LINE__, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
+                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __VA_ARGS__,    \
+                TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_BLANK_MARKER(c_str, ...)
@@ -330,8 +328,7 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  *
  */
 #        define TIMEMORY_BLANK_MARKER(c_str, ...)                                        \
-            c_timemory_create_auto_tuple(c_str, __LINE__, __VA_ARGS__,                   \
-                                         TIMEMORY_COMPONENTS_END)
+            c_timemory_create_auto_tuple(c_str, __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//
 /*! \def TIMEMORY_MARKER(c_str, ...)
@@ -348,7 +345,7 @@ extern TIMEMORY_EXTERN_C tim_api const char*
  */
 #        define TIMEMORY_MARKER(c_str, ...)                                              \
             c_timemory_create_auto_tuple(                                                \
-                c_timemory_string_combine(__TIMEMORY_FUNCTION__, c_str), __LINE__,       \
+                c_timemory_auto_str(__TIMEMORY_FUNCTION__, c_str, __FILE__, __LINE__),   \
                 __VA_ARGS__, TIMEMORY_COMPONENTS_END)
 
 //--------------------------------------------------------------------------------------//

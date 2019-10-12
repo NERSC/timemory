@@ -308,11 +308,15 @@ storage<ObjectType, true>::merge(this_type* itr)
     if(itr && !itr->is_initialized())
         return;
     // create lock but don't immediately lock
-    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+    auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
 
     // lock if not already owned
     if(!l.owns_lock())
         l.lock();
+
+    for(const auto& _itr : itr->get_hash_ids())
+        if(m_hash_ids.find(_itr.first) == m_hash_ids.end())
+            m_hash_ids[_itr.first] = _itr.second;
 
     // if self is not initialized but itr is, copy data
     if(itr && itr->is_initialized() && !this->is_initialized())
@@ -344,14 +348,11 @@ storage<ObjectType, true>::merge(this_type* itr)
     {
         using predicate_type = decltype(_this_beg);
         auto _compare        = [](predicate_type lhs, predicate_type rhs) {
-            return ((lhs->id() == rhs->id() && lhs->depth() == rhs->depth()) ||
-                    (lhs->prefix() == rhs->prefix() && lhs->depth() == rhs->depth()));
+            return (*lhs == *rhs);
         };
-        auto _reduce = [](predicate_type lhs, predicate_type rhs) {
-            details::reduce_merge<predicate_type, ObjectType>(lhs, rhs);
-        };
-        _this_beg = graph().begin();
-        _this_end = graph().end();
+        auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+        _this_beg    = graph().begin();
+        _this_end    = graph().end();
         graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare, _reduce);
     }
     else
@@ -384,9 +385,17 @@ void storage<ObjectType, true>::external_print(std::false_type)
     {
         merge();
 
-        auto _iter_beg = _data().graph().begin();
-        auto _iter_end = _data().graph().end();
-        _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end);
+        {
+            auto _iter_beg       = _data().graph().begin();
+            auto _iter_end       = _data().graph().end();
+            using predicate_type = decltype(_iter_beg);
+            auto _compare        = [](predicate_type lhs, predicate_type rhs) {
+                return (*lhs == *rhs);
+            };
+            auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
+            _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end, _compare,
+                                   _reduce);
+        }
 
         finalize();
 
@@ -424,8 +433,8 @@ void storage<ObjectType, true>::external_print(std::false_type)
         }
 
         // fix up the prefix based on the actual depth
-        auto _compute_modified_prefix = [](const graph_node& itr) {
-            std::string _prefix   = itr.prefix();
+        auto _compute_modified_prefix = [&](const graph_node& itr) {
+            std::string _prefix   = get_prefix(itr);
             auto        _ebracket = _prefix.find("]");
             auto        _boffset  = _prefix.find("|_");
 
@@ -653,7 +662,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
                 iterator _parent = _data().graph().parent(itr);
                 do
                 {
-                    _hierarchy.push_back(_parent->prefix());
+                    _hierarchy.push_back(get_prefix(_parent));
                     if(_parent->depth() == 0)
                         break;
                     auto _new_parent = graph_t::parent(_parent);
@@ -675,7 +684,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
                     continue;
                 auto _obj       = itr->obj();
                 auto _hierarchy = get_hierarchy(itr);
-                _hierarchy.push_back(itr->prefix());
+                _hierarchy.push_back(get_prefix(itr));
                 operation::echo_measurement<ObjectType>(_obj, _hierarchy);
                 ++_nitr;
             }
@@ -735,7 +744,8 @@ storage<ObjectType, true>::serialize_me(std::false_type, Archive& ar,
         {
             if(itr.depth() < 0)
                 continue;
-            _list.push_back(itr);
+            _list.push_back(
+                tuple_type(itr.id(), itr.obj(), get_prefix(itr), itr.depth()));
         }
         return _list;
     };
@@ -776,7 +786,8 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
     auto convert_graph = [&]() {
         array_type _list;
         for(const auto& itr : _data().graph())
-            _list.push_back(itr);
+            _list.push_back(
+                tuple_type(itr.id(), itr.obj(), get_prefix(itr), itr.depth()));
         return _list;
     };
 

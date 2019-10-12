@@ -37,7 +37,7 @@ namespace tim
 namespace component
 {
 template <typename _Tp, typename _Value, typename... _Policies>
-struct base : public tim::counted_object<_Tp>
+struct base
 {
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
@@ -48,7 +48,6 @@ public:
     using this_type      = base<_Tp, _Value, _Policies...>;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
-    using counted_type   = tim::counted_object<_Tp>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
@@ -57,7 +56,6 @@ private:
     friend struct operation::init_storage<_Tp>;
     friend struct operation::live_count<_Tp>;
     friend struct operation::set_prefix<_Tp>;
-    friend struct operation::insert_node<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;
     friend struct operation::reset<_Tp>;
@@ -72,6 +70,9 @@ private:
     friend struct operation::print<_Tp>;
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
+
+    template <typename _Up, typename _Scope>
+    friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
     friend struct operation::serialization;
@@ -187,22 +188,13 @@ public:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    void insert_node(bool& exists, const int64_t& _hashid)
+    template <typename _Scope = scope::process>
+    void insert_node(const string_t& _prefix)
     {
         if(!is_on_stack)
         {
             Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->insert(_hashid, obj, exists);
-            is_on_stack = true;
-        }
-    }
-
-    void insert_node(const string_t& _prefix, const int64_t& _hashid)
-    {
-        if(!is_on_stack)
-        {
-            Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->insert(_hashid, obj, _prefix);
+            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _prefix);
             is_on_stack = true;
         }
     }
@@ -507,7 +499,7 @@ public:
 //--------------------------------------------------------------------------------------//
 
 template <typename _Tp, typename... _Policies>
-struct base<_Tp, void, _Policies...> : public tim::counted_object<_Tp>
+struct base<_Tp, void, _Policies...>
 {
 public:
     static constexpr bool implements_storage_v = false;
@@ -517,7 +509,6 @@ public:
     using policy_type  = policy::wrapper<_Policies...>;
     using this_type    = base<_Tp, value_type, _Policies...>;
     using storage_type = impl::storage<_Tp, implements_storage_v>;
-    using counted_type = tim::counted_object<_Tp>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
@@ -525,7 +516,6 @@ private:
     friend struct operation::init_storage<_Tp>;
     friend struct operation::live_count<_Tp>;
     friend struct operation::set_prefix<_Tp>;
-    friend struct operation::insert_node<_Tp>;
     friend struct operation::pop_node<_Tp>;
     friend struct operation::record<_Tp>;
     friend struct operation::reset<_Tp>;
@@ -539,6 +529,9 @@ private:
     friend struct operation::print<_Tp>;
     friend struct operation::print_storage<_Tp>;
     friend struct operation::copy<_Tp>;
+
+    template <typename _Up, typename _Scope>
+    friend struct operation::insert_node;
 
     template <typename _Up, typename Archive>
     friend struct operation::serialization;
@@ -612,7 +605,7 @@ public:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename... _Args>
+    template <typename _Scope = scope::process, typename... _Args>
     void insert_node(_Args&&...)
     {
         is_on_stack = true;

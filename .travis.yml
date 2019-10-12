@@ -284,7 +284,7 @@ install:
 
 script:
   - eval "${MATRIX_EVAL}"
-  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DTIMEMORY_BUILD_STATIC=OFF
+  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DTIMEMORY_BUILD_STATIC=OFF -- -j2
   - python -c "import timemory; print(timemory.__file__)"
   - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 

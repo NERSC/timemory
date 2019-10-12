@@ -121,6 +121,11 @@ public:
         return (m_current = m_graph.append_child(m_current, node));
     }
 
+    inline iterator append_head(_Node& node)
+    {
+        return m_graph.append_child(m_head, node);
+    }
+
 private:
     bool     m_has_head = false;
     int64_t  m_depth    = 0;

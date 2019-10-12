@@ -196,6 +196,11 @@ print_info(const _Tp& obj, int64_t expected)
 
 class rusage_tests : public ::testing::Test
 {
+protected:
+    void SetUp() override
+    {
+        tim::settings::file_output() = true;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -245,6 +250,7 @@ main(int argc, char** argv)
     tim::settings::precision()    = 9;
     tim::settings::memory_units() = memory_unit.second;
     tim::timemory_init(argc, argv);
+    tim::settings::file_output()  = false;
 
     details::allocate();
 

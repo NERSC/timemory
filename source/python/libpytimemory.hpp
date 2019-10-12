@@ -294,10 +294,10 @@ components_enum_to_vec(py::list enum_list)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-create_component_list(std::string obj_tag, int lineno, const tim::language& lang,
-                      bool report, const component_enum_vec& components)
+create_component_list(std::string obj_tag, const component_enum_vec& components)
 {
-    auto obj = new component_list_t(obj_tag, lineno, lang, report);
+    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile(),
+                                    tim::language::pyc());
     tim::initialize(*obj, components);
     return obj;
 }
@@ -360,25 +360,28 @@ manager()
 //--------------------------------------------------------------------------------------//
 
 tim_timer_t*
-timer(std::string key, int line, bool report_at_exit)
+timer(std::string key)
 {
-    return new tim_timer_t(key, line, tim::language::pyc(), report_at_exit);
+    return new tim_timer_t(key, true, tim::settings::flat_profile(),
+                           tim::language::pyc());
 }
 
 //--------------------------------------------------------------------------------------//
 
 auto_timer_t*
-auto_timer(std::string key, int line, bool report_at_exit)
+auto_timer(std::string key, bool report_at_exit)
 {
-    return new auto_timer_t(key, line, tim::language::pyc(), report_at_exit);
+    return new auto_timer_t(key, tim::settings::flat_profile(), tim::language::pyc(),
+                            report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
 
 rss_usage_t*
-rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
+rss_usage(std::string key, bool record)
 {
-    rss_usage_t* _rss = new rss_usage_t(key, line, tim::language::pyc(), report_at_exit);
+    rss_usage_t* _rss =
+        new rss_usage_t(key, true, tim::settings::flat_profile(), tim::language::pyc());
     if(record)
         _rss->measure();
     return _rss;
@@ -387,36 +390,33 @@ rss_usage(std::string key, int line, bool report_at_exit, bool record = false)
 //--------------------------------------------------------------------------------------//
 
 component_list_t*
-component_list(py::list components, std::string key, int line, bool report_at_exit)
+component_list(py::list components, std::string key)
 {
-    return create_component_list(key, line, tim::language::pyc(), report_at_exit,
-                                 components_enum_to_vec(components));
+    return create_component_list(key, components_enum_to_vec(components));
 }
 
 //----------------------------------------------------------------------------//
 
 auto_timer_decorator*
-timer_decorator(const std::string& key, int line, bool report_at_exit)
+timer_decorator(const std::string& key, bool report_at_exit)
 {
     auto_timer_decorator* _ptr = new auto_timer_decorator();
-    if(!auto_timer_t::is_enabled())
+    if(!tim::settings::enabled())
         return _ptr;
-    return &(*_ptr = new auto_timer_t(key, line, tim::language::pyc(), report_at_exit));
+    return &(*_ptr = new auto_timer_t(key, tim::settings::flat_profile(),
+                                      tim::language::pyc(), report_at_exit));
 }
 
 //----------------------------------------------------------------------------//
 
 component_list_decorator*
-component_decorator(py::list components, const std::string& key, int line,
-                    bool report_at_exit)
+component_decorator(py::list components, const std::string& key)
 {
     component_list_decorator* _ptr = new component_list_decorator();
     if(!manager_t::is_enabled())
         return _ptr;
 
-    return &(*_ptr =
-                 create_component_list(key, line, tim::language::pyc(), report_at_exit,
-                                       components_enum_to_vec(components)));
+    return &(*_ptr = create_component_list(key, components_enum_to_vec(components)));
 }
 
 //--------------------------------------------------------------------------------------//

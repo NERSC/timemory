@@ -353,16 +353,23 @@ TEST_F(gotcha_tests, member_functions)
     double dsum = 0.0;
     DoWork dw(pair_t(0.25, 0.5));
 
+    // auto orig = tim::settings::verbose();
     for(int i = 0; i < nitr; ++i)
     {
-        auto        _fp4 = [&]() { dw.execute_fp4(1000); };
-        auto        _fp8 = [&]() { dw.execute_fp8(1000); };
-        std::thread t4(_fp4);
-        std::thread t8(_fp8);
+        {
+            // tim::settings::verbose() = orig;
+            auto        _fp4 = [&]() { dw.execute_fp4(1000); };
+            auto        _fp8 = [&]() { dw.execute_fp8(1000); };
+            std::thread t4(_fp4);
+            std::thread t8(_fp8);
 
-        t4.join();
-        t8.join();
-
+            // PRINT_HERE("joining t4");
+            t4.join();
+            // PRINT_HERE("joining t8");
+            // tim::settings::verbose() = 6;
+            t8.join();
+            // PRINT_HERE("destroying");
+        }
         auto ret = dw.get();
         fsum += std::get<0>(ret);
         dsum += std::get<1>(ret);
@@ -387,6 +394,8 @@ TEST_F(gotcha_tests, member_functions)
 
     ASSERT_NEAR(fsum, -2416347.50, tolerance);
     ASSERT_NEAR(dsum, 881550.95, tolerance);
+    auto real_storage = tim::storage<real_clock>::instance();
+    ASSERT_EQ(real_storage->size(), 4);
 }
 
 #if defined(TIMEMORY_USE_MPI)

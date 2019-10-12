@@ -104,9 +104,6 @@ public:
     using reference_type  = std::tuple<Types...>;
     using type_tuple      = std::tuple<Types...>;
     using string_hash     = std::hash<string_t>;
-    using counter_type    = tim::counted_object<this_type>;
-    using counter_void    = tim::counted_object<void>;
-    using hashed_type     = tim::hashed_object<this_type>;
     using language_t      = tim::language;
     using init_func_t     = std::function<void(this_type&)>;
     using data_value_type = get_data_value_t<reference_type>;
@@ -125,7 +122,8 @@ public:
     // clang-format off
     template <typename _Archive>
     using serialize_t        = std::tuple<operation::pointer_operator<Types, operation::serialization<Types, _Archive>>...>;
-    using insert_node_t      = std::tuple<operation::pointer_operator<Types, operation::insert_node<Types>>...>;
+    template <typename _Scope>
+    using insert_node_t      = std::tuple<operation::pointer_operator<Types, operation::insert_node<Types, _Scope>>...>;
     using pop_node_t         = std::tuple<operation::pointer_operator<Types, operation::pop_node<Types>>...>;
     using measure_t          = std::tuple<operation::pointer_operator<Types, operation::measure<Types>>...>;
     using record_t           = std::tuple<operation::pointer_operator<Types, operation::record<Types>>...>;
@@ -154,13 +152,11 @@ public:
 
 public:
     template <typename _Func>
-    explicit component_list(const string_t& key, const bool& store,
-                            const language_t& lang, int64_t ncount, int64_t nhash,
-                            _Func&& _func)
+    explicit component_list(const string_t& key, const bool& store, const bool& flat,
+                            const language_t& lang, _Func&& _func)
     : m_store(store && settings::enabled())
+    , m_flat(flat)
     , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_key(key)
     , m_lang(lang)
     , m_identifier("")
@@ -186,10 +182,9 @@ public:
 
     component_list(const component_list& rhs)
     : m_store(rhs.m_store)
+    , m_flat(rhs.m_flat)
     , m_is_pushed(rhs.m_is_pushed)
     , m_laps(rhs.m_laps)
-    , m_count(rhs.m_count)
-    , m_hash(rhs.m_hash)
     , m_key(rhs.m_key)
     , m_lang(rhs.m_lang)
     , m_identifier(rhs.m_identifier)
@@ -203,10 +198,9 @@ public:
         if(this != &rhs)
         {
             m_store      = rhs.m_store;
+            m_flat       = rhs.m_flat;
             m_is_pushed  = rhs.m_is_pushed;
             m_laps       = rhs.m_laps;
-            m_count      = rhs.m_count;
-            m_hash       = rhs.m_hash;
             m_key        = rhs.m_key;
             m_lang       = std::move(language_t(rhs.m_lang));
             m_identifier = rhs.m_identifier;
@@ -216,11 +210,11 @@ public:
         return *this;
     }
 
-    component_list clone(const int64_t& nhash, bool store)
+    component_list clone(bool store, bool flat)
     {
         component_list tmp(*this);
-        tmp.m_hash  = nhash;
         tmp.m_store = store;
+        tmp.m_flat  = flat;
         return tmp;
     }
 
@@ -246,7 +240,10 @@ public:
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<insert_node_t>(m_data, m_identifier, m_hash);
+            if(m_flat)
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_identifier);
+            else
+                apply<void>::access<insert_node_t<scope::process>>(m_data, m_identifier);
         }
     }
 
@@ -516,11 +513,9 @@ public:
     inline const data_type& data() const { return m_data; }
     inline int64_t          laps() const { return m_laps; }
 
-    int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
     string_t& identifier() { return m_identifier; }
 
-    const int64_t&    hash() const { return m_hash; }
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
@@ -672,12 +667,12 @@ protected:
 protected:
     // objects
     bool              m_store        = false;
+    bool              m_flat         = false;
     bool              m_is_pushed    = false;
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
     int64_t           m_count        = 0;
-    int64_t           m_hash         = 0;
     string_t          m_key          = "";
     language_t        m_lang         = language_t::cxx();
     string_t          m_identifier   = "";
@@ -810,9 +805,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     template <typename _Func>
-    explicit _comp_list(const string_t& key, const bool& store, const language_t& lang,
-                        int64_t ncount, int64_t nhash, _Func&& _func)
-    : base_type(key, store, lang, ncount, nhash, std::forward<_Func>(_func))
+    explicit _comp_list(const string_t& key, const bool& store, const bool& flat,
+                        const language_t& lang, _Func&& _func)
+    : base_type(key, store, flat, lang, std::forward<_Func>(_func))
     {
     }
 
@@ -864,9 +859,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const language_t& lang = language_t::cxx(),
-                            int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+                            const bool&       flat = settings::flat_profile(),
+                            const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -954,9 +949,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const language_t& lang = language_t::cxx(),
-                            int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+                            const bool&       flat = settings::flat_profile(),
+                            const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -1044,9 +1039,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const language_t& lang = language_t::cxx(),
-                            int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash, [](core_type& _core) {
+                            const bool&       flat = settings::flat_profile(),
+                            const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {

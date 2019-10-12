@@ -246,28 +246,28 @@ struct base<_Tp, skeleton::base, _Policies...>
 
 #if !defined(TIMEMORY_USE_GOTCHA)
 
-#if !defined(TIMEMORY_C_GOTCHA)
-#define TIMEMORY_C_GOTCHA(...)
-#endif
+#    if !defined(TIMEMORY_C_GOTCHA)
+#        define TIMEMORY_C_GOTCHA(...)
+#    endif
 
-#if !defined(TIMEMORY_DERIVED_GOTCHA)
-#define TIMEMORY_DERIVED_GOTCHA(...)
-#endif
+#    if !defined(TIMEMORY_DERIVED_GOTCHA)
+#        define TIMEMORY_DERIVED_GOTCHA(...)
+#    endif
 
-#if !defined(TIMEMORY_CXX_GOTCHA)
-#define TIMEMORY_CXX_GOTCHA(...)
-#endif
+#    if !defined(TIMEMORY_CXX_GOTCHA)
+#        define TIMEMORY_CXX_GOTCHA(...)
+#    endif
 
-#if !defined(TIMEMORY_CXX_MEMFUN_GOTCHA)
-#define TIMEMORY_CXX_MEMFUN_GOTCHA(...)
-#endif
+#    if !defined(TIMEMORY_CXX_MEMFUN_GOTCHA)
+#        define TIMEMORY_CXX_MEMFUN_GOTCHA(...)
+#    endif
 
-#if !defined(TIMEMORY_C_GOTCHA_TOOL)
-#define TIMEMORY_C_GOTCHA_TOOL(...)
-#endif
+#    if !defined(TIMEMORY_C_GOTCHA_TOOL)
+#        define TIMEMORY_C_GOTCHA_TOOL(...)
+#    endif
 
-#if !defined(TIMEMORY_CXX_GOTCHA_TOOL)
-#define TIMEMORY_CXX_GOTCHA_TOOL(...)
-#endif
+#    if !defined(TIMEMORY_CXX_GOTCHA_TOOL)
+#        define TIMEMORY_CXX_GOTCHA_TOOL(...)
+#    endif
 
 #endif

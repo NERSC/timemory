@@ -411,7 +411,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     timer.def(py::init(&pytim::init::timer), "Initialization", py::arg("key") = "",
-              py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
               py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     timer.def("real_elapsed",
@@ -504,8 +503,7 @@ PYBIND11_MODULE(libpytimemory, tim)
     //
     //==================================================================================//
     auto_timer.def(py::init(&pytim::init::auto_timer), "Initialization",
-                   py::arg("key") = "", py::arg("line") = pytim::get_line(1),
-                   py::arg("report_at_exit") = false,
+                   py::arg("key") = "", py::arg("report_at_exit") = false,
                    py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     auto_timer.def("__str__",
@@ -540,7 +538,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     comp_list.def(py::init(&pytim::init::component_list), "Initialization",
                   py::arg("components") = py::list(), py::arg("key") = "",
-                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
                   py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     comp_list.def("start",
@@ -618,7 +615,6 @@ PYBIND11_MODULE(libpytimemory, tim)
     //==================================================================================//
     rss_usage.def(py::init(&pytim::init::rss_usage),
                   "Initialization of RSS measurement class", py::arg("key") = "",
-                  py::arg("line") = pytim::get_line(1), py::arg("report_at_exit") = false,
                   py::arg("record") = false, py::return_value_policy::take_ownership);
     //----------------------------------------------------------------------------------//
     rss_usage.def("record", [&](py::object self) { self.cast<rss_usage_t*>()->record(); },

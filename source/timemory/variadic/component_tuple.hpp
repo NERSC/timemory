@@ -118,7 +118,8 @@ public:
 public:
     // modifier types
     // clang-format off
-    using insert_node_t      = std::tuple<operation::insert_node<Types>...>;
+    using insert_flat_t      = std::tuple<operation::insert_node<Types, scope::flat>...>;
+    using insert_proc_t      = std::tuple<operation::insert_node<Types, scope::process>...>;
     using pop_node_t         = std::tuple<operation::pop_node<Types>...>;
     using measure_t          = std::tuple<operation::measure<Types>...>;
     using record_t           = std::tuple<operation::record<Types>...>;
@@ -143,13 +144,11 @@ public:
     using auto_type = auto_tuple<Types...>;
 
 public:
-    explicit component_tuple(const string_t& key, const bool& store = false,
-                             const language_t& lang = language_t::cxx(),
-                             int64_t ncount = 0, int64_t nhash = 0)
+    explicit component_tuple(const string_t& key, const bool& store, const bool& flat,
+                             const language_t& lang)
     : m_store(store && settings::enabled())
+    , m_flat(flat)
     , m_laps(0)
-    , m_count(ncount)
-    , m_hash((nhash == 0) ? string_hash()(key) : nhash)
     , m_lang(lang)
     , m_key(key)
     , m_identifier("")
@@ -170,11 +169,11 @@ public:
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple clone(const int64_t& nhash, bool store)
+    component_tuple clone(bool store, bool flat)
     {
         component_tuple tmp(*this);
-        tmp.m_hash  = nhash;
         tmp.m_store = store;
+        tmp.m_flat  = flat;
         return tmp;
     }
 
@@ -198,7 +197,10 @@ public:
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
-            apply<void>::access<insert_node_t>(m_data, m_identifier, m_hash);
+            if(m_flat)
+                apply<void>::access<insert_flat_t>(m_data, m_identifier);
+            else
+                apply<void>::access<insert_proc_t>(m_data, m_identifier);
         }
     }
 
@@ -463,11 +465,11 @@ public:
     inline const data_type& data() const { return m_data; }
     inline int64_t          laps() const { return m_laps; }
 
-    int64_t&  hash() { return m_hash; }
+    // int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
     string_t& identifier() { return m_identifier; }
 
-    const int64_t&    hash() const { return m_hash; }
+    // const int64_t&    hash() const { return m_hash; }
     const string_t&   key() const { return m_key; }
     const language_t& lang() const { return m_lang; }
     const string_t&   identifier() const { return m_identifier; }
@@ -513,12 +515,11 @@ protected:
 protected:
     // objects
     bool              m_store        = false;
+    bool              m_flat         = false;
     bool              m_is_pushed    = false;
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
-    int64_t           m_count        = 0;
-    int64_t           m_hash         = 0;
     language_t        m_lang         = language_t::cxx();
     string_t          m_key          = "";
     string_t          m_identifier   = "";
@@ -635,10 +636,9 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
-    explicit _comp_tuple(const string_t& key, const bool& store = false,
-                         const language_t& lang = language_t::cxx(), int64_t ncount = 0,
-                         int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash)
+    explicit _comp_tuple(const string_t& key, const bool& store, const bool& flat,
+                         const language_t& lang)
+    : base_type(key, store, flat, lang)
     {
     }
 
@@ -688,9 +688,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const language_t& lang = language_t::cxx(),
-                             int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash)
+                             const bool&       flat = settings::flat_profile(),
+                             const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang)
     {
     }
 
@@ -766,9 +766,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const language_t& lang = language_t::cxx(),
-                             int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash)
+                             const bool&       flat = settings::flat_profile(),
+                             const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang)
     {
     }
 
@@ -844,9 +844,9 @@ public:
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const language_t& lang = language_t::cxx(),
-                             int64_t ncount = 0, int64_t nhash = 0)
-    : base_type(key, store, lang, ncount, nhash)
+                             const bool&       flat = settings::flat_profile(),
+                             const language_t& lang = language_t::cxx())
+    : base_type(key, store, flat, lang)
     {
     }
 

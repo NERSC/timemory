@@ -143,6 +143,7 @@ TEST_F(macro_tests, basic_marker)
 TEST_F(macro_tests, marker)
 {
     TIMEMORY_MARKER(auto_tuple_t, "_", details::get_test_name());
+    auto line = __LINE__ - 1;
     details::do_sleep(25);
     details::consume(75);
     timemory_variable_145.stop();
@@ -151,7 +152,7 @@ TEST_F(macro_tests, marker)
     std::string       file = __FILE__;
     file = std::string(file).substr(std::string(file).find_last_of('/') + 1);
     expected << __FUNCTION__ << "_" << details::get_test_name() << "@'" << file
-             << "':146";
+             << "':" << line;
     if(key != expected.str())
     {
         std::cout << std::endl;

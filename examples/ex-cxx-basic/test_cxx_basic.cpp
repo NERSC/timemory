@@ -111,13 +111,13 @@ fibonacci(intmax_t n)
 void
 some_func()
 {
-    auto_tuple_t at("some_func", __LINE__);
+    auto_tuple_t at("some_func");
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }
 
 void
 another_func()
 {
-    auto_list_t al("another_func", __LINE__);
+    auto_list_t al("another_func");
     std::this_thread::sleep_for(std::chrono::milliseconds(10));
 }

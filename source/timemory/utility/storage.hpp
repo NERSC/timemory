@@ -38,6 +38,7 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/data/accumulators.hpp"
 #include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
@@ -64,30 +65,27 @@
 
 namespace tim
 {
-class manager;
-//--------------------------------------------------------------------------------------//
-//
-namespace cupti
-{
-struct result;
-}  // namespace cupti
-
-//--------------------------------------------------------------------------------------//
-//
+// clang-format off
 namespace details
 {
-template <typename StorageType>
-struct storage_deleter;
-
-template <typename ObjectType>
-class storage;
-
+template <typename StorageType> struct storage_deleter;
+template <typename ObjectType> class storage;
 template <typename _Tp>
 using storage_smart_pointer = std::unique_ptr<_Tp, details::storage_deleter<_Tp>>;
 template <typename _Tp>
 using storage_singleton_t = singleton<_Tp, storage_smart_pointer<_Tp>>;
-
 }  // namespace details
+namespace cupti { struct result; }
+namespace impl  { template <typename ObjectType, bool IsAvailable> class storage {}; }
+class manager;
+
+namespace scope
+{
+struct flat    {};  // flat-scope storage
+struct thread  {};  // thread-scoped storage
+struct process {};  // process-scoped storage
+} // namespace scope
+// clang-format on
 
 //--------------------------------------------------------------------------------------//
 
@@ -100,6 +98,8 @@ get_storage_singleton()
     return _instance;
 }
 
+//--------------------------------------------------------------------------------------//
+
 template <typename _Tp>
 details::storage_singleton_t<_Tp>&
 get_noninit_storage_singleton()
@@ -109,15 +109,10 @@ get_noninit_storage_singleton()
     return _instance;
 }
 
-//======================================================================================//
+//--------------------------------------------------------------------------------------//
 
 namespace impl
 {
-template <typename ObjectType, bool IsAvailable>
-class storage
-{
-};
-
 //======================================================================================//
 //
 //              Storage class for types that implement it
@@ -136,9 +131,8 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using count_type    = counted_object<ObjectType>;
 
-    using graph_node_tuple = std::tuple<int64_t, ObjectType, std::string, int64_t>;
+    using graph_node_tuple = std::tuple<int64_t, ObjectType, int64_t>;
 
     class graph_node : public graph_node_tuple
     {
@@ -151,37 +145,25 @@ public:
 
         int64_t&    id() { return std::get<0>(*this); }
         ObjectType& obj() { return std::get<1>(*this); }
-        string_t&   prefix() { return std::get<2>(*this); }
-        int64_t&    depth() { return std::get<3>(*this); }
+        int64_t&    depth() { return std::get<2>(*this); }
 
         const int64_t&    id() const { return std::get<0>(*this); }
         const ObjectType& obj() const { return std::get<1>(*this); }
-        const string_t&   prefix() const { return std::get<2>(*this); }
-        const int64_t&    depth() const { return std::get<3>(*this); }
+        const int64_t&    depth() const { return std::get<2>(*this); }
 
         graph_node()
-        : base_type(0, ObjectType(), "", 0)
+        : base_type(0, ObjectType(), 0)
         {
-            obj().activate_noop();
         }
 
         explicit graph_node(base_type&& _base)
         : base_type(std::forward<base_type>(_base))
         {
-            obj().activate_noop();
         }
 
         graph_node(const int64_t& _id, const ObjectType& _obj, int64_t _depth)
-        : base_type(_id, _obj, "", _depth)
+        : base_type(_id, _obj, _depth)
         {
-            obj().activate_noop();
-        }
-
-        graph_node(const int64_t& _id, const ObjectType& _obj, const string_t& _tag,
-                   int64_t _depth)
-        : base_type(_id, _obj, _tag, _depth)
-        {
-            obj().activate_noop();
         }
 
         ~graph_node() {}
@@ -192,8 +174,7 @@ public:
 
         bool operator==(const graph_node& rhs) const
         {
-            return ((id() == rhs.id() && depth() == rhs.depth()) ||
-                    (prefix() == rhs.prefix() && depth() == rhs.depth()));
+            return (id() == rhs.id() && depth() == rhs.depth());
         }
 
         bool operator!=(const graph_node& rhs) const { return !(*this == rhs); }
@@ -326,6 +307,10 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
+    template <typename _Scope  = scope::process,
+              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
+                           std::is_same<_Scope, scope::thread>::value),
+                          int> = 0>
     iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
     {
         // lambda for updating settings
@@ -374,16 +359,16 @@ public:
         }
         else
         {
-            auto current = _data().current();
-            // auto nchildren = graph_t::number_of_children(current);
+            auto current   = _data().current();
+            auto nchildren = graph_t::number_of_children(current);
 
             if(hash_id == current->id())
             {
                 exists = true;
                 return current;
             }
-            // else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-            //    return _insert_child();
+            else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+                return _insert_child();
             else if(_data().graph().is_valid(current))
             {
                 // check siblings
@@ -397,7 +382,6 @@ public:
                         return _update(itr);
                 }
 
-                /*
                 // check children
                 if(nchildren == 0)
                     return _insert_child();
@@ -410,7 +394,6 @@ public:
                             return _update(itr);
                     }
                 }
-                */
             }
         }
         return _insert_child();
@@ -418,19 +401,99 @@ public:
 
     //----------------------------------------------------------------------------------//
     //
-    iterator insert(int64_t hash_id, const ObjectType& obj, const string_t& prefix)
+    template <typename _Scope = scope::process,
+              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
     {
-        hash_id *= (_data().depth() >= 0) ? (_data().depth() + 1) : 1;
+        // lambda for updating settings
+        auto _update = [&](iterator itr) {
+            exists          = true;
+            _data().depth() = 1;
+            return itr;
+        };
+
+        if(m_node_ids.find(hash_id) != m_node_ids.end() &&
+           m_node_ids.find(hash_id)->second->depth() == _data().depth())
+        {
+            _update(m_node_ids.find(hash_id)->second);
+        }
+
+        using sibling_itr = typename graph_t::sibling_iterator;
+        graph_node_t node(hash_id, obj, 1);
+
+        // lambda for inserting child
+        auto _insert_head = [&]() {
+            exists       = false;
+            node.depth() = 1;
+            auto itr     = _data().append_head(node);
+            return itr;
+        };
+
+        auto current   = _data().head();
+        auto nchildren = graph_t::number_of_children(current);
+
+        if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            return _insert_head();
+        else if(_data().graph().is_valid(current))
+        {
+            // check siblings
+            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
+            {
+                // skip if current
+                if(itr == current)
+                    continue;
+                // check hash id's
+                if(hash_id == itr->id())
+                    return _update(itr);
+            }
+
+            // check siblings
+            auto fchild = graph_t::child(current, 0);
+            for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
+            {
+                if(hash_id == itr->id())
+                    return _update(itr);
+            }
+        }
+        return _insert_head();
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Scope  = scope::process,
+              enable_if_t<(std::is_same<_Scope, scope::process>::value ||
+                           std::is_same<_Scope, scope::thread>::value),
+                          int> = 0>
+    iterator insert(const ObjectType& obj, const string_t& prefix)
+    {
+        int64_t hash_id = std::hash<string_t>()(prefix) *
+                          ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
         bool exists = false;
-        auto itr    = insert(hash_id, obj, exists);
-        if(!exists)
-            itr->prefix() = prefix;
+        auto itr    = insert<_Scope>(hash_id, obj, exists);
+        if(m_hash_ids.find(hash_id) == m_hash_ids.end())
+        {
+            m_hash_ids[hash_id] = prefix;
+            m_hash_ids.rehash(m_hash_ids.size());
+        }
         return itr;
     }
 
     //----------------------------------------------------------------------------------//
     //
-    void set_prefix(const string_t& _prefix) { _data().current()->prefix() = _prefix; }
+    template <typename _Scope = scope::process,
+              enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
+    iterator insert(const ObjectType& obj, const string_t& prefix)
+    {
+        int64_t hash_id = std::hash<string_t>()(prefix);
+        bool    exists  = false;
+        auto    itr     = insert<_Scope>(hash_id, obj, exists);
+        if(m_hash_ids.find(hash_id) == m_hash_ids.end())
+        {
+            m_hash_ids[hash_id] = prefix;
+            m_hash_ids.rehash(m_hash_ids.size());
+        }
+        return itr;
+    }
 
     //----------------------------------------------------------------------------------//
     //
@@ -439,6 +502,11 @@ public:
         typename trait::external_output_handling<ObjectType>::type type;
         external_print(type);
     }
+
+private:
+    string_t get_prefix(const graph_node& _node) { return m_hash_ids[_node.id()]; }
+
+    string_t get_prefix(iterator _itr) { return m_hash_ids[_itr->id()]; }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -578,8 +646,10 @@ private:
         }
         else if(__graph_data_instance == nullptr)
         {
-            using base_type = typename ObjectType::base_type;
-            graph_node_t node(0, base_type::dummy(), "> [tot] total", 0);
+            using base_type     = typename ObjectType::base_type;
+            std::string _prefix = "> [tot] total";
+            m_hash_ids[0]       = _prefix.c_str();
+            graph_node_t node(0, base_type::dummy(), 0);
             __graph_data_instance          = new graph_data_t(node);
             __graph_data_instance->depth() = 0;
             m_node_ids.insert(std::make_pair(0, __graph_data_instance->current()));
@@ -594,6 +664,13 @@ private:
     int64_t                               m_instance_id         = instance_count()++;
     mutable graph_data_t*                 __graph_data_instance = nullptr;
     std::unordered_map<int64_t, iterator> m_node_ids;
+    std::unordered_map<int64_t, string_t> m_hash_ids;
+
+public:
+    const std::unordered_map<int64_t, string_t>& get_hash_ids() const
+    {
+        return m_hash_ids;
+    }
 };
 
 //======================================================================================//
@@ -614,7 +691,6 @@ public:
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using count_type    = counted_object<ObjectType>;
 
 public:
     using iterator       = void*;
@@ -812,7 +888,6 @@ class storage
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using count_type    = counted_object<_Tp>;
     friend struct details::storage_deleter<this_type>;
     friend class manager;
 };

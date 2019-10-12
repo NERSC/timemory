@@ -5,7 +5,7 @@
 #   see <timemory/components/types.hpp>
 #
 components = [
-    "real_clock",
+    "wall_clock",
     "system_clock",
     "user_clock",
     "cpu_clock",
@@ -58,7 +58,6 @@ components = [
 #
 mangled_enums = {
     "system_clock": "sys_clock",
-    "real_clock": "wall_clock",
     "papi_array_t": "papi_array",
 }
 
@@ -68,6 +67,7 @@ mangled_enums = {
 # e.g. "component_name" : "string_identifier"
 #
 mangled_strings = {
+    "wall_clock": ["real_clock", "virtual_clock"],
     "system_clock": ["sys_clock"],
     "papi_array_t": ["papi_array", "papi"],
     "cpu_roofline_flops": ["cpu_roofline"],
@@ -83,7 +83,7 @@ mangled_strings = {
 }
 
 recommended_types = {
-    "tuple": ["real_clock", "system_clock", "user_clock", "cpu_util",
+    "tuple": ["wall_clock", "system_clock", "user_clock", "cpu_util",
               "page_rss", "peak_rss", "read_bytes", "written_bytes",
               "num_minor_page_faults", "num_major_page_faults",
               "voluntary_context_switch", "priority_context_switch"],
@@ -97,7 +97,7 @@ recommended_types = {
 traits = {
     "is_timing_category": ("std::true_type",
                            [
-                               "real_clock",
+                               "wall_clock",
                                "system_clock",
                                "user_clock",
                                "cpu_clock",
@@ -130,7 +130,7 @@ traits = {
                            ]),
     "uses_timing_units": ("std::true_type",
                           [
-                              "real_clock",
+                              "wall_clock",
                               "system_clock",
                               "user_clock",
                               "cpu_clock",
@@ -154,7 +154,7 @@ traits = {
 }
 
 native_components = [
-    "real_clock",
+    "wall_clock",
     "system_clock",
     "user_clock",
     "cpu_clock",

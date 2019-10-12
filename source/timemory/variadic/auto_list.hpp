@@ -55,16 +55,11 @@ namespace filt
 {
 template <typename... Types>
 class auto_list
-: public counted_object<auto_list<Types...>>
-, public hashed_object<auto_list<Types...>>
 {
 public:
     using component_type  = ::tim::component_list<Types...>;
     using this_type       = auto_list<Types...>;
     using data_type       = typename component_type::data_type;
-    using counter_type    = counted_object<this_type>;
-    using counter_void    = counted_object<void>;
-    using hashed_type     = hashed_object<this_type>;
     using string_t        = std::string;
     using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
@@ -79,11 +74,11 @@ public:
 
 public:
     template <typename _Func>
-    inline explicit auto_list(const string_t&, const int64_t& lineno,
-                              const language_t& lang, bool report_at_exit, _Func&& _func);
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
+    inline explicit auto_list(const string_t&, bool flat, const language_t& lang,
                               bool report_at_exit, _Func&& _func);
+    template <typename _Func>
+    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                              _Func&& _func);
     inline ~auto_list();
 
     // copy and move
@@ -228,17 +223,11 @@ private:
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno,
+auto_list<Types...>::auto_list(const string_t& object_tag, bool flat,
                                const language_t& lang, bool report_at_exit, _Func&& _func)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(object_tag) + static_cast<int64_t>(lang) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(counter_type::enable() && settings::enabled())
+: m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, lang, counter_type::m_count,
-                     hashed_type::m_hash)
+, m_temporary_object(object_tag, m_enabled, flat, lang)
 {
     if(m_enabled)
     {
@@ -251,16 +240,11 @@ auto_list<Types...>::auto_list(const string_t& object_tag, const int64_t& lineno
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(component_type& tmp, const int64_t& lineno,
-                               bool report_at_exit, _Func&& _func)
-: counter_type()
-, hashed_type((counter_type::enable())
-                  ? (string_hash()(tmp.key()) + static_cast<int64_t>(tmp.lang()) +
-                     (counter_type::live() + hashed_type::live() + lineno))
-                  : 0)
-, m_enabled(true)
+auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                               _Func&& _func)
+: m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(hashed_type::m_hash, true))
+, m_temporary_object(tmp.clone(true, flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -323,16 +307,16 @@ public:
 
 public:
     template <typename _Func>
-    inline explicit _auto_list(const string_t& label, const int64_t& lineno,
-                               const language_t& lang, bool report_at_exit, _Func&& _func)
-    : base_type(label, lineno, lang, report_at_exit, std::forward<_Func>(_func))
+    inline explicit _auto_list(const string_t& label, bool flat, const language_t& lang,
+                               bool report_at_exit, _Func&& _func)
+    : base_type(label, flat, lang, report_at_exit, std::forward<_Func>(_func))
     {
     }
 
     template <typename _Func>
-    inline explicit _auto_list(component_type& tmp, const int64_t& lineno,
-                               bool report_at_exit, _Func&& _func)
-    : base_type(tmp, lineno, report_at_exit, std::forward<_Func>(_func))
+    inline explicit _auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                               _Func&& _func)
+    : base_type(tmp, flat, report_at_exit, std::forward<_Func>(_func))
     {
     }
 
@@ -372,35 +356,35 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+    inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
                               const language_t& lang = language_t::cxx(),
                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
                               bool report_at_exit = settings::destructor_report())
-    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+    : base_type(tmp, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, const int64_t& lineno,
-                              const language_t& lang, bool report_at_exit, _Func&& _func)
-    : base_type(label, lineno, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(label, flat, lang, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(tmp, lineno, report_at_exit,
+    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(tmp, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -441,35 +425,35 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+    inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
                               const language_t& lang = language_t::cxx(),
                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
                               bool report_at_exit = settings::destructor_report())
-    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+    : base_type(tmp, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, const int64_t& lineno,
-                              const language_t& lang, bool report_at_exit, _Func&& _func)
-    : base_type(label, lineno, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(label, flat, lang, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(tmp, lineno, report_at_exit,
+    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(tmp, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -511,35 +495,35 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+    inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
                               const language_t& lang = language_t::cxx(),
                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
                               bool report_at_exit = settings::destructor_report())
-    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+    : base_type(tmp, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, const int64_t& lineno,
-                              const language_t& lang, bool report_at_exit, _Func&& _func)
-    : base_type(label, lineno, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(label, flat, lang, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(tmp, lineno, report_at_exit,
+    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(tmp, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -581,35 +565,35 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_list(const string_t& label, const int64_t& lineno = 0,
+    inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
                               const language_t& lang = language_t::cxx(),
                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, lineno, lang, report_at_exit, [](core_type& _core) {
+    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno = 0,
+    inline explicit auto_list(component_type& tmp, bool flat = settings::flat_profile(),
                               bool report_at_exit = settings::destructor_report())
-    : base_type(tmp, lineno, report_at_exit, [](core_type& _core) {
+    : base_type(tmp, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, const int64_t& lineno,
-                              const language_t& lang, bool report_at_exit, _Func&& _func)
-    : base_type(label, lineno, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
+                              bool report_at_exit, _Func&& _func)
+    : base_type(label, flat, lang, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
 
     template <typename _Func>
-    inline explicit auto_list(component_type& tmp, const int64_t& lineno,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(tmp, lineno, report_at_exit,
+    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(tmp, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }

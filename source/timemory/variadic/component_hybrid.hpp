@@ -104,10 +104,10 @@ public:
 
 public:
     explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const language_t& lang = language_t::cxx(),
-                              int64_t ncount = 0, int64_t nhash = 0)
-    : m_tuple(key, store, lang, ncount, nhash)
-    , m_list(key, store, lang, ncount, nhash)
+                              const bool&       flat = settings::flat_profile(),
+                              const language_t& lang = language_t::cxx())
+    : m_tuple(key, store, flat, lang)
+    , m_list(key, store, flat, lang)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -131,9 +131,9 @@ public:
     component_hybrid& operator=(const component_hybrid& rhs) = default;
     component_hybrid& operator=(component_hybrid&&) = default;
 
-    component_hybrid clone(const int64_t& nhash, bool store)
+    component_hybrid clone(bool store, bool flat)
     {
-        return component_hybrid(m_tuple.clone(nhash, store), m_list.clone(nhash, store));
+        return component_hybrid(m_tuple.clone(store, flat), m_list.clone(store, flat));
     }
 
 public:
@@ -155,11 +155,9 @@ public:
 public:
     inline int64_t laps() const { return m_tuple.laps(); }
 
-    int64_t&  hash() { return m_tuple.hash(); }
     string_t& key() { return m_tuple.key(); }
     string_t& identifier() { return m_tuple.identifier(); }
 
-    const int64_t&    hash() const { return m_tuple.hash(); }
     const string_t&   key() const { return m_tuple.key(); }
     const language_t& lang() const { return m_tuple.lang(); }
     const string_t&   identifier() const { return m_tuple.identifier(); }
@@ -480,36 +478,6 @@ protected:
     // objects
     tuple_type m_tuple;
     list_type  m_list;
-
-protected:
-    /*
-    string_t get_prefix() { return m_tuple.get_prefix(); }
-
-    void compute_identifier(const string_t& key, const language_t& lang)
-    {
-        m_tuple.compute_identifier(key, lang);
-        m_list.compute_identifier(key, lang);
-    }
-
-    void update_identifier() const
-    {
-        m_tuple.update_identifier();
-        m_list.update_identifier();
-    }
-
-    static int64_t output_width(int64_t width = 0)
-    {
-        return std::max<int64_t>(tuple_type::output_width(width),
-                                 list_type::output_width(width));
-    }
-
-    template <typename _Func, typename... _Args>
-    void apply_to_members(_Func&& _func, _Args&&... _args)
-    {
-        ((m_tuple).*(_func))(std::forward<_Args>(_args)...);
-        ((m_list).*(_func))(std::forward<_Args>(_args)...);
-    }
-    */
 };
 
 //--------------------------------------------------------------------------------------//

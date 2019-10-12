@@ -257,7 +257,7 @@ enumerate_components(const _Container<_StringT, _ExtraArgs...>& component_names)
         {
             vec.push_back(READ_BYTES);
         }
-        else if(itr == "real_clock")
+        else if(itr == "real_clock" || itr == "wall_clock")
         {
             vec.push_back(WALL_CLOCK);
         }

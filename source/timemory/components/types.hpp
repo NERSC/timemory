@@ -56,7 +56,7 @@ namespace tim
 namespace component
 {
 // define this short-hand from C++14 for C++11
-template <bool B, typename T = void>
+template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
 }  // component
@@ -229,7 +229,7 @@ struct live_count;
 template <typename _Tp>
 struct set_prefix;
 
-template <typename _Tp>
+template <typename _Tp, typename _Scope>
 struct insert_node;
 
 template <typename _Tp>

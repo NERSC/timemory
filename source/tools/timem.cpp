@@ -101,7 +101,7 @@ class custom_component_tuple : public component_tuple<Types...>
 
 public:
     custom_component_tuple(const string_t& key, const language& lang)
-    : component_tuple<Types...>(key, true, lang, 0, 0)
+    : component_tuple<Types...>(key, true, true, lang)
     {
     }
 

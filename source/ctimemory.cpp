@@ -48,6 +48,14 @@ using complete_list_t = tim::complete_list_t;
 //======================================================================================//
 
 #if defined(TIMEMORY_EXTERN_INIT)
+
+static bool&
+free_cstr()
+{
+    static thread_local bool _instance = false;
+    return _instance;
+}
+
 /*
 //--------------------------------------------------------------------------------------//
 //  construct the library at start up
@@ -126,19 +134,20 @@ cxx_timemory_init(int argc, char** argv, timemory_settings _settings)
 extern "C" tim_api int
 cxx_timemory_enabled(void)
 {
-    return (tim::settings::enabled() && tim::counted_object<void>::is_enabled()) ? 1 : 0;
+    return (tim::settings::enabled()) ? 1 : 0;
 }
 
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
+cxx_timemory_create_auto_timer(const char* timer_tag)
 {
     if(!tim::settings::enabled())
         return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    auto*       obj = new auto_timer_t(key_tag, true, tim::language::c(), lineno);
+    auto*       obj = new auto_timer_t(key_tag, true, tim::settings::flat_profile(),
+                                 tim::language::c());
     obj->start();
     return (void*) obj;
 }
@@ -146,14 +155,21 @@ cxx_timemory_create_auto_timer(const char* timer_tag, int lineno)
 //======================================================================================//
 
 extern "C" tim_api void*
-cxx_timemory_create_auto_tuple(const char* timer_tag, int lineno, int num_components,
+cxx_timemory_create_auto_tuple(const char* timer_tag, int num_components,
                                const int* components)
 {
     if(!tim::settings::enabled())
         return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    auto        obj = new complete_list_t(key_tag, true, tim::language::c(), lineno);
+    if(free_cstr())
+    {
+        char* _tag = (char*) timer_tag;
+        free(_tag);
+        free_cstr() = false;
+    }
+    auto obj = new complete_list_t(key_tag, true, tim::settings::flat_profile(),
+                                   tim::language::c());
 #    if defined(DEBUG)
     std::vector<int> _components;
     for(int i = 0; i < num_components; ++i)
@@ -204,7 +220,10 @@ cxx_timemory_delete_auto_tuple(void* ctuple)
 extern "C" tim_api const char*
 cxx_timemory_string_combine(const char* _a, const char* _b)
 {
-    char* buff = (char*) malloc(sizeof(char) * 256);
+    if(std::strlen(_b) == 0)
+        return _a;
+    free_cstr() = true;
+    char* buff  = (char*) malloc(sizeof(char) * 256);
     if(buff)
         sprintf(buff, "%s%s", _a, _b);
     return (const char*) buff;
@@ -215,9 +234,11 @@ cxx_timemory_string_combine(const char* _a, const char* _b)
 extern "C" tim_api const char*
 cxx_timemory_auto_timer_str(const char* _a, const char* _b, const char* _c, int _d)
 {
+    free_cstr()      = true;
     std::string _C   = std::string(_c).substr(std::string(_c).find_last_of('/') + 1);
     char*       buff = (char*) malloc(sizeof(char) * 256);
-    sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
+    if(buff)
+        sprintf(buff, "%s%s@'%s':%i", _a, _b, _C.c_str(), _d);
     return (const char*) buff;
 }
 
