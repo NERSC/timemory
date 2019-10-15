@@ -50,6 +50,7 @@ namespace ert
 template <typename _Device, typename _Tp, typename _ExecData, typename _Counter>
 struct configuration
 {
+    using this_type       = configuration<_Device, _Tp, _ExecData, _Counter>;
     using ert_data_t      = _ExecData;
     using ert_params_t    = exec_params;
     using device_t        = _Device;
@@ -212,14 +213,14 @@ struct configuration
     }
 
 public:
-    get_uint64_t    num_threads      = get_num_threads();
-    get_uint64_t    num_streams      = get_num_streams();
-    get_uint64_t    min_working_size = get_min_working_size();
-    get_uint64_t    max_data_size    = get_max_data_size();
-    get_uint64_t    alignment        = get_alignment();
-    get_uint64_t    grid_size        = get_grid_size();
-    get_uint64_t    block_size       = get_block_size();
-    executor_func_t executor         = get_executor();
+    get_uint64_t    num_threads      = this_type::get_num_threads();
+    get_uint64_t    num_streams      = this_type::get_num_streams();
+    get_uint64_t    min_working_size = this_type::get_min_working_size();
+    get_uint64_t    max_data_size    = this_type::get_max_data_size();
+    get_uint64_t    alignment        = this_type::get_alignment();
+    get_uint64_t    grid_size        = this_type::get_grid_size();
+    get_uint64_t    block_size       = this_type::get_block_size();
+    executor_func_t executor         = this_type::get_executor();
 };
 
 //======================================================================================//

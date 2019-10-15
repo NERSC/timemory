@@ -49,13 +49,6 @@ using complete_list_t = tim::complete_list_t;
 
 #if defined(TIMEMORY_EXTERN_INIT)
 
-static bool&
-free_cstr()
-{
-    static thread_local bool _instance = false;
-    return _instance;
-}
-
 /*
 //--------------------------------------------------------------------------------------//
 //  construct the library at start up
@@ -101,6 +94,15 @@ timemory_library_constructor()
 //======================================================================================//
 
 #if defined(TIMEMORY_BUILD_C)
+
+//======================================================================================//
+
+static bool&
+free_cstr()
+{
+    static thread_local bool _instance = false;
+    return _instance;
+}
 
 //======================================================================================//
 

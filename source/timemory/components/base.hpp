@@ -100,7 +100,6 @@ private:
     {
         if(!properties<this_type>::has_storage())
         {
-            using storage_type                 = storage<Type>;
             static thread_local auto _instance = storage_type::instance();
             _instance->initialize();
         }
@@ -158,7 +157,6 @@ protected:
 public:
     static void initialize_storage()
     {
-        using storage_type                 = storage<Type>;
         static thread_local auto _instance = storage_type::instance();
         consume_parameters(_instance);
     }
@@ -188,8 +186,8 @@ public:
     //----------------------------------------------------------------------------------//
     // insert the node into the graph
     //
-    template <typename _Scope = scope::process>
-    void insert_node(const int64_t& _hash)
+    template <typename _Scope>
+    void insert_node(const _Scope&, const int64_t& _hash)
     {
         if(!is_on_stack)
         {
@@ -578,7 +576,6 @@ public:
 public:
     static void initialize_storage()
     {
-        using storage_type                 = storage<Type>;
         static thread_local auto _instance = storage_type::instance();
         consume_parameters(_instance);
     }
@@ -606,7 +603,7 @@ public:
     // insert the node into the graph
     //
     template <typename _Scope = scope::process, typename... _Args>
-    void insert_node(_Args&&...)
+    void insert_node(const _Scope&, _Args&&...)
     {
         is_on_stack = true;
     }

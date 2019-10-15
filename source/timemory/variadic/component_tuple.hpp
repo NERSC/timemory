@@ -73,14 +73,9 @@ class component_tuple;
 //
 namespace filt
 {
-template <typename... _Types>
-class _comp_tuple;
-
 template <typename... Types>
 class component_tuple
 {
-    static const std::size_t num_elements = sizeof...(Types);
-
     // empty init for friends
     explicit component_tuple() {}
 
@@ -92,9 +87,6 @@ class component_tuple
 
     template <typename... _Types>
     friend class ::tim::component_tuple;
-
-    template <typename... _Types>
-    friend class _comp_tuple;
 
 public:
     using string_t        = std::string;
@@ -180,7 +172,7 @@ public:
     //----------------------------------------------------------------------------------//
     // get the size
     //
-    static constexpr std::size_t size() { return num_elements; }
+    static constexpr std::size_t size() { return std::tuple_size<type_tuple>::value; }
     static constexpr std::size_t available_size()
     {
         return std::tuple_size<data_type>::value;
@@ -592,54 +584,18 @@ public:
 //  unused base class
 //
 template <typename... _Types>
-class _comp_tuple : public component_tuple<_Types...>
+struct comp_tuple_t
 {
+    using type = component_tuple<_Types...>;
 };
 
 //--------------------------------------------------------------------------------------//
 //  tuple overloaded base class
 //
 template <typename... _Types>
-class _comp_tuple<std::tuple<_Types...>> : public component_tuple<_Types...>
+struct comp_tuple_t<std::tuple<_Types...>>
 {
-    // empty init for friends
-    explicit _comp_tuple() = default;
-
-    // manager is friend so can use above
-    friend class ::tim::manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class ::tim::component_hybrid;
-
-public:
-    using string_t   = std::string;
-    using base_type  = component_tuple<_Types...>;
-    using size_type  = typename base_type::size_type;
-    using data_type  = typename base_type::data_type;
-    using type_tuple = typename base_type::type_tuple;
-    using auto_type  = typename base_type::auto_type;
-
-    static constexpr bool is_component_list  = base_type::is_component_list;
-    static constexpr bool is_component_tuple = base_type::is_component_tuple;
-    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
-
-    explicit _comp_tuple(const string_t& key, const bool& store, const bool& flat)
-    : base_type(key, store, flat)
-    {
-    }
-
-    ~_comp_tuple() {}
-
-    _comp_tuple(const _comp_tuple&) = default;
-    _comp_tuple(_comp_tuple&&)      = default;
-
-    _comp_tuple& operator=(const _comp_tuple&) = default;
-    _comp_tuple& operator=(_comp_tuple&&) = default;
-
-    _comp_tuple(const base_type& rhs)
-    : base_type(rhs)
-    {
-    }
+    using type = component_tuple<_Types...>;
 };
 
 }  // namespace filt
@@ -647,7 +603,7 @@ public:
 //======================================================================================//
 
 template <typename... _Types>
-class component_tuple : public filt::_comp_tuple<implemented<_Types...>>
+class component_tuple : public filt::comp_tuple_t<implemented<_Types...>>::type
 {
     // empty init for friends
     explicit component_tuple() = default;
@@ -660,9 +616,8 @@ class component_tuple : public filt::_comp_tuple<implemented<_Types...>>
 
 public:
     using string_t   = std::string;
-    using base_type  = filt::_comp_tuple<implemented<_Types...>>;
     using this_type  = component_tuple<_Types...>;
-    using core_type  = typename base_type::base_type;
+    using base_type  = typename filt::comp_tuple_t<implemented<_Types...>>::type;
     using size_type  = typename base_type::size_type;
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
@@ -686,7 +641,7 @@ public:
     component_tuple& operator=(const component_tuple&) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple(const core_type& rhs)
+    component_tuple(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -696,25 +651,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 };
@@ -723,7 +678,7 @@ public:
 
 template <typename... _Types>
 class component_tuple<std::tuple<_Types...>>
-: public filt::_comp_tuple<implemented<_Types...>>
+: public filt::comp_tuple_t<implemented<_Types...>>::type
 {
     // empty init for friends
     explicit component_tuple() = default;
@@ -736,9 +691,8 @@ class component_tuple<std::tuple<_Types...>>
 
 public:
     using string_t   = std::string;
-    using base_type  = filt::_comp_tuple<implemented<_Types...>>;
     using this_type  = component_tuple<std::tuple<_Types...>>;
-    using core_type  = typename base_type::base_type;
+    using base_type  = typename filt::comp_tuple_t<implemented<_Types...>>::type;
     using size_type  = typename base_type::size_type;
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
@@ -762,7 +716,7 @@ public:
     component_tuple& operator=(const component_tuple&) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple(const core_type& rhs)
+    component_tuple(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -772,25 +726,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 };
@@ -799,7 +753,7 @@ public:
 
 template <typename... _CompTypes, typename... _Types>
 class component_tuple<component_tuple<_CompTypes...>, _Types...>
-: public filt::_comp_tuple<implemented<_CompTypes..., _Types...>>
+: public filt::comp_tuple_t<implemented<_CompTypes..., _Types...>>::type
 {
     // empty init for friends
     explicit component_tuple() = default;
@@ -811,10 +765,10 @@ class component_tuple<component_tuple<_CompTypes...>, _Types...>
     friend class component_hybrid;
 
 public:
-    using string_t   = std::string;
-    using base_type  = filt::_comp_tuple<implemented<_CompTypes..., _Types...>>;
-    using this_type  = component_tuple<component_tuple<_CompTypes...>, _Types...>;
-    using core_type  = typename base_type::base_type;
+    using string_t  = std::string;
+    using this_type = component_tuple<component_tuple<_CompTypes...>, _Types...>;
+    using base_type =
+        typename filt::comp_tuple_t<implemented<_CompTypes..., _Types...>>::type;
     using size_type  = typename base_type::size_type;
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
@@ -838,7 +792,7 @@ public:
     component_tuple& operator=(const component_tuple&) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple(const core_type& rhs)
+    component_tuple(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -848,25 +802,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 };

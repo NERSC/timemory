@@ -357,8 +357,8 @@ public:
         _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
         if(settings::debug())
             printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> params(0, 512, 0, 0);
-        device::launch(nsize, params, initialize_buffer<_Device, _Up, uint64_t>, buffer,
+        device::params<_Device> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint64_t>, buffer,
                        _Up(1), nsize);
         return buffer;
     }
@@ -382,8 +382,8 @@ public:
         _Up* buffer = allocate_aligned<_Up, _Device>(nsize, align);
         if(settings::debug())
             printf("[%s]> buffer = %p\n", __FUNCTION__, buffer);
-        device::params<_Device> params(0, 512, 0, 0);
-        device::launch(nsize, params, initialize_buffer<_Device, _Up, uint32_t>, buffer,
+        device::params<_Device> _params(0, 512, 0, 0);
+        device::launch(nsize, _params, initialize_buffer<_Device, _Up, uint32_t>, buffer,
                        _Up{ 1, 1 }, nsize);
         return buffer;
     }

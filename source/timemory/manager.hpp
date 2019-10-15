@@ -286,17 +286,14 @@ protected:
     string_t get_prefix() const;
 
 private:
-    // private static variables
-    /// for temporary enabling/disabling
-    // static bool f_enabled();
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
-
-    graph_hash_map_ptr   m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr m_hash_aliases = ::tim::get_hash_aliases();
+    /// increment the shared_ptr count here to ensure these instances live
+    /// for the entire lifetime of the manager instance
+    ::tim::graph_hash_map_ptr_t   m_hash_ids     = ::tim::get_hash_ids();
+    ::tim::graph_hash_alias_ptr_t m_hash_aliases = ::tim::get_hash_aliases();
 
 private:
-    // private variables
     /// instance id
     int32_t m_instance_count;
 

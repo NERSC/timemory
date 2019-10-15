@@ -44,26 +44,26 @@ namespace tim
 //
 //--------------------------------------------------------------------------------------//
 
-using graph_hash_map       = std::unordered_map<int64_t, std::string>;
-using graph_hash_alias     = std::unordered_map<int64_t, int64_t>;
-using graph_hash_map_ptr   = std::shared_ptr<graph_hash_map>;
-using graph_hash_alias_ptr = std::shared_ptr<graph_hash_alias>;
+using graph_hash_map_t       = std::unordered_map<int64_t, std::string>;
+using graph_hash_alias_t     = std::unordered_map<int64_t, int64_t>;
+using graph_hash_map_ptr_t   = std::shared_ptr<graph_hash_map_t>;
+using graph_hash_alias_ptr_t = std::shared_ptr<graph_hash_alias_t>;
 
 //--------------------------------------------------------------------------------------//
 
-inline graph_hash_map_ptr
+inline graph_hash_map_ptr_t
 get_hash_ids()
 {
-    static thread_local auto _pointer = graph_hash_map_ptr(new graph_hash_map);
+    static thread_local auto _pointer = graph_hash_map_ptr_t(new graph_hash_map_t);
     return _pointer;
 }
 
 //--------------------------------------------------------------------------------------//
 
-inline graph_hash_alias_ptr
+inline graph_hash_alias_ptr_t
 get_hash_aliases()
 {
-    static thread_local auto _pointer = graph_hash_alias_ptr(new graph_hash_alias);
+    static thread_local auto _pointer = graph_hash_alias_ptr_t(new graph_hash_alias_t);
     return _pointer;
 }
 

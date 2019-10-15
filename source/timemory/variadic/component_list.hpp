@@ -73,9 +73,6 @@ class component_list;
 //
 namespace filt
 {
-template <typename... _Types>
-class _comp_list;
-
 template <typename... Types>
 class component_list
 {
@@ -92,9 +89,6 @@ class component_list
 
     template <typename... _Types>
     friend class ::tim::component_list;
-
-    template <typename... _Types>
-    friend class _comp_list;
 
 public:
     using string_t        = std::string;
@@ -755,58 +749,18 @@ public:
 //  unused base class
 //
 template <typename... _Types>
-class _comp_list : public component_list<_Types...>
+struct comp_list_t
 {
+    using type = component_list<_Types...>;
 };
 
 //--------------------------------------------------------------------------------------//
 //  tuple overloaded base class
 //
 template <typename... _Types>
-class _comp_list<std::tuple<_Types...>> : public component_list<_Types...>
+struct comp_list_t<std::tuple<_Types...>>
 {
-    // empty init for friends
-    explicit _comp_list() = default;
-
-    // manager is friend so can use above
-    friend class ::tim::manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class ::tim::component_hybrid;
-
-public:
-    using string_t       = std::string;
-    using base_type      = component_list<_Types...>;
-    using size_type      = typename base_type::size_type;
-    using data_type      = typename base_type::data_type;
-    using reference_type = typename base_type::reference_type;
-    using type_tuple     = typename base_type::type_tuple;
-    using init_func_t    = typename base_type::init_func_t;
-    using auto_type      = typename base_type::auto_type;
-
-    static constexpr bool is_component_list  = base_type::is_component_list;
-    static constexpr bool is_component_tuple = base_type::is_component_tuple;
-    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
-
-    template <typename _Func>
-    explicit _comp_list(const string_t& key, const bool& store, const bool& flat,
-                        _Func&& _func)
-    : base_type(key, store, flat, std::forward<_Func>(_func))
-    {
-    }
-
-    ~_comp_list() {}
-
-    _comp_list(const _comp_list&) = default;
-    _comp_list(_comp_list&&)      = default;
-
-    _comp_list& operator=(const _comp_list&) = default;
-    _comp_list& operator=(_comp_list&&) = default;
-
-    _comp_list(const base_type& rhs)
-    : base_type(rhs)
-    {
-    }
+    using type = component_list<_Types...>;
 };
 
 }  // namespace filt
@@ -814,7 +768,7 @@ public:
 //======================================================================================//
 //
 template <typename... _Types>
-class component_list : public filt::_comp_list<implemented<_Types...>>
+class component_list : public filt::comp_list_t<implemented<_Types...>>::type
 {
     // empty init for friends
     explicit component_list() = default;
@@ -827,10 +781,9 @@ class component_list : public filt::_comp_list<implemented<_Types...>>
 
 public:
     using string_t       = std::string;
-    using base_type      = filt::_comp_list<implemented<_Types...>>;
     using this_type      = component_list<_Types...>;
     using init_func_t    = std::function<void(this_type&)>;
-    using core_type      = typename base_type::base_type;
+    using base_type      = typename filt::comp_list_t<implemented<_Types...>>::type;
     using size_type      = typename base_type::size_type;
     using data_type      = typename base_type::data_type;
     using reference_type = typename base_type::reference_type;
@@ -843,7 +796,7 @@ public:
 
     explicit component_list(const string_t& key, const bool& store = false,
                             const bool& flat = settings::flat_profile())
-    : base_type(key, store, flat, [](core_type& _core) {
+    : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -857,7 +810,7 @@ public:
     component_list& operator=(const component_list&) = default;
     component_list& operator=(component_list&&) = default;
 
-    component_list(const core_type& rhs)
+    component_list(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -867,25 +820,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 
@@ -902,7 +855,7 @@ public:
 //
 template <typename... _Types>
 class component_list<std::tuple<_Types...>>
-: public filt::_comp_list<implemented<_Types...>>
+: public filt::comp_list_t<implemented<_Types...>>::type
 {
     // empty init for friends
     explicit component_list() = default;
@@ -915,10 +868,9 @@ class component_list<std::tuple<_Types...>>
 
 public:
     using string_t       = std::string;
-    using base_type      = filt::_comp_list<implemented<_Types...>>;
     using this_type      = component_list<std::tuple<_Types...>>;
     using init_func_t    = std::function<void(this_type&)>;
-    using core_type      = typename base_type::base_type;
+    using base_type      = typename filt::comp_list_t<implemented<_Types...>>::type;
     using size_type      = typename base_type::size_type;
     using data_type      = typename base_type::data_type;
     using reference_type = typename base_type::reference_type;
@@ -931,7 +883,7 @@ public:
 
     explicit component_list(const string_t& key, const bool& store = false,
                             const bool& flat = settings::flat_profile())
-    : base_type(key, store, flat, [](core_type& _core) {
+    : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -945,7 +897,7 @@ public:
     component_list& operator=(const component_list&) = default;
     component_list& operator=(component_list&&) = default;
 
-    component_list(const core_type& rhs)
+    component_list(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -955,25 +907,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 
@@ -990,7 +942,7 @@ public:
 //
 template <typename... _CompTypes, typename... _Types>
 class component_list<component_list<_CompTypes...>, _Types...>
-: public filt::_comp_list<_CompTypes..., _Types...>
+: public filt::comp_list_t<_CompTypes..., _Types...>::type
 {
     // empty init for friends
     explicit component_list() = default;
@@ -1003,10 +955,9 @@ class component_list<component_list<_CompTypes...>, _Types...>
 
 public:
     using string_t       = std::string;
-    using base_type      = filt::_comp_list<_CompTypes..., _Types...>;
     using this_type      = component_list<component_list<_CompTypes...>, _Types...>;
     using init_func_t    = std::function<void(this_type&)>;
-    using core_type      = typename base_type::base_type;
+    using base_type      = typename filt::comp_list_t<_CompTypes..., _Types...>::type;
     using size_type      = typename base_type::size_type;
     using data_type      = typename base_type::data_type;
     using reference_type = typename base_type::reference_type;
@@ -1019,7 +970,7 @@ public:
 
     explicit component_list(const string_t& key, const bool& store = false,
                             const bool& flat = settings::flat_profile())
-    : base_type(key, store, flat, [](core_type& _core) {
+    : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -1033,7 +984,7 @@ public:
     component_list& operator=(const component_list&) = default;
     component_list& operator=(component_list&&) = default;
 
-    component_list(const core_type& rhs)
+    component_list(const base_type& rhs)
     : base_type(rhs)
     {
     }
@@ -1043,25 +994,25 @@ public:
     //
     this_type& operator-=(const this_type& rhs)
     {
-        core_type::operator-=(static_cast<const core_type&>(rhs));
+        base_type::operator-=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator-=(this_type& rhs)
     {
-        core_type::operator-=(static_cast<core_type&>(rhs));
+        base_type::operator-=(static_cast<base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(const this_type& rhs)
     {
-        core_type::operator+=(static_cast<const core_type&>(rhs));
+        base_type::operator+=(static_cast<const base_type&>(rhs));
         return *this;
     }
 
     this_type& operator+=(this_type& rhs)
     {
-        core_type::operator+=(static_cast<core_type&>(rhs));
+        base_type::operator+=(static_cast<base_type&>(rhs));
         return *this;
     }
 

@@ -183,7 +183,7 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const int64_t& _hash)
     {
-        obj.template insert_node<_Scope>(_hash);
+        obj.insert_node(_Scope{}, _hash);
     }
 
     //----------------------------------------------------------------------------------//

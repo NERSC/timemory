@@ -643,23 +643,24 @@ private:
 
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
-    template <typename Key, typename Mapped, typename Hash = std::hash<Key>>
-    using uomap_t             = std::unordered_map<Key, Mapped, Hash>;
+    template <typename _Key_t, typename _Mapped_t>
+    using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
     using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
 
-    bool                  m_initialized         = false;
-    bool                  m_finalized           = false;
-    bool                  m_node_init           = mpi::is_initialized();
-    int32_t               m_node_rank           = mpi::rank();
-    int32_t               m_node_size           = mpi::size();
-    int64_t               m_instance_id         = instance_count()++;
-    mutable graph_data_t* m_graph_data_instance = nullptr;
-    iterator_hash_map_t   m_node_ids;
-    graph_hash_map_ptr    m_hash_ids     = ::tim::get_hash_ids();
-    graph_hash_alias_ptr  m_hash_aliases = ::tim::get_hash_aliases();
+    bool                          m_initialized         = false;
+    bool                          m_finalized           = false;
+    bool                          m_node_init           = mpi::is_initialized();
+    int32_t                       m_node_rank           = mpi::rank();
+    int32_t                       m_node_size           = mpi::size();
+    int64_t                       m_instance_id         = instance_count()++;
+    ::tim::graph_hash_map_ptr_t   m_hash_ids            = ::tim::get_hash_ids();
+    ::tim::graph_hash_alias_ptr_t m_hash_aliases        = ::tim::get_hash_aliases();
+    mutable graph_data_t*         m_graph_data_instance = nullptr;
+    iterator_hash_map_t           m_node_ids;
 
 public:
-    const graph_hash_map_ptr& get_hash_ids() const { return m_hash_ids; }
+    const graph_hash_map_ptr_t& get_hash_ids() const { return m_hash_ids; }
+    const iterator_hash_map_t   get_node_ids() const { return m_node_ids; }
 };
 
 //======================================================================================//

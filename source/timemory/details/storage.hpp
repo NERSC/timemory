@@ -324,7 +324,6 @@ storage<ObjectType, true>::merge(this_type* itr)
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
-        m_node_ids    = itr->m_node_ids;
         return;
     }
 
