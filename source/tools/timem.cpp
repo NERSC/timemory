@@ -100,8 +100,8 @@ class custom_component_tuple : public component_tuple<Types...>
     using apply_print_t = modifiers<custom_print, Types...>;
 
 public:
-    custom_component_tuple(const string_t& key, const language& lang)
-    : component_tuple<Types...>(key, true, true, lang)
+    custom_component_tuple(const string_t& key)
+    : component_tuple<Types...>(key, true, true)
     {
     }
 
@@ -112,13 +112,13 @@ public:
         std::stringstream ssp;
         std::stringstream ssd;
         auto&&            data  = obj.m_data;
-        auto&&            ident = obj.m_identifier;
+        auto&&            key   = obj.m_key;
         auto&&            width = obj.output_width();
 
         apply<void>::access<apply_stop_t>(data);
         apply<void>::access_with_indices<apply_print_t>(data, std::ref(ssd), false);
 
-        ssp << std::setw(width) << std::left << ident << " : ";
+        ssp << std::setw(width) << std::left << key << " : ";
         os << ssp.str() << ssd.str();
 
         return os;
@@ -246,9 +246,8 @@ parent_process(pid_t pid)
     if(get_papi_array())
     {
         papi_array_t::get_label() = "";
-        _oss << "\n"
-             << tim::language(command().c_str())
-             << " hardware counters : " << (*get_papi_array()) << "\n"
+        _oss << "\n[" << command() << "] "
+             << "hardware counters : " << (*get_papi_array()) << "\n"
              << std::flush;
         delete get_papi_array();
         get_papi_array() = nullptr;
@@ -256,10 +255,13 @@ parent_process(pid_t pid)
 
     if(tim::settings::file_output())
     {
+        auto        _init = tim::mpi::is_initialized();
+        auto        _rank = tim::mpi::rank();
         std::string label = "timem";
         if(tim::settings::text_output())
         {
-            auto          fname = tim::settings::compose_output_filename(label, ".txt");
+            auto fname =
+                tim::settings::compose_output_filename(label, ".txt", _init, &_rank);
             std::ofstream ofs(fname.c_str());
             if(ofs)
             {
@@ -276,7 +278,8 @@ parent_process(pid_t pid)
 
         if(tim::settings::json_output())
         {
-            auto jname = tim::settings::compose_output_filename(label, ".json");
+            auto jname =
+                tim::settings::compose_output_filename(label, ".json", _init, &_rank);
             printf("[timem]> Outputting '%s'...\n", jname.c_str());
             serialize_storage(jname, *get_measure());
         }
@@ -420,6 +423,12 @@ main(int argc, char** argv)
     // update values to reflect modifications
     tim::settings::process();
 
+    auto compose_prefix = [&]() {
+        std::stringstream ss;
+        ss << "[" << command().c_str() << "] total execution time";
+        return ss.str();
+    };
+
     if(argc > 1)
     {
         command() = "[" + std::string(const_cast<const char*>(argv[1])) + "]";
@@ -428,8 +437,7 @@ main(int argc, char** argv)
     {
         command() = "[" + std::string(const_cast<const char*>(argv[0])) + "]";
         tim::get_rusage_type() = RUSAGE_CHILDREN;
-        get_measure() =
-            new comp_tuple_t("total execution time", tim::language(command().c_str()));
+        get_measure()          = new comp_tuple_t(compose_prefix());
         get_measure()->start();
         get_measure()->stop();
         std::cout << "\n" << *get_measure() << std::flush;
@@ -437,8 +445,7 @@ main(int argc, char** argv)
     }
 
     tim::get_rusage_type() = RUSAGE_CHILDREN;
-    get_measure() =
-        new comp_tuple_t("total execution time", tim::language(command().c_str()));
+    get_measure()          = new comp_tuple_t(compose_prefix());
 
     if(papi_enabled())
     {

@@ -29,6 +29,10 @@
 #include "timemory/utility/graph.hpp"
 
 #include <cstdint>
+#include <memory>
+#include <sstream>
+#include <string>
+#include <unordered_map>
 
 //--------------------------------------------------------------------------------------//
 
@@ -38,6 +42,87 @@ namespace tim
 //
 //  graph instance + current node + head node
 //
+//--------------------------------------------------------------------------------------//
+
+using graph_hash_map       = std::unordered_map<int64_t, std::string>;
+using graph_hash_alias     = std::unordered_map<int64_t, int64_t>;
+using graph_hash_map_ptr   = std::shared_ptr<graph_hash_map>;
+using graph_hash_alias_ptr = std::shared_ptr<graph_hash_alias>;
+
+//--------------------------------------------------------------------------------------//
+
+inline graph_hash_map_ptr
+get_hash_ids()
+{
+    static thread_local auto _pointer = graph_hash_map_ptr(new graph_hash_map);
+    return _pointer;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline graph_hash_alias_ptr
+get_hash_aliases()
+{
+    static thread_local auto _pointer = graph_hash_alias_ptr(new graph_hash_alias);
+    return _pointer;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int64_t
+add_hash_id(const std::string& prefix)
+{
+    static thread_local auto _hash_map = get_hash_ids();
+    int64_t                  _hash_id  = std::hash<std::string>()(prefix.c_str());
+    if(_hash_map->find(_hash_id) == _hash_map->end())
+    {
+        (*_hash_map)[_hash_id] = prefix;
+        if(_hash_map->bucket_count() < _hash_map->size())
+            _hash_map->rehash(_hash_map->size() + 10);
+    }
+    return _hash_id;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
+add_hash_id(int64_t _hash_id, int64_t _alias_hash_id)
+{
+    static thread_local auto _hash_map   = get_hash_ids();
+    static thread_local auto _hash_alias = get_hash_aliases();
+    if(_hash_alias->find(_alias_hash_id) == _hash_alias->end() &&
+       _hash_map->find(_hash_id) != _hash_map->end())
+    {
+        (*_hash_alias)[_alias_hash_id] = _hash_id;
+        if(_hash_alias->bucket_count() < _hash_alias->size())
+            _hash_alias->rehash(_hash_alias->size() + 10);
+    }
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
+get_hash_identifier(int64_t _hash_id)
+{
+    auto _hash_map   = get_hash_ids();
+    auto _hash_alias = get_hash_aliases();
+    if(_hash_map->find(_hash_id) != _hash_map->end())
+        return _hash_map->find(_hash_id)->second;
+    else if(_hash_alias->find(_hash_id) != _hash_alias->end())
+        return _hash_map->find(_hash_alias->find(_hash_id)->second)->second;
+
+    std::stringstream ss;
+    ss << "Error! node with hash " << _hash_id << " did not have an associated prefix!\n";
+    ss << "Hash map:\n";
+    for(const auto& itr : *_hash_map)
+        ss << "    " << itr.first << " : " << itr.second << "\n";
+    ss << "Alias hash map:\n";
+    for(const auto& itr : *_hash_alias)
+        ss << "    " << itr.first << " : " << itr.second << "\n";
+    throw std::runtime_error(ss.str());
+    return "unknown";
+}
+
 //--------------------------------------------------------------------------------------//
 
 template <typename _Node>

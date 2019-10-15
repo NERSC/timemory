@@ -323,12 +323,25 @@ get_output_prefix()
 //--------------------------------------------------------------------------------------//
 
 inline string_t
-compose_output_filename(const string_t& _tag, string_t _ext)
+compose_output_filename(const string_t& _tag, string_t _ext, bool _mpi_init = false,
+                        const int32_t* _mpi_rank = nullptr)
 {
-    auto _prefix      = get_output_prefix();
-    auto _rank_suffix = (!mpi::is_initialized())
-                            ? string_t("")
-                            : (string_t("_") + std::to_string(mpi::rank()));
+    int32_t _rank = 0;
+    if(_mpi_rank)
+        _rank = *_mpi_rank;
+    else
+    {
+        // fallback if not specified
+        if(mpi::is_initialized())
+        {
+            _mpi_init = true;
+            _rank     = mpi::rank();
+        }
+    }
+
+    auto _prefix = get_output_prefix();
+    auto _rank_suffix =
+        (!_mpi_init) ? string_t("") : (string_t("_") + std::to_string(_rank));
     if(_ext.find('.') != 0)
         _ext = string_t(".") + _ext;
     auto plast = _prefix.length() - 1;

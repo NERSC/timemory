@@ -146,8 +146,7 @@ cxx_timemory_create_auto_timer(const char* timer_tag)
         return nullptr;
     using namespace tim::component;
     std::string key_tag(timer_tag);
-    auto*       obj = new auto_timer_t(key_tag, true, tim::settings::flat_profile(),
-                                 tim::language::c());
+    auto*       obj = new auto_timer_t(key_tag, true, tim::settings::flat_profile());
     obj->start();
     return (void*) obj;
 }
@@ -168,8 +167,7 @@ cxx_timemory_create_auto_tuple(const char* timer_tag, int num_components,
         free(_tag);
         free_cstr() = false;
     }
-    auto obj = new complete_list_t(key_tag, true, tim::settings::flat_profile(),
-                                   tim::language::c());
+    auto obj = new complete_list_t(key_tag, true, tim::settings::flat_profile());
 #    if defined(DEBUG)
     std::vector<int> _components;
     for(int i = 0; i < num_components; ++i)

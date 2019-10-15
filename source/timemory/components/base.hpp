@@ -189,12 +189,12 @@ public:
     // insert the node into the graph
     //
     template <typename _Scope = scope::process>
-    void insert_node(const string_t& _prefix)
+    void insert_node(const int64_t& _hash)
     {
         if(!is_on_stack)
         {
             Type& obj   = static_cast<Type&>(*this);
-            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _prefix);
+            graph_itr   = storage_type::instance()->template insert<_Scope>(obj, _hash);
             is_on_stack = true;
         }
     }

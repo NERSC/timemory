@@ -292,6 +292,9 @@ private:
     /// number of timing manager instances
     static std::atomic<int32_t>& f_manager_instance_count();
 
+    graph_hash_map_ptr   m_hash_ids     = ::tim::get_hash_ids();
+    graph_hash_alias_ptr m_hash_aliases = ::tim::get_hash_aliases();
+
 private:
     // private variables
     /// instance id

@@ -63,7 +63,6 @@ public:
     using string_t        = std::string;
     using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
-    using language_t      = language;
     using tuple_type      = implemented<Types...>;
     using init_func_t     = std::function<void(this_type&)>;
     using type_tuple      = typename component_type::type_tuple;
@@ -74,8 +73,8 @@ public:
 
 public:
     template <typename _Func>
-    inline explicit auto_list(const string_t&, bool flat, const language_t& lang,
-                              bool report_at_exit, _Func&& _func);
+    inline explicit auto_list(const string_t&, bool flat, bool report_at_exit,
+                              _Func&& _func);
     template <typename _Func>
     inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
                               _Func&& _func);
@@ -155,13 +154,11 @@ public:
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline bool             store() const { return m_temporary_object.store(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
     inline const int64_t&   hash() const { return m_temporary_object.hash(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
@@ -223,11 +220,11 @@ private:
 
 template <typename... Types>
 template <typename _Func>
-auto_list<Types...>::auto_list(const string_t& object_tag, bool flat,
-                               const language_t& lang, bool report_at_exit, _Func&& _func)
+auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool report_at_exit,
+                               _Func&& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat, lang)
+, m_temporary_object(object_tag, m_enabled, flat)
 {
     if(m_enabled)
     {
@@ -300,16 +297,15 @@ public:
     using this_type      = _auto_list<std::tuple<_Types...>>;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
     template <typename _Func>
-    inline explicit _auto_list(const string_t& label, bool flat, const language_t& lang,
-                               bool report_at_exit, _Func&& _func)
-    : base_type(label, flat, lang, report_at_exit, std::forward<_Func>(_func))
+    inline explicit _auto_list(const string_t& label, bool flat, bool report_at_exit,
+                               _Func&& _func)
+    : base_type(label, flat, report_at_exit, std::forward<_Func>(_func))
     {
     }
 
@@ -349,7 +345,6 @@ public:
     using this_type      = auto_list<_Types...>;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
     using init_func_t    = std::function<void(this_type&)>;
 
@@ -357,9 +352,8 @@ public:
 
 public:
     inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(label, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -374,9 +368,9 @@ public:
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(label, flat, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(label, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -418,7 +412,6 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
     using init_func_t    = std::function<void(this_type&)>;
 
@@ -426,9 +419,8 @@ public:
 
 public:
     inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(label, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -443,9 +435,9 @@ public:
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(label, flat, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(label, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -488,7 +480,6 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
     using init_func_t    = std::function<void(this_type&)>;
 
@@ -496,9 +487,8 @@ public:
 
 public:
     inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(label, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -513,9 +503,9 @@ public:
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(label, flat, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(label, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }
@@ -558,7 +548,6 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
     using init_func_t    = std::function<void(this_type&)>;
 
@@ -566,9 +555,8 @@ public:
 
 public:
     inline explicit auto_list(const string_t& label, bool flat = settings::flat_profile(),
-                              const language_t& lang = language_t::cxx(),
-                              bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit, [](core_type& _core) {
+                              bool report_at_exit = settings::destructor_report())
+    : base_type(label, flat, report_at_exit, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -583,9 +571,9 @@ public:
     }
 
     template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, const language_t& lang,
-                              bool report_at_exit, _Func&& _func)
-    : base_type(label, flat, lang, report_at_exit,
+    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
+                              _Func&& _func)
+    : base_type(label, flat, report_at_exit,
                 [&](core_type& _core) { _func(static_cast<this_type&>(_core)); })
     {
     }

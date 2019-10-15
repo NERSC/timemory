@@ -108,7 +108,7 @@ tim::settings::parse()
     }
 
     // logic
-    enabled()     = tim::get_env("TIMEMORY_ENABLE", enabled());
+    enabled()     = tim::get_env("TIMEMORY_ENABLED", enabled());
     auto_output() = tim::get_env("TIMEMORY_AUTO_OUTPUT", auto_output());
     file_output() = tim::get_env("TIMEMORY_FILE_OUTPUT", file_output());
     text_output() = tim::get_env("TIMEMORY_TEXT_OUTPUT", text_output());

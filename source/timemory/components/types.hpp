@@ -335,7 +335,7 @@ struct set_units;
 //  Language specification
 //
 //--------------------------------------------------------------------------------------//
-
+/*
 class language
 {
 public:
@@ -391,7 +391,7 @@ private:
     type        m_type;
     const char* m_descript = nullptr;
 };
-
+*/
 //--------------------------------------------------------------------------------------//
 //
 //  Some common types

@@ -129,18 +129,16 @@ extern "C"
             (*timemory_create_function)(name, nid, n, ctypes);
             return;
         }
+        // else: provide default behavior or none at all
 
-        // provide default behavior or none at all
-
-        auto                            _ctypes = (TIMEMORY_COMPONENT*) (ctypes);
-        std::vector<TIMEMORY_COMPONENT> types(_ctypes, _ctypes + n);
-
-        *nid     = timemory_get_unique_id();
-        auto obj = toolset_ptr_t(new toolset_t(name, true, tim::settings::flat_profile(),
-                                               tim::language::cxx()));
-        tim::initialize(*obj.get(), types);
+        *nid = timemory_get_unique_id();
+        auto obj =
+            toolset_ptr_t(new toolset_t(name, true, tim::settings::flat_profile()));
+        tim::initialize(*obj.get(), n, ctypes);
         get_record_map()[*nid] = std::move(obj);
         get_record_map()[*nid]->start();
+        if(get_record_map().bucket_count() > get_record_map().size())
+            get_record_map().rehash(get_record_map().size() + 10);
     }
 
     //----------------------------------------------------------------------------------//
@@ -220,8 +218,6 @@ extern "C"
 
     API void timemory_set_default(const char* _component_string)
     {
-        if(tim::settings::enabled() == false)
-            return;
         get_default_components() = std::string(_component_string);
         auto& _stack             = get_components_stack();
         if(_stack.size() == 0)
@@ -233,8 +229,6 @@ extern "C"
 
     API void timemory_push_components(const char* _component_string)
     {
-        if(tim::settings::enabled() == false)
-            return;
         auto& _stack = get_components_stack();
         _stack.push_back(tim::enumerate_components(_component_string));
     }
@@ -243,8 +237,6 @@ extern "C"
 
     API void timemory_pop_components()
     {
-        if(tim::settings::enabled() == false)
-            return;
         auto& _stack = get_components_stack();
         if(_stack.size() > 1)
             _stack.pop_back();

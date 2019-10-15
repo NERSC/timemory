@@ -224,8 +224,8 @@ public:
 
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
-        delete __graph_data_instance;
-        __graph_data_instance = nullptr;
+        delete m_graph_data_instance;
+        m_graph_data_instance = nullptr;
     }
 
     //----------------------------------------------------------------------------------//
@@ -311,19 +311,18 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
+    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
     {
         // lambda for updating settings
         auto _update = [&](iterator itr) {
-            exists          = true;
             _data().depth() = itr->depth();
             return (_data().current() = itr);
         };
 
-        if(m_node_ids.find(hash_id) != m_node_ids.end() &&
-           m_node_ids.find(hash_id)->second->depth() == _data().depth())
+        if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
+           m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
         {
-            _update(m_node_ids.find(hash_id)->second);
+            _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
@@ -331,21 +330,23 @@ public:
 
         // lambda for inserting child
         auto _insert_child = [&]() {
-            exists       = false;
-            node.depth() = _data().depth() + 1;
-            auto itr     = _data().append_child(node);
+            node.depth()                    = hash_depth;
+            auto itr                        = _data().append_child(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
+            //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
             return itr;
         };
 
         // if first instance
-        if(!_data().has_head() || (this == master_instance() && m_node_ids.size() == 0))
+        if(!_data().has_head() ||
+           (this == master_instance() && m_node_ids[0].size() == 0))
         {
             if(this == master_instance())
             {
-                _data()         = graph_data_t(node);
-                exists          = false;
-                _data().depth() = 0;
-                m_node_ids.insert(std::make_pair(hash_id, _data().current()));
+                _data()                         = graph_data_t(node);
+                _data().depth()                 = 0;
+                m_node_ids[hash_depth][hash_id] = _data().current();
                 return _data().current();
             }
             else
@@ -362,9 +363,8 @@ public:
             auto current   = _data().current();
             auto nchildren = graph_t::number_of_children(current);
 
-            if(hash_id == current->id())
+            if((hash_id) == current->id())
             {
-                exists = true;
                 return current;
             }
             else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
@@ -378,7 +378,7 @@ public:
                     if(itr == current)
                         continue;
                     // check hash id's
-                    if(hash_id == itr->id())
+                    if((hash_id) == itr->id())
                         return _update(itr);
                 }
 
@@ -390,7 +390,7 @@ public:
                     auto fchild = graph_t::child(current, 0);
                     for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {
-                        if(hash_id == itr->id())
+                        if((hash_id) == itr->id())
                             return _update(itr);
                     }
                 }
@@ -403,29 +403,27 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const int64_t& hash_id, const ObjectType& obj, bool& exists)
+    iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
     {
         // lambda for updating settings
-        auto _update = [&](iterator itr) {
-            exists          = true;
-            _data().depth() = 1;
-            return itr;
-        };
+        auto _update = [&](iterator itr) { return itr; };
 
-        if(m_node_ids.find(hash_id) != m_node_ids.end() &&
-           m_node_ids.find(hash_id)->second->depth() == _data().depth())
+        if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
+           m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
         {
-            _update(m_node_ids.find(hash_id)->second);
+            _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node_t node(hash_id, obj, 1);
+        graph_node_t node(hash_id, obj, hash_depth);
 
         // lambda for inserting child
         auto _insert_head = [&]() {
-            exists       = false;
-            node.depth() = 1;
-            auto itr     = _data().append_head(node);
+            node.depth()                    = hash_depth;
+            auto itr                        = _data().append_head(node);
+            m_node_ids[hash_depth][hash_id] = itr;
+            // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
+            //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
             return itr;
         };
 
@@ -443,7 +441,7 @@ public:
                 if(itr == current)
                     continue;
                 // check hash id's
-                if(hash_id == itr->id())
+                if((hash_id) == itr->id())
                     return _update(itr);
             }
 
@@ -451,7 +449,7 @@ public:
             auto fchild = graph_t::child(current, 0);
             for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
             {
-                if(hash_id == itr->id())
+                if((hash_id) == itr->id())
                     return _update(itr);
             }
         }
@@ -464,17 +462,11 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::process>::value ||
                            std::is_same<_Scope, scope::thread>::value),
                           int> = 0>
-    iterator insert(const ObjectType& obj, const string_t& prefix)
+    iterator insert(const ObjectType& obj, int64_t hash_id)
     {
-        int64_t hash_id = std::hash<string_t>()(prefix) *
-                          ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
-        bool exists = false;
-        auto itr    = insert<_Scope>(hash_id, obj, exists);
-        if(m_hash_ids.find(hash_id) == m_hash_ids.end())
-        {
-            m_hash_ids[hash_id] = prefix;
-            m_hash_ids.rehash(m_hash_ids.size());
-        }
+        auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
+        auto itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
+        add_hash_id(hash_id, hash_id * hash_depth);
         return itr;
     }
 
@@ -482,16 +474,9 @@ public:
     //
     template <typename _Scope = scope::process,
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
-    iterator insert(const ObjectType& obj, const string_t& prefix)
+    iterator insert(const ObjectType& obj, int64_t hash_id)
     {
-        int64_t hash_id = std::hash<string_t>()(prefix);
-        bool    exists  = false;
-        auto    itr     = insert<_Scope>(hash_id, obj, exists);
-        if(m_hash_ids.find(hash_id) == m_hash_ids.end())
-        {
-            m_hash_ids[hash_id] = prefix;
-            m_hash_ids.rehash(m_hash_ids.size());
-        }
+        auto itr = insert<_Scope>(hash_id, obj, 1);
         return itr;
     }
 
@@ -504,9 +489,8 @@ public:
     }
 
 private:
-    string_t get_prefix(const graph_node& _node) { return m_hash_ids[_node.id()]; }
-
-    string_t get_prefix(iterator _itr) { return m_hash_ids[_itr->id()]; }
+    string_t get_prefix(const graph_node& node) { return get_hash_identifier(node.id()); }
+    string_t get_prefix(iterator _node) { return get_prefix(*_node); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -637,40 +621,45 @@ private:
 
     graph_data_t& _data()
     {
-        if(__graph_data_instance == nullptr && !singleton_t::is_master(this))
+        if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
         {
-            __graph_data_instance = new graph_data_t(*master_instance()->current());
-            __graph_data_instance->head()    = master_instance()->current();
-            __graph_data_instance->current() = master_instance()->current();
-            __graph_data_instance->depth()   = master_instance()->depth();
+            m_graph_data_instance = new graph_data_t(*master_instance()->current());
+            m_graph_data_instance->head()    = master_instance()->current();
+            m_graph_data_instance->current() = master_instance()->current();
+            m_graph_data_instance->depth()   = master_instance()->depth();
         }
-        else if(__graph_data_instance == nullptr)
+        else if(m_graph_data_instance == nullptr)
         {
             using base_type     = typename ObjectType::base_type;
             std::string _prefix = "> [tot] total";
-            m_hash_ids[0]       = _prefix.c_str();
+            add_hash_id(_prefix);
             graph_node_t node(0, base_type::dummy(), 0);
-            __graph_data_instance          = new graph_data_t(node);
-            __graph_data_instance->depth() = 0;
-            m_node_ids.insert(std::make_pair(0, __graph_data_instance->current()));
+            m_graph_data_instance          = new graph_data_t(node);
+            m_graph_data_instance->depth() = 0;
+            m_node_ids[0][0]               = m_graph_data_instance->current();
         }
-        return *__graph_data_instance;
+        return *m_graph_data_instance;
     }
 
     const graph_data_t& _data() const { return const_cast<this_type*>(this)->_data(); }
 
-    bool                                  m_initialized         = false;
-    bool                                  m_finalized           = false;
-    int64_t                               m_instance_id         = instance_count()++;
-    mutable graph_data_t*                 __graph_data_instance = nullptr;
-    std::unordered_map<int64_t, iterator> m_node_ids;
-    std::unordered_map<int64_t, string_t> m_hash_ids;
+    template <typename Key, typename Mapped, typename Hash = std::hash<Key>>
+    using uomap_t             = std::unordered_map<Key, Mapped, Hash>;
+    using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
+
+    bool                  m_initialized         = false;
+    bool                  m_finalized           = false;
+    bool                  m_node_init           = mpi::is_initialized();
+    int32_t               m_node_rank           = mpi::rank();
+    int32_t               m_node_size           = mpi::size();
+    int64_t               m_instance_id         = instance_count()++;
+    mutable graph_data_t* m_graph_data_instance = nullptr;
+    iterator_hash_map_t   m_node_ids;
+    graph_hash_map_ptr    m_hash_ids     = ::tim::get_hash_ids();
+    graph_hash_alias_ptr  m_hash_aliases = ::tim::get_hash_aliases();
 
 public:
-    const std::unordered_map<int64_t, string_t>& get_hash_ids() const
-    {
-        return m_hash_ids;
-    }
+    const graph_hash_map_ptr& get_hash_ids() const { return m_hash_ids; }
 };
 
 //======================================================================================//
@@ -900,7 +889,7 @@ class storage
 ///
 template <typename _Tp>
 void
-serialize_storage(const std::string&, const _Tp&, int64_t = 1);
+serialize_storage(const std::string&, const _Tp&, int64_t = 1, int64_t = mpi::rank());
 
 //--------------------------------------------------------------------------------------//
 

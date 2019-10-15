@@ -520,6 +520,8 @@ private:
 inline void
 serialize(std::string fname, const exec_data& obj)
 {
+    bool                  _init   = mpi::is_initialized();
+    auto                  _rank   = mpi::rank();
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     std::stringstream     ss;
     {
@@ -529,12 +531,11 @@ serialize(std::string fname, const exec_data& obj)
         cereal::JSONOutputArchive          oa(ss, opts);
         oa.setNextName("rank");
         oa.startNode();
-        auto rank = tim::mpi::rank();
-        oa(cereal::make_nvp("rank_id", rank));
+        oa(cereal::make_nvp("rank_id", _rank));
         oa(cereal::make_nvp("data", obj));
         oa.finishNode();
     }
-    fname = settings::compose_output_filename(fname, ".json");
+    fname = settings::compose_output_filename(fname, ".json", _init, &_rank);
     std::ofstream ofs(fname.c_str());
     if(ofs)
         ofs << ss.str() << std::endl;

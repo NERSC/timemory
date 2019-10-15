@@ -314,9 +314,9 @@ storage<ObjectType, true>::merge(this_type* itr)
     if(!l.owns_lock())
         l.lock();
 
-    for(const auto& _itr : itr->get_hash_ids())
-        if(m_hash_ids.find(_itr.first) == m_hash_ids.end())
-            m_hash_ids[_itr.first] = _itr.second;
+    for(const auto& _itr : (*itr->get_hash_ids()))
+        if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
+            (*m_hash_ids)[_itr.first] = _itr.second;
 
     // if self is not initialized but itr is, copy data
     if(itr && itr->is_initialized() && !this->is_initialized())
@@ -399,6 +399,13 @@ void storage<ObjectType, true>::external_print(std::false_type)
 
         finalize();
 
+        // no entries
+        if(_data().graph().size() <= 1)
+        {
+            instance_count().store(0);
+            return;
+        }
+
         // disable gperf if profiling
         try
         {
@@ -432,60 +439,45 @@ void storage<ObjectType, true>::external_print(std::false_type)
             return;
         }
 
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the node prefix
+        //
+        //------------------------------------------------------------------------------//
+        auto _get_node_prefix = [&]() {
+            if(!m_node_init)
+                return std::string("> ");
+
+            // prefix spacing
+            static uint16_t width = 1;
+            if(m_node_size > 9)
+                width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
+            std::stringstream ss;
+            ss.fill('0');
+            ss << "|" << std::setw(width) << m_node_rank << "> ";
+            return ss.str();
+        };
+
+        //------------------------------------------------------------------------------//
+        //
+        //  Compute the indentation
+        //
+        //------------------------------------------------------------------------------//
         // fix up the prefix based on the actual depth
         auto _compute_modified_prefix = [&](const graph_node& itr) {
-            std::string _prefix   = get_prefix(itr);
-            auto        _ebracket = _prefix.find("]");
-            auto        _boffset  = _prefix.find("|_");
+            std::string _prefix      = get_prefix(itr);
+            std::string _indent      = "";
+            std::string _node_prefix = _get_node_prefix();
 
-            // if depth == 0
-            if(itr.depth() < 1)
+            int64_t _depth = itr.depth();
+            if(_depth > 0)
             {
-                // account for |_ in the prefix
-                if(_boffset != std::string::npos)
-                {
-                    auto _beg =
-                        (_ebracket != std::string::npos) ? (_ebracket + 2) : _boffset;
-                    auto _len = (_boffset + 2) - _beg;
-                    _prefix   = _prefix.erase(_beg, _len);
-                }
-                return _prefix;
+                for(int64_t ii = 0; ii < _depth - 1; ++ii)
+                    _indent += "  ";
+                _indent += "|_";
             }
 
-            // if |_ found
-            if(_boffset == std::string::npos)
-            {
-                for(int64_t _i = 0; _i < itr.depth() - 1; ++_i)
-                {
-                    _prefix.insert(_ebracket + 2, "  ");
-                    _ebracket += 2;
-                }
-                _prefix.insert(_ebracket + 2, "|_");
-            }
-            else  // if |_ not found
-            {
-                int _diff = (_boffset - (_ebracket + 2));
-                int _expd = 2 * (itr.depth() - 1);
-                // if indent is less than depth
-                if(_expd > _diff)
-                {
-                    int ninsert = (_expd - _diff);
-                    for(auto i = 0; i < ninsert; ++i)
-                    {
-                        _prefix.insert(_ebracket + 1, " ");
-                    }
-                }
-                // if indent is more than depth
-                else if(_diff > _expd)
-                {
-                    int nstrip = (_diff - _expd);
-                    for(auto i = 0; i < nstrip; ++i)
-                    {
-                        _prefix = _prefix.erase(_ebracket + 1, 1);
-                    }
-                }
-            }
-            return _prefix;
+            return _node_prefix + _indent + _prefix;
         };
 
         _data().current()  = _data().head();
@@ -527,12 +519,13 @@ void storage<ObjectType, true>::external_print(std::false_type)
         if((settings::file_output() && settings::json_output()) || requires_json)
         {
             printf("\n");
-            auto jname = settings::compose_output_filename(label, ".json");
+            auto jname = settings::compose_output_filename(label, ".json", m_node_init,
+                                                           &m_node_rank);
             if(jname.length() > 0)
             {
                 printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
                        jname.c_str());
-                serialize_storage(jname, *this, num_instances);
+                serialize_storage(jname, *this, num_instances, m_node_rank);
             }
         }
         else if(settings::file_output() && settings::text_output())
@@ -831,7 +824,8 @@ storage<ObjectType, true>::serialize_me(std::true_type, Archive& ar,
 
 template <typename _Tp>
 void
-tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency)
+tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurrency,
+                       int64_t rank)
 {
     static constexpr auto spacing = cereal::JSONOutputArchive::Options::IndentChar::space;
     // std::stringstream     ss;
@@ -844,7 +838,6 @@ tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurr
         cereal::JSONOutputArchive          oa(ofs, opts);
         oa.setNextName("rank");
         oa.startNode();
-        auto rank = tim::mpi::rank();
         oa(cereal::make_nvp("rank_id", rank));
         oa(cereal::make_nvp("concurrency", concurrency));
         oa(cereal::make_nvp("data", obj));

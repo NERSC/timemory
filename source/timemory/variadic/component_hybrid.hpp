@@ -75,7 +75,6 @@ class component_hybrid
 
 public:
     using size_type       = int64_t;
-    using language_t      = tim::language;
     using string_hash     = std::hash<string_t>;
     using tuple_type      = _CompTuple;
     using list_type       = _CompList;
@@ -104,10 +103,9 @@ public:
 
 public:
     explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const bool&       flat = settings::flat_profile(),
-                              const language_t& lang = language_t::cxx())
-    : m_tuple(key, store, flat, lang)
-    , m_list(key, store, flat, lang)
+                              const bool& flat = settings::flat_profile())
+    : m_tuple(key, store, flat)
+    , m_list(key, store, flat)
     {
         m_tuple.m_print_laps  = false;
         m_list.m_print_laps   = false;
@@ -156,12 +154,9 @@ public:
     inline int64_t laps() const { return m_tuple.laps(); }
 
     string_t& key() { return m_tuple.key(); }
-    string_t& identifier() { return m_tuple.identifier(); }
 
-    const string_t&   key() const { return m_tuple.key(); }
-    const language_t& lang() const { return m_tuple.lang(); }
-    const string_t&   identifier() const { return m_tuple.identifier(); }
-    void              rekey(const string_t& _key) { m_tuple.rekey(_key); }
+    const string_t& key() const { return m_tuple.key(); }
+    void            rekey(const string_t& _key) { m_tuple.rekey(_key); }
 
     bool&       store() { return m_tuple.store(); }
     const bool& store() const { return m_tuple.store(); }

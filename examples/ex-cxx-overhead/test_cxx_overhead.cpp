@@ -187,7 +187,7 @@ fibonacci(int64_t n, int64_t cutoff)
 
 template <typename _Tp>
 result_type
-run(int64_t n, int64_t cutoff)
+run(int64_t n, int64_t cutoff, bool store = true)
 {
     // bool is_none  = std::is_same<_Tp, mode::none>::value;
     bool is_blank = std::is_same<_Tp, mode::blank>::value ||
@@ -203,7 +203,7 @@ run(int64_t n, int64_t cutoff)
     nmeasure = 0;
     fibonacci<mode::measure>(n, cutoff);
 
-    timer_tuple_t timer(signature, true);
+    timer_tuple_t timer(signature, store);
     timer.start();
     int64_t result = fibonacci<_Tp>(n, cutoff);
     timer.stop();
@@ -265,8 +265,8 @@ main(int argc, char** argv)
     tim::settings::text_output()       = false;
     tim::settings::memory_units()      = "kB";
     tim::settings::memory_precision()  = 3;
-    tim::settings::memory_width()      = 8;
-    tim::settings::timing_width()      = 10;
+    tim::settings::width()             = 10;
+    tim::settings::timing_precision()  = 6;
     tim::timemory_init(argc, argv);
     tim::settings::cout_output() = false;
     tim::print_env();
@@ -293,7 +293,7 @@ main(int argc, char** argv)
     tim::auto_tuple<> empty_test("test");
     tim::consume_parameters(empty_test);
 
-    auto warmup = run<mode::none>(nfib, nfib);
+    auto warmup = run<mode::none>(nfib, nfib, false);
     std::cout << "[warmup]" << std::get<0>(warmup) << std::endl;
 
     int64_t ex_measure = 0;
@@ -366,7 +366,7 @@ main(int argc, char** argv)
     {
         ex_unique = ((nfib - cutoff) + 1) * auto_tuple_t::size();
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size();
+            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_t::size();
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
@@ -374,7 +374,7 @@ main(int argc, char** argv)
     else
     {
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size() - 4;
+            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_t::size() - 4;
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;

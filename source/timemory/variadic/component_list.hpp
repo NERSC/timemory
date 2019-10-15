@@ -104,7 +104,6 @@ public:
     using reference_type  = std::tuple<Types...>;
     using type_tuple      = std::tuple<Types...>;
     using string_hash     = std::hash<string_t>;
-    using language_t      = tim::language;
     using init_func_t     = std::function<void(this_type&)>;
     using data_value_type = get_data_value_t<reference_type>;
     using data_label_type = get_data_label_t<reference_type>;
@@ -153,19 +152,20 @@ public:
 public:
     template <typename _Func>
     explicit component_list(const string_t& key, const bool& store, const bool& flat,
-                            const language_t& lang, _Func&& _func)
+                            _Func&& _func)
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
     , m_key(key)
-    , m_lang(lang)
-    , m_identifier("")
     {
         apply<void>::set_value(m_data, nullptr);
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
-        _func(*this);
+        // if(settings::enabled())
+        {
+            compute_width(key);
+            init_manager();
+            init_storage();
+            _func(*this);
+        }
     }
 
     ~component_list()
@@ -186,8 +186,6 @@ public:
     , m_is_pushed(rhs.m_is_pushed)
     , m_laps(rhs.m_laps)
     , m_key(rhs.m_key)
-    , m_lang(rhs.m_lang)
-    , m_identifier(rhs.m_identifier)
     {
         apply<void>::set_value(m_data, nullptr);
         apply<void>::access2<copy_t>(m_data, rhs.m_data);
@@ -197,13 +195,11 @@ public:
     {
         if(this != &rhs)
         {
-            m_store      = rhs.m_store;
-            m_flat       = rhs.m_flat;
-            m_is_pushed  = rhs.m_is_pushed;
-            m_laps       = rhs.m_laps;
-            m_key        = rhs.m_key;
-            m_lang       = std::move(language_t(rhs.m_lang));
-            m_identifier = rhs.m_identifier;
+            m_store     = rhs.m_store;
+            m_flat      = rhs.m_flat;
+            m_is_pushed = rhs.m_is_pushed;
+            m_laps      = rhs.m_laps;
+            m_key       = rhs.m_key;
             apply<void>::access<deleter_t>(m_data);
             apply<void>::access2<copy_t>(m_data, rhs.m_data);
         }
@@ -239,11 +235,13 @@ public:
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
+            // compute the hash
+            int64_t _hash = add_hash_id(m_key);
             // insert node or find existing node
             if(m_flat)
-                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_identifier);
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, _hash);
             else
-                apply<void>::access<insert_node_t<scope::process>>(m_data, m_identifier);
+                apply<void>::access<insert_node_t<scope::process>>(m_data, _hash);
         }
     }
 
@@ -462,8 +460,10 @@ public:
         {
             if(obj.m_print_prefix)
             {
-                obj.update_identifier();
-                ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
+                obj.update_width();
+                std::stringstream ss_id;
+                ss_id << obj.get_prefix() << " " << std::left << obj.m_key;
+                ss_prefix << std::setw(output_width()) << std::left << ss_id.str()
                           << " : ";
                 os << ss_prefix.str();
             }
@@ -478,8 +478,7 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        ar(serializer::make_nvp("identifier", m_identifier),
-           serializer::make_nvp("laps", m_laps));
+        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
         apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
@@ -514,12 +513,9 @@ public:
     inline int64_t          laps() const { return m_laps; }
 
     string_t& key() { return m_key; }
-    string_t& identifier() { return m_identifier; }
 
-    const string_t&   key() const { return m_key; }
-    const language_t& lang() const { return m_lang; }
-    const string_t&   identifier() const { return m_identifier; }
-    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
+    const string_t& key() const { return m_key; }
+    void            rekey(const string_t& _key) { compute_width(m_key = _key); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
@@ -568,7 +564,7 @@ public:
                        _id.c_str());
             }
             _obj = new _Tp(std::forward<_Args>(_args)...);
-            compute_identifier_extra(_obj);
+            set_object_prefix(_obj);
         }
         else
         {
@@ -672,14 +668,11 @@ protected:
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
-    int64_t           m_count        = 0;
     string_t          m_key          = "";
-    language_t        m_lang         = language_t::cxx();
-    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:
-    string_t get_prefix()
+    string_t get_prefix() const
     {
         auto _get_prefix = []() {
             if(!mpi::is_initialized())
@@ -698,22 +691,14 @@ protected:
         return _prefix;
     }
 
-    void compute_identifier(const string_t& key, const language_t& lang)
+    void compute_width(const string_t& key)
     {
-        static string_t   _prefix = get_prefix();
-        std::stringstream ss;
-        // designated as [cxx], [pyc], etc.
-        ss << _prefix << lang << " ";
-        ss << std::left << key;
-        m_identifier = ss.str();
-        output_width(m_identifier.length());
-        compute_identifier_extra(key, lang);
+        static string_t _prefix = get_prefix();
+        output_width(key.length() + _prefix.length() + 1);
+        set_object_prefix(key);
     }
 
-    void update_identifier() const
-    {
-        const_cast<this_type&>(*this).compute_identifier(m_key, m_lang);
-    }
+    void update_width() const { const_cast<this_type&>(*this).compute_width(m_key); }
 
     static int64_t output_width(int64_t width = 0)
     {
@@ -740,13 +725,13 @@ protected:
         return _instance.load();
     }
 
-    void compute_identifier_extra(const string_t& key, const language_t&)
+    void set_object_prefix(const string_t& key)
     {
         apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
 
     template <typename _Tp, enable_if_t<(trait::requires_prefix<_Tp>::value), int> = 0>
-    void compute_identifier_extra(_Tp* obj)
+    void set_object_prefix(_Tp* obj)
     {
         if(obj)
             obj->prefix = m_key;
@@ -754,7 +739,7 @@ protected:
 
     template <typename _Tp,
               enable_if_t<(trait::requires_prefix<_Tp>::value == false), int> = 0>
-    void compute_identifier_extra(_Tp*)
+    void set_object_prefix(_Tp*)
     {
     }
 
@@ -798,7 +783,6 @@ public:
     using type_tuple     = typename base_type::type_tuple;
     using init_func_t    = typename base_type::init_func_t;
     using auto_type      = typename base_type::auto_type;
-    using language_t     = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
@@ -806,8 +790,8 @@ public:
 
     template <typename _Func>
     explicit _comp_list(const string_t& key, const bool& store, const bool& flat,
-                        const language_t& lang, _Func&& _func)
-    : base_type(key, store, flat, lang, std::forward<_Func>(_func))
+                        _Func&& _func)
+    : base_type(key, store, flat, std::forward<_Func>(_func))
     {
     }
 
@@ -852,16 +836,14 @@ public:
     using reference_type = typename base_type::reference_type;
     using type_tuple     = typename base_type::type_tuple;
     using auto_type      = typename base_type::auto_type;
-    using language_t     = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool&       flat = settings::flat_profile(),
-                            const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang, [](core_type& _core) {
+                            const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -942,16 +924,14 @@ public:
     using reference_type = typename base_type::reference_type;
     using type_tuple     = typename base_type::type_tuple;
     using auto_type      = typename base_type::auto_type;
-    using language_t     = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool&       flat = settings::flat_profile(),
-                            const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang, [](core_type& _core) {
+                            const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {
@@ -1032,16 +1012,14 @@ public:
     using reference_type = typename base_type::reference_type;
     using type_tuple     = typename base_type::type_tuple;
     using auto_type      = typename base_type::auto_type;
-    using language_t     = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool&       flat = settings::flat_profile(),
-                            const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang, [](core_type& _core) {
+                            const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat, [](core_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
     {

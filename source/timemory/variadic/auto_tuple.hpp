@@ -63,7 +63,6 @@ public:
     using string_t        = std::string;
     using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
-    using language_t      = language;
     using type_tuple      = typename component_type::type_tuple;
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
@@ -71,8 +70,7 @@ public:
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&, bool flat, const language_t& lang,
-                               bool report_at_exit);
+    inline explicit auto_tuple(const string_t&, bool flat, bool report_at_exit);
     inline explicit auto_tuple(component_type& tmp, bool flat, bool report_at_exit);
     inline ~auto_tuple();
 
@@ -150,12 +148,10 @@ public:
     inline void report_at_exit(bool val) { m_report_at_exit = val; }
     inline bool report_at_exit() const { return m_report_at_exit; }
 
-    inline const bool&      store() const { return m_temporary_object.store(); }
+    inline bool             store() const { return m_temporary_object.store(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
-    inline const language&  lang() const { return m_temporary_object.lang(); }
-    inline const string_t&  identifier() const { return m_temporary_object.identifier(); }
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
 public:
@@ -189,10 +185,10 @@ protected:
 
 template <typename... Types>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
-                                 const language_t& lang, bool report_at_exit)
+                                 bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat, lang)
+, m_temporary_object(object_tag, m_enabled, flat)
 {
     if(m_enabled)
     {
@@ -261,17 +257,15 @@ public:
     using this_type      = _auto_tuple<std::tuple<_Types...>>;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit _auto_tuple(const string_t&   label,
-                                bool              flat = settings::flat_profile(),
-                                const language_t& lang = language_t::cxx(),
-                                bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit)
+    inline explicit _auto_tuple(const string_t& label,
+                                bool            flat = settings::flat_profile(),
+                                bool report_at_exit  = settings::destructor_report())
+    : base_type(label, flat, report_at_exit)
     {
     }
 
@@ -306,17 +300,15 @@ public:
     using this_type      = auto_tuple<_Types...>;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&   label,
-                               bool              flat = settings::flat_profile(),
-                               const language_t& lang = language_t::cxx(),
-                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit)
+    inline explicit auto_tuple(const string_t& label,
+                               bool            flat = settings::flat_profile(),
+                               bool report_at_exit  = settings::destructor_report())
+    : base_type(label, flat, report_at_exit)
     {
     }
 
@@ -347,17 +339,15 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&   label,
-                               bool              flat = settings::flat_profile(),
-                               const language_t& lang = language_t::cxx(),
-                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit)
+    inline explicit auto_tuple(const string_t& label,
+                               bool            flat = settings::flat_profile(),
+                               bool report_at_exit  = settings::destructor_report())
+    : base_type(label, flat, report_at_exit)
     {
     }
 
@@ -389,17 +379,15 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&   label,
-                               bool              flat = settings::flat_profile(),
-                               const language_t& lang = language_t::cxx(),
-                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit)
+    inline explicit auto_tuple(const string_t& label,
+                               bool            flat = settings::flat_profile(),
+                               bool report_at_exit  = settings::destructor_report())
+    : base_type(label, flat, report_at_exit)
     {
     }
 
@@ -431,17 +419,15 @@ public:
     using component_type = typename base_type::component_type;
     using data_type      = typename base_type::data_type;
     using string_t       = std::string;
-    using language_t     = language;
     using type_tuple     = typename base_type::type_tuple;
 
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&   label,
-                               bool              flat = settings::flat_profile(),
-                               const language_t& lang = language_t::cxx(),
-                               bool report_at_exit    = settings::destructor_report())
-    : base_type(label, flat, lang, report_at_exit)
+    inline explicit auto_tuple(const string_t& label,
+                               bool            flat = settings::flat_profile(),
+                               bool report_at_exit  = settings::destructor_report())
+    : base_type(label, flat, report_at_exit)
     {
     }
 

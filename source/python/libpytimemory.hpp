@@ -296,8 +296,7 @@ components_enum_to_vec(py::list enum_list)
 component_list_t*
 create_component_list(std::string obj_tag, const component_enum_vec& components)
 {
-    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile(),
-                                    tim::language::pyc());
+    auto obj = new component_list_t(obj_tag, true, tim::settings::flat_profile());
     tim::initialize(*obj, components);
     return obj;
 }
@@ -362,8 +361,7 @@ manager()
 tim_timer_t*
 timer(std::string key)
 {
-    return new tim_timer_t(key, true, tim::settings::flat_profile(),
-                           tim::language::pyc());
+    return new tim_timer_t(key, true, tim::settings::flat_profile());
 }
 
 //--------------------------------------------------------------------------------------//
@@ -371,8 +369,7 @@ timer(std::string key)
 auto_timer_t*
 auto_timer(std::string key, bool report_at_exit)
 {
-    return new auto_timer_t(key, tim::settings::flat_profile(), tim::language::pyc(),
-                            report_at_exit);
+    return new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -380,8 +377,7 @@ auto_timer(std::string key, bool report_at_exit)
 rss_usage_t*
 rss_usage(std::string key, bool record)
 {
-    rss_usage_t* _rss =
-        new rss_usage_t(key, true, tim::settings::flat_profile(), tim::language::pyc());
+    rss_usage_t* _rss = new rss_usage_t(key, true, tim::settings::flat_profile());
     if(record)
         _rss->measure();
     return _rss;
@@ -403,8 +399,8 @@ timer_decorator(const std::string& key, bool report_at_exit)
     auto_timer_decorator* _ptr = new auto_timer_decorator();
     if(!tim::settings::enabled())
         return _ptr;
-    return &(*_ptr = new auto_timer_t(key, tim::settings::flat_profile(),
-                                      tim::language::pyc(), report_at_exit));
+    return &(*_ptr =
+                 new auto_timer_t(key, tim::settings::flat_profile(), report_at_exit));
 }
 
 //----------------------------------------------------------------------------//

@@ -115,9 +115,12 @@ struct gperf_cpu_profiler
         set_started();
         if(!gperf::cpu::is_running())
         {
-            index      = this_type::get_index()++;
-            auto fname = settings::compose_output_filename(
-                label() + "_" + std::to_string(index), ".dat");
+            index                 = this_type::get_index()++;
+            const auto& _mpi_info = get_mpi_info();
+            bool        _mpi_init = std::get<0>(_mpi_info);
+            int32_t     _mpi_rank = std::get<1>(_mpi_info);
+            auto        fname     = settings::compose_output_filename(
+                label() + "_" + std::to_string(index), ".dat", _mpi_init, &_mpi_rank);
             auto ret = gperf::cpu::profiler_start(fname);
             if(ret == 0)
                 fprintf(stderr, "[gperf_cpu_profiler]> Error starting %s...",
@@ -149,6 +152,14 @@ private:
     {
         static std::atomic<int64_t> _instance;
         return _instance;
+    }
+
+    using mpi_info_t = std::tuple<bool, int32_t, int32_t>;
+
+    static const mpi_info_t& get_mpi_info()
+    {
+        static mpi_info_t _info{ mpi::is_initialized(), mpi::rank(), mpi::size() };
+        return _info;
     }
 };
 

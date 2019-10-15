@@ -99,7 +99,6 @@ class component_tuple
 public:
     using string_t        = std::string;
     using size_type       = int64_t;
-    using language_t      = tim::language;
     using string_hash     = std::hash<string_t>;
     using this_type       = component_tuple<Types...>;
     using data_type       = std::tuple<Types...>;
@@ -144,18 +143,18 @@ public:
     using auto_type = auto_tuple<Types...>;
 
 public:
-    explicit component_tuple(const string_t& key, const bool& store, const bool& flat,
-                             const language_t& lang)
+    explicit component_tuple(const string_t& key, const bool& store, const bool& flat)
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
-    , m_lang(lang)
     , m_key(key)
-    , m_identifier("")
     {
-        compute_identifier(key, lang);
-        init_manager();
-        init_storage();
+        // if(settings::enabled())
+        {
+            compute_width(key);
+            init_manager();
+            init_storage();
+        }
     }
 
     ~component_tuple() { pop(); }
@@ -196,11 +195,13 @@ public:
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
+            // compute the hash
+            int64_t _hash = add_hash_id(m_key);
             // insert node or find existing node
             if(m_flat)
-                apply<void>::access<insert_flat_t>(m_data, m_identifier);
+                apply<void>::access<insert_flat_t>(m_data, _hash);
             else
-                apply<void>::access<insert_proc_t>(m_data, m_identifier);
+                apply<void>::access<insert_proc_t>(m_data, _hash);
         }
     }
 
@@ -416,9 +417,10 @@ public:
         apply<void>::access_with_indices<print_t>(obj.m_data, std::ref(ss_data), false);
         if(obj.m_print_prefix)
         {
-            obj.update_identifier();
-            ss_prefix << std::setw(output_width()) << std::left << obj.m_identifier
-                      << " : ";
+            obj.update_width();
+            std::stringstream ss_id;
+            ss_id << obj.get_prefix() << " " << std::left << obj.m_key;
+            ss_prefix << std::setw(output_width()) << std::left << ss_id.str() << " : ";
             os << ss_prefix.str();
         }
         os << ss_data.str();
@@ -432,8 +434,7 @@ public:
     void serialize(Archive& ar, const unsigned int version)
     {
         using apply_types = std::tuple<operation::serialization<Types, Archive>...>;
-        ar(serializer::make_nvp("identifier", m_identifier),
-           serializer::make_nvp("laps", m_laps));
+        ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
         apply<void>::access<apply_types>(m_data, std::ref(ar), version);
@@ -467,13 +468,10 @@ public:
 
     // int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
-    string_t& identifier() { return m_identifier; }
 
     // const int64_t&    hash() const { return m_hash; }
-    const string_t&   key() const { return m_key; }
-    const language_t& lang() const { return m_lang; }
-    const string_t&   identifier() const { return m_identifier; }
-    void rekey(const string_t& _key) { compute_identifier(m_key = _key, m_lang); }
+    const string_t& key() const { return m_key; }
+    void            rekey(const string_t& _key) { compute_width(m_key = _key); }
 
     bool&       store() { return m_store; }
     const bool& store() const { return m_store; }
@@ -520,13 +518,11 @@ protected:
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
-    language_t        m_lang         = language_t::cxx();
     string_t          m_key          = "";
-    string_t          m_identifier   = "";
     mutable data_type m_data;
 
 protected:
-    string_t get_prefix()
+    string_t get_prefix() const
     {
         auto _get_prefix = []() {
             if(!mpi::is_initialized())
@@ -545,22 +541,14 @@ protected:
         return _prefix;
     }
 
-    void compute_identifier(const string_t& key, const language_t& lang)
+    void compute_width(const string_t& key)
     {
-        static string_t   _prefix = get_prefix();
-        std::stringstream ss;
-        // designated as [cxx], [pyc], etc.
-        ss << _prefix << lang << " ";
-        ss << std::left << key;
-        m_identifier = ss.str();
-        output_width(m_identifier.length());
-        compute_identifier_extra(key, lang);
+        static string_t _prefix = get_prefix();
+        output_width(key.length() + _prefix.length() + 1);
+        set_object_prefix(key);
     }
 
-    void update_identifier() const
-    {
-        const_cast<this_type&>(*this).compute_identifier(m_key, m_lang);
-    }
+    void update_width() const { const_cast<this_type&>(*this).compute_width(m_key); }
 
     static int64_t output_width(int64_t width = 0)
     {
@@ -587,7 +575,7 @@ protected:
         return _instance.load();
     }
 
-    void compute_identifier_extra(const string_t& key, const language_t&)
+    void set_object_prefix(const string_t& key)
     {
         apply<void>::access<set_prefix_extra_t>(m_data, key);
     }
@@ -630,15 +618,13 @@ public:
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
     using auto_type  = typename base_type::auto_type;
-    using language_t = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
-    explicit _comp_tuple(const string_t& key, const bool& store, const bool& flat,
-                         const language_t& lang)
-    : base_type(key, store, flat, lang)
+    explicit _comp_tuple(const string_t& key, const bool& store, const bool& flat)
+    : base_type(key, store, flat)
     {
     }
 
@@ -681,16 +667,14 @@ public:
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
     using auto_type  = typename base_type::auto_type;
-    using language_t = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool&       flat = settings::flat_profile(),
-                             const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang)
+                             const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat)
     {
     }
 
@@ -759,16 +743,14 @@ public:
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
     using auto_type  = typename base_type::auto_type;
-    using language_t = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool&       flat = settings::flat_profile(),
-                             const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang)
+                             const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat)
     {
     }
 
@@ -837,16 +819,14 @@ public:
     using data_type  = typename base_type::data_type;
     using type_tuple = typename base_type::type_tuple;
     using auto_type  = typename base_type::auto_type;
-    using language_t = typename base_type::language_t;
 
     static constexpr bool is_component_list  = base_type::is_component_list;
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
     explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool&       flat = settings::flat_profile(),
-                             const language_t& lang = language_t::cxx())
-    : base_type(key, store, flat, lang)
+                             const bool& flat = settings::flat_profile())
+    : base_type(key, store, flat)
     {
     }
 
