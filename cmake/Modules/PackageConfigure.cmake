@@ -49,7 +49,7 @@ include(\${CMAKE_CURRENT_LIST_DIR}/${PROJECT_NAME}-config.cmake)
 ")
 
 write_basic_package_version_file(
-    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
+    ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     VERSION ${PROJECT_VERSION}
     COMPATIBILITY SameMajorVersion)
 
@@ -57,7 +57,7 @@ install(
     FILES
         ${CMAKE_BINARY_DIR}/TiMemoryConfig.cmake
         ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config.cmake
-        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-version.cmake
+        ${CMAKE_BINARY_DIR}/${PROJECT_NAME}-config-version.cmake
     DESTINATION
         ${CMAKE_INSTALL_CONFIGDIR})
 
@@ -70,8 +70,11 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
         ${PROJECT_SOURCE_DIR}/timemory
         ${PROJECT_SOURCE_DIR}/examples)
 
-    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/external/cereal
-        ${PROJECT_SOURCE_DIR}/external/pybind11)
+    set(EXCLUDE_LIST ${PROJECT_SOURCE_DIR}/external
+        ${PROJECT_SOURCE_DIR}/external/cereal
+        ${PROJECT_SOURCE_DIR}/external/pybind11
+        ${PROJECT_SOURCE_DIR}/external/gotcha
+        ${PROJECT_SOURCE_DIR}/external/google-test)
 
     add_feature(TIMEMORY_COMPILED_LIBRARIES "Compiled libraries")
     # add_feature(TIMEMORY_INTERFACE_LIBRARIES "Interface libraries")

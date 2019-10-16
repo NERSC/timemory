@@ -262,15 +262,20 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
+    template <typename _Scope = scope::process>
     inline explicit _auto_tuple(const string_t& label,
-                                bool            flat = settings::flat_profile(),
+                                bool            flat = (settings::flat_profile() ||
+                                             std::is_same<_Scope, scope::flat>::value),
                                 bool report_at_exit  = settings::destructor_report())
     : base_type(label, flat, report_at_exit)
     {
     }
 
-    inline explicit _auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report())
+    template <typename _Scope = scope::process>
+    inline explicit _auto_tuple(component_type& tmp,
+                                bool            flat = (settings::flat_profile() ||
+                                             std::is_same<_Scope, scope::flat>::value),
+                                bool report_at_exit  = settings::destructor_report())
     : base_type(tmp, flat, report_at_exit)
     {
     }
@@ -305,15 +310,20 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
+    template <typename _Scope = scope::process>
     inline explicit auto_tuple(const string_t& label,
-                               bool            flat = settings::flat_profile(),
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
                                bool report_at_exit  = settings::destructor_report())
     : base_type(label, flat, report_at_exit)
     {
     }
 
-    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                               bool report_at_exit = settings::destructor_report())
+    template <typename _Scope = scope::process>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
+                               bool report_at_exit  = settings::destructor_report())
     : base_type(tmp, flat, report_at_exit)
     {
     }
@@ -344,15 +354,20 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
+    template <typename _Scope = scope::process>
     inline explicit auto_tuple(const string_t& label,
-                               bool            flat = settings::flat_profile(),
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
                                bool report_at_exit  = settings::destructor_report())
     : base_type(label, flat, report_at_exit)
     {
     }
 
-    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                               bool report_at_exit = settings::destructor_report())
+    template <typename _Scope = scope::process>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
+                               bool report_at_exit  = settings::destructor_report())
     : base_type(tmp, flat, report_at_exit)
     {
     }
@@ -384,15 +399,20 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
+    template <typename _Scope = scope::process>
     inline explicit auto_tuple(const string_t& label,
-                               bool            flat = settings::flat_profile(),
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
                                bool report_at_exit  = settings::destructor_report())
     : base_type(label, flat, report_at_exit)
     {
     }
 
-    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                               bool report_at_exit = settings::destructor_report())
+    template <typename _Scope = scope::process>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
+                               bool report_at_exit  = settings::destructor_report())
     : base_type(tmp, flat, report_at_exit)
     {
     }
@@ -424,15 +444,20 @@ public:
     static constexpr bool contains_gotcha = base_type::contains_gotcha;
 
 public:
+    template <typename _Scope = scope::process>
     inline explicit auto_tuple(const string_t& label,
-                               bool            flat = settings::flat_profile(),
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
                                bool report_at_exit  = settings::destructor_report())
     : base_type(label, flat, report_at_exit)
     {
     }
 
-    inline explicit auto_tuple(component_type& tmp, bool flat = settings::flat_profile(),
-                               bool report_at_exit = settings::destructor_report())
+    template <typename _Scope = scope::process>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (settings::flat_profile() ||
+                                            std::is_same<_Scope, scope::flat>::value),
+                               bool report_at_exit  = settings::destructor_report())
     : base_type(tmp, flat, report_at_exit)
     {
     }

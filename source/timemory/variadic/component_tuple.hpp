@@ -627,8 +627,11 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
-    explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool& flat = settings::flat_profile())
+    template <typename _Scope = scope::process>
+    explicit component_tuple(
+        const string_t& key, const bool& store = false,
+        const bool& flat = (settings::flat_profile() ||
+                            std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat)
     {
     }
@@ -702,8 +705,11 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
-    explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool& flat = settings::flat_profile())
+    template <typename _Scope = scope::process>
+    explicit component_tuple(
+        const string_t& key, const bool& store = false,
+        const bool& flat = (settings::flat_profile() ||
+                            std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat)
     {
     }
@@ -778,8 +784,11 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
-    explicit component_tuple(const string_t& key, const bool& store = false,
-                             const bool& flat = settings::flat_profile())
+    template <typename _Scope = scope::process>
+    explicit component_tuple(
+        const string_t& key, const bool& store = false,
+        const bool& flat = (settings::flat_profile() ||
+                            std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat)
     {
     }

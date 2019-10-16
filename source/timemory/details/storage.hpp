@@ -384,6 +384,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
     {
         merge();
 
+        if(is_initialized() && m_graph_data_instance)
         {
             auto _iter_beg       = _data().graph().begin();
             auto _iter_end       = _data().graph().end();
@@ -397,6 +398,13 @@ void storage<ObjectType, true>::external_print(std::false_type)
         }
 
         finalize();
+
+        // if the graph wasn't ever initialized, exit
+        if(!m_graph_data_instance)
+        {
+            instance_count().store(0);
+            return;
+        }
 
         // no entries
         if(_data().graph().size() <= 1)

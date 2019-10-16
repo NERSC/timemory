@@ -96,7 +96,9 @@ allocate()
         nfib = details::random_entry(v);
         ret += details::fibonacci(nfib);
     }
-    printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
+
+    if(ret < 0)
+        printf("fibonacci(%li) * %li = %li\n", (long) nfib, (long) niter, ret);
 
     curr.stop();
     peak.stop();

@@ -1,11 +1,7 @@
 # use IN_LIST so this is required
 cmake_minimum_required(VERSION 3.3 FATAL_ERROR)
 
-#if(CMAKE_VERSION VERSION_LESS 3.10)
-#    message(FATAL_ERROR "@PROJECT_NAME@ configuration file requires CMake 3.10+")
-#endif()
-
-include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-version.cmake)
+include(${CMAKE_CURRENT_LIST_DIR}/@PROJECT_NAME@-config-version.cmake)
 
 @PACKAGE_INIT@
 

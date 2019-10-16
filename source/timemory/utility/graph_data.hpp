@@ -74,7 +74,7 @@ add_hash_id(const std::string& prefix)
 {
     static thread_local auto _hash_map = get_hash_ids();
     int64_t                  _hash_id  = std::hash<std::string>()(prefix.c_str());
-    if(_hash_map->find(_hash_id) == _hash_map->end())
+    if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         (*_hash_map)[_hash_id] = prefix;
         if(_hash_map->bucket_count() < _hash_map->size())

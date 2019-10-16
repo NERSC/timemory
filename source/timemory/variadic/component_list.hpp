@@ -794,8 +794,10 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
+    template <typename _Scope = scope::process>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
+                            const bool& flat = (settings::flat_profile() ||
+                                                std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
@@ -881,8 +883,10 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
+    template <typename _Scope = scope::process>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
+                            const bool& flat = (settings::flat_profile() ||
+                                                std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })
@@ -968,8 +972,10 @@ public:
     static constexpr bool is_component_tuple = base_type::is_component_tuple;
     static constexpr bool contains_gotcha    = base_type::contains_gotcha;
 
+    template <typename _Scope = scope::process>
     explicit component_list(const string_t& key, const bool& store = false,
-                            const bool& flat = settings::flat_profile())
+                            const bool& flat = (settings::flat_profile() ||
+                                                std::is_same<_Scope, scope::flat>::value))
     : base_type(key, store, flat, [](base_type& _core) {
         this_type::get_initializer()(static_cast<this_type&>(_core));
     })

@@ -102,8 +102,11 @@ public:
     using auto_type = auto_hybrid<tuple_type, list_type>;
 
 public:
-    explicit component_hybrid(const string_t& key, const bool& store = false,
-                              const bool& flat = settings::flat_profile())
+    template <typename _Scope = scope::process>
+    explicit component_hybrid(
+        const string_t& key, const bool& store = false,
+        const bool& flat = (settings::flat_profile() ||
+                            std::is_same<_Scope, scope::flat>::value))
     : m_tuple(key, store, flat)
     , m_list(key, store, flat)
     {

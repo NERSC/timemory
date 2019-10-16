@@ -70,10 +70,16 @@ public:
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),
+    template <typename _Scope = scope::process>
+    inline explicit auto_hybrid(const string_t&,
+                                bool flat           = (settings::flat_profile() ||
+                                             std::is_same<_Scope, scope::flat>::value),
                                 bool report_at_exit = settings::destructor_report());
-    inline explicit auto_hybrid(component_type& tmp, bool flat = settings::flat_profile(),
-                                bool report_at_exit = settings::destructor_report());
+    template <typename _Scope = scope::process>
+    inline explicit auto_hybrid(component_type& tmp,
+                                bool            flat = (settings::flat_profile() ||
+                                             std::is_same<_Scope, scope::flat>::value),
+                                bool report_at_exit  = settings::destructor_report());
     inline ~auto_hybrid();
 
     // copy and move
@@ -192,6 +198,7 @@ private:
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
+template <typename _Scope>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool flat,
                                                 bool report_at_exit)
 : m_enabled(settings::enabled())
@@ -207,6 +214,7 @@ auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
+template <typename _Scope>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(component_type& tmp, bool flat,
                                                 bool report_at_exit)
 : m_enabled(true)
