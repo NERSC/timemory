@@ -1042,7 +1042,25 @@ struct echo_measurement
         for(const auto& itr : attributes)
             os << " " << attribute_string(itr.first, itr.second);
         os << ">" << std::setprecision(Type::get_precision()) << value
-           << "</DartMeasurement>\n";
+           << "</DartMeasurement>\n\n";
+    }
+
+    //----------------------------------------------------------------------------------//
+    /// generate a measurement tag
+    ///
+    template <typename _Vt, typename... _Extra>
+    static void generate_measurement(std::ostream& os, attributes_t attributes,
+                                     const std::vector<_Vt, _Extra...>& value)
+    {
+        auto _default_name = attributes["name"];
+        int  i             = 0;
+        for(const auto& itr : value)
+        {
+            std::stringstream ss;
+            ss << "INDEX_" << i++ << " ";
+            attributes["name"] = ss.str() + _default_name;
+            generate_measurement(os, attributes, itr);
+        }
     }
 
     //----------------------------------------------------------------------------------//

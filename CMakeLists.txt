@@ -100,13 +100,6 @@ set(_BUILD_STATIC_CXX ${BUILD_STATIC_LIBS})
 option(TIMEMORY_BUILD_QUIET "Suppress author warnings without -Wno-dev" OFF)
 mark_as_advanced(TIMEMORY_BUILD_QUIET)
 
-if(TIMEMORY_BUILD_TOOLS AND NOT BUILD_STATIC_LIBS)
-    if(NOT TIMEMORY_BUILD_QUIET)
-        message(AUTHOR_WARNING "BUILD_STATIC_LIBS=OFF --> disabling TIMEMORY_BUILD_TOOLS")
-        set(TIMEMORY_BUILD_TOOLS OFF)
-    endif()
-endif()
-
 if(SKBUILD)
     set(_BUILD_SHARED_CXX ON)
 else()

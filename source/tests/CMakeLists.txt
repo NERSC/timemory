@@ -34,40 +34,40 @@ message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
 
 add_subdirectory(external)
 
-add_googletest(macro_tests
+add_timemory_google_test(macro_tests
     DISCOVER_TESTS
     SOURCES         macro_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options)
 
-add_googletest(hybrid_tests
+add_timemory_google_test(hybrid_tests
     DISCOVER_TESTS
     SOURCES         hybrid_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options ${HYBRID_COMPONENTS})
 
-add_googletest(timing_tests
+add_timemory_google_test(timing_tests
     DISCOVER_TESTS
     SOURCES         timing_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options)
 
-add_googletest(rusage_tests
+add_timemory_google_test(rusage_tests
     DISCOVER_TESTS
     SOURCES         rusage_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options)
 
 if(TIMEMORY_USE_PAPI)
-    add_googletest(papi_tests
+    add_timemory_google_test(papi_tests
         DISCOVER_TESTS
         SOURCES         papi_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-papi timemory-compile-options)
 endif()
 
-add_googletest(apply_tests
+add_timemory_google_test(apply_tests
     DISCOVER_TESTS
     SOURCES         apply_tests.cpp
     LINK_LIBRARIES  timemory-headers timemory-compile-options)
 
 if(TIMEMORY_USE_ARCH)
-    add_googletest(aligned_allocator_tests
+    add_timemory_google_test(aligned_allocator_tests
         DISCOVER_TESTS
         SOURCES         aligned_allocator_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch timemory-compile-options)
@@ -79,7 +79,7 @@ set_source_files_properties(cuda_tests.cpp cupti_tests.cpp
     LINKER_LANGUAGE ${DEVICE_LANGUAGE})
 
 if(TIMEMORY_USE_CUDA)
-    add_googletest(cuda_tests
+    add_timemory_google_test(cuda_tests
         DISCOVER_TESTS
         SOURCES         cuda_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
@@ -87,7 +87,7 @@ if(TIMEMORY_USE_CUDA)
 endif()
 
 if(TIMEMORY_USE_CUDA AND TIMEMORY_USE_NVTX)
-    add_googletest(cuda_nvtx_tests
+    add_timemory_google_test(cuda_nvtx_tests
         DISCOVER_TESTS
         SOURCES         cuda_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
@@ -98,7 +98,7 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
     add_library(cupti-compile-options INTERFACE)
     target_compile_options(cupti-compile-options INTERFACE
         $<$<COMPILE_LANGUAGE:CUDA>:--default-stream=per-thread>)
-    add_googletest(cupti_tests
+    add_timemory_google_test(cupti_tests
         DISCOVER_TESTS
         SOURCES         cupti_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-arch   timemory-compile-options
@@ -107,19 +107,19 @@ if(TIMEMORY_USE_CUPTI AND HAS_CUDA_cuda_LIBRARY)
 endif()
 
 if(_HAS_PROFILER)
-    add_googletest(gperf_cpu_tests
+    add_timemory_google_test(gperf_cpu_tests
         SOURCES         gperf_cpu_tests.cpp
         LINK_LIBRARIES  timemory-headers timemory-compile-options timemory-gperftools-cpu
         ENVIRONMENT     "CPUPROFILE_FREQUENCY=1000;CPUPROFILE_REALTIME=1")
 endif()
 
-add_googletest(gperf_fake_cpu_tests
+add_timemory_google_test(gperf_fake_cpu_tests
     DISCOVER_TESTS
     SOURCES         gperf_cpu_tests.cpp
     LINK_LIBRARIES  timemory-headers)
 
 if(_HAS_TCMALLOC)
-    add_googletest(gperf_heap_tests
+    add_timemory_google_test(gperf_heap_tests
         DISCOVER_TESTS
         SOURCES         gperf_heap_tests.cpp
         LINK_LIBRARIES  timemory-headers    timemory-arch   timemory-compile-options
@@ -127,7 +127,7 @@ if(_HAS_TCMALLOC)
 endif()
 
 if(TIMEMORY_USE_GOTCHA)
-    add_googletest(gotcha_tests
+    add_timemory_google_test(gotcha_tests
         DISCOVER_TESTS
         SOURCES         gotcha_tests.cpp
         LINK_LIBRARIES  timemory-headers    timemory-compile-options
@@ -136,7 +136,7 @@ if(TIMEMORY_USE_GOTCHA)
                         timemory-arch       gotcha-tests-lib)
 endif()
 
-add_googletest(priority_tests
+add_timemory_google_test(priority_tests
     DISCOVER_TESTS
     SOURCES         priority_tests.cpp
     LINK_LIBRARIES  timemory-headers)

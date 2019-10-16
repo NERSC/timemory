@@ -94,9 +94,12 @@ add_feature(CMAKE_CUDA_STANDARD "CUDA language standard")
 set(BUILD_SHARED_LIBS ${_DEFAULT_BUILD_SHARED} CACHE BOOL "Build shared libraries")
 set(BUILD_STATIC_LIBS ${_DEFAULT_BUILD_STATIC} CACHE BOOL "Build static libraries")
 
-if(NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS)
+add_option(TIMEMORY_SKIP_BUILD "Disable building any libraries" OFF)
+
+if((NOT BUILD_SHARED_LIBS AND NOT BUILD_STATIC_LIBS) OR TIMEMORY_SKIP_BUILD)
     # local override
     set(TIMEMORY_BUILD_C OFF)
+    set(TIMEMORY_BUILD_PYTHON OFF)
 endif()
 
 add_feature(BUILD_SHARED_LIBS "Build shared libraries")

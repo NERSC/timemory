@@ -167,7 +167,7 @@ ENDFUNCTION()
 # Adds a unit test and links against googletest. Additional arguments are linked
 # against the test.
 #
-FUNCTION(ADD_GOOGLETEST TEST_NAME)
+FUNCTION(ADD_TIMEMORY_GOOGLE_TEST TEST_NAME)
     if(NOT TIMEMORY_BUILD_GTEST)
         return()
     endif()
