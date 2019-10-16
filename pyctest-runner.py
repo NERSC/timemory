@@ -104,6 +104,7 @@ def configure():
 
     # always echo dart measurements
     os.environ["TIMEMORY_DART_OUTPUT"] = "ON"
+    os.environ["TIMEMORY_DART_COUNT"] = "1"
 
     return args
 
