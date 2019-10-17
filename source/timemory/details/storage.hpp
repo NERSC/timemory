@@ -314,9 +314,12 @@ storage<ObjectType, true>::merge(this_type* itr)
     if(!l.owns_lock())
         l.lock();
 
-    for(const auto& _itr : (*itr->get_hash_ids()))
-        if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
-            (*m_hash_ids)[_itr.first] = _itr.second;
+    auto _copy_hash_ids = [&]()
+    {
+        for(const auto& _itr : (*itr->get_hash_ids()))
+            if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
+                (*m_hash_ids)[_itr.first] = _itr.second;
+    };
 
     // if self is not initialized but itr is, copy data
     if(itr && itr->is_initialized() && !this->is_initialized())
@@ -324,8 +327,16 @@ storage<ObjectType, true>::merge(this_type* itr)
         graph().insert_subgraph_after(_data().head(), itr->data().head());
         m_initialized = itr->m_initialized;
         m_finalized   = itr->m_finalized;
+        _copy_hash_ids();
         return;
     }
+    else
+    {
+        _copy_hash_ids();
+    }
+
+    if(itr->size() == 0)
+        return;
 
     auto _this_beg = graph().begin();
     auto _this_end = graph().end();
@@ -356,11 +367,15 @@ storage<ObjectType, true>::merge(this_type* itr)
     }
     else
     {
-        auto_lock_t lerr(type_mutex<decltype(std::cerr)>());
+        auto_lock_t lerr(type_mutex<decltype(std::cerr)>(), std::defer_lock);
+        if(!lerr.owns_lock())
+            lerr.lock();
         std::cerr << "Failure to merge graphs!" << std::endl;
         auto g = graph();
         graph().insert_subgraph_after(_data().current(), itr->data().head());
     }
+
+    itr->data().clear();
 }
 
 //======================================================================================//
