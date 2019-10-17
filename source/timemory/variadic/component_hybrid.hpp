@@ -422,6 +422,20 @@ public:
     }
 
 public:
+    //----------------------------------------------------------------------------------//
+    static void init_manager()
+    {
+        tuple_type::init_manager();
+    }
+
+    //----------------------------------------------------------------------------------//
+    static void init_storage()
+    {
+        tuple_type::init_storage();
+        list_type::init_storage();
+    }
+
+public:
     inline data_type data() const
     {
         return std::tuple_cat(m_tuple.data(), m_list.data());

@@ -188,6 +188,18 @@ public:
         return os;
     }
 
+    //----------------------------------------------------------------------------------//
+    static void init_manager()
+    {
+        component_type::init_manager();
+    }
+
+    //----------------------------------------------------------------------------------//
+    static void init_storage()
+    {
+        component_type::init_storage();
+    }
+
 private:
     bool            m_enabled        = true;
     bool            m_report_at_exit = false;

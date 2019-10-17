@@ -145,7 +145,7 @@ public:
         {
             compute_width(key);
             init_manager();
-            init_storage();
+            // init_storage();
         }
     }
 

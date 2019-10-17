@@ -115,7 +115,7 @@ struct init_storage
     {
         using storage_type    = storage<Type>;
         static auto _instance = storage_type::instance();
-        consume_parameters(_instance);
+        _instance->initialize();
     }
 
     template <typename _Up                                                  = _Tp,

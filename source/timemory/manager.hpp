@@ -110,7 +110,7 @@ private:
     {
         using storage_type = typename _Tp::storage_type;
         auto ret           = storage_type::instance();
-        consume_parameters(ret);
+        ret->initialize();
     }
 
     template <typename _Tp, typename... _Tail,
