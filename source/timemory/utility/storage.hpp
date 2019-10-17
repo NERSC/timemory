@@ -251,13 +251,21 @@ public:
 
         m_initialized = true;
 
-        if(!singleton_t::is_master(this))
+        if(singleton_t::is_master(this))
         {
+            ObjectType::global_init_policy(this);
             ObjectType::thread_init_policy(this);
+            auto* ptr = &_data();
+            if(ptr != m_graph_data_instance)
+            {
+                fprintf(stderr,
+                        "[%s]> mismatched graph data on master thread: %p vs. %p\n",
+                        ObjectType::label().c_str(), (void*) ptr,
+                        (void*) m_graph_data_instance);
+            }
         }
         else
         {
-            ObjectType::global_init_policy(this);
             ObjectType::thread_init_policy(this);
         }
     }
