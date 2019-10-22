@@ -34,6 +34,7 @@
 #include <cstdint>
 #include <string>
 
+#include "timemory/bits/types.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
@@ -79,7 +80,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 // helper macros for assembling unique variable name
 //
-#    define _LINE_STRING priv::apply::join("", __LINE__)
+#    define _LINE_STRING ::tim::str::join("", __LINE__)
 #    define _AUTO_NAME_COMBINE(X, Y) X##Y
 #    define _AUTO_NAME(Y) _AUTO_NAME_COMBINE(timemory_variable_, Y)
 #    define _AUTO_TYPEDEF(Y) _AUTO_NAME_COMBINE(timemory_variable_type_, Y)
@@ -88,30 +89,30 @@ using str = tim::apply<std::string>;
 //
 #    if !defined(_WINDOWS)
 #        define _AUTO_STR(A, B)                                                          \
-            priv::apply::join(                                                           \
+            ::tim::str::join(                                                            \
                 "", "@'", std::string(A).substr(std::string(A).find_last_of('/') + 1),   \
                 "':", B)
 #    else
 #        define _AUTO_STR(A, B)                                                          \
-            priv::apply::join(                                                           \
+            ::tim::str::join(                                                            \
                 "", "@'", std::string(A).substr(std::string(A).find_last_of('\\') + 1),  \
                 "':", B)
 #    endif
 
 //--------------------------------------------------------------------------------------//
 
-#    define TIMEMORY_JOIN(delim, ...) priv::apply::join(delim, __VA_ARGS__)
+#    define TIMEMORY_JOIN(delim, ...) ::tim::str::join(delim, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_BASIC_LABEL(...)                                                    \
-        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
+        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 
 #    define TIMEMORY_LABEL(...)                                                          \
-        priv::apply::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                        \
-                          _AUTO_STR(__FILE__, _LINE_STRING))
+        ::tim::str::join("", __TIMEMORY_FUNCTION__, __VA_ARGS__,                         \
+                         _AUTO_STR(__FILE__, _LINE_STRING))
 
 //======================================================================================//
 //

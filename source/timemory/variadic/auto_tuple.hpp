@@ -46,32 +46,38 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_tuple.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-namespace filt
-{
 template <typename... Types>
 class auto_tuple
 {
 public:
-    using component_type  = ::tim::component_tuple<Types...>;
+    using component_type  = component_tuple<Types...>;
     using this_type       = auto_tuple<Types...>;
-    using data_type       = typename component_type::data_type;
-    using string_t        = std::string;
-    using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
     using type_tuple      = typename component_type::type_tuple;
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
+    using data_type       = typename component_type::data_type;
+    using string_t        = std::string;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    inline explicit auto_tuple(const string_t&, bool flat, bool report_at_exit);
-    inline explicit auto_tuple(component_type& tmp, bool flat, bool report_at_exit);
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_tuple(const string_t&,
+                               bool flat           = (_Flat || settings::flat_profile()),
+                               bool report_at_exit = false);
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_tuple(component_type& tmp,
+                               bool            flat = (_Flat || settings::flat_profile()),
+                               bool            report_at_exit = false);
     inline ~auto_tuple();
 
     // copy and move
@@ -137,9 +143,9 @@ public:
             m_temporary_object.customize(std::forward<_Args>(_args)...);
     }
 
-    data_value_type inline get() const { return m_temporary_object.get(); }
+    inline data_value_type get() const { return m_temporary_object.get(); }
 
-    data_label_type inline get_labeled() const
+    inline data_label_type get_labeled() const
     {
         return m_temporary_object.get_labeled();
     }
@@ -175,16 +181,10 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    static void init_manager()
-    {
-        component_type::init_manager();
-    }
+    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
-    static void init_storage()
-    {
-        component_type::init_storage();
-    }
+    static void init_storage() { component_type::init_storage(); }
 
 protected:
     bool            m_enabled        = true;
@@ -196,11 +196,12 @@ protected:
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
+template <typename _Scope, bool _Flat>
 auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
                                  bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat)
+, m_temporary_object(object_tag, m_enabled, flat || _Flat)
 {
     if(m_enabled)
     {
@@ -211,10 +212,11 @@ auto_tuple<Types...>::auto_tuple(const string_t& object_tag, bool flat,
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
+template <typename _Scope, bool _Flat>
 auto_tuple<Types...>::auto_tuple(component_type& tmp, bool flat, bool report_at_exit)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(tmp.clone(true, flat || _Flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -250,240 +252,6 @@ auto_tuple<Types...>::~auto_tuple()
 }
 
 //======================================================================================//
-//
-//
-template <typename... _Types>
-class _auto_tuple : public auto_tuple<_Types...>
-{
-};
-
-//======================================================================================//
-//
-//
-template <typename... _Types>
-class _auto_tuple<std::tuple<_Types...>> : public auto_tuple<_Types...>
-{
-public:
-    using base_type      = auto_tuple<_Types...>;
-    using component_type = typename base_type::component_type;
-    using this_type      = _auto_tuple<std::tuple<_Types...>>;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit _auto_tuple(const string_t& label,
-                                bool            flat = (settings::flat_profile() ||
-                                             std::is_same<_Scope, scope::flat>::value),
-                                bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit)
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit _auto_tuple(component_type& tmp,
-                                bool            flat = (settings::flat_profile() ||
-                                             std::is_same<_Scope, scope::flat>::value),
-                                bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit)
-    {
-    }
-
-    inline ~_auto_tuple() {}
-
-    // copy and move
-    inline _auto_tuple(const this_type&) = default;
-    inline _auto_tuple(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace filt
-
-//======================================================================================//
-
-template <typename... _Types>
-class auto_tuple : public filt::_auto_tuple<implemented<_Types...>>
-{
-public:
-    using base_type      = filt::_auto_tuple<implemented<_Types...>>;
-    using core_type      = typename base_type::base_type;
-    using component_type = typename base_type::component_type;
-    using this_type      = auto_tuple<_Types...>;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(const string_t& label,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit)
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(component_type& tmp,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit)
-    {
-    }
-
-    inline ~auto_tuple() {}
-
-    // copy and move
-    inline auto_tuple(const this_type&) = default;
-    inline auto_tuple(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-};
-
-//======================================================================================//
-
-template <typename... _Types>
-class auto_tuple<std::tuple<_Types...>> : public filt::_auto_tuple<implemented<_Types...>>
-{
-public:
-    using base_type      = filt::_auto_tuple<implemented<_Types...>>;
-    using this_type      = auto_tuple<std::tuple<_Types...>>;
-    using core_type      = typename base_type::base_type;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(const string_t& label,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit)
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(component_type& tmp,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit)
-    {
-    }
-
-    inline ~auto_tuple() {}
-
-    // copy and move
-    inline auto_tuple(const this_type&) = default;
-    inline auto_tuple(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-};
-
-//======================================================================================//
-
-template <typename... _CompTypes, typename... _Types>
-class auto_tuple<component_tuple<_CompTypes...>, _Types...>
-: public filt::_auto_tuple<implemented<_CompTypes..., _Types...>>
-{
-public:
-    using base_type      = filt::_auto_tuple<implemented<_CompTypes..., _Types...>>;
-    using this_type      = auto_tuple<component_tuple<_CompTypes...>, _Types...>;
-    using core_type      = typename base_type::base_type;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(const string_t& label,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit)
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(component_type& tmp,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit)
-    {
-    }
-
-    inline ~auto_tuple() {}
-
-    // copy and move
-    inline auto_tuple(const this_type&) = default;
-    inline auto_tuple(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-};
-
-//======================================================================================//
-
-template <typename... _CompTypes, typename... _Types>
-class auto_tuple<auto_tuple<_CompTypes...>, _Types...>
-: public filt::_auto_tuple<implemented<_CompTypes..., _Types...>>
-{
-public:
-    using base_type      = filt::_auto_tuple<implemented<_CompTypes..., _Types...>>;
-    using this_type      = auto_tuple<auto_tuple<_CompTypes...>, _Types...>;
-    using core_type      = typename base_type::base_type;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(const string_t& label,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit)
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_tuple(component_type& tmp,
-                               bool            flat = (settings::flat_profile() ||
-                                            std::is_same<_Scope, scope::flat>::value),
-                               bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit)
-    {
-    }
-
-    inline ~auto_tuple() {}
-
-    // copy and move
-    inline auto_tuple(const this_type&) = default;
-    inline auto_tuple(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-};
-
-//======================================================================================//
 
 template <typename... _Types,
           typename _Ret = typename auto_tuple<_Types...>::data_value_type>
@@ -499,26 +267,6 @@ template <typename... _Types,
           typename _Ret = typename auto_tuple<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_tuple<_Types...>& _obj)
-{
-    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types,
-          typename _Ret = typename filt::auto_tuple<_Types...>::data_value_type>
-_Ret
-get(const filt::auto_tuple<_Types...>& _obj)
-{
-    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types,
-          typename _Ret = typename filt::auto_tuple<_Types...>::data_label_type>
-_Ret
-get_labeled(const filt::auto_tuple<_Types...>& _obj)
 {
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }

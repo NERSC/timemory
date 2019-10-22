@@ -31,6 +31,9 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/variadic/types.hpp"
+
+#include <tuple>
 
 namespace tim
 {

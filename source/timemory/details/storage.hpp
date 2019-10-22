@@ -307,18 +307,27 @@ storage<ObjectType, true>::merge(this_type* itr)
     // if merge was not initialized return
     if(itr && !itr->is_initialized())
         return;
+    {
+        auto _this_graph = graph();
+        auto _itr_graph = graph();
+        consume_parameters(_this_graph, _itr_graph);
+    }
+
     // create lock but don't immediately lock
-    auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+    // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+    auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
 
     // lock if not already owned
     if(!l.owns_lock())
         l.lock();
 
-    auto _copy_hash_ids = [&]()
-    {
+    auto _copy_hash_ids = [&]() {
         for(const auto& _itr : (*itr->get_hash_ids()))
             if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
                 (*m_hash_ids)[_itr.first] = _itr.second;
+        for(const auto& _itr : (*itr->get_hash_aliases()))
+            if(m_hash_aliases->find(_itr.first) == m_hash_aliases->end())
+                (*m_hash_aliases)[_itr.first] = _itr.second;
     };
 
     // if self is not initialized but itr is, copy data
@@ -354,18 +363,7 @@ storage<ObjectType, true>::merge(this_type* itr)
         }
     }
 
-    if(_merged)
-    {
-        using predicate_type = decltype(_this_beg);
-        auto _compare        = [](predicate_type lhs, predicate_type rhs) {
-            return (*lhs == *rhs);
-        };
-        auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-        _this_beg    = graph().begin();
-        _this_end    = graph().end();
-        graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare, _reduce);
-    }
-    else
+    if(!_merged)
     {
         auto_lock_t lerr(type_mutex<decltype(std::cerr)>(), std::defer_lock);
         if(!lerr.owns_lock())
@@ -375,7 +373,107 @@ storage<ObjectType, true>::merge(this_type* itr)
         graph().insert_subgraph_after(_data().current(), itr->data().head());
     }
 
+    using predicate_t = decltype(_this_beg);
+    auto _compare     = [](predicate_t lhs, predicate_t rhs) { return (*lhs == *rhs); };
+    auto _reduce      = [](predicate_t lhs, predicate_t rhs) { *lhs += *rhs; };
+
+    _this_beg = graph().begin();
+    _this_end = graph().end();
+    graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare, _reduce);
+
     itr->data().clear();
+}
+
+template <typename ObjectType>
+void
+storage<ObjectType, true>::mpi_reduce()
+{
+#if defined(TIMEMORY_USE_MPI)
+    using predicate_t = decltype(graph().begin());
+    auto _compare     = [](predicate_t lhs, predicate_t rhs) {
+        // printf("comparing %li vs. %li\n", (long int) lhs->id(), (long int) rhs->id());
+        return (*lhs == *rhs);
+    };
+    auto _reduce = [](predicate_t lhs, predicate_t rhs) {
+        // printf("reducing...\n");
+        *lhs += *rhs;
+    };
+
+    if(mpi::is_initialized())
+    {
+        unsigned long long* _graph_data_size = nullptr;
+        graph_t*            data             = new graph_t(graph());
+        uint32_t            num_ranks        = mpi::size() - 1;
+
+        if(mpi::rank() != 0)
+        {
+            _graph_data_size  = new unsigned long long;
+            *_graph_data_size = graph().data_size();
+            MPI_Send(_graph_data_size, 1, MPI_UNSIGNED_LONG_LONG, 0, 0, MPI_COMM_WORLD);
+        }
+
+        if(mpi::rank() == 0)
+        {
+            _graph_data_size = new unsigned long long[num_ranks];
+            for(uint32_t i = 0; i < num_ranks; ++i)
+            {
+                MPI_Recv(&_graph_data_size[i], 1, MPI_UNSIGNED_LONG_LONG, i + 1, 0,
+                         MPI_COMM_WORLD, NULL);
+            }
+        }
+
+        if(mpi::rank() != 0)
+        {
+            MPI_Send(data, _graph_data_size[0], MPI_CHAR, 0, 0, MPI_COMM_WORLD);
+        }
+
+        if(mpi::rank() == 0)
+        {
+            for(uint32_t i = 0; i < num_ranks; ++i)
+            {
+                // PRINT_HERE("");
+                void* _data = malloc(_graph_data_size[i]);
+                MPI_Recv(_data, _graph_data_size[i], MPI_CHAR, i + 1, 0, MPI_COMM_WORLD,
+                         NULL);
+                data = static_cast<graph_t*>(data);
+                // printf("[%i]> this storage size: %i\n", (int) mpi::rank(), (int)
+                // graph().size()); printf("[%i]> data storage size: %i\n", (int)
+                // mpi::rank(), (int) data->size());
+
+                using sibling_itr     = typename graph_t::sibling_iterator;
+                sibling_itr _this_beg = graph().begin();
+                sibling_itr _this_end = graph().end();
+
+                sibling_itr _iter_beg = data->begin();
+                sibling_itr _iter_end = data->end();
+
+                graph().merge(_this_beg, _this_end, _iter_beg, _iter_end, true, false);
+                graph().reduce(_this_beg, _this_end, _this_beg, _this_end, _compare,
+                               _reduce);
+
+                using pre_iterator = typename graph_t::pre_order_iterator;
+                for(pre_iterator titr = graph().begin(); titr != graph().end(); ++titr)
+                {
+                    auto titr_next = titr;
+                    ++titr_next;
+                    for(pre_iterator ditr = titr_next; ditr != graph().end(); ++ditr)
+                    {
+                        if(*titr == *ditr)
+                        {
+                            *titr += *ditr;
+                            graph().erase(ditr);
+                        }
+                    }
+                }
+                free(_data);
+                // PRINT_HERE("");
+            }
+        }
+
+        delete data;
+        delete[] _graph_data_size;
+    }
+#endif
 }
 
 //======================================================================================//
@@ -398,313 +496,323 @@ void storage<ObjectType, true>::external_print(std::false_type)
     else if(settings::auto_output())
     {
         merge();
-
-        if(is_initialized() && m_graph_data_instance)
+        mpi_reduce();
+        if(mpi::is_initialized())
+            mpi::barrier();
+        if(!mpi::is_initialized() || mpi::rank() == 0)
         {
-            auto _iter_beg       = _data().graph().begin();
-            auto _iter_end       = _data().graph().end();
-            using predicate_type = decltype(_iter_beg);
-            auto _compare        = [](predicate_type lhs, predicate_type rhs) {
-                return (*lhs == *rhs);
-            };
-            auto _reduce = [](predicate_type lhs, predicate_type rhs) { *lhs += *rhs; };
-            _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end, _compare,
-                                   _reduce);
-        }
+            if(is_initialized() && m_graph_data_instance)
+            {
+                auto _iter_beg    = _data().graph().begin();
+                auto _iter_end    = _data().graph().end();
+                using predicate_t = decltype(_iter_beg);
+                auto _compare     = [](predicate_t lhs, predicate_t rhs) {
+                    return (*lhs == *rhs);
+                };
+                auto _reduce = [](predicate_t lhs, predicate_t rhs) { *lhs += *rhs; };
+                _data().graph().reduce(_iter_beg, _iter_beg, _iter_beg, _iter_end,
+                                       _compare, _reduce);
+            }
 
-        finalize();
+            finalize();
 
-        // if the graph wasn't ever initialized, exit
-        if(!m_graph_data_instance)
-        {
-            instance_count().store(0);
-            return;
-        }
+            // if the graph wasn't ever initialized, exit
+            if(!m_graph_data_instance)
+            {
+                instance_count().store(0);
+                return;
+            }
 
-        // no entries
-        if(_data().graph().size() <= 1)
-        {
-            instance_count().store(0);
-            return;
-        }
+            // no entries
+            if(_data().graph().size() <= 1)
+            {
+                instance_count().store(0);
+                return;
+            }
 
-        // disable gperf if profiling
-        try
-        {
-            if(details::storage_once_flag()++ == 0)
-                gperf::profiler_stop();
-        }
-        catch(std::exception& e)
-        {
+            // disable gperf if profiling
+            try
+            {
+                if(details::storage_once_flag()++ == 0)
+                    gperf::profiler_stop();
+            }
+            catch(std::exception& e)
+            {
 #if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER) ||           \
     defined(TIMEMORY_USE_GPERF_HEAP_PROFILER)
-            std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
-                      << ". Continuing..." << std::endl;
+                std::cerr << "Error calling gperf::profiler_stop(): " << e.what()
+                          << ". Continuing..." << std::endl;
 #else
-            consume_parameters(e);
+                consume_parameters(e);
 #endif
-        }
-
-        int64_t _min = std::numeric_limits<int64_t>::max();
-        for(const auto& itr : _data().graph())
-            _min = std::min<int64_t>(itr.depth(), _min);
-
-        if(!(_min < 0))
-        {
-            for(auto& itr : _data().graph())
-                itr.depth() -= 1;
-        }
-
-        if(!settings::file_output() && !settings::cout_output())
-        {
-            instance_count().store(0);
-            return;
-        }
-
-        //------------------------------------------------------------------------------//
-        //
-        //  Compute the node prefix
-        //
-        //------------------------------------------------------------------------------//
-        auto _get_node_prefix = [&]() {
-            if(!m_node_init)
-                return std::string("> ");
-
-            // prefix spacing
-            static uint16_t width = 1;
-            if(m_node_size > 9)
-                width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
-            std::stringstream ss;
-            ss.fill('0');
-            ss << "|" << std::setw(width) << m_node_rank << "> ";
-            return ss.str();
-        };
-
-        //------------------------------------------------------------------------------//
-        //
-        //  Compute the indentation
-        //
-        //------------------------------------------------------------------------------//
-        // fix up the prefix based on the actual depth
-        auto _compute_modified_prefix = [&](const graph_node& itr) {
-            std::string _prefix      = get_prefix(itr);
-            std::string _indent      = "";
-            std::string _node_prefix = _get_node_prefix();
-
-            int64_t _depth = itr.depth();
-            if(_depth > 0)
-            {
-                for(int64_t ii = 0; ii < _depth - 1; ++ii)
-                    _indent += "  ";
-                _indent += "|_";
             }
 
-            return _node_prefix + _indent + _prefix;
-        };
+            int64_t _min = std::numeric_limits<int64_t>::max();
+            for(const auto& itr : _data().graph())
+                _min = std::min<int64_t>(itr.depth(), _min);
 
-        _data().current()  = _data().head();
-        int64_t _width     = ObjectType::get_width();
-        int64_t _max_depth = 0;
-        int64_t _max_laps  = 0;
-        // find the max width
-        for(const auto& itr : _data().graph())
-        {
-            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
-                continue;
-            int64_t _len = _compute_modified_prefix(itr).length();
-            _width       = std::max(_len, _width);
-            _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
-            _max_laps    = std::max<int64_t>(_max_laps, itr.obj().nlaps());
-        }
-        int64_t              _width_laps  = std::log10(_max_laps) + 1;
-        int64_t              _width_depth = std::log10(_max_depth) + 1;
-        std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
-
-        // return type of get() function
-        using get_return_type = decltype(std::declval<const ObjectType>().get());
-
-        auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
-        auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
-
-        if(!flk.owns_lock())
-            flk.lock();
-
-        if(!slk.owns_lock())
-            slk.lock();
-
-        std::ofstream*       fout = nullptr;
-        decltype(std::cout)* cout = nullptr;
-
-        //--------------------------------------------------------------------------//
-        // output to json file
-        //
-        if((settings::file_output() && settings::json_output()) || requires_json)
-        {
-            printf("\n");
-            auto jname = settings::compose_output_filename(label, ".json", m_node_init,
-                                                           &m_node_rank);
-            if(jname.length() > 0)
+            if(!(_min < 0))
             {
-                printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
-                       jname.c_str());
-                serialize_storage(jname, *this, num_instances, m_node_rank);
+                for(auto& itr : _data().graph())
+                    itr.depth() -= 1;
             }
-        }
-        else if(settings::file_output() && settings::text_output())
-        {
-            printf("\n");
-        }
 
-        //--------------------------------------------------------------------------//
-        // output to text file
-        //
-        if(settings::file_output() && settings::text_output())
-        {
-            auto fname = settings::compose_output_filename(label, ".txt");
-            if(fname.length() > 0)
+            if(!settings::file_output() && !settings::cout_output())
             {
-                fout = new std::ofstream(fname.c_str());
-                if(fout && *fout)
+                instance_count().store(0);
+                return;
+            }
+
+            //------------------------------------------------------------------------------//
+            //
+            //  Compute the node prefix
+            //
+            //------------------------------------------------------------------------------//
+            auto _get_node_prefix = [&]() {
+                if(!m_node_init)
+                    return std::string(">>> ");
+
+                // prefix spacing
+                static uint16_t width = 1;
+                if(m_node_size > 9)
+                    width = std::max(width, (uint16_t)(log10(m_node_size) + 1));
+                std::stringstream ss;
+                ss.fill('0');
+                ss << "|" << std::setw(width) << m_node_rank << ">>> ";
+                return ss.str();
+            };
+
+            //------------------------------------------------------------------------------//
+            //
+            //  Compute the indentation
+            //
+            //------------------------------------------------------------------------------//
+            // fix up the prefix based on the actual depth
+            auto _compute_modified_prefix = [&](const graph_node& itr) {
+                std::string _prefix      = get_prefix(itr);
+                std::string _indent      = "";
+                std::string _node_prefix = _get_node_prefix();
+
+                int64_t _depth = itr.depth();
+                if(_depth > 0)
+                {
+                    for(int64_t ii = 0; ii < _depth - 1; ++ii)
+                        _indent += "  ";
+                    _indent += "|_";
+                }
+
+                return _node_prefix + _indent + _prefix;
+            };
+
+            _data().current()  = _data().head();
+            int64_t _width     = ObjectType::get_width();
+            int64_t _max_depth = 0;
+            int64_t _max_laps  = 0;
+            // find the max width
+            for(const auto& itr : _data().graph())
+            {
+                if(itr.depth() < 0 || itr.depth() > settings::max_depth())
+                    continue;
+                int64_t _len = _compute_modified_prefix(itr).length();
+                _width       = std::max(_len, _width);
+                _max_depth   = std::max<int64_t>(_max_depth, itr.depth());
+                _max_laps    = std::max<int64_t>(_max_laps, itr.obj().nlaps());
+            }
+            int64_t              _width_laps  = std::log10(_max_laps) + 1;
+            int64_t              _width_depth = std::log10(_max_depth) + 1;
+            std::vector<int64_t> _widths      = { _width, _width_laps, _width_depth };
+
+            // return type of get() function
+            using get_return_type = decltype(std::declval<const ObjectType>().get());
+
+            auto_lock_t flk(type_mutex<std::ofstream>(), std::defer_lock);
+            auto_lock_t slk(type_mutex<decltype(std::cout)>(), std::defer_lock);
+
+            if(!flk.owns_lock())
+                flk.lock();
+
+            if(!slk.owns_lock())
+                slk.lock();
+
+            std::ofstream*       fout = nullptr;
+            decltype(std::cout)* cout = nullptr;
+
+            //--------------------------------------------------------------------------//
+            // output to json file
+            //
+            if((settings::file_output() && settings::json_output()) || requires_json)
+            {
+                printf("\n");
+                auto jname = settings::compose_output_filename(label, ".json",
+                                                               m_node_init, &m_node_rank);
+                if(jname.length() > 0)
                 {
                     printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
-                           fname.c_str());
-                }
-                else
-                {
-                    delete fout;
-                    fout = nullptr;
-                    fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
-                            ObjectType::label().c_str(), __FUNCTION__, __LINE__,
-                            fname.c_str());
+                           jname.c_str());
+                    serialize_storage(jname, *this, num_instances, m_node_rank);
                 }
             }
-        }
-
-        //--------------------------------------------------------------------------//
-        // output to cout
-        //
-        if(settings::cout_output())
-        {
-            cout = &std::cout;
-            printf("\n");
-        }
-
-        // std::stringstream _mss;
-        for(auto pitr = _data().graph().begin(); pitr != _data().graph().end(); ++pitr)
-        {
-            auto itr = *pitr;
-            if(itr.depth() < 0 || itr.depth() > settings::max_depth())
-                continue;
-            std::stringstream _pss;
-            // if we are not at the bottom of the call stack (i.e. completely inclusive)
-            if(itr.depth() < _max_depth)
+            else if(settings::file_output() && settings::text_output())
             {
-                // get the next iteration
-                auto eitr = pitr;
-                std::advance(eitr, 1);
-                // counts the number of non-exclusive values
-                int64_t nexclusive = 0;
-                // the sum of the exclusive values
-                get_return_type exclusive_values;
-                // continue while not at end of graph until first sibling is encountered
-                while(eitr->depth() != itr.depth() && eitr != _data().graph().end())
+                printf("\n");
+            }
+
+            //--------------------------------------------------------------------------//
+            // output to text file
+            //
+            if(settings::file_output() && settings::text_output())
+            {
+                auto fname = settings::compose_output_filename(label, ".txt");
+                if(fname.length() > 0)
                 {
-                    // if one level down, this is an exclusive value
-                    if(eitr->depth() == itr.depth() + 1)
+                    fout = new std::ofstream(fname.c_str());
+                    if(fout && *fout)
                     {
-                        // if first exclusive value encountered: assign; else: combine
-                        if(nexclusive == 0)
-                            exclusive_values = eitr->obj().get();
-                        else
-                            details::combine(exclusive_values, eitr->obj().get());
-                        // increment. beyond 0 vs. 1, this value plays no role
-                        ++nexclusive;
+                        printf("[%s]> Outputting '%s'...\n", ObjectType::label().c_str(),
+                               fname.c_str());
                     }
-                    // increment iterator for next while check
-                    ++eitr;
-                }
-                // if there were exclusive values encountered
-                if(nexclusive > 0 && trait::is_available<ObjectType>::value)
-                {
-                    details::print_percentage(
-                        _pss,
-                        details::compute_percentage(exclusive_values, itr.obj().get()));
+                    else
+                    {
+                        delete fout;
+                        fout = nullptr;
+                        fprintf(stderr, "[storage<%s>::%s @ %i]> Error opening '%s'...\n",
+                                ObjectType::label().c_str(), __FUNCTION__, __LINE__,
+                                fname.c_str());
+                    }
                 }
             }
 
-            auto _obj    = itr.obj();
-            auto _prefix = _compute_modified_prefix(itr);
-            auto _laps   = _obj.nlaps();
-            auto _depth  = itr.depth();
-
-            std::stringstream _oss;
-            operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _widths,
-                                         true, _pss.str());
-            // operation::print<ObjectType>(_obj, _mss, false);
-            if(cout != nullptr)
-                *cout << _oss.str() << std::flush;
-            if(fout != nullptr)
-                *fout << _oss.str() << std::flush;
-        }
-
-        if(fout)
-        {
-            fout->close();
-            delete fout;
-            fout = nullptr;
-        }
-
-        // if(cout != nullptr)
-        //    *cout << std::endl;
-
-        bool _dart_output = settings::dart_output();
-
-        // if only a specific type should be echoed
-        if(settings::dart_type().length() > 0)
-        {
-            auto dtype = settings::dart_type();
-            if(operation::echo_measurement<ObjectType>::lowercase(dtype) !=
-               operation::echo_measurement<ObjectType>::lowercase(label))
-                _dart_output = false;
-        }
-
-        if(_dart_output)
-        {
-            auto get_hierarchy = [&](iterator itr) {
-                std::vector<std::string> _hierarchy;
-                if(!itr || itr->depth() == 0)
-                    return _hierarchy;
-                iterator _parent = _data().graph().parent(itr);
-                do
-                {
-                    _hierarchy.push_back(get_prefix(_parent));
-                    if(_parent->depth() == 0)
-                        break;
-                    auto _new_parent = graph_t::parent(_parent);
-                    if(_parent == _new_parent)
-                        break;
-                    _parent = _new_parent;
-                } while(_parent && !(_parent->depth() < 0));
-                std::reverse(_hierarchy.begin(), _hierarchy.end());
-                return _hierarchy;
-            };
-            printf("\n");
-            uint64_t _nitr = 0;
-            for(auto itr = _data().graph().begin(); itr != _data().graph().end(); ++itr)
+            //--------------------------------------------------------------------------//
+            // output to cout
+            //
+            if(settings::cout_output())
             {
-                if(itr->depth() < 0 || itr->depth() > settings::max_depth())
+                cout = &std::cout;
+                printf("\n");
+            }
+
+            // std::stringstream _mss;
+            for(auto pitr = _data().graph().begin(); pitr != _data().graph().end();
+                ++pitr)
+            {
+                auto itr = *pitr;
+                if(itr.depth() < 0 || itr.depth() > settings::max_depth())
                     continue;
-                // if only a specific number of measurements should be echoed
-                if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
-                    continue;
-                auto _obj       = itr->obj();
-                auto _hierarchy = get_hierarchy(itr);
-                _hierarchy.push_back(get_prefix(itr));
-                operation::echo_measurement<ObjectType>(_obj, _hierarchy);
-                ++_nitr;
+                std::stringstream _pss;
+                // if we are not at the bottom of the call stack (i.e. completely
+                // inclusive)
+                if(itr.depth() < _max_depth)
+                {
+                    // get the next iteration
+                    auto eitr = pitr;
+                    std::advance(eitr, 1);
+                    // counts the number of non-exclusive values
+                    int64_t nexclusive = 0;
+                    // the sum of the exclusive values
+                    get_return_type exclusive_values;
+                    // continue while not at end of graph until first sibling is
+                    // encountered
+                    while(eitr->depth() != itr.depth() && eitr != _data().graph().end())
+                    {
+                        // if one level down, this is an exclusive value
+                        if(eitr->depth() == itr.depth() + 1)
+                        {
+                            // if first exclusive value encountered: assign; else: combine
+                            if(nexclusive == 0)
+                                exclusive_values = eitr->obj().get();
+                            else
+                                details::combine(exclusive_values, eitr->obj().get());
+                            // increment. beyond 0 vs. 1, this value plays no role
+                            ++nexclusive;
+                        }
+                        // increment iterator for next while check
+                        ++eitr;
+                    }
+                    // if there were exclusive values encountered
+                    if(nexclusive > 0 && trait::is_available<ObjectType>::value)
+                    {
+                        details::print_percentage(
+                            _pss, details::compute_percentage(exclusive_values,
+                                                              itr.obj().get()));
+                    }
+                }
+
+                auto _obj    = itr.obj();
+                auto _prefix = _compute_modified_prefix(itr);
+                auto _laps   = _obj.nlaps();
+                auto _depth  = itr.depth();
+
+                std::stringstream _oss;
+                operation::print<ObjectType>(_obj, _oss, _prefix, _laps, _depth, _widths,
+                                             true, _pss.str());
+                // operation::print<ObjectType>(_obj, _mss, false);
+                if(cout != nullptr)
+                    *cout << _oss.str() << std::flush;
+                if(fout != nullptr)
+                    *fout << _oss.str() << std::flush;
+            }
+
+            if(fout)
+            {
+                fout->close();
+                delete fout;
+                fout = nullptr;
+            }
+
+            // if(cout != nullptr)
+            //    *cout << std::endl;
+
+            bool _dart_output = settings::dart_output();
+
+            // if only a specific type should be echoed
+            if(settings::dart_type().length() > 0)
+            {
+                auto dtype = settings::dart_type();
+                if(operation::echo_measurement<ObjectType>::lowercase(dtype) !=
+                   operation::echo_measurement<ObjectType>::lowercase(label))
+                    _dart_output = false;
+            }
+
+            if(_dart_output)
+            {
+                auto get_hierarchy = [&](iterator itr) {
+                    std::vector<std::string> _hierarchy;
+                    if(!itr || itr->depth() == 0)
+                        return _hierarchy;
+                    iterator _parent = _data().graph().parent(itr);
+                    do
+                    {
+                        _hierarchy.push_back(get_prefix(_parent));
+                        if(_parent->depth() == 0)
+                            break;
+                        auto _new_parent = graph_t::parent(_parent);
+                        if(_parent == _new_parent)
+                            break;
+                        _parent = _new_parent;
+                    } while(_parent && !(_parent->depth() < 0));
+                    std::reverse(_hierarchy.begin(), _hierarchy.end());
+                    return _hierarchy;
+                };
+                printf("\n");
+                uint64_t _nitr = 0;
+                for(auto itr = _data().graph().begin(); itr != _data().graph().end();
+                    ++itr)
+                {
+                    if(itr->depth() < 0 || itr->depth() > settings::max_depth())
+                        continue;
+                    // if only a specific number of measurements should be echoed
+                    if(settings::dart_count() > 0 && _nitr >= settings::dart_count())
+                        continue;
+                    auto _obj       = itr->obj();
+                    auto _hierarchy = get_hierarchy(itr);
+                    _hierarchy.push_back(get_prefix(itr));
+                    operation::echo_measurement<ObjectType>(_obj, _hierarchy);
+                    ++_nitr;
+                }
             }
         }
-
+        if(mpi::is_initialized())
+            mpi::barrier();
         instance_count().store(0);
     }
     else

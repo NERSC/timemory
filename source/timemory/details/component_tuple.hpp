@@ -29,7 +29,7 @@
 
 template <typename... Types>
 void
-tim::filt::component_tuple<Types...>::init_manager()
+tim::component_tuple<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -62,26 +62,6 @@ get_labeled(const component_tuple<_Types...>& _obj)
 
 //--------------------------------------------------------------------------------------//
 
-template <typename... _Types>
-auto
-get(const filt::component_tuple<_Types...>& _obj)
-    -> decltype(std::declval<filt::component_tuple<_Types...>>().get())
-{
-    return _obj.get();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-auto
-get_labeled(const filt::component_tuple<_Types...>& _obj)
-    -> decltype(std::declval<filt::component_tuple<_Types...>>().get_labeled())
-{
-    return _obj.get_labeled();
-}
-
-//--------------------------------------------------------------------------------------//
-
 }  // namespace tim
 
 //======================================================================================//
@@ -94,7 +74,7 @@ namespace std
 
 template <std::size_t N, typename... Types>
 typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(tim::component_tuple<Types...>& obj)
+get(::tim::component_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -103,7 +83,7 @@ get(tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 const typename std::tuple_element<N, std::tuple<Types...>>::type&
-get(const tim::component_tuple<Types...>& obj)
+get(const ::tim::component_tuple<Types...>& obj)
 {
     return get<N>(obj.data());
 }
@@ -112,10 +92,10 @@ get(const tim::component_tuple<Types...>& obj)
 
 template <std::size_t N, typename... Types>
 auto
-get(tim::component_tuple<Types...>&& obj)
-    -> decltype(get<N>(std::forward<tim::component_tuple<Types...>>(obj).data()))
+get(::tim::component_tuple<Types...>&& obj)
+    -> decltype(get<N>(std::forward<::tim::component_tuple<Types...>>(obj).data()))
 {
-    using obj_type = tim::component_tuple<Types...>;
+    using obj_type = ::tim::component_tuple<Types...>;
     return get<N>(std::forward<obj_type>(obj).data());
 }
 

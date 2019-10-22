@@ -32,6 +32,7 @@
 #include <algorithm>
 #include <cassert>
 #include <cstddef>
+#include <deque>
 #include <functional>
 #include <iomanip>
 #include <iostream>
@@ -40,6 +41,11 @@
 #include <queue>
 #include <set>
 #include <stdexcept>
+#include <vector>
+
+#include "timemory/units.hpp"
+#include "timemory/utility/macros.hpp"
+#include "timemory/utility/serializer.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -76,6 +82,16 @@ public:
     tgraph_node<T>* prev_sibling = nullptr;
     tgraph_node<T>* next_sibling = nullptr;
     T               data         = T{};
+
+    static size_t data_size() { return (5 * sizeof(tgraph_node<T>*)) + sizeof(T); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive>
+    void serialize(_Archive& ar, const unsigned int)
+    {
+        ar(serializer::make_nvp("data", data));
+    }
 };
 
 //======================================================================================//
@@ -95,8 +111,233 @@ tgraph_node<T>::tgraph_node(T&& val)
 }
 
 //======================================================================================//
+//  graph allocator that counts the size of the allocation
+//
+//
+template <typename _Tp>
+class graph_allocator : public std::allocator<_Tp>
+{
+public:
+    // The following will be the same for virtually all allocators.
+    using value_type      = _Tp;
+    using pointer         = _Tp*;
+    using reference       = _Tp&;
+    using const_pointer   = const _Tp*;
+    using const_reference = const _Tp&;
+    using size_type       = size_t;
+    using difference_type = ptrdiff_t;
+    using boolvec_t       = std::deque<bool>;
+    using voidvec_t       = std::vector<void*>;
+    using sizevec_t       = std::vector<uint16_t>;
+    using base_type = std::allocator<_Tp>;
 
-template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>>
+public:
+    // constructors and destructors
+    graph_allocator()                       = default;
+    graph_allocator(const graph_allocator&) = delete;
+    graph_allocator(graph_allocator&&)      = default;
+    ~graph_allocator()
+    {
+        PRINT_HERE("destroying graph_allocator...");
+        for(auto& itr : m_allocations)
+            free(itr);
+    }
+
+public:
+    // operators
+    graph_allocator& operator=(const graph_allocator&) = delete;
+    graph_allocator& operator==(graph_allocator&&)     = delete;
+    bool operator!=(const graph_allocator& other) const { return !(*this == other); }
+    bool operator==(const graph_allocator&) const { return true; }
+
+public:
+    _Tp*       address(_Tp& r) const { return &r; }
+    const _Tp* address(const _Tp& s) const { return &s; }
+
+    size_t max_size() const
+    {
+        // avoid signed/unsigned warnings independent of size_t definition
+        return (static_cast<size_t>(0) - static_cast<size_t>(1)) / sizeof(_Tp);
+    }
+
+    // The following must be the same for all allocators.
+    template <typename U>
+    struct rebind
+    {
+        typedef graph_allocator<U> other;
+    };
+
+    using base_type::construct;
+    using base_type::destroy;
+    /*
+    void construct(_Tp* const p, const _Tp& val) const { new((void*) p) _Tp(val); }
+
+    template <typename... _Args>
+    void construct(_Tp* const p, _Args&&... args) const
+    {
+        ::new((void*) p) _Tp(std::forward<_Args>(args)...);
+    }
+
+    void destroy(_Tp* const p) const { p->~_Tp(); }
+    */
+
+    _Tp* allocate(const size_t n) const
+    {
+        if(n == 0)
+            return nullptr;
+
+        // integer overflow check that throws std::length_error in case of overflow
+        if(n > max_size())
+        {
+            throw std::length_error(
+                "graph_allocator<_Tp>::allocate() - Integer overflow.");
+        }
+
+        auto _check_page_entry = [&](size_t i, size_t& j) -> _Tp* {
+            if(m_offset_avail[i][j])
+            {
+                bool _block = true;
+                for(size_t k = 1; k < n; ++k)
+                    if(!m_offset_avail[i][j + k])
+                    {
+                        _block = false;
+                        j += k + 1;
+                        break;
+                    }
+                if(_block)
+                {
+                    _Tp* ptr = ((_Tp*) m_pages[i]) + j;
+                    for(size_t k = 0; k < n; ++k)
+                        m_offset_avail[i][j + k] = false;
+                    m_offset_empty[i] -= n;
+                    return ptr;
+                }
+            }
+            return nullptr;
+        };
+
+        if(!m_next_addr)
+            add_pages(1);
+
+        if(m_next_offset < m_alloc_per_page && m_offset_empty[m_next_page] >= n)
+        {
+            for(size_t j = m_next_offset; j < m_offset_avail[m_next_page].size(); ++j)
+            {
+                auto _ptr = _check_page_entry(m_next_page, j);
+                if(_ptr)
+                {
+                    m_next_offset += n;
+                    return _ptr;
+                }
+            }
+        }
+
+        // Mallocator wraps malloc().
+        for(size_t i = 0; i < m_pages.size(); ++i)
+        {
+            if(m_offset_empty[i] >= n)
+            {
+                for(size_t j = 0; j < m_offset_avail[i].size(); ++j)
+                {
+                    auto _ptr = _check_page_entry(i, j);
+                    if(_ptr)
+                        return _ptr;
+                }
+            }
+        }
+
+        add_pages(1);
+        for(size_t k = 0; k < n; ++k)
+            m_offset_avail[m_next_page][m_next_offset + k] = false;
+        m_offset_empty[m_next_page] -= n;
+        m_next_offset += n;
+        return static_cast<_Tp*>(m_next_addr);
+    }
+
+    void deallocate(_Tp* const ptr, const size_t n) const
+    {
+        for(size_t j = 0; j < n; ++j)
+        {
+            char* _ptr = (char*) ptr + j;
+            for(size_t i = 0; i < m_pages.size(); ++i)
+            {
+                auto itr  = m_pages[i];
+                auto dist = std::distance((char*) itr, _ptr);
+                if(dist >= 0 && dist < units::get_page_size())
+                {
+                    m_offset_avail[i][dist] = true;
+                    m_offset_empty[i] += 1;
+                }
+            }
+        }
+    }
+
+    // same for all allocators that ignore hints.
+    // template <typename U = _Tp>
+    _Tp* allocate(const size_t n, const void* /* const hint */) const
+    {
+        return allocate(n);
+    }
+
+    size_t alloc_bytes() const { return units::get_page_size() * m_pages.size(); }
+
+    void reserve(const size_t n)
+    {
+        auto npages = n / m_alloc_per_page + 1;
+        add_pages(npages);
+    }
+
+private:
+    template <typename... _Args>
+    void _consume(_Args&&...)
+    {
+    }
+
+    void add_pages(int npages = 1) const
+    {
+        auto  nbytes = npages * units::get_page_size();
+        void* _space = malloc(nbytes);
+        m_allocations.push_back(_space);
+
+        // throw std::bad_alloc in the case of memory allocation failure.
+        if(_space == nullptr)
+        {
+            std::cerr << "Allocation of type " << typeid(_Tp).name() << " of size "
+                      << nbytes << " failed" << std::endl;
+            throw std::bad_alloc();
+        }
+
+        auto _num_pages = m_pages.size();
+        m_next_page     = m_pages.size();
+        m_next_addr     = _space;
+        m_next_offset   = 0;
+
+        boolvec_t avail(m_alloc_per_page, true);
+        m_pages.resize(m_pages.size() + npages, nullptr);
+        m_offset_empty.resize(m_offset_empty.size() + npages, m_alloc_per_page);
+        m_offset_avail.resize(m_offset_avail.size() + npages, avail);
+
+        for(int i = 0; i < npages; ++i)
+        {
+            char* _ptr = (char*) _space;
+            _ptr += (i * units::get_page_size());
+            m_pages[_num_pages + i] = (void*) _ptr;
+        }
+    }
+
+    const uint16_t    m_alloc_per_page            = units::get_page_size() / sizeof(_Tp);
+    mutable uint16_t  m_next_offset               = 0;
+    mutable size_t    m_next_page                 = 0;
+    mutable void*     m_next_addr                 = nullptr;
+    mutable voidvec_t m_pages                     = {};
+    mutable sizevec_t m_offset_empty              = {};
+    mutable std::vector<boolvec_t> m_offset_avail = {};
+    mutable voidvec_t              m_allocations  = {};
+};
+
+//======================================================================================//
+
+template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>> // graph_allocator<tgraph_node<T>>>
 class graph
 {
 protected:
@@ -216,33 +457,42 @@ public:
 
     /// Return iterator to the beginning of the graph.
     inline pre_order_iterator begin() const;
+
     /// Return iterator to the end of the graph.
     inline pre_order_iterator end() const;
+
     /// Return sibling iterator to the first child of given node.
     static sibling_iterator begin(const iterator_base&);
+
     /// Return sibling end iterator for children of given node.
     static sibling_iterator end(const iterator_base&);
 
     /// Return iterator to the parent of a node.
     template <typename iter>
     static iter parent(iter);
+
     /// Return iterator to the previous sibling of a node.
     template <typename iter>
     static iter previous_sibling(iter);
+
     /// Return iterator to the next sibling of a node.
     template <typename iter>
     static iter next_sibling(iter);
 
     /// Erase all nodes of the graph.
     inline void clear();
+
     /// Erase element at position pointed to by iterator, return incremented
     /// iterator.
     template <typename iter>
     inline iter erase(iter);
+
     /// Erase all children of the node pointed to by iterator.
     inline void erase_children(const iterator_base&);
+
     /// Erase all siblings to the right of the iterator.
     inline void erase_right_siblings(const iterator_base&);
+
     /// Erase all siblings to the left of the iterator.
     inline void erase_left_siblings(const iterator_base&);
 
@@ -251,6 +501,7 @@ public:
     inline iter append_child(iter position);
     template <typename iter>
     inline iter prepend_child(iter position);
+
     /// Insert node as last/first child of node pointed to by position.
     template <typename iter>
     inline iter append_child(iter position, const T& x);
@@ -260,12 +511,14 @@ public:
     inline iter prepend_child(iter position, const T& x);
     template <typename iter>
     inline iter prepend_child(iter position, T&& x);
+
     /// Append the node (plus its children) at other_position as last/first
     /// child of position.
     template <typename iter>
     inline iter append_child(iter position, iter other_position);
     template <typename iter>
     inline iter prepend_child(iter position, iter other_position);
+
     /// Append the nodes in the from-to range (plus their children) as
     /// last/first children of position.
     template <typename iter>
@@ -278,23 +531,28 @@ public:
     /// Short-hand to insert topmost node in otherwise empty graph.
     inline pre_order_iterator set_head(const T& x);
     inline pre_order_iterator set_head(T&& x);
+
     /// Insert node as previous sibling of node pointed to by position.
     template <typename iter>
     inline iter insert(iter position, const T& x);
     template <typename iter>
     inline iter insert(iter position, T&& x);
+
     /// Specialisation of previous member.
     inline sibling_iterator insert(sibling_iterator position, const T& x);
+
     /// Insert node (with children) pointed to by subgraph as previous sibling
     /// of node pointed to by position. Does not change the subgraph itself (use
     /// move_in or move_in_below for that).
     template <typename iter>
     inline iter insert_subgraph(iter position, const iterator_base& subgraph);
+
     /// Insert node as next sibling of node pointed to by position.
     template <typename iter>
     inline iter insert_after(iter position, const T& x);
     template <typename iter>
     inline iter insert_after(iter position, T&& x);
+
     /// Insert node (with children) pointed to by subgraph as next sibling of
     /// node pointed to by position.
     template <typename iter>
@@ -304,10 +562,12 @@ public:
     /// 'position' becomes invalid.
     template <typename iter>
     inline iter replace(iter position, const T& x);
+
     /// Replace node at 'position' with subgraph starting at 'from' (do not
     /// erase subgraph at 'from'); see above.
     template <typename iter>
     inline iter replace(iter position, const iterator_base& from);
+
     /// Replace string of siblings (plus their children) with copy of a new
     /// string (with children); see above
     inline sibling_iterator replace(sibling_iterator        orig_begin,
@@ -319,6 +579,7 @@ public:
     /// position.
     template <typename iter>
     inline iter flatten(iter position);
+
     /// Move nodes in range to be children of 'position'.
     template <typename iter>
     inline iter reparent(iter position, sibling_iterator begin,
@@ -331,6 +592,7 @@ public:
     /// child of the new node.
     template <typename iter>
     inline iter wrap(iter position, const T& x);
+
     /// Replace the range of sibling nodes (plus subgraphs), making these
     /// children of the new node.
     template <typename iter>
@@ -340,11 +602,13 @@ public:
     /// 'target'.
     template <typename iter>
     inline iter move_after(iter target, iter source);
+
     /// Move 'source' node (plus its children) to become the previous sibling of
     /// 'target'.
     template <typename iter>
     inline iter             move_before(iter target, iter source);
     inline sibling_iterator move_before(sibling_iterator target, sibling_iterator source);
+
     /// Move 'source' node (plus its children) to become the node at 'target'
     /// (erasing the node at 'target').
     template <typename iter>
@@ -353,14 +617,17 @@ public:
     /// Extract the subgraph starting at the indicated node, removing it from
     /// the original graph.
     inline graph move_out(iterator);
+
     /// Inverse of take_out: inserts the given graph as previous sibling of
     /// indicated node by a move operation, that is, the given graph becomes
     /// empty. Returns iterator to the top node.
     template <typename iter>
     inline iter move_in(iter, graph&);
+
     /// As above, but now make the graph a child of the indicated node.
     template <typename iter>
     inline iter move_in_below(iter, graph&);
+
     /// As above, but now make the graph the nth child of the indicated node (if
     /// possible).
     template <typename iter>
@@ -371,16 +638,18 @@ public:
     inline void merge(const sibling_iterator&, const sibling_iterator&, sibling_iterator,
                       const sibling_iterator&, bool duplicate_leaves = false,
                       bool first = false);
+
     /// Reduce duplicate nodes
     template <
         typename _ComparePred = std::function<bool(sibling_iterator, sibling_iterator)>,
         typename _ReducePred  = std::function<void(sibling_iterator, sibling_iterator)>>
     inline void reduce(
         const sibling_iterator&, const sibling_iterator&, const sibling_iterator&,
-        sibling_iterator,
+        const sibling_iterator&,
         _ComparePred&& = [](sibling_iterator lhs,
                             sibling_iterator rhs) { return (*lhs == *rhs); },
         _ReducePred&& = [](sibling_iterator lhs, sibling_iterator rhs) { *lhs += *rhs; });
+
     /// Sort (std::sort only moves values of nodes, this one moves children as
     /// well).
     inline void sort(const sibling_iterator& from, const sibling_iterator& to,
@@ -388,6 +657,7 @@ public:
     template <class StrictWeakOrdering>
     inline void sort(sibling_iterator from, const sibling_iterator& to,
                      StrictWeakOrdering comp, bool deep = false);
+
     /// Compare two ranges of nodes (compares nodes as well as graph structure).
     template <typename iter>
     inline bool equal(const iter& one, const iter& two, const iter& three) const;
@@ -398,13 +668,16 @@ public:
     inline bool equal_subgraph(const iter& one, const iter& two) const;
     template <typename iter, class BinaryPredicate>
     inline bool equal_subgraph(const iter& one, const iter& two, BinaryPredicate) const;
+
     /// Extract a new graph formed by the range of siblings plus all their
     /// children.
     inline graph subgraph(sibling_iterator from, sibling_iterator to) const;
     inline void  subgraph(graph&, sibling_iterator from, sibling_iterator to) const;
+
     /// Exchange the node (plus subgraph) with its sibling node (do nothing if
     /// no sibling present).
     inline void swap(sibling_iterator it);
+
     /// Exchange two nodes (plus subgraphs). The iterators will remain valid and
     /// keep pointing to the same nodes, which now sit at different locations in
     /// the graph.
@@ -412,34 +685,45 @@ public:
 
     /// Count the total number of nodes.
     inline size_t size() const;
+
     /// Count the total number of nodes below the indicated node (plus one).
     inline size_t size(const iterator_base&) const;
+
     /// Check if graph is empty.
     inline bool empty() const;
+
     /// Compute the depth to the root or to a fixed other iterator.
     static int depth(const iterator_base&);
     static int depth(const iterator_base&, const iterator_base&);
+
     /// Determine the maximal depth of the graph. An empty graph has
     /// max_depth=-1.
     inline int max_depth() const;
+
     /// Determine the maximal depth of the graph with top node at the given
     /// position.
     inline int max_depth(const iterator_base&) const;
+
     /// Count the number of children of node at position.
     static unsigned int number_of_children(const iterator_base&);
+
     /// Count the number of siblings (left and right) of node at iterator. Total
     /// nodes at this level is +1.
     inline unsigned int number_of_siblings(const iterator_base&) const;
+
     /// Determine whether node at position is in the subgraphs with root in the
     /// range.
     inline bool is_in_subgraph(const iterator_base& position, const iterator_base& begin,
                                const iterator_base& end) const;
+
     /// Determine whether the iterator is an 'end' iterator and thus not
     /// actually pointing to a node.
     inline bool is_valid(const iterator_base&) const;
+
     /// Determine whether the iterator is one of the 'head' nodes at the top
     /// level, i.e. has no parent.
     static bool is_head(const iterator_base&);
+
     /// Find the lowest common ancestor of two nodes, that is, the deepest node
     /// such that both nodes are descendants of it.
     inline iterator lowest_common_ancestor(const iterator_base&,
@@ -448,8 +732,10 @@ public:
     /// Determine the index of a node in the range of siblings to which it
     /// belongs.
     inline unsigned int index(sibling_iterator it) const;
+
     /// Inverse of 'index': return the n-th child of the node at position.
     static sibling_iterator child(const iterator_base& position, unsigned int);
+
     /// Return iterator to the sibling indicated by index
     inline sibling_iterator sibling(const iterator_base& position, unsigned int) const;
 
@@ -472,6 +758,21 @@ public:
 
     graph_node* head;  // head/feet are always dummy; if an iterator
     graph_node* feet;  // points to them it is invalid
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Archive>
+    void serialize(_Archive& ar, const unsigned int)
+    {
+        for(auto itr = begin(); itr != end(); ++itr)
+            ar(serializer::make_nvp("node", *itr));
+    }
+
+    size_t data_size()
+    {
+        return 0;
+        // return m_alloc.alloc_bytes();
+    }
 
 private:
     AllocatorT  m_alloc;
@@ -614,6 +915,7 @@ graph<T, AllocatorT>::operator=(graph<T, AllocatorT>&& x)
 template <typename T, typename AllocatorT>
 graph<T, AllocatorT>::graph(const graph<T, AllocatorT>& other)
 {
+    // m_alloc.reserve(2 + other.size());
     m_head_initialize();
     m_copy(other);
 }
@@ -1901,25 +2203,132 @@ template <typename T, typename AllocatorT>
 template <typename _ComparePred, typename _ReducePred>
 void
 graph<T, AllocatorT>::reduce(const sibling_iterator& beg1, const sibling_iterator& end1,
-                             const sibling_iterator& beg2, sibling_iterator end2,
+                             const sibling_iterator& beg2, const sibling_iterator& end2,
                              _ComparePred&& _compare, _ReducePred&& _reduce)
 {
-    for(auto itr1 = beg1; itr1 != end1; ++itr1)
+    // if(!is_valid(beg1) || !is_valid(beg2))
+    //     return;
+
+    /*int ncompare = 0;
+    int nitr1 = 0;
+    int nitr2 = 0;
+    if(beg1 && beg2)
     {
-        for(auto itr2 = beg2; itr2 != end2; ++itr2)
+    auto nsib1 = number_of_siblings(beg1);
+    auto nsib2 = number_of_siblings(beg2);
+    printf("number of siblings: %li and %li\n", (long int) nsib1, (long int) nsib2);
+    auto nchild1 = number_of_children(beg1);
+    auto nchild2 = number_of_children(beg2);
+    printf("number of children: %li and %li\n", (long int) nchild1, (long int) nchild2);
+    }*/
+    for(sibling_iterator itr1 = beg1; itr1 != end1; ++itr1)
+    {
+        // nitr1++;
+        for(sibling_iterator itr2 = beg2; itr2 != end2; ++itr2)
         {
+            // nitr2++;
             // skip if same iterator
             if(itr1 == itr2)
                 continue;
-            if(_compare(itr1, itr2))
+            //++ncompare;
+            if(itr1 && itr2 && _compare(itr1, itr2))
             {
                 _reduce(itr1, itr2);
-                reduce(itr1.begin(), itr1.end(), itr2.begin(), itr2.end(), _compare,
-                       _reduce);
+                // recursive for children
+                auto ncitr1 = number_of_children(itr1);
+                auto ncitr2 = number_of_children(itr2);
+                if(ncitr1 > 0 && ncitr2 > 0)
+                {
+                    for(uint32_t i = 0; i < ncitr1; ++i)
+                        for(uint32_t j = 0; j < ncitr2; ++j)
+                        {
+                            auto citr1 = child(itr1, i);
+                            auto citr2 = child(itr2, j);
+                            reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(),
+                                   _compare, _reduce);
+                        }
+                }
                 this->erase(itr2);
             }
         }
+
+        /*
+        // recursive for children
+        auto ncitr1 = number_of_children(itr1);
+        auto ncitr2 = number_of_children(beg2);
+        if(ncitr1 > 0 && ncitr2 > 0)
+        {
+            auto citr1 = child(itr1, 0);
+            auto citr2 = child(beg2, 0);
+            if(citr1 && citr2)
+                reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(), _compare,
+                       _reduce);
+        }
+        */
     }
+
+    if(beg1 && beg2)
+    {
+        // recursive for children
+        auto ncitr1 = number_of_children(beg1);
+        auto ncitr2 = number_of_children(beg2);
+        // printf("number of children: %li and %li\n", (long int) ncitr1, (long int)
+        // ncitr2);
+        if(ncitr1 > 0 && ncitr2 > 0)
+        {
+            graph_node* pos1 = beg1.node->first_child;
+            while(pos1)
+            {
+                graph_node* pos2 = beg2.node->first_child;
+                while(pos2)
+                {
+                    if(pos1 != pos2 && _compare(pos1, pos2))
+                    {
+                        _reduce(pos1, pos2);
+                        auto tmp = pos2;
+                        pos2     = pos2->next_sibling;
+                        this->erase(sibling_iterator(tmp));
+                    }
+                    else
+                    {
+                        pos2 = pos2->next_sibling;
+                    }
+                }
+                pos1 = pos1->next_sibling;
+            }
+
+            auto citr1 = beg1.begin();
+            auto citr2 = beg2.begin();
+            if(citr1 && citr2)
+            {
+                reduce(citr1.begin(), citr1.end(), citr2.begin(), citr2.end(), _compare,
+                       _reduce);
+            }
+        }
+        reduce(beg1.begin(), beg1.end(), beg2.begin(), beg2.end(), _compare, _reduce);
+        graph_node* pos1 = beg1.node->next_sibling;
+        while(pos1)
+        {
+            graph_node* pos2 = beg2.node->next_sibling;
+            while(pos2)
+            {
+                if(pos1 != pos2 && _compare(pos1, pos2))
+                {
+                    _reduce(pos1, pos2);
+                    auto tmp = pos2;
+                    pos2     = pos2->next_sibling;
+                    this->erase(sibling_iterator(tmp));
+                }
+                else
+                {
+                    pos2 = pos2->next_sibling;
+                }
+            }
+            pos1 = pos1->next_sibling;
+        }
+    }
+
+    // printf("number of comparisons: %i, lhs: %i, rhs: %i\n", ncompare, nitr1, nitr2);
 }
 
 //--------------------------------------------------------------------------------------//

@@ -290,6 +290,13 @@ TIMEMORY_ENV_STATIC_ACCESSOR(int32_t, node_count, "TIMEMORY_NODE_COUNT", 0)
 TIMEMORY_ENV_STATIC_ACCESSOR(bool, destructor_report, "TIMEMORY_DESTRUCTOR_REPORT", false)
 
 //--------------------------------------------------------------------------------------//
+//     For plotting
+//--------------------------------------------------------------------------------------//
+
+/// default setting for python invocation when plotting from C++ code
+TIMEMORY_ENV_STATIC_ACCESSOR(string_t, python_exe, "TIMEMORY_PYTHON_EXE", "python")
+
+//--------------------------------------------------------------------------------------//
 
 inline string_t
 tolower(string_t str)

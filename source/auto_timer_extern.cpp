@@ -32,10 +32,13 @@
 
 #define EXTERN_TEMPLATE_BUILD
 
-#include "timemory/components.hpp"           // for papi_array_t
-#include "timemory/components/types.hpp"     // for cpu_roofline_dp_flops
-#include "timemory/utility/macros.hpp"       // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/components.hpp"        // for papi_array_t
+#include "timemory/components/types.hpp"  // for cpu_roofline_dp_flops
+#include "timemory/utility/macros.hpp"    // for TIMEMORY_INSTANTIATE_EXT...
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
 #include "timemory/variadic/auto_timer.hpp"  // for auto_timer_list_t, auto_...
+#include "timemory/variadic/auto_tuple.hpp"
 
 //======================================================================================//
 //

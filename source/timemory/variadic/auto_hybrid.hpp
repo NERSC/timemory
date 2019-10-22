@@ -40,6 +40,7 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_hybrid.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
@@ -70,11 +71,14 @@ public:
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    template <typename _Scope = scope::process>
     inline explicit auto_hybrid(const string_t&,
-                                bool flat           = (settings::flat_profile() ||
-                                             std::is_same<_Scope, scope::flat>::value),
+                                bool flat           = settings::flat_profile(),
                                 bool report_at_exit = settings::destructor_report());
+
+    template <typename _Scope>
+    inline auto_hybrid(const string_t&, _Scope = _Scope{},
+                       bool report_at_exit = settings::destructor_report());
+
     template <typename _Scope = scope::process>
     inline explicit auto_hybrid(component_type& tmp,
                                 bool            flat = (settings::flat_profile() ||
@@ -140,9 +144,9 @@ public:
             m_temporary_object.customize(std::forward<_Args>(_args)...);
     }
 
-    data_value_type inline get() const { return m_temporary_object.get(); }
+    inline data_value_type get() const { return m_temporary_object.get(); }
 
-    data_label_type inline get_labeled() const
+    inline data_label_type get_labeled() const
     {
         return m_temporary_object.get_labeled();
     }
@@ -189,16 +193,10 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    static void init_manager()
-    {
-        component_type::init_manager();
-    }
+    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
-    static void init_storage()
-    {
-        component_type::init_storage();
-    }
+    static void init_storage() { component_type::init_storage(); }
 
 private:
     bool            m_enabled        = true;
@@ -210,12 +208,29 @@ private:
 //======================================================================================//
 
 template <typename _CompTuple, typename _CompList>
-template <typename _Scope>
 auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, bool flat,
                                                 bool report_at_exit)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, flat)
+                               : component_type())
+{
+    if(m_enabled)
+    {
+        m_temporary_object.start();
+    }
+}
+
+//======================================================================================//
+
+template <typename _CompTuple, typename _CompList>
+template <typename _Scope>
+auto_hybrid<_CompTuple, _CompList>::auto_hybrid(const string_t& object_tag, _Scope,
+                                                bool report_at_exit)
+: m_enabled(settings::enabled())
+, m_report_at_exit(report_at_exit)
+, m_temporary_object(m_enabled ? component_type(object_tag, m_enabled, std::is_same<_Scope, scope::flat>::value)
+                               : component_type())
 {
     if(m_enabled)
     {

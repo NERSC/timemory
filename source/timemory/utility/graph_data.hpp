@@ -70,9 +70,8 @@ get_hash_aliases()
 //--------------------------------------------------------------------------------------//
 
 inline int64_t
-add_hash_id(const std::string& prefix)
+add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
 {
-    static thread_local auto _hash_map = get_hash_ids();
     int64_t                  _hash_id  = std::hash<std::string>()(prefix.c_str());
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
@@ -81,6 +80,15 @@ add_hash_id(const std::string& prefix)
             _hash_map->rehash(_hash_map->size() + 10);
     }
     return _hash_id;
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline int64_t
+add_hash_id(const std::string& prefix)
+{
+    static thread_local auto _hash_map = get_hash_ids();
+    return add_hash_id(_hash_map, prefix);
 }
 
 //--------------------------------------------------------------------------------------//

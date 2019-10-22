@@ -103,7 +103,6 @@ struct function_traits<R(Args...)>
 // member function pointer
 template <typename C, typename R, typename... Args>
 struct function_traits<R (C::*)(Args...)>
-// : public function_traits<R(C&,Args...)>
 {
     static constexpr bool   is_memfun = true;
     static constexpr bool   is_const  = false;
@@ -116,7 +115,6 @@ struct function_traits<R (C::*)(Args...)>
 // const member function pointer
 template <typename C, typename R, typename... Args>
 struct function_traits<R (C::*)(Args...) const>
-// : public function_traits<R(C&,Args...)>
 {
     static constexpr bool   is_memfun = true;
     static constexpr bool   is_const  = true;
@@ -129,7 +127,6 @@ struct function_traits<R (C::*)(Args...) const>
 // member object pointer
 template <typename C, typename R>
 struct function_traits<R(C::*)>
-// : public function_traits<R(C&)>
 {
     static constexpr bool is_memfun = true;
     static constexpr bool is_const  = false;
@@ -137,124 +134,6 @@ struct function_traits<R(C::*)>
     using result_type               = R;
     using args_type                 = std::tuple<>;
     using call_type                 = std::tuple<C&>;
-};
-
-/*
-// functor
-template<class F>
-struct function_traits
-{
-    private:
-        using call_type = function_traits<decltype(&F::type::operator())>;
-    public:
-        using return_type = typename call_type::return_type;
-
-        static constexpr std::size_t arity = call_type::arity - 1;
-
-        template <std::size_t N>
-        struct argument
-        {
-            static_assert(N < arity, "error: invalid parameter index.");
-            using type = typename call_type::template argument<N+1>::type;
-        };
-};
-
-template<class F>
-struct traits<F&> : public traits<F>
-{};
-
-template<class F>
-struct traits<F&&> : public traits<F>
-{};
-
-*/
-//--------------------------------------------------------------------------------------//
-//
-//  Pre-C++17 result_of and invoke_result
-//
-//--------------------------------------------------------------------------------------//
-
-namespace detail
-{
-template <typename T>
-struct is_reference_wrapper : std::false_type
-{
-};
-template <typename U>
-struct is_reference_wrapper<std::reference_wrapper<U>> : std::true_type
-{
-};
-
-template <typename T>
-struct invoke_impl
-{
-    template <typename F, typename... Args>
-    static auto call(F&& f, Args&&... args)
-        -> decltype(std::forward<F>(f)(std::forward<Args>(args)...));
-};
-
-template <typename B, typename MT>
-struct invoke_impl<MT B::*>
-{
-    template <typename T, typename Td = typename std::decay<T>::type,
-              typename = typename std::enable_if<std::is_base_of<B, Td>::value>::type>
-    static auto get(T&& t) -> T&&;
-
-    template <typename T, typename Td = typename std::decay<T>::type,
-              typename = typename std::enable_if<is_reference_wrapper<Td>::value>::type>
-    static auto get(T&& t) -> decltype(t.get());
-
-    template <typename T, typename Td = typename std::decay<T>::type,
-              typename = typename std::enable_if<!std::is_base_of<B, Td>::value>::type,
-              typename = typename std::enable_if<!is_reference_wrapper<Td>::value>::type>
-    static auto get(T&& t) -> decltype(*std::forward<T>(t));
-
-    template <typename T, typename... Args, typename MT1,
-              typename = typename std::enable_if<std::is_function<MT1>::value>::type>
-    static auto call(MT1 B::*pmf, T&& t, Args&&... args)
-        -> decltype((invoke_impl::get(std::forward<T>(t)).*
-                     pmf)(std::forward<Args>(args)...));
-
-    template <typename T>
-    static auto call(MT B::*pmd, T&& t)
-        -> decltype(invoke_impl::get(std::forward<T>(t)).*pmd);
-};
-
-template <typename F, typename... Args, typename Fd = typename std::decay<F>::type>
-auto
-INVOKE(F&& f, Args&&... args)
-    -> decltype(invoke_impl<Fd>::call(std::forward<F>(f), std::forward<Args>(args)...));
-
-}  // namespace detail
-
-// Conforming C++14 implementation (is also a valid C++11 implementation):
-namespace detail
-{
-template <typename AlwaysVoid, typename, typename...>
-struct invoke_result
-{
-};
-
-template <typename F, typename... Args>
-struct invoke_result<decltype(void(
-                         detail::INVOKE(std::declval<F>(), std::declval<Args>()...))),
-                     F, Args...>
-{
-    using type = decltype(detail::INVOKE(std::declval<F>(), std::declval<Args>()...));
-};
-}  // namespace detail
-
-template <typename>
-struct result_of;
-
-template <typename F, typename... ArgTypes>
-struct result_of<F(ArgTypes...)> : detail::invoke_result<void, F, ArgTypes...>
-{
-};
-
-template <typename F, typename... ArgTypes>
-struct invoke_result : detail::invoke_result<void, F, ArgTypes...>
-{
 };
 
 //======================================================================================//
@@ -333,7 +212,6 @@ template <typename _Tp, _Tp _Num, size_t... _Idx>
 struct _Make_integer_sequence<_Tp, _Num, _Index_tuple<_Idx...>>
 {
     static_assert(_Num >= 0, "Cannot make integer sequence of negative length");
-
     using __type = integer_sequence<_Tp, static_cast<_Tp>(_Idx)...>;
 };
 
@@ -397,38 +275,6 @@ template <typename _Tp, typename _Types>
 using is_one_of = typename impl::is_one_of<_Tp, _Types>;
 
 //======================================================================================//
-// remove first type from expansion
-//
-template <typename List>
-class pop_front_t;
-
-template <typename Head, typename... Tail>
-class pop_front_t<std::tuple<Head, Tail...>>
-{
-public:
-    using Type = std::tuple<Tail...>;
-};
-
-template <typename List>
-using pop_front = typename pop_front_t<List>::Type;
-
-//======================================================================================//
-// add type to expansion
-//
-template <typename List, typename NewElement>
-class push_back_t;
-
-template <typename... Elements, typename NewElement>
-class push_back_t<std::tuple<Elements...>, NewElement>
-{
-public:
-    using type = std::tuple<Elements..., NewElement>;
-};
-
-template <typename List, typename NewElement>
-using push_back = typename push_back_t<List, NewElement>::type;
-
-//======================================================================================//
 // get the index of a type in expansion
 //
 template <typename _Tp, typename Type>
@@ -452,9 +298,10 @@ template <typename _Ret>
 struct _apply_impl
 {
     //----------------------------------------------------------------------------------//
+    //  invoke a function with a tuple
     //
     template <typename _Fn, typename _Tuple, size_t... _Idx>
-    static _Ret all(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
+    static _Ret invoke(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
     {
         return __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
     }
@@ -514,6 +361,17 @@ struct _apply_impl
 template <>
 struct _apply_impl<void>
 {
+    using _Ret = void;
+
+    //----------------------------------------------------------------------------------//
+    //  invoke a function with a tuple
+    //
+    template <typename _Fn, typename _Tuple, size_t... _Idx>
+    static _Ret invoke(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
+    {
+        return __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
+    }
+
     //----------------------------------------------------------------------------------//
     // temporary construction
     //
@@ -542,7 +400,7 @@ struct _apply_impl<void>
         std::get<_N>(__t) = __v;
     }
 
-    template <std::size_t _N, std::size_t _Nt, typename _Tuple, typename _Value,
+    template <size_t _N, size_t _Nt, typename _Tuple, typename _Value,
               enable_if_t<(_N < _Nt), char> = 0>
     static void set_value(_Tuple&& __t, _Value&& __v)
     {
@@ -754,42 +612,53 @@ struct _apply_impl<void>
 };
 
 //======================================================================================//
-
+//
+//      Declaration
+//
 template <typename _Ret>
-struct apply
+struct apply;
+
+//======================================================================================//
+
+template <>
+struct apply<std::string>
 {
-    using string_t = std::string;
+    using _Ret           = std::string;
+    using string_t       = std::string;
+    using string_tuple_t = std::tuple<std::string>;
+
+    //----------------------------------------------------------------------------------//
+    //      Helper
     //----------------------------------------------------------------------------------//
 
     template <typename _Tp, bool _Val = true, typename _Up = int,
               typename _Dt = typename std::remove_const<decay_t<_Tp>>::type>
-    using enable_if_string_t =
-        enable_if_t<(std::is_same<_Dt, char*>::value) == _Val, _Up>;
+    using if_string_t = enable_if_t<(std::is_same<_Dt, char*>::value) == _Val, _Up>;
 
     //----------------------------------------------------------------------------------//
 
-    template <typename... _Args, typename _Return = _Ret, size_t _N = sizeof...(_Args),
-              enable_if_t<(std::is_same<_Return, string_t>::value && _N > 0), char> = 0>
-    static _Return join(const string_t& separator, _Args&&... __args)
+    template <typename _Sep, typename... _Args, typename _Return = _Ret,
+              size_t _N = sizeof...(_Args), enable_if_t<(_N > 0), char> = 0>
+    static _Return join(_Sep&& separator, _Args&&... __args)
     {
         std::stringstream ss;
         ss << std::boolalpha;
-        return _apply_impl<_Ret>::template join<string_t, _Args...>(
-            std::ref(ss), separator, std::forward<_Args>(__args)...);
+        return _apply_impl<_Ret>::template join<_Sep, _Args...>(
+            std::ref(ss), std::forward<_Sep>(separator), std::forward<_Args>(__args)...);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Arg, enable_if_string_t<_Arg, true> = 0>
-    static _Ret join(const string_t&, _Arg&& _arg)
+    template <typename _Sep, typename _Arg, if_string_t<_Arg, true> = 0>
+    static _Ret join(_Sep&&, _Arg&& _arg)
     {
         return std::move(_arg);
     }
 
     //----------------------------------------------------------------------------------//
 
-    template <typename _Arg, enable_if_string_t<_Arg, false> = 0>
-    static _Ret join(const string_t&, _Arg&& _arg)
+    template <typename _Sep, typename _Arg, if_string_t<_Arg, false> = 0>
+    static _Ret join(_Sep&&, _Arg&& _arg)
     {
         std::stringstream ss;
         ss << _arg;
@@ -801,13 +670,100 @@ struct apply
     static _Ret join(const string_t&) { return _Ret{ "" }; }
 
     //----------------------------------------------------------------------------------//
+};
 
-    template <size_t... _Idx, typename _Tuple, typename _Return = _Ret,
-              enable_if_t<!(std::is_same<_Return, string_t>::value), char> = 0>
-    static string_t join(const string_t& separator, _Tuple&& __tup,
-                         index_sequence<_Idx...>)
+//======================================================================================//
+
+template <typename _Ret>
+struct apply
+{
+    using string_t = std::string;
+
+    //----------------------------------------------------------------------------------//
+    //  invoke a function
+    //
+    template <typename _Fn, typename... _Args, size_t _N = sizeof...(_Args)>
+    static _Ret invoke(_Fn&& __f, _Args&&... __args)
+    {
+        return __f(std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  invoke a function with a tuple
+    //
+    template <typename _Fn, template <typename...> class _Tuple, typename... _Args,
+              size_t _N = sizeof...(_Args)>
+    static _Ret invoke(_Fn&& __f, _Tuple<_Args...>&& __t)
+    {
+        using _Tuple_t = _Tuple<_Args...>;
+        return _apply_impl<_Ret>::template invoke<_Fn, _Tuple_t>(
+            std::forward<_Fn>(__f), std::forward<_Tuple_t>(__t),
+            make_index_sequence<_N>{});
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    template <size_t... _Idx, typename _Sep, typename _Tuple>
+    static string_t join(const char* separator, _Tuple&& __tup, index_sequence<_Idx...>)
     {
         return apply<string_t>::join(separator, std::get<_Idx>(__tup)...);
+    }
+};
+
+//======================================================================================//
+
+template <>
+struct apply<std::tuple<std::string>>
+{
+    using string_t = std::string;
+    using _Ret     = string_t;
+    using apply_v  = apply<string_t>;
+
+    //----------------------------------------------------------------------------------//
+    //  implementation for label + entry join
+    //
+    struct _impl
+    {
+        template <typename _LabelSep, typename _EntrySep, typename _LabelTup,
+                  typename _EntryTup, size_t... _Idx>
+        static _Ret join(_LabelSep&& _label_sep, _EntrySep&& _entry_sep,
+                         _LabelTup&& _label_tup, _EntryTup&& _entry_tup,
+                         index_sequence<_Idx...>)
+        {
+            return apply_v::join(std::forward<_LabelSep>(_label_sep),
+                                 apply_v::join(std::forward<_EntrySep>(_entry_sep),
+                                               std::get<_Idx>(_label_tup),
+                                               std::get<_Idx>(_entry_tup))...);
+        }
+    };
+
+    //----------------------------------------------------------------------------------//
+    //  join a tuple of labels with entries
+    //
+    template <typename _LabelSep, typename _EntrySep, typename _LabelTup,
+              typename _EntryTup, size_t _N = std::tuple_size<decay_t<_LabelTup>>::value,
+              enable_if_t<(_N > 0), int> = 0>
+    static _Ret join(_LabelSep&& _label_sep, _EntrySep&& _entry_sep,
+                     _LabelTup&& _label_tup, _EntryTup&& _entry_tup)
+    {
+        // clang-format off
+        return _impl::join(std::forward<_LabelSep>(_label_sep),
+                           std::forward<_EntrySep>(_entry_sep),
+                           std::forward<_LabelTup>(_label_tup),
+                           std::forward<_EntryTup>(_entry_tup),
+                           make_index_sequence<_N>{});
+        // clang-format on
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  join a tuple of labels with entries
+    //
+    template <typename _LabelSep, typename _EntrySep, typename _LabelTup,
+              typename _EntryTup, size_t _N = std::tuple_size<decay_t<_LabelTup>>::value,
+              enable_if_t<(_N == 0), int> = 0>
+    static _Ret join(_LabelSep&&, _EntrySep&&, _LabelTup&&, _EntryTup&&)
+    {
+        return "";
     }
 
     //----------------------------------------------------------------------------------//
@@ -818,6 +774,30 @@ struct apply
 template <>
 struct apply<void>
 {
+    using _Ret = void;
+
+    //----------------------------------------------------------------------------------//
+    //  invoke a function
+    //
+    template <typename _Fn, typename... _Args, size_t _N = sizeof...(_Args)>
+    static _Ret invoke(_Fn&& __f, _Args&&... __args)
+    {
+        __f(std::forward<_Args>(__args)...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  invoke a function with a tuple
+    //
+    template <typename _Fn, template <typename...> class _Tuple, typename... _Args,
+              size_t _N = sizeof...(_Args)>
+    static _Ret invoke(_Fn&& __f, _Tuple<_Args...>&& __t)
+    {
+        using _Tuple_t = _Tuple<_Args...>;
+        _apply_impl<_Ret>::template invoke<_Fn, _Tuple_t>(std::forward<_Fn>(__f),
+                                                          std::forward<_Tuple_t>(__t),
+                                                          make_index_sequence<_N>{});
+    }
+
     //----------------------------------------------------------------------------------//
 
     template <size_t _N, typename _Device, typename _Func, typename... _Args,

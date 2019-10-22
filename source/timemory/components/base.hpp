@@ -24,7 +24,10 @@
 
 #pragma once
 
+#include "timemory/bits/types.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/types.hpp"
+
 #include "timemory/mpl/policy.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
@@ -48,6 +51,7 @@ public:
     using this_type      = base<_Tp, _Value, _Policies...>;
     using storage_type   = impl::storage<_Tp, implements_storage_v>;
     using graph_iterator = typename storage_type::iterator;
+    using properties_t   = properties<this_type>;
 
 private:
     friend class impl::storage<_Tp, implements_storage_v>;
@@ -98,7 +102,7 @@ private:
               enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
     void _init_storage()
     {
-        if(!properties<this_type>::has_storage())
+        if(!properties_t::has_storage())
         {
             static thread_local auto _instance = storage_type::instance();
             _instance->initialize();
@@ -121,7 +125,7 @@ private:
 protected:
     static Type dummy()
     {
-        properties<this_type>::has_storage() = true;
+        properties_t::has_storage() = true;
         Type _fake{};
         return _fake;
     }
@@ -316,12 +320,12 @@ public:
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    bool operator==(const base<Type>& rhs) const { return (value == rhs.value); }
-    bool operator<(const base<Type>& rhs) const { return (value < rhs.value); }
-    bool operator>(const base<Type>& rhs) const { return (value > rhs.value); }
-    bool operator!=(const base<Type>& rhs) const { return !(*this == rhs); }
-    bool operator<=(const base<Type>& rhs) const { return !(*this > rhs); }
-    bool operator>=(const base<Type>& rhs) const { return !(*this < rhs); }
+    bool operator==(const this_type& rhs) const { return (value == rhs.value); }
+    bool operator<(const this_type& rhs) const { return (value < rhs.value); }
+    bool operator>(const this_type& rhs) const { return (value > rhs.value); }
+    bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
+    bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
+    bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
     //----------------------------------------------------------------------------------//
     // this_type operators (plain-old data)
@@ -432,12 +436,12 @@ public:
     //
     friend Type operator+(const this_type& lhs, const this_type& rhs)
     {
-        return base<Type>(lhs) += rhs;
+        return this_type(lhs) += rhs;
     }
 
     friend Type operator-(const this_type& lhs, const this_type& rhs)
     {
-        return base<Type>(lhs) -= rhs;
+        return this_type(lhs) -= rhs;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const this_type& obj)
@@ -694,12 +698,12 @@ public:
     //----------------------------------------------------------------------------------//
     // comparison operators
     //
-    // bool operator==(const base<Type>& rhs) const { return (value == rhs.value); }
-    // bool operator<(const base<Type>& rhs) const { return (value < rhs.value); }
-    // bool operator>(const base<Type>& rhs) const { return (value > rhs.value); }
-    // bool operator!=(const base<Type>& rhs) const { return !(*this == rhs); }
-    // bool operator<=(const base<Type>& rhs) const { return !(*this > rhs); }
-    // bool operator>=(const base<Type>& rhs) const { return !(*this < rhs); }
+    // bool operator==(const this_type& rhs) const { return (value == rhs.value); }
+    // bool operator<(const this_type& rhs) const { return (value < rhs.value); }
+    // bool operator>(const this_type& rhs) const { return (value > rhs.value); }
+    // bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
+    // bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
+    // bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
     //----------------------------------------------------------------------------------//
     // this_type operators
@@ -713,12 +717,12 @@ public:
     //
     friend Type operator+(const this_type& lhs, const this_type& rhs)
     {
-        return base<Type>(lhs) += rhs;
+        return this_type(lhs) += rhs;
     }
 
     friend Type operator-(const this_type& lhs, const this_type& rhs)
     {
-        return base<Type>(lhs) -= rhs;
+        return this_type(lhs) -= rhs;
     }
 
     friend std::ostream& operator<<(std::ostream& os, const this_type&) { return os; }

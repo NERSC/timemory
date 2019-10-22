@@ -46,38 +46,42 @@
 #include "timemory/utility/utility.hpp"
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
 
-namespace filt
-{
 template <typename... Types>
 class auto_list
 {
 public:
-    using component_type  = ::tim::component_list<Types...>;
+    using component_type  = component_list<Types...>;
     using this_type       = auto_list<Types...>;
-    using data_type       = typename component_type::data_type;
-    using string_t        = std::string;
-    using string_hash     = std::hash<string_t>;
     using base_type       = component_type;
-    using tuple_type      = implemented<Types...>;
-    using init_func_t     = std::function<void(this_type&)>;
+    using data_type       = typename component_type::data_type;
     using type_tuple      = typename component_type::type_tuple;
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
+    using init_func_t     = std::function<void(this_type&)>;
+    using string_t        = std::string;
 
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:
-    template <typename _Func>
-    inline explicit auto_list(const string_t&, bool flat, bool report_at_exit,
-                              _Func&& _func);
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                              _Func&& _func);
+    template <typename _Scope = scope::process, typename _Func = init_func_t,
+              bool _Flat = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_list(const string_t&,
+                              bool         flat = (_Flat || settings::flat_profile()),
+                              bool         report_at_exit = false,
+                              const _Func& _func          = this_type::get_initializer());
+
+    template <typename _Scope = scope::process, typename _Func = init_func_t,
+              bool _Flat = std::is_same<_Scope, scope::flat>::value>
+    inline explicit auto_list(component_type& tmp,
+                              bool            flat = (_Flat || settings::flat_profile()),
+                              bool            report_at_exit = false,
+                              const _Func&    _func = this_type::get_initializer());
     inline ~auto_list();
 
     // copy and move
@@ -143,9 +147,9 @@ public:
             m_temporary_object.customize(std::forward<_Args>(_args)...);
     }
 
-    data_value_type inline get() const { return m_temporary_object.get(); }
+    inline data_value_type get() const { return m_temporary_object.get(); }
 
-    data_label_type inline get_labeled() const
+    inline data_label_type get_labeled() const
     {
         return m_temporary_object.get_labeled();
     }
@@ -157,7 +161,6 @@ public:
     inline bool             store() const { return m_temporary_object.store(); }
     inline const data_type& data() const { return m_temporary_object.data(); }
     inline int64_t          laps() const { return m_temporary_object.laps(); }
-    inline const int64_t&   hash() const { return m_temporary_object.hash(); }
     inline const string_t&  key() const { return m_temporary_object.key(); }
     inline void rekey(const string_t& _key) { m_temporary_object.rekey(_key); }
 
@@ -175,14 +178,14 @@ public:
     }
 
     template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type>::value == true), int> = 0>
+              enable_if_t<(is_one_of<_Tp, type_tuple>::value == true), int> = 0>
     void init(_Args&&... _args)
     {
         m_temporary_object.template init<_Tp>(std::forward<_Args>(_args)...);
     }
 
     template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, tuple_type>::value == false), int> = 0>
+              enable_if_t<(is_one_of<_Tp, type_tuple>::value == false), int> = 0>
     void init(_Args&&...)
     {
     }
@@ -210,15 +213,17 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
-    static void init_manager()
-    {
-        component_type::init_manager();
-    }
+    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
-    static void init_storage()
+    static void init_storage() { component_type::init_storage(); }
+
+    static init_func_t& get_initializer()
     {
-        component_type::init_storage();
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
     }
 
 private:
@@ -231,12 +236,12 @@ private:
 //======================================================================================//
 
 template <typename... Types>
-template <typename _Func>
+template <typename _Scope, typename _Func, bool _Flat>
 auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool report_at_exit,
-                               _Func&& _func)
+                               const _Func& _func)
 : m_enabled(settings::enabled())
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(object_tag, m_enabled, flat)
+, m_temporary_object(object_tag, m_enabled, flat || _Flat)
 {
     if(m_enabled)
     {
@@ -248,12 +253,12 @@ auto_list<Types...>::auto_list(const string_t& object_tag, bool flat, bool repor
 //--------------------------------------------------------------------------------------//
 
 template <typename... Types>
-template <typename _Func>
+template <typename _Scope, typename _Func, bool _Flat>
 auto_list<Types...>::auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                               _Func&& _func)
+                               const _Func& _func)
 : m_enabled(true)
 , m_report_at_exit(report_at_exit)
-, m_temporary_object(tmp.clone(true, flat))
+, m_temporary_object(tmp.clone(true, flat || _Flat))
 , m_reference_object(&tmp)
 {
     if(m_enabled)
@@ -289,325 +294,6 @@ auto_list<Types...>::~auto_list()
     }
 }
 
-//--------------------------------------------------------------------------------------//
-//  unused base class
-//
-template <typename... _Types>
-struct auto_list_t
-{
-    using type = auto_list<_Types...>;
-};
-
-//--------------------------------------------------------------------------------------//
-//  tuple overloaded base class
-//
-template <typename... _Types>
-struct auto_list_t<std::tuple<_Types...>>
-{
-    using type = auto_list<_Types...>;
-};
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace filt
-
-//======================================================================================//
-//
-//                                      AUTO LIST
-//
-//======================================================================================//
-
-template <typename... _Types>
-class auto_list : public filt::auto_list_t<implemented<_Types...>>::type
-{
-public:
-    using base_type      = typename filt::auto_list_t<implemented<_Types...>>::type;
-    using component_type = typename base_type::component_type;
-    using this_type      = auto_list<_Types...>;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-    using init_func_t    = std::function<void(this_type&)>;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(const string_t& label,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(component_type& tmp,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(label, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(tmp, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    inline ~auto_list() {}
-
-    // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-};
-
-//======================================================================================//
-
-template <typename... _Types>
-class auto_list<std::tuple<_Types...>>
-: public filt::auto_list_t<implemented<_Types...>>::type
-{
-public:
-    using base_type      = typename filt::auto_list_t<implemented<_Types...>>::type;
-    using this_type      = auto_list<std::tuple<_Types...>>;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-    using init_func_t    = std::function<void(this_type&)>;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(const string_t& label,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(component_type& tmp,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(label, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(tmp, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    inline ~auto_list() {}
-
-    // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-};
-
-//======================================================================================//
-
-template <typename... _CompTypes, typename... _Types>
-class auto_list<component_list<_CompTypes...>, _Types...>
-: public filt::auto_list_t<implemented<_CompTypes..., _Types...>>::type
-{
-public:
-    using base_type =
-        typename filt::auto_list_t<implemented<_CompTypes..., _Types...>>::type;
-    using this_type      = auto_list<component_list<_CompTypes...>, _Types...>;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-    using init_func_t    = std::function<void(this_type&)>;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(const string_t& label,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(component_type& tmp,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(label, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(tmp, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    inline ~auto_list() {}
-
-    // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-};
-
-//======================================================================================//
-
-template <typename... _CompTypes, typename... _Types>
-class auto_list<auto_list<_CompTypes...>, _Types...>
-: public filt::auto_list_t<implemented<_CompTypes..., _Types...>>::type
-{
-public:
-    using base_type =
-        typename filt::auto_list_t<implemented<_CompTypes..., _Types...>>::type;
-    using this_type      = auto_list<auto_list<_CompTypes...>, _Types...>;
-    using component_type = typename base_type::component_type;
-    using data_type      = typename base_type::data_type;
-    using string_t       = std::string;
-    using type_tuple     = typename base_type::type_tuple;
-    using init_func_t    = std::function<void(this_type&)>;
-
-    static constexpr bool contains_gotcha = base_type::contains_gotcha;
-
-public:
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(const string_t& label,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(label, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Scope = scope::process>
-    inline explicit auto_list(component_type& tmp,
-                              bool            flat = (settings::flat_profile() ||
-                                           std::is_same<_Scope, scope::flat>::value),
-                              bool report_at_exit  = settings::destructor_report())
-    : base_type(tmp, flat, report_at_exit, [](base_type& _core) {
-        this_type::get_initializer()(static_cast<this_type&>(_core));
-    })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(const string_t& label, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(label, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    template <typename _Func>
-    inline explicit auto_list(component_type& tmp, bool flat, bool report_at_exit,
-                              _Func&& _func)
-    : base_type(tmp, flat, report_at_exit,
-                [&](base_type& _core) { _func(static_cast<this_type&>(_core)); })
-    {
-    }
-
-    inline ~auto_list() {}
-
-    // copy and move
-    inline auto_list(const this_type&) = default;
-    inline auto_list(this_type&&)      = default;
-    inline this_type& operator=(const this_type&) = default;
-    inline this_type& operator=(this_type&&) = default;
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
-    }
-};
-
 //======================================================================================//
 
 template <typename... _Types,
@@ -624,26 +310,6 @@ template <typename... _Types,
           typename _Ret = typename auto_list<_Types...>::data_label_type>
 _Ret
 get_labeled(const auto_list<_Types...>& _obj)
-{
-    return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types,
-          typename _Ret = typename filt::auto_list<_Types...>::data_value_type>
-_Ret
-get(const filt::auto_list<_Types...>& _obj)
-{
-    return (_obj.enabled()) ? get(_obj.get_component()) : _Ret{};
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types,
-          typename _Ret = typename filt::auto_list<_Types...>::data_label_type>
-_Ret
-get_labeled(const filt::auto_list<_Types...>& _obj)
 {
     return (_obj.enabled()) ? get_labeled(_obj.get_component()) : _Ret{};
 }

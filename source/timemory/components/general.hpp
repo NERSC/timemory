@@ -25,11 +25,12 @@
 
 #pragma once
 
+#include "timemory/backends/gperf.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/details/settings.hpp"
-
-#include "timemory/backends/gperf.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/variadic/types.hpp"
 
 #include <cstdint>
 
@@ -37,11 +38,6 @@
 
 namespace tim
 {
-template <typename... _Types>
-class component_list;
-template <typename... _Types>
-class component_tuple;
-
 namespace component
 {
 //--------------------------------------------------------------------------------------//
@@ -215,10 +211,12 @@ protected:
     int32_t     index = -1;  // if this is >= zero, then we flush and stop
 
     template <typename... _Types>
-    friend class component_tuple;
+    friend class ::tim::component_tuple;
 
     template <typename... _Types>
-    friend class component_list;
+    friend class ::tim::component_list;
+
+    friend struct ::tim::operation::set_prefix<this_type>;
 
 private:
     static std::atomic<int64_t>& get_index()

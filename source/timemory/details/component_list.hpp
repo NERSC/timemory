@@ -29,7 +29,7 @@
 
 template <typename... Types>
 void
-tim::filt::component_list<Types...>::init_manager()
+tim::component_list<Types...>::init_manager()
 {
     tim::manager::instance();
 }
@@ -56,26 +56,6 @@ template <typename... _Types>
 auto
 get_labeled(const component_list<_Types...>& _obj)
     -> decltype(std::declval<component_list<_Types...>>().get_labeled())
-{
-    return _obj.get_labeled();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-auto
-get(const filt::component_list<_Types...>& _obj)
-    -> decltype(std::declval<filt::component_list<_Types...>>().get())
-{
-    return _obj.get();
-}
-
-//--------------------------------------------------------------------------------------//
-
-template <typename... _Types>
-auto
-get_labeled(const filt::component_list<_Types...>& _obj)
-    -> decltype(std::declval<filt::component_list<_Types...>>().get_labeled())
 {
     return _obj.get_labeled();
 }

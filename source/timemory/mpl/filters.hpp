@@ -164,14 +164,28 @@ using filter_false = typename filter_if_false<Predicate, Sequence>::type;
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
-          typename Sequence>
-struct operation_filter_if_false;
+          typename... Ts>
+struct operation_filter_if_false
+{
+    using type = tuple_concat_t<typename filter_if_false_result<
+        Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
+};
 
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, template <typename...> class Operator,
           typename... Ts>
 struct operation_filter_if_false<Predicate, Operator, std::tuple<Ts...>>
+{
+    using type = tuple_concat_t<typename filter_if_false_result<
+        Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class Predicate, template <typename...> class Operator,
+          typename... Ts>
+struct operation_filter_if_false<Predicate, Operator, std::tuple<std::tuple<Ts...>>>
 {
     using type = tuple_concat_t<typename filter_if_false_result<
         Predicate<Ts>::value>::template operation_type<Operator, Ts>...>;
@@ -190,13 +204,26 @@ using operation_filter_false =
 //
 //======================================================================================//
 
-template <template <typename> class Predicate, typename Sequence>
-struct filter_if_true;
+template <template <typename> class Predicate, typename... Ts>
+struct filter_if_true
+{
+    using type = tuple_concat_t<
+        typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
 
 //--------------------------------------------------------------------------------------//
 
 template <template <typename> class Predicate, typename... Ts>
 struct filter_if_true<Predicate, std::tuple<Ts...>>
+{
+    using type = tuple_concat_t<
+        typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;
+};
+
+//--------------------------------------------------------------------------------------//
+
+template <template <typename> class Predicate, typename... Ts>
+struct filter_if_true<Predicate, std::tuple<std::tuple<Ts...>>>
 {
     using type = tuple_concat_t<
         typename filter_if_true_result<Predicate<Ts>::value>::template type<Ts>...>;

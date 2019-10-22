@@ -583,7 +583,7 @@ struct profiler
     int passes() { return m_metric_passes + m_event_passes; }
 
 private:
-    using mutex_t = std::mutex;
+    using mutex_t = std::recursive_mutex;
     using lock_t  = std::unique_lock<mutex_t>;
 
     static mutex_t& get_mutex()

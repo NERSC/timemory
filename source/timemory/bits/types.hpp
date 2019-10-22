@@ -32,6 +32,12 @@
 
 #include "timemory/bits/ctimemory.h"
 
+#include "timemory/mpl/apply.hpp"
+
+#include <ostream>
+#include <sstream>
+#include <string>
+
 namespace tim
 {
 namespace component
@@ -53,4 +59,81 @@ struct properties
 
 }  // namespace component
 
+//======================================================================================//
+
+struct source_location
+{
+    enum class mode : short
+    {
+        blank = 0,
+        basic = 1,
+        full  = 2
+    };
+
+    template <typename... _Args>
+    source_location(const mode& _mode, const char* _fname, const char* _func, int _line,
+                    _Args&&... args)
+    : m_mode(_mode)
+    , m_line(_line)
+    , m_filename(std::move(_fname))
+    , m_function(std::move(_func))
+    , m_data(apply<std::string>::join("", std::forward<_Args>(args)...).c_str())
+    {
+    }
+
+    source_location()                       = delete;
+    ~source_location()                      = default;
+    source_location(const source_location&) = delete;
+    source_location(source_location&&)      = default;
+    source_location& operator=(const source_location&) = delete;
+    source_location& operator=(source_location&&) = default;
+
+    const char* filename() const { return m_filename; }
+    const char* function() const { return m_function; }
+    int         line() const { return m_line; }
+
+    const char* get() const
+    {
+        std::stringstream ss;
+        ss << *this;
+        return std::move(ss.str().c_str());
+    }
+
+    friend std::ostream& operator<<(std::ostream& os, const source_location& obj)
+    {
+        auto filename_substr = [&]() {
+#if defined(_WINDOWS)
+            const char delim = '\\';
+#else
+            const char delim = '/';
+#endif
+            std::string _filename = obj.filename();
+            if(_filename.find(delim) != std::string::npos)
+                return _filename.substr(_filename.find_last_of(delim) + 1).c_str();
+            return obj.m_filename;
+        };
+
+        switch(obj.m_mode)
+        {
+            case mode::blank: os << obj.m_data; break;
+            case mode::basic: os << obj.function() << obj.m_data; break;
+            case mode::full:
+                os << obj.function() << obj.m_data << "@'" << filename_substr()
+                   << "':" << obj.line();
+                break;
+        }
+        return os;
+    }
+
+private:
+    mode        m_mode;
+    int         m_line;
+    const char* m_filename;
+    const char* m_function;
+    const char* m_data;
+};
+
 }  // namespace tim
+
+#define TIMEMORY_SOURCE_LOCATION(MODE, ...)                                              \
+    ::tim::source_location(MODE, __FILE__, __FUNCTION__, __LINE__, __VA_ARGS__)

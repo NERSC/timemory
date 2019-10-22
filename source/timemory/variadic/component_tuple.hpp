@@ -51,28 +51,15 @@
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
+#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 
 namespace tim
 {
 //======================================================================================//
-// forward declaration
-//
-template <typename... Types>
-class auto_tuple;
-
-template <typename _CompTuple, typename _CompList>
-class component_hybrid;
-
-template <typename... _Types>
-class component_tuple;
-
-//======================================================================================//
 // variadic list of components
 //
-namespace filt
-{
 template <typename... Types>
 class component_tuple
 {
@@ -80,21 +67,59 @@ class component_tuple
     explicit component_tuple() {}
 
     // manager is friend so can use above
-    friend class ::tim::manager;
+    friend class manager;
 
     template <typename _TupleC, typename _ListC>
-    friend class ::tim::component_hybrid;
+    friend class component_hybrid;
 
     template <typename... _Types>
-    friend class ::tim::component_tuple;
+    friend class auto_tuple;
 
 public:
-    using string_t        = std::string;
-    using size_type       = int64_t;
-    using string_hash     = std::hash<string_t>;
-    using this_type       = component_tuple<Types...>;
-    using data_type       = std::tuple<Types...>;
-    using type_tuple      = std::tuple<Types...>;
+    template <typename... _Types>
+    struct filtered
+    {
+    };
+
+    template <typename... _Types>
+    struct filtered<std::tuple<_Types...>>
+    {
+        using this_type  = component_tuple<_Types...>;
+        using data_type  = std::tuple<_Types...>;
+        using type_tuple = std::tuple<_Types...>;
+
+        template <typename _Archive>
+        using serialize_t = std::tuple<operation::serialization<Types, _Archive>...>;
+        template <typename _Scope>
+        using insert_node_t = std::tuple<operation::insert_node<_Types, _Scope>...>;
+        using pop_node_t    = std::tuple<operation::pop_node<_Types>...>;
+        using measure_t     = std::tuple<operation::measure<_Types>...>;
+        using record_t      = std::tuple<operation::record<_Types>...>;
+        using reset_t       = std::tuple<operation::reset<_Types>...>;
+        using plus_t        = std::tuple<operation::plus<_Types>...>;
+        using minus_t       = std::tuple<operation::minus<_Types>...>;
+        using multiply_t    = std::tuple<operation::multiply<_Types>...>;
+        using divide_t      = std::tuple<operation::divide<_Types>...>;
+        using print_t       = std::tuple<operation::print<_Types>...>;
+        using prior_start_t = std::tuple<operation::priority_start<_Types>...>;
+        using prior_stop_t  = std::tuple<operation::priority_stop<_Types>...>;
+        using stand_start_t = std::tuple<operation::standard_start<_Types>...>;
+        using stand_stop_t  = std::tuple<operation::standard_stop<_Types>...>;
+        using mark_begin_t  = std::tuple<operation::mark_begin<_Types>...>;
+        using mark_end_t    = std::tuple<operation::mark_end<_Types>...>;
+        using customize_t   = std::tuple<operation::customize<_Types>...>;
+        using set_prefix_t  = std::tuple<operation::set_prefix<_Types>...>;
+        using get_data_t    = std::tuple<operation::get_data<_Types>...>;
+        using auto_type     = auto_tuple<Types...>;
+    };
+
+public:
+    using string_t    = std::string;
+    using size_type   = int64_t;
+    using string_hash = std::hash<string_t>;
+    using this_type   = component_tuple<Types...>;
+    using data_type   = typename filtered<available_tuple<concat<Types...>>>::data_type;
+    using type_tuple  = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
     using data_value_type = get_data_value_t<data_type>;
     using data_label_type = get_data_label_t<data_type>;
 
@@ -108,34 +133,45 @@ public:
 
 public:
     // modifier types
-    // clang-format off
-    using insert_flat_t      = std::tuple<operation::insert_node<Types, scope::flat>...>;
-    using insert_proc_t      = std::tuple<operation::insert_node<Types, scope::process>...>;
-    using pop_node_t         = std::tuple<operation::pop_node<Types>...>;
-    using measure_t          = std::tuple<operation::measure<Types>...>;
-    using record_t           = std::tuple<operation::record<Types>...>;
-    using reset_t            = std::tuple<operation::reset<Types>...>;
-    using plus_t             = std::tuple<operation::plus<Types>...>;
-    using minus_t            = std::tuple<operation::minus<Types>...>;
-    using multiply_t         = std::tuple<operation::multiply<Types>...>;
-    using divide_t           = std::tuple<operation::divide<Types>...>;
-    using print_t            = std::tuple<operation::print<Types>...>;
-    using prior_start_t      = std::tuple<operation::priority_start<Types>...>;
-    using prior_stop_t       = std::tuple<operation::priority_stop<Types>...>;
-    using stand_start_t      = std::tuple<operation::standard_start<Types>...>;
-    using stand_stop_t       = std::tuple<operation::standard_stop<Types>...>;
-    using mark_begin_t       = std::tuple<operation::mark_begin<Types>...>;
-    using mark_end_t         = std::tuple<operation::mark_end<Types>...>;
-    using customize_t        = std::tuple<operation::customize<Types>...>;
-    using set_prefix_extra_t = std::tuple<operation::set_prefix<Types>...>;
-    using get_data_t         = std::tuple<operation::get_data<Types>...>;
-    // clang-format on
+    template <typename _Archive>
+    using serialize_t = typename filtered<
+        available_tuple<concat<Types...>>>::template serialize_t<_Archive>;
+    template <typename _Scope>
+    using insert_node_t = typename filtered<
+        available_tuple<concat<Types...>>>::template insert_node_t<_Scope>;
+    using pop_node_t = typename filtered<available_tuple<concat<Types...>>>::pop_node_t;
+    using measure_t  = typename filtered<available_tuple<concat<Types...>>>::measure_t;
+    using record_t   = typename filtered<available_tuple<concat<Types...>>>::record_t;
+    using reset_t    = typename filtered<available_tuple<concat<Types...>>>::reset_t;
+    using plus_t     = typename filtered<available_tuple<concat<Types...>>>::plus_t;
+    using minus_t    = typename filtered<available_tuple<concat<Types...>>>::minus_t;
+    using multiply_t = typename filtered<available_tuple<concat<Types...>>>::multiply_t;
+    using divide_t   = typename filtered<available_tuple<concat<Types...>>>::divide_t;
+    using print_t    = typename filtered<available_tuple<concat<Types...>>>::print_t;
+    using prior_start_t =
+        typename filtered<available_tuple<concat<Types...>>>::prior_start_t;
+    using prior_stop_t =
+        typename filtered<available_tuple<concat<Types...>>>::prior_stop_t;
+    using stand_start_t =
+        typename filtered<available_tuple<concat<Types...>>>::stand_start_t;
+    using stand_stop_t =
+        typename filtered<available_tuple<concat<Types...>>>::stand_stop_t;
+    using mark_begin_t =
+        typename filtered<available_tuple<concat<Types...>>>::mark_begin_t;
+    using mark_end_t  = typename filtered<available_tuple<concat<Types...>>>::mark_end_t;
+    using customize_t = typename filtered<available_tuple<concat<Types...>>>::customize_t;
+    using set_prefix_t =
+        typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
+    using get_data_t = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
 
 public:
-    using auto_type = auto_tuple<Types...>;
+    using auto_type = typename filtered<available_tuple<concat<Types...>>>::auto_type;
 
 public:
-    explicit component_tuple(const string_t& key, const bool& store, const bool& flat)
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    explicit component_tuple(const string_t& key, const bool& store = false,
+                             const bool& flat = (_Flat || settings::flat_profile()))
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
@@ -160,7 +196,9 @@ public:
     component_tuple& operator=(const component_tuple& rhs) = default;
     component_tuple& operator=(component_tuple&&) = default;
 
-    component_tuple clone(bool store, bool flat)
+    template <typename _Scope = scope::process,
+              bool _Flat      = std::is_same<_Scope, scope::flat>::value>
+    component_tuple clone(bool store, bool flat = _Flat)
     {
         component_tuple tmp(*this);
         tmp.m_store = store;
@@ -191,9 +229,9 @@ public:
             int64_t _hash = add_hash_id(m_key);
             // insert node or find existing node
             if(m_flat)
-                apply<void>::access<insert_flat_t>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, _hash);
             else
-                apply<void>::access<insert_proc_t>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::process>>(m_data, _hash);
         }
     }
 
@@ -425,11 +463,10 @@ public:
     template <typename Archive>
     void serialize(Archive& ar, const unsigned int version)
     {
-        using apply_types = std::tuple<operation::serialization<Types, Archive>...>;
         ar(serializer::make_nvp("key", m_key), serializer::make_nvp("laps", m_laps));
         ar.setNextName("data");
         ar.startNode();
-        apply<void>::access<apply_types>(m_data, std::ref(ar), version);
+        apply<void>::access<serialize_t<Archive>>(m_data, std::ref(ar), version);
         ar.finishNode();
     }
 
@@ -518,7 +555,7 @@ protected:
     {
         auto _get_prefix = []() {
             if(!mpi::is_initialized())
-                return string_t("> ");
+                return string_t(">>> ");
 
             // prefix spacing
             static uint16_t width = 1;
@@ -526,7 +563,7 @@ protected:
                 width = std::max(width, (uint16_t)(log10(mpi::size()) + 1));
             std::stringstream ss;
             ss.fill('0');
-            ss << "|" << std::setw(width) << mpi::rank() << "> ";
+            ss << "|" << std::setw(width) << mpi::rank() << ">>> ";
             return ss.str();
         };
         static string_t _prefix = _get_prefix();
@@ -569,7 +606,7 @@ protected:
 
     void set_object_prefix(const string_t& key)
     {
-        apply<void>::access<set_prefix_extra_t>(m_data, key);
+        apply<void>::access<set_prefix_t>(m_data, key);
     }
 
 public:
@@ -577,260 +614,6 @@ public:
     static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, data_type>();
-    }
-};
-
-//--------------------------------------------------------------------------------------//
-//  unused base class
-//
-template <typename... _Types>
-struct comp_tuple_t
-{
-    using type = component_tuple<_Types...>;
-};
-
-//--------------------------------------------------------------------------------------//
-//  tuple overloaded base class
-//
-template <typename... _Types>
-struct comp_tuple_t<std::tuple<_Types...>>
-{
-    using type = component_tuple<_Types...>;
-};
-
-}  // namespace filt
-
-//======================================================================================//
-
-template <typename... _Types>
-class component_tuple : public filt::comp_tuple_t<implemented<_Types...>>::type
-{
-    // empty init for friends
-    explicit component_tuple() = default;
-
-    // manager is friend so can use above
-    friend class manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class component_hybrid;
-
-public:
-    using string_t   = std::string;
-    using this_type  = component_tuple<_Types...>;
-    using base_type  = typename filt::comp_tuple_t<implemented<_Types...>>::type;
-    using size_type  = typename base_type::size_type;
-    using data_type  = typename base_type::data_type;
-    using type_tuple = typename base_type::type_tuple;
-    using auto_type  = typename base_type::auto_type;
-
-    static constexpr bool is_component_list  = base_type::is_component_list;
-    static constexpr bool is_component_tuple = base_type::is_component_tuple;
-    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
-
-    template <typename _Scope = scope::process>
-    explicit component_tuple(
-        const string_t& key, const bool& store = false,
-        const bool& flat = (settings::flat_profile() ||
-                            std::is_same<_Scope, scope::flat>::value))
-    : base_type(key, store, flat)
-    {
-    }
-
-    ~component_tuple() {}
-
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
-
-    component_tuple& operator=(const component_tuple&) = default;
-    component_tuple& operator=(component_tuple&&) = default;
-
-    component_tuple(const base_type& rhs)
-    : base_type(rhs)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    this_type& operator-=(const this_type& rhs)
-    {
-        base_type::operator-=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator-=(this_type& rhs)
-    {
-        base_type::operator-=(static_cast<base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        base_type::operator+=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(this_type& rhs)
-    {
-        base_type::operator+=(static_cast<base_type&>(rhs));
-        return *this;
-    }
-};
-
-//======================================================================================//
-
-template <typename... _Types>
-class component_tuple<std::tuple<_Types...>>
-: public filt::comp_tuple_t<implemented<_Types...>>::type
-{
-    // empty init for friends
-    explicit component_tuple() = default;
-
-    // manager is friend so can use above
-    friend class manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class component_hybrid;
-
-public:
-    using string_t   = std::string;
-    using this_type  = component_tuple<std::tuple<_Types...>>;
-    using base_type  = typename filt::comp_tuple_t<implemented<_Types...>>::type;
-    using size_type  = typename base_type::size_type;
-    using data_type  = typename base_type::data_type;
-    using type_tuple = typename base_type::type_tuple;
-    using auto_type  = typename base_type::auto_type;
-
-    static constexpr bool is_component_list  = base_type::is_component_list;
-    static constexpr bool is_component_tuple = base_type::is_component_tuple;
-    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
-
-    template <typename _Scope = scope::process>
-    explicit component_tuple(
-        const string_t& key, const bool& store = false,
-        const bool& flat = (settings::flat_profile() ||
-                            std::is_same<_Scope, scope::flat>::value))
-    : base_type(key, store, flat)
-    {
-    }
-
-    ~component_tuple() {}
-
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
-
-    component_tuple& operator=(const component_tuple&) = default;
-    component_tuple& operator=(component_tuple&&) = default;
-
-    component_tuple(const base_type& rhs)
-    : base_type(rhs)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    this_type& operator-=(const this_type& rhs)
-    {
-        base_type::operator-=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator-=(this_type& rhs)
-    {
-        base_type::operator-=(static_cast<base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        base_type::operator+=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(this_type& rhs)
-    {
-        base_type::operator+=(static_cast<base_type&>(rhs));
-        return *this;
-    }
-};
-
-//======================================================================================//
-
-template <typename... _CompTypes, typename... _Types>
-class component_tuple<component_tuple<_CompTypes...>, _Types...>
-: public filt::comp_tuple_t<implemented<_CompTypes..., _Types...>>::type
-{
-    // empty init for friends
-    explicit component_tuple() = default;
-
-    // manager is friend so can use above
-    friend class manager;
-
-    template <typename _TupleC, typename _ListC>
-    friend class component_hybrid;
-
-public:
-    using string_t  = std::string;
-    using this_type = component_tuple<component_tuple<_CompTypes...>, _Types...>;
-    using base_type =
-        typename filt::comp_tuple_t<implemented<_CompTypes..., _Types...>>::type;
-    using size_type  = typename base_type::size_type;
-    using data_type  = typename base_type::data_type;
-    using type_tuple = typename base_type::type_tuple;
-    using auto_type  = typename base_type::auto_type;
-
-    static constexpr bool is_component_list  = base_type::is_component_list;
-    static constexpr bool is_component_tuple = base_type::is_component_tuple;
-    static constexpr bool contains_gotcha    = base_type::contains_gotcha;
-
-    template <typename _Scope = scope::process>
-    explicit component_tuple(
-        const string_t& key, const bool& store = false,
-        const bool& flat = (settings::flat_profile() ||
-                            std::is_same<_Scope, scope::flat>::value))
-    : base_type(key, store, flat)
-    {
-    }
-
-    ~component_tuple() {}
-
-    component_tuple(const component_tuple&) = default;
-    component_tuple(component_tuple&&)      = default;
-
-    component_tuple& operator=(const component_tuple&) = default;
-    component_tuple& operator=(component_tuple&&) = default;
-
-    component_tuple(const base_type& rhs)
-    : base_type(rhs)
-    {
-    }
-
-    //----------------------------------------------------------------------------------//
-    // this_type operators
-    //
-    this_type& operator-=(const this_type& rhs)
-    {
-        base_type::operator-=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator-=(this_type& rhs)
-    {
-        base_type::operator-=(static_cast<base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(const this_type& rhs)
-    {
-        base_type::operator+=(static_cast<const base_type&>(rhs));
-        return *this;
-    }
-
-    this_type& operator+=(this_type& rhs)
-    {
-        base_type::operator+=(static_cast<base_type&>(rhs));
-        return *this;
     }
 };
 

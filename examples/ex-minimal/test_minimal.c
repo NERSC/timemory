@@ -32,10 +32,10 @@ int main(int argc, char** argv)
 {
     long nfib = (argc > 1) ? atol(argv[1]) : 43;
 
-    void* t0  = TIMEMORY_AUTO_TIMER(argv[0]);
+    void* t0  = TIMEMORY_AUTO_TIMER("_total");
     long  ans = fib(nfib);
 
-    void* t1 = TIMEMORY_BLANK_AUTO_TIMER(argv[0]);
+    void* t1 = TIMEMORY_BLANK_AUTO_TIMER("nested");
     ans += fib(nfib + 1);
 
     FREE_TIMEMORY_AUTO_TIMER(t1);

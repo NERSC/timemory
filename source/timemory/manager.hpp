@@ -77,7 +77,7 @@ public:
     using size_type     = std::size_t;
     using string_t      = std::string;
     using comm_group_t  = std::tuple<mpi::comm_t, int32_t>;
-    using mutex_t       = std::mutex;
+    using mutex_t       = std::recursive_mutex;
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = singleton_t::pointer;
     using smart_pointer = singleton_t::smart_pointer;

@@ -52,7 +52,7 @@ class singleton
 public:
     using this_type     = singleton<Type, Pointer>;
     using thread_id_t   = std::thread::id;
-    using mutex_t       = std::mutex;
+    using mutex_t       = std::recursive_mutex;
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = Type*;
     using list_t        = std::set<pointer>;
@@ -106,6 +106,7 @@ public:
 
     static list_t children() { return f_children(); }
     static bool   is_master(pointer ptr) { return ptr == master_instance_ptr(); }
+    static bool   is_master_thread() { return std::this_thread::get_id() == f_master_thread(); }
 
     static void insert(pointer itr)
     {

@@ -27,8 +27,10 @@
 #include "timemory/backends/caliper.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/storage.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
@@ -38,7 +40,8 @@ struct caliper : public base<caliper, void, policy::global_init>
 {
     // timemory component api
     using value_type = void;
-    using base_type  = base<caliper, value_type, policy::global_init>;
+    using this_type  = caliper;
+    using base_type  = base<this_type, value_type, policy::global_init>;
 
     static std::string label() { return "caliper"; }
     static std::string description() { return "caliper"; }
@@ -96,6 +99,15 @@ struct caliper : public base<caliper, void, policy::global_init>
     // Member Variables
     //
     //----------------------------------------------------------------------------------//
+private:
+    template <typename... _Types>
+    friend class ::tim::component_tuple;
+
+    template <typename... _Types>
+    friend class ::tim::component_list;
+
+    friend struct ::tim::operation::set_prefix<this_type>;
+
     std::string channel    = get_channel();
     int         attributes = get_attributes();
     cali::id_t  id     = cali::create_attribute(channel, CALI_TYPE_STRING, attributes);

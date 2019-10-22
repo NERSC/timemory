@@ -93,9 +93,9 @@ const int64_t PiB = 1024 * TiB;
 inline int64_t
 get_page_size()
 {
-    return ::sysconf(_SC_PAGESIZE);
+    return sysconf(_SC_PAGESIZE);
 }
-const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
 #elif defined(_MACOS)
 
@@ -104,7 +104,7 @@ get_page_size()
 {
     return getpagesize();
 }
-const int64_t clocks_per_sec = ::sysconf(_SC_CLK_TCK);
+const int64_t clocks_per_sec = sysconf(_SC_CLK_TCK);
 
 #elif defined(_WINDOWS)
 

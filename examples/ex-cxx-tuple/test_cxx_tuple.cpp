@@ -107,6 +107,7 @@ int
 main(int argc, char** argv)
 {
     tim::timemory_init(argc, argv);
+    tim::mpi::initialize(argc, argv);
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 
@@ -143,8 +144,8 @@ main(int argc, char** argv)
     TEST_SUMMARY(argv[0], num_test, num_fail);
     delete timing;
 
-    // tim::manager::get_storage<tim::complete_tuple_t>::print();
-    // tim::settings::auto_output() = false;
+    tim::manager::get_storage<tim::complete_tuple_t>::print();
+    tim::settings::auto_output() = false;
     exit(num_fail);
 }
 

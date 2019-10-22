@@ -25,8 +25,8 @@
 /** \file components/types.hpp
  * \headerfile components/types.hpp "timemory/components/types.hpp"
  *
- * This is a pre-declaration of all the component structs, operation structs, and
- * variadic wrappers. Care should be taken to make sure that this includes a minimal
+ * This is a pre-declaration of all the component structs.
+ * Care should be taken to make sure that this includes a minimal
  * number of additional headers.
  *
  */
@@ -40,7 +40,6 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/bits/types.hpp"
-#include "timemory/components/skeletons.hpp"
 
 #if !defined(TIMEMORY_PAPI_ARRAY_SIZE)
 #    define TIMEMORY_PAPI_ARRAY_SIZE 32
@@ -51,7 +50,7 @@
 namespace tim
 {
 //======================================================================================//
-// generic
+//  components that provide implementations (i.e. HOW to record a component)
 //
 namespace component
 {
@@ -59,13 +58,6 @@ namespace component
 template <bool B, typename T = int>
 using enable_if_t = typename std::enable_if<B, T>::type;
 
-}  // component
-
-//======================================================================================//
-//  components that provide implementations (i.e. HOW to record a component)
-//
-namespace component
-{
 // generic static polymorphic base class
 template <typename _Tp, typename value_type = int64_t, typename... _Policies>
 struct base;
@@ -116,43 +108,16 @@ struct written_bytes;
 // caliper
 struct caliper;
 
-#if defined(TIMEMORY_USE_CUDA)
-
 // cuda
 struct cuda_event;
-
-#else
-
-using cuda_event = placeholder<skeleton::cuda<>>;
-
-#endif
-
-#if defined(TIMEMORY_USE_CUDA) && defined(TIMEMORY_USE_NVTX)
 
 // nvtx
 struct nvtx_marker;
 
-#else
-
-using nvtx_marker = placeholder<skeleton::nvtx<>>;
-
-#endif
-
-#if defined(TIMEMORY_USE_GOTCHA)
-
 template <size_t _N, typename _Components, typename _Differentiator = void>
 struct gotcha;
 
-#else
-
-template <size_t _N, typename _Components, typename _Differentiator = void>
-using gotcha = placeholder<skeleton::gotcha<_N, _Components, _Differentiator>>;
-
-#endif
-
 // aliases
-#if defined(TIMEMORY_USE_PAPI)
-
 // papi
 template <int... EventTypes>
 struct papi_tuple;
@@ -163,23 +128,8 @@ struct papi_array;
 template <typename... _Types>
 struct cpu_roofline;
 
-#else
-
-template <size_t N>
-using papi_array = placeholder<skeleton::papi_array<N>>;
-
-template <int... _Events>
-using papi_tuple = placeholder<skeleton::papi_tuple<_Events...>>;
-
-template <typename... _Types>
-using cpu_roofline = placeholder<skeleton::cpu_roofline<_Types...>>;
-
-#endif
-
 // always defined
 using papi_array_t = papi_array<TIMEMORY_PAPI_ARRAY_SIZE>;
-
-#if defined(TIMEMORY_USE_CUPTI)
 
 // cupti
 struct cupti_counters;
@@ -188,17 +138,6 @@ struct cupti_activity;
 
 template <typename... _Types>
 struct gpu_roofline;
-
-#else
-
-using cupti_activity = placeholder<skeleton::cupti_activity<int>>;
-
-using cupti_counters = placeholder<skeleton::cupti_counters<int>>;
-
-template <typename... _Types>
-using gpu_roofline = placeholder<skeleton::gpu_roofline<_Types...>>;
-
-#endif
 
 //
 // roofline aliases
@@ -212,210 +151,7 @@ using gpu_roofline_dp_flops = gpu_roofline<double>;
 using gpu_roofline_hp_flops = gpu_roofline<cuda::fp16_t>;
 using gpu_roofline_flops    = gpu_roofline<cuda::fp16_t, float, double>;
 
-}  // component
-
-//======================================================================================//
-//  components that provide the invocation (i.e. WHAT the components need to do)
-//
-namespace operation
-{
-// operators
-template <typename _Tp>
-struct init_storage;
-
-template <typename _Tp>
-struct live_count;
-
-template <typename _Tp>
-struct set_prefix;
-
-template <typename _Tp, typename _Scope>
-struct insert_node;
-
-template <typename _Tp>
-struct pop_node;
-
-template <typename _Tp>
-struct record;
-
-template <typename _Tp>
-struct reset;
-
-template <typename _Tp>
-struct measure;
-
-template <typename _Ret, typename _Lhs, typename _Rhs>
-struct compose;
-
-template <typename _Tp>
-struct start;
-
-template <typename _Tp>
-struct priority_start;
-
-template <typename _Tp>
-struct standard_start;
-
-template <typename _Tp>
-struct stop;
-
-template <typename _Tp>
-struct priority_stop;
-
-template <typename _Tp>
-struct standard_stop;
-
-template <typename _Tp>
-struct mark_begin;
-
-template <typename _Tp>
-struct mark_end;
-
-template <typename RetType, typename LhsType, typename RhsType>
-struct compose;
-
-template <typename _Tp>
-struct plus;
-
-template <typename _Tp>
-struct minus;
-
-template <typename _Tp>
-struct multiply;
-
-template <typename _Tp>
-struct divide;
-
-template <typename _Tp>
-struct get_data;
-
-template <typename _Tp>
-struct base_printer;
-
-template <typename _Tp>
-struct print;
-
-template <typename _Tp>
-struct print_storage;
-
-template <typename _Tp, typename _Archive>
-struct serialization;
-
-template <typename _Tp>
-struct echo_measurement;
-
-template <typename _Tp>
-struct copy;
-
-template <typename _Tp, typename _Op>
-struct pointer_operator;
-
-template <typename _Tp>
-struct pointer_deleter;
-
-template <typename _Tp>
-struct pointer_counter;
-
-template <typename _Tp>
-struct set_width;
-
-template <typename _Tp>
-struct set_precision;
-
-template <typename _Tp>
-struct set_format_flags;
-
-template <typename _Tp>
-struct set_units;
-
-}  // namespace operation
-
-//--------------------------------------------------------------------------------------//
-//
-//  Language specification
-//
-//--------------------------------------------------------------------------------------//
-/*
-class language
-{
-public:
-    enum class type : int64_t
-    {
-        C       = 1,
-        CXX     = 2,
-        PYTHON  = 3,
-        UNKNOWN = 4
-    };
-
-    friend std::ostream& operator<<(std::ostream& os, const language& lang)
-    {
-        os << language::as_string(lang);
-        return os;
-    }
-
-    static std::string as_string(const language& _lang)
-    {
-        switch(_lang.m_type)
-        {
-            case type::C: return "[_c_]";
-            case type::CXX: return "[cxx]";
-            case type::PYTHON: return "[pyc]";
-            case type::UNKNOWN:
-            default: return _lang.m_descript;
-        }
-    }
-
-    explicit operator int64_t() const { return static_cast<int64_t>(m_type); }
-    explicit operator uint64_t() const { return static_cast<uint64_t>(m_type); }
-
-    constexpr explicit language(const type& _type)
-    : m_type(_type)
-    {}
-
-    explicit language(const char* m_lang)
-    : m_type(type::UNKNOWN)
-    , m_descript(m_lang)
-    {}
-
-    language(const language&) = default;
-    language(language&&)      = default;
-
-    language& operator=(const language& rhs) = default;
-    language& operator=(language&&) = default;
-
-    constexpr static language c() { return language(type::C); }
-    constexpr static language cxx() { return language(type::CXX); }
-    constexpr static language pyc() { return language(type::PYTHON); }
-
-private:
-    type        m_type;
-    const char* m_descript = nullptr;
-};
-*/
-//--------------------------------------------------------------------------------------//
-//
-//  Some common types
-//
-//--------------------------------------------------------------------------------------//
-
-template <typename... Types>
-class component_tuple;
-
-template <typename... Types>
-class component_list;
-
-template <typename _Tuple, typename _List>
-class component_hybrid;
-
-template <typename... Types>
-class auto_tuple;
-
-template <typename... Types>
-class auto_list;
-
-template <typename _Tuple, typename _List>
-class auto_hybrid;
-
-}  // tim
+}  // namespace component
+}  // namespace tim
 
 //======================================================================================//

@@ -44,17 +44,12 @@
 
 #include "timemory/variadic/component_list.hpp"
 #include "timemory/variadic/component_tuple.hpp"
+#include "timemory/variadic/types.hpp"
 
 //======================================================================================//
 
 namespace tim
 {
-//======================================================================================//
-// forward declaration
-//
-template <typename _CompTuple, typename _CompList>
-class auto_hybrid;
-
 //======================================================================================//
 // variadic list of components
 //
@@ -72,6 +67,9 @@ class component_hybrid
 
     // manager is friend so can use above
     friend class manager;
+
+    template <typename _TupleC, typename _ListC>
+    friend class auto_hybrid;
 
 public:
     using size_type       = int64_t;
@@ -423,10 +421,7 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
-    static void init_manager()
-    {
-        tuple_type::init_manager();
-    }
+    static void init_manager() { tuple_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
     static void init_storage()

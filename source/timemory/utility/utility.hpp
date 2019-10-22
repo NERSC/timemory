@@ -122,7 +122,7 @@ isfinite(const _Tp& arg)
 
 using string_t    = std::string;
 using str_list_t  = std::vector<string_t>;
-using mutex_t     = std::mutex;
+using mutex_t     = std::recursive_mutex;
 using auto_lock_t = std::unique_lock<mutex_t>;
 
 //======================================================================================//
@@ -308,7 +308,7 @@ delimit(const string_t& line, const string_t& delimiters = ",; ",
 class env_settings
 {
 public:
-    using mutex_t     = std::mutex;
+    using mutex_t     = std::recursive_mutex;
     using string_t    = std::string;
     using env_map_t   = std::map<string_t, string_t>;
     using env_uomap_t = std::map<string_t, string_t>;

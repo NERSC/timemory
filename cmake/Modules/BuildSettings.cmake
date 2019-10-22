@@ -187,10 +187,10 @@ if(TIMEMORY_USE_SANITIZER)
         target_link_libraries(timemory-${_TYPE}-sanitizer INTERFACE ${SANITIZER_${_LIB}_LIBRARY})
     endforeach()
 
-    foreach(_TYPE ${SANITIZER_TYPES})
+    foreach(_TYPE ${SANITIZER_TYPE} ${SANITIZER_TYPES})
         set(_LIB ${${_TYPE}_lib})
-        if(c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
-                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} AND
+        if((c_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE} OR
+                cxx_timemory_${_TYPE}_sanitizer_fsanitize_${SANITIZER_TYPE}) AND
                 SANITIZER_${_LIB}_LIBRARY)
             add_interface_library(timemory-sanitizer)
             add_target_flag_if_avail(timemory-sanitizer "-fno-omit-frame-pointer")

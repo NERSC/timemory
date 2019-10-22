@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-project(timemory-Minimal-Example LANGUAGES CXX)
+project(timemory-Minimal-Example LANGUAGES C CXX)
 
 include(CheckCCompilerFlag)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)

@@ -67,6 +67,9 @@ using communicator_map_t = std::unordered_map<comm_t, _Tp>;
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+barrier(comm_t comm = comm_world_v);
+
 inline bool
 is_supported()
 {
@@ -119,6 +122,19 @@ initialize(int& argc, char**& argv)
 //--------------------------------------------------------------------------------------//
 
 inline void
+initialize(int* argc, char*** argv)
+{
+#if defined(TIMEMORY_USE_MPI)
+    if(!is_initialized())
+        MPI_Init(argc, argv);
+#else
+    consume_parameters(argc, argv);
+#endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline void
 finalize()
 {
     // is_initialized has a check against is_finalized(), if manually invoking
@@ -128,6 +144,7 @@ finalize()
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())
     {
+        // barrier();
         MPI_Finalize();
         is_finalized() = true;  // to try to avoid calling MPI_Initialized(...) after
         // finalized
@@ -194,7 +211,7 @@ size(comm_t comm = comm_world_v)
 //--------------------------------------------------------------------------------------//
 
 inline void
-barrier(comm_t comm = comm_world_v)
+barrier(comm_t comm)
 {
 #if defined(TIMEMORY_USE_MPI)
     if(is_initialized())

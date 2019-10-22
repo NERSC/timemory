@@ -32,6 +32,9 @@
 
 #include "timemory/components.hpp"
 #include "timemory/utility/macros.hpp"
+#include "timemory/variadic/auto_hybrid.hpp"
+#include "timemory/variadic/auto_list.hpp"
+#include "timemory/variadic/auto_tuple.hpp"
 
 //--------------------------------------------------------------------------------------//
 // auto_timer

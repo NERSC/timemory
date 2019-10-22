@@ -183,6 +183,12 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const int64_t& _hash)
     {
+        using storage_type = typename Type::storage_type;
+        static bool _master_init = storage_type::master_instance()->data_init();
+        //static bool _data_init = storage_type::instance()->data_init();
+        consume_parameters(_master_init);
+        // consume_parameters(_data_init);
+
         obj.insert_node(_Scope{}, _hash);
     }
 
@@ -1203,6 +1209,13 @@ struct pointer_operator
     using Type       = _Tp;
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
+
+    pointer_operator()                        = delete;
+    pointer_operator(const pointer_operator&) = delete;
+    pointer_operator(pointer_operator&&)      = delete;
+
+    pointer_operator& operator=(const pointer_operator&) = delete;
+    pointer_operator& operator=(pointer_operator&&) = delete;
 
     template <typename _Up = _Tp, typename... _Args,
               tim::enable_if_t<(trait::is_available<_Up>::value), int> = 0>

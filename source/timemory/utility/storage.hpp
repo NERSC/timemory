@@ -187,6 +187,8 @@ public:
                 static_cast<const data_base_type&>(_rhs);
             return *this;
         }
+
+        size_t data_size() const { return sizeof(ObjectType) + 2 * sizeof(int64_t); }
     };
 
 public:
@@ -252,17 +254,7 @@ public:
 
         m_initialized = true;
 
-        if(singleton_t::is_master(this))
-        {
-            ObjectType::global_init_policy(this);
-            ObjectType::thread_init_policy(this);
-            check_consistency();
-        }
-        else
-        {
-            ObjectType::thread_init_policy(this);
-            check_consistency();
-        }
+        // global_init();
     }
 
     //----------------------------------------------------------------------------------//
@@ -281,17 +273,74 @@ public:
         m_finalized = true;
         if(!singleton_t::is_master(this))
         {
-            ObjectType::thread_finalize_policy(this);
+            if(m_thread_init)
+                ObjectType::thread_finalize_policy(this);
         }
         else
         {
-            ObjectType::thread_finalize_policy(this);
-            ObjectType::global_finalize_policy(this);
+            if(m_thread_init)
+                ObjectType::thread_finalize_policy(this);
+            if(m_global_init)
+                ObjectType::global_finalize_policy(this);
         }
     }
 
     bool    is_initialized() const { return m_initialized; }
     int64_t instance_id() const { return m_instance_id; }
+
+    //----------------------------------------------------------------------------------//
+    //
+    bool global_init()
+    {
+        static auto _lambda = [&]() {
+            if(!singleton_t::is_master(this))
+                master_instance()->global_init();
+            if(singleton_t::is_master(this))
+                ObjectType::global_init_policy(this);
+            m_global_init = true;
+            return m_global_init;
+        };
+        if(!m_global_init)
+            return _lambda();
+        return m_global_init;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    bool thread_init()
+    {
+        static auto _lambda = [&]() {
+            if(!singleton_t::is_master(this))
+                master_instance()->thread_init();
+            bool _global_init = global_init();
+            consume_parameters(_global_init);
+            ObjectType::thread_init_policy(this);
+            m_thread_init = true;
+            return m_thread_init;
+        };
+        if(!m_thread_init)
+            return _lambda();
+        return m_thread_init;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    bool data_init()
+    {
+        static auto _lambda = [&]() {
+            if(!singleton_t::is_master(this))
+                master_instance()->data_init();
+            bool _global_init = global_init();
+            bool _thread_init = thread_init();
+            consume_parameters(_global_init, _thread_init);
+            check_consistency();
+            m_data_init = true;
+            return m_data_init;
+        };
+        if(!m_data_init)
+            return _lambda();
+        return m_data_init;
+    }
 
 private:
     void check_consistency()
@@ -303,8 +352,7 @@ private:
         auto* ptr = &_data();
         if(ptr != m_graph_data_instance)
         {
-            fprintf(stderr,
-                    "[%s]> mismatched graph data on master thread: %p vs. %p\n",
+            fprintf(stderr, "[%s]> mismatched graph data on master thread: %p vs. %p\n",
                     ObjectType::label().c_str(), (void*) ptr,
                     (void*) m_graph_data_instance);
         }
@@ -344,8 +392,8 @@ public:
             graph_node_t node(hash_id, obj, hash_depth);
             if(this == master_instance())
             {
-                _data()                         = graph_data_t(node);
-                _data().depth()                 = 0;
+                _data()         = graph_data_t(node);
+                _data().depth() = 0;
                 if(m_node_ids.size() == 0)
                     m_node_ids[0][0] = _data().current();
                 m_node_ids[hash_depth][hash_id] = _data().current();
@@ -388,45 +436,45 @@ public:
             return itr;
         };
 
-            auto current   = _data().current();
-            auto nchildren = graph_t::number_of_children(current);
+        auto current   = _data().current();
+        auto nchildren = graph_t::number_of_children(current);
 
-            if((hash_id) == current->id())
+        if((hash_id) == current->id())
+        {
+            return current;
+        }
+        else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            return _insert_child();
+        else if(_data().graph().is_valid(current))
+        {
+            // check siblings
+            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
             {
-                return current;
+                // skip if current
+                if(itr == current)
+                    continue;
+                // check hash id's
+                if((hash_id) == itr->id())
+                    return _update(itr);
             }
-            else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-                return _insert_child();
-            else if(_data().graph().is_valid(current))
-            {
-                // check siblings
-                for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-                {
-                    // skip if current
-                    if(itr == current)
-                        continue;
-                    // check hash id's
-                    if((hash_id) == itr->id())
-                        return _update(itr);
-                }
 
-                // check children
-                if(nchildren == 0)
-                    return _insert_child();
-                else
+            // check children
+            if(nchildren == 0)
+                return _insert_child();
+            else
+            {
+                // check child
+                auto fchild = graph_t::child(current, 0);
+                if(_data().graph().is_valid(fchild))
                 {
-                    // check child
-                    auto fchild = graph_t::child(current, 0);
-                    if(_data().graph().is_valid(fchild))
+                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {
-                        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                        {
-                            if((hash_id) == itr->id())
-                                return _update(itr);
-                        }
+                        if((hash_id) == itr->id())
+                            return _update(itr);
                     }
                 }
             }
+        }
 
         return _insert_child();
     }
@@ -437,6 +485,7 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
     {
+
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
             initialize();
@@ -448,8 +497,8 @@ public:
             graph_node_t node(hash_id, obj, hash_depth);
             if(this == master_instance())
             {
-                _data()                         = graph_data_t(node);
-                _data().depth()                 = 0;
+                _data()         = graph_data_t(node);
+                _data().depth() = 0;
                 if(m_node_ids.size() == 0)
                     m_node_ids[0][0] = _data().current();
                 m_node_ids[hash_depth][hash_id] = _data().current();
@@ -489,41 +538,41 @@ public:
             return itr;
         };
 
-            auto current   = _data().head();
-            auto nchildren = graph_t::number_of_children(current);
+        auto current   = _data().head();
+        auto nchildren = graph_t::number_of_children(current);
 
-            if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-                return _insert_head();
-            else if(_data().graph().is_valid(current))
+        if(nchildren == 0 && graph().number_of_siblings(current) == 0)
+            return _insert_head();
+        else if(_data().graph().is_valid(current))
+        {
+            // check siblings
+            for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
             {
-                // check siblings
-                for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
-                {
-                    // skip if current
-                    if(itr == current)
-                        continue;
-                    // check hash id's
-                    if((hash_id) == itr->id())
-                        return _update(itr);
-                }
+                // skip if current
+                if(itr == current)
+                    continue;
+                // check hash id's
+                if((hash_id) == itr->id())
+                    return _update(itr);
+            }
 
-                // check children
-                if(nchildren == 0)
-                    return _insert_head();
-                else
+            // check children
+            if(nchildren == 0)
+                return _insert_head();
+            else
+            {
+                // check child
+                auto fchild = graph_t::child(current, 0);
+                if(_data().graph().is_valid(fchild))
                 {
-                    // check child
-                    auto fchild = graph_t::child(current, 0);
-                    if(_data().graph().is_valid(fchild))
+                    for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {
-                        for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
-                        {
-                            if((hash_id) == itr->id())
-                                return _update(itr);
-                        }
+                        if((hash_id) == itr->id())
+                            return _update(itr);
                     }
                 }
             }
+        }
         return _insert_head();
     }
 
@@ -535,9 +584,15 @@ public:
                           int> = 0>
     iterator insert(const ObjectType& obj, int64_t hash_id)
     {
+        static bool _global_init = global_init();
+        static bool _thread_init = thread_init();
+        static bool _data_init   = data_init();
+        consume_parameters(_global_init, _thread_init, _data_init);
+
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
         auto itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
         add_hash_id(hash_id, hash_id * hash_depth);
+        add_hash_id(hash_id * hash_depth, hash_id);
         return itr;
     }
 
@@ -547,6 +602,11 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(const ObjectType& obj, int64_t hash_id)
     {
+        static bool _global_init = global_init();
+        static bool _thread_init = thread_init();
+        static bool _data_init   = data_init();
+        consume_parameters(_global_init, _thread_init, _data_init);
+
         auto itr = insert<_Scope>(hash_id, obj, 1);
         return itr;
     }
@@ -604,6 +664,7 @@ protected:
     }
 
     void merge(this_type* itr);
+    void mpi_reduce();
 
 protected:
     //----------------------------------------------------------------------------------//
@@ -694,6 +755,9 @@ private:
     {
         if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
         {
+            static bool _data_init = master_instance()->data_init();
+            consume_parameters(_data_init);
+
             m_graph_data_instance = new graph_data_t(*master_instance()->current());
             m_graph_data_instance->head()    = master_instance()->current();
             m_graph_data_instance->current() = master_instance()->current();
@@ -701,13 +765,17 @@ private:
         }
         else if(m_graph_data_instance == nullptr)
         {
-            auto_lock_t lk(type_mutex<this_type>(), std::defer_lock);
+            // auto_lock_t lk(type_mutex<this_type>(), std::defer_lock);
+            //if(!lk.owns_lock())
+            //    lk.lock();
+            /*static std::recursive_mutex _init_mutex;
+            auto_lock_t lk(_init_mutex, std::defer_lock);
             if(!lk.owns_lock())
-                lk.lock();
+                lk.lock();*/
 
             using base_type     = typename ObjectType::base_type;
             std::string _prefix = "> [tot] total";
-            add_hash_id(_prefix);
+            add_hash_id(m_hash_ids, _prefix);
             graph_node_t node(0, base_type::dummy(), 0);
             m_graph_data_instance          = new graph_data_t(node);
             m_graph_data_instance->depth() = 0;
@@ -725,6 +793,9 @@ private:
 
     bool                          m_initialized         = false;
     bool                          m_finalized           = false;
+    bool                          m_global_init         = false;
+    bool                          m_thread_init         = false;
+    bool                          m_data_init           = false;
     bool                          m_node_init           = mpi::is_initialized();
     int32_t                       m_node_rank           = mpi::rank();
     int32_t                       m_node_size           = mpi::size();
@@ -735,8 +806,9 @@ private:
     iterator_hash_map_t           m_node_ids;
 
 public:
-    const graph_hash_map_ptr_t& get_hash_ids() const { return m_hash_ids; }
-    const iterator_hash_map_t   get_node_ids() const { return m_node_ids; }
+    const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
+    const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
+    const iterator_hash_map_t     get_node_ids() const { return m_node_ids; }
 };
 
 //======================================================================================//
@@ -937,7 +1009,7 @@ struct implements_storage
 {
     static constexpr bool value = (trait::is_available<_Tp>::value &&
                                    !(trait::external_output_handling<_Tp>::value) &&
-                                   !(std::is_same<_Tp, void>::value));
+                                   !(std::is_same<_Vp, void>::value));
 };
 
 //======================================================================================//

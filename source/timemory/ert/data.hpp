@@ -289,7 +289,7 @@ class counter
 {
 public:
     using string_t      = std::string;
-    using mutex_t       = std::mutex;
+    using mutex_t       = std::recursive_mutex;
     using lock_t        = std::unique_lock<mutex_t>;
     using counter_type  = _Counter;
     using exec_data_t   = _ExecData;

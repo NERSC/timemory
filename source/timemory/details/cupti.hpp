@@ -851,7 +851,7 @@ namespace activity
 class receiver
 {
 public:
-    using mutex_type     = std::mutex;
+    using mutex_type     = std::recursive_mutex;
     using lock_type      = std::unique_lock<mutex_type>;
     using data_type      = std::list<void*>;
     using size_type      = typename data_type::size_type;

@@ -465,7 +465,7 @@ struct is_available<component::virtual_memory> : std::false_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_PAPI
 //
 #if !defined(TIMEMORY_USE_PAPI)
-/*
+
 template <int... EventTypes>
 struct is_available<component::papi_tuple<EventTypes...>> : std::false_type
 {
@@ -495,7 +495,7 @@ template <>
 struct is_available<component::cpu_roofline_flops> : std::false_type
 {
 };
-*/
+
 #else
 
 template <typename... _Types>
@@ -533,12 +533,12 @@ struct supports_custom_record<component::cpu_roofline<_Types...>> : std::true_ty
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUDA
 //
 #if !defined(TIMEMORY_USE_CUDA)
-/*
+
 template <>
 struct is_available<component::cuda_event> : std::false_type
 {
 };
-*/
+
 #endif  // TIMEMORY_USE_CUDA
 
 //--------------------------------------------------------------------------------------//
@@ -549,7 +549,7 @@ struct is_available<component::cuda_event> : std::false_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_CUPTI
 //
 #if !defined(TIMEMORY_USE_CUPTI)
-/*
+
 template <>
 struct is_available<component::cupti_counters> : std::false_type
 {
@@ -584,7 +584,7 @@ template <>
 struct is_available<component::gpu_roofline_flops> : std::false_type
 {
 };
-*/
+
 #else
 
 template <typename... _Types>
@@ -643,12 +643,12 @@ struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_NVTX
 //
 #if !defined(TIMEMORY_USE_NVTX)
-/*
+
 template <>
 struct is_available<component::nvtx_marker> : std::false_type
 {
 };
-*/
+
 #else
 
 template <>
@@ -699,12 +699,12 @@ struct external_output_handling<component::caliper> : std::true_type
 //  disable if not enabled via preprocessor TIMEMORY_USE_GOTCHA
 //
 #if !defined(TIMEMORY_USE_GOTCHA)
-/*
+
 template <size_t _N, typename _Comp, typename _Diff>
 struct is_available<component::gotcha<_N, _Comp, _Diff>> : std::false_type
 {
 };
-*/
+
 #else  // TIMEMORY_USE_GOTCHA
 
 template <size_t _N, typename _Comp, typename _Diff>
@@ -731,12 +731,11 @@ struct is_gotcha<component::gotcha<_N, _Comp, _Diff>> : std::true_type
 
 //--------------------------------------------------------------------------------------//
 //
-/*
 template <>
 struct requires_prefix<component::gperf_heap_profiler> : std::true_type
 {
 };
-*/
+
 //--------------------------------------------------------------------------------------//
 //
 template <>

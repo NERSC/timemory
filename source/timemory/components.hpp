@@ -34,43 +34,30 @@
 // forward declare any types
 #include "timemory/components/types.hpp"
 
-// placeholder
-#include "timemory/components/placeholder.hpp"
-
 // general components
 #include "timemory/components/caliper.hpp"
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
-#if defined(TIMEMORY_USE_GOTCHA)
 // gotcha components
-#    include "timemory/components/gotcha.hpp"
-#endif
+#include "timemory/components/gotcha.hpp"
 
 // cuda event
-#if defined(TIMEMORY_USE_CUDA)
-#    include "timemory/components/cuda_event.hpp"
-#endif
+#include "timemory/components/cuda_event.hpp"
 
 // nvtx marker
-#if defined(TIMEMORY_USE_NVTX)
-#    include "timemory/components/nvtx_marker.hpp"
-#endif
+#include "timemory/components/nvtx_marker.hpp"
 
 // GPU hardware counter components
-#if defined(TIMEMORY_USE_CUPTI)
-#    include "timemory/components/cupti_activity.hpp"
-#    include "timemory/components/cupti_counters.hpp"
-#    include "timemory/components/gpu_roofline.hpp"
-#endif
+#include "timemory/components/cupti_activity.hpp"
+#include "timemory/components/cupti_counters.hpp"
+#include "timemory/components/gpu_roofline.hpp"
 
 // CPU/GPU hardware counter components
-#if defined(TIMEMORY_USE_PAPI)
-#    include "timemory/components/cpu_roofline.hpp"
-#    include "timemory/components/papi_array.hpp"
-#    include "timemory/components/papi_tuple.hpp"
-#endif
+#include "timemory/components/cpu_roofline.hpp"
+#include "timemory/components/papi_array.hpp"
+#include "timemory/components/papi_tuple.hpp"
 
 // device backend
 #include "timemory/backends/device.hpp"

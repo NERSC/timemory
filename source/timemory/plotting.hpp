@@ -78,8 +78,9 @@ _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
                 return;
         }
         auto odir = (_dir == "") ? settings::output_path() : _dir;
-        auto cmd  = TIMEMORY_JOIN(" ", "python", "-m", "timemory.plotting", "-f", jname,
-                                 "-t", "\"" + _prefix, descript + "\"", "-o", odir);
+        auto cmd =
+            TIMEMORY_JOIN(" ", settings::python_exe(), "-m", "timemory.plotting", "-f",
+                          jname, "-t", "\"" + _prefix, descript + "\"", "-o", odir);
         if(echo_dart)
             cmd += " -e";
         int ret = std::system(cmd.c_str());
@@ -87,7 +88,7 @@ _plot(const string_t& _prefix, const string_t& _dir = "", bool echo_dart = true)
         {
             auto msg =
                 TIMEMORY_JOIN("", "Error generating plots with command: '", cmd, "'");
-            fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL("").c_str(), msg.c_str());
+            fprintf(stderr, "[%s]> %s\n", TIMEMORY_LABEL(""), msg.c_str());
         }
     }
 }

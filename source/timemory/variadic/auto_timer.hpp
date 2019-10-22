@@ -35,72 +35,50 @@
 
 #pragma once
 
-#include "timemory/variadic/auto_hybrid.hpp"
-#include "timemory/variadic/auto_list.hpp"
-#include "timemory/variadic/auto_tuple.hpp"
-#include "timemory/variadic/component_hybrid.hpp"
-#include "timemory/variadic/component_list.hpp"
-#include "timemory/variadic/component_tuple.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/variadic/macros.hpp"
+#include "timemory/variadic/types.hpp"
 
 namespace tim
 {
 //--------------------------------------------------------------------------------------//
-namespace details
-{
-//
-//  In general, the complex scheme below is not needed at all -- this is only done
-//  here in order to reduce the compilation time since auto-timer is so frequently used
-//
-
-//--------------------------------------------------------------------------------------//
-namespace auto_timer
+namespace auto_timer_types
 {
 using namespace component;
 
-using tuple_t = implemented<real_clock, system_clock, user_clock, cpu_util, peak_rss>;
+using tuple_t = component_tuple<real_clock, system_clock, user_clock, cpu_util, peak_rss>;
 
 //--------------------------------------------------------------------------------------//
 
 #if defined(TIMEMORY_MINIMAL_AUTO_TIMER_LIST)
 
-using list_t =
-    implemented<page_rss, virtual_memory, cpu_clock, caliper, papi_array_t,
-                cpu_roofline_sp_flops, cpu_roofline_dp_flops, gperf_cpu_profiler,
-                gperf_heap_profiler, cuda_event, nvtx_marker, cupti_activity,
-                cupti_counters, gpu_roofline_flops, gpu_roofline_hp_flops,
-                gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
+using list_t = component_list<page_rss, virtual_memory, cpu_clock, caliper, papi_array_t,
+                              cuda_event, nvtx_marker, cupti_activity, cupti_counters>;
 
 #else
 
 using list_t =
-    implemented<page_rss, virtual_memory, cpu_clock, thread_cpu_clock, thread_cpu_util,
-                process_cpu_clock, process_cpu_util, priority_context_switch,
-                voluntary_context_switch, num_major_page_faults, num_minor_page_faults,
-                read_bytes, written_bytes, caliper, papi_array_t, cpu_roofline_sp_flops,
-                cpu_roofline_dp_flops, gperf_cpu_profiler, gperf_heap_profiler,
-                cuda_event, nvtx_marker, cupti_activity, cupti_counters,
-                gpu_roofline_flops, gpu_roofline_hp_flops, gpu_roofline_sp_flops,
-                gpu_roofline_dp_flops>;
+    component_list<page_rss, virtual_memory, cpu_clock, thread_cpu_clock, thread_cpu_util,
+                   process_cpu_clock, process_cpu_util, priority_context_switch,
+                   voluntary_context_switch, num_major_page_faults, num_minor_page_faults,
+                   read_bytes, written_bytes, caliper, papi_array_t,
+                   cpu_roofline_sp_flops, cpu_roofline_dp_flops, gperf_cpu_profiler,
+                   gperf_heap_profiler, cuda_event, nvtx_marker, cupti_activity,
+                   cupti_counters, gpu_roofline_flops, gpu_roofline_hp_flops,
+                   gpu_roofline_sp_flops, gpu_roofline_dp_flops>;
 
 #endif
-}  // namespace auto_timer
+}  // namespace auto_timer_types
 
 //--------------------------------------------------------------------------------------//
 
-}  // namespace details
-
-//--------------------------------------------------------------------------------------//
-
-using auto_timer_tuple_t = component_tuple<details::auto_timer::tuple_t>;
-using auto_timer_list_t  = component_list<details::auto_timer::list_t>;
+using auto_timer_tuple_t = auto_timer_types::tuple_t;
+using auto_timer_list_t  = auto_timer_types::list_t;
 
 #if defined(TIMEMORY_MINIMAL_AUTO_TIMER)
 /// if compilation overhead is too high for C++, define TIMEMORY_MINIMAL_AUTO_TIMER before
 /// including any timemory headers
-using auto_timer =
-    tim::auto_tuple<component::real_clock, component::system_clock, component::user_clock,
-                    component::cpu_util, component::peak_rss>;
+using auto_timer = auto_timer_types::tuple_t;
 #else
 using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 #endif
@@ -111,29 +89,32 @@ using auto_timer = auto_hybrid<auto_timer_tuple_t, auto_timer_list_t>;
 
 //======================================================================================//
 
-#define TIMEMORY_BLANK_AUTO_TIMER(...) TIMEMORY_BLANK_MARKER(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BLANK_AUTO_TIMER(...)                                                   \
+    TIMEMORY_BLANK_MARKER(::tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_BASIC_AUTO_TIMER(...) TIMEMORY_BASIC_MARKER(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_BASIC_AUTO_TIMER(...)                                                   \
+    TIMEMORY_BASIC_MARKER(::tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_MARKER(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER(...) TIMEMORY_MARKER(::tim::auto_timer, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // instance versions
 
 #define TIMEMORY_BLANK_AUTO_TIMER_HANDLE(...)                                            \
-    TIMEMORY_BLANK_HANDLE(tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_BLANK_HANDLE(::tim::auto_timer, __VA_ARGS__)
 
 #define TIMEMORY_BASIC_AUTO_TIMER_HANDLE(...)                                            \
-    TIMEMORY_BASIC_HANDLE(tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_BASIC_HANDLE(::tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_AUTO_TIMER_HANDLE(...) TIMEMORY_HANDLE(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_AUTO_TIMER_HANDLE(...) TIMEMORY_HANDLE(::tim::auto_timer, __VA_ARGS__)
 
 //--------------------------------------------------------------------------------------//
 // debug versions
 
 #define TIMEMORY_DEBUG_BASIC_AUTO_TIMER(...)                                             \
-    TIMEMORY_DEBUG_BASIC_MARKER(tim::auto_timer, __VA_ARGS__)
+    TIMEMORY_DEBUG_BASIC_MARKER(::tim::auto_timer, __VA_ARGS__)
 
-#define TIMEMORY_DEBUG_AUTO_TIMER(...) TIMEMORY_DEBUG_MARKER(tim::auto_timer, __VA_ARGS__)
+#define TIMEMORY_DEBUG_AUTO_TIMER(...)                                                   \
+    TIMEMORY_DEBUG_MARKER(::tim::auto_timer, __VA_ARGS__)
 
 //======================================================================================//

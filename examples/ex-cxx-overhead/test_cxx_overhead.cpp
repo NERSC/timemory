@@ -268,7 +268,8 @@ main(int argc, char** argv)
     tim::settings::width()             = 10;
     tim::settings::timing_precision()  = 6;
     tim::timemory_init(argc, argv);
-    tim::settings::cout_output() = false;
+    tim::mpi::initialize(argc, argv);
+    tim::settings::cout_output() = tim::settings::flat_profile();
     tim::print_env();
 
     // default calc: fibonacci(43)
@@ -366,7 +367,7 @@ main(int argc, char** argv)
     {
         ex_unique = ((nfib - cutoff) + 1) * auto_tuple_t::size();
         int64_t rc_unique =
-            (tim::storage<real_clock>::instance()->size() - 5) * auto_tuple_t::size();
+            (tim::storage<real_clock>::instance()->size() - 6) * auto_tuple_t::size();
         printf("Expected size: %li, actual size: %li\n", (long) ex_unique,
                (long) rc_unique);
         return (rc_unique == ex_unique) ? EXIT_SUCCESS : EXIT_FAILURE;
