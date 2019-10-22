@@ -703,8 +703,8 @@ struct apply
 
     //----------------------------------------------------------------------------------//
 
-    template <size_t... _Idx, typename _Sep, typename _Tuple>
-    static string_t join(const char* separator, _Tuple&& __tup, index_sequence<_Idx...>)
+    template <typename _Sep, typename _Tuple, size_t... _Idx>
+    static string_t join(_Sep&& separator, _Tuple&& __tup, index_sequence<_Idx...>)
     {
         return apply<string_t>::join(separator, std::get<_Idx>(__tup)...);
     }

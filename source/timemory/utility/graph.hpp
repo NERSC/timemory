@@ -129,7 +129,7 @@ public:
     using boolvec_t       = std::deque<bool>;
     using voidvec_t       = std::vector<void*>;
     using sizevec_t       = std::vector<uint16_t>;
-    using base_type = std::allocator<_Tp>;
+    using base_type       = std::allocator<_Tp>;
 
 public:
     // constructors and destructors
@@ -337,7 +337,9 @@ private:
 
 //======================================================================================//
 
-template <typename T, typename AllocatorT = std::allocator<tgraph_node<T>>> // graph_allocator<tgraph_node<T>>>
+template <typename T,
+          typename AllocatorT =
+              std::allocator<tgraph_node<T>>>  // graph_allocator<tgraph_node<T>>>
 class graph
 {
 protected:

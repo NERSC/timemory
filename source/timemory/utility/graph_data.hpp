@@ -72,7 +72,7 @@ get_hash_aliases()
 inline int64_t
 add_hash_id(graph_hash_map_ptr_t& _hash_map, const std::string& prefix)
 {
-    int64_t                  _hash_id  = std::hash<std::string>()(prefix.c_str());
+    int64_t _hash_id = std::hash<std::string>()(prefix.c_str());
     if(_hash_map && _hash_map->find(_hash_id) == _hash_map->end())
     {
         (*_hash_map)[_hash_id] = prefix;

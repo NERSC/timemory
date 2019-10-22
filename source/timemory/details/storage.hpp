@@ -309,7 +309,7 @@ storage<ObjectType, true>::merge(this_type* itr)
         return;
     {
         auto _this_graph = graph();
-        auto _itr_graph = graph();
+        auto _itr_graph  = graph();
         consume_parameters(_this_graph, _itr_graph);
     }
 

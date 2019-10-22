@@ -106,7 +106,10 @@ public:
 
     static list_t children() { return f_children(); }
     static bool   is_master(pointer ptr) { return ptr == master_instance_ptr(); }
-    static bool   is_master_thread() { return std::this_thread::get_id() == f_master_thread(); }
+    static bool   is_master_thread()
+    {
+        return std::this_thread::get_id() == f_master_thread();
+    }
 
     static void insert(pointer itr)
     {

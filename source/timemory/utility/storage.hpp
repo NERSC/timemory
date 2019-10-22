@@ -485,7 +485,6 @@ public:
               enable_if_t<(std::is_same<_Scope, scope::flat>::value), int> = 0>
     iterator insert(int64_t hash_id, const ObjectType& obj, int64_t hash_depth)
     {
-
         // check this now to ensure everything is initialized
         if(m_node_ids.size() == 0 || m_graph_data_instance == nullptr)
             initialize();
@@ -766,7 +765,7 @@ private:
         else if(m_graph_data_instance == nullptr)
         {
             // auto_lock_t lk(type_mutex<this_type>(), std::defer_lock);
-            //if(!lk.owns_lock())
+            // if(!lk.owns_lock())
             //    lk.lock();
             /*static std::recursive_mutex _init_mutex;
             auto_lock_t lk(_init_mutex, std::defer_lock);
