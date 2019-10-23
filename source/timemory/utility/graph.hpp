@@ -138,7 +138,7 @@ public:
     graph_allocator(graph_allocator&&)      = default;
     ~graph_allocator()
     {
-        PRINT_HERE("destroying graph_allocator...");
+        // PRINT_HERE("destroying graph_allocator...");
         for(auto& itr : m_allocations)
             free(itr);
     }

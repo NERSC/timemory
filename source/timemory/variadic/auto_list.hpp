@@ -66,6 +66,10 @@ public:
     using init_func_t     = std::function<void(this_type&)>;
     using string_t        = std::string;
 
+    // used by component hybrid and gotcha
+    static constexpr bool is_component_list  = false;
+    static constexpr bool is_component_tuple = false;
+    static constexpr bool is_component_hybrid = false;
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:

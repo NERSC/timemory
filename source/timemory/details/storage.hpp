@@ -496,10 +496,12 @@ void storage<ObjectType, true>::external_print(std::false_type)
     else if(settings::auto_output())
     {
         merge();
-        mpi_reduce();
+        // mpi_reduce();
+        for(int32_t i = 0; i < mpi::size(); ++i)
+        {
         if(mpi::is_initialized())
             mpi::barrier();
-        if(!mpi::is_initialized() || mpi::rank() == 0)
+        if(!mpi::is_initialized() || mpi::rank() == i)
         {
             if(is_initialized() && m_graph_data_instance)
             {
@@ -813,6 +815,7 @@ void storage<ObjectType, true>::external_print(std::false_type)
         }
         if(mpi::is_initialized())
             mpi::barrier();
+        }
         instance_count().store(0);
     }
     else

@@ -52,15 +52,17 @@ using size_type = std::size_t;
 //
 template <size_type _Nt, typename _Components, typename _Differentiator>
 struct gotcha
-: public base<gotcha<_Nt, _Components, _Differentiator>, int8_t, policy::global_init>
+: public base<gotcha<_Nt, _Components, _Differentiator>, void, policy::global_init,
+              policy::global_finalize>
 {
     static_assert(_Components::contains_gotcha == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    using value_type   = int8_t;
-    using this_type    = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type    = base<this_type, value_type, policy::global_init>;
+    using value_type = void;
+    using this_type  = gotcha<_Nt, _Components, _Differentiator>;
+    using base_type =
+        base<this_type, value_type, policy::global_init, policy::global_finalize>;
     using storage_type = typename base_type::storage_type;
 
     template <typename _Tp>
@@ -72,6 +74,7 @@ struct gotcha
     using error_t       = ::tim::gotcha::error_t;
     using destructor_t  = std::function<void()>;
     using constructor_t = std::function<void()>;
+    using atomic_bool_t = std::atomic<bool>;
 
     using blacklist_t = std::set<std::string>;
 
@@ -80,16 +83,9 @@ struct gotcha
     using get_initializer_t = std::function<config_t()>;
     using get_blacklist_t   = std::function<blacklist_t()>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "gotcha"; }
     static std::string description() { return "GOTCHA wrapper"; }
-    static std::string display_unit() { return ""; }
-    static value_type  record() { return 0; }
+    static value_type  record() { return; }
 
     //----------------------------------------------------------------------------------//
 
@@ -281,7 +277,20 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_global_init(storage_type*) { configure(); }
+    static void invoke_global_init(storage_type*)
+    {
+        // configure();
+    }
+
+    static void invoke_global_finalize(storage_type*)
+    {
+        while(get_started() > 0)
+            --get_started();
+        while(get_thread_started() > 0)
+            --get_thread_started();
+        for(auto& itr : get_destructors())
+            itr();
+    }
 
     double get_display() const { return 0; }
 
@@ -290,13 +299,31 @@ struct gotcha
     void start()
     {
         auto _n = get_started()++;
+        auto _t = get_thread_started()++;
+
         if(_n == 0)
+        {
             configure();
+        }
+
+        if(_t == 0)
+        {
+            for(size_type i = 0; i < _Nt; ++i)
+                get_ready_flags()[i] = get_filled()[i];
+        }
     }
 
     void stop()
     {
         auto _n = --get_started();
+        auto _t = --get_thread_started();
+
+        if(_t == 0)
+        {
+            for(size_type i = 0; i < _Nt; ++i)
+                get_ready_flags()[i] = false;
+        }
+
         if(_n == 0)
         {
             for(auto& itr : get_destructors())
@@ -338,6 +365,14 @@ private:
     static std::atomic<int64_t>& get_started()
     {
         static std::atomic<int64_t> _instance;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
+    static int64_t& get_thread_started()
+    {
+        static thread_local int64_t _instance = 0;
         return _instance;
     }
 
@@ -420,6 +455,20 @@ private:
 private:
     //----------------------------------------------------------------------------------//
 
+    static array_t<bool>& get_ready_flags()
+    {
+        static auto _get = []() {
+            array_t<bool> _arr;
+            for(auto& itr : _arr)
+                itr = false;
+            return _arr;
+        };
+        static thread_local array_t<bool> _instance = _get();
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N>
     static void check_error(error_t _ret, const std::string& _prefix)
     {
@@ -466,6 +515,13 @@ private:
         typedef _Ret (*func_t)(_Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
 
+        if(!get_ready_flags()[_N])
+            return (_orig) ? (*_orig)(_args...) : _Ret{};
+
+        // make sure the function is not recursively entered (important for
+        // allocation-based wrappers)
+        get_ready_flags()[_N] = false;
+
 #    if defined(DEBUG)
         if(settings::verbose() > 2 || settings::debug())
         {
@@ -486,17 +542,21 @@ private:
 
         if(_orig)
         {
-            _Components _obj(get_tool_ids()[_N], true);
+            static constexpr bool _is_component_type = (_Components::is_component_tuple ||
+                                                        _Components::is_component_list ||
+                                                        _Components::is_component_hybrid);
+            bool _boolA = (_is_component_type || settings::flat_profile());
+            bool _boolB = (_is_component_type && settings::flat_profile()) || (!_is_component_type && settings::destructor_report());
+            _Components _obj(get_tool_ids()[_N], _boolA, _boolB);
             _obj.customize(get_tool_ids()[_N], _args...);
             _obj.start();
 
-            // return (*_orig)(std::forward<_Args>(_args)...);
-            // return (_orig)(std::move(_args)...);
-            // return (*_orig)(_args...);
-            _Ret _ret = (*_orig)(_args...);
+            get_ready_flags()[_N] = true;
+            _Ret _ret             = (*_orig)(_args...);
+            get_ready_flags()[_N] = false;
 
+            _obj.customize(get_tool_ids()[_N], _ret);
             _obj.stop();
-
 #    if defined(DEBUG)
             if(settings::verbose() > 2 || settings::debug())
             {
@@ -512,10 +572,16 @@ private:
             }
 #    endif
 
+            // allow re-entrance into wrapper
+            get_ready_flags()[_N] = true;
+
             return _ret;
         }
         if(settings::debug())
             PRINT_HERE("nullptr to original function!");
+
+        // allow re-entrance into wrapper
+        get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");
@@ -531,17 +597,36 @@ private:
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
 #if defined(TIMEMORY_USE_GOTCHA)
         auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
+
+        if(!get_ready_flags()[_N])
+        {
+            if(_orig)
+                (*_orig)(_args...);
+            return;
+        }
+
+        // make sure the function is not recursively entered (important for
+        // allocation-based wrappers)
+        get_ready_flags()[_N] = false;
+
         if(_orig)
         {
             _Components _obj(get_tool_ids()[_N], true);
             _obj.customize(get_tool_ids()[_N], _args...);
             _obj.start();
+
+            get_ready_flags()[_N] = true;
             (*_orig)(_args...);
+            get_ready_flags()[_N] = false;
+
             _obj.stop();
         } else if(settings::debug())
         {
             PRINT_HERE("nullptr to original function!");
         }
+
+        // allow re-entrance into wrapper
+        get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
         PRINT_HERE("should not be here!");

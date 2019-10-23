@@ -68,6 +68,10 @@ public:
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
 
+    // used by gotcha
+    static constexpr bool is_component_list  = false;
+    static constexpr bool is_component_tuple = false;
+    static constexpr bool is_component_hybrid = false;
     static constexpr bool contains_gotcha = component_type::contains_gotcha;
 
 public:

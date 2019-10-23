@@ -119,16 +119,21 @@ get_hash_identifier(int64_t _hash_id)
     else if(_hash_alias->find(_hash_id) != _hash_alias->end())
         return _hash_map->find(_hash_alias->find(_hash_id)->second)->second;
 
-    std::stringstream ss;
-    ss << "Error! node with hash " << _hash_id << " did not have an associated prefix!\n";
-    ss << "Hash map:\n";
-    for(const auto& itr : *_hash_map)
-        ss << "    " << itr.first << " : " << itr.second << "\n";
-    ss << "Alias hash map:\n";
-    for(const auto& itr : *_hash_alias)
-        ss << "    " << itr.first << " : " << itr.second << "\n";
-    throw std::runtime_error(ss.str());
-    return "unknown";
+    if(settings::verbose() > 0 || settings::debug())
+    {
+        std::stringstream ss;
+        ss << "Error! node with hash " << _hash_id
+           << " did not have an associated prefix!\n";
+        ss << "Hash map:\n";
+        auto _w = 30;
+        for(const auto& itr : *_hash_map)
+            ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
+        ss << "Alias hash map:\n";
+        for(const auto& itr : *_hash_alias)
+            ss << "    " << std::setw(_w) << itr.first << " : " << itr.second << "\n";
+        fprintf(stderr, "%s\n", ss.str().c_str());
+    }
+    return std::string("unknown-hash=") + std::to_string(_hash_id);
 }
 
 //--------------------------------------------------------------------------------------//

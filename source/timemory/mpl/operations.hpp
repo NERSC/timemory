@@ -185,10 +185,11 @@ struct insert_node
     {
         using storage_type       = typename Type::storage_type;
         static bool _master_init = storage_type::master_instance()->data_init();
-        // static bool _data_init = storage_type::instance()->data_init();
-        consume_parameters(_master_init);
+        // consume_parameters(_master_init);
+        static bool _data_init = storage_type::instance()->data_init();
         // consume_parameters(_data_init);
-
+        if(!_master_init || !_data_init)
+            PRINT_HERE("Weird");
         obj.insert_node(_Scope{}, _hash);
     }
 

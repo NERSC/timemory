@@ -126,6 +126,7 @@ public:
     // used by component hybrid
     static constexpr bool is_component_list  = false;
     static constexpr bool is_component_tuple = true;
+    static constexpr bool is_component_hybrid = false;
 
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
@@ -222,11 +223,12 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
+            // compute the hash
+            int64_t _hash = add_hash_id(m_key);
+            // reset the data
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
-            // compute the hash
-            int64_t _hash = add_hash_id(m_key);
             // insert node or find existing node
             if(m_flat)
                 apply<void>::access<insert_node_t<scope::flat>>(m_data, _hash);

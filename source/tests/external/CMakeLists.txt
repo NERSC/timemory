@@ -4,6 +4,7 @@ if(NOT TIMEMORY_BUILD_GTEST)
 endif()
 
 add_library(gotcha-tests-lib SHARED
+    malloc_gotcha.hpp
     gotcha_tests_lib.hpp
     gotcha_tests_lib.cpp)
   
