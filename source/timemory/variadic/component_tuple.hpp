@@ -124,8 +124,8 @@ public:
     using data_label_type = get_data_label_t<data_type>;
 
     // used by component hybrid
-    static constexpr bool is_component_list  = false;
-    static constexpr bool is_component_tuple = true;
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = true;
     static constexpr bool is_component_hybrid = false;
 
     // used by gotcha component to prevent recursion

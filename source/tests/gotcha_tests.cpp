@@ -317,6 +317,62 @@ print_func_info(const std::string& fname)
 
 //======================================================================================//
 
+TEST_F(gotcha_tests, malloc_gotcha)
+{
+    using malloc_analyzer_t =
+        tim::auto_tuple<real_clock, cpu_clock, page_rss, peak_rss, malloc_gotcha>;
+    using malloc_gotcha_t = tim::component::gotcha<4, malloc_analyzer_t, int>;
+    using toolset_t       = tim::auto_tuple<real_clock, malloc_gotcha_t>;
+
+    malloc_gotcha_t::get_initializer() = []() {
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
+        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, free);
+#if defined(TIMEMORY_USE_MPI)
+        // TIMEMORY_C_GOTCHA(malloc_gotcha_t, 3, MPI_Allreduce);
+#endif
+    };
+
+    toolset_t tool(details::get_test_name());
+
+    float  fsum = 0.0;
+    double dsum = 0.0;
+    for(int i = 0; i < nitr; ++i)
+    {
+        auto fsendbuf = details::generate<float>(1000);
+        auto frecvbuf = details::allreduce(fsendbuf);
+        fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
+
+        auto dsendbuf = details::generate<double>(1000);
+        auto drecvbuf = details::allreduce(dsendbuf);
+        dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
+    }
+
+    auto rank = tim::mpi::rank();
+    auto size = tim::mpi::size();
+    for(int i = 0; i < size; ++i)
+    {
+        tim::mpi::barrier();
+        if(i == rank)
+        {
+            printf("\n");
+            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
+            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
+        }
+        tim::mpi::barrier();
+    }
+    tim::mpi::barrier();
+    if(rank == 0)
+        printf("\n");
+
+    tool.stop();
+
+    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
+    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+}
+
+//======================================================================================//
+
 TEST_F(gotcha_tests, member_functions)
 {
     using pair_t = std::pair<float, double>;
@@ -397,83 +453,7 @@ TEST_F(gotcha_tests, member_functions)
     ASSERT_NEAR(fsum, -2416347.50, tolerance);
     ASSERT_NEAR(dsum, 881550.95, tolerance);
     auto real_storage = tim::storage<real_clock>::instance();
-    ASSERT_EQ(real_storage->size(), 4);
-}
-
-//======================================================================================//
-
-TEST_F(gotcha_tests, malloc_gotcha)
-{
-    using malloc_analyzer_t = tim::auto_tuple<page_rss, peak_rss, malloc_gotcha>;
-    using mpi_toolset_t = tim::auto_tuple<real_clock, cpu_clock>;
-    using malloc_gotcha_t =
-        tim::component::gotcha<3, malloc_analyzer_t, malloc_analyzer_t>;
-    using mpip_gotcha_t = tim::component::gotcha<16, mpi_toolset_t>;
-    using toolset_t = tim::auto_tuple<real_clock, malloc_gotcha_t, mpip_gotcha_t>;
-
-    mpip_gotcha_t::get_initializer() = []() {
-#if defined(TIMEMORY_USE_MPI)
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 0, MPI_Send);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 1, MPI_Recv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 2, MPI_Issend);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 3, MPI_Irsend);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 4, MPI_Irecv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 5, MPI_Bcast);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 6, MPI_Gather);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 7, MPI_Gatherv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 8, MPI_Scatter);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 9, MPI_Scatterv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 10, MPI_Allgather);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 11, MPI_Allgatherv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 12, MPI_Alltoall);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 13, MPI_Alltoallv);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 14, MPI_Alltoallw);
-        TIMEMORY_C_GOTCHA(mpip_gotcha_t, 15, MPI_Allreduce);
-#endif
-    };
-
-    malloc_gotcha_t::get_initializer() = []() {
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 0, malloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 1, calloc);
-        TIMEMORY_C_GOTCHA(malloc_gotcha_t, 2, free);
-    };
-
-    toolset_t tool(details::get_test_name());
-
-    float  fsum = 0.0;
-    double dsum = 0.0;
-    for(int i = 0; i < nitr; ++i)
-    {
-        auto fsendbuf = details::generate<float>(1000);
-        auto frecvbuf = details::allreduce(fsendbuf);
-        fsum += std::accumulate(frecvbuf.begin(), frecvbuf.end(), 0.0);
-
-        auto dsendbuf = details::generate<double>(1000);
-        auto drecvbuf = details::allreduce(dsendbuf);
-        dsum += std::accumulate(drecvbuf.begin(), drecvbuf.end(), 0.0);
-    }
-
-    auto rank = tim::mpi::rank();
-    auto size = tim::mpi::size();
-    for(int i = 0; i < size; ++i)
-    {
-        tim::mpi::barrier();
-        if(i == rank)
-        {
-            printf("\n");
-            printf("[%i]> single-precision sum = %8.2f\n", rank, fsum);
-            printf("[%i]> double-precision sum = %8.2f\n", rank, dsum);
-        }
-        tim::mpi::barrier();
-    }
-    tim::mpi::barrier();
-    if(rank == 0)
-        printf("\n");
-
-    tool.stop();
-
-    ASSERT_NEAR(fsum, 49892284.00 * size, tolerance);
-    ASSERT_NEAR(dsum, 49868704.48 * size, tolerance);
+    ASSERT_EQ(real_storage->size(), 6);
 }
 
 //======================================================================================//

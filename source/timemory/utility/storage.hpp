@@ -420,7 +420,7 @@ public:
         if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
            m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
         {
-            _update(m_node_ids[hash_depth].find(hash_id)->second);
+            return _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
@@ -436,15 +436,17 @@ public:
             return itr;
         };
 
-        auto current   = _data().current();
-        auto nchildren = graph_t::number_of_children(current);
+        auto current = _data().current();
+        if(!_data().graph().is_valid(current))
+            _insert_child();
+
+        // auto nchildren = graph().number_of_children(current);
+        // auto nsiblings = graph().number_of_siblings(current);
 
         if((hash_id) == current->id())
         {
             return current;
         }
-        else if(nchildren == 0 && graph().number_of_siblings(current) == 0)
-            return _insert_child();
         else if(_data().graph().is_valid(current))
         {
             // check siblings
@@ -459,9 +461,9 @@ public:
             }
 
             // check children
-            if(nchildren == 0)
-                return _insert_child();
-            else
+            // if(nchildren == 0)
+            //    return _insert_child();
+            // else
             {
                 // check child
                 auto fchild = graph_t::child(current, 0);
@@ -521,7 +523,7 @@ public:
         if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
            m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
         {
-            _update(m_node_ids[hash_depth].find(hash_id)->second);
+            return _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
@@ -764,9 +766,9 @@ private:
         }
         else if(m_graph_data_instance == nullptr)
         {
-            // auto_lock_t lk(type_mutex<this_type>(), std::defer_lock);
-            // if(!lk.owns_lock())
-            //    lk.lock();
+            auto_lock_t lk(singleton_t::get_mutex(), std::defer_lock);
+            if(!lk.owns_lock())
+                lk.lock();
             /*static std::recursive_mutex _init_mutex;
             auto_lock_t lk(_init_mutex, std::defer_lock);
             if(!lk.owns_lock())

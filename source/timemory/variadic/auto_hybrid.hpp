@@ -69,10 +69,10 @@ public:
     using data_label_type = typename component_type::data_label_type;
 
     // used by gotcha
-    static constexpr bool is_component_list  = false;
-    static constexpr bool is_component_tuple = false;
+    static constexpr bool is_component_list   = false;
+    static constexpr bool is_component_tuple  = false;
     static constexpr bool is_component_hybrid = false;
-    static constexpr bool contains_gotcha = component_type::contains_gotcha;
+    static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
     inline explicit auto_hybrid(const string_t&, bool flat = settings::flat_profile(),

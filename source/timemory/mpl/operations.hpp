@@ -183,13 +183,30 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const int64_t& _hash)
     {
-        using storage_type       = typename Type::storage_type;
-        static bool _master_init = storage_type::master_instance()->data_init();
-        // consume_parameters(_master_init);
-        static bool _data_init = storage_type::instance()->data_init();
-        // consume_parameters(_data_init);
-        if(!_master_init || !_data_init)
-            PRINT_HERE("Weird");
+        using storage_type     = typename Type::storage_type;
+        static auto _main_inst = storage_type::master_instance();
+        static auto _this_inst = storage_type::instance();
+        if(_main_inst != _this_inst)
+        {
+            static bool _main_glob = _main_inst->global_init();
+            static bool _this_glob = _this_inst->global_init();
+            static bool _main_work = _main_inst->thread_init();
+            static bool _this_work = _this_inst->thread_init();
+            static bool _main_data = _main_inst->data_init();
+            static bool _this_data = _this_inst->data_init();
+            if(!(_main_glob && _this_glob && _main_work && _this_work && _main_data &&
+                 _this_data))
+                PRINT_HERE("Weird");
+        }
+        else
+        {
+            static bool _this_glob = _this_inst->global_init();
+            static bool _this_work = _this_inst->thread_init();
+            static bool _this_data = _this_inst->data_init();
+            if(!(_this_glob && _this_work && _this_data))
+                PRINT_HERE("Weird");
+        }
+
         obj.insert_node(_Scope{}, _hash);
     }
 

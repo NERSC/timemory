@@ -542,11 +542,12 @@ private:
 
         if(_orig)
         {
-            static constexpr bool _is_component_type = (_Components::is_component_tuple ||
-                                                        _Components::is_component_list ||
-                                                        _Components::is_component_hybrid);
+            static constexpr bool _is_component_type =
+                (_Components::is_component_tuple || _Components::is_component_list ||
+                 _Components::is_component_hybrid);
             bool _boolA = (_is_component_type || settings::flat_profile());
-            bool _boolB = (_is_component_type && settings::flat_profile()) || (!_is_component_type && settings::destructor_report());
+            bool _boolB = (_is_component_type && settings::flat_profile()) ||
+                          (!_is_component_type && settings::destructor_report());
             _Components _obj(get_tool_ids()[_N], _boolA, _boolB);
             _obj.customize(get_tool_ids()[_N], _args...);
             _obj.start();

@@ -42,10 +42,10 @@ namespace tim
 namespace component
 {
 struct malloc_gotcha
-: base<malloc_gotcha, std::array<size_t, 3>, policy::global_init, policy::global_finalize>
+: base<malloc_gotcha, std::array<double, 3>, policy::global_init, policy::global_finalize>
 {
     static constexpr uintmax_t data_size = 3;
-    using value_type                     = std::array<size_t, data_size>;
+    using value_type                     = std::array<double, data_size>;
     using this_type                      = malloc_gotcha;
     using base_type =
         base<this_type, value_type, policy::global_init, policy::global_finalize>;
@@ -54,19 +54,24 @@ struct malloc_gotcha
 
     static std::string label() { return "malloc_gotcha"; }
     static std::string description() { return "GOTCHA wrapper for memory allocation"; }
-    static std::string display_unit() { return "GB"; }
-    static int64_t     unit() { return units::gigabyte; }
-    static const short precision                      = 3;
-    static const short width                          = 8;
-    static const std::ios_base::fmtflags format_flags = {};
+    static std::string display_unit() { return "MB"; }
+    static int64_t     unit() { return units::megabyte; }
+    static const short precision = 3;
+    static const short width     = 12;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
-    static value_type record() { return value_type{ 0, 0 }; }
+    static value_type record() { return value_type{ 0.0, 0.0, 0.0 }; }
 
     using base_type::accum;
     using base_type::is_transient;
     using base_type::value;
 
-    malloc_gotcha()                 = default;
+    malloc_gotcha()
+    {
+        value = { { 0.0, 0.0, 0.0 } };
+        accum = { { 0.0, 0.0, 0.0 } };
+    }
     ~malloc_gotcha()                = default;
     malloc_gotcha(const this_type&) = default;
     malloc_gotcha(this_type&&)      = default;
@@ -79,49 +84,50 @@ struct malloc_gotcha
 
     double get() const
     {
-        auto& _obj = (is_transient) ? accum : value;
-        return ((_obj[0] + _obj[1]) - _obj[2]) / base_type::get_unit();
+        return ((accum[0] + accum[1]) - accum[2]) / base_type::get_unit();
     }
 
     double get_display() const { return get(); }
 
     void customize(const std::string& fname, size_t nbytes)
     {
-        if(string_hash()(fname) == (*m_hash_array)[0])
+        if(string_hash()(fname) == get_hash_array()[0])
         {
             // malloc
-            value[0] = nbytes;
-            accum[0] += nbytes;
+            value[0] = (nbytes / static_cast<double>(units::kilobyte));
+            accum[0] += (nbytes / static_cast<double>(units::kilobyte));
         }
     }
 
     void customize(const std::string& fname, size_t nmemb, size_t size)
     {
-        if(string_hash()(fname) == (*m_hash_array)[1])
+        if(string_hash()(fname) == get_hash_array()[1])
         {
             // calloc
-            value[1] = nmemb * size;
-            accum[1] += nmemb * size;
+            value[1] = (nmemb * size) / static_cast<double>(units::kilobyte);
+            accum[1] += (nmemb * size) / static_cast<double>(units::kilobyte);
         }
     }
 
     void customize(const std::string& fname, void* ptr)
     {
+        if(!ptr)
+            return;
         auto _hash = string_hash()(fname);
 
         // malloc
-        if(_hash == (*m_hash_array)[0])
-            (*m_alloc_map)[ptr] = value[0];
-        else if(_hash == (*m_hash_array)[1])
-            (*m_alloc_map)[ptr] = value[1];
-        else if(_hash == (*m_hash_array)[2])
+        if(_hash == get_hash_array()[0])
+            get_allocation_map()[ptr] = value[0];
+        else if(_hash == get_hash_array()[1])
+            get_allocation_map()[ptr] = value[1];
+        else if(_hash == get_hash_array()[2])
         {
-            auto itr = m_alloc_map->find(ptr);
-            if(itr != m_alloc_map->end())
+            auto itr = get_allocation_map().find(ptr);
+            if(itr != get_allocation_map().end())
             {
                 value[2] = itr->second;
                 accum[2] += itr->second;
-                m_alloc_map->erase(itr);
+                get_allocation_map().erase(itr);
             }
             else
             {
@@ -188,9 +194,6 @@ private:
         static hash_array_t _instance = _get();
         return _instance;
     }
-
-    alloc_map_t*  m_alloc_map  = &get_allocation_map();
-    hash_array_t* m_hash_array = &get_hash_array();
 };
 
 }  // namespace component
