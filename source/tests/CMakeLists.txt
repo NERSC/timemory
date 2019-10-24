@@ -34,6 +34,11 @@ message(STATUS "[${PROJECT_NAME}] hybrid test components: ${HYBRID_COMPONENTS}")
 
 add_subdirectory(external)
 
+add_timemory_google_test(mangle_tests
+    DISCOVER_TESTS
+    SOURCES         mangle_tests.cpp
+    LINK_LIBRARIES  timemory-headers timemory-compile-options)
+
 add_timemory_google_test(macro_tests
     DISCOVER_TESTS
     SOURCES         macro_tests.cpp

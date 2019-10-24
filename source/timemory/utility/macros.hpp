@@ -134,6 +134,13 @@
 
 //--------------------------------------------------------------------------------------//
 
+//  nvcc compiler
+#if defined(__NVCC__)
+#    define _TIMEMORY_NVCC
+#endif
+
+//--------------------------------------------------------------------------------------//
+
 //  Intel compiler
 #if defined(__INTEL_COMPILER)
 #    define _TIMEMORY_INTEL
@@ -159,7 +166,8 @@
 //
 //======================================================================================//
 
-#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL)) &&   \
+#if(defined(_TIMEMORY_GNU) || defined(_TIMEMORY_CLANG) || defined(_TIMEMORY_INTEL) ||    \
+    defined(_TIMEMORY_NVCC)) &&                                                          \
     defined(_UNIX)
 #    if !defined(_TIMEMORY_ENABLE_DEMANGLE)
 #        define _TIMEMORY_ENABLE_DEMANGLE 1

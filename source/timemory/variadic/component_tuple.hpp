@@ -134,36 +134,30 @@ public:
 
 public:
     // modifier types
+    // clang-format off
     template <typename _Archive>
-    using serialize_t = typename filtered<
-        available_tuple<concat<Types...>>>::template serialize_t<_Archive>;
+    using serialize_t   = typename filtered<available_tuple<concat<Types...>>>::template serialize_t<_Archive>;
     template <typename _Scope>
-    using insert_node_t = typename filtered<
-        available_tuple<concat<Types...>>>::template insert_node_t<_Scope>;
-    using pop_node_t = typename filtered<available_tuple<concat<Types...>>>::pop_node_t;
-    using measure_t  = typename filtered<available_tuple<concat<Types...>>>::measure_t;
-    using record_t   = typename filtered<available_tuple<concat<Types...>>>::record_t;
-    using reset_t    = typename filtered<available_tuple<concat<Types...>>>::reset_t;
-    using plus_t     = typename filtered<available_tuple<concat<Types...>>>::plus_t;
-    using minus_t    = typename filtered<available_tuple<concat<Types...>>>::minus_t;
-    using multiply_t = typename filtered<available_tuple<concat<Types...>>>::multiply_t;
-    using divide_t   = typename filtered<available_tuple<concat<Types...>>>::divide_t;
-    using print_t    = typename filtered<available_tuple<concat<Types...>>>::print_t;
-    using prior_start_t =
-        typename filtered<available_tuple<concat<Types...>>>::prior_start_t;
-    using prior_stop_t =
-        typename filtered<available_tuple<concat<Types...>>>::prior_stop_t;
-    using stand_start_t =
-        typename filtered<available_tuple<concat<Types...>>>::stand_start_t;
-    using stand_stop_t =
-        typename filtered<available_tuple<concat<Types...>>>::stand_stop_t;
-    using mark_begin_t =
-        typename filtered<available_tuple<concat<Types...>>>::mark_begin_t;
-    using mark_end_t  = typename filtered<available_tuple<concat<Types...>>>::mark_end_t;
-    using customize_t = typename filtered<available_tuple<concat<Types...>>>::customize_t;
-    using set_prefix_t =
-        typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
-    using get_data_t = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
+    using insert_node_t = typename filtered<available_tuple<concat<Types...>>>::template insert_node_t<_Scope>;
+    using pop_node_t    = typename filtered<available_tuple<concat<Types...>>>::pop_node_t;
+    using measure_t     = typename filtered<available_tuple<concat<Types...>>>::measure_t;
+    using record_t      = typename filtered<available_tuple<concat<Types...>>>::record_t;
+    using reset_t       = typename filtered<available_tuple<concat<Types...>>>::reset_t;
+    using plus_t        = typename filtered<available_tuple<concat<Types...>>>::plus_t;
+    using minus_t       = typename filtered<available_tuple<concat<Types...>>>::minus_t;
+    using multiply_t    = typename filtered<available_tuple<concat<Types...>>>::multiply_t;
+    using divide_t      = typename filtered<available_tuple<concat<Types...>>>::divide_t;
+    using print_t       = typename filtered<available_tuple<concat<Types...>>>::print_t;
+    using prior_start_t = typename filtered<available_tuple<concat<Types...>>>::prior_start_t;
+    using prior_stop_t  = typename filtered<available_tuple<concat<Types...>>>::prior_stop_t;
+    using stand_start_t = typename filtered<available_tuple<concat<Types...>>>::stand_start_t;
+    using stand_stop_t  = typename filtered<available_tuple<concat<Types...>>>::stand_stop_t;
+    using mark_begin_t  = typename filtered<available_tuple<concat<Types...>>>::mark_begin_t;
+    using mark_end_t    = typename filtered<available_tuple<concat<Types...>>>::mark_end_t;
+    using customize_t   = typename filtered<available_tuple<concat<Types...>>>::customize_t;
+    using set_prefix_t  = typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
+    using get_data_t    = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
+    // clang-format on
 
 public:
     using auto_type = typename filtered<available_tuple<concat<Types...>>>::auto_type;

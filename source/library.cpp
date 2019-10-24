@@ -220,9 +220,7 @@ extern "C"
     {
         get_default_components() = std::string(_component_string);
         auto& _stack             = get_components_stack();
-        if(_stack.size() == 0)
-            _stack.push_back(tim::enumerate_components(get_default_components(),
-                                                       "TIMEMORY_COMPONENTS"));
+        _stack.push_back(tim::enumerate_components(_component_string));
     }
 
     //----------------------------------------------------------------------------------//

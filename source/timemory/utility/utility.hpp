@@ -150,19 +150,36 @@ type_mutex(const uint64_t& _n = 0)
 //--------------------------------------------------------------------------------------//
 
 inline std::string
-demangle(const std::string& _str)
+demangle(const char* _cstr)
 {
 #if defined(_TIMEMORY_ENABLE_DEMANGLE)
     // demangling a string when delimiting
     int   _ret    = 0;
-    char* _demang = abi::__cxa_demangle(_str.c_str(), 0, 0, &_ret);
+    char* _demang = abi::__cxa_demangle(_cstr, 0, 0, &_ret);
     if(_demang && _ret == 0)
         return std::string(const_cast<const char*>(_demang));
     else
-        return _str;
+        return _cstr;
 #else
-    return _str;
+    return _cstr;
 #endif
+}
+
+//--------------------------------------------------------------------------------------//
+
+inline std::string
+demangle(const std::string& _str)
+{
+    return demangle(_str.c_str());
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp>
+inline std::string
+demangle()
+{
+    return demangle(typeid(_Tp).name());
 }
 
 //--------------------------------------------------------------------------------------//

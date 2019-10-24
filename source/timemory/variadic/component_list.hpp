@@ -122,17 +122,18 @@ public:
     };
 
 public:
-    using string_t   = std::string;
-    using size_type  = int64_t;
-    using this_type  = component_list<Types...>;
-    using data_type  = typename filtered<available_tuple<concat<Types...>>>::data_type;
-    using type_tuple = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
-    using reference_type =
-        typename filtered<available_tuple<concat<Types...>>>::reference_type;
-    using string_hash     = std::hash<string_t>;
-    using init_func_t     = std::function<void(this_type&)>;
+    using string_t    = std::string;
+    using size_type   = int64_t;
+    using this_type   = component_list<Types...>;
+    using data_type   = typename filtered<available_tuple<concat<Types...>>>::data_type;
+    using type_tuple  = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
+    using string_hash = std::hash<string_t>;
+    using init_func_t = std::function<void(this_type&)>;
     using data_value_type = get_data_value_t<reference_type>;
     using data_label_type = get_data_label_t<reference_type>;
+
+    using reference_type =
+        typename filtered<available_tuple<concat<Types...>>>::reference_type;
 
     // used by component hybrid
     static constexpr bool is_component_list   = true;
