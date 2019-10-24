@@ -187,8 +187,6 @@ public:
             get_labels() = { std::string("runtime") };
         } else
         {
-            using strvec_t = std::vector<string_t>;
-
             strvec_t events  = { "active_warps", "global_load", "global_store" };
             strvec_t metrics = { "ldst_executed",
                                  "ldst_issued",

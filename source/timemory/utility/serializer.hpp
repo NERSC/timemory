@@ -29,6 +29,12 @@
 
 #pragma once
 
+// cereal will cause some -Wclass-memaccess warnings that are quite annoying
+#if defined(__GNUC__) && (__GNUC__ > 7)
+#    pragma GCC diagnostic push
+#    pragma GCC diagnostic ignored "-Wclass-memaccess"
+#endif
+
 // define this so avoid warnings about noexcept functions throwing
 #define CEREAL_RAPIDJSON_ASSERT(x)                                                       \
     {                                                                                    \
@@ -64,3 +70,7 @@ using cereal::make_nvp;
 }  // namespace serializer
 
 //======================================================================================//
+
+#if defined(__GNUC__) && (__GNUC__ > 7)
+#    pragma GCC diagnostic pop
+#endif
