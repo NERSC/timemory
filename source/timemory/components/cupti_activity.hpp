@@ -112,15 +112,15 @@ struct cupti_activity
                 return _kinds;
             } else if(lvl == 0)
             {
-                // general settings for kernels, runtime
+                // general settings for kernels, runtime, overhead
                 _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_RUNTIME };
+                           CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_OVERHEAD };
             } else if(lvl == 1)
             {
-                // general settings for kernels, runtime, memory
+                // general settings for kernels, runtime, memory, overhead
                 _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
                            CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME };
+                           CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_OVERHEAD };
             } else if(lvl == 2)
             {
                 // general settings for kernels, runtime, memory, overhead, and device
@@ -215,13 +215,20 @@ public:
             auto kitr = kernel_tmp.find(itr.first);
             if(kitr != kernel_tmp.end())
             {
+                // if kernel found in start and stop, add difference
                 m_kernels_accum[itr.first] += (kitr->second - itr.second);
                 skip.insert(itr.first);
             }
+            // do not add if found in start but not in stop (this should not happen)
+            // else if(m_kernels_accum.find(itr.first) == m_kernels_accum.end())
+            // {
+            //    m_kernels_accum[itr.first] = itr.second;
+            //}
         }
 
         for(const auto& itr : kernel_tmp)
         {
+            // if found in stop but not in start -> new kernel between start/stop
             if(skip.count(itr.first) == 0)
                 m_kernels_accum[itr.first] += itr.second;
         }
@@ -253,10 +260,7 @@ public:
 
     kernel_elapsed_t get_secondary() const
     {
-        kernel_elapsed_t _kernels = (is_transient) ? m_kernels_accum : m_kernels_value;
-        for(auto& itr : _kernels)
-            itr.second /= static_cast<double>(ratio_t::den) * base_type::get_unit();
-        return _kernels;
+        return (is_transient) ? m_kernels_accum : m_kernels_value;
     }
 
 private:

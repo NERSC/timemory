@@ -181,6 +181,7 @@ struct cupti_counters
 
     static value_type record()
     {
+        configure();
         value_type tmp;
         auto&      _profiler = _get_profiler();
         auto&      _labels   = _get_labels();

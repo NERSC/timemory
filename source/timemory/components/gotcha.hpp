@@ -93,7 +93,7 @@ class gotcha_suppression
 template <size_type _Nt, typename _Components, typename _Differentiator>
 struct gotcha
 : public base<gotcha<_Nt, _Components, _Differentiator>, void, policy::global_init,
-              policy::global_finalize>
+              policy::global_finalize, policy::thread_init>
 {
     static_assert(_Components::contains_gotcha == false,
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
@@ -102,7 +102,7 @@ struct gotcha
     // clang-format off
     using value_type     = void;
     using this_type      = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type      = base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using base_type      = base<this_type, value_type, policy::global_init, policy::global_finalize, policy::thread_init>;
     using storage_type   = typename base_type::storage_type;
     using component_type = typename _Components::component_type;
     // clang-format on
@@ -336,7 +336,8 @@ struct gotcha
 
     static void invoke_global_init(storage_type*)
     {
-        // configure();
+        // if(get_default_ready())
+        //     configure();
     }
 
     static void invoke_global_finalize(storage_type*)
@@ -347,6 +348,12 @@ struct gotcha
             --get_thread_started();
         for(auto& itr : get_destructors())
             itr();
+    }
+
+    static void invoke_thread_init(storage_type*)
+    {
+        for(size_type i = 0; i < _Nt; ++i)
+            get_ready_flags()[i] = (get_filled()[i] && get_default_ready());
     }
 
     double get_display() const { return 0; }
@@ -517,7 +524,7 @@ private:
         static auto _get = []() {
             array_t<bool> _arr;
             for(auto& itr : _arr)
-                itr = false;
+                itr = get_default_ready();
             return _arr;
         };
         static thread_local array_t<bool> _instance = _get();
@@ -575,7 +582,19 @@ private:
         auto& _global_suppress = gotcha_suppression::get();
 
         if(!get_ready_flags()[_N] || _global_suppress)
+        {
+            if(settings::debug())
+            {
+                static std::atomic<int64_t> _tcount;
+                static thread_local int64_t _tid = _tcount++;
+                std::stringstream           ss;
+                ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
+                   << get_ready_flags()[_N] << ") or is globally suppressed ("
+                   << _global_suppress << ")...\n";
+                std::cout << ss.str().c_str() << std::flush;
+            }
             return (_orig) ? (*_orig)(_args...) : _Ret{};
+        }
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
@@ -615,6 +634,7 @@ private:
 
             _obj.customize(get_tool_ids()[_N], _ret);
             _obj.stop();
+
 #    if defined(DEBUG)
             if(settings::verbose() > 2 || settings::debug())
             {
@@ -661,6 +681,16 @@ private:
         auto& _global_suppress = gotcha_suppression::get();
         if(!get_ready_flags()[_N] || _global_suppress)
         {
+            if(settings::debug())
+            {
+                static std::atomic<int64_t> _tcount;
+                static thread_local int64_t _tid = _tcount++;
+                std::stringstream           ss;
+                ss << "[T" << _tid << "]> is either not ready (" << std::boolalpha
+                   << get_ready_flags()[_N] << ") or is globally suppressed ("
+                   << _global_suppress << ")...\n";
+                std::cout << ss.str().c_str() << std::flush;
+            }
             if(_orig)
                 (*_orig)(_args...);
             return;

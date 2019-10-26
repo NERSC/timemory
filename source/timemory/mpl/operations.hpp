@@ -78,8 +78,8 @@ struct init_storage
               enable_if_t<(trait::is_available<_Up>::value), char> = 0>
     init_storage()
     {
-        using storage_type    = storage<Type>;
-        static auto _instance = storage_type::instance();
+        using storage_type                 = storage<Type>;
+        static thread_local auto _instance = storage_type::instance();
         _instance->initialize();
     }
 
@@ -142,26 +142,26 @@ struct insert_node
     template <typename _Up = base_type, enable_if_t<(_Up::implements_storage_v), int> = 0>
     explicit insert_node(base_type& obj, const int64_t& _hash)
     {
-        using storage_type     = typename Type::storage_type;
-        static auto _main_inst = storage_type::master_instance();
-        static auto _this_inst = storage_type::instance();
+        using storage_type                  = typename Type::storage_type;
+        static thread_local auto _main_inst = storage_type::master_instance();
+        static thread_local auto _this_inst = storage_type::instance();
         if(_main_inst != _this_inst)
         {
-            static bool _main_glob = _main_inst->global_init();
-            static bool _this_glob = _this_inst->global_init();
-            static bool _main_work = _main_inst->thread_init();
-            static bool _this_work = _this_inst->thread_init();
-            static bool _main_data = _main_inst->data_init();
-            static bool _this_data = _this_inst->data_init();
+            static bool              _main_glob = _main_inst->global_init();
+            static bool              _this_glob = _this_inst->global_init();
+            static thread_local bool _main_work = _main_inst->thread_init();
+            static thread_local bool _this_work = _this_inst->thread_init();
+            static thread_local bool _main_data = _main_inst->data_init();
+            static thread_local bool _this_data = _this_inst->data_init();
             if(!(_main_glob && _this_glob && _main_work && _this_work && _main_data &&
                  _this_data))
                 PRINT_HERE("Weird");
         }
         else
         {
-            static bool _this_glob = _this_inst->global_init();
-            static bool _this_work = _this_inst->thread_init();
-            static bool _this_data = _this_inst->data_init();
+            static bool              _this_glob = _this_inst->global_init();
+            static thread_local bool _this_work = _this_inst->thread_init();
+            static thread_local bool _this_data = _this_inst->data_init();
             if(!(_this_glob && _this_work && _this_data))
                 PRINT_HERE("Weird");
         }

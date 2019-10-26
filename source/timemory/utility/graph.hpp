@@ -976,7 +976,7 @@ graph<T, AllocatorT>::erase_children(const iterator_base& it)
         graph_node* prev = 0;
         cur              = cur->next_sibling;
         erase_children(pre_order_iterator(prev));
-        m_alloc.destroy(prev);
+        // m_alloc.destroy(prev);
         m_alloc.deallocate(prev, 1);
     }
     it.node->first_child = 0;

@@ -49,7 +49,7 @@ using gotcha_hybrid_t = tim::auto_hybrid<gotcha_tuple_t, gotcha_list_t>;
 // create gotcha types for various bundles of functions
 using mpi_gotcha_t    = tim::component::gotcha<1, gotcha_hybrid_t>;
 using work_gotcha_t   = tim::component::gotcha<1, gotcha_hybrid_t, int>;
-using memfun_gotcha_t = tim::component::gotcha<3, gotcha_hybrid_t>;
+using memfun_gotcha_t = tim::component::gotcha<3, gotcha_tuple_t>;
 
 using comp_t  = component_tuple<real_clock, cpu_clock, peak_rss>;
 using tuple_t = component_tuple<comp_t, mpi_gotcha_t, work_gotcha_t, memfun_gotcha_t>;
@@ -377,7 +377,8 @@ TEST_F(gotcha_tests, member_functions)
 {
     using pair_t = std::pair<float, double>;
 
-    memfun_gotcha_t::get_initializer() = [=]() {
+    memfun_gotcha_t::get_default_ready() = true;
+    memfun_gotcha_t::get_initializer()   = [=]() {
         PRINT_HERE(details::get_test_name().c_str());
 
         {
@@ -414,6 +415,12 @@ TEST_F(gotcha_tests, member_functions)
     // auto orig = tim::settings::verbose();
     for(int i = 0; i < nitr; ++i)
     {
+        if(i < 10)
+        {
+            dw.execute_fp4(1000);
+            dw.execute_fp8(1000);
+        }
+        else
         {
             // tim::settings::verbose() = orig;
             auto        _fp4 = [&]() { dw.execute_fp4(1000); };
@@ -428,6 +435,7 @@ TEST_F(gotcha_tests, member_functions)
             t8.join();
             // PRINT_HERE("destroying");
         }
+
         auto ret = dw.get();
         fsum += std::get<0>(ret);
         dsum += std::get<1>(ret);
@@ -453,7 +461,7 @@ TEST_F(gotcha_tests, member_functions)
     ASSERT_NEAR(fsum, -2416347.50, tolerance);
     ASSERT_NEAR(dsum, 881550.95, tolerance);
     auto real_storage = tim::storage<real_clock>::instance();
-    ASSERT_EQ(real_storage->size(), 6);
+    ASSERT_EQ(real_storage->size(), 4);
 }
 
 //======================================================================================//

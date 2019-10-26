@@ -223,14 +223,33 @@ TEST_F(cupti_tests, activity)
     std::this_thread::sleep_for(std::chrono::milliseconds(sleep_msec));
     timer.stop();
 
+    int     kwidth = 60;
     tuple_t subtot(details::get_test_name() + "_itr_subtotal");
     for(const auto& itr : subtimers)
     {
         std::cout << itr << std::endl;
+        // secondaries (individual kernels)
+        std::cout << "Individual kernels:\n";
+        for(const auto& itr : itr.get<cupti_activity>().get_secondary())
+        {
+            std::cout << "    " << std::setw(kwidth) << itr.first << " : "
+                      << std::setw(12) << std::setprecision(8) << std::fixed << itr.second
+                      << "\n";
+        }
+        std::cout << "\n";
         subtot += itr;
     }
     std::cout << subtot << std::endl;
     std::cout << timer << std::endl;
+
+    // secondaries (individual kernels)
+    std::cout << "Individual kernels:\n";
+    for(const auto& itr : timer.get<cupti_activity>().get_secondary())
+    {
+        std::cout << "    " << std::setw(kwidth) << itr.first << " : " << std::setw(12)
+                  << std::setprecision(8) << std::fixed << itr.second << "\n";
+    }
+    std::cout << "\n";
 
     auto& rc = timer.get<real_clock>();
     auto& ca = timer.get<cupti_activity>();
