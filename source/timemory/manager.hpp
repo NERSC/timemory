@@ -61,18 +61,13 @@ namespace tim
 template <typename... Types>
 class component_tuple;
 
-namespace details
-{
-struct tim_api manager_deleter;
-}
-
 //--------------------------------------------------------------------------------------//
 
 class tim_api manager
 {
 public:
     using this_type     = manager;
-    using pointer_t     = std::unique_ptr<this_type, details::manager_deleter>;
+    using pointer_t     = std::shared_ptr<this_type>;
     using singleton_t   = singleton<this_type, pointer_t>;
     using size_type     = std::size_t;
     using string_t      = std::string;
@@ -81,7 +76,6 @@ public:
     using auto_lock_t   = std::unique_lock<mutex_t>;
     using pointer       = singleton_t::pointer;
     using smart_pointer = singleton_t::smart_pointer;
-    using void_counter  = counted_object<void>;
 
 public:
     // Constructor and Destructors
@@ -90,16 +84,16 @@ public:
 
 public:
     // Public static functions
-    static pointer instance();
-    static pointer master_instance();
-    static pointer noninit_instance();
-    static pointer noninit_master_instance();
-    static void    enable(bool val = true) { void_counter::enable(val); }
-    static void    disable(bool val = true) { void_counter::enable(!val); }
-    static bool    is_enabled() { return void_counter::enable(); }
-    static void    max_depth(const int32_t& val) { void_counter::set_max_depth(val); }
-    static int32_t max_depth() { return void_counter::max_depth(); }
-    static int32_t total_instance_count() { return f_manager_instance_count().load(); }
+    static pointer_t instance();
+    static pointer_t master_instance();
+    static pointer   noninit_instance();
+    static pointer   noninit_master_instance();
+    static void      enable(bool val = true) { settings::enabled() = val; }
+    static void      disable(bool val = true) { settings::enabled() = !val; }
+    static bool      is_enabled() { return settings::enabled(); }
+    static void      max_depth(const int32_t& val) { settings::max_depth() = val; }
+    static int32_t   max_depth() { return settings::max_depth(); }
+    static int32_t   total_instance_count() { return f_manager_instance_count().load(); }
 
     static void exit_hook();
 
@@ -185,9 +179,11 @@ public:
     {
         using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
         static constexpr auto spacing = indent::space;
-        static std::string    serialize()
+
+        static std::string serialize(pointer_t _manager = pointer_t(nullptr))
         {
-            manager*          _manager = manager::instance();
+            if(_manager.get() == nullptr)
+                _manager = manager::instance();
             std::stringstream ss;
             {
                 // args: precision, spacing, indent size
@@ -203,70 +199,48 @@ public:
             return ss.str();
         }
 
-        static void initialize()
+        static void initialize(pointer_t _manager = pointer_t(nullptr))
         {
-            manager* _manager = manager::instance();
+            if(_manager.get() == nullptr)
+                _manager = manager::instance();
             _manager->_init_storage<_Types...>();
         }
 
-        static void clear()
+        static void clear(pointer_t _manager = pointer_t(nullptr))
         {
-            manager* _manager = manager::instance();
+            if(_manager.get() == nullptr)
+                _manager = manager::instance();
             _manager->_clear<_Types...>();
         }
 
-        static void print()
+        static void print(pointer_t _manager = pointer_t(nullptr))
         {
-            manager* _manager = manager::instance();
+            if(_manager.get() == nullptr)
+                _manager = manager::instance();
             _manager->_print_storage<_Types...>();
         }
     };
 
+    /*
     template <typename... _Types>
-    struct get_storage<std::tuple<_Types...>>
+    struct get_storage<std::tuple<_Types...>> : public get_storage<_Types...>
     {
-        using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
-        static constexpr auto spacing = indent::space;
+        using base_type = get_storage<_Types...>;
+        using base_type::serialize;
+        using base_type::initialize;
+        using base_type::clear;
+        using base_type::print;
 
-        static std::string serialize(manager* _manager = nullptr)
-        {
-            if(_manager == nullptr)
-                _manager = manager::instance();
-            std::stringstream ss;
-            {
-                // args: precision, spacing, indent size
-                cereal::JSONOutputArchive::Options opts(12, spacing, 4);
-                cereal::JSONOutputArchive          oa(ss, opts);
-                oa.setNextName("rank");
-                oa.startNode();
-                auto rank = mpi::rank();
-                oa(cereal::make_nvp("rank_id", rank));
-                _manager->_serialize<decltype(oa), _Types...>(oa);
-                oa.finishNode();
-            }
-            return ss.str();
-        }
+    };*/
 
-        static void initialize(manager* _manager = nullptr)
-        {
-            if(_manager == nullptr)
-                _manager = manager::instance();
-            _manager->_init_storage<_Types...>();
-        }
-
-        static void clear(manager* _manager = nullptr)
-        {
-            if(_manager == nullptr)
-                _manager = manager::instance();
-            _manager->_clear<_Types...>();
-        }
-
-        static void print(manager* _manager = nullptr)
-        {
-            if(_manager == nullptr)
-                _manager = manager::instance();
-            _manager->_print_storage<_Types...>();
-        }
+    template <typename... _Types, template <typename...> class _Tuple>
+    struct get_storage<_Tuple<_Types...>> : public get_storage<_Types...>
+    {
+        using base_type = get_storage<_Types...>;
+        using base_type::clear;
+        using base_type::initialize;
+        using base_type::print;
+        using base_type::serialize;
     };
 
 private:
@@ -310,50 +284,6 @@ private:
 
 namespace details
 {
-//--------------------------------------------------------------------------------------//
-
-struct manager_deleter
-{
-    using Type        = tim::manager;
-    using pointer_t   = std::unique_ptr<Type, manager_deleter>;
-    using singleton_t = singleton<Type, pointer_t>;
-
-    void operator()(Type* ptr)
-    {
-        Type*           master     = singleton_t::master_instance_ptr();
-        std::thread::id master_tid = singleton_t::master_thread_id();
-        std::thread::id this_tid   = std::this_thread::get_id();
-
-        if(ptr && master && ptr != master)
-        {
-        }
-        else
-        {
-            if(ptr)
-            {
-                // ptr->print();
-            }
-            else if(master)
-            {
-                // master->print();
-            }
-        }
-
-        if(this_tid == master_tid)
-        {
-            // delete ptr;
-        }
-        else
-        {
-            if(master && ptr != master)
-            {
-                singleton_t::remove(ptr);
-            }
-            delete ptr;
-        }
-    }
-};
-
 //--------------------------------------------------------------------------------------//
 
 inline manager::singleton_t&

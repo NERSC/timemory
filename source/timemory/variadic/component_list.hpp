@@ -122,18 +122,20 @@ public:
     };
 
 public:
-    using string_t    = std::string;
-    using size_type   = int64_t;
-    using this_type   = component_list<Types...>;
-    using data_type   = typename filtered<available_tuple<concat<Types...>>>::data_type;
-    using type_tuple  = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
-    using string_hash = std::hash<string_t>;
-    using init_func_t = std::function<void(this_type&)>;
+    using string_t   = std::string;
+    using size_type  = int64_t;
+    using this_type  = component_list<Types...>;
+    using data_type  = typename filtered<available_tuple<concat<Types...>>>::data_type;
+    using type_tuple = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
+    using reference_type  = type_tuple;
+    using string_hash     = std::hash<string_t>;
+    using init_func_t     = std::function<void(this_type&)>;
     using data_value_type = get_data_value_t<reference_type>;
     using data_label_type = get_data_label_t<reference_type>;
 
-    using reference_type =
-        typename filtered<available_tuple<concat<Types...>>>::reference_type;
+    // used by gotcha
+    using component_type =
+        typename filtered<available_tuple<concat<Types...>>>::this_type;
 
     // used by component hybrid
     static constexpr bool is_component_list   = true;
@@ -185,16 +187,16 @@ public:
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
+    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
     , m_key(key)
     {
         apply<void>::set_value(m_data, nullptr);
         // if(settings::enabled())
         {
             compute_width(key);
-            init_manager();
             if(settings::enabled())
             {
-                init_storage();
+                // init_storage();
                 get_initializer()(*this);
             }
         }
@@ -207,16 +209,16 @@ public:
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
+    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
     , m_key(key)
     {
         apply<void>::set_value(m_data, nullptr);
         // if(settings::enabled())
         {
             compute_width(key);
-            init_manager();
             if(settings::enabled())
             {
-                init_storage();
+                // init_storage();
                 _func(*this);
             }
         }
@@ -288,17 +290,15 @@ public:
         apply<void>::access<pointer_count_t>(m_data, std::ref(count));
         if(m_store && !m_is_pushed && count > 0)
         {
-            // compute the hash
-            int64_t _hash = add_hash_id(m_key);
             // reset data
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
             if(m_flat)
-                apply<void>::access<insert_node_t<scope::flat>>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
             else
-                apply<void>::access<insert_node_t<scope::process>>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
         }
     }
 
@@ -579,25 +579,29 @@ public:
 
 public:
     // get member functions taking a type
-    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
-    _Tp& get()
+    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0,
+              enable_if_t<is_one_of<_Tp, data_type>::value, int> = 0>
+    _Tp get()
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
-    _Tp*& get()
+    template <typename _Tp, enable_if_t<!(std::is_pointer<_Tp>::value), char> = 0,
+              enable_if_t<is_one_of<_Tp, reference_type>::value, int> = 0>
+    _Tp* get()
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0>
-    const _Tp& get() const
+    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0,
+              enable_if_t<is_one_of<_Tp, data_type>::value, int> = 0>
+    const _Tp get() const
     {
         return std::get<index_of<_Tp, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, enable_if_t<(!std::is_pointer<_Tp>::value), char> = 0>
+    template <typename _Tp, enable_if_t<!(std::is_pointer<_Tp>::value), char> = 0,
+              enable_if_t<is_one_of<_Tp, reference_type>::value, int> = 0>
     const _Tp* get() const
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
@@ -725,6 +729,7 @@ protected:
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
+    int64_t           m_hash         = 0;
     string_t          m_key          = "";
     mutable data_type m_data;
 
@@ -791,7 +796,7 @@ protected:
     void set_object_prefix(_Tp* obj)
     {
         if(obj)
-            obj->prefix = m_key;
+            obj->set_prefix(m_key);
     }
 
     template <typename _Tp,
@@ -801,7 +806,6 @@ protected:
     }
 
 public:
-    static void init_manager();
     static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, reference_type>();
@@ -815,6 +819,8 @@ public:
         return _instance;
     }
 };
+
+//--------------------------------------------------------------------------------------//
 
 template <typename... Types>
 class component_list<std::tuple<Types...>> : component_list<Types...>
@@ -841,7 +847,6 @@ public:
     using data_type       = typename base_type::data_type;
     using type_tuple      = typename base_type::type_tuple;
     using reference_type  = typename base_type::reference_type;
-    using string_hash     = std::hash<string_t>;
     using init_func_t     = std::function<void(this_type&)>;
     using data_value_type = get_data_value_t<reference_type>;
     using data_label_type = get_data_label_t<reference_type>;
@@ -858,6 +863,7 @@ public:
     {
     }
 };
+
 //--------------------------------------------------------------------------------------//
 
 }  // namespace tim

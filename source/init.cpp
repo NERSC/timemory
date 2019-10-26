@@ -56,12 +56,12 @@ timemory_library_constructor()
 #    endif
 
     // fully initialize manager
-    auto _instance = tim::manager::instance();
-    auto _master   = tim::manager::master_instance();
+    static thread_local auto _instance = tim::manager::instance();
+    static auto              _master   = tim::manager::master_instance();
 
     if(_instance != _master)
         printf("[%s]> master_instance() != instance() : %p vs. %p\n", __FUNCTION__,
-               (void*) _instance, (void*) _master);
+               (void*) _instance.get(), (void*) _master.get());
 
 #    if defined(DEBUG)
     if(_debug || _verbose > 3)
@@ -98,19 +98,19 @@ manager::f_manager_instance_count()
 //======================================================================================//
 // get either master or thread-local instance
 //
-manager::pointer
+manager::pointer_t
 manager::instance()
 {
-    return details::manager_singleton().instance();
+    return details::manager_singleton().smart_instance();
 }
 
 //======================================================================================//
 // get master instance
 //
-manager::pointer
+manager::pointer_t
 manager::master_instance()
 {
-    return details::manager_singleton().master_instance();
+    return details::manager_singleton().smart_master_instance();
 }
 
 //======================================================================================//

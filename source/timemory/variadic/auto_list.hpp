@@ -56,9 +56,9 @@ template <typename... Types>
 class auto_list
 {
 public:
-    using component_type  = component_list<Types...>;
     using this_type       = auto_list<Types...>;
-    using base_type       = component_type;
+    using base_type       = component_list<Types...>;
+    using component_type  = typename base_type::component_type;
     using data_type       = typename component_type::data_type;
     using type_tuple      = typename component_type::type_tuple;
     using data_value_type = typename component_type::data_value_type;
@@ -215,9 +215,6 @@ public:
         os << obj.m_temporary_object;
         return os;
     }
-
-    //----------------------------------------------------------------------------------//
-    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
     static void init_storage() { component_type::init_storage(); }

@@ -48,7 +48,7 @@ using tuple_t = tim::component_tuple<real_clock, cpu_clock, cpu_util, peak_rss>;
 using list_t  = tim::component_list<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                                    papi_array_t, cuda_event, cupti_counters, caliper>;
 using auto_hybrid_t = tim::auto_hybrid<tuple_t, list_t>;
-using hybrid_t      = auto_hybrid_t::component_type;
+using hybrid_t      = typename auto_hybrid_t::component_type;
 
 static const int64_t niter       = 20;
 static const int64_t nelements   = 0.95 * (tim::units::get_page_size() * 500);
@@ -191,21 +191,21 @@ TEST_F(hybrid_tests, hybrid)
     auto& t_cpu  = obj.get_tuple().get<cpu_clock>();
     auto& t_util = obj.get_tuple().get<cpu_util>();
 
-    auto& l_rc   = *obj.get_list().get<real_clock>();
-    auto& l_cpu  = *obj.get_list().get<cpu_clock>();
-    auto& l_util = *obj.get_list().get<cpu_util>();
-
     details::print_info(t_rc, 1.0, "sec", clock_convert);
     details::print_info(t_cpu, 1.25, "sec", clock_convert);
     details::print_info(t_util, 125.0, "%", cpu_util_convert);
 
-    details::print_info(l_rc, 1.0, "sec", clock_convert);
-    details::print_info(l_cpu, 1.25, "sec", clock_convert);
-    details::print_info(l_util, 125.0, "%", cpu_util_convert);
-
     ASSERT_NEAR(1.0, t_rc.get(), timer_tolerance);
     ASSERT_NEAR(1.25, t_cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, t_util.get(), util_tolerance);
+
+    auto& l_rc   = *obj.get_list().get<real_clock>();
+    auto& l_cpu  = *obj.get_list().get<cpu_clock>();
+    auto& l_util = *obj.get_list().get<cpu_util>();
+
+    details::print_info(l_rc, 1.0, "sec", clock_convert);
+    details::print_info(l_cpu, 1.25, "sec", clock_convert);
+    details::print_info(l_util, 125.0, "%", cpu_util_convert);
 
     ASSERT_NEAR(t_rc.get(), l_rc.get(), timer_epsilon);
     ASSERT_NEAR(t_cpu.get(), l_cpu.get(), timer_epsilon);

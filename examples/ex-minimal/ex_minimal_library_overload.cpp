@@ -45,16 +45,16 @@ using record_map_t  = std::unordered_map<uint64_t, toolset_ptr_t>;
 
 void create_record(const char* name, uint64_t* id, int, int*)
 {
-    *id                                     = timemory_get_unique_id();
-    auto obj                                = toolset_ptr_t(new toolset_t(name));
-    timemory_tl_static<record_map_t>()[*id] = std::move(obj);
+    auto& _records = timemory_tl_static<record_map_t>();
+    *id            = timemory_get_unique_id();
+    _records.insert(std::make_pair(*id, std::make_shared<toolset_t>(name)));
 }
 
 void delete_record(uint64_t nid)
 {
-    auto& record_ids = timemory_tl_static<record_map_t>();
+    auto& _records = timemory_tl_static<record_map_t>();
     // erase key from map which stops recording when object is destroyed
-    record_ids.erase(nid);
+    _records.erase(nid);
 }
 
 long fib(long n) { return (n < 2) ? n : (fib(n - 1) + fib(n - 2)); }

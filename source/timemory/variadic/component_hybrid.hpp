@@ -72,25 +72,28 @@ class component_hybrid
     friend class auto_hybrid;
 
 public:
-    using size_type       = int64_t;
-    using string_hash     = std::hash<string_t>;
-    using tuple_type      = _CompTuple;
-    using list_type       = _CompList;
-    using this_type       = component_hybrid<tuple_type, list_type>;
+    using this_type       = component_hybrid<_CompTuple, _CompList>;
+    using tuple_type      = typename _CompTuple::component_type;
+    using list_type       = typename _CompList::component_type;
     using tuple_data_type = typename tuple_type::data_type;
     using list_data_type  = typename list_type::data_type;
-    using data_type       = decltype(std::tuple_cat(std::declval<_CompTuple>().data(),
-                                              std::declval<_CompList>().data()));
+    using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
+                                              std::declval<list_type>().data()));
     using type_tuple      = tim::impl::tuple_concat<typename tuple_type::type_tuple,
                                                typename list_type::type_tuple>;
 
     using tuple_type_list = typename tuple_type::data_type;
     using list_type_list  = typename list_type::reference_type;
-    using data_value_type = decltype(std::tuple_cat(std::declval<_CompTuple>().get(),
-                                                    std::declval<_CompList>().get()));
+    using data_value_type = decltype(std::tuple_cat(std::declval<tuple_type>().get(),
+                                                    std::declval<list_type>().get()));
     using data_label_type =
-        decltype(std::tuple_cat(std::declval<_CompTuple>().get_labeled(),
-                                std::declval<_CompList>().get_labeled()));
+        decltype(std::tuple_cat(std::declval<tuple_type>().get_labeled(),
+                                std::declval<list_type>().get_labeled()));
+
+    // used by gotcha
+    using tuple_component_type = typename tuple_type::component_type;
+    using list_component_type  = typename list_type::component_type;
+    using component_type = component_hybrid<tuple_component_type, list_component_type>;
 
     // used by component hybrid and gotcha
     static constexpr bool is_component_list   = false;
@@ -98,7 +101,10 @@ public:
     static constexpr bool is_component_hybrid = true;
     // used by gotcha component to prevent recursion
     static constexpr bool contains_gotcha =
-        (_CompTuple::contains_gotcha || _CompList::contains_gotcha);
+        (tuple_type::contains_gotcha || list_type::contains_gotcha);
+
+    using size_type   = int64_t;
+    using string_hash = std::hash<string_t>;
 
 public:
     using auto_type = auto_hybrid<tuple_type, list_type>;
@@ -425,9 +431,6 @@ public:
 
 public:
     //----------------------------------------------------------------------------------//
-    static void init_manager() { tuple_type::init_manager(); }
-
-    //----------------------------------------------------------------------------------//
     static void init_storage()
     {
         tuple_type::init_storage();
@@ -446,14 +449,14 @@ public:
     //
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, tuple_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<_CompTuple>().template get<_Tp>())
+    auto get() -> decltype(std::declval<tuple_type>().template get<_Tp>())
     {
         return m_tuple.template get<_Tp>();
     }
 
     template <typename _Tp,
               enable_if_t<(is_one_of<_Tp, list_type_list>::value == true), int> = 0>
-    auto get() -> decltype(std::declval<_CompList>().template get<_Tp>())
+    auto get() -> decltype(std::declval<list_type>().template get<_Tp>())
     {
         return m_list.template get<_Tp>();
     }

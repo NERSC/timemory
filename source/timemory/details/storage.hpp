@@ -497,11 +497,11 @@ void storage<ObjectType, true>::external_print(std::false_type)
     {
         merge();
         // mpi_reduce();
-        for(int32_t i = 0; i < mpi::size(); ++i)
+        // for(int32_t i = 0; i < mpi::size(); ++i)
         {
-            if(mpi::is_initialized())
-                mpi::barrier();
-            if(!mpi::is_initialized() || mpi::rank() == i)
+            // if(mpi::is_initialized())
+            //    mpi::barrier();
+            // if(!mpi::is_initialized() || mpi::rank() == i)
             {
                 if(is_initialized() && m_graph_data_instance)
                 {
@@ -816,8 +816,8 @@ void storage<ObjectType, true>::external_print(std::false_type)
                     }
                 }
             }
-            if(mpi::is_initialized())
-                mpi::barrier();
+            // if(mpi::is_initialized())
+            //    mpi::barrier();
         }
         instance_count().store(0);
     }
@@ -985,4 +985,24 @@ tim::serialize_storage(const std::string& fname, const _Tp& obj, int64_t concurr
     ofs.close();
 }
 
+#include "timemory/manager.hpp"
+
+namespace tim
+{
+namespace impl
+{
+template <typename ObjectType>
+void
+storage<ObjectType, true>::get_shared_manager()
+{
+    m_manager = ::tim::manager::instance();
+}
+template <typename ObjectType>
+void
+storage<ObjectType, false>::get_shared_manager()
+{
+    m_manager = ::tim::manager::instance();
+}
+}  // namespace impl
+}  // namespace tim
 //======================================================================================//

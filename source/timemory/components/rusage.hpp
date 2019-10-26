@@ -55,7 +55,7 @@ struct peak_rss : public base<peak_rss>
     using base_type  = base<peak_rss, value_type>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -98,7 +98,7 @@ struct page_rss : public base<page_rss>
     using base_type  = base<page_rss, value_type>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -144,7 +144,7 @@ struct stack_rss : public base<stack_rss>
     using base_type  = base<stack_rss, value_type>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -186,7 +186,7 @@ struct data_rss : public base<data_rss>
     using base_type  = base<data_rss, value_type>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -629,7 +629,7 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
     using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -676,7 +676,10 @@ struct read_bytes : public base<read_bytes, std::tuple<int64_t, int64_t>>
         auto delta = static_cast<double>(std::get<1>(val) /
                                          static_cast<double>(timer_type::ratio_t::den) *
                                          timer_type::get_unit());
-        return result_type(data, data / delta);
+        auto rate  = data / delta;
+        if(!std::isfinite(rate))
+            rate = 0.0;
+        return result_type(data, rate);
     }
 
     void start()
@@ -708,7 +711,7 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
     using result_type = std::tuple<int64_t, double>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
@@ -755,7 +758,10 @@ struct written_bytes : public base<written_bytes, std::tuple<int64_t, int64_t>>
         auto delta = static_cast<double>(std::get<1>(val) /
                                          static_cast<double>(timer_type::ratio_t::den) *
                                          timer_type::get_unit());
-        return result_type(data, data / delta);
+        auto rate  = data / delta;
+        if(!std::isfinite(rate))
+            rate = 0.0;
+        return result_type(data, rate);
     }
 
     void start()
@@ -785,7 +791,7 @@ struct virtual_memory : public base<virtual_memory>
     using base_type  = base<virtual_memory, value_type>;
 
     static const short                   precision = 1;
-    static const short                   width     = 5;
+    static const short                   width     = 6;
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 

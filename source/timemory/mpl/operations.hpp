@@ -31,10 +31,12 @@
 
 #pragma once
 
+#include "timemory/bits/types.hpp"
 #include "timemory/components.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
 #include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/utility/serializer.hpp"
 
 #include <iostream>
@@ -46,43 +48,6 @@
 
 namespace tim
 {
-//======================================================================================//
-
-/// the namespace is provided to hide stl overload from global namespace but provide
-/// a method of using the namespace without a "using namespace tim;"
-namespace stl_overload
-{
-template <typename _Tp>
-struct stl_tuple_printer
-{
-    using size_type = std::size_t;
-    stl_tuple_printer(size_type _N, size_type _Ntot, const _Tp& obj, std::ostream& os)
-    {
-        os << ((_N == 0) ? "(" : "") << obj << ((_N + 1 == _Ntot) ? ")" : ",");
-    }
-};
-
-template <typename... T>
-::std::ostream&
-operator<<(::std::ostream& os, const ::std::tuple<T...>& p)
-{
-    using apply_t = ::std::tuple<stl_tuple_printer<T>...>;
-    ::tim::apply<void>::access_with_indices<apply_t>(p, std::ref(os));
-    return os;
-}
-
-template <typename T, typename U>
-::std::ostream&
-operator<<(::std::ostream& os, const ::std::pair<T, U>& p)
-{
-    os << "(" << p.first << "," << p.second << ")";
-    return os;
-}
-
-}  // namespace stl_overload
-
-using namespace stl_overload;
-
 //--------------------------------------------------------------------------------------//
 
 namespace operation
@@ -148,17 +113,11 @@ struct set_prefix
     using base_type  = typename Type::base_type;
     using string_t   = std::string;
 
-    set_prefix(base_type& obj, const bool& exists, const string_t& _prefix)
-    {
-        if(!exists)
-            obj.set_prefix(_prefix);
-    }
-
     template <typename _Up                                           = _Tp,
               enable_if_t<(trait::requires_prefix<_Up>::value), int> = 0>
     set_prefix(Type& obj, const string_t& _prefix)
     {
-        obj.prefix = _prefix;
+        obj.set_prefix(_prefix);
     }
 
     template <typename _Up                                                    = _Tp,
@@ -606,20 +565,22 @@ struct plus
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
+    plus(Type& obj, const int64_t& rhs) { obj += rhs; }
+
     template <typename _Up = _Tp, enable_if_t<(trait::record_max<_Up>::value), int> = 0>
-    plus(base_type& obj, const base_type& rhs)
+    plus(Type& obj, const Type& rhs)
     {
+        obj.base_type::plus(rhs);
         obj = std::max(obj, rhs);
     }
 
     template <typename _Up                                               = _Tp,
               enable_if_t<(trait::record_max<_Up>::value == false), int> = 0>
-    plus(base_type& obj, const base_type& rhs)
+    plus(Type& obj, const Type& rhs)
     {
+        obj.base_type::plus(rhs);
         obj += rhs;
     }
-
-    plus(base_type& obj, const int64_t& rhs) { obj += rhs; }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -635,8 +596,14 @@ struct minus
     using value_type = typename Type::value_type;
     using base_type  = typename Type::base_type;
 
-    minus(base_type& obj, const int64_t& rhs) { obj -= rhs; }
-    minus(base_type& obj, const base_type& rhs) { obj -= rhs; }
+    minus(Type& obj, const int64_t& rhs) { obj -= rhs; }
+
+    minus(Type& obj, const Type& rhs)
+    {
+        // ensures update to laps
+        obj.base_type::minus(rhs);
+        obj -= rhs;
+    }
 };
 
 //--------------------------------------------------------------------------------------//

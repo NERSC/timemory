@@ -23,7 +23,7 @@
 // SOFTWARE.
 //
 
-#include "test_gotcha_lib.hpp"
+#include "ex_gotcha_lib.hpp"
 #include <timemory/timemory.hpp>
 
 #include <array>
@@ -90,7 +90,7 @@ init()
     TIMEMORY_INC=../source
     CEREAL_INC=../external/cereal/include
     SRC_DIR=../examples/ex-gotcha
-    FILE=test_gotcha_lib
+    FILE=ex_gotcha_lib
     g++ -S -fverbose-asm -I${TIMEMORY_INC} -I${CEREAL_INC} ${SRC_DIR}/${FILE}.cpp
     as -alhnd ${FILE}.s > ${FILE}.asm
     grep '\.globl' ${FILE}.asm

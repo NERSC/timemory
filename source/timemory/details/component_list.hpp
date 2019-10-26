@@ -22,17 +22,7 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-#include "timemory/manager.hpp"
 #include "timemory/mpl/filters.hpp"
-
-//======================================================================================//
-
-template <typename... Types>
-void
-tim::component_list<Types...>::init_manager()
-{
-    tim::manager::instance();
-}
 
 //======================================================================================//
 //

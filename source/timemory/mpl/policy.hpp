@@ -31,6 +31,7 @@
 #pragma once
 
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/types.hpp"
 
 namespace tim
 {

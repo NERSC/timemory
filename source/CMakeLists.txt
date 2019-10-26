@@ -70,14 +70,17 @@ if(_BUILD_SHARED_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
                             PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
-                            TIMEMORY_EXTERN_NATIVE_TEMPLATES
-        LINK_LIBRARIES      timemory-headers
-                            timemory-vector
-                            timemory-external-shared
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-analysis-tools
-                                ${_ARCH_LIBRARY})
+                            TIMEMORY_EXTERN_NATIVE_TEMPLATES)
+
+    target_link_libraries(timemory-cxx-shared PUBLIC
+        timemory-headers
+        timemory-vector
+        timemory-external-shared)
+
+    target_link_libraries(timemory-cxx-shared PRIVATE
+        timemory-compile-options
+        timemory-analysis-tools
+        ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-shared PRIVATE TIMEMORY_BUILD_C)
@@ -101,14 +104,17 @@ if(_BUILD_STATIC_CXX)
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
         COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
                             PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
-                            TIMEMORY_EXTERN_NATIVE_TEMPLATES
-        LINK_LIBRARIES      timemory-headers
-                            timemory-vector
-                            timemory-external-static
-                            PRIVATE
-                                timemory-compile-options
-                                timemory-analysis-tools
-                                ${_ARCH_LIBRARY})
+                            TIMEMORY_EXTERN_NATIVE_TEMPLATES)
+
+    target_link_libraries(timemory-cxx-static PUBLIC
+        timemory-headers
+        timemory-vector
+        timemory-external-static)
+
+    target_link_libraries(timemory-cxx-static PRIVATE
+        timemory-compile-options
+        timemory-analysis-tools
+        ${_ARCH_LIBRARY})
 
     if(TIMEMORY_BUILD_C)
         target_compile_definitions(timemory-cxx-static PRIVATE TIMEMORY_BUILD_C)
@@ -119,12 +125,18 @@ if(_BUILD_STATIC_CXX)
     endif()
 endif()
 
-if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
-    # make sure on Windows, static is built first. There is something weird
-    # happening here when built in parallel...
-    add_dependencies(timemory-cxx-shared timemory-cxx-static)
-    target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
-    target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
+if(WIN32)
+    if(_BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
+        # make sure on Windows, static is built first. There is something weird
+        # happening here when built in parallel...
+        add_dependencies(timemory-cxx-shared timemory-cxx-static)
+    endif()
+    if(_BUILD_SHARED_CXX)
+        target_compile_definitions(timemory-cxx-shared PRIVATE _TIMEMORY_DLL PUBLIC _TIMEMORY_LINK_LIBRARY)
+    endif()
+    if(_BUILD_STATIC_CXX)
+        target_compile_definitions(timemory-cxx-static PUBLIC  _TIMEMORY_ARCHIVE)
+    endif()
 endif()
 
 
@@ -151,6 +163,9 @@ if(TIMEMORY_BUILD_C)
                                     timemory-external-shared
                                     timemory-analysis-tools
                                     ${_ARCH_LIBRARY})
+        if(WIN32)
+            target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
+        endif()
     endif()
 
     if(_BUILD_STATIC_CXX)
@@ -171,20 +186,15 @@ if(TIMEMORY_BUILD_C)
                                     timemory-external-static
                                     timemory-analysis-tools
                                     ${_ARCH_LIBRARY})
+        if(WIN32)
+            target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
+        endif()
     endif()
 
     if(WIN32 AND _BUILD_SHARED_CXX AND _BUILD_STATIC_CXX)
         add_dependencies(timemory-c-shared timemory-c-static)
-        target_compile_definitions(timemory-c-shared PRIVATE _TIMEMORY_DLL)
-        target_compile_definitions(timemory-c-static PUBLIC  _TIMEMORY_ARCHIVE)
     endif()
 endif()
-
-
-#----------------------------------------------------------------------------------------#
-# Extern initialization
-#
-# include(Extern)
 
 
 #----------------------------------------------------------------------------------------#
@@ -226,7 +236,7 @@ export(
 
 
 #----------------------------------------------------------------------------------------#
-# timem wrapper tool
+# timem wrapper tool, mpip, etc.
 #
 add_subdirectory(tools)
 

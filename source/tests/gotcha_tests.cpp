@@ -320,7 +320,7 @@ print_func_info(const std::string& fname)
 TEST_F(gotcha_tests, malloc_gotcha)
 {
     using malloc_analyzer_t =
-        tim::auto_tuple<real_clock, cpu_clock, page_rss, peak_rss, malloc_gotcha>;
+        tim::auto_tuple<real_clock, cpu_clock, peak_rss, malloc_gotcha>;
     using malloc_gotcha_t = tim::component::gotcha<4, malloc_analyzer_t, int>;
     using toolset_t       = tim::auto_tuple<real_clock, malloc_gotcha_t>;
 

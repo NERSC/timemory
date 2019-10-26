@@ -24,109 +24,219 @@
 
 #pragma once
 
+#include "timemory/components/base.hpp"
 #include "timemory/components/gotcha.hpp"
+#include "timemory/components/types.hpp"
 #include "timemory/details/settings.hpp"
-#include "timemory/timemory.hpp"
-
-#include <stdlib.h>
-
-extern "C"
-{
-    extern void* malloc(size_t);
-    extern void* calloc(size_t, size_t);
-    extern void  free(void*);
-}
+#include "timemory/utility/graph_data.hpp"
 
 namespace tim
 {
 namespace component
 {
 struct malloc_gotcha
-: base<malloc_gotcha, std::array<double, 3>, policy::global_init, policy::global_finalize>
+: base<malloc_gotcha, double, policy::global_init, policy::global_finalize>
 {
     static constexpr uintmax_t data_size = 3;
-    using value_type                     = std::array<double, data_size>;
-    using this_type                      = malloc_gotcha;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::global_finalize>;
+
+    // clang-format off
+    using value_type   = double;
+    using this_type    = malloc_gotcha;
+    using base_type    = base<this_type, value_type, policy::global_init, policy::global_finalize>;
     using storage_type = typename base_type::storage_type;
     using string_hash  = std::hash<std::string>;
+    // clang-format on
 
+    // formatting
+    static const short                   precision = 3;
+    static const short                   width     = 12;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    // required static functions
     static std::string label() { return "malloc_gotcha"; }
     static std::string description() { return "GOTCHA wrapper for memory allocation"; }
     static std::string display_unit() { return "MB"; }
     static int64_t     unit() { return units::megabyte; }
-    static const short precision = 3;
-    static const short width     = 12;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static value_type record() { return value_type{ 0.0, 0.0, 0.0 }; }
+    static value_type  record() { return value_type{ 0.0 }; }
 
     using base_type::accum;
     using base_type::is_transient;
+    using base_type::set_started;
+    using base_type::set_stopped;
     using base_type::value;
 
-    malloc_gotcha()
+public:
+    //----------------------------------------------------------------------------------//
+
+    static void invoke_global_init(storage_type*)
     {
-        value = { { 0.0, 0.0, 0.0 } };
-        accum = { { 0.0, 0.0, 0.0 } };
+        // add_hash_id("malloc");
+        // add_hash_id("calloc");
+        // add_hash_id("free");
     }
+
+    //----------------------------------------------------------------------------------//
+
+    static void invoke_global_finalize(storage_type*) {}
+
+    //----------------------------------------------------------------------------------//
+
+    static uintmax_t get_index(uintmax_t _hash)
+    {
+        uintmax_t idx = std::numeric_limits<uintmax_t>::max();
+        for(uintmax_t i = 0; i < get_hash_array().size(); ++i)
+        {
+            if(_hash == get_hash_array()[i])
+                idx = i;
+        }
+        return idx;
+    }
+
+public:
+    //----------------------------------------------------------------------------------//
+
+    malloc_gotcha(const std::string& _prefix = "")
+    : prefix_hash(string_hash()(_prefix))
+    , prefix_idx(get_index(prefix_hash))
+    , prefix(_prefix)
+    {
+        // value = { { 0.0, 0.0, 0.0 } };
+        // accum = { { 0.0, 0.0, 0.0 } };
+        value = 0.0;
+        accum = 0.0;
+    }
+
     ~malloc_gotcha()                = default;
     malloc_gotcha(const this_type&) = default;
     malloc_gotcha(this_type&&)      = default;
     malloc_gotcha& operator=(const this_type&) = default;
     malloc_gotcha& operator=(this_type&&) = default;
 
-    void start() {}
+public:
+    //----------------------------------------------------------------------------------//
 
-    void stop() {}
-
-    double get() const
+    void start()
     {
-        return ((accum[0] + accum[1]) - accum[2]) / base_type::get_unit();
+        set_started();
+        value = record();
     }
+
+    void stop()
+    {
+        // value should be update via customize in-between start() and stop()
+        auto tmp = record();
+        accum += (value - tmp);
+        value = std::move(std::max(value, tmp));
+        set_stopped();
+    }
+
+    //----------------------------------------------------------------------------------//
 
     double get_display() const { return get(); }
 
+    //----------------------------------------------------------------------------------//
+
+    double get() const { return accum / base_type::get_unit(); }
+
+    //----------------------------------------------------------------------------------//
+
     void customize(const std::string& fname, size_t nbytes)
     {
-        if(string_hash()(fname) == get_hash_array()[0])
+        auto _hash = string_hash()(fname);
+        auto idx   = get_index(_hash);
+
+        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, nbytes, prefix,
+        // prefix_hash,
+        //                                         _hash, prefix_idx, idx).c_str());
+
+        if(idx > get_hash_array().size())
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                       fname.c_str());
+            return;
+        }
+
+        if(_hash == prefix_hash)
         {
             // malloc
-            value[0] = (nbytes / static_cast<double>(units::kilobyte));
-            accum[0] += (nbytes / static_cast<double>(units::kilobyte));
+            value = (nbytes);
+            accum += (nbytes);
+        }
+        else
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> skipped function '%s with hash %llu'\n",
+                       this_type::label().c_str(), fname.c_str(),
+                       (long long unsigned) _hash);
         }
     }
 
+    //----------------------------------------------------------------------------------//
+
     void customize(const std::string& fname, size_t nmemb, size_t size)
     {
-        if(string_hash()(fname) == get_hash_array()[1])
+        auto _hash = string_hash()(fname);
+        auto idx   = get_index(_hash);
+
+        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, nmemb, size, prefix,
+        //                                         prefix_hash, _hash, prefix_idx,
+        //                                         idx).c_str());
+
+        if(idx > get_hash_array().size())
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                       fname.c_str());
+            return;
+        }
+
+        if(_hash == prefix_hash)
         {
             // calloc
-            value[1] = (nmemb * size) / static_cast<double>(units::kilobyte);
-            accum[1] += (nmemb * size) / static_cast<double>(units::kilobyte);
+            value = (nmemb * size);
+            accum += (nmemb * size);
+        }
+        else
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> skipped function '%s with hash %llu'\n",
+                       this_type::label().c_str(), fname.c_str(),
+                       (long long unsigned) _hash);
         }
     }
+
+    //----------------------------------------------------------------------------------//
 
     void customize(const std::string& fname, void* ptr)
     {
         if(!ptr)
             return;
         auto _hash = string_hash()(fname);
+        auto idx   = get_index(_hash);
+
+        // PRINT_HERE(tim::apply<std::string>::join(" ", fname, ptr, prefix, prefix_hash,
+        //                                          _hash, prefix_idx, idx).c_str());
+
+        if(idx > get_hash_array().size())
+        {
+            if(settings::verbose() > 1 || settings::debug())
+                printf("[%s]> unknown function: '%s'\n", this_type::label().c_str(),
+                       fname.c_str());
+            return;
+        }
 
         // malloc
-        if(_hash == get_hash_array()[0])
-            get_allocation_map()[ptr] = value[0];
-        else if(_hash == get_hash_array()[1])
-            get_allocation_map()[ptr] = value[1];
-        else if(_hash == get_hash_array()[2])
+        if(idx < 2)
+            get_allocation_map()[ptr] = value;
+        else
         {
             auto itr = get_allocation_map().find(ptr);
             if(itr != get_allocation_map().end())
             {
-                value[2] = itr->second;
-                accum[2] += itr->second;
+                value = itr->second;
+                accum += itr->second;
                 get_allocation_map().erase(itr);
             }
             else
@@ -138,23 +248,26 @@ struct malloc_gotcha
         }
     }
 
-    static void invoke_global_init(storage_type*)
-    {
-        // add_hash_id("malloc");
-        // add_hash_id("calloc");
-        // add_hash_id("free");
-    }
+    //----------------------------------------------------------------------------------//
 
-    static void invoke_global_finalize(storage_type*) {}
+    void set_prefix(const std::string& _prefix)
+    {
+        prefix      = _prefix;
+        prefix_hash = add_hash_id(prefix);
+        for(uintmax_t i = 0; i < get_hash_array().size(); ++i)
+        {
+            if(prefix_hash == get_hash_array()[i])
+                prefix_idx = i;
+        }
+    }
 
     //----------------------------------------------------------------------------------//
 
     this_type& operator+=(const this_type& rhs)
     {
-        for(size_type i = 0; i < value.size(); ++i)
-            value[i] += rhs.value[i];
-        for(size_type i = 0; i < accum.size(); ++i)
-            accum[i] += rhs.accum[i];
+        value += rhs.value;
+        accum += rhs.accum;
+        // PRINT_HERE(tim::apply<std::string>::join(" ", prefix, value, accum).c_str());
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -164,10 +277,9 @@ struct malloc_gotcha
 
     this_type& operator-=(const this_type& rhs)
     {
-        for(size_type i = 0; i < value.size(); ++i)
-            value[i] -= rhs.value[i];
-        for(size_type i = 0; i < accum.size(); ++i)
-            accum[i] -= rhs.accum[i];
+        value -= rhs.value;
+        accum -= rhs.accum;
+        // PRINT_HERE(tim::apply<std::string>::join(" ", prefix, value, accum).c_str());
         if(rhs.is_transient)
             is_transient = rhs.is_transient;
         return *this;
@@ -194,9 +306,16 @@ private:
         static hash_array_t _instance = _get();
         return _instance;
     }
+
+private:
+    uintmax_t   prefix_hash = string_hash()("");
+    uintmax_t   prefix_idx  = std::numeric_limits<uintmax_t>::max();
+    std::string prefix      = "";
 };
 
 }  // namespace component
+
+//======================================================================================//
 
 namespace trait
 {
@@ -227,6 +346,12 @@ template <>
 struct is_memory_category<component::malloc_gotcha> : std::true_type
 {
 };
+
+template <>
+struct requires_prefix<component::malloc_gotcha> : std::true_type
+{
+};
+
 }  // namespace trait
 
 }  // namespace tim

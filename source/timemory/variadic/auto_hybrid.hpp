@@ -54,19 +54,19 @@ class auto_hybrid
                   "must be tim::component_list<...>");
 
 public:
-    using tuple_type      = _CompTuple;
-    using list_type       = _CompList;
-    using component_type  = component_hybrid<tuple_type, list_type>;
-    using this_type       = auto_hybrid<tuple_type, list_type>;
+    using this_type       = auto_hybrid<_CompTuple, _CompList>;
+    using tuple_type      = typename _CompTuple::component_type;
+    using list_type       = typename _CompList::component_type;
+    using base_type       = component_hybrid<tuple_type, list_type>;
+    using component_type  = typename base_type::component_type;
     using data_type       = typename component_type::data_type;
-    using string_t        = std::string;
-    using string_hash     = std::hash<string_t>;
-    using base_type       = component_type;
     using type_tuple      = typename component_type::type_tuple;
     using tuple_type_list = typename component_type::tuple_type_list;
     using list_type_list  = typename component_type::list_type_list;
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
+    using string_t        = std::string;
+    using string_hash     = std::hash<string_t>;
 
     // used by gotcha
     static constexpr bool is_component_list   = false;
@@ -194,9 +194,6 @@ public:
         os << obj.m_temporary_object;
         return os;
     }
-
-    //----------------------------------------------------------------------------------//
-    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
     static void init_storage() { component_type::init_storage(); }

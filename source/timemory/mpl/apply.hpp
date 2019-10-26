@@ -369,7 +369,57 @@ struct _apply_impl<void>
     template <typename _Fn, typename _Tuple, size_t... _Idx>
     static _Ret invoke(_Fn&& __f, _Tuple&& __t, index_sequence<_Idx...>)
     {
-        return __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
+        __f(std::get<_Idx>(std::forward<_Tuple>(__t))...);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  add two tuples
+    //
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+    static void plus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        // assign argument
+        std::get<_Idx>(_lhs) += std::get<_Idx>(_rhs);
+    }
+
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+    static void plus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        plus<_Tuple, _Idx>(_lhs, _rhs);
+        plus<_Tuple, _Nt...>(_lhs, _rhs);
+    }
+
+    template <typename _Tuple, size_t... _Idx>
+    static _Ret plus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+    {
+        plus<_Tuple, _Idx...>(_lhs, _rhs);
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  subtract two tuples
+    //
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
+    static void minus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        // assign argument
+        std::get<_Idx>(_lhs) -= std::get<_Idx>(_rhs);
+    }
+
+    template <typename _Tuple, size_t _Idx, size_t... _Nt,
+              enable_if_t<(sizeof...(_Nt) > 0), char> = 0>
+    static void minus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        minus<_Tuple, _Idx>(_lhs, _rhs);
+        minus<_Tuple, _Nt...>(_lhs, _rhs);
+    }
+
+    template <typename _Tuple, size_t... _Idx>
+    static _Ret minus(_Tuple& _lhs, const _Tuple& _rhs, index_sequence<_Idx...>)
+    {
+        minus<_Tuple, _Idx...>(_lhs, _rhs);
     }
 
     //----------------------------------------------------------------------------------//
@@ -796,6 +846,24 @@ struct apply<void>
         _apply_impl<_Ret>::template invoke<_Fn, _Tuple_t>(std::forward<_Fn>(__f),
                                                           std::forward<_Tuple_t>(__t),
                                                           make_index_sequence<_N>{});
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  add two tuples
+    //
+    template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
+    static void plus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        _apply_impl<_Ret>::template plus<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
+    }
+
+    //----------------------------------------------------------------------------------//
+    //  subtract two tuples
+    //
+    template <typename _Tuple, size_t _N = std::tuple_size<_Tuple>::value>
+    static void minus(_Tuple& _lhs, const _Tuple& _rhs)
+    {
+        _apply_impl<_Ret>::template minus<_Tuple>(_lhs, _rhs, make_index_sequence<_N>{});
     }
 
     //----------------------------------------------------------------------------------//

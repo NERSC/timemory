@@ -149,6 +149,27 @@ private:
     void* operator new[](std::size_t) noexcept { return nullptr; }
     void  operator delete[](void*) noexcept {}
 
+    using deleter_t = std::function<void(Pointer&)>;
+
+    template <typename _Tp = Type, typename _Ptr = Pointer,
+              enable_if_t<(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    deleter_t& get_deleter()
+    {
+        static deleter_t _instance = [](Pointer&) {};
+        return _instance;
+    }
+
+    template <typename _Tp = Type, typename _Ptr = Pointer,
+              enable_if_t<!(std::is_same<_Ptr, std::shared_ptr<_Tp>>::value)> = 0>
+    deleter_t& get_deleter()
+    {
+        static deleter_t _instance = [](Pointer& _master) {
+            auto& del = _master.get_deleter();
+            del(_master.get());
+        };
+        return _instance;
+    }
+
 private:
     // Private variables
     static thread_id_t& f_master_thread();
@@ -219,8 +240,8 @@ template <typename Type, typename Pointer>
 singleton<Type, Pointer>::~singleton()
 {
     // should be called at __cxa_finalize so don't bother deleting
-    auto& del = _master_instance().get_deleter();
-    del(_master_instance().get());
+    auto& del = get_deleter();
+    del(_master_instance());
     //_master_instance().reset();
 }
 

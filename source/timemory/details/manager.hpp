@@ -57,19 +57,19 @@ manager::f_manager_instance_count()
 //======================================================================================//
 // get either master or thread-local instance
 //
-inline manager::pointer
+inline manager::pointer_t
 manager::instance()
 {
-    return details::manager_singleton().instance();
+    return details::manager_singleton().smart_instance();
 }
 
 //======================================================================================//
 // get master instance
 //
-inline manager::pointer
+inline manager::pointer_t
 manager::master_instance()
 {
-    return details::manager_singleton().master_instance();
+    return details::manager_singleton().smart_master_instance();
 }
 
 //======================================================================================//
@@ -99,7 +99,7 @@ inline manager::manager()
     if(_once++ == 0)
     {
         settings::parse();
-        std::atexit(&exit_hook);
+        // std::atexit(&exit_hook);
     }
 
     if(m_instance_count == 0)
@@ -123,12 +123,18 @@ inline manager::manager()
 
 inline manager::~manager()
 {
-    if(m_instance_count > 0)
+    --f_manager_instance_count();
+
+    if(singleton_t::is_master(this))
     {
         f_thread_counter().store(0, std::memory_order_relaxed);
+        exit_hook();
+        if(settings::banner())
+            printf(
+                "\n\n#---------------------- tim::manager destroyed [%i] "
+                "----------------------#\n",
+                m_instance_count);
     }
-
-    --f_manager_instance_count();
 }
 
 //======================================================================================//
@@ -136,17 +142,15 @@ inline manager::~manager()
 inline void
 manager::exit_hook()
 {
-    auto*   ptr   = noninit_master_instance();
-    int32_t count = 0;
+    auto* ptr = noninit_master_instance();
     if(ptr)
     {
-        count = ptr->instance_count();
+        int32_t count = ptr->instance_count();
         if(settings::banner())
             printf(
                 "\n\n#---------------------- tim::manager destroyed [%i] "
                 "----------------------#\n",
                 count);
-        delete ptr;
     }
     papi::shutdown();
     mpi::finalize();

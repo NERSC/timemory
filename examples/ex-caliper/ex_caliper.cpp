@@ -36,7 +36,7 @@ intmax_t time_fibonacci(intmax_t);
 intmax_t
 fibonacci(intmax_t n);
 intmax_t
-test_caliper(intmax_t n, const std::string& scope_tag);
+ex_caliper(intmax_t n, const std::string& scope_tag);
 void
 print_info(const std::string& func, const std::string& scope_tag);
 
@@ -75,7 +75,7 @@ main(int argc, char** argv)
         print_info("execute_test", scope_tag);
         intmax_t ret = 0;
         for(auto n : fibvalues)
-            ret += test_caliper(n, scope_tag);
+            ret += ex_caliper(n, scope_tag);
         std::cout << "fibonacci " << scope_tag << " : " << ret << std::endl;
     };
 
@@ -140,7 +140,7 @@ print_info(const std::string& func, const std::string& scope_tag)
 //======================================================================================//
 
 intmax_t
-test_caliper(intmax_t nfib, const std::string& scope_tag)
+ex_caliper(intmax_t nfib, const std::string& scope_tag)
 {
     std::atomic<int64_t> ret;
     // accumulate metrics on full run

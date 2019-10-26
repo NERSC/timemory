@@ -27,51 +27,51 @@ endif()
 
 # if C library is available
 if(TIMEMORY_C_LIBRARY)
-    add_executable(test_c_minimal test_minimal.c)
-    target_link_libraries(test_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
-    install(TARGETS test_c_minimal DESTINATION bin)
+    add_executable(ex_c_minimal ex_minimal.c)
+    target_link_libraries(ex_c_minimal timemory-minimal-example ${TIMEMORY_C_LIBRARY})
+    install(TARGETS ex_c_minimal DESTINATION bin)
 
     # if C stubs via CXX library are available
     if(TIMEMORY_CXX_LIBRARY)
-        add_executable(test_c_minimal_library_overload test_minimal_library_overload.c)
-        target_link_libraries(test_c_minimal_library_overload timemory-minimal-example
+        add_executable(ex_c_minimal_library_overload ex_minimal_library_overload.c)
+        target_link_libraries(ex_c_minimal_library_overload timemory-minimal-example
             ${TIMEMORY_C_LIBRARY} ${TIMEMORY_CXX_LIBRARY})
-        install(TARGETS test_c_minimal_library_overload DESTINATION bin)
+        install(TARGETS ex_c_minimal_library_overload DESTINATION bin)
     endif()
 endif()
 
 # if C stubs via CXX library are available
 if(TIMEMORY_CXX_LIBRARY)
-    add_executable(test_c_minimal_library test_minimal_library.c)
-    target_link_libraries(test_c_minimal_library timemory-minimal-example
+    add_executable(ex_c_minimal_library ex_minimal_library.c)
+    target_link_libraries(ex_c_minimal_library timemory-minimal-example
         ${TIMEMORY_CXX_LIBRARY} ${TIMEMORY_C_LIBRARY})
-    install(TARGETS test_c_minimal_library DESTINATION bin)
+    install(TARGETS ex_c_minimal_library DESTINATION bin)
 endif()
 
 # headers are always available
-add_executable(test_cxx_minimal test_minimal.cpp)
-target_link_libraries(test_cxx_minimal timemory-minimal-example)
-install(TARGETS test_cxx_minimal DESTINATION bin)
+add_executable(ex_cxx_minimal ex_minimal.cpp)
+target_link_libraries(ex_cxx_minimal timemory-minimal-example)
+install(TARGETS ex_cxx_minimal DESTINATION bin)
 
 if(TIMEMORY_CXX_LIBRARY)
-    add_executable(test_cxx_minimal_library test_minimal_library.cpp)
-    target_link_libraries(test_cxx_minimal_library timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
-    install(TARGETS test_cxx_minimal_library DESTINATION bin)
+    add_executable(ex_cxx_minimal_library ex_minimal_library.cpp)
+    target_link_libraries(ex_cxx_minimal_library timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library DESTINATION bin)
 
-    add_executable(test_cxx_minimal_library_overload test_minimal_library_overload.cpp)
-    target_link_libraries(test_cxx_minimal_library_overload timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
-    install(TARGETS test_cxx_minimal_library_overload DESTINATION bin)
+    add_executable(ex_cxx_minimal_library_overload ex_minimal_library_overload.cpp)
+    target_link_libraries(ex_cxx_minimal_library_overload timemory-minimal-example ${TIMEMORY_CXX_LIBRARY})
+    install(TARGETS ex_cxx_minimal_library_overload DESTINATION bin)
 endif()
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-configure_file(${PROJECT_SOURCE_DIR}/test_python_minimal.py
-    ${CMAKE_BINARY_DIR}/test_python_minimal @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ex_python_minimal.py
+    ${CMAKE_BINARY_DIR}/ex_python_minimal @ONLY)
 
 install(
-    FILES ${CMAKE_BINARY_DIR}/test_python_minimal
+    FILES ${CMAKE_BINARY_DIR}/ex_python_minimal
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE

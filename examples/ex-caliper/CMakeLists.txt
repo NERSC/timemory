@@ -1,24 +1,29 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
+# this is for internal use
+if("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_USE_CALIPER)
+    return()
+endif()
+
 project(timemory-Caliper-Example LANGUAGES CXX)
 
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-caliper-example)
 set(COMPONENTS compile-options analysis-tools caliper)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
-add_executable(test_caliper test_caliper.cpp)
-target_link_libraries(test_caliper timemory-caliper-example)
-install(TARGETS test_caliper DESTINATION bin)
+add_executable(ex_caliper ex_caliper.cpp)
+target_link_libraries(ex_caliper timemory-caliper-example)
+install(TARGETS ex_caliper DESTINATION bin)
 
 if(NOT PYTHON_EXECUTABLE)
     set(PYTHON_EXECUTABLE "/usr/bin/env python")
 endif()
 
-configure_file(${PROJECT_SOURCE_DIR}/test_caliper.py
-    ${CMAKE_BINARY_DIR}/test_python_caliper @ONLY)
+configure_file(${PROJECT_SOURCE_DIR}/ex_caliper.py
+    ${CMAKE_BINARY_DIR}/ex_python_caliper @ONLY)
 
 install(
-    FILES ${CMAKE_BINARY_DIR}/test_python_caliper
+    FILES ${CMAKE_BINARY_DIR}/ex_python_caliper
     DESTINATION bin
     PERMISSIONS
         OWNER_EXECUTE OWNER_READ OWNER_WRITE

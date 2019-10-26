@@ -13,7 +13,6 @@ matrix:
     # GCC 5
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -32,11 +31,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='--build-libs static'"
     # GCC 6
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -55,11 +53,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs static'"
     # GCC 7
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -78,11 +75,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static'"
     # Clang 4.0
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -100,11 +96,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1 && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1 && BUILD_ARGS='--build-libs static'"
     # Clang 5.0
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.6"
       addons:
         apt:
@@ -124,7 +119,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='-DBUILD_STATIC_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -133,7 +128,6 @@ matrix:
     # GCC 5
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -152,11 +146,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='--build-libs shared'"
     # GCC 6
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -175,11 +168,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-6) && CXX=$(which g++-6) && BUILD_TYPE=MinSizeRel && BUILD_ARGS='--build-libs shared'"
     # GCC 7
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -198,11 +190,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs shared'"
     # Clang 4.0
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -220,11 +211,10 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_ARGS='--build-libs shared'"
     # Clang 5.0
     - os: linux
       dist: xenial
-      sudo: false
       python: "3.7"
       addons:
         apt:
@@ -244,7 +234,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='-DBUILD_SHARED_LIBS=OFF'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared'"
     # ------------------------------------------------------------------------ #
 
 before_install:
@@ -253,37 +243,25 @@ before_install:
   - export CXX=${CXX}
   - export TIMEMORY_VERBOSE=4
   - export TIMEMORY_OUTPUT_TOTAL=1
-  - export USE_MPI=$(if [ ! -z "$(which mpicc)" ]; then echo "ON"; else echo "OFF"; fi)
   - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
   - bash miniconda.sh -b -p ${HOME}/miniconda
   - export PATH="${HOME}/miniconda/bin:${PATH}"
-  - conda config --add channels conda-forge
   - conda config --set always_yes yes --set changeps1 no
-  - echo "CC = ${CC} $(${CC} -dumpversion)"
-  - echo "CXX = ${CXX} $(${CXX} -dumpversion)"
-  - echo "Python = $(which python) [version ${PYTHON_VERSION}]"
-  - echo "PYBINPATH = ${PYBINPATH}"
-  - echo "PYROOTPATH = ${PYROOTPATH}"
-  - echo "CMAKE_PREFIX_PATH = ${CMAKE_PREFIX_PATH}"
 
 install:
   - eval "${MATRIX_EVAL}"
   - env
-  - conda create -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
+  - conda create -c defaults -c conda-forge -n pyctest python=${TRAVIS_PYTHON_VERSION} pyctest scikit-build cmake numpy matplotlib pillow
   - source activate pyctest
-  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-py"
+  - export ARGS="-SF --pyctest-model=Continuous --pyctest-site=Travis --no-python --no-mpi ${BUILD_ARGS}"
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
-  - if [ -n "${COVERAGE}" ]; then
-    travis_wait 20 python ./pyctest-runner.py ${ARGS} --coverage -- -VV -- ${BUILD_ARGS};
-    else
-    travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=cpu -- -VV -- ${BUILD_ARGS};
-    fi
-  # - travis_wait 20 python ./pyctest-runner.py ${ARGS} --profile=heap
+  - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
+  - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
 
 script:
   - eval "${MATRIX_EVAL}"
-  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DTIMEMORY_BUILD_STATIC=OFF -- -j2
+  - python setup.py install --build-type=Debug -- -DTIMEMORY_BUILD_C=OFF -DTIMEMORY_BUILD_TOOLS=OFF -DTIMEMORY_BUILD_STATIC=OFF -DTIMEMORY_USE_CALIPER=OFF -DTIMEMORY_USE_GOTCHA=OFF -- -j2
   - python -c "import timemory; print(timemory.__file__)"
   - echo "python${TRAVIS_PYTHON_VERSION} testing -- Done"
 

@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/components/types.hpp"
+#include "timemory/mpl/types.hpp"
 #include <type_traits>
 
 //======================================================================================//
@@ -195,6 +196,19 @@ struct supports_custom_record : std::false_type
 ///
 template <typename _Tp>
 struct iterable_measurement : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+/// trait that signifies that secondary data resembling the original data
+/// exists but should be another node entry in the graph. These types
+/// must provide a get_secondary() member function and that member function
+/// must return a pair-wise iterable container, e.g. std::map, of types:
+///     - std::string
+///     - value_type
+///
+template <typename _Tp>
+struct secondary_data : std::false_type
 {
 };
 
@@ -585,6 +599,15 @@ struct is_available<component::gpu_roofline_flops> : std::false_type
 {
 };
 
+//
+//  secondary data
+//
+
+template <>
+struct secondary_data<component::cupti_activity> : std::true_type
+{
+};
+
 #else
 
 template <typename... _Types>
@@ -761,14 +784,6 @@ struct is_available<component::gperf_heap_profiler> : std::false_type
 
 #if defined(TIMEMORY_USE_GPERF) || defined(TIMEMORY_USE_GPERF_CPU_PROFILER)
 
-//--------------------------------------------------------------------------------------//
-//
-/*
-template <>
-struct requires_prefix<component::gperf_cpu_profiler> : std::true_type
-{
-};
-*/
 //--------------------------------------------------------------------------------------//
 //
 template <>

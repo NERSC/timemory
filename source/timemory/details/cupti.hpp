@@ -851,12 +851,13 @@ namespace activity
 class receiver
 {
 public:
-    using mutex_type     = std::recursive_mutex;
-    using lock_type      = std::unique_lock<mutex_type>;
-    using data_type      = std::list<void*>;
-    using size_type      = typename data_type::size_type;
-    using iterator       = typename data_type::iterator;
-    using const_iterator = typename data_type::const_iterator;
+    using mutex_type      = std::recursive_mutex;
+    using lock_type       = std::unique_lock<mutex_type>;
+    using data_type       = std::list<void*>;
+    using size_type       = typename data_type::size_type;
+    using iterator        = typename data_type::iterator;
+    using const_iterator  = typename data_type::const_iterator;
+    using named_elapsed_t = std::unordered_map<std::string, uint64_t>;
 
     // value_type is not used but keeping it here bc of plans to use something
     // similar later for a "thread_value" to distinguish traditional additions
@@ -906,6 +907,11 @@ public:
             delete m_lock;
         }
 
+        lock_holder(const lock_holder&) = delete;
+        lock_holder(lock_holder&&)      = delete;
+        lock_holder& operator=(const lock_holder&) = delete;
+        lock_holder& operator=(lock_holder&&) = delete;
+
     private:
         receiver&  m_recv;
         lock_type* m_lock = nullptr;
@@ -924,6 +930,7 @@ public:
     receiver(receiver&& rhs) noexcept
     : m_external_hold(rhs.m_external_hold)
     , m_elapsed(rhs.m_elapsed)
+    , m_named_elapsed(rhs.m_named_elapsed)
     {
         std::swap(m_data, rhs.m_data);
     }
@@ -935,6 +942,7 @@ public:
 
         m_external_hold = rhs.m_external_hold;
         m_elapsed       = rhs.m_elapsed;
+        m_named_elapsed = rhs.m_named_elapsed;
         std::swap(m_data, rhs.m_data);
         return *this;
     }
@@ -1008,6 +1016,14 @@ public:
         return m_elapsed;
     }
 
+    named_elapsed_t get_named()
+    {
+        lock_type lk(m_mutex, std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        return m_named_elapsed;
+    }
+
     // this operator is invoked from the CUPTI callback which implements an external
     // hold to make sure all the buffers get added before allowing other operations
     // such as insert/remove to proceed
@@ -1028,6 +1044,30 @@ public:
         if(!lk.owns_lock())
             lk.lock();
         m_elapsed -= rhs;
+        return *this;
+    }
+
+    template <typename _Up>
+    inline receiver& operator+=(const std::tuple<const char*, _Up>& rhs)
+    {
+        lock_type lk(m_mutex, std::defer_lock);
+        if(!lk.owns_lock() && !m_external_hold)
+            lk.lock();
+        auto _name = demangle(std::get<0>(rhs));
+        m_elapsed += std::get<1>(rhs);
+        m_named_elapsed[_name] += std::get<1>(rhs);
+        return *this;
+    }
+
+    template <typename _Up>
+    inline receiver& operator-=(const std::tuple<const char*, _Up>& rhs)
+    {
+        lock_type lk(m_mutex, std::defer_lock);
+        if(!lk.owns_lock())
+            lk.lock();
+        auto _name = demangle(std::get<0>(rhs));
+        m_elapsed -= std::get<1>(rhs);
+        m_named_elapsed[_name] -= std::get<1>(rhs);
         return *this;
     }
 
@@ -1067,6 +1107,7 @@ protected:
     uint64_t           m_elapsed       = 0;
     mutable mutex_type m_mutex;
     data_type          m_data;
+    named_elapsed_t    m_named_elapsed;
 };
 
 //--------------------------------------------------------------------------------------//

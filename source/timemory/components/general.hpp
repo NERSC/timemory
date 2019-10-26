@@ -137,12 +137,6 @@ struct gperf_cpu_profiler
 protected:
     int32_t index = -1;  // if this is >= zero, then we flush and stop
 
-    template <typename... _Types>
-    friend class component_tuple;
-
-    template <typename... _Types>
-    friend class component_list;
-
 private:
     static std::atomic<int64_t>& get_index()
     {
@@ -206,17 +200,11 @@ struct gperf_heap_profiler
         set_stopped();
     }
 
+    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
+
 protected:
     std::string prefix;
     int32_t     index = -1;  // if this is >= zero, then we flush and stop
-
-    template <typename... _Types>
-    friend class ::tim::component_tuple;
-
-    template <typename... _Types>
-    friend class ::tim::component_list;
-
-    friend struct ::tim::operation::set_prefix<this_type>;
 
 private:
     static std::atomic<int64_t>& get_index()

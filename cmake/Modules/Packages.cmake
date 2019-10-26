@@ -62,7 +62,9 @@ set(TIMEMORY_EXTENSION_INTERFACES
     timemory-gperftools
     timemory-gperftools-cpu
     timemory-gperftools-heap
-    timemory-santizier)
+    timemory-santizier
+    timemory-caliper
+    timemory-gotcha)
 
 set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-threading
@@ -74,6 +76,7 @@ set(TIMEMORY_EXTERNAL_SHARED_INTERFACES
     timemory-cudart-device
     timemory-gperftools-cpu
     timemory-caliper
+    timemory-gotcha
     ${_MPI_INTERFACE_LIBRARY})
 
 set(TIMEMORY_EXTERNAL_STATIC_INTERFACES
@@ -754,6 +757,11 @@ endif()
 #                               Caliper
 #
 #----------------------------------------------------------------------------------------#
+if(NOT TIMEMORY_USE_CALIPER)
+    # override locally to suppress building
+    set(TIMEMORY_BUILD_CALIPER OFF)
+endif()
+
 if(TIMEMORY_BUILD_CALIPER)
     set(caliper_FOUND ON)
     checkout_git_submodule(RECURSIVE
@@ -770,7 +778,9 @@ if(TIMEMORY_BUILD_CALIPER)
     set(CMAKE_C_EXTENSIONS ${_ORIG_CEXT})
     set(caliper_DIR ${CMAKE_INSTALL_PREFIX})
 else()
-    find_package(caliper QUIET)
+    if(TIMEMORY_USE_CALIPER)
+        find_package(caliper QUIET)
+    endif()
 endif()
 
 if(caliper_FOUND)

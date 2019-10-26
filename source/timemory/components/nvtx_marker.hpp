@@ -119,6 +119,9 @@ struct nvtx_marker : public base<nvtx_marker, void, policy::thread_init>
 
     void set_stream(cuda::stream_t _stream) { stream = _stream; }
 
+    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
+
+private:
     nvtx::color::color_t     color = 0;
     nvtx::event_attributes_t attribute;
     nvtx::range_id_t         range_id = 0;

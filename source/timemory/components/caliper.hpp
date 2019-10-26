@@ -60,6 +60,8 @@ struct caliper : public base<caliper, void, policy::global_init>
     void start() { cali::begin(id, prefix.c_str()); }
     void stop() { cali::end(id); }
 
+    void set_prefix(const std::string& _prefix) { prefix = _prefix; }
+
     //----------------------------------------------------------------------------------//
     //
     // Custom functions
@@ -100,14 +102,6 @@ struct caliper : public base<caliper, void, policy::global_init>
     //
     //----------------------------------------------------------------------------------//
 private:
-    template <typename... _Types>
-    friend class ::tim::component_tuple;
-
-    template <typename... _Types>
-    friend class ::tim::component_list;
-
-    friend struct ::tim::operation::set_prefix<this_type>;
-
     std::string channel    = get_channel();
     int         attributes = get_attributes();
     cali::id_t  id     = cali::create_attribute(channel, CALI_TYPE_STRING, attributes);

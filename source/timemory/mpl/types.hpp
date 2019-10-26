@@ -157,4 +157,81 @@ template <typename _Tp>
 struct set_units;
 
 }  // namespace operation
+
+namespace policy
+{
+struct serialization;
+struct global_init;
+struct global_finalize;
+struct thread_init;
+struct thread_finalize;
+
+template <typename... _Policies>
+struct wrapper;
+
+}  // namespace policy
+
+namespace trait
+{
+template <typename _Tp>
+struct is_available;
+
+template <typename _Tp>
+struct record_max;
+
+template <typename _Tp>
+struct array_serialization;
+
+template <typename _Tp>
+struct external_output_handling;
+
+template <typename _Tp>
+struct requires_prefix;
+
+template <typename _Tp>
+struct custom_label_printing;
+
+template <typename _Tp>
+struct custom_unit_printing;
+
+template <typename _Tp>
+struct custom_laps_printing;
+
+template <typename _Tp>
+struct start_priority;
+
+template <typename _Tp>
+struct stop_priority;
+
+template <typename _Tp>
+struct is_timing_category;
+
+template <typename _Tp>
+struct is_memory_category;
+
+template <typename _Tp>
+struct uses_timing_units;
+
+template <typename _Tp>
+struct uses_memory_units;
+
+template <typename _Tp>
+struct requires_json;
+
+template <typename _Tp>
+struct is_gotcha;
+
+template <typename _Tp, typename _Tuple>
+struct supports_args;
+
+template <typename _Tp>
+struct supports_custom_record;
+
+template <typename _Tp>
+struct iterable_measurement;
+
+template <typename _Tp>
+struct secondary_data;
+}  // namespace trait
+
 }  // namespace tim

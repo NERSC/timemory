@@ -26,9 +26,9 @@
 
 #include "timemory/bits/types.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/mpl/types.hpp"
-
 #include "timemory/mpl/policy.hpp"
+#include "timemory/mpl/type_traits.hpp"
+#include "timemory/mpl/types.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/storage.hpp"
@@ -44,6 +44,7 @@ struct base
 {
 public:
     static constexpr bool implements_storage_v = implements_storage<_Tp, _Value>::value;
+    static constexpr bool has_secondary_data   = trait::secondary_data<_Tp>::value;
 
     using Type           = _Tp;
     using value_type     = _Value;
@@ -173,6 +174,20 @@ public:
                       "Error! component::<Type>::configure not handled!");
     }
 
+    //----------------------------------------------------------------------------------//
+    /// type contains secondary data resembling the original data
+    /// but should be another node entry in the graph. These types
+    /// must provide a get_secondary() member function and that member function
+    /// must return a pair-wise iterable container, e.g. std::map, of types:
+    ///     - std::string
+    ///     - value_type
+    ///
+    static void append(graph_iterator itr, const Type& rhs)
+    {
+        using has_secondary_type = typename trait::secondary_data<_Tp>::type;
+        this_type::append_impl<value_type>(has_secondary_type{}, itr, rhs);
+    }
+
 public:
     //----------------------------------------------------------------------------------//
     // function operator
@@ -204,26 +219,6 @@ public:
     //----------------------------------------------------------------------------------//
     // pop the node off the graph
     //
-    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value), int> = 0>
-    void pop_node()
-    {
-        if(is_on_stack)
-        {
-            Type& obj = graph_itr->obj();
-            obj.accum += accum;
-            obj.value += value;
-            obj.is_transient = is_transient;
-            obj.is_running   = false;
-            obj.laps += laps;
-            graph_itr   = storage_type::instance()->pop();
-            is_on_stack = false;
-        }
-    }
-
-    //----------------------------------------------------------------------------------//
-    // pop the node off the graph
-    //
-    template <typename U = value_type, enable_if_t<(std::is_class<U>::value), int> = 0>
     void pop_node()
     {
         if(is_on_stack)
@@ -231,9 +226,11 @@ public:
             Type& obj = graph_itr->obj();
             Type& rhs = static_cast<Type&>(*this);
             obj += rhs;
-            obj.laps += rhs.laps;
+            obj.plus(rhs);
+            Type::append(graph_itr, rhs);
             storage_type::instance()->pop();
-            is_on_stack = false;
+            obj.is_running = false;
+            is_on_stack    = false;
         }
     }
 
@@ -327,46 +324,33 @@ public:
     bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
     bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
 
+    // this_type operators (plain-old data)
+    //
+    Type& operator+=(const this_type& rhs)
+    {
+        return operator+=(static_cast<const Type&>(rhs));
+    }
+
+    Type& operator-=(const this_type& rhs)
+    {
+        return operator-=(static_cast<const Type&>(rhs));
+    }
+
     //----------------------------------------------------------------------------------//
     // this_type operators (plain-old data)
     //
-    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value), int> = 0>
-    Type& operator+=(const this_type& rhs)
+    Type& operator+=(const Type& rhs)
     {
         value += rhs.value;
         accum += rhs.accum;
-        laps += rhs.laps;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return static_cast<Type&>(*this);
     }
 
-    template <typename U = value_type, enable_if_t<(!std::is_class<U>::value), int> = 0>
-    Type& operator-=(const this_type& rhs)
+    Type& operator-=(const Type& rhs)
     {
         value -= rhs.value;
         accum -= rhs.accum;
-        laps -= rhs.laps;
-        if(rhs.is_transient)
-            is_transient = rhs.is_transient;
         return static_cast<Type&>(*this);
-    }
-
-    //----------------------------------------------------------------------------------//
-    // this_type operators (complex data)
-    //
-    template <typename U = value_type, enable_if_t<(std::is_class<U>::value), int> = 0>
-    Type& operator+=(const this_type& rhs)
-    {
-        laps += rhs.laps;
-        return static_cast<Type&>(*this).operator+=(static_cast<const Type&>(rhs));
-    }
-
-    template <typename U = value_type, enable_if_t<(std::is_class<U>::value), int> = 0>
-    Type& operator-=(const this_type& rhs)
-    {
-        laps -= rhs.laps;
-        return static_cast<Type&>(*this).operator-=(static_cast<const Type&>(rhs));
     }
 
     //----------------------------------------------------------------------------------//
@@ -469,6 +453,21 @@ public:
     const bool&       get_is_transient() const { return is_transient; }
 
 protected:
+    void plus(const this_type& rhs)
+    {
+        laps += rhs.laps;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+    }
+
+    void minus(const this_type& rhs)
+    {
+        laps -= rhs.laps;
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+    }
+
+protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
     bool           is_transient = false;
@@ -476,6 +475,13 @@ protected:
     value_type     accum        = value_type();
     int64_t        laps         = 0;
     graph_iterator graph_itr    = graph_iterator{ nullptr };
+    // storage_type*  m_storage    = storage_type::instance();
+
+private:
+    template <typename _Vp>
+    static void append_impl(std::true_type, graph_iterator, const Type&);
+    template <typename _Vp>
+    static void append_impl(std::false_type, graph_iterator, const Type&);
 
 public:
     CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
@@ -591,6 +597,10 @@ public:
         static_assert(sizeof...(_Args) == 0,
                       "Error! component::<Type>::configure not handled!");
     }
+
+    template <typename _GraphItr>
+    static void append(_GraphItr, const Type&)
+    {}
 
 public:
     //----------------------------------------------------------------------------------//
@@ -732,10 +742,57 @@ public:
     void* get() { return nullptr; }
 
 protected:
+    void plus(const this_type& rhs)
+    {
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+    }
+
+    void minus(const this_type& rhs)
+    {
+        if(rhs.is_transient)
+            is_transient = rhs.is_transient;
+    }
+
+protected:
     bool is_running   = false;
     bool is_on_stack  = false;
     bool is_transient = false;
 };
+
+//----------------------------------------------------------------------------------//
+/// type contains secondary data resembling the original data
+/// but should be another node entry in the graph. These types
+/// must provide a get_secondary() member function and that member function
+/// must return a pair-wise iterable container, e.g. std::map, of types:
+///     - std::string
+///     - value_type
+///
+template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Vp>
+void
+base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
+                                             const Type& rhs)
+{
+    static_assert(trait::secondary_data<_Tp>::value,
+                  "append_impl should not be compiled");
+    static_assert(std::is_same<_Vp, _Value>::value, "Type mismatch");
+
+    auto _storage          = storage_type::instance();
+    using string_t         = std::string;
+    using secondary_data_t = std::tuple<graph_iterator, const string_t&, _Vp>;
+    for(const auto& dat : rhs.get_secondary())
+        _storage->append(secondary_data_t{ itr, dat.first, dat.second });
+}
+
+//----------------------------------------------------------------------------------//
+//  type does not contain secondary data
+//
+template <typename _Tp, typename _Value, typename... _Policies>
+template <typename _Vp>
+void
+base<_Tp, _Value, _Policies...>::append_impl(std::false_type, graph_iterator, const Type&)
+{}
 
 }  // component
 }  // tim

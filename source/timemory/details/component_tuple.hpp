@@ -26,15 +26,6 @@
 #include "timemory/mpl/filters.hpp"
 
 //======================================================================================//
-
-template <typename... Types>
-void
-tim::component_tuple<Types...>::init_manager()
-{
-    tim::manager::instance();
-}
-
-//======================================================================================//
 //
 //      tim::get functions
 //

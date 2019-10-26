@@ -206,6 +206,9 @@ public:
         return get_noninit_singleton().master_instance();
     }
 
+    template <typename _Vp>
+    using secondary_data_t = std::tuple<iterator, const std::string&, _Vp>;
+
 public:
     //----------------------------------------------------------------------------------//
     //
@@ -214,6 +217,7 @@ public:
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
 
+        get_shared_manager();
         component::properties<ObjectType>::has_storage() = true;
         // check_consistency();
     }
@@ -592,8 +596,7 @@ public:
 
         auto hash_depth = ((_data().depth() >= 0) ? (_data().depth() + 1) : 1);
         auto itr        = insert<_Scope>(hash_id * hash_depth, obj, hash_depth);
-        add_hash_id(hash_id, hash_id * hash_depth);
-        add_hash_id(hash_id * hash_depth, hash_id);
+        add_hash_id(m_hash_ids, m_hash_aliases, hash_id, hash_id * hash_depth);
         return itr;
     }
 
@@ -609,7 +612,44 @@ public:
         consume_parameters(_global_init, _thread_init, _data_init);
 
         auto itr = insert<_Scope>(hash_id, obj, 1);
+        add_hash_id(m_hash_ids, m_hash_aliases, hash_id, hash_id);
         return itr;
+    }
+
+    //----------------------------------------------------------------------------------//
+    //
+    template <typename _Vp>
+    void append(const secondary_data_t<_Vp>& _data)
+    {
+        static bool _global_init = global_init();
+        static bool _thread_init = thread_init();
+        static bool _data_init   = data_init();
+        consume_parameters(_global_init, _thread_init, _data_init);
+
+        // get the iterator and check if valid
+        auto&& _itr = std::get<0>(_data);
+        if(!_data().graph().is_valid(_itr))
+            return;
+
+        // compute hash and depth
+        auto _hash  = add_hash_id(std::get<1>(_data));
+        auto _depth = _itr->depth() + 1;
+
+        // see if depth + hash entry exists already
+        auto _nitr = m_node_ids[_depth].find(_hash);
+        if(_nitr != m_node_ids[_depth].end())
+        {
+            // if so, then update
+            *_nitr += std::get<2>(_data);
+        }
+        else
+        {
+            // else, create a new entry
+            auto&& _tmp = ObjectType();
+            _tmp += std::get<2>(_data);
+            _nitr = _data().emplace_child(_itr, graph_node_t(_hash, _tmp, _depth));
+            m_node_ids[_depth][_hash] = _nitr;
+        }
     }
 
     //----------------------------------------------------------------------------------//
@@ -621,7 +661,13 @@ public:
     }
 
 private:
-    string_t get_prefix(const graph_node& node) { return get_hash_identifier(node.id()); }
+    string_t get_prefix(const graph_node& node)
+    {
+        auto _ret = get_hash_identifier(m_hash_ids, m_hash_aliases, node.id());
+        if(_ret.find("unknown-hash=") == 0)
+            return get_hash_identifier(node.id());
+        return _ret;
+    }
     string_t get_prefix(iterator _node) { return get_prefix(*_node); }
 
 public:
@@ -752,6 +798,8 @@ private:
     // tim::trait::external_output_handling<ObjectType>::type == FALSE
     void external_print(std::false_type);
 
+    void get_shared_manager();
+
     graph_data_t& _data()
     {
         if(m_graph_data_instance == nullptr && !singleton_t::is_master(this))
@@ -805,6 +853,7 @@ private:
     ::tim::graph_hash_alias_ptr_t m_hash_aliases        = ::tim::get_hash_aliases();
     mutable graph_data_t*         m_graph_data_instance = nullptr;
     iterator_hash_map_t           m_node_ids;
+    std::shared_ptr<manager>      m_manager;
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
@@ -851,6 +900,7 @@ public:
         if(settings::debug())
             printf("[%s]> constructing @ %i...\n", ObjectType::label().c_str(), __LINE__);
 
+        get_shared_manager();
         component::properties<ObjectType>::has_storage() = false;
     }
 
@@ -958,10 +1008,41 @@ public:
         }
     }
 
+    void add_hash_id(const std::string& _prefix)
+    {
+        ::tim::add_hash_id(m_hash_ids, _prefix);
+    }
+
 protected:
     friend struct details::storage_deleter<this_type>;
-    void merge() {}
-    void merge(this_type*) {}
+
+    void merge()
+    {
+        auto m_children = singleton_t::children();
+        if(m_children.size() == 0)
+            return;
+
+        for(auto& itr : m_children)
+            merge(itr);
+    }
+
+    void merge(this_type* itr)
+    {
+        // create lock but don't immediately lock
+        // auto_lock_t l(type_mutex<this_type>(), std::defer_lock);
+        auto_lock_t l(singleton_t::get_mutex(), std::defer_lock);
+
+        // lock if not already owned
+        if(!l.owns_lock())
+            l.lock();
+
+        for(const auto& _itr : (*itr->get_hash_ids()))
+            if(m_hash_ids->find(_itr.first) == m_hash_ids->end())
+                (*m_hash_ids)[_itr.first] = _itr.second;
+        for(const auto& _itr : (*itr->get_hash_aliases()))
+            if(m_hash_aliases->find(_itr.first) == m_hash_aliases->end())
+                (*m_hash_aliases)[_itr.first] = _itr.second;
+    }
 
 public:
     template <typename _Archive>
@@ -990,9 +1071,18 @@ private:
         return _counter;
     }
 
-    bool    m_initialized = false;
-    bool    m_finalized   = false;
-    int64_t m_instance_id = instance_count()++;
+    void get_shared_manager();
+
+    bool                          m_initialized  = false;
+    bool                          m_finalized    = false;
+    int64_t                       m_instance_id  = instance_count()++;
+    ::tim::graph_hash_map_ptr_t   m_hash_ids     = ::tim::get_hash_ids();
+    ::tim::graph_hash_alias_ptr_t m_hash_aliases = ::tim::get_hash_aliases();
+    std::shared_ptr<manager>      m_manager;
+
+public:
+    const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
+    const graph_hash_alias_ptr_t& get_hash_aliases() const { return m_hash_aliases; }
 };
 
 //======================================================================================//
@@ -1027,6 +1117,9 @@ class storage
     using singleton_t   = singleton<this_type, smart_pointer>;
     using pointer       = typename singleton_t::pointer;
     using auto_lock_t   = typename singleton_t::auto_lock_t;
+    using iterator      = typename base_type::iterator;
+    using const_iterator = typename base_type::const_iterator;
+
     friend struct details::storage_deleter<this_type>;
     friend class manager;
 };

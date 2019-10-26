@@ -110,7 +110,7 @@ public:
         using customize_t   = std::tuple<operation::customize<_Types>...>;
         using set_prefix_t  = std::tuple<operation::set_prefix<_Types>...>;
         using get_data_t    = std::tuple<operation::get_data<_Types>...>;
-        using auto_type     = auto_tuple<Types...>;
+        using auto_type     = auto_tuple<_Types...>;
     };
 
 public:
@@ -122,6 +122,10 @@ public:
     using type_tuple  = typename filtered<available_tuple<concat<Types...>>>::type_tuple;
     using data_value_type = get_data_value_t<data_type>;
     using data_label_type = get_data_label_t<data_type>;
+
+    // used by gotcha
+    using component_type =
+        typename filtered<available_tuple<concat<Types...>>>::this_type;
 
     // used by component hybrid
     static constexpr bool is_component_list   = false;
@@ -170,12 +174,12 @@ public:
     : m_store(store && settings::enabled())
     , m_flat(flat)
     , m_laps(0)
+    , m_hash((settings::enabled()) ? add_hash_id(key) : 0)
     , m_key(key)
     {
         // if(settings::enabled())
         {
             compute_width(key);
-            init_manager();
             // init_storage();
         }
     }
@@ -217,17 +221,15 @@ public:
     {
         if(m_store && !m_is_pushed)
         {
-            // compute the hash
-            int64_t _hash = add_hash_id(m_key);
             // reset the data
             apply<void>::access<reset_t>(m_data);
             // avoid pushing/popping when already pushed/popped
             m_is_pushed = true;
             // insert node or find existing node
             if(m_flat)
-                apply<void>::access<insert_node_t<scope::flat>>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::flat>>(m_data, m_hash);
             else
-                apply<void>::access<insert_node_t<scope::process>>(m_data, _hash);
+                apply<void>::access<insert_node_t<scope::process>>(m_data, m_hash);
         }
     }
 
@@ -491,10 +493,10 @@ public:
     inline const data_type& data() const { return m_data; }
     inline int64_t          laps() const { return m_laps; }
 
-    // int64_t&  hash() { return m_hash; }
+    int64_t&  hash() { return m_hash; }
     string_t& key() { return m_key; }
 
-    // const int64_t&    hash() const { return m_hash; }
+    const int64_t&  hash() const { return m_hash; }
     const string_t& key() const { return m_key; }
     void            rekey(const string_t& _key) { compute_width(m_key = _key); }
 
@@ -543,6 +545,7 @@ protected:
     bool              m_print_prefix = true;
     bool              m_print_laps   = true;
     int64_t           m_laps         = 0;
+    int64_t           m_hash         = 0;
     string_t          m_key          = "";
     mutable data_type m_data;
 
@@ -606,7 +609,6 @@ protected:
     }
 
 public:
-    static void init_manager();
     static void init_storage()
     {
         apply<void>::type_access<operation::init_storage, data_type>();

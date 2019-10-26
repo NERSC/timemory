@@ -74,6 +74,7 @@ struct cupti_activity
     using receiver_type     = cupti::activity::receiver;
     using kind_vector_type  = std::vector<cupti::activity_kind_t>;
     using get_initializer_t = std::function<kind_vector_type()>;
+    using kernel_elapsed_t  = typename cupti::activity::receiver::named_elapsed_t;
 
     static const short                   precision = 3;
     static const short                   width     = 8;
@@ -194,7 +195,8 @@ public:
     {
         set_started();
         cupti::activity::start_trace(this);
-        value = record();
+        value           = cupti::activity::get_receiver().get();
+        m_kernels_value = cupti::activity::get_receiver().get_named();
     }
 
     //----------------------------------------------------------------------------------//
@@ -202,9 +204,30 @@ public:
     void stop()
     {
         cupti::activity::stop_trace(this);
-        auto tmp = record();
+        auto tmp        = cupti::activity::get_receiver().get();
+        auto kernel_tmp = cupti::activity::get_receiver().get_named();
         accum += (tmp - value);
         value = std::move(tmp);
+
+        std::unordered_set<std::string> skip;
+        for(const auto& itr : m_kernels_value)
+        {
+            auto kitr = kernel_tmp.find(itr.first);
+            if(kitr != kernel_tmp.end())
+            {
+                m_kernels_accum[itr.first] += (kitr->second - itr.second);
+                skip.insert(itr.first);
+            }
+        }
+
+        for(const auto& itr : kernel_tmp)
+        {
+            if(skip.count(itr.first) == 0)
+                m_kernels_accum[itr.first] += itr.second;
+        }
+
+        m_kernels_value = std::move(kernel_tmp);
+
         set_stopped();
     }
 
@@ -225,6 +248,20 @@ public:
         return static_cast<double>(val / static_cast<double>(ratio_t::den) *
                                    base_type::get_unit());
     }
+
+    //----------------------------------------------------------------------------------//
+
+    kernel_elapsed_t get_secondary() const
+    {
+        kernel_elapsed_t _kernels = (is_transient) ? m_kernels_accum : m_kernels_value;
+        for(auto& itr : _kernels)
+            itr.second /= static_cast<double>(ratio_t::den) * base_type::get_unit();
+        return _kernels;
+    }
+
+private:
+    kernel_elapsed_t m_kernels_value;
+    kernel_elapsed_t m_kernels_accum;
 };
 
 }  // namespace component

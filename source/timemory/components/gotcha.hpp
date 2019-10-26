@@ -42,6 +42,46 @@ namespace component
 {
 using size_type = std::size_t;
 
+//======================================================================================//
+//
+class gotcha_suppression
+{
+    template <size_type _Nt, typename _Components, typename _Differentiator>
+    friend struct gotcha;
+
+    static bool& get()
+    {
+        static thread_local bool _instance = false;
+        return _instance;
+    }
+
+    struct auto_toggle
+    {
+        explicit auto_toggle(bool& _value, bool _if_equal = false)
+        : m_value(_value)
+        , m_if_equal(_if_equal)
+        {
+            if(m_value == m_if_equal)
+                m_value = !m_value;
+        }
+
+        ~auto_toggle()
+        {
+            if(m_value != m_if_equal)
+                m_value = !m_value;
+        }
+
+        auto_toggle(const auto_toggle&) = delete;
+        auto_toggle(auto_toggle&&)      = delete;
+        auto_toggle& operator=(const auto_toggle&) = delete;
+        auto_toggle& operator=(auto_toggle&&) = delete;
+
+    private:
+        bool& m_value;
+        bool  m_if_equal;
+    };
+};
+
 //
 // template params:
 //      _Nt             ==  max number of GOTCHA wrappers
@@ -59,11 +99,13 @@ struct gotcha
                   "Error! {auto,component}_{list,tuple,hybrid} in a GOTCHA specification "
                   "cannot include another gotcha_component");
 
-    using value_type = void;
-    using this_type  = gotcha<_Nt, _Components, _Differentiator>;
-    using base_type =
-        base<this_type, value_type, policy::global_init, policy::global_finalize>;
-    using storage_type = typename base_type::storage_type;
+    // clang-format off
+    using value_type     = void;
+    using this_type      = gotcha<_Nt, _Components, _Differentiator>;
+    using base_type      = base<this_type, value_type, policy::global_init, policy::global_finalize>;
+    using storage_type   = typename base_type::storage_type;
+    using component_type = typename _Components::component_type;
+    // clang-format on
 
     template <typename _Tp>
     using array_t = std::array<_Tp, _Nt>;
@@ -108,21 +150,31 @@ struct gotcha
 
     //----------------------------------------------------------------------------------//
 
+    static bool& get_default_ready()
+    {
+        static bool _instance = false;
+        return _instance;
+    }
+
+    //----------------------------------------------------------------------------------//
+
     template <size_t _N, typename _Ret, typename... _Args>
     static void construct(const std::string& _func, int _priority = 0,
                           const std::string& _tool = "")
     {
+        gotcha_suppression::auto_toggle suppress_lock(gotcha_suppression::get());
+
         static_assert(_N < _Nt, "Error! _N must be less than _Nt!");
         auto& _fill_ids = get_filled();
 
         if(_func.find("MPI_") != std::string::npos ||
            _func.find("mpi_") != std::string::npos)
         {
-            static auto mpi_blacklist = { "MPI_Init",       "MPI_Initialized",
-                                          "MPI_Pcontrol",   "MPI_Init_thread",
-                                          "MPI_Finalize",   "MPI_Comm_rank",
-                                          "MPI_Comm_size",  "MPI_T_init_thread",
-                                          "MPI_Comm_split", "MPI_Abort" };
+            static auto mpi_blacklist = {
+                "MPI_Init",        "MPI_Finalize",  "MPI_Pcontrol",  "MPI_Init_thread",
+                "MPI_Initialized", "MPI_Comm_rank", "MPI_Comm_size", "MPI_T_init_thread",
+                "MPI_Comm_split",  "MPI_Abort",     "MPI_Barrier",   "MPI_Comm_split_type"
+            };
 
             auto tofortran = [](std::string _fort) {
                 for(auto& itr : _fort)
@@ -162,6 +214,7 @@ struct gotcha
             auto& _tool_ids     = get_tool_ids();
             auto& _constructors = get_constructors();
             auto& _destructors  = get_destructors();
+            auto& _ready_flags  = get_ready_flags();
 
             // static int _incr = _priority;
             // _priority        = _incr++;
@@ -174,9 +227,13 @@ struct gotcha
                     _label.erase(_label.find("//"), 1);
             }
 
-            _tool_ids[_N] = _label;
-            _fill_ids[_N] = true;
-            _wrap_ids[_N] = _func;
+            // ensure the hash to string pairing is stored
+            storage_type::instance()->add_hash_id(_label);
+
+            _tool_ids[_N]    = _label;
+            _fill_ids[_N]    = true;
+            _wrap_ids[_N]    = _func;
+            _ready_flags[_N] = get_default_ready();
 
             error_t ret_prio = ::tim::gotcha::set_priority(_label, _priority);
             check_error<_N>(ret_prio, "set priority");
@@ -515,12 +572,15 @@ private:
         typedef _Ret (*func_t)(_Args...);
         func_t _orig = (func_t)(gotcha_get_wrappee(get_wrappees()[_N]));
 
-        if(!get_ready_flags()[_N])
+        auto& _global_suppress = gotcha_suppression::get();
+
+        if(!get_ready_flags()[_N] || _global_suppress)
             return (_orig) ? (*_orig)(_args...) : _Ret{};
 
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
         get_ready_flags()[_N] = false;
+        _global_suppress      = true;
 
 #    if defined(DEBUG)
         if(settings::verbose() > 2 || settings::debug())
@@ -542,18 +602,15 @@ private:
 
         if(_orig)
         {
-            static constexpr bool _is_component_type =
-                (_Components::is_component_tuple || _Components::is_component_list ||
-                 _Components::is_component_hybrid);
-            bool _boolA = (_is_component_type || settings::flat_profile());
-            bool _boolB = (_is_component_type && settings::flat_profile()) ||
-                          (!_is_component_type && settings::destructor_report());
-            _Components _obj(get_tool_ids()[_N], _boolA, _boolB);
-            _obj.customize(get_tool_ids()[_N], _args...);
+            // component_type is always: component_{tuple,list,hybrid}
+            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
             _obj.start();
+            _obj.customize(get_tool_ids()[_N], _args...);
 
             get_ready_flags()[_N] = true;
+            _global_suppress      = false;
             _Ret _ret             = (*_orig)(_args...);
+            _global_suppress      = true;
             get_ready_flags()[_N] = false;
 
             _obj.customize(get_tool_ids()[_N], _ret);
@@ -574,6 +631,7 @@ private:
 #    endif
 
             // allow re-entrance into wrapper
+            _global_suppress      = false;
             get_ready_flags()[_N] = true;
 
             return _ret;
@@ -582,6 +640,7 @@ private:
             PRINT_HERE("nullptr to original function!");
 
         // allow re-entrance into wrapper
+        _global_suppress      = false;
         get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
@@ -599,7 +658,8 @@ private:
 #if defined(TIMEMORY_USE_GOTCHA)
         auto _orig = (void (*)(_Args...)) gotcha_get_wrappee(get_wrappees()[_N]);
 
-        if(!get_ready_flags()[_N])
+        auto& _global_suppress = gotcha_suppression::get();
+        if(!get_ready_flags()[_N] || _global_suppress)
         {
             if(_orig)
                 (*_orig)(_args...);
@@ -609,17 +669,21 @@ private:
         // make sure the function is not recursively entered (important for
         // allocation-based wrappers)
         get_ready_flags()[_N] = false;
+        _global_suppress      = true;
 
         if(_orig)
         {
-            _Components _obj(get_tool_ids()[_N], true);
-            _obj.customize(get_tool_ids()[_N], _args...);
+            component_type _obj(get_tool_ids()[_N], true, settings::flat_profile());
             _obj.start();
+            _obj.customize(get_tool_ids()[_N], _args...);
 
             get_ready_flags()[_N] = true;
+            _global_suppress      = false;
             (*_orig)(_args...);
+            _global_suppress      = true;
             get_ready_flags()[_N] = false;
 
+            _obj.customize(get_tool_ids()[_N]);
             _obj.stop();
         } else if(settings::debug())
         {
@@ -627,6 +691,7 @@ private:
         }
 
         // allow re-entrance into wrapper
+        _global_suppress      = false;
         get_ready_flags()[_N] = true;
 #else
         consume_parameters(_args...);
@@ -653,11 +718,13 @@ private:
 
 ///
 /// generate a GOTCHA wrapper for function with identical args but different name
+/// -- useful for C++ template function where the mangled name is determined
+///    via `nm --dynamic <EXE>`
 ///
-#define TIMEMORY_DERIVED_GOTCHA(type, idx, func, fort_func)                              \
+#define TIMEMORY_DERIVED_GOTCHA(type, idx, func, deriv_name)                             \
     type::instrument<                                                                    \
         idx, ::tim::function_traits<decltype(func)>::result_type,                        \
-        ::tim::function_traits<decltype(func)>::call_type>::generate(fort_func)
+        ::tim::function_traits<decltype(func)>::call_type>::generate(deriv_name)
 
 ///
 /// attempt to generate a GOTCHA wrapper for a C++ function by mangling the function name

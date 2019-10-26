@@ -56,9 +56,9 @@ template <typename... Types>
 class auto_tuple
 {
 public:
-    using component_type  = component_tuple<Types...>;
     using this_type       = auto_tuple<Types...>;
-    using base_type       = component_type;
+    using base_type       = component_tuple<Types...>;
+    using component_type  = typename base_type::component_type;
     using type_tuple      = typename component_type::type_tuple;
     using data_value_type = typename component_type::data_value_type;
     using data_label_type = typename component_type::data_label_type;
@@ -183,9 +183,6 @@ public:
         os << obj.m_temporary_object;
         return os;
     }
-
-    //----------------------------------------------------------------------------------//
-    static void init_manager() { component_type::init_manager(); }
 
     //----------------------------------------------------------------------------------//
     static void init_storage() { component_type::init_storage(); }
