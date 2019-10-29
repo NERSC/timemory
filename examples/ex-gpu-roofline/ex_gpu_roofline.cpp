@@ -41,7 +41,10 @@ using device_t       = tim::device::gpu;
 using params_t       = tim::device::params<device_t>;
 using stream_t       = tim::cuda::stream_t;
 using default_device = device_t;
-using fp16_t         = tim::cuda::fp16_t;
+
+#if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
+using fp16_t = tim::cuda::fp16_t;
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -55,7 +58,7 @@ using cpu_roofline_t = cpu_roofline_dp_flops;
 using gpu_roofline_t = gpu_roofline_sp_flops;
 using cpu_roofline_t = cpu_roofline_sp_flops;
 
-#elif ROOFLINE_FP_BYTES == 2
+#elif(ROOFLINE_FP_BYTES == 2) && !defined(TIMEMORY_DISABLE_CUDA_HALF2)
 
 using gpu_roofline_t = gpu_roofline_hp_flops;
 using cpu_roofline_t = cpu_roofline_sp_flops;
@@ -90,6 +93,7 @@ amypx(int64_t n, _Tp* x, _Tp* y, int64_t nitr)
 //--------------------------------------------------------------------------------------//
 // amypx calculation
 //
+#if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
 template <>
 GLOBAL_CALLABLE void
 amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
@@ -104,6 +108,7 @@ amypx(int64_t n, fp16_t* x, fp16_t* y, int64_t nitr)
         }
     }
 }
+#endif
 
 //--------------------------------------------------------------------------------------//
 
@@ -140,7 +145,7 @@ exec_amypx(int64_t data_size, int64_t nitr, params_t params)
 }
 
 //--------------------------------------------------------------------------------------//
-
+#if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
 template <>
 void
 exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params)
@@ -168,7 +173,7 @@ exec_amypx<fp16_t>(int64_t data_size, int64_t nitr, params_t params)
     tim::cuda::free(x);
     tim::cuda::free(y);
 }
-
+#endif
 //--------------------------------------------------------------------------------------//
 
 int
@@ -228,8 +233,11 @@ main(int argc, char** argv)
 
     usage();
 
+#if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
     customize_roofline<fp16_t>(num_threads, working_size, memory_factor, num_streams,
                                grid_size, block_size);
+#endif
+
     customize_roofline<float>(num_threads, working_size, memory_factor, num_streams,
                               grid_size, block_size);
     customize_roofline<double>(num_threads, working_size, memory_factor, num_streams,
@@ -252,11 +260,12 @@ main(int argc, char** argv)
     //
     // run amypx calculations
     //
-    using fp16_t = tim::device::gpu::fp16_t;
 
+#if !defined(TIMEMORY_DISABLE_CUDA_HALF2)
     exec_amypx<fp16_t>(data_size / 2, iterations * 2, params);
     exec_amypx<fp16_t>(data_size, iterations, params);
     exec_amypx<fp16_t>(data_size * 2, iterations / 2, params);
+#endif
 
     exec_amypx<float>(data_size / 2, iterations * 2, params);
     exec_amypx<float>(data_size, iterations, params);

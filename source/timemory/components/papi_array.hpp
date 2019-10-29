@@ -119,12 +119,22 @@ struct papi_array
             std::vector<int>      events_list;
             for(const auto& itr : events_str_list)
             {
+                if(itr.length() == 0)
+                    continue;
+
+                if(settings::debug())
+                    printf("[papi_array]> Getting event code from '%s'...\n",
+                           itr.c_str());
+
                 int evt_code = papi::get_event_code(itr);
                 if(evt_code == PAPI_NOT_INITED)  // defined as zero
                 {
                     std::stringstream ss;
                     ss << "[papi_array] Error creating event with ID: " << itr;
-                    throw std::runtime_error(ss.str());
+                    if(settings::papi_fail_on_error())
+                        throw std::runtime_error(ss.str());
+                    else
+                        fprintf(stderr, "%s\n", ss.str().c_str());
                 } else
                 {
                     if(settings::debug())
@@ -142,7 +152,11 @@ struct papi_array
 
     //----------------------------------------------------------------------------------//
 
-    static event_list get_events() { return get_initializer()(); }
+    static event_list get_events()
+    {
+        static event_list _instance = get_initializer()();
+        return _instance;
+    }
 
     //----------------------------------------------------------------------------------//
 
@@ -154,8 +168,8 @@ struct papi_array
         if(events.size() > 0)
         {
             papi::create_event_set(&_event_set(), settings::papi_multiplexing());
-            papi::add_events(event_set(), events.data(), events.size());
-            papi::start(event_set());
+            papi::add_events(_event_set(), events.data(), events.size());
+            papi::start(_event_set());
         }
     }
 
@@ -166,12 +180,12 @@ struct papi_array
         if(!initialize_papi())
             return;
         auto events = get_events();
-        if(events.size() > 0 && event_set() != PAPI_NULL)
+        if(events.size() > 0 && _event_set() != PAPI_NULL && _event_set() >= 0)
         {
             value_type values;
-            papi::stop(event_set(), values.data());
-            papi::remove_events(event_set(), events.data(), events.size());
-            papi::destroy_event_set(event_set());
+            papi::stop(_event_set(), values.data());
+            // papi::remove_events(_event_set(), events.data(), events.size());
+            papi::destroy_event_set(_event_set());
             _event_set() = PAPI_NULL;
         }
         papi::unregister_thread();
@@ -207,8 +221,8 @@ struct papi_array
     {
         value_type read_value;
         apply<void>::set_value(read_value, 0);
-        if(initialize_papi() && event_set() != PAPI_NULL)
-            papi::read(event_set(), read_value.data());
+        if(initialize_papi() && _event_set() != PAPI_NULL)
+            papi::read(_event_set(), read_value.data());
         return read_value;
     }
 
@@ -295,10 +309,11 @@ public:
     //
     //==================================================================================//
 
-    static std::string label() { return "papi" + std::to_string(event_set()); }
-    static std::string description() { return ""; }
-    static std::string display_unit() { return ""; }
-    static int64_t     unit() { return 1; }
+    static std::string label()
+    {
+        return "papi_array" + std::to_string((_event_set() < 0) ? 0 : _event_set());
+    }
+    static std::string description() { return "Array of PAPI HW counters"; }
 
     entry_type get_display(int evt_type) const
     {

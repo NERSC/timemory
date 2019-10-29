@@ -170,7 +170,7 @@ main(int argc, char** argv)
         throw std::runtime_error("Error N is not a multiple of nitr");
     }
 
-    cuda_event::get_format_flags() = std::ios_base::scientific | std::ios_base::showpoint;
+    tim::settings::timing_scientific() = true;
     tim::timemory_init(argc, argv);
     tim::settings::json_output() = true;
     tim::enable_signal_detection();

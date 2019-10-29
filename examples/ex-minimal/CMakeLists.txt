@@ -2,9 +2,8 @@ cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
 project(timemory-Minimal-Example LANGUAGES C CXX)
 
-include(CheckCCompilerFlag)
 set(timemory_FIND_COMPONENTS_INTERFACE timemory-minimal-example)
-set(COMPONENTS compile-options analysis-tools)
+set(COMPONENTS headers compile-options analysis-tools papi caliper)
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
 
 set(TIMEMORY_C_LIBRARY )

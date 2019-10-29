@@ -402,20 +402,20 @@ public:
             graph_node_t node(hash_id, obj, hash_depth);
             if(this == master_instance())
             {
-                _data()         = graph_data_t(node);
-                _data().depth() = 0;
+                _data()                        = graph_data_t(node);
+                m_graph_data_instance->depth() = 0;
                 if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = _data().current();
-                m_node_ids[hash_depth][hash_id] = _data().current();
-                return _data().current();
+                    m_node_ids[0][0] = m_graph_data_instance->current();
+                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
+                return m_graph_data_instance->current();
             }
             else
             {
-                _data()           = graph_data_t(*master_instance()->current());
-                _data().head()    = master_instance()->data().current();
-                _data().current() = master_instance()->data().current();
-                _data().depth()   = master_instance()->data().depth();
-                auto itr          = _data().append_child(node);
+                _data() = graph_data_t(*master_instance()->current());
+                m_graph_data_instance->head()    = master_instance()->data().current();
+                m_graph_data_instance->current() = master_instance()->data().current();
+                m_graph_data_instance->depth()   = master_instance()->data().depth();
+                auto itr = m_graph_data_instance->append_child(node);
                 m_node_ids[hash_depth][hash_id] = itr;
                 return itr;
             }
@@ -423,31 +423,32 @@ public:
 
         // lambda for updating settings
         auto _update = [&](iterator itr) {
-            _data().depth() = itr->depth();
-            return (_data().current() = itr);
+            m_graph_data_instance->depth() = itr->depth();
+            return (m_graph_data_instance->current() = itr);
         };
 
         if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-           m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
+           m_node_ids[hash_depth].find(hash_id)->second->depth() ==
+               m_graph_data_instance->depth())
         {
             return _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
 
         using sibling_itr = typename graph_t::sibling_iterator;
-        graph_node_t node(hash_id, obj, _data().depth());
+        graph_node_t node(hash_id, obj, m_graph_data_instance->depth());
 
         // lambda for inserting child
         auto _insert_child = [&]() {
             node.depth()                    = hash_depth;
-            auto itr                        = _data().append_child(node);
+            auto itr                        = m_graph_data_instance->append_child(node);
             m_node_ids[hash_depth][hash_id] = itr;
             // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
             //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
             return itr;
         };
 
-        auto current = _data().current();
-        if(!_data().graph().is_valid(current))
+        auto current = m_graph_data_instance->current();
+        if(!m_graph_data_instance->graph().is_valid(current))
             _insert_child();
 
         // auto nchildren = graph().number_of_children(current);
@@ -457,7 +458,7 @@ public:
         {
             return current;
         }
-        else if(_data().graph().is_valid(current))
+        else if(m_graph_data_instance->graph().is_valid(current))
         {
             // check siblings
             for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
@@ -477,7 +478,7 @@ public:
             {
                 // check child
                 auto fchild = graph_t::child(current, 0);
-                if(_data().graph().is_valid(fchild))
+                if(m_graph_data_instance->graph().is_valid(fchild))
                 {
                     for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {
@@ -508,20 +509,20 @@ public:
             graph_node_t node(hash_id, obj, hash_depth);
             if(this == master_instance())
             {
-                _data()         = graph_data_t(node);
-                _data().depth() = 0;
+                _data()                        = graph_data_t(node);
+                m_graph_data_instance->depth() = 0;
                 if(m_node_ids.size() == 0)
-                    m_node_ids[0][0] = _data().current();
-                m_node_ids[hash_depth][hash_id] = _data().current();
-                return _data().current();
+                    m_node_ids[0][0] = m_graph_data_instance->current();
+                m_node_ids[hash_depth][hash_id] = m_graph_data_instance->current();
+                return m_graph_data_instance->current();
             }
             else
             {
-                _data()           = graph_data_t(*master_instance()->current());
-                _data().head()    = master_instance()->data().current();
-                _data().current() = master_instance()->data().current();
-                _data().depth()   = master_instance()->data().depth();
-                auto itr          = _data().append_child(node);
+                _data() = graph_data_t(*master_instance()->current());
+                m_graph_data_instance->head()    = master_instance()->data().current();
+                m_graph_data_instance->current() = master_instance()->data().current();
+                m_graph_data_instance->depth()   = master_instance()->data().depth();
+                auto itr = m_graph_data_instance->append_child(node);
                 m_node_ids[hash_depth][hash_id] = itr;
                 return itr;
             }
@@ -531,7 +532,8 @@ public:
         auto _update = [&](iterator itr) { return itr; };
 
         if(m_node_ids[hash_depth].find(hash_id) != m_node_ids[hash_depth].end() &&
-           m_node_ids[hash_depth].find(hash_id)->second->depth() == _data().depth())
+           m_node_ids[hash_depth].find(hash_id)->second->depth() ==
+               m_graph_data_instance->depth())
         {
             return _update(m_node_ids[hash_depth].find(hash_id)->second);
         }
@@ -542,19 +544,19 @@ public:
         // lambda for inserting child
         auto _insert_head = [&]() {
             node.depth()                    = hash_depth;
-            auto itr                        = _data().append_head(node);
+            auto itr                        = m_graph_data_instance->append_head(node);
             m_node_ids[hash_depth][hash_id] = itr;
             // if(m_node_ids[hash_depth].bucket_count() < m_node_ids[hash_depth].size())
             //    m_node_ids[hash_depth].rehash(m_node_ids[hash_depth].size() + 10);
             return itr;
         };
 
-        auto current   = _data().head();
+        auto current   = m_graph_data_instance->head();
         auto nchildren = graph_t::number_of_children(current);
 
         if(nchildren == 0 && graph().number_of_siblings(current) == 0)
             return _insert_head();
-        else if(_data().graph().is_valid(current))
+        else if(m_graph_data_instance->graph().is_valid(current))
         {
             // check siblings
             for(sibling_itr itr = current.begin(); itr != current.end(); ++itr)
@@ -574,7 +576,7 @@ public:
             {
                 // check child
                 auto fchild = graph_t::child(current, 0);
-                if(_data().graph().is_valid(fchild))
+                if(m_graph_data_instance->graph().is_valid(fchild))
                 {
                     for(sibling_itr itr = fchild.begin(); itr != fchild.end(); ++itr)
                     {

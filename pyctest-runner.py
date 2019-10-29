@@ -81,7 +81,7 @@ def configure():
     parser.add_argument("--extra-optimizations",
                         help="TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS=ON",
                         default=False, action='store_true')
-    parser.add_argument("--no-extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=OFF",
+    parser.add_argument("--extern-templates", help="TIMEMORY_BUILD_EXTERN_TEMPLATES=ON",
                         default=False, action='store_true')
     parser.add_argument("--build-libs", help="Build library type(s)", default=("shared"),
                         nargs='*', type=str, choices=("static", "shared"))
@@ -163,7 +163,7 @@ def run_pyctest():
         "TIMEMORY_BUILD_PYTHON": "OFF" if args.no_python else "ON",
         "TIMEMORY_BUILD_GOTCHA": "ON" if args.gotcha else "OFF",
         "TIMEMORY_BUILD_CALIPER": "ON" if args.caliper else "OFF",
-        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "OFF" if args.no_extern_templates else "ON",
+        "TIMEMORY_BUILD_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
         "TIMEMORY_BUILD_EXTRA_OPTIMIZATIONS": "ON" if args.extra_optimizations else "OFF",
         "TIMEMORY_USE_MPI": "OFF" if args.no_mpi else "ON",
         "TIMEMORY_USE_ARCH": "ON" if args.arch else "OFF",
@@ -176,7 +176,7 @@ def run_pyctest():
         "TIMEMORY_USE_COVERAGE": "ON" if args.coverage else "OFF",
         "TIMEMORY_USE_SANITIZER": "OFF",
         "TIMEMORY_USE_CLANG_TIDY": "ON" if args.static_analysis else "OFF",
-        "USE_EXTERN_TEMPLATES": "OFF" if args.no_extern_templates else "ON",
+        "USE_EXTERN_TEMPLATES": "ON" if args.extern_templates else "OFF",
     }
 
     if not args.no_c:
