@@ -43,7 +43,6 @@
 
 namespace tim
 {
-
 //======================================================================================//
 
 template <typename _Tp>
@@ -60,7 +59,6 @@ struct stl_tuple_printer
 /// a method of using the namespace without a "using namespace tim;"
 namespace stl_overload
 {
-
 //--------------------------------------------------------------------------------------//
 //
 //      operator <<

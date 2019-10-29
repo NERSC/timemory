@@ -25,6 +25,7 @@
 #pragma once
 
 #include "timemory/backends/bits/cupti.hpp"
+#include "timemory/backends/cuda.hpp"
 #include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti_activity.hpp"

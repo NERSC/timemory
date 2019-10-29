@@ -124,10 +124,7 @@ public:
 
     //----------------------------------------------------------------------------------//
 
-    static void invoke_thread_init(storage_type*)
-    {
-        configure();
-    }
+    static void invoke_thread_init(storage_type*) { configure(); }
 
     //----------------------------------------------------------------------------------//
 

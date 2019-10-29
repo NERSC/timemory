@@ -233,11 +233,11 @@ TEST_F(cupti_tests, activity)
         std::cout << itr << std::endl;
         // secondaries (individual kernels)
         std::cout << "Individual kernels:\n";
-        for(const auto& itr : itr.get<cupti_activity>().get_secondary())
+        for(const auto& sitr : itr.get<cupti_activity>().get_secondary())
         {
-            std::cout << "    " << std::setw(kwidth) << itr.first << " : "
-                      << std::setw(12) << std::setprecision(8) << std::fixed << itr.second
-                      << "\n";
+            std::cout << "    " << std::setw(kwidth) << sitr.first << " : "
+                      << std::setw(12) << std::setprecision(8) << std::fixed
+                      << sitr.second << "\n";
         }
         std::cout << "\n";
         subtot += itr;

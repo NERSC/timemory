@@ -223,6 +223,10 @@ if(${PROJECT_NAME}_MASTER_PROJECT)
     add_feature(TIMEMORY_GPERF_COMPONENTS "gperftool components")
 endif()
 
+if(TIMEMORY_USE_CUDA)
+    add_option(TIMEMORY_DISABLE_CUDA_HALF2 "Disable half2 if CUDA_ARCH < 60" OFF)
+endif()
+
 # cereal options
 add_option(WITH_WERROR "Compile with '-Werror' C++ compiler flag" OFF NO_FEATURE)
 add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)

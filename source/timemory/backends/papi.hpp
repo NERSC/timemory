@@ -397,7 +397,7 @@ init_library()
     }
 #endif
 }
-} // details
+}  // namespace details
 
 //--------------------------------------------------------------------------------------//
 
@@ -482,7 +482,7 @@ enable_multiplexing(int event_set, int component = 0)
 #if defined(TIMEMORY_USE_PAPI)
     if(working())
     {
-        auto retval = PAPI_assign_eventset_component(event_set, component);
+        auto              retval = PAPI_assign_eventset_component(event_set, component);
         std::stringstream ss;
         ss << "Warning!! Failure to assign event set component. event set: " << event_set
            << ", component: " << component;
@@ -490,7 +490,7 @@ enable_multiplexing(int event_set, int component = 0)
     }
     if(working())
     {
-        auto retval = PAPI_set_multiplex(event_set);
+        auto              retval = PAPI_set_multiplex(event_set);
         std::stringstream ss;
         ss << "Warning!! Failure to enable multiplex on EventSet " << event_set;
         working() = check(retval, ss.str());
@@ -546,7 +546,7 @@ start(int event_set)
     // start counting hardware events in an event set
 #if defined(TIMEMORY_USE_PAPI)
     int retval = PAPI_start(event_set);
-    working() = check(retval, "Warning!! Failure to start event set");
+    working()  = check(retval, "Warning!! Failure to start event set");
 #else
     consume_parameters(event_set);
 #endif

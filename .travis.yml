@@ -103,7 +103,7 @@ matrix:
     # Clang 7
     - os: linux
       dist: bionic
-      python: "3.7"
+      python: "3.6"
       addons:
         apt:
           packages:

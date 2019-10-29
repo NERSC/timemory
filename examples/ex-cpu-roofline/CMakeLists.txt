@@ -9,10 +9,14 @@ project(timemory-CPU-Roofline-Example LANGUAGES C CXX)
 
 set(EXE_NAME ex_cpu_roofline)
 set(COMPONENTS papi threading compile-options analysis-tools arch)
+set(_LINKER_LANG CXX)
 
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)
     list(APPEND COMPONENTS cxx extern-templates)
+    if(TIMEMORY_USE_CUPTI OR TIMEMORY_USE_CUDA)
+        set(_LINKER_LANG CUDA)
+    endif()
 endif()
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
@@ -26,11 +30,13 @@ target_compile_definitions(cpu-fp-double INTERFACE ROOFLINE_FP_BYTES=8)
 # create the fibonacci example
 add_executable(ex-cpu-roofline-fib-single          ${EXE_NAME}.cpp)
 target_link_libraries(ex-cpu-roofline-fib-single   timemory cpu-fp-single)
-set_target_properties(ex-cpu-roofline-fib-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp)
+set_target_properties(ex-cpu-roofline-fib-single   PROPERTIES OUTPUT_NAME ${EXE_NAME}.sp
+    LINKER_LANGUAGE ${_LINKER_LANG})
 
 add_executable(ex-cpu-roofline-fib-double          ${EXE_NAME}.cpp)
 target_link_libraries(ex-cpu-roofline-fib-double   timemory cpu-fp-double)
-set_target_properties(ex-cpu-roofline-fib-double   PROPERTIES OUTPUT_NAME ${EXE_NAME})
+set_target_properties(ex-cpu-roofline-fib-double   PROPERTIES OUTPUT_NAME ${EXE_NAME}
+    LINKER_LANGUAGE ${_LINKER_LANG})
 
 # install the targets
 install(TARGETS ex-cpu-roofline-fib-single ex-cpu-roofline-fib-double DESTINATION bin)

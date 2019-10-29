@@ -30,9 +30,9 @@
 #include "timemory/components/types.hpp"
 #include "timemory/utility/graph_data.hpp"
 
-#include <tuple>
-#include <string>
 #include <cstdint>
+#include <string>
+#include <tuple>
 
 namespace tim
 {

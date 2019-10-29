@@ -93,6 +93,41 @@ struct test_clock : public base<test_clock<Idx>>
 using priority_start_wc = test_clock<0>;
 using priority_stop_wc  = test_clock<1>;
 
+//--------------------------------------------------------------------------------------//
+
+namespace tim
+{
+namespace trait
+{
+template <>
+struct is_timing_category<priority_start_wc> : public std::true_type
+{
+};
+template <>
+struct is_timing_category<priority_stop_wc> : public std::true_type
+{
+};
+template <>
+struct uses_timing_units<priority_start_wc> : public std::true_type
+{
+};
+template <>
+struct uses_timing_units<priority_stop_wc> : public std::true_type
+{
+};
+template <>
+struct start_priority<priority_start_wc> : public std::true_type
+{
+};
+template <>
+struct stop_priority<priority_stop_wc> : public std::true_type
+{
+};
+}  // namespace trait
+}  // namespace tim
+
+//--------------------------------------------------------------------------------------//
+
 using tuple_t =
     tim::component_tuple<wall_clock, cpu_clock, priority_start_wc, priority_stop_wc>;
 
@@ -252,39 +287,6 @@ TEST_F(priority_tests, start_stop)
     ASSERT_NEAR(pstop_exp, pstop_wc.get(), 0.125);
     ASSERT_NEAR(native_exp, native_wc.get(), 0.125);
 }
-
-//--------------------------------------------------------------------------------------//
-
-namespace tim
-{
-namespace trait
-{
-template <>
-struct start_priority<priority_start_wc> : public std::true_type
-{
-};
-template <>
-struct stop_priority<priority_stop_wc> : public std::true_type
-{
-};
-template <>
-struct is_timing_category<priority_start_wc> : public std::true_type
-{
-};
-template <>
-struct is_timing_category<priority_stop_wc> : public std::true_type
-{
-};
-template <>
-struct uses_timing_units<priority_start_wc> : public std::true_type
-{
-};
-template <>
-struct uses_timing_units<priority_stop_wc> : public std::true_type
-{
-};
-}  // namespace trait
-}  // namespace tim
 
 //--------------------------------------------------------------------------------------//
 

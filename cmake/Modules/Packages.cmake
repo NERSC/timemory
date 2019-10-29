@@ -481,6 +481,9 @@ if(TIMEMORY_USE_CUDA)
                 set(CUDA_ARCH "${CUDA_AUTO_ARCH}")
             else()
                 set(_ARCH_NUM ${cuda_${CUDA_ARCH}_arch})
+                if(_ARCH_NUM LESS 60)
+                    set(TIMEMORY_DISABLE_CUDA_HALF2 ON)
+                endif()
             endif()
         endif()
 
@@ -504,10 +507,6 @@ if(TIMEMORY_USE_CUDA)
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_35,code=sm_35
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -517,10 +516,6 @@ if(TIMEMORY_USE_CUDA)
         add_interface_library(timemory-cuda-10)
         target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
-            -gencode=arch=compute_30,code=sm_30
-            -gencode=arch=compute_35,code=sm_35
-            -gencode=arch=compute_50,code=sm_50
-            -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -562,6 +557,11 @@ if(TIMEMORY_USE_CUDA)
 
         target_compile_options(timemory-cuda INTERFACE
             $<$<COMPILE_LANGUAGE:CUDA>:--expt-extended-lambda>)
+
+        if(TIMEMORY_DISABLE_CUDA_HALF2)
+            target_compile_definitions(timemory-cuda INTERFACE
+                TIMEMORY_DISABLE_CUDA_HALF2)
+        endif()
 
         if(NOT WIN32)
             target_compile_options(timemory-cuda INTERFACE

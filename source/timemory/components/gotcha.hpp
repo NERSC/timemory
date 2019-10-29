@@ -38,7 +38,6 @@
 
 namespace tim
 {
-
 namespace component
 {
 using size_type = std::size_t;

@@ -12,6 +12,7 @@ unset(CMAKE_CXX_CLANG_TIDY)
 add_library(timemory-python-compile-options INTERFACE)
 add_cxx_flag_if_avail("-ftls-model=global-dynamic" timemory-python-compile-options)
 add_cxx_flag_if_avail("-Wno-deprecated-declarations" timemory-python-compile-options)
+add_cxx_flag_if_avail("-Wno-unused-but-set-parameter" timemory-python-compile-options)
 
 execute_process(COMMAND ${PYTHON_EXECUTABLE}
     -c "import sys; print('{}'.format(sys.version_info[0]))"
