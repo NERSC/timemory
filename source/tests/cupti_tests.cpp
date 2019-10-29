@@ -179,6 +179,9 @@ class cupti_tests : public ::testing::Test
 TEST_F(cupti_tests, activity)
 {
     using tuple_t = tim::auto_tuple<real_clock, cupti_activity>::component_type;
+    tim::settings::verbose() = 4;
+    tim::settings::debug()   = true;
+
     tuple_t timer(details::get_test_name(), true);
     timer.start();
 
@@ -322,7 +325,7 @@ TEST_F(cupti_tests, kernels)
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
     using tuple_t = tim::auto_tuple<real_clock, cupti_counters>::component_type;
-    tuple_t timer(details::get_test_name());
+    tuple_t timer(details::get_test_name(), true);
 
     timer.start();
     for(int i = 0; i < num_iter; ++i)
@@ -411,13 +414,13 @@ TEST_F(cupti_tests, streams)
     float*             data = tim::device::gpu::alloc<float>(num_data);
     tim::cuda::memcpy(data, cpu_data.data(), num_data, tim::cuda::host_to_device_v, 0);
 
-    tuple_t timer(details::get_test_name());
+    tuple_t timer(details::get_test_name(), true);
     timer.start();
     std::vector<tuple_t> subtimers;
     for(int i = 0; i < num_iter; ++i)
     {
         printf("[%s]> iteration %i...\n", __FUNCTION__, i);
-        tuple_t subtimer(details::get_test_name() + "_itr");
+        tuple_t subtimer(details::get_test_name() + "_itr", true);
         subtimer.start();
         details::KERNEL_A(data, num_data, stream);
         details::KERNEL_B(data, num_data, stream);
@@ -604,6 +607,8 @@ main(int argc, char** argv)
     tim::settings::timing_units() = "sec";
     tim::settings::precision()    = 3;
     tim::settings::width()        = 8;
+    tim::settings::debug()        = true;
+    tim::settings::verbose()      = 4;
     tim::timemory_init(argc, argv);
     tim::settings::banner() = false;
     return RUN_ALL_TESTS();

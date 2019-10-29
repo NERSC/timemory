@@ -43,8 +43,8 @@
 #include <string>
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -134,8 +134,8 @@ public:
     using data_label_type = get_data_label_t<reference_type>;
 
     // used by gotcha
-    using component_type =
-        typename filtered<available_tuple<concat<Types...>>>::this_type;
+    using component_type = this_type;
+    using auto_type      = auto_list<Types...>;
 
     // used by component hybrid
     static constexpr bool is_component_list   = true;
@@ -175,9 +175,6 @@ public:
     using deleter_t       = typename filtered<available_tuple<concat<Types...>>>::deleter_t;
     using copy_t          = typename filtered<available_tuple<concat<Types...>>>::copy_t;
     // clang-format on
-
-public:
-    using auto_type = typename filtered<available_tuple<concat<Types...>>>::auto_type;
 
 public:
     template <typename _Scope = scope::process,
@@ -579,43 +576,38 @@ public:
 
 public:
     // get member functions taking a type
-    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0,
-              enable_if_t<is_one_of<_Tp, data_type>::value, int> = 0>
-    _Tp get()
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp, enable_if_t<!(std::is_pointer<_Tp>::value), char> = 0,
-              enable_if_t<is_one_of<_Tp, reference_type>::value, int> = 0>
+    template <typename _Up, typename _Tp = typename std::remove_pointer<_Up>::type,
+              enable_if_t<is_one_of<_Tp*, data_type>::value, int> = 0>
     _Tp* get()
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
-    template <typename _Tp, enable_if_t<std::is_pointer<_Tp>::value, char> = 0,
-              enable_if_t<is_one_of<_Tp, data_type>::value, int> = 0>
-    const _Tp get() const
-    {
-        return std::get<index_of<_Tp, data_type>::value>(m_data);
-    }
-
-    template <typename _Tp, enable_if_t<!(std::is_pointer<_Tp>::value), char> = 0,
-              enable_if_t<is_one_of<_Tp, reference_type>::value, int> = 0>
+    template <typename _Up, typename _Tp = typename std::remove_pointer<_Up>::type,
+              enable_if_t<is_one_of<_Tp*, data_type>::value, int> = 0>
     const _Tp* get() const
     {
         return std::get<index_of<_Tp*, data_type>::value>(m_data);
     }
 
+    template <typename _Up, typename _Tp = typename std::remove_pointer<_Up>::type,
+              enable_if_t<!(is_one_of<_Tp, reference_type>::value), int> = 0>
+    _Tp* get() const
+    {
+        PRINT_HERE("");
+        return nullptr;
+    }
+
     //----------------------------------------------------------------------------------//
     ///  initialize a type that is in variadic list AND is available
     ///
-    template <typename _Tp, typename... _Args,
-              enable_if_t<(is_one_of<_Tp, reference_type>::value == true), int> = 0,
-              enable_if_t<(trait::is_available<_Tp>::value == true), int>       = 0>
+    template <typename _Up, typename _Tp = typename std::remove_pointer<_Up>::type,
+              typename... _Args,
+              enable_if_t<(is_one_of<_Tp*, data_type>::value == true), int> = 0,
+              enable_if_t<(trait::is_available<_Tp>::value == true), int>   = 0>
     void init(_Args&&... _args)
     {
-        auto&& _obj = get<_Tp>();
+        _Tp*& _obj = std::get<index_of<_Tp*, data_type>::value>(m_data);
         if(!_obj)
         {
             if(settings::debug())
@@ -870,4 +862,4 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/component_list.hpp"
+#include "timemory/variadic/bits/component_list.hpp"

@@ -48,9 +48,11 @@ fibonacci(intmax_t n);
 int
 main(int argc, char** argv)
 {
+#if defined(TIMEMORY_USE_PAPI)
     papi_array_t::get_initializer() = []() {
         return std::vector<int>({ PAPI_TOT_CYC, PAPI_TOT_INS, PAPI_LST_INS });
     };
+#endif
 
     // runtime customization of auto_list_t initialization
     auto_list_t::get_initializer() = [](auto_list_t& al) {

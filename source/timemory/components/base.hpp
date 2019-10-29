@@ -88,8 +88,7 @@ private:
     static_assert(std::is_pointer<_Tp>::value == false, "Error pointer base type");
 
 public:
-    base() { _init_storage(); }
-
+    base() { init_storage(); }
     ~base() = default;
 
     explicit base(const this_type&) = default;
@@ -101,7 +100,7 @@ public:
 private:
     template <typename _Up = _Tp, typename _Vp = _Value,
               enable_if_t<(implements_storage<_Up, _Vp>::value), int> = 0>
-    void _init_storage()
+    void init_storage()
     {
         if(!properties_t::has_storage())
         {
@@ -109,19 +108,6 @@ private:
             _instance->initialize();
         }
     }
-
-    template <typename _Up = _Tp, typename _Vp = _Value,
-              enable_if_t<!(implements_storage<_Up, _Vp>::value), int> = 0>
-    void _init_storage()
-    {}
-
-    struct _Fake
-    {};
-
-    template <typename _Ctor,
-              typename std::enable_if<(std::is_same<_Ctor, _Fake>::value), int>::type = 0>
-    base(_Ctor)
-    {}
 
 protected:
     static Type dummy()
@@ -315,6 +301,11 @@ public:
     }
 
     //----------------------------------------------------------------------------------//
+    // default get_display
+    //
+    value_type get_display() const { return static_cast<const Type&>(*this).get(); }
+
+    //----------------------------------------------------------------------------------//
     // comparison operators
     //
     bool operator==(const this_type& rhs) const { return (value == rhs.value); }
@@ -467,6 +458,9 @@ protected:
             is_transient = rhs.is_transient;
     }
 
+    static void cleanup() {}
+    static void invoke_cleanup() { Type::cleanup(); }
+
 protected:
     bool           is_running   = false;
     bool           is_on_stack  = false;
@@ -484,24 +478,121 @@ private:
     static void append_impl(std::false_type, graph_iterator, const Type&);
 
 public:
-    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_precision, precision)
-    CREATE_STATIC_VARIABLE_ACCESSOR(short, get_width, width)
-    CREATE_STATIC_VARIABLE_ACCESSOR(std::ios_base::fmtflags, get_format_flags,
-                                    format_flags)
-    CREATE_STATIC_FUNCTION_ACCESSOR(int64_t, get_unit, unit)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_display_unit, display_unit)
+    static constexpr bool timing_category_v = trait::is_timing_category<Type>::value;
+    static constexpr bool memory_category_v = trait::is_memory_category<Type>::value;
+    static constexpr bool timing_units_v    = trait::uses_timing_units<Type>::value;
+    static constexpr bool memory_units_v    = trait::uses_memory_units<Type>::value;
+    static constexpr bool percent_units_v   = trait::uses_percent_units<Type>::value;
 
-    /*
-    // these are available but currently unused
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, enabled, settings::enabled())
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, auto_output, settings::auto_output())
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, file_output, settings::file_output())
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, text_output, settings::text_output())
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, json_output, settings::json_output())
-    CREATE_STATIC_FUNCTION_ACCESSOR(bool, cout_output, settings::cout_output())
-    */
+    static const short precision = (memory_units_v || percent_units_v) ? 1 : 3;
+    static const short width     = (memory_units_v || percent_units_v) ? 6 : 8;
+    static const std::ios_base::fmtflags format_flags =
+        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
+
+    static int64_t unit()
+    {
+        if(timing_units_v)
+            return units::sec;
+        else if(memory_units_v)
+            return units::megabyte;
+        else if(percent_units_v)
+            return 1;
+
+        return 1;
+    }
+
+    static std::string display_unit()
+    {
+        if(timing_units_v)
+            return units::time_repr(unit());
+        else if(memory_units_v)
+            return units::mem_repr(unit());
+        else if(percent_units_v)
+            return "%";
+
+        return "";
+    }
+
+    static short get_width()
+    {
+        static short _instance = Type::width;
+        if(settings::width() >= 0)
+            _instance = settings::width();
+
+        if(timing_category_v && settings::timing_width() >= 0)
+            _instance = settings::timing_width();
+        else if(memory_category_v && settings::memory_width() >= 0)
+            _instance = settings::memory_width();
+
+        return _instance;
+    }
+
+    static short get_precision()
+    {
+        static short _instance = Type::precision;
+        if(settings::precision() >= 0)
+            _instance = settings::precision();
+
+        if(timing_category_v && settings::timing_precision() >= 0)
+            _instance = settings::timing_precision();
+        else if(memory_category_v && settings::memory_precision() >= 0)
+            _instance = settings::memory_precision();
+
+        return _instance;
+    }
+
+    static std::ios_base::fmtflags get_format_flags()
+    {
+        static std::ios_base::fmtflags _instance = Type::format_flags;
+
+        auto _set_scientific = [&]() {
+            _instance &= (std::ios_base::fixed & std::ios_base::scientific);
+            _instance |= (std::ios_base::scientific);
+        };
+
+        if(settings::scientific() ||
+           (timing_category_v && settings::timing_scientific()) ||
+           (memory_category_v && settings::memory_scientific()))
+            _set_scientific();
+
+        return _instance;
+    }
+
+    static int64_t get_unit()
+    {
+        static int64_t _instance = Type::unit();
+
+        if(timing_units_v && settings::timing_units().length() > 0)
+            _instance = std::get<1>(units::get_timing_unit(settings::timing_units()));
+        else if(memory_units_v && settings::memory_units().length() > 0)
+            _instance = std::get<1>(units::get_memory_unit(settings::memory_units()));
+
+        return _instance;
+    }
+
+    static std::string get_display_unit()
+    {
+        static std::string _instance = Type::display_unit();
+
+        if(timing_units_v && settings::timing_units().length() > 0)
+            _instance = std::get<0>(units::get_timing_unit(settings::timing_units()));
+        else if(memory_units_v && settings::memory_units().length() > 0)
+            _instance = std::get<0>(units::get_memory_unit(settings::memory_units()));
+
+        return _instance;
+    }
+
+    static std::string get_label()
+    {
+        static std::string _instance = Type::label();
+        return _instance;
+    }
+
+    static std::string get_description()
+    {
+        static std::string _instance = Type::description();
+        return _instance;
+    }
 };
 
 //--------------------------------------------------------------------------------------//
@@ -702,19 +793,6 @@ public:
         is_transient = true;
     }
 
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_label, label)
-    CREATE_STATIC_FUNCTION_ACCESSOR(std::string, get_description, description)
-
-    //----------------------------------------------------------------------------------//
-    // comparison operators
-    //
-    // bool operator==(const this_type& rhs) const { return (value == rhs.value); }
-    // bool operator<(const this_type& rhs) const { return (value < rhs.value); }
-    // bool operator>(const this_type& rhs) const { return (value > rhs.value); }
-    // bool operator!=(const this_type& rhs) const { return !(*this == rhs); }
-    // bool operator<=(const this_type& rhs) const { return !(*this > rhs); }
-    // bool operator>=(const this_type& rhs) const { return !(*this < rhs); }
-
     //----------------------------------------------------------------------------------//
     // this_type operators
     //
@@ -754,10 +832,26 @@ protected:
             is_transient = rhs.is_transient;
     }
 
+    static void cleanup() {}
+    static void invoke_cleanup() { Type::cleanup(); }
+
 protected:
     bool is_running   = false;
     bool is_on_stack  = false;
     bool is_transient = false;
+
+public:
+    static std::string get_label()
+    {
+        static std::string _instance = Type::label();
+        return _instance;
+    }
+
+    static std::string get_description()
+    {
+        static std::string _instance = Type::description();
+        return _instance;
+    }
 };
 
 //----------------------------------------------------------------------------------//
@@ -774,6 +868,7 @@ void
 base<_Tp, _Value, _Policies...>::append_impl(std::true_type, graph_iterator itr,
                                              const Type& rhs)
 {
+    PRINT_HERE(demangle<this_type>().c_str());
     static_assert(trait::secondary_data<_Tp>::value,
                   "append_impl should not be compiled");
     static_assert(std::is_same<_Vp, _Value>::value, "Type mismatch");

@@ -30,10 +30,10 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/cupti.hpp"
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -75,16 +75,10 @@ struct cupti_activity
     using kind_vector_type  = std::vector<cupti::activity_kind_t>;
     using get_initializer_t = std::function<kind_vector_type()>;
     using kernel_elapsed_t  = typename cupti::activity::receiver::named_elapsed_t;
+    using kernel_names_t    = std::unordered_set<std::string>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "cupti_activity"; }
     static std::string description() { return "CUpti Activity API"; }
-    static std::string display_unit() { return "sec"; }
 
     //----------------------------------------------------------------------------------//
 
@@ -113,38 +107,33 @@ struct cupti_activity
             } else if(lvl == 0)
             {
                 // general settings for kernels, runtime, overhead
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_OVERHEAD };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_RUNTIME,
+                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl == 1)
             {
                 // general settings for kernels, runtime, memory, overhead
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_OVERHEAD };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME,
+                             CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl == 2)
             {
                 // general settings for kernels, runtime, memory, overhead, and device
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY,
-                           CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME,
-                           CUPTI_ACTIVITY_KIND_DEVICE,
-                           CUPTI_ACTIVITY_KIND_DRIVER,
-                           CUPTI_ACTIVITY_KIND_OVERHEAD };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_DEVICE,
+                             CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_OVERHEAD } };
             } else if(lvl > 2)
             {
                 // general settings for kernels, runtime, memory, overhead, device,
                 // stream, CDP kernels
-                _kinds = { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
-                           CUPTI_ACTIVITY_KIND_MEMCPY,
-                           CUPTI_ACTIVITY_KIND_MEMSET,
-                           CUPTI_ACTIVITY_KIND_RUNTIME,
-                           CUPTI_ACTIVITY_KIND_DEVICE,
-                           CUPTI_ACTIVITY_KIND_DRIVER,
-                           CUPTI_ACTIVITY_KIND_OVERHEAD,
-                           CUPTI_ACTIVITY_KIND_MARKER,
-                           CUPTI_ACTIVITY_KIND_STREAM,
-                           CUPTI_ACTIVITY_KIND_CDP_KERNEL };
+                _kinds = { { CUPTI_ACTIVITY_KIND_CONCURRENT_KERNEL,
+                             CUPTI_ACTIVITY_KIND_MEMCPY, CUPTI_ACTIVITY_KIND_MEMSET,
+                             CUPTI_ACTIVITY_KIND_RUNTIME, CUPTI_ACTIVITY_KIND_DEVICE,
+                             CUPTI_ACTIVITY_KIND_DRIVER, CUPTI_ACTIVITY_KIND_OVERHEAD,
+                             CUPTI_ACTIVITY_KIND_MARKER, CUPTI_ACTIVITY_KIND_STREAM,
+                             CUPTI_ACTIVITY_KIND_CDP_KERNEL } };
             }
             return _kinds;
         };
@@ -197,6 +186,9 @@ public:
         cupti::activity::start_trace(this);
         value           = cupti::activity::get_receiver().get();
         m_kernels_value = cupti::activity::get_receiver().get_named();
+        m_kernels_names.clear();
+        for(const auto& itr : m_kernels_value)
+            m_kernels_names.insert(itr.first);
     }
 
     //----------------------------------------------------------------------------------//
@@ -209,27 +201,22 @@ public:
         accum += (tmp - value);
         value = std::move(tmp);
 
-        std::unordered_set<std::string> skip;
-        for(const auto& itr : m_kernels_value)
+        /*for(const auto& itr : m_kernels_names)
         {
-            auto kitr = kernel_tmp.find(itr.first);
-            if(kitr != kernel_tmp.end())
+            auto kitr = kernel_tmp.find(itr);
+            auto vitr = m_kernels_value.find(itr);
+            if(kitr != kernel_tmp.end() && vitr != m_kernels_value.end() &&
+               kitr->second > vitr->second)
             {
                 // if kernel found in start and stop, add difference
-                m_kernels_accum[itr.first] += (kitr->second - itr.second);
-                skip.insert(itr.first);
+                m_kernels_accum[itr] += (kitr->second - vitr->second);
             }
-            // do not add if found in start but not in stop (this should not happen)
-            // else if(m_kernels_accum.find(itr.first) == m_kernels_accum.end())
-            // {
-            //    m_kernels_accum[itr.first] = itr.second;
-            //}
-        }
+        }*/
 
         for(const auto& itr : kernel_tmp)
         {
             // if found in stop but not in start -> new kernel between start/stop
-            if(skip.count(itr.first) == 0)
+            if(m_kernels_names.count(itr.first) == 0)
                 m_kernels_accum[itr.first] += itr.second;
         }
 
@@ -264,6 +251,7 @@ public:
     }
 
 private:
+    kernel_names_t   m_kernels_names;
     kernel_elapsed_t m_kernels_value;
     kernel_elapsed_t m_kernels_accum;
 };

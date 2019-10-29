@@ -92,7 +92,6 @@ protected:
     {
         tim::settings::timing_units() = "sec";
         tim::settings::precision()    = 9;
-        tim::settings::process();
     }
 };
 

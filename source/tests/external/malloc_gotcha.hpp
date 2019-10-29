@@ -24,14 +24,61 @@
 
 #pragma once
 
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/gotcha.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/utility/graph_data.hpp"
+
+#include <tuple>
+#include <string>
+#include <cstdint>
 
 namespace tim
 {
+// clang-format off
+namespace component { struct malloc_gotcha; }
+// clang-format on
+
+//======================================================================================//
+
+namespace trait
+{
+template <>
+struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t>>
+: std::true_type
+{
+};
+
+template <>
+struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t, size_t>>
+: std::true_type
+{
+};
+
+template <>
+struct supports_args<component::malloc_gotcha, std::tuple<std::string, void*>>
+: std::true_type
+{
+};
+
+template <>
+struct uses_memory_units<component::malloc_gotcha> : std::true_type
+{
+};
+
+template <>
+struct is_memory_category<component::malloc_gotcha> : std::true_type
+{
+};
+
+template <>
+struct requires_prefix<component::malloc_gotcha> : std::true_type
+{
+};
+
+}  // namespace trait
+
 namespace component
 {
 struct malloc_gotcha
@@ -314,44 +361,5 @@ private:
 };
 
 }  // namespace component
-
-//======================================================================================//
-
-namespace trait
-{
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t>>
-: std::true_type
-{
-};
-
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, size_t, size_t>>
-: std::true_type
-{
-};
-
-template <>
-struct supports_args<component::malloc_gotcha, std::tuple<std::string, void*>>
-: std::true_type
-{
-};
-
-template <>
-struct uses_memory_units<component::malloc_gotcha> : std::true_type
-{
-};
-
-template <>
-struct is_memory_category<component::malloc_gotcha> : std::true_type
-{
-};
-
-template <>
-struct requires_prefix<component::malloc_gotcha> : std::true_type
-{
-};
-
-}  // namespace trait
 
 }  // namespace tim

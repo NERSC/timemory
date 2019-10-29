@@ -140,12 +140,12 @@ unset(_TLS_OPTIONS)
 #   rest of configuration
 #----------------------------------------------------------------------------------------#
 
+include(ClangFormat)
 include(Compilers)
 include(GNUInstallDirs)
 include(ProjectSettings)
 include(BuildSettings)
 include(Packages)
-include(ClangFormat)
 include(CMakeParseArguments)
 
 #----------------------------------------------------------------------------------------#
@@ -196,7 +196,7 @@ if("${CMAKE_PROJECT_NAME}" STREQUAL "${PROJECT_NAME}")
 
     include(Documentation)
 
-    if(TIMEMORY_DOXYGEN_DOCS)
+    if(TIMEMORY_BUILD_DOCS)
         SET(CMAKE_INSTALL_MESSAGE NEVER)
         Generate_Documentation(Doxyfile.${PROJECT_NAME})
         SET(CMAKE_INSTALL_MESSAGE LAZY)

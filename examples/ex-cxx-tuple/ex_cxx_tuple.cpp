@@ -106,8 +106,7 @@ test_4_measure();
 int
 main(int argc, char** argv)
 {
-    tim::timemory_init(argc, argv);
-    tim::mpi::initialize(argc, argv);
+    tim::timemory_init(&argc, &argv);
     tim::settings::json_output() = true;
     tim::enable_signal_detection();
 

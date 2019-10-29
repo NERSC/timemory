@@ -15,7 +15,8 @@ file(GLOB cxx_headers_templates     ${CMAKE_CURRENT_LIST_DIR}/timemory/templates
 file(GLOB cxx_headers_data          ${CMAKE_CURRENT_LIST_DIR}/timemory/data/*.hpp)
 file(GLOB cxx_headers_utility       ${CMAKE_CURRENT_LIST_DIR}/timemory/utility/*.hpp)
 file(GLOB cxx_headers_bits          ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.hpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h)
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.h
+                                    ${CMAKE_CURRENT_LIST_DIR}/timemory/bits/*.icpp)
 file(GLOB_RECURSE cereal_headers    ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hpp
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.h
                                     ${CMAKE_CURRENT_LIST_DIR}/cereal/include/*.hh)
@@ -23,15 +24,24 @@ file(GLOB c_sources                 ${CMAKE_CURRENT_LIST_DIR}/ctimemory.c)
 file(GLOB cxx_sources               ${CMAKE_CURRENT_LIST_DIR}/ctimemory.cpp
                                     ${CMAKE_CURRENT_LIST_DIR}/library.cpp
                                     ${CMAKE_CURRENT_LIST_DIR}/init.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp
-                                    ${CMAKE_CURRENT_LIST_DIR}/native_extern.cpp)
+                                    ${CMAKE_CURRENT_LIST_DIR}/auto_timer_extern.cpp)
+# bits folder
+set(cxx_headers_category_bits)
+foreach(_CATEGORY backends components ert mpl variadic utility)
+    file(GLOB cxx_headers_${_CATEGORY}_bits
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.hpp
+        ${CMAKE_CURRENT_LIST_DIR}/timemory/${_CATEGORY}/bits/*.icpp)
+    list(APPEND cxx_headers_category_bits ${cxx_headers_${_CATEGORY}_bits})
+endforeach()
 
 # all the headers
 set(timemory_headers
     ${c_headers} ${cxx_headers} ${cxx_headers_variadic}
     ${cxx_headers_backends} ${cxx_headers_ert} ${cxx_headers_details}
     ${cxx_headers_components} ${cxx_headers_mpl} ${cxx_headers_templates}
-    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data})
+    ${cxx_headers_utility} ${cxx_headers_bits} ${cxx_headers_data}
+    ${cxx_headers_category_bits})
+
 # this is only needed for windows
 file(GLOB pyheaders ${CMAKE_CURRENT_LIST_DIR}/python/*.hpp)
 file(GLOB pysources ${CMAKE_CURRENT_LIST_DIR}/python/*.cpp)
@@ -79,6 +89,7 @@ if(_BUILD_SHARED_CXX)
 
     target_link_libraries(timemory-cxx-shared PRIVATE
         timemory-compile-options
+        timemory-develop-options
         timemory-analysis-tools
         ${_ARCH_LIBRARY})
 
@@ -113,6 +124,7 @@ if(_BUILD_STATIC_CXX)
 
     target_link_libraries(timemory-cxx-static PRIVATE
         timemory-compile-options
+        timemory-develop-options
         timemory-analysis-tools
         ${_ARCH_LIBRARY})
 
@@ -159,6 +171,7 @@ if(TIMEMORY_BUILD_C)
             LINK_LIBRARIES      timemory-headers
                                 PRIVATE
                                     timemory-compile-options
+                                    timemory-develop-options
                                     timemory-cxx-shared
                                     timemory-external-shared
                                     timemory-analysis-tools
@@ -182,6 +195,7 @@ if(TIMEMORY_BUILD_C)
             LINK_LIBRARIES      timemory-headers
                                 PRIVATE
                                     timemory-compile-options
+                                    timemory-develop-options
                                     timemory-cxx-static
                                     timemory-external-static
                                     timemory-analysis-tools

@@ -25,10 +25,10 @@
 #pragma once
 
 #include "timemory/backends/papi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
@@ -248,7 +248,7 @@ struct cpu_roofline
                 _events.push_back(itr);
         }
 
-        papi::create_event_set(_event_set_ptr());
+        papi::create_event_set(_event_set_ptr(), settings::papi_multiplexing());
         if(event_set() == PAPI_NULL)
         {
             fprintf(stderr, "[cpu_roofline]> event_set is PAPI_NULL!\n");
@@ -267,7 +267,7 @@ struct cpu_roofline
                             papi::get_event_code_name(itr).c_str());
             }
             if(_events_ptr()->size() > 0)
-                papi::start(event_set(), settings::papi_multiplexing());
+                papi::start(event_set());
         }
     }
 

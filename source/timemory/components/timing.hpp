@@ -49,15 +49,8 @@ struct real_clock : public base<real_clock>
     using value_type = int64_t;
     using base_type  = base<real_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "real"; }
     static std::string description() { return "wall time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_real_now<int64_t, ratio_t>(); }
 
     double get_display() const
@@ -102,15 +95,8 @@ struct system_clock : public base<system_clock>
     using value_type = int64_t;
     using base_type  = base<system_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "sys"; }
     static std::string description() { return "system time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_system_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -145,15 +131,8 @@ struct user_clock : public base<user_clock>
     using value_type = int64_t;
     using base_type  = base<user_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "user"; }
     static std::string description() { return "user time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_user_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -188,15 +167,8 @@ struct cpu_clock : public base<cpu_clock>
     using value_type = int64_t;
     using base_type  = base<cpu_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "cpu"; }
     static std::string description() { return "cpu time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_cpu_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -228,15 +200,8 @@ struct monotonic_clock : public base<monotonic_clock>
     using value_type = int64_t;
     using base_type  = base<monotonic_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "monotonic_clock"; }
     static std::string description() { return "monotonic time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
         return tim::get_clock_monotonic_now<int64_t, ratio_t>();
@@ -272,15 +237,8 @@ struct monotonic_raw_clock : public base<monotonic_raw_clock>
     using value_type = int64_t;
     using base_type  = base<monotonic_raw_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "monotonic_raw_clock"; }
     static std::string description() { return "monotonic raw time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record()
     {
         return tim::get_clock_monotonic_raw_now<int64_t, ratio_t>();
@@ -317,15 +275,8 @@ struct thread_cpu_clock : public base<thread_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<thread_cpu_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "thread_cpu"; }
     static std::string description() { return "thread cpu time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_thread_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -358,15 +309,8 @@ struct process_cpu_clock : public base<process_cpu_clock>
     using value_type = int64_t;
     using base_type  = base<process_cpu_clock, value_type>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "process_cpu"; }
     static std::string description() { return "process cpu time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return tim::get_clock_process_now<int64_t, ratio_t>(); }
     double             get_display() const
     {
@@ -404,15 +348,8 @@ struct cpu_util : public base<cpu_util, std::pair<int64_t, int64_t>>
     using base_type  = base<cpu_util, value_type>;
     using this_type  = cpu_util;
 
-    static const short                   precision = 1;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "cpu_util"; }
     static std::string description() { return "cpu utilization"; }
-    static std::string display_unit() { return "%"; }
     static value_type  record()
     {
         return value_type(cpu_clock::record(), real_clock::record());
@@ -477,15 +414,8 @@ struct process_cpu_util : public base<process_cpu_util, std::pair<int64_t, int64
     using base_type  = base<process_cpu_util, value_type>;
     using this_type  = process_cpu_util;
 
-    static const short                   precision = 1;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "proc_cpu_util"; }
     static std::string description() { return "process cpu utilization"; }
-    static std::string display_unit() { return "%"; }
     static value_type  record()
     {
         return value_type(process_cpu_clock::record(), real_clock::record());
@@ -550,15 +480,8 @@ struct thread_cpu_util : public base<thread_cpu_util, std::pair<int64_t, int64_t
     using base_type  = base<thread_cpu_util, value_type>;
     using this_type  = thread_cpu_util;
 
-    static const short                   precision = 1;
-    static const short                   width     = 6;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return 1; }
     static std::string label() { return "thread_cpu_util"; }
     static std::string description() { return "thread cpu utilization"; }
-    static std::string display_unit() { return "%"; }
     static value_type  record()
     {
         return value_type(thread_cpu_clock::record(), real_clock::record());

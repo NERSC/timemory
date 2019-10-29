@@ -33,31 +33,50 @@
 
 // forward declare any types
 #include "timemory/components/types.hpp"
+#include "timemory/ert/types.hpp"
+#include "timemory/mpl/types.hpp"
+#include "timemory/variadic/types.hpp"
 
 // general components
-#include "timemory/components/caliper.hpp"
 #include "timemory/components/general.hpp"
 #include "timemory/components/rusage.hpp"
 #include "timemory/components/timing.hpp"
 
+// caliper components
+#if defined(TIMEMORY_USE_CALIPER)
+#    include "timemory/components/caliper.hpp"
+#endif
+
 // gotcha components
-#include "timemory/components/gotcha.hpp"
+#if defined(TIMEMORY_USE_GOTCHA)
+#    include "timemory/components/gotcha.hpp"
+#endif
 
 // cuda event
-#include "timemory/components/cuda_event.hpp"
+#if defined(TIMEMORY_USE_CUDA)
+#    include "timemory/components/cuda_event.hpp"
+#endif
 
 // nvtx marker
-#include "timemory/components/nvtx_marker.hpp"
+#if defined(TIMEMORY_USE_NVTX)
+#    include "timemory/components/nvtx_marker.hpp"
+#endif
 
 // GPU hardware counter components
-#include "timemory/components/cupti_activity.hpp"
-#include "timemory/components/cupti_counters.hpp"
-#include "timemory/components/gpu_roofline.hpp"
+#if defined(TIMEMORY_USE_CUPTI)
+#    include "timemory/components/cupti_activity.hpp"
+#    include "timemory/components/cupti_counters.hpp"
+#    include "timemory/components/gpu_roofline.hpp"
+#endif
 
 // CPU/GPU hardware counter components
-#include "timemory/components/cpu_roofline.hpp"
-#include "timemory/components/papi_array.hpp"
-#include "timemory/components/papi_tuple.hpp"
+#if defined(TIMEMORY_USE_PAPI)
+#    include "timemory/components/cpu_roofline.hpp"
+#    include "timemory/components/papi_array.hpp"
+#    include "timemory/components/papi_tuple.hpp"
+#endif
+
+#include "timemory/backends/cuda.hpp"
 
 // device backend
 #include "timemory/backends/device.hpp"
@@ -67,11 +86,6 @@
 //      helpers for generating components
 //
 //======================================================================================//
-
-/// this is the default maximum number of CPU counters that can be used in papi_array
-#if !defined(TIMEMORY_CPU_COUNTERS)
-#    define TIMEMORY_CPU_COUNTERS 32
-#endif
 
 #include "timemory/ctimemory.h"
 #include "timemory/mpl/apply.hpp"
@@ -83,19 +97,6 @@
 
 namespace tim
 {
-//--------------------------------------------------------------------------------------//
-///  provide a default size for papi_array
-//
-namespace component
-{
-//--------------------------------------------------------------------------------------//
-
-using papi_array_t = papi_array<TIMEMORY_CPU_COUNTERS>;
-
-//--------------------------------------------------------------------------------------//
-
-}  // namespace component
-
 //--------------------------------------------------------------------------------------//
 //
 ///  description:

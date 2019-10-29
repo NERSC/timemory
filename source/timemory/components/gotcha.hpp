@@ -25,9 +25,9 @@
 #pragma once
 
 #include "timemory/backends/gotcha.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/units.hpp"
 #include "timemory/utility/mangler.hpp"
@@ -38,6 +38,7 @@
 
 namespace tim
 {
+
 namespace component
 {
 using size_type = std::size_t;
@@ -602,6 +603,7 @@ private:
         _global_suppress      = true;
 
 #    if defined(DEBUG)
+        /*
         if(settings::verbose() > 2 || settings::debug())
         {
             static std::atomic<int32_t> _count;
@@ -617,6 +619,7 @@ private:
                        _atype.c_str());
             }
         }
+        */
 #    endif
 
         if(_orig)
@@ -636,6 +639,7 @@ private:
             _obj.stop();
 
 #    if defined(DEBUG)
+            /*
             if(settings::verbose() > 2 || settings::debug())
             {
                 static std::atomic<int32_t> _count;
@@ -648,6 +652,7 @@ private:
                               << std::endl;
                 }
             }
+            */
 #    endif
 
             // allow re-entrance into wrapper

@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 
 #include <cstdint>

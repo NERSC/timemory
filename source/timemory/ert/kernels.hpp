@@ -27,7 +27,7 @@
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
 #include "timemory/backends/mpi.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/macros.hpp"

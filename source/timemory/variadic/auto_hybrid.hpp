@@ -55,9 +55,9 @@ class auto_hybrid
 
 public:
     using this_type       = auto_hybrid<_CompTuple, _CompList>;
-    using tuple_type      = typename _CompTuple::component_type;
-    using list_type       = typename _CompList::component_type;
-    using base_type       = component_hybrid<tuple_type, list_type>;
+    using base_type       = component_hybrid<_CompTuple, _CompList>;
+    using tuple_type      = typename base_type::tuple_type;
+    using list_type       = typename base_type::list_type;
     using component_type  = typename base_type::component_type;
     using data_type       = typename component_type::data_type;
     using type_tuple      = typename component_type::type_tuple;

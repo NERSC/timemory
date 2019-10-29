@@ -145,7 +145,7 @@ endif()
 add_option(CMAKE_INSTALL_RPATH_USE_LINK_PATH "Embed RPATH using link path" ON)
 
 # Build settings
-add_option(TIMEMORY_DOXYGEN_DOCS
+add_option(TIMEMORY_BUILD_DOCS
     "Make a `doc` make target"  OFF ${_FEATURE})
 add_option(TIMEMORY_BUILD_EXAMPLES
     "Build the examples"  OFF)
@@ -165,6 +165,8 @@ add_option(TIMEMORY_BUILD_GTEST
     "Enable GoogleTest" OFF)
 add_option(TIMEMORY_BUILD_CALIPER
     "Enable building Caliper submodule (set to OFF for external)" ${_BUILD_CALIPER})
+add_option(TIMEMORY_BUILD_DEVELOPER
+    "Enable building with developer flags" OFF)
 if(UNIX AND NOT APPLE)
     add_option(TIMEMORY_BUILD_GOTCHA
         "Enable building GOTCHA (set to OFF for external)" ON)
@@ -227,7 +229,7 @@ add_option(THREAD_SAFE "Compile Cereal with THREAD_SAFE option" ON NO_FEATURE)
 add_option(JUST_INSTALL_CEREAL "Skip testing of Cereal" ON NO_FEATURE)
 add_option(SKIP_PORTABILITY_TEST "Skip Cereal portability test" ON NO_FEATURE)
 
-if(TIMEMORY_DOXYGEN_DOCS)
+if(TIMEMORY_BUILD_DOCS)
     add_option(TIMEMORY_BUILD_DOXYGEN "Include `doc` make target in all" OFF NO_FEATURE)
     mark_as_advanced(TIMEMORY_BUILD_DOXYGEN)
 endif()

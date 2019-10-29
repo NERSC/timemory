@@ -26,7 +26,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/graph.hpp"
 
 #include <cstdint>
@@ -271,9 +271,9 @@ public:
         return m_graph.append_child(m_head, node);
     }
 
-    inline iterator emplace_child(iterator _itr, _Node&& node)
+    inline iterator emplace_child(iterator _itr, _Node& node)
     {
-        return m_graph.append_child(_itr, std::move(node));
+        return m_graph.append_child(_itr, node);
     }
 
 private:

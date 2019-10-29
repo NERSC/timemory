@@ -31,9 +31,9 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/units.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
@@ -102,15 +102,8 @@ struct cuda_event : public base<cuda_event, float>
     using base_type     = base<cuda_event, value_type>;
     using marker_list_t = std::vector<marker>;
 
-    static const short                   precision = 3;
-    static const short                   width     = 8;
-    static const std::ios_base::fmtflags format_flags =
-        std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
-
-    static int64_t     unit() { return units::sec; }
     static std::string label() { return "cuda_event"; }
     static std::string description() { return "event time"; }
-    static std::string display_unit() { return "sec"; }
     static value_type  record() { return 0.0f; }
 
     static uint64_t& get_batched_marker_size()

@@ -100,6 +100,7 @@ inline manager::manager()
     {
         settings::parse();
         // std::atexit(&exit_hook);
+        papi::init();
     }
 
     if(m_instance_count == 0)

@@ -96,6 +96,16 @@ if(TIMEMORY_USE_COMPILE_TIMING)
 endif()
 
 #----------------------------------------------------------------------------------------#
+# developer build flags
+#
+add_interface_library(timemory-develop-options)
+if(TIMEMORY_BUILD_DEVELOPER)
+    add_target_flag_if_avail(timemory-develop-options "-ftime-report")
+    add_target_flag_if_avail(timemory-develop-options "-ftime-trace")
+    add_target_flag_if_avail(timemory-develop-options "-Wshadow")
+endif()
+
+#----------------------------------------------------------------------------------------#
 # architecture optimizations
 #
 add_interface_library(timemory-vector)

@@ -38,8 +38,8 @@
 
 #include "timemory/backends/gperf.hpp"
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/data/accumulators.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/type_traits.hpp"
 #include "timemory/utility/graph.hpp"
@@ -231,6 +231,7 @@ public:
 
         if(!singleton_t::is_master(this))
             singleton_t::master_instance()->merge(this);
+
         delete m_graph_data_instance;
         m_graph_data_instance = nullptr;
     }
@@ -244,6 +245,11 @@ public:
     //
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
+
+    //----------------------------------------------------------------------------------//
+    //  cleanup function for object
+    //
+    void cleanup() { ObjectType::invoke_cleanup(); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -358,7 +364,7 @@ private:
         {
             fprintf(stderr, "[%s]> mismatched graph data on master thread: %p vs. %p\n",
                     ObjectType::label().c_str(), (void*) ptr,
-                    (void*) m_graph_data_instance);
+                    static_cast<void*>(m_graph_data_instance));
         }
     }
 
@@ -619,7 +625,7 @@ public:
     //----------------------------------------------------------------------------------//
     //
     template <typename _Vp>
-    void append(const secondary_data_t<_Vp>& _data)
+    void append(const secondary_data_t<_Vp>& _secondary)
     {
         static bool _global_init = global_init();
         static bool _thread_init = thread_init();
@@ -627,12 +633,12 @@ public:
         consume_parameters(_global_init, _thread_init, _data_init);
 
         // get the iterator and check if valid
-        auto&& _itr = std::get<0>(_data);
+        auto&& _itr = std::get<0>(_secondary);
         if(!_data().graph().is_valid(_itr))
             return;
 
         // compute hash and depth
-        auto _hash  = add_hash_id(std::get<1>(_data));
+        auto _hash  = add_hash_id(std::get<1>(_secondary));
         auto _depth = _itr->depth() + 1;
 
         // see if depth + hash entry exists already
@@ -640,15 +646,17 @@ public:
         if(_nitr != m_node_ids[_depth].end())
         {
             // if so, then update
-            *_nitr += std::get<2>(_data);
+            _nitr->second->obj() += std::get<2>(_secondary);
+            _nitr->second->obj().laps += 1;
         }
         else
         {
             // else, create a new entry
             auto&& _tmp = ObjectType();
-            _tmp += std::get<2>(_data);
-            _nitr = _data().emplace_child(_itr, graph_node_t(_hash, _tmp, _depth));
-            m_node_ids[_depth][_hash] = _nitr;
+            _tmp += std::get<2>(_secondary);
+            _tmp.laps = 1;
+            graph_node_t _node(_hash, _tmp, _depth);
+            m_node_ids[_depth][_hash] = _data().emplace_child(_itr, _node);
         }
     }
 
@@ -840,20 +848,20 @@ private:
     using uomap_t             = std::unordered_map<_Key_t, _Mapped_t>;
     using iterator_hash_map_t = uomap_t<int64_t, uomap_t<int64_t, iterator>>;
 
-    bool                          m_initialized         = false;
-    bool                          m_finalized           = false;
-    bool                          m_global_init         = false;
-    bool                          m_thread_init         = false;
-    bool                          m_data_init           = false;
-    bool                          m_node_init           = mpi::is_initialized();
-    int32_t                       m_node_rank           = mpi::rank();
-    int32_t                       m_node_size           = mpi::size();
-    int64_t                       m_instance_id         = instance_count()++;
-    ::tim::graph_hash_map_ptr_t   m_hash_ids            = ::tim::get_hash_ids();
-    ::tim::graph_hash_alias_ptr_t m_hash_aliases        = ::tim::get_hash_aliases();
-    mutable graph_data_t*         m_graph_data_instance = nullptr;
-    iterator_hash_map_t           m_node_ids;
-    std::shared_ptr<manager>      m_manager;
+    bool                     m_initialized         = false;
+    bool                     m_finalized           = false;
+    bool                     m_global_init         = false;
+    bool                     m_thread_init         = false;
+    bool                     m_data_init           = false;
+    bool                     m_node_init           = mpi::is_initialized();
+    int32_t                  m_node_rank           = mpi::rank();
+    int32_t                  m_node_size           = mpi::size();
+    int64_t                  m_instance_id         = instance_count()++;
+    graph_hash_map_ptr_t     m_hash_ids            = ::tim::get_hash_ids();
+    graph_hash_alias_ptr_t   m_hash_aliases        = ::tim::get_hash_aliases();
+    mutable graph_data_t*    m_graph_data_instance = nullptr;
+    iterator_hash_map_t      m_node_ids;
+    std::shared_ptr<manager> m_manager;
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
@@ -921,6 +929,11 @@ public:
     //
     this_type& operator=(const this_type&) = delete;
     this_type& operator=(this_type&& rhs) = delete;
+
+    //----------------------------------------------------------------------------------//
+    //  cleanup function for object
+    //
+    void cleanup() { ObjectType::invoke_cleanup(); }
 
 public:
     //----------------------------------------------------------------------------------//
@@ -1073,12 +1086,12 @@ private:
 
     void get_shared_manager();
 
-    bool                          m_initialized  = false;
-    bool                          m_finalized    = false;
-    int64_t                       m_instance_id  = instance_count()++;
-    ::tim::graph_hash_map_ptr_t   m_hash_ids     = ::tim::get_hash_ids();
-    ::tim::graph_hash_alias_ptr_t m_hash_aliases = ::tim::get_hash_aliases();
-    std::shared_ptr<manager>      m_manager;
+    bool                     m_initialized  = false;
+    bool                     m_finalized    = false;
+    int64_t                  m_instance_id  = instance_count()++;
+    graph_hash_map_ptr_t     m_hash_ids     = ::tim::get_hash_ids();
+    graph_hash_alias_ptr_t   m_hash_aliases = ::tim::get_hash_aliases();
+    std::shared_ptr<manager> m_manager;
 
 public:
     const graph_hash_map_ptr_t&   get_hash_ids() const { return m_hash_ids; }
@@ -1106,19 +1119,18 @@ struct implements_storage
 //======================================================================================//
 
 template <typename _Tp>
-class storage
-: public impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>
+class storage : public impl::storage<_Tp, implements_storage<_Tp>::value>
 {
-    using this_type = storage<_Tp>;
-    using base_type =
-        impl::storage<_Tp, implements_storage<_Tp, typename _Tp::value_type>::value>;
-    using string_t      = std::string;
-    using smart_pointer = std::unique_ptr<this_type, details::storage_deleter<this_type>>;
-    using singleton_t   = singleton<this_type, smart_pointer>;
-    using pointer       = typename singleton_t::pointer;
-    using auto_lock_t   = typename singleton_t::auto_lock_t;
-    using iterator      = typename base_type::iterator;
-    using const_iterator = typename base_type::const_iterator;
+    static constexpr bool implements_storage_v = implements_storage<_Tp>::value;
+    using this_type                            = storage<_Tp>;
+    using base_type                            = impl::storage<_Tp, implements_storage_v>;
+    using deleter_t                            = details::storage_deleter<base_type>;
+    using smart_pointer                        = std::unique_ptr<base_type, deleter_t>;
+    using singleton_t                          = singleton<base_type, smart_pointer>;
+    using pointer                              = typename singleton_t::pointer;
+    using auto_lock_t                          = typename singleton_t::auto_lock_t;
+    using iterator                             = typename base_type::iterator;
+    using const_iterator                       = typename base_type::const_iterator;
 
     friend struct details::storage_deleter<this_type>;
     friend class manager;
@@ -1129,6 +1141,7 @@ class storage
 ///     1) filename
 ///     2) reference to storage object
 ///     3) concurrency
+///     4) mpi rank
 ///
 template <typename _Tp>
 void
@@ -1165,6 +1178,7 @@ struct tim::details::storage_deleter : public std::default_delete<StorageType>
             else if(master)
             {
                 master->StorageType::print();
+                master->StorageType::cleanup();
             }
         }
 

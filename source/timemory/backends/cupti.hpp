@@ -30,10 +30,10 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/details/cupti.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -308,7 +308,7 @@ static void CUPTIAPI
     {
         _LOG("New kernel encountered: %s", current_kernel_name.c_str());
         kernel_data_t k_data = dummy;
-        k_data.m_name        = corr_data;
+        k_data.m_name        = demangle(cbInfo->symbolName);
         auto& pass_data      = k_data.m_pass_data;
 
         for(size_t j = 0; j < pass_data.size(); ++j)
@@ -462,7 +462,7 @@ struct profiler
         m_event_ids.resize(events.size());
 
         // Init device, context and setup callback
-        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, device_num));
+        CUDA_DRIVER_API_CALL(cuDeviceGet(&m_device, m_device_num));
         // CUDA_DRIVER_API_CALL(cuCtxCreate(&m_context, 0, m_device));
         CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRetain(&m_context, m_device));
 
@@ -572,7 +572,7 @@ struct profiler
 
         cuptiDisableKernelReplayMode(m_context);
         CUPTI_CALL(cuptiActivityDisable(CUPTI_ACTIVITY_KIND_KERNEL));
-        CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
+        // CUDA_DRIVER_API_CALL(cuDevicePrimaryCtxRelease(m_device));
     }
 
     profiler(const profiler&) = delete;
@@ -730,6 +730,7 @@ public:
         {
             if(kitr.first == impl::dummy_kernel_id)
                 continue;
+            ss << kitr.second.m_name << " : ";
             for(size_t i = 0; i < m_event_names.size(); ++i)
             {
                 if(print_names)
@@ -754,6 +755,7 @@ public:
         {
             if(kitr.first == impl::dummy_kernel_id)
                 continue;
+            ss << kitr.second.m_name << " : ";
             for(size_t i = 0; i < m_metric_names.size(); ++i)
             {
                 if(print_names)
@@ -805,7 +807,11 @@ public:
                 std::string evt_name  = m_event_names[i].c_str();
                 auto        label_idx = get_label_index(evt_name);
                 if(label_idx < 0)
+                {
+                    printf("[%s:'%s'@%i]> Skipping metric '%s'...\n", __FUNCTION__,
+                           __FILE__, __LINE__, evt_name.c_str());
                     continue;
+                }
                 auto         value = static_cast<uint64_t>(kitr.second.m_event_values[i]);
                 data::metric ret;
                 data::unsigned_integer::set(ret, value);
@@ -817,10 +823,18 @@ public:
                 std::string met_name  = m_metric_names[i].c_str();
                 auto        label_idx = get_label_index(met_name);
                 if(label_idx < 0)
+                {
+                    printf("[%s:'%s'@%i]> Skipping metric '%s'...\n", __FUNCTION__,
+                           __FILE__, __LINE__, met_name.c_str());
                     continue;
+                }
                 auto ret =
                     impl::get_metric(m_metric_ids[i], kitr.second.m_metric_values[i]);
-                kern_data[label_idx] += result(met_name, ret, false);
+                result _result(met_name, ret, false);
+                kern_data[label_idx] += _result;
+                std::cout << "\nMETRIC: " << met_name << std::endl;
+                std::cout << "RESULT [indiv]: " << _result << std::endl;
+                std::cout << "RESULT [total]: " << kern_data[label_idx] << std::endl;
             }
         }
         return kern_data;

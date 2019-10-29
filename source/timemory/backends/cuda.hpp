@@ -622,4 +622,4 @@ memset(_Tp* dst, const int& value, size_t n, stream_t stream)
 //--------------------------------------------------------------------------------------//
 
 // definition of cuda device query
-#include "timemory/details/cuda.hpp"
+#include "timemory/backends/bits/cuda.hpp"

@@ -26,8 +26,8 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/timing.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/aligned_allocator.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"
@@ -178,19 +178,19 @@ struct configuration
         static executor_func_t _instance = [](ert_data_ptr_t data) {
             using lli = long long int;
             // configuration sizes
-            auto mws_size   = get_min_working_size()();
-            auto max_size   = get_max_data_size()();
-            auto num_thread = get_num_threads()();
-            auto num_stream = get_num_streams()();
-            auto grid_size  = get_grid_size()();
-            auto block_size = get_block_size()();
-            auto align_size = get_alignment()();
+            auto _mws_size   = get_min_working_size()();
+            auto _max_size   = get_max_data_size()();
+            auto _num_thread = get_num_threads()();
+            auto _num_stream = get_num_streams()();
+            auto _grid_size  = get_grid_size()();
+            auto _block_size = get_block_size()();
+            auto _align_size = get_alignment()();
 
             // execution parameters
-            ert_params_t params(mws_size, max_size, num_thread, num_stream, grid_size,
-                                block_size);
+            ert_params_t params(_mws_size, _max_size, _num_thread, _num_stream,
+                                _grid_size, _block_size);
             // operation _counter instance
-            ert_counter_t _counter(params, data, align_size);
+            ert_counter_t _counter(params, data, _align_size);
 
             // set bytes per element
             _counter.bytes_per_element = sizeof(_Tp);
@@ -204,8 +204,8 @@ struct configuration
                 "working-set = %lli, max-size = %lli, num-thread = %lli, num-stream = "
                 "%lli, grid-size = %lli, block-size = %lli, align-size = %lli, data-type "
                 "= %s\n",
-                (lli) mws_size, (lli) max_size, (lli) num_thread, (lli) num_stream,
-                (lli) grid_size, (lli) block_size, (lli) align_size, dtype.c_str());
+                (lli) _mws_size, (lli) _max_size, (lli) _num_thread, (lli) _num_stream,
+                (lli) _grid_size, (lli) _block_size, (lli) _align_size, dtype.c_str());
 
             return _counter;
         };

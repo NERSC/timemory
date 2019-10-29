@@ -37,6 +37,7 @@
 
 #include "timemory/backends/papi.hpp"
 #include "timemory/mpl/apply.hpp"
+#include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/serializer.hpp"
 #include "timemory/utility/singleton.hpp"
@@ -102,9 +103,12 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _init_storage()
     {
-        using storage_type = typename _Tp::storage_type;
-        auto ret           = storage_type::instance();
-        ret->initialize();
+        if(!component::properties<_Tp>::has_storage())
+        {
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::instance();
+            ret->initialize();
+        }
     }
 
     template <typename _Tp, typename... _Tail,
@@ -119,10 +123,13 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _print_storage()
     {
-        using storage_type = typename _Tp::storage_type;
-        auto ret           = storage_type::noninit_instance();
-        if(ret && !ret->empty())
-            ret->print();
+        if(component::properties<_Tp>::has_storage())
+        {
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::noninit_instance();
+            if(ret && !ret->empty())
+                ret->print();
+        }
     }
 
     template <typename _Tp, typename... _Tail,
@@ -137,10 +144,13 @@ private:
               enable_if_t<(sizeof...(_Tail) == 0), int> = 0>
     void _clear()
     {
-        using storage_type = typename _Tp::storage_type;
-        auto ret           = storage_type::noninit_instance();
-        if(ret)
-            ret->data().clear();
+        if(component::properties<_Tp>::has_storage())
+        {
+            using storage_type = typename _Tp::storage_type;
+            auto ret           = storage_type::noninit_instance();
+            if(ret)
+                ret->data().clear();
+        }
     }
 
     template <typename _Tp, typename... _Tail,
@@ -172,10 +182,9 @@ private:
         _serialize<_Archive, _Tail...>(ar);
     }
 
-public:
     // used to expand a tuple in settings
     template <typename... _Types>
-    struct get_storage
+    struct filtered_get_storage
     {
         using indent                  = cereal::JSONOutputArchive::Options::IndentChar;
         static constexpr auto spacing = indent::space;
@@ -184,6 +193,8 @@ public:
         {
             if(_manager.get() == nullptr)
                 _manager = manager::instance();
+            if(!_manager)
+                return "";
             std::stringstream ss;
             {
                 // args: precision, spacing, indent size
@@ -203,6 +214,8 @@ public:
         {
             if(_manager.get() == nullptr)
                 _manager = manager::instance();
+            if(!_manager)
+                return;
             _manager->_init_storage<_Types...>();
         }
 
@@ -210,6 +223,8 @@ public:
         {
             if(_manager.get() == nullptr)
                 _manager = manager::instance();
+            if(!_manager)
+                return;
             _manager->_clear<_Types...>();
         }
 
@@ -217,26 +232,39 @@ public:
         {
             if(_manager.get() == nullptr)
                 _manager = manager::instance();
+            if(!_manager)
+                return;
             _manager->_print_storage<_Types...>();
         }
     };
 
-    /*
-    template <typename... _Types>
-    struct get_storage<std::tuple<_Types...>> : public get_storage<_Types...>
+    template <typename... _Types, template <typename...> class _Tuple>
+    struct filtered_get_storage<_Tuple<_Types...>>
+    : public filtered_get_storage<_Types...>
     {
-        using base_type = get_storage<_Types...>;
-        using base_type::serialize;
-        using base_type::initialize;
+        using base_type = filtered_get_storage<_Types...>;
         using base_type::clear;
+        using base_type::initialize;
         using base_type::print;
+        using base_type::serialize;
+    };
 
-    };*/
+public:
+    template <typename... _Types>
+    struct get_storage : public filtered_get_storage<implemented<_Types...>>
+    {
+        using base_type = filtered_get_storage<implemented<_Types...>>;
+        using base_type::clear;
+        using base_type::initialize;
+        using base_type::print;
+        using base_type::serialize;
+    };
 
     template <typename... _Types, template <typename...> class _Tuple>
-    struct get_storage<_Tuple<_Types...>> : public get_storage<_Types...>
+    struct get_storage<_Tuple<_Types...>>
+    : public filtered_get_storage<implemented<_Types...>>
     {
-        using base_type = get_storage<_Types...>;
+        using base_type = filtered_get_storage<implemented<_Types...>>;
         using base_type::clear;
         using base_type::initialize;
         using base_type::print;
@@ -246,6 +274,9 @@ public:
 private:
     template <typename... _Types>
     friend struct get_storage;
+
+    template <typename... _Types>
+    friend struct filtered_get_storage;
 
 public:
     // Public member functions
@@ -264,8 +295,8 @@ private:
     static std::atomic<int32_t>& f_manager_instance_count();
     /// increment the shared_ptr count here to ensure these instances live
     /// for the entire lifetime of the manager instance
-    ::tim::graph_hash_map_ptr_t   m_hash_ids     = ::tim::get_hash_ids();
-    ::tim::graph_hash_alias_ptr_t m_hash_aliases = ::tim::get_hash_aliases();
+    graph_hash_map_ptr_t   m_hash_ids     = get_hash_ids();
+    graph_hash_alias_ptr_t m_hash_aliases = get_hash_aliases();
 
 private:
     /// instance id
@@ -313,7 +344,7 @@ struct manager::initialize<std::tuple<_Types...>>
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/manager.hpp"
+#include "timemory/bits/manager.hpp"
 
 //--------------------------------------------------------------------------------------//
 

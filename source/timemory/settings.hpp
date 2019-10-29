@@ -32,7 +32,7 @@
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/utility/macros.hpp"
 
@@ -66,10 +66,6 @@ namespace tim
 {
 namespace settings
 {
-/// process the environment and apply settings to specified types
-template <typename _Tuple = available_tuple<tim::complete_tuple_t>>
-void
-process();
 /// initialize the storage of the specified types
 template <typename _Tuple = available_tuple<tim::complete_tuple_t>>
 void
@@ -83,6 +79,10 @@ timemory_init(int argc, char** argv, const std::string& _prefix = "timemory-",
 /// initialization (creates manager and configures output path)
 void
 timemory_init(const std::string& exe_name, const std::string& _prefix = "timemory-",
+              const std::string& _suffix = "-output");
+/// initialization (creates manager, configures output path, mpi_init)
+void
+timemory_init(int* argc, char*** argv, const std::string& _prefix = "timemory-",
               const std::string& _suffix = "-output");
 /// finalization of the specified types
 template <typename _Tuple = available_tuple<complete_tuple_t>>
@@ -102,10 +102,7 @@ inline void
 tim::settings::parse()
 {
     if(suppress_parsing())
-    {
-        process();
         return;
-    }
 
     // logic
     enabled()     = tim::get_env("TIMEMORY_ENABLED", enabled());
@@ -140,147 +137,6 @@ tim::settings::parse()
     // file settings
     output_path()   = tim::get_env("TIMEMORY_OUTPUT_PATH", output_path());
     output_prefix() = tim::get_env("TIMEMORY_OUTPUT_PREFIX", output_prefix());
-
-    process();
-}
-
-//--------------------------------------------------------------------------------------//
-// function to process the settings -- always called even when environment processesing
-// is suppressed
-//
-template <typename _CompTuple>
-inline void
-tim::settings::process()
-{
-    using _Tuple = available_tuple<_CompTuple>;
-
-    using namespace tim::component;
-    using category_timing  = impl::filter_false<trait::is_timing_category, _Tuple>;
-    using category_memory  = impl::filter_false<trait::is_memory_category, _Tuple>;
-    using has_timing_units = impl::filter_false<trait::uses_timing_units, _Tuple>;
-    using has_memory_units = impl::filter_false<trait::uses_memory_units, _Tuple>;
-
-    //------------------------------------------------------------------------//
-    //  Helper function for memory units processing
-    auto get_memory_unit = [&](string_t _unit) {
-        using return_type = std::tuple<std::string, long>;
-
-        if(_unit.length() == 0)
-            return return_type("MB", tim::units::megabyte);
-
-        using inner            = std::tuple<string_t, string_t, int64_t>;
-        using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = { inner("byte", "B", tim::units::byte),
-                                   inner("kilobyte", "KB", tim::units::kilobyte),
-                                   inner("megabyte", "MB", tim::units::megabyte),
-                                   inner("gigabyte", "GB", tim::units::gigabyte),
-                                   inner("terabyte", "TB", tim::units::terabyte),
-                                   inner("petabyte", "PB", tim::units::petabyte),
-                                   inner("kibibyte", "KiB", tim::units::KiB),
-                                   inner("mebibyte", "MiB", tim::units::MiB),
-                                   inner("gibibyte", "GiB", tim::units::GiB),
-                                   inner("tebibyte", "TiB", tim::units::TiB),
-                                   inner("pebibyte", "PiB", tim::units::PiB) };
-
-        _unit = tolower(_unit);
-        for(const auto& itr : matching)
-            if(_unit == tolower(std::get<0>(itr)) || _unit == tolower(std::get<1>(itr)))
-                return return_type(std::get<1>(itr), std::get<2>(itr));
-        std::cerr << "Warning!! No memory unit matching \"" << _unit
-                  << "\". Using default..." << std::endl;
-        return return_type("MB", tim::units::megabyte);
-    };
-    //------------------------------------------------------------------------//
-    //  Helper function for timing units processing
-    auto get_timing_unit = [&](string_t _unit) {
-        using return_type = std::tuple<std::string, long>;
-
-        if(_unit.length() == 0)
-            return return_type("sec", tim::units::sec);
-
-        using inner            = std::tuple<string_t, string_t, int64_t>;
-        using pair_vector_t    = std::vector<inner>;
-        pair_vector_t matching = { inner("ps", "picosecond", tim::units::psec),
-                                   inner("ns", "nanosecond", tim::units::nsec),
-                                   inner("us", "microsecond", tim::units::usec),
-                                   inner("ms", "millisecond", tim::units::msec),
-                                   inner("cs", "centisecond", tim::units::csec),
-                                   inner("ds", "decisecond", tim::units::dsec),
-                                   inner("s", "second", tim::units::sec) };
-
-        _unit = tolower(_unit);
-        for(const auto& itr : matching)
-            if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
-               _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
-            {
-                return return_type(std::get<0>(itr) + "ec", std::get<2>(itr));
-            }
-        std::cerr << "Warning!! No timing unit matching \"" << _unit
-                  << "\". Using default..." << std::endl;
-        return return_type("sec", tim::units::sec);
-    };
-
-    if(precision() > 0)
-    {
-        apply<void>::type_access<operation::set_precision, _Tuple>(precision());
-    }
-
-    if(width() > 0)
-    {
-        apply<void>::type_access<operation::set_width, _Tuple>(width());
-    }
-
-    if(scientific())
-    {
-        apply<void>::type_access<operation::set_format_flags, _Tuple>(
-            std::ios_base::scientific);
-    }
-
-    if(!(memory_width() < 0))
-    {
-        apply<void>::type_access<operation::set_width, category_memory>(memory_width());
-    }
-
-    if(!(timing_width() < 0))
-    {
-        apply<void>::type_access<operation::set_width, category_timing>(timing_width());
-    }
-
-    if(memory_scientific())
-    {
-        apply<void>::type_access<operation::set_format_flags, category_memory>(
-            std::ios_base::scientific);
-    }
-
-    if(timing_scientific())
-    {
-        apply<void>::type_access<operation::set_format_flags, category_timing>(
-            std::ios_base::scientific);
-    }
-
-    if(!(memory_precision() < 0))
-    {
-        apply<void>::type_access<operation::set_precision, category_memory>(
-            memory_precision());
-    }
-
-    if(!(timing_precision() < 0))
-    {
-        apply<void>::type_access<operation::set_precision, category_timing>(
-            timing_precision());
-    }
-
-    if(memory_units().length() > 0)
-    {
-        auto _memory_units = get_memory_unit(memory_units());
-        apply<void>::type_access<operation::set_units, has_memory_units>(_memory_units);
-    }
-
-    if(timing_units().length() > 0)
-    {
-        auto _timing_units = get_timing_unit(timing_units());
-        apply<void>::type_access<operation::set_units, has_timing_units>(_timing_units);
-    }
 }
 
 //--------------------------------------------------------------------------------------//
@@ -339,6 +195,18 @@ tim::timemory_init(const std::string& exe_name, const std::string& _prefix,
 
 //--------------------------------------------------------------------------------------//
 
+inline void
+tim::timemory_init(int* argc, char*** argv, const std::string& _prefix,
+                   const std::string& _suffix)
+{
+#if defined(TIMEMORY_USE_MPI)
+    tim::mpi::initialize(argc, argv);
+#endif
+    timemory_init(*argc, *argv, _prefix, _suffix);
+}
+
+//--------------------------------------------------------------------------------------//
+
 template <typename _CompTuple>
 inline void
 tim::timemory_finalize()
@@ -355,7 +223,7 @@ tim::timemory_finalize()
 }
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/storage.hpp"
+#include "timemory/utility/bits/storage.hpp"
 
 //--------------------------------------------------------------------------------------//
 
@@ -384,20 +252,5 @@ tim::timemory_finalize()
 #        define __library_dtor__
 #    endif
 #endif
-
-//--------------------------------------------------------------------------------------//
-
-namespace
-{
-/*
-static void
-timemory_minimal_init() __library_ctor__;
-
-void timemory_minimal_init()
-{
-    tim::settings::parse();
-}
-*/
-}  // namespace
 
 //--------------------------------------------------------------------------------------//

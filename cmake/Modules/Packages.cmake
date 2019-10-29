@@ -238,8 +238,10 @@ endif()
 find_library(PTHREADS_LIBRARY pthread)
 find_package(Threads QUIET)
 
-if(Threads_FOUND)
-    target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
+if(Threads_FOUND AND WIN32)
+    # older versions of CMake < ~3.13 have issues with -pthread being passed to NVCC
+    # compiler
+    target_link_libraries(timemory-threading INTERFACE Threads::Threads)
 endif()
 
 if(PTHREADS_LIBRARY AND NOT WIN32)
@@ -402,7 +404,7 @@ endif()
 
 find_package(PAPI QUIET)
 
-if(PAPI_FOUND)
+if(TIMEMORY_USE_PAPI AND PAPI_FOUND)
     target_link_libraries(timemory-papi INTERFACE papi-shared)
     target_link_libraries(timemory-papi-static INTERFACE papi-static)
     cache_list(APPEND ${PROJECT_NAME_UC}_INTERFACE_LIBRARIES papi-shared papi-static)
@@ -488,21 +490,11 @@ if(TIMEMORY_USE_CUDA)
         mark_as_advanced(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
 
         if(TIMEMORY_DEPRECATED_CUDA_SUPPORT)
-            add_interface_library(timemory-cuda-7)
-            target_compile_options(timemory-cuda-7 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
-                $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-                -gencode=arch=compute_20,code=sm_20
-                -gencode=arch=compute_30,code=sm_30
-                -gencode=arch=compute_50,code=sm_50
-                -gencode=arch=compute_52,code=sm_52
-                -gencode=arch=compute_52,code=compute_52
-                >)
-
             add_interface_library(timemory-cuda-8)
             target_compile_options(timemory-cuda-8 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
                 $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_30,-arch=sm_${_ARCH_NUM}>
-                -gencode=arch=compute_20,code=sm_20
                 -gencode=arch=compute_30,code=sm_30
+                -gencode=arch=compute_35,code=sm_35
                 -gencode=arch=compute_50,code=sm_50
                 -gencode=arch=compute_52,code=sm_52
                 -gencode=arch=compute_60,code=sm_60
@@ -514,6 +506,8 @@ if(TIMEMORY_USE_CUDA)
         add_interface_library(timemory-cuda-9)
         target_compile_options(timemory-cuda-9 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:${CUDA_ARCH},${CUDA_AUTO_ARCH}>,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_30,code=sm_30
+            -gencode=arch=compute_35,code=sm_35
             -gencode=arch=compute_50,code=sm_50
             -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
@@ -525,6 +519,10 @@ if(TIMEMORY_USE_CUDA)
         add_interface_library(timemory-cuda-10)
         target_compile_options(timemory-cuda-10 INTERFACE $<$<COMPILE_LANGUAGE:CUDA>:
             $<IF:$<STREQUAL:"${CUDA_ARCH}","${CUDA_AUTO_ARCH}">,-arch=sm_60,-arch=sm_${_ARCH_NUM}>
+            -gencode=arch=compute_30,code=sm_30
+            -gencode=arch=compute_35,code=sm_35
+            -gencode=arch=compute_50,code=sm_50
+            -gencode=arch=compute_52,code=sm_52
             -gencode=arch=compute_60,code=sm_60
             -gencode=arch=compute_61,code=sm_61
             -gencode=arch=compute_70,code=sm_70
@@ -814,7 +812,7 @@ endif()
 #----------------------------------------------------------------------------------------#
 if(UNIX AND NOT APPLE)
     set(GOTCHA_BUILD_EXAMPLES OFF CACHE BOOL "Build GOTCHA examples")
-    if(TIMEMORY_BUILD_GOTCHA)
+    if(TIMEMORY_BUILD_GOTCHA AND TIMEMORY_USE_GOTCHA)
         set(gotcha_FOUND ON)
         checkout_git_submodule(RECURSIVE
             RELATIVE_PATH external/gotcha
@@ -823,8 +821,10 @@ if(UNIX AND NOT APPLE)
         list(APPEND TIMEMORY_ADDITIONAL_EXPORT_TARGETS gotcha gotcha-include)
     elseif(TIMEMORY_USE_GOTCHA)
         find_package(gotcha QUIET)
+        set(TIMEMORY_BUILD_GOTCHA OFF)
     else()
         set(gotcha_FOUND OFF)
+        set(TIMEMORY_BUILD_GOTCHA OFF)
     endif()
 else()
     set(gotcha_FOUND OFF)

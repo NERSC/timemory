@@ -138,28 +138,10 @@ using comp_tuple_t =
 
 //--------------------------------------------------------------------------------------//
 
-bool&
-papi_enabled()
-{
-    static bool _instance = tim::get_env("TIMEM_PAPI", false);
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
 comp_tuple_t*&
 get_measure()
 {
     static comp_tuple_t* _instance = nullptr;
-    return _instance;
-}
-
-//--------------------------------------------------------------------------------------//
-
-papi_array_t*&
-get_papi_array()
-{
-    static papi_array_t* _instance = nullptr;
     return _instance;
 }
 
@@ -210,8 +192,6 @@ parent_process(pid_t pid)
     if(waitpid(pid, &status, 0) > 0)
     {
         get_measure()->stop();
-        if(get_papi_array())
-            get_papi_array()->stop();
 
         if(WIFEXITED(status) && !WEXITSTATUS(status))
         {
@@ -242,16 +222,6 @@ parent_process(pid_t pid)
 
     std::stringstream _oss;
     _oss << "\n" << *get_measure() << std::flush;
-
-    if(get_papi_array())
-    {
-        papi_array_t::get_label() = "";
-        _oss << "\n[" << command() << "] "
-             << "hardware counters : " << (*get_papi_array()) << "\n"
-             << std::flush;
-        delete get_papi_array();
-        get_papi_array() = nullptr;
-    }
 
     if(tim::settings::file_output())
     {
@@ -420,9 +390,6 @@ main(int argc, char** argv)
     tim::settings::auto_output()      = false;
     tim::settings::output_prefix()    = "";
 
-    // update values to reflect modifications
-    tim::settings::process();
-
     auto compose_prefix = [&]() {
         std::stringstream ss;
         ss << "[" << command().c_str() << "] total execution time";
@@ -447,24 +414,7 @@ main(int argc, char** argv)
     tim::get_rusage_type() = RUSAGE_CHILDREN;
     get_measure()          = new comp_tuple_t(compose_prefix());
 
-    if(papi_enabled())
-    {
-        tim::papi::init();
-        papi_array_t::get_initializer() = [&]() {
-            auto events_str = tim::get_env<string_t>("TIMEM_PAPI_EVENTS", "PAPI_LST_INS");
-            vector_t<string_t> events_str_list = tim::delimit(events_str);
-            vector_t<int>      events_list;
-            for(const auto& itr : events_str_list)
-                events_list.push_back(tim::papi::get_event_code(itr));
-            return events_list;
-        };
-        tim::settings::papi_multiplexing() = tim::get_env("TIMEM_PAPI_MULTIPLEX", true);
-        get_papi_array()                   = new papi_array_t();
-    }
-
     get_measure()->start();
-    if(get_papi_array())
-        get_papi_array()->start();
 
     pid_t pid = fork();
 
@@ -483,5 +433,4 @@ main(int argc, char** argv)
     }
 
     delete get_measure();
-    delete get_papi_array();
 }

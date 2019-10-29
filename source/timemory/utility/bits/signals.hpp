@@ -23,8 +23,8 @@
 // SOFTWARE.
 //
 
-/** \file signal_detection.hpp
- * \headerfile signal_detection.hpp "timemory/details/signal_detection.hpp"
+/** \file utility/bits/signals.hpp
+ * \headerfile utility/bits/signals.hpp "timemory/utility/bits/signals.hpp"
  * Provides inline implementation of signal_detection functions
  *
  */
@@ -33,7 +33,7 @@
 #include <sstream>
 #include <string>
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 
 namespace tim
 {

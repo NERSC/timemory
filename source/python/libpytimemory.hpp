@@ -57,8 +57,8 @@
 #include "pybind11/stl.h"
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/ctimemory.h"
-#include "timemory/details/settings.hpp"
 #include "timemory/manager.hpp"
 #include "timemory/timemory.hpp"
 #include "timemory/utility/signals.hpp"

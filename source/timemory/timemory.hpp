@@ -164,8 +164,6 @@ struct dummy
 
 #    include "timemory/bits/init.hpp"
 #    include "timemory/templates/auto_timer_extern.hpp"
-#    include "timemory/templates/cuda_extern.hpp"
-#    include "timemory/templates/native_extern.hpp"
 
 //======================================================================================//
 

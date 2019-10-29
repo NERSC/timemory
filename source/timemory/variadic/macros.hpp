@@ -286,7 +286,7 @@ using str = tim::apply<std::string>;
 //--------------------------------------------------------------------------------------//
 
 // deprecated macros
-#    include "timemory/details/macros.hpp"
+#    include "timemory/utility/bits/macros.hpp"
 
 //--------------------------------------------------------------------------------------//
 

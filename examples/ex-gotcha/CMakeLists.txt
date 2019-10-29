@@ -1,7 +1,8 @@
 cmake_minimum_required(VERSION 3.10 FATAL_ERROR)
 
-if(WIN32)
-	return()
+# this is for internal use
+if(WIN32 OR ("${CMAKE_PROJECT_NAME}" STREQUAL "timemory" AND NOT TIMEMORY_USE_GOTCHA))
+    return()
 endif()
 
 project(timemory-gotcha-Example LANGUAGES C CXX)

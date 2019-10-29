@@ -39,7 +39,7 @@
 
 #include "timemory/backends/mpi.hpp"
 #include "timemory/backends/signals.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -547,4 +547,4 @@ timemory_stack_backtrace(std::ostream& os)
 
 #endif
 
-#include "timemory/details/signals.hpp"
+#include "timemory/utility/bits/signals.hpp"

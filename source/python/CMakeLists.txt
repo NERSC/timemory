@@ -34,6 +34,7 @@ target_link_libraries(libpytimemory PUBLIC
     timemory-headers
     timemory-cxx-shared
     timemory-compile-options
+    timemory-develop-options
     timemory-external-shared
     timemory-python-compile-options
     PRIVATE pybind11::module)

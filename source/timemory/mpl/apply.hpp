@@ -37,6 +37,7 @@
 #include <tuple>
 #include <type_traits>
 #include <utility>
+#include <vector>
 
 #if defined(__NVCC__)
 #    define TIMEMORY_LAMBDA __host__ __device__
@@ -52,11 +53,93 @@
 
 namespace tim
 {
-namespace device
+// clang-format off
+namespace device { struct cpu; struct gpu; }  // namespace device
+// clang-format on
+
+//--------------------------------------------------------------------------------------//
+//
+//  STL overload
+//
+//--------------------------------------------------------------------------------------//
+
+namespace stl_overload
 {
-struct cpu;
-struct gpu;
-}  // namespace device
+//--------------------------------------------------------------------------------------//
+
+template <typename T, typename U>
+::std::ostream&
+operator<<(::std::ostream&, const ::std::pair<T, U>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::ostream&
+operator<<(::std::ostream&, const ::std::tuple<_Types...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, size_t _N>
+::std::array<_Tp, _N>&
+operator+=(::std::array<_Tp, _N>&, const ::std::array<_Tp, _N>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Lhs, typename _Rhs>
+::std::pair<_Lhs, _Rhs>&
+operator+=(::std::pair<_Lhs, _Rhs>&, const ::std::pair<_Lhs, _Rhs>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, size_t _N>
+::std::array<_Tp, _N>&
+operator-=(::std::array<_Tp, _N>&, const ::std::array<_Tp, _N>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::tuple<_Types...>&
+operator-=(::std::tuple<_Types...>&, const ::std::tuple<_Types...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Lhs, typename _Rhs>
+::std::pair<_Lhs, _Rhs>&
+operator-=(::std::pair<_Lhs, _Rhs>&, const ::std::pair<_Lhs, _Rhs>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename... _Types>
+::std::tuple<_Types...>&
+operator+=(::std::tuple<_Types...>&, const ::std::tuple<_Types...>&);
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Extra>
+::std::vector<_Tp, _Extra...>&
+operator+=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+{
+    const auto _N = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < _N; ++i)
+        lhs[i] += rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+template <typename _Tp, typename... _Extra>
+::std::vector<_Tp, _Extra...>&
+operator-=(::std::vector<_Tp, _Extra...>& lhs, const ::std::vector<_Tp, _Extra...>& rhs)
+{
+    const auto _N = ::std::min(lhs.size(), rhs.size());
+    for(size_t i = 0; i < _N; ++i)
+        lhs[i] -= rhs[i];
+    return lhs;
+}
+
+//--------------------------------------------------------------------------------------//
+
+}  // namespace stl_overload
 
 //--------------------------------------------------------------------------------------//
 //
@@ -379,6 +462,7 @@ struct _apply_impl<void>
               enable_if_t<(sizeof...(_Nt) == 0), char> = 0>
     static void plus(_Tuple& _lhs, const _Tuple& _rhs)
     {
+        using namespace stl_overload;
         // assign argument
         std::get<_Idx>(_lhs) += std::get<_Idx>(_rhs);
     }
@@ -1034,3 +1118,5 @@ struct apply<void>
 }  // namespace tim
 
 //======================================================================================//
+
+#include "timemory/mpl/bits/apply.hpp"

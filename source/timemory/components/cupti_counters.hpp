@@ -31,9 +31,9 @@
 #pragma once
 
 #include "timemory/backends/cuda.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 
 #if defined(TIMEMORY_USE_CUPTI)
 #    include "timemory/backends/cupti.hpp"
@@ -60,13 +60,13 @@ namespace component
 
 struct cupti_counters
 : public base<cupti_counters, cupti::profiler::results_t, policy::global_init,
-              policy::global_init, policy::serialization>
+              policy::global_finalize, policy::serialization>
 {
     // required aliases
     using value_type = cupti::profiler::results_t;
     using this_type  = cupti_counters;
     using base_type  = base<cupti_counters, value_type, policy::global_init,
-                           policy::global_init, policy::serialization>;
+                           policy::global_finalize, policy::serialization>;
 
     // custom aliases
     using size_type     = std::size_t;
@@ -152,6 +152,7 @@ struct cupti_counters
 
     explicit cupti_counters()
     {
+        configure();
         auto& _labels = _get_labels();
         value.resize(_labels.size());
         accum.resize(_labels.size());
@@ -405,12 +406,12 @@ private:
         const_iterator begin() const { return obj.begin(); }
         const_iterator end() const { return obj.end(); }
 
-        friend std::ostream& operator<<(std::ostream& os, const writer& obj)
+        friend std::ostream& operator<<(std::ostream& os, const writer<_Tp>& _obj)
         {
-            auto sz = std::distance(obj.begin(), obj.end());
-            for(auto itr = obj.begin(); itr != obj.end(); ++itr)
+            auto sz = std::distance(_obj.begin(), _obj.end());
+            for(auto itr = _obj.begin(); itr != _obj.end(); ++itr)
             {
-                auto idx = std::distance(obj.begin(), itr);
+                auto idx = std::distance(_obj.begin(), itr);
                 os << (*itr);
                 if(idx + 1 < sz)
                     os << ", ";
@@ -427,26 +428,26 @@ private:
 
     static strvec_t& _get_events()
     {
-        static strvec_t _instance;
-        return _instance;
+        static strvec_t* _instance = new strvec_t();
+        return *_instance;
     }
 
     static strvec_t& _get_metrics()
     {
-        static strvec_t _instance;
-        return _instance;
+        static strvec_t* _instance = new strvec_t();
+        return *_instance;
     }
 
     static int& _get_device()
     {
-        static int _instance;
-        return _instance;
+        static int* _instance = new int(0);
+        return *_instance;
     }
 
     static strvec_t& _get_labels()
     {
-        static strvec_t _instance;
-        return _instance;
+        static strvec_t* _instance = new strvec_t();
+        return *_instance;
     }
 
     static strvec_t generate_labels()
@@ -545,6 +546,16 @@ private:
         _get_metrics().clear();
         _get_events().clear();
         _get_profiler().reset();
+    }
+
+public:
+    static void cleanup()
+    {
+        clear();
+        delete &_get_device();
+        delete &_get_events();
+        delete &_get_labels();
+        delete &_get_metrics();
     }
 };
 

@@ -153,9 +153,9 @@ struct papi_array
         auto events = get_events();
         if(events.size() > 0)
         {
-            papi::create_event_set(&_event_set());
+            papi::create_event_set(&_event_set(), settings::papi_multiplexing());
             papi::add_events(event_set(), events.data(), events.size());
-            papi::start(event_set(), settings::papi_multiplexing());
+            papi::start(event_set());
         }
     }
 

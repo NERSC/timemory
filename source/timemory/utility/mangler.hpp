@@ -24,7 +24,7 @@
 
 #pragma once
 
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/utility/type_id.hpp"
 #include "timemory/utility/utility.hpp"

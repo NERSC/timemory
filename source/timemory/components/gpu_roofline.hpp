@@ -24,13 +24,13 @@
 
 #pragma once
 
+#include "timemory/backends/bits/cupti.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/cupti_activity.hpp"
 #include "timemory/components/cupti_counters.hpp"
 #include "timemory/components/timing.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/cupti.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/ert/configuration.hpp"
 #include "timemory/ert/data.hpp"
 #include "timemory/ert/kernels.hpp"

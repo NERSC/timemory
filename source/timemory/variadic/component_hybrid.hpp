@@ -73,8 +73,8 @@ class component_hybrid
 
 public:
     using this_type       = component_hybrid<_CompTuple, _CompList>;
-    using tuple_type      = typename _CompTuple::component_type;
-    using list_type       = typename _CompList::component_type;
+    using tuple_type      = _CompTuple;
+    using list_type       = _CompList;
     using tuple_data_type = typename tuple_type::data_type;
     using list_data_type  = typename list_type::data_type;
     using data_type       = decltype(std::tuple_cat(std::declval<tuple_type>().data(),
@@ -91,9 +91,8 @@ public:
                                 std::declval<list_type>().get_labeled()));
 
     // used by gotcha
-    using tuple_component_type = typename tuple_type::component_type;
-    using list_component_type  = typename list_type::component_type;
-    using component_type = component_hybrid<tuple_component_type, list_component_type>;
+    using component_type = component_hybrid<tuple_type, list_type>;
+    using auto_type      = auto_hybrid<tuple_type, list_type>;
 
     // used by component hybrid and gotcha
     static constexpr bool is_component_list   = false;
@@ -105,9 +104,6 @@ public:
 
     using size_type   = int64_t;
     using string_hash = std::hash<string_t>;
-
-public:
-    using auto_type = auto_hybrid<tuple_type, list_type>;
 
 public:
     template <typename _Scope = scope::process>
@@ -500,4 +496,4 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/component_hybrid.hpp"
+#include "timemory/variadic/bits/component_hybrid.hpp"

@@ -22,11 +22,16 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
-/** \file bits/type_traits.hpp
- * \headerfile bits/type_traits.hpp "timemory/bits/type_traits.hpp"
+/** \file mpl/bits/type_traits.hpp
+ * \headerfile mpl/bits/type_traits.hpp "timemory/mpl/bits/type_traits.hpp"
  * This provides the generated type-traits for various types
  *
  */
+
+#pragma once
+
+#include "timemory/components/types.hpp"
+#include "timemory/mpl/type_traits.hpp"
 
 namespace tim
 {
@@ -263,6 +268,27 @@ struct uses_memory_units<component::read_bytes> : std::true_type
 
 template <>
 struct uses_memory_units<component::written_bytes> : std::true_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
+//
+//                              USES PERCENT UNITS
+//
+//--------------------------------------------------------------------------------------//
+
+template <>
+struct uses_percent_units<component::cpu_util> : std::true_type
+{
+};
+
+template <>
+struct uses_percent_units<component::process_cpu_util> : std::true_type
+{
+};
+
+template <>
+struct uses_percent_units<component::thread_cpu_util> : std::true_type
 {
 };
 

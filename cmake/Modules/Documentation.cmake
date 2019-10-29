@@ -15,15 +15,15 @@ endif()
 
 #----------------------------------------------------------------------------------------#
 
-if(TIMEMORY_DOXYGEN_DOCS)
+if(TIMEMORY_BUILD_DOCS)
     # if BUILD_DOXYGEN_DOCS = ON, we want to build docs quietly
     # else, don't build quietly
-    CMAKE_DEPENDENT_OPTION(TIMEMORY_DOXYGEN_DOCS_QUIET
+    CMAKE_DEPENDENT_OPTION(TIMEMORY_BUILD_DOCS_QUIET
         "Suppress standard output when making the docs" ON
         "BUILD_DOXYGEN_DOCS" OFF)
-    mark_as_advanced(TIMEMORY_DOXYGEN_DOCS_QUIET)
+    mark_as_advanced(TIMEMORY_BUILD_DOCS_QUIET)
 
-    if(TIMEMORY_DOXYGEN_DOCS_QUIET)
+    if(TIMEMORY_BUILD_DOCS_QUIET)
         set(DOXYGEN_QUIET YES)
     else()
         set(DOXYGEN_QUIET NO)
@@ -152,7 +152,7 @@ if(TIMEMORY_DOXYGEN_DOCS)
           "<meta http-equiv=\"refresh\" content=\"1;url=html/index.html\">")
     endif()
 
-endif() # TIMEMORY_DOXYGEN_DOCS
+endif() # TIMEMORY_BUILD_DOCS
 
 #----------------------------------------------------------------------------------------#
 # Macro to generate documentation
@@ -162,7 +162,7 @@ MACRO(GENERATE_DOCUMENTATION DOXYGEN_CONFIG_FILE)
 
     FIND_PACKAGE(Doxygen)
     if(NOT Doxygen_FOUND)
-     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_DOXYGEN_DOCS")
+     message(STATUS "Doxygen executable cannot be found. Disable TIMEMORY_BUILD_DOCS")
 	 return()
     endif()
     SET(DOXYFILE_FOUND false)

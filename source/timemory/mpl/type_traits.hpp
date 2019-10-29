@@ -158,6 +158,14 @@ struct uses_memory_units : std::false_type
 };
 
 //--------------------------------------------------------------------------------------//
+/// trait that designates the units are a percentage
+///
+template <typename _Tp>
+struct uses_percent_units : std::false_type
+{
+};
+
+//--------------------------------------------------------------------------------------//
 /// trait that designates a type should always print a JSON output
 ///
 template <typename _Tp>
@@ -599,15 +607,6 @@ struct is_available<component::gpu_roofline_flops> : std::false_type
 {
 };
 
-//
-//  secondary data
-//
-
-template <>
-struct secondary_data<component::cupti_activity> : std::true_type
-{
-};
-
 #else
 
 template <typename... _Types>
@@ -657,6 +656,15 @@ struct iterable_measurement<component::gpu_roofline_dp_flops> : std::true_type
 
 template <>
 struct iterable_measurement<component::gpu_roofline_flops> : std::true_type
+{
+};
+
+//
+//  secondary data
+//
+
+template <>
+struct secondary_data<component::cupti_activity> : std::true_type
 {
 };
 
@@ -806,4 +814,4 @@ struct is_available<component::gperf_cpu_profiler> : std::false_type
 }  // namespace trait
 }  // namespace tim
 
-#include "timemory/bits/type_traits.hpp"
+#include "timemory/mpl/bits/type_traits.hpp"

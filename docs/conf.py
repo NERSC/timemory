@@ -43,7 +43,7 @@ if not os.path.exists(_bindir):
     os.makedirs(_bindir)
 os.chdir(_bindir)
 sp.run(["cmake",
-        "-DTIMEMORY_DOXYGEN_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",
+        "-DTIMEMORY_BUILD_DOCS=ON", "-DENABLE_DOXYGEN_HTML_DOCS=ON",
         "-DENABLE_DOXYGEN_LATEX_DOCS=OFF", "-DENABLE_DOXYGEN_MAN_DOCS=OFF",
         _srcdir])
 sp.run(["cmake", "--build", os.getcwd(), "--target", "doc"])
@@ -52,7 +52,7 @@ if os.path.exists(_doxdir):
 shutil.copytree(_doxbin, _doxdir)
 
 install('mkdocs-cinder')
-install('mkdocs-inspired')
+# install('mkdocs-inspired')
 os.chdir(_srcdir)
 sp.run(["mkdocs", "build"])
 os.chdir(_docdir)

@@ -41,22 +41,32 @@ namespace tim
 //      template <> get_storage_singleton<TYPE>();
 //      template <> get_noninit_storage_singleton<TYPE>();
 //
+#    if defined(TIMEMORY_USE_CALIPER)
 TIMEMORY_DECLARE_EXTERN_INIT(caliper)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_clock)
+#    if defined(TIMEMORY_USE_PAPI)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_dp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_roofline_sp_flops)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(cpu_util)
+#    if defined(TIMEMORY_USE_CUDA)
 TIMEMORY_DECLARE_EXTERN_INIT(cuda_event)
+#    endif
+#    if defined(TIMEMORY_USE_CUPTI)
 TIMEMORY_DECLARE_EXTERN_INIT(cupti_activity)
 TIMEMORY_DECLARE_EXTERN_INIT(cupti_counters)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(data_rss)
 TIMEMORY_DECLARE_EXTERN_INIT(gperf_cpu_profiler)
 TIMEMORY_DECLARE_EXTERN_INIT(gperf_heap_profiler)
+#    if defined(TIMEMORY_USE_CUPTI)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_dp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_hp_flops)
 TIMEMORY_DECLARE_EXTERN_INIT(gpu_roofline_sp_flops)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_clock)
 TIMEMORY_DECLARE_EXTERN_INIT(monotonic_raw_clock)
 TIMEMORY_DECLARE_EXTERN_INIT(num_io_in)
@@ -67,9 +77,13 @@ TIMEMORY_DECLARE_EXTERN_INIT(num_msg_recv)
 TIMEMORY_DECLARE_EXTERN_INIT(num_msg_sent)
 TIMEMORY_DECLARE_EXTERN_INIT(num_signals)
 TIMEMORY_DECLARE_EXTERN_INIT(num_swap)
+#    if defined(TIMEMORY_USE_NVTX)
 TIMEMORY_DECLARE_EXTERN_INIT(nvtx_marker)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(page_rss)
+#    if defined(TIMEMORY_USE_PAPI)
 TIMEMORY_DECLARE_EXTERN_INIT(papi_array_t)
+#    endif
 TIMEMORY_DECLARE_EXTERN_INIT(peak_rss)
 TIMEMORY_DECLARE_EXTERN_INIT(priority_context_switch)
 TIMEMORY_DECLARE_EXTERN_INIT(process_cpu_clock)

@@ -66,7 +66,7 @@
 #endif
 
 #include "timemory/backends/device.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 
 namespace tim
 {

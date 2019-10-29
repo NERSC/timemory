@@ -159,9 +159,11 @@ class hybrid_tests : public ::testing::Test
 protected:
     void SetUp() override
     {
+#if defined(TIMEMORY_USE_PAPI)
         papi_array_t::get_initializer() = []() {
             return std::vector<int>({ PAPI_TOT_CYC, PAPI_LST_INS });
         };
+#endif
         list_t::get_initializer() = [](list_t& l) {
             l.initialize<real_clock, cpu_clock, cpu_util, peak_rss, page_rss,
                          papi_array_t, caliper>();
@@ -171,9 +173,22 @@ protected:
 
 //--------------------------------------------------------------------------------------//
 
+TEST_F(hybrid_tests, type_check)
+{
+    using list_type = typename hybrid_t::list_type;
+    printf("\n");
+    std::cout << "list_t    = " << tim::demangle<list_t>() << std::endl;
+    std::cout << "list_type = " << tim::demangle<list_type>() << std::endl;
+    printf("\n");
+    ASSERT_TRUE((std::is_same<list_type, list_t>::value));
+}
+
+//--------------------------------------------------------------------------------------//
+
 TEST_F(hybrid_tests, hybrid)
 {
     hybrid_t obj(details::get_test_name());
+
     obj.start();
     std::thread t(details::consume, 500);
     details::do_sleep(250);
@@ -199,17 +214,21 @@ TEST_F(hybrid_tests, hybrid)
     ASSERT_NEAR(1.25, t_cpu.get(), timer_tolerance);
     ASSERT_NEAR(125.0, t_util.get(), util_tolerance);
 
-    auto& l_rc   = *obj.get_list().get<real_clock>();
-    auto& l_cpu  = *obj.get_list().get<cpu_clock>();
-    auto& l_util = *obj.get_list().get<cpu_util>();
+    auto* l_rc   = obj.get_list().get<real_clock>();
+    auto* l_cpu  = obj.get_list().get<cpu_clock>();
+    auto* l_util = obj.get_list().get<cpu_util>();
 
-    details::print_info(l_rc, 1.0, "sec", clock_convert);
-    details::print_info(l_cpu, 1.25, "sec", clock_convert);
-    details::print_info(l_util, 125.0, "%", cpu_util_convert);
+    ASSERT_TRUE(l_rc != nullptr);
+    ASSERT_TRUE(l_cpu != nullptr);
+    ASSERT_TRUE(l_util != nullptr);
 
-    ASSERT_NEAR(t_rc.get(), l_rc.get(), timer_epsilon);
-    ASSERT_NEAR(t_cpu.get(), l_cpu.get(), timer_epsilon);
-    ASSERT_NEAR(t_util.get(), l_util.get(), util_epsilon);
+    details::print_info(*l_rc, 1.0, "sec", clock_convert);
+    details::print_info(*l_cpu, 1.25, "sec", clock_convert);
+    details::print_info(*l_util, 125.0, "%", cpu_util_convert);
+
+    ASSERT_NEAR(t_rc.get(), l_rc->get(), timer_epsilon);
+    ASSERT_NEAR(t_cpu.get(), l_cpu->get(), timer_epsilon);
+    ASSERT_NEAR(t_util.get(), l_util->get(), util_epsilon);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -294,7 +313,6 @@ main(int argc, char** argv)
     tim::settings::memory_units() = "KiB";
     tim::settings::precision()    = 6;
     tim::timemory_init(argc, argv);
-    // tim::settings::file_output() = false;
     tim::settings::verbose() += 1;
     tim::settings::debug() = true;
 

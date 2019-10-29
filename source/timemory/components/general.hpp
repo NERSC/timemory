@@ -26,9 +26,9 @@
 #pragma once
 
 #include "timemory/backends/gperf.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components/base.hpp"
 #include "timemory/components/types.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/types.hpp"
 #include "timemory/variadic/types.hpp"
 
@@ -58,13 +58,10 @@ struct trip_count : public base<trip_count>
     static const std::ios_base::fmtflags format_flags =
         std::ios_base::fixed | std::ios_base::dec | std::ios_base::showpoint;
 
-    static int64_t     unit() { return 1; }
     static std::string label() { return "trip_count"; }
     static std::string description() { return "trip counts"; }
-    static std::string display_unit() { return ""; }
     static value_type  record() { return 1; }
 
-    value_type get_display() const { return accum; }
     value_type get() const { return accum; }
 
     void start()

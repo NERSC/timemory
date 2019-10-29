@@ -26,7 +26,7 @@
 
 #include "timemory/backends/cuda.hpp"
 #include "timemory/backends/device.hpp"
-#include "timemory/details/settings.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/utility/macros.hpp"
 #include "timemory/utility/utility.hpp"
 
@@ -447,10 +447,8 @@ template <typename _Ret, typename _Tp, typename... _Types,
 void
 _get(_Ret& val, const data_metric_t& lhs)
 {
-    if(lhs.index == _Tp::index)
-        val = static_cast<_Ret>(_Tp::get_data(lhs));
-    else
-        _get<_Ret, _Types...>(val, lhs);
+    _get<_Ret, _Tp>(val, lhs);
+    _get<_Ret, _Types...>(val, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -471,10 +469,8 @@ template <typename _Tp, typename... _Types,
 void
 _set(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(rhs.index == _Tp::index)
-        _Tp::set(lhs, rhs);
-    else
-        _set<_Types...>(lhs, rhs);
+    _set<_Tp>(lhs, rhs);
+    _set<_Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -495,10 +491,8 @@ template <typename _Tp, typename... _Types,
 void
 _print(std::ostream& os, const data_metric_t& lhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::print(os, lhs);
-    else
-        _print<_Types...>(os, lhs);
+    _print<_Tp>(os, lhs);
+    _print<_Types...>(os, lhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -519,10 +513,8 @@ template <typename _Tp, typename... _Types,
 void
 _plus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) += _Tp::cget(rhs);
-    else
-        _plus<_Types...>(lhs, rhs);
+    _plus<_Tp>(lhs, rhs);
+    _plus<_Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -543,10 +535,8 @@ template <typename _Tp, typename... _Types,
 void
 _minus(data_metric_t& lhs, const data_metric_t& rhs)
 {
-    if(lhs.index == _Tp::index)
-        _Tp::get(lhs) -= _Tp::cget(rhs);
-    else
-        _minus<_Types...>(lhs, rhs);
+    _minus<_Tp>(lhs, rhs);
+    _minus<_Types...>(lhs, rhs);
 }
 
 //--------------------------------------------------------------------------------------//
@@ -689,8 +679,8 @@ struct result
     result(const result& rhs)
     : is_event_value(rhs.is_event_value)
     , name(rhs.name)
+    , data(rhs.data)
     {
-        set(data, rhs.data);
     }
 
     result& operator=(const result& rhs)
@@ -703,8 +693,8 @@ struct result
         return *this;
     }
 
-    result(result&&) = default;
-    result& operator=(result&&) = default;
+    result(result&&) = delete;
+    result& operator=(result&&) = delete;
 
     explicit result(const std::string& _name, const data_t& _data, bool _is = true)
     : is_event_value(_is)

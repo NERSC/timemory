@@ -43,8 +43,8 @@
 #include <string>
 
 #include "timemory/backends/mpi.hpp"
+#include "timemory/bits/settings.hpp"
 #include "timemory/components.hpp"
-#include "timemory/details/settings.hpp"
 #include "timemory/mpl/apply.hpp"
 #include "timemory/mpl/filters.hpp"
 #include "timemory/mpl/operations.hpp"
@@ -124,8 +124,8 @@ public:
     using data_label_type = get_data_label_t<data_type>;
 
     // used by gotcha
-    using component_type =
-        typename filtered<available_tuple<concat<Types...>>>::this_type;
+    using component_type = this_type;
+    using auto_type      = auto_tuple<Types...>;
 
     // used by component hybrid
     static constexpr bool is_component_list   = false;
@@ -162,9 +162,6 @@ public:
     using set_prefix_t  = typename filtered<available_tuple<concat<Types...>>>::set_prefix_t;
     using get_data_t    = typename filtered<available_tuple<concat<Types...>>>::get_data_t;
     // clang-format on
-
-public:
-    using auto_type = typename filtered<available_tuple<concat<Types...>>>::auto_type;
 
 public:
     template <typename _Scope = scope::process,
@@ -621,4 +618,4 @@ public:
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/component_tuple.hpp"
+#include "timemory/variadic/bits/component_tuple.hpp"

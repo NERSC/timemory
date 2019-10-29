@@ -132,4 +132,4 @@ get_virt_mem();
 
 //--------------------------------------------------------------------------------------//
 
-#include "timemory/details/rusage.hpp"
+#include "timemory/backends/bits/rusage.hpp"
