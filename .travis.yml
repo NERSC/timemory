@@ -75,7 +75,30 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs static --caliper'"
+    #
+    # GCC 8
+    - os: linux
+      dist: bionic
+      python: "3.6"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static'"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -120,6 +143,26 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs static'"
+    # Clang 7
+    - os: linux
+      dist: bionic
+      python: "3.7"
+      addons:
+        apt:
+          packages:
+            - clang-7
+            - clang++-7
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs static --caliper'"
     # ------------------------------------------------------------------------ #
     #
     #   Python 3.7
@@ -190,7 +233,30 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs shared --caliper'"
+        - MATRIX_EVAL="CC=$(which gcc-7) && CXX=$(which g++-7) && BUILD_ARGS='--build-libs shared'"
+    #
+    # GCC 8
+    - os: linux
+      dist: bionic
+      python: "3.7"
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-8
+            - g++-8
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared'"
     # Clang 4.0
     - os: linux
       dist: xenial
@@ -235,6 +301,27 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --caliper'"
+    # Clang 7
+    - os: linux
+      dist: bionic
+      python: "3.7"
+      addons:
+        apt:
+          packages:
+            - clang-7
+            - clang++-7
+            - build-essential
+            - libmpich-dev
+            - mpich
+            - libpapi-dev
+            - papi-tools
+            - libgoogle-perftools-dev
+            - google-perftools
+            - lcov
+            - graphviz
+      env:
+        - MATRIX_EVAL="CC=$(which clang-7) && CXX=$(which clang++-7) && BUILD_ARGS='--build-libs shared --gotcha --caliper'"
+
     # ------------------------------------------------------------------------ #
 
 before_install:
