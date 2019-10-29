@@ -151,10 +151,31 @@ endif()
 #   timemory link target
 #----------------------------------------------------------------------------------------#
 set(@PROJECT_NAME@_LIBRARIES @LIBNAME@-headers)
-set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx)
-if(TIMEMORY_C_LIBRARY)
-    set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c)
-    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c)
+set(@PROJECT_NAME@_C_LIBRARIES @LIBNAME@-headers)
+set(@PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-headers)
+
+if(TARGET @LIBNAME@-cxx-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-shared)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-shared)
+elseif(TARGET @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_CXX_LIBRARIES @LIBNAME@-cxx-static)
+endif()
+
+if(TARGET @LIBNAME@-c-shared AND (NOT DEFINED BUILD_SHARED_LIBS OR BUILD_SHARED_LIBS))
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-shared)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-shared)
+elseif(TARGET @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_LIBRARIES @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_C_LIBRARIES @LIBNAME@-c-static)
+endif()
+
+if(TARGET @LIBNAME@-cxx-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-cxx-static)
+endif()
+
+if(TARGET @LIBNAME@-c-static)
+    list(APPEND @PROJECT_NAME@_STATIC_LIBRARIES @LIBNAME@-c-static)
 endif()
 
 
@@ -383,6 +404,9 @@ if(NOT "${@PROJECT_NAME@_FIND_COMPONENTS}" STREQUAL "" AND TIMEMORY_BUILD_INTERF
     unset(_LANGUAGES)
 endif()
 
+set(TiMemory_INCLUDE_DIR ${@PROJECT_NAME@_INCLUDE_DIR})
+set(TiMemory_LIB_DIR ${@PROJECT_NAME@_LIB_DIR})
+set(TiMemory_LIBRARIES ${@PROJECT_NAME@_LIBRARIES})
 
 #----------------------------------------------------------------------------------------#
 #   find_package variables
