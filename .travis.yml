@@ -10,28 +10,6 @@ matrix:
     #   Python 3.6
     #
     # ------------------------------------------------------------------------ #
-    # GCC 5
-    - os: linux
-      dist: xenial
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='--build-libs static'"
     # GCC 6
     - os: linux
       dist: xenial
@@ -99,27 +77,6 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs static'"
-    # Clang 4.0
-    - os: linux
-      dist: xenial
-      python: "3.6"
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-4.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-4.0
-            - clang++-4.0
-            - build-essential
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && COVERAGE=1 && BUILD_ARGS='--build-libs static'"
     # Clang 5.0
     - os: linux
       dist: xenial
@@ -168,28 +125,6 @@ matrix:
     #   Python 3.7
     #
     # ------------------------------------------------------------------------ #
-    # GCC 5
-    - os: linux
-      dist: xenial
-      python: "3.7"
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-5
-            - g++-5
-            - build-essential
-            - libmpich-dev
-            - mpich
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which gcc-5) && CXX=$(which g++-5) && BUILD_ARGS='--build-libs shared'"
     # GCC 6
     - os: linux
       dist: xenial
@@ -257,28 +192,7 @@ matrix:
             - graphviz
       env:
         - MATRIX_EVAL="CC=$(which gcc-8) && CXX=$(which g++-8) && BUILD_ARGS='--build-libs shared'"
-    # Clang 4.0
-    - os: linux
-      dist: xenial
-      python: "3.7"
-      addons:
-        apt:
-          sources:
-            - llvm-toolchain-xenial-4.0
-            - ubuntu-toolchain-r-test
-          packages:
-            - clang-4.0
-            - clang++-4.0
-            - build-essential
-            - libpapi-dev
-            - papi-tools
-            - libgoogle-perftools-dev
-            - google-perftools
-            - lcov
-            - graphviz
-      env:
-        - MATRIX_EVAL="CC=$(which clang-4.0) && CXX=$(which clang++-4.0) && BUILD_ARGS='--build-libs shared --gotcha'"
-    # Clang 5.0
+   # Clang 5.0
     - os: linux
       dist: xenial
       python: "3.7"
@@ -300,7 +214,7 @@ matrix:
             - lcov
             - graphviz
       env:
-        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && BUILD_ARGS='--build-libs shared --caliper'"
+        - MATRIX_EVAL="CC=$(which clang-5.0) && CXX=$(which clang++-5.0) && COVERAGE=1 && BUILD_ARGS='--build-libs shared'"
     # Clang 7
     - os: linux
       dist: bionic
