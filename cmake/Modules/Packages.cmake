@@ -238,10 +238,8 @@ endif()
 find_library(PTHREADS_LIBRARY pthread)
 find_package(Threads QUIET)
 
-if(Threads_FOUND AND WIN32)
-    # older versions of CMake < ~3.13 have issues with -pthread being passed to NVCC
-    # compiler
-    target_link_libraries(timemory-threading INTERFACE Threads::Threads)
+if(Threads_FOUND)
+    target_link_libraries(timemory-threading INTERFACE ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 if(PTHREADS_LIBRARY AND NOT WIN32)
