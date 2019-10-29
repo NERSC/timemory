@@ -178,7 +178,7 @@ get_memory_unit(std::string _unit)
     if(_unit.length() == 0)
         return return_type("MB", tim::units::megabyte);
 
-    auto _tolower = [](string_t _str) {
+    auto to_lower = [](string_t _str) {
         for(auto& itr : _str)
             itr = tolower(itr);
         return _str;
@@ -198,9 +198,9 @@ get_memory_unit(std::string _unit)
                                inner_t("tebibyte", "TiB", tim::units::TiB),
                                inner_t("pebibyte", "PiB", tim::units::PiB) };
 
-    _unit = _tolower(_unit);
+    _unit = to_lower(_unit);
     for(const auto& itr : matching)
-        if(_unit == _tolower(std::get<0>(itr)) || _unit == _tolower(std::get<1>(itr)))
+        if(_unit == to_lower(std::get<0>(itr)) || _unit == to_lower(std::get<1>(itr)))
             return return_type(std::get<1>(itr), std::get<2>(itr));
 
     std::cerr << "Warning!! No memory unit matching \"" << _unit << "\". Using default..."
@@ -220,7 +220,7 @@ get_timing_unit(std::string _unit)
     if(_unit.length() == 0)
         return return_type("sec", tim::units::sec);
 
-    auto _tolower = [](string_t _str) {
+    auto to_lower = [](string_t _str) {
         for(auto& itr : _str)
             itr = tolower(itr);
         return _str;
@@ -236,7 +236,7 @@ get_timing_unit(std::string _unit)
                                inner_t("ds", "decisecond", tim::units::dsec),
                                inner_t("s", "second", tim::units::sec) };
 
-    _unit = _tolower(_unit);
+    _unit = to_lower(_unit);
     for(const auto& itr : matching)
         if(_unit == std::get<0>(itr) || _unit == std::get<1>(itr) ||
            _unit == (std::get<0>(itr) + "ec") || _unit == (std::get<1>(itr) + "s"))
