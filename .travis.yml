@@ -258,7 +258,7 @@ install:
   - if [ -z "${BUILD_TYPE}" ]; then BUILD_TYPE=RelWithDebInfo ; fi
   - if [ -z "${USE_MPI}" ]; then ARGS="${ARGS} --no-mpi"; fi
   - if [ -n "${COVERAGE}" ]; then ARGS="${ARGS} --coverage"; else ARGS="${ARGS} --profile=cpu"; fi
-  - travis_wait 20 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
+  - travis_wait 45 python ./pyctest-runner.py ${ARGS} --pyctest-build-type=${BUILD_TYPE} -- -VV
 
 script:
   - eval "${MATRIX_EVAL}"

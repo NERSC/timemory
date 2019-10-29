@@ -158,9 +158,11 @@ target_compile_definitions(timemory-exceptions INTERFACE TIMEMORY_EXCEPTIONS)
 #
 #----------------------------------------------------------------------------------------#
 
-target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
-if(TIMEMORY_USE_EXTERN_INIT)
-    # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+if(NOT WIN32)
+    target_compile_definitions(timemory-extern-init INTERFACE TIMEMORY_EXTERN_INIT)
+    if(TIMEMORY_USE_EXTERN_INIT)
+        # target_link_libraries(timemory-headers INTERFACE timemory-extern-init)
+    endif()
 endif()
 
 

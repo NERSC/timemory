@@ -66,6 +66,10 @@ endif()
 #----------------------------------------------------------------------------------------#
 # build the C++ libraries
 #
+set(_EXTERN_INIT TIMEMORY_EXTERN_INIT)
+if(WIN32)
+    set(_EXTERN_INIT )
+endif()
 
 if(_BUILD_SHARED_CXX)
     build_library(
@@ -78,7 +82,7 @@ if(_BUILD_SHARED_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
+        COMPILE_DEFINITIONS ${_EXTERN_INIT}
                             PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
                             TIMEMORY_EXTERN_NATIVE_TEMPLATES)
 
@@ -113,7 +117,7 @@ if(_BUILD_STATIC_CXX)
         OUTPUT_DIR          ${PROJECT_BINARY_DIR}
         SOURCES             ${CXX_LIBRARY_SOURCES}
         CXX_COMPILE_OPTIONS ${${PROJECT_NAME}_CXX_COMPILE_OPTIONS}
-        COMPILE_DEFINITIONS TIMEMORY_EXTERN_INIT
+        COMPILE_DEFINITIONS ${_EXTERN_INIT}
                             PRIVATE TIMEMORY_EXTERN_AUTO_TIMER_TEMPLATES
                             TIMEMORY_EXTERN_NATIVE_TEMPLATES)
 
