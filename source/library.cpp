@@ -47,8 +47,8 @@ extern "C"
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    timemory_create_func_t timemory_create_function = nullptr;
-    timemory_delete_func_t timemory_delete_function = nullptr;
+    API timemory_create_func_t timemory_create_function = nullptr;
+    API timemory_delete_func_t timemory_delete_function = nullptr;
 }
 
 //======================================================================================//

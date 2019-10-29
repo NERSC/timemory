@@ -57,79 +57,6 @@
 
 //======================================================================================//
 //
-//      Operating System
-//
-//======================================================================================//
-
-// machine bits
-#    if defined(__x86_64__)
-#        if !defined(_64BIT)
-#            define _64BIT
-#        endif
-#    else
-#        if !defined(_32BIT)
-#            define _32BIT
-#        endif
-#    endif
-
-//--------------------------------------------------------------------------------------//
-// base operating system
-
-#    if defined(_WIN32) || defined(_WIN64)
-#        if !defined(_WINDOWS)
-#            define _WINDOWS
-#        endif
-//--------------------------------------------------------------------------------------//
-
-#    elif defined(__APPLE__) || defined(__MACH__)
-#        if !defined(_MACOS)
-#            define _MACOS
-#        endif
-#        if !defined(_UNIX)
-#            define _UNIX
-#        endif
-//--------------------------------------------------------------------------------------//
-
-#    elif defined(__linux__) || defined(__linux) || defined(linux) ||                    \
-        defined(__gnu_linux__)
-#        if !defined(_LINUX)
-#            define _LINUX
-#        endif
-#        if !defined(_UNIX)
-#            define _UNIX
-#        endif
-//--------------------------------------------------------------------------------------//
-
-#    elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
-#        if !defined(_UNIX)
-#            define _UNIX
-#        endif
-#    endif
-
-//======================================================================================//
-//
-//      Windows DLL settings
-//
-//======================================================================================//
-
-// Define macros for WIN32 for importing/exporting external symbols to DLLs
-#    if !defined(tim_api) && !defined(tim_api_static)
-#        if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
-#            if defined(_TIMEMORY_DLL)
-#                define tim_api __declspec(dllexport)
-#                define tim_api_static static __declspec(dllexport)
-#            else
-#                define tim_api __declspec(dllimport)
-#                define tim_api_static static __declspec(dllimport)
-#            endif
-#        else
-#            define tim_api
-#            define tim_api_static static
-#        endif
-#    endif
-
-//======================================================================================//
-//
 //      C component enum
 //
 //======================================================================================//
@@ -172,28 +99,28 @@ extern "C"
 //======================================================================================//
 #    if !defined(TIMEMORY_EXTERN_C)
 #        if defined(__cplusplus)
-#            define TIMEMORY_EXTERN_C "C"
+#            define TIMEMORY_EXTERN_C extern "C" tim_api
 #        else
-#            define TIMEMORY_EXTERN_C
+#            define TIMEMORY_EXTERN_C extern tim_api
 #        endif
 #    endif
 
-extern TIMEMORY_EXTERN_C tim_api void
-                         c_timemory_init(int argc, char** argv, timemory_settings);
-extern TIMEMORY_EXTERN_C tim_api int
-                         c_timemory_enabled(void);
-extern TIMEMORY_EXTERN_C tim_api void*
-                         c_timemory_create_auto_timer(const char*);
-extern TIMEMORY_EXTERN_C tim_api void
-                         c_timemory_delete_auto_timer(void*);
-extern TIMEMORY_EXTERN_C tim_api void*
-                         c_timemory_create_auto_tuple(const char*, ...);
-extern TIMEMORY_EXTERN_C tim_api void
-                         c_timemory_delete_auto_tuple(void*);
-extern TIMEMORY_EXTERN_C tim_api const char*
-                         c_timemory_string_combine(const char*, const char*);
-extern TIMEMORY_EXTERN_C tim_api const char*
-                         c_timemory_auto_str(const char*, const char*, const char*, int);
+TIMEMORY_EXTERN_C void
+c_timemory_init(int argc, char** argv, timemory_settings);
+TIMEMORY_EXTERN_C int
+c_timemory_enabled(void);
+TIMEMORY_EXTERN_C void*
+c_timemory_create_auto_timer(const char*);
+TIMEMORY_EXTERN_C void
+c_timemory_delete_auto_timer(void*);
+TIMEMORY_EXTERN_C void*
+c_timemory_create_auto_tuple(const char*, ...);
+TIMEMORY_EXTERN_C void
+c_timemory_delete_auto_tuple(void*);
+TIMEMORY_EXTERN_C const char*
+c_timemory_string_combine(const char*, const char*);
+TIMEMORY_EXTERN_C const char*
+c_timemory_auto_str(const char*, const char*, const char*, int);
 
 //======================================================================================//
 //

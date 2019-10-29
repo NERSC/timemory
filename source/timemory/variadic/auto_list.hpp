@@ -73,6 +73,21 @@ public:
     static constexpr bool contains_gotcha     = component_type::contains_gotcha;
 
 public:
+    //----------------------------------------------------------------------------------//
+    //
+    static void init_storage() { component_type::init_storage(); }
+
+    //----------------------------------------------------------------------------------//
+    //
+    static init_func_t& get_initializer()
+    {
+        static init_func_t _instance = [](this_type& al) {
+            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
+        };
+        return _instance;
+    }
+
+public:
     template <typename _Scope = scope::process, typename _Func = init_func_t,
               bool _Flat = std::is_same<_Scope, scope::flat>::value>
     inline explicit auto_list(const string_t&,
@@ -214,17 +229,6 @@ public:
     {
         os << obj.m_temporary_object;
         return os;
-    }
-
-    //----------------------------------------------------------------------------------//
-    static void init_storage() { component_type::init_storage(); }
-
-    static init_func_t& get_initializer()
-    {
-        static init_func_t _instance = [](this_type& al) {
-            env::initialize(al, "TIMEMORY_AUTO_LIST_INIT", "");
-        };
-        return _instance;
     }
 
 private:

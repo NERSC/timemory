@@ -30,6 +30,64 @@
 
 #pragma once
 
+//--------------------------------------------------------------------------------------//
+// base operating system
+
+#if defined(_WIN32) || defined(_WIN64)
+#    if !defined(_WINDOWS)
+#        define _WINDOWS
+#    endif
+//--------------------------------------------------------------------------------------//
+
+#elif defined(__APPLE__) || defined(__MACH__)
+#    if !defined(_MACOS)
+#        define _MACOS
+#    endif
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+//--------------------------------------------------------------------------------------//
+
+#elif defined(__linux__) || defined(__linux) || defined(linux) || defined(__gnu_linux__)
+#    if !defined(_LINUX)
+#        define _LINUX
+#    endif
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+//--------------------------------------------------------------------------------------//
+
+#elif defined(__unix__) || defined(__unix) || defined(unix) || defined(_)
+#    if !defined(_UNIX)
+#        define _UNIX
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Windows DLL settings
+//
+//======================================================================================//
+
+// Define macros for WIN32 for importing/exporting external symbols to DLLs
+#if !defined(tim_api)
+#    if defined(_WINDOWS) && !defined(_TIMEMORY_ARCHIVE)
+#        if defined(_TIMEMORY_DLL)
+#            define tim_api __declspec(dllexport)
+#        else
+#            define tim_api __declspec(dllimport)
+#        endif
+#    else
+#        define tim_api
+#    endif
+#endif
+
+//======================================================================================//
+//
+//      Enumeration
+//
+//======================================================================================//
+
 enum TIMEMORY_COMPONENT
 {
     CALIPER                  = 0,

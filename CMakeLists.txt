@@ -184,7 +184,7 @@ install(EXPORT ${PROJECT_NAME}-library-depends
 #----------------------------------------------------------------------------------------#
 
 if(TIMEMORY_BUILD_EXAMPLES)
-    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE STRING "timemory install directory")
+    set(timemory_DIR "${CMAKE_BINARY_DIR}" CACHE INTERNAL "timemory install directory")
     add_subdirectory(examples)
 endif()
 

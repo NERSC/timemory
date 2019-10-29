@@ -38,9 +38,9 @@
 #include "timemory/bits/ctimemory.h"
 
 //--------------------------------------------------------------------------------------//
-
+//
 #if defined(__cplusplus)
-
+//
 //--------------------------------------------------------------------------------------//
 
 // for generating names
@@ -48,26 +48,36 @@
 
 extern "C"
 {
-    uint64_t timemory_get_unique_id();
-    void     timemory_create_record(const char* name, uint64_t* id, int n, int* ct);
-    void     timemory_delete_record(uint64_t nid);
-    void     timemory_init_library(int argc, char** argv);
-    void     timemory_finalize_library();
-    void     timemory_set_default(const char* components);
-    void     timemory_push_components(const char* components);
-    void     timemory_pop_components();
-    void     timemory_begin_record(const char* name, uint64_t* id);
-    void     timemory_begin_record_types(const char* name, uint64_t*, const char*);
-    uint64_t timemory_get_begin_record(const char* name);
-    uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes);
-    void     timemory_end_record(uint64_t id);
+//--------------------------------------------------------------------------------------//
+//
+#endif  // if defined(__cplusplus)
+
+    extern uint64_t timemory_get_unique_id();
+    extern void timemory_create_record(const char* name, uint64_t* id, int n, int* ct);
+    extern void timemory_delete_record(uint64_t nid);
+    extern void timemory_init_library(int argc, char** argv);
+    extern void timemory_finalize_library();
+    extern void timemory_set_default(const char* components);
+    extern void timemory_push_components(const char* components);
+    extern void timemory_pop_components();
+    extern void timemory_begin_record(const char* name, uint64_t* id);
+    extern void timemory_begin_record_types(const char* name, uint64_t*, const char*);
+    extern uint64_t timemory_get_begin_record(const char* name);
+    extern uint64_t timemory_get_begin_record_types(const char* name, const char* ctypes);
+    extern void     timemory_end_record(uint64_t id);
 
     typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
     typedef void (*timemory_delete_func_t)(uint64_t);
 
-    extern timemory_create_func_t timemory_create_function;
-    extern timemory_delete_func_t timemory_delete_function;
-}
+    extern tim_api timemory_create_func_t timemory_create_function;
+    extern tim_api timemory_delete_func_t timemory_delete_function;
+
+//
+//--------------------------------------------------------------------------------------//
+//
+#if defined(__cplusplus)
+
+}  // extern "C"
 
 //--------------------------------------------------------------------------------------//
 
@@ -101,41 +111,4 @@ timemory_tl_static(const _Tp& _initial = {})
 
 //--------------------------------------------------------------------------------------//
 
-#else
-
-extern uint64_t
-timemory_get_unique_id();
-extern void
-timemory_create_record(const char* name, uint64_t* id, int n, int* ct);
-extern void
-timemory_delete_record(uint64_t nid);
-extern void
-timemory_init_library(int argc, char** argv);
-extern void
-timemory_finalize_library();
-extern void
-timemory_set_default(const char* components);
-extern void
-timemory_push_components(const char* components);
-extern void
-timemory_pop_components();
-extern void
-timemory_begin_record(const char* name, uint64_t* id);
-extern void
-timemory_begin_record_types(const char* name, uint64_t* id, const char* components);
-extern uint64_t
-timemory_get_begin_record(const char* name);
-extern uint64_t
-timemory_get_begin_record_types(const char* name, const char* ctypes);
-extern void
-timemory_end_record(uint64_t id);
-
-// function types
-typedef void (*timemory_create_func_t)(const char*, uint64_t*, int, int*);
-typedef void (*timemory_delete_func_t)(uint64_t);
-
-// function pointer handles
-extern timemory_create_func_t timemory_create_function;
-extern timemory_delete_func_t timemory_delete_function;
-
-#endif
+#endif  // if defined(__cplusplus)
