@@ -12,7 +12,7 @@ set(COMPONENTS papi threading compile-options analysis-tools arch)
 
 option(USE_EXTERN_TEMPLATES "Enable extern templates" OFF)
 if(USE_EXTERN_TEMPLATES)
-    list(APPEND COMPONENTS cxx shared extern-templates)
+    list(APPEND COMPONENTS cxx extern-templates)
 endif()
 
 find_package(timemory REQUIRED COMPONENTS ${COMPONENTS})
