@@ -315,6 +315,9 @@ main(int argc, char** argv)
     tim::timemory_init(argc, argv);
     tim::settings::verbose() += 1;
     tim::settings::debug() = true;
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count() = 1;
+    tim::settings::banner() = false;
 
     return RUN_ALL_TESTS();
 }

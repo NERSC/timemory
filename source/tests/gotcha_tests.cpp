@@ -886,6 +886,10 @@ main(int argc, char** argv)
     tim::mpi::initialize(argc, argv);
     cpu_roofline_sp_flops::ert_config_type<float>::configure(1, 64);
     cpu_roofline_dp_flops::ert_config_type<double>::configure(1, 64);
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count() = 1;
+    tim::settings::banner() = false;
+
     return RUN_ALL_TESTS();
 }
 

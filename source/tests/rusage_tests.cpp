@@ -262,6 +262,9 @@ main(int argc, char** argv)
     // rb = io.get<read_bytes>();
     // wb = io.get<written_bytes>();
 #endif
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count() = 1;
+    tim::settings::banner() = false;
 
     return RUN_ALL_TESTS();
 }

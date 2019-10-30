@@ -1,4 +1,4 @@
-#!/bin/bash -e
+#!/bin/bash
 
 EXE=$(basename ${1})
 DIR=cpu.prof.${EXE}
@@ -94,8 +94,10 @@ else
     fi
 fi
 
+set -e
 # run the application
 eval CPUPROFILE_FREQUENCY=${CPUPROFILE_FREQUENCY} CPUPROFILE=${GPERF_PROFILE} $@ | tee ${GPERF_PROFILE}.log
+set +e
 
 echo-dart-measurement()
 {

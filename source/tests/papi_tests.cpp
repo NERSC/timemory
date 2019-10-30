@@ -342,6 +342,10 @@ main(int argc, char** argv)
 {
     ::testing::InitGoogleTest(&argc, argv);
     tim::timemory_init(argc, argv);
+    tim::settings::dart_output() = true;
+    tim::settings::dart_count() = 1;
+    tim::settings::banner() = false;
+
     return RUN_ALL_TESTS();
 }
 
